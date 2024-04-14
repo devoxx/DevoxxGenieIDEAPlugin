@@ -4,6 +4,9 @@
 
 DevoxxGenie is a plugin for IntelliJ IDEA that uses local LLM's (Ollama, LMStudio and GPT4All) to help review, test, explain your project code.
 
+https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730-89d5-bb79b7ad1a53
+
+
 ### Key Features:
 
 - **Generate**: Generate code using local LLM's.
