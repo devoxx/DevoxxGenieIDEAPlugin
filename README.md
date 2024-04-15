@@ -2,7 +2,7 @@
 
 <img height="128" src="src/main/resources/META-INF/pluginIcon.svg" width="128"/>
 
-DevoxxGenie is a 100% Java LLM plugin for IntelliJ IDEA that supports local LLM providers Ollama, LMStudio and GPT4All to help review, test, explain your project code.
+DevoxxGenie is a fully Java-based LLM plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as Ollama, LMStudio, and GPT4All. This plugin aids in reviewing, testing, and explaining your project code, enhancing your development workflow.
 
 https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730-89d5-bb79b7ad1a53
 
