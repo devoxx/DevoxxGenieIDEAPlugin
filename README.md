@@ -21,6 +21,11 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
 
 <img width="1194" alt="DevoxxSettings" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/3f79f716-1647-49be-a155-8563ba340629">
 
+### Requirements:
+
+- **IntelliJ** minimum version is 2023.3.4
+- **Java** minimum version is JDK 17
+
 ### Usage:
 1) Select an LLM provider from the DevoxxGenie panel (right corner)
 2) Select some code 
