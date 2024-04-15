@@ -16,9 +16,10 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
  
 ### Installation:
 
-- **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Install Plugin from Disk
+- **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find plugin (pending approval) OR Install plugin from Disk 
 - **From Source Code**: Clone the repository, build the plugin using `./gradlew shadowJar`, and install the plugin from the `build/libs` directory and select file 'DevoxxGenie-0.0.1-all.jar'
 
+ 
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
 
