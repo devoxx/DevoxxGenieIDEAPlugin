@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.util;
 
 import com.intellij.notification.*;
 import com.intellij.openapi.project.Project;

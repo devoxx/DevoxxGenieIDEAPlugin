@@ -5,6 +5,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class OllamaModelServiceTest {
 
     @Test
@@ -12,6 +15,7 @@ public class OllamaModelServiceTest {
 
         // Create an instance of the OllamaModelService with the mocked OkHttpClient
         OllamaModelEntryDTO[] models = new OllamaService().getModels();
-        assert models.length > 0;
+        assertNotNull(models);
+        assertTrue(models.length > 0);
     }
 }
