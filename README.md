@@ -17,7 +17,9 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
 ### Installation:
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Install Plugin from Disk
-- **From Source Code**: Clone the repository, build the plugin using `./gradlew shadowJar`, and install the plugin from the `build/libs` directory and select file 'DevoxxGenie-0.0.1.jar'
+- **From Source Code**: Clone the repository, build the plugin using `./gradlew shadowJar`, and install the plugin from the `build/libs` directory and select file 'DevoxxGenie-0.0.1-all.jar'
+
+<img width="1194" alt="DevoxxSettings" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/3f79f716-1647-49be-a155-8563ba340629">
 
 ### Usage:
 1) Select an LLM provider from the DevoxxGenie panel (right corner)
