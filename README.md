@@ -9,7 +9,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
 
 ### Key Features:
 
-- **100% Java**: A 100% Java LMM plugin using [Langchain4J](https://github.com/langchain4j/langchain4j)
+- **100% Java**: An IDEA plugin using local LLM models using Java and [Langchain4J](https://github.com/langchain4j/langchain4j)
 - **Explain**: Explain code using local LLM's.
 - **Review**: Review and improve your code using local LLM's.
 - **Test**: Generate unit tests for your code using local LLM's.
