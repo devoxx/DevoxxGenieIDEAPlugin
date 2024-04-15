@@ -2,7 +2,7 @@
 
 <img height="128" src="src/main/resources/META-INF/pluginIcon.svg" width="128"/>
 
-DevoxxGenie is a plugin for IntelliJ IDEA that uses local LLM's (Ollama, LMStudio and GPT4All) to help review, test, explain your project code.
+DevoxxGenie is a 100% Java LLM plugin for IntelliJ IDEA that supports local LLM providers Ollama, LMStudio and GPT4All to help review, test, explain your project code.
 
 https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730-89d5-bb79b7ad1a53
 
@@ -18,6 +18,9 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Install Plugin from Disk
 - **From Source Code**: Clone the repository, build the plugin using `./gradlew shadowJar`, and install the plugin from the `build/libs` directory and select file 'DevoxxGenie-0.0.1-all.jar'
+
+### LLM Settings
+In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
 
 <img width="1194" alt="DevoxxSettings" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/3f79f716-1647-49be-a155-8563ba340629">
 
