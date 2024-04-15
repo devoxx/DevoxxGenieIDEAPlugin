@@ -5,6 +5,7 @@ import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.component.PlaceholderTextArea;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WorkingMessage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -27,19 +28,18 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.devoxx.genie.model.Pair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
 
-final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
+import static com.devoxx.genie.ui.CommandHandler.*;
 
-    private static final Logger log = LoggerFactory.getLogger(DevoxxGenieToolWindowFactory.class);
+final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
@@ -48,15 +48,12 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         toolWindow.getContentManager().addContent(content);
     }
 
-    private static class DevoxxGenieToolWindowContent {
+    public static class DevoxxGenieToolWindowContent implements CommandHandlerListener {
 
-        public static final String DEVOXX_GENIE_WORKING = "Devoxx Genie working...";
-
-        public static final String HELP_CMD = "/help";
-        public static final String TEST_CMD = "/test";
-        public static final String REVIEW_CMD = "/review";
-        public static final String EXPLAIN_CMD = "/explain";
         public static final String DEFAULT_LANGUAGE = "Java";
+
+        public static final String WORKING_MESSAGE = "working.message";
+
         private final String[] items = {"Ollama", "LMStudio", "GPT4All"};
 
         private final DevoxxGenieClient genieClient;
@@ -64,17 +61,26 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         private final JPanel contentPanel = new JPanel();
         private final ComboBox<String> providersComboBox = new ComboBox<>(items);
         private final ComboBox<String> modelComboBox = new ComboBox<>();
-        private final JButton submitButton = new JButton("Submit");
-        private final JButton clearButton = new JButton("Clear");
-        private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea("Enter your prompt here or type /help", 3, 80);
+        private final JButton submitButton = new JButton();
+        private final JButton clearButton = new JButton();
+        private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
         private final JEditorPane promptOutputArea = new JEditorPane();
 
         private final Project project;
+        private final CommandHandler commandHandler;
+        private final ResourceBundle resourceBundle;
 
         public DevoxxGenieToolWindowContent(ToolWindow toolWindow) {
             project = toolWindow.getProject();
             fileEditorManager = FileEditorManager.getInstance(project);
             genieClient = DevoxxGenieClient.getInstance();
+            commandHandler = new CommandHandler(this); // Initialize with the loaded ResourceBundle
+
+            // Load the resource bundle
+            resourceBundle = ResourceBundle.getBundle("messages");
+            submitButton.setText(resourceBundle.getString("btn.submit.label"));
+            clearButton.setText(resourceBundle.getString("btn.clear.label"));
+            promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
             addOllamaModels();
             setupUIComponents();
@@ -89,18 +95,14 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         @NotNull
         private JPanel createSelectionPanel() {
             JPanel toolPanel = new JPanel();
-            // Set the panel's layout to BoxLayout, aligning components along the Y-axis (top to bottom)
             toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
-            // Ensure each combo box takes full horizontal space and aligns correctly
             providersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, providersComboBox.getPreferredSize().height));
             modelComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelComboBox.getPreferredSize().height));
 
-            // Add the combo boxes to the panel
             toolPanel.add(providersComboBox);
             toolPanel.add(Box.createVerticalStrut(5)); // Add some vertical spacing between components
             toolPanel.add(modelComboBox);
 
-            // Add action listeners as before
             providersComboBox.addActionListener(e -> processModelProviderSelection());
             modelComboBox.addActionListener(e -> processModelNameSelection());
 
@@ -114,33 +116,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             // Output Area - This should expand to fill most of the space
             promptOutputArea.setEditable(false);
             promptOutputArea.setContentType("text/html");
-            promptOutputArea.setText("""
-                <html>
-                <head>
-                    <style type="text/css">
-                        body {
-                            font-family: 'Source Code Pro', monospace; font-size: 14pt;
-                            margin: 5px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h2>Welcome to Devoxx Genie</h2>
-                    <p>The Devoxx Genie plugin allows you to interact with local running Large Language Models (LLMs) even without an internet connection..</p>
-                    <p>Start by selecting a language model provider.</p>
-                    <p>Select some code, type your prompt and click the submit button.</p>
-                    <p>Utility commands are:
-                    <ul>
-                    <li>/test - write a unit test</li>
-                    <li>/review - review code</li>
-                    <li>/explain - explain the code</li>
-                    </ul>
-                    </p>
-                    <p>You can also change the LLM provider REST endpoints in the plugin settings.</p>
-                    <p>Enjoy!</p>
-                </body>
-                </html>
-                """);
+            promptOutputArea.setText(getWelcomeText());
             JScrollPane outputScrollPane = new JBScrollPane(promptOutputArea);
             inputPanel.add(outputScrollPane, BorderLayout.CENTER);
 
@@ -187,41 +163,58 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             return inputPanel;
         }
 
+        public String getWelcomeText() {
+            return """
+                <html>
+                <head>
+                    <style type="text/css">
+                        body {
+                            font-family: 'Source Code Pro', monospace; font-size: 14pt;
+                            margin: 5px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>%s</h2>
+                    <p>%s</p>
+                    <p>%s</p>
+                    <p>%s
+                    <ul>
+                    <li>%s</li>
+                    <li>%s</li>
+                    <li>%s</li>
+                    </ul>
+                    </p>
+                    <p>%s</p>
+                    <p>%s</p>
+                </body>
+                </html>
+                """.formatted(
+                resourceBundle.getString("welcome.title"),
+                resourceBundle.getString("welcome.description"),
+                resourceBundle.getString("welcome.instructions"),
+                resourceBundle.getString("welcome.commands"),
+                resourceBundle.getString("command.test"),
+                resourceBundle.getString("command.review"),
+                resourceBundle.getString("command.explain"),
+                resourceBundle.getString("welcome.tip"),
+                resourceBundle.getString("welcome.enjoy")
+            );
+        }
+
         public void handleCommand(String command) {
-            switch (command.toLowerCase()) {
-                case TEST_CMD:
-                    executePrompt("Write a unit test for this code using JUnit.");
-                    break;
-                case REVIEW_CMD:
-                    executePrompt("Review the selected code, can it be improved or are there bugs?");
-                    break;
-                case EXPLAIN_CMD:
-                    executePrompt("Explain the code so a junior developer can understand it.");
-                    break;
-                default:
-                    String value = """
-                        <html>
-                        <head>
-                            <style type="text/css">
-                                body {
-                                    font-family: 'Source Code Pro', monospace; font-size: 14pt;
-                                    margin: 5px;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            Available commands for selected code:<br>
-                            <UL>
-                            <LI>/test - write a unit test</LI>
-                            <LI>/review - review code</LI>
-                            <LI>/explain - explain the code</LI>
-                            </UL>
-                        </body>
-                        </html>
-                        """;
-                    promptOutputArea.setText(value);
-                    break;
-            }
+            commandHandler.handleCommand(command);
+        }
+
+        public void showHelp() {
+            String availableCommands = "<html><head><style type=\"text/css\">body { font-family: 'Source Code Pro', monospace; font-size: 14pt; margin: 5px; }</style></head><body>" +
+                resourceBundle.getString("command.available") +
+                "<br><ul>" +
+                "<li>" + resourceBundle.getString("command.test") + "</li>" +
+                "<li>" + resourceBundle.getString("command.review") + "</li>" +
+                "<li>" + resourceBundle.getString("command.explain") + "</li>" +
+                "</ul></body></html>";
+            promptOutputArea.setText(availableCommands);
         }
 
         private void onSubmit() {
@@ -232,23 +225,25 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             }
             disableButtons();
 
+            promptOutputArea.setText(WorkingMessage.getWorkingMessage());
+
             if (prompt.startsWith("/")) {
-                if (prompt.equalsIgnoreCase(HELP_CMD) ||
-                    prompt.equalsIgnoreCase(TEST_CMD) ||
-                    prompt.equalsIgnoreCase(REVIEW_CMD) ||
-                    prompt.equalsIgnoreCase(EXPLAIN_CMD)) {
+                if (prompt.equalsIgnoreCase(COMMAND_HELP) ||
+                    prompt.equalsIgnoreCase(COMMAND_TEST) ||
+                    prompt.equalsIgnoreCase(COMMAND_REVIEW) ||
+                    prompt.equalsIgnoreCase(COMMAND_EXPLAIN)) {
                     handleCommand(prompt);
                     enableButtons();
                 } else {
-                    NotificationUtil.sendNotification(project, "Unknown command: " + prompt);
+                    NotificationUtil.sendNotification(project, resourceBundle.getString("command.unknown") +  prompt);
                 }
                 return;
             }
 
-            Task.Backgroundable task = new Task.Backgroundable(project, DEVOXX_GENIE_WORKING, true) {
+            Task.Backgroundable task = new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    progressIndicator.setText(DEVOXX_GENIE_WORKING);
+                    progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
                     executePrompt(promptInputArea.getText());
                 }
             };
@@ -259,7 +254,6 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             submitButton.setEnabled(false);
             clearButton.setEnabled(false);
             promptInputArea.setEnabled(false);
-            promptOutputArea.setText(WorkingMessage.getWorkingMessage());
         }
 
         private void enableButtons() {
@@ -297,11 +291,11 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * Execute the user prompt.
          * @param userPrompt the user prompt
          */
-        private void executePrompt(String userPrompt) {
+        public void executePrompt(String userPrompt) {
             Editor editor = fileEditorManager.getSelectedTextEditor();
             if (editor != null) {
                 Pair value = getEditorLanguageAndText(editor);
-                new Task.Backgroundable(project, DEVOXX_GENIE_WORKING, true) {
+                new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
                     @Override
                     public void run(@NotNull ProgressIndicator progressIndicator) {
                         String response = genieClient.executeGeniePrompt(userPrompt, value.language(), value.text());
@@ -309,7 +303,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                     }
                 }.queue();
             } else {
-                NotificationUtil.sendNotification(project, "No source file open.");
+                NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
             }
         }
 
@@ -363,8 +357,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                     modelComboBox.addItem(model.getName());
                 }
             } catch (IOException e) {
-                log.error("Error getting Ollama models", e);
-                NotificationUtil.sendNotification(project, "Error getting Ollama models, make sure Ollama is running.");
+                NotificationUtil.sendNotification(project, resourceBundle.getString("ollama.not_running"));
             }
         }
 

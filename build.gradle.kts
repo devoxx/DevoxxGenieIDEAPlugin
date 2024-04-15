@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     mavenCentral()
@@ -17,8 +17,14 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-local-ai:0.29.1")
     implementation("org.commonmark:commonmark:0.22.0")
 
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.assertj:assertj-core:3.25.3")
+
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
 }
+
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
@@ -47,6 +53,10 @@ tasks {
                     "Implementation-Version" to version,
             )
         }
+    }
+
+    test {
+        useJUnitPlatform()
     }
 
     signPlugin {

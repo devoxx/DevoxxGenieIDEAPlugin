@@ -28,6 +28,14 @@
         </UL>
     ]]></description>
 
+    <change-notes><![CDATA[
+        <UL>
+            <LI>Initial release</LI>
+            <LI>I18N labels and support for the French language</LI>
+            <LI>Introduced CommandHandler for the predefined commands</LI>
+        </UL>
+    ]]></change-notes>
+
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
