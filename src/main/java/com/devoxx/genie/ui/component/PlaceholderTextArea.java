@@ -7,12 +7,19 @@ import java.awt.event.FocusListener;
 
 public class PlaceholderTextArea extends JTextArea {
 
-    private final String placeholder;
+    private String placeholder;
 
-    public PlaceholderTextArea(String placeholder, int rows, int columns) {
+    public PlaceholderTextArea(int rows, int columns) {
         super(rows, columns);
-        this.placeholder = placeholder;
         this.addFocusListener(new FocusAdapter());
+    }
+
+    public void setPlaceholder(String placeholder) {
+        this.placeholder = placeholder;
+    }
+
+    public String getPlaceholder() {
+        return this.placeholder;
     }
 
     @Override
