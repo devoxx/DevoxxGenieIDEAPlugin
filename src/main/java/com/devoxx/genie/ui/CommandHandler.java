@@ -11,6 +11,7 @@ public class CommandHandler {
     public static final String COMMAND_TEST = "/test";
     public static final String COMMAND_REVIEW = "/review";
     public static final String COMMAND_EXPLAIN = "/explain";
+    public static final String COMMAND_CUSTOM = "/custom";
 
     private final CommandHandlerListener listener;
 
@@ -39,6 +40,9 @@ public class CommandHandler {
 
         commandMap.put(COMMAND_EXPLAIN,
             () -> listener.executePrompt(settings.getExplainPrompt()));
+
+        commandMap.put(COMMAND_CUSTOM,
+            () -> listener.executePrompt(settings.getCustomPrompt()));
     }
 
     /**
