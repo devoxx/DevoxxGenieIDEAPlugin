@@ -14,7 +14,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(ChatModel chatModel) {
         return OllamaChatModel.builder()
             .baseUrl(getBaseUrlByType(ModelProvider.Ollama))
-            .modelName(chatModel.name)
+            .modelName(chatModel.modelName)
             .temperature(chatModel.temperature)
             .topP(chatModel.topP)
             .maxRetries(chatModel.maxRetries)
