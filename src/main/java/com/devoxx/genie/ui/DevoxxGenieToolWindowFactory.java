@@ -215,6 +215,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 "<li>" + resourceBundle.getString("command.test") + "</li>" +
                 "<li>" + resourceBundle.getString("command.review") + "</li>" +
                 "<li>" + resourceBundle.getString("command.explain") + "</li>" +
+                "<li>" + resourceBundle.getString("command.custom") + "</li>" +
                 "</ul></body></html>";
             promptOutputArea.setText(availableCommands);
         }
