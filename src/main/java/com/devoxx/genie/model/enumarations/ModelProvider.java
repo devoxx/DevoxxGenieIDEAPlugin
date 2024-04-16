@@ -3,8 +3,12 @@ package com.devoxx.genie.model.enumarations;
 public enum ModelProvider {
     Ollama("Ollama"),
     LMStudio("LMStudio"),
-    GPT4All("GPT4All");
-    // Add more
+    GPT4All("GPT4All"),
+    OpenAI("OpenAI"),
+    Anthropic("Anthropic"),
+    Mistral("Mistral"),
+    Groq("Groq"),
+    DeepInfra("DeepInfra");
 
     private String name;
 
