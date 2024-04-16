@@ -34,10 +34,19 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 import static com.devoxx.genie.ui.CommandHandler.*;
+import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
+import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
+import static dev.langchain4j.model.openai.OpenAiModelName.*;
+
 
 final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -54,12 +63,24 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         public static final String WORKING_MESSAGE = "working.message";
 
-        private final String[] items = {"Ollama", "LMStudio", "GPT4All"};
+        private final String[] llmProvidersWithKey = {
+            Anthropic.getName(),
+            DeepInfra.getName(),
+            Groq.getName(),
+            Mistral.getName(),
+            OpenAI.getName()
+        };
+
+        private final String[] llmProviders = {
+            GPT4All.getName(),
+            LMStudio.getName(),
+            Ollama.getName()
+        };
 
         private final DevoxxGenieClient genieClient;
         private final FileEditorManager fileEditorManager;
         private final JPanel contentPanel = new JPanel();
-        private final ComboBox<String> providersComboBox = new ComboBox<>(items);
+        private final ComboBox<String> providersComboBox = new ComboBox<>();
         private final ComboBox<String> modelComboBox = new ComboBox<>();
         private final JButton submitButton = new JButton();
         private final JButton clearButton = new JButton();
@@ -82,6 +103,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             clearButton.setText(resourceBundle.getString("btn.clear.label"));
             promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
+            populateProvidersComboBox();
             addOllamaModels();
             setupUIComponents();
         }
@@ -92,6 +114,27 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             contentPanel.add(createInputPanel(), BorderLayout.CENTER);
         }
 
+        private void populateProvidersComboBox() {
+            SettingsState settingState = SettingsState.getInstance();
+
+            Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
+            providerKeyMap.put(OpenAI.getName(), settingState::getOpenAIKey);
+            providerKeyMap.put(Anthropic.getName(), settingState::getAnthropicKey);
+            providerKeyMap.put(Mistral.getName(), settingState::getMistralKey);
+            providerKeyMap.put(Groq.getName(), settingState::getGroqKey);
+            providerKeyMap.put(DeepInfra.getName(), settingState::getDeepInfraKey);
+
+            List<String> providers = Stream.of(llmProvidersWithKey)
+                .filter(provider -> Optional.ofNullable(providerKeyMap.get(provider))
+                    .map(Supplier::get)
+                    .filter(key -> !key.isBlank())
+                    .isPresent())
+                .collect(Collectors.toList());
+
+            Collections.addAll(providers, llmProviders);
+            providers.forEach(providersComboBox::addItem);
+        }
+
         @NotNull
         private JPanel createSelectionPanel() {
             JPanel toolPanel = new JPanel();
@@ -100,7 +143,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             modelComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelComboBox.getPreferredSize().height));
 
             toolPanel.add(providersComboBox);
-            toolPanel.add(Box.createVerticalStrut(5)); // Add some vertical spacing between components
+            toolPanel.add(Box.createVerticalStrut(5));
             toolPanel.add(modelComboBox);
 
             providersComboBox.addActionListener(e -> processModelProviderSelection());
@@ -347,10 +390,40 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
             }
 
-            // When Ollama is selected we need to show the available language models
-            boolean isOllamaSelected = selectedProvider != null &&
-                                       selectedProvider.equalsIgnoreCase(ModelProvider.Ollama.getName());
-            modelComboBox.setVisible(isOllamaSelected);
+            if (selectedProvider != null) {
+                modelComboBox.setVisible(true);
+                modelComboBox.removeAllItems();
+
+                if (selectedProvider.equalsIgnoreCase(Ollama.getName())) {
+                    modelComboBox.setVisible(true);
+                    modelComboBox.removeAllItems();
+                    addOllamaModels();
+                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.OpenAI.getName())) {
+                    modelComboBox.addItem(GPT_3_5_TURBO);
+                    modelComboBox.addItem(GPT_3_5_TURBO_16K);
+                    modelComboBox.addItem(GPT_4);
+                    modelComboBox.addItem(GPT_4_32K);
+                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Anthropic.getName())) {
+                    modelComboBox.addItem(CLAUDE_3_OPUS_20240229.toString());
+                    modelComboBox.addItem(CLAUDE_3_SONNET_20240229.toString());
+                    modelComboBox.addItem(CLAUDE_3_HAIKU_20240307.toString());
+                    modelComboBox.addItem(CLAUDE_2_1.toString());
+                    modelComboBox.addItem(CLAUDE_2.toString());
+                    modelComboBox.addItem(CLAUDE_INSTANT_1_2.toString());
+                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Mistral.getName())) {
+                    modelComboBox.addItem(OPEN_MISTRAL_7B.toString());
+                    modelComboBox.addItem(OPEN_MIXTRAL_8x7B.toString());
+                    modelComboBox.addItem(MISTRAL_SMALL_LATEST.toString());
+                    modelComboBox.addItem(MISTRAL_MEDIUM_LATEST.toString());
+                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Groq.getName())) {
+                    modelComboBox.addItem("llama2-70b-4096");
+                    modelComboBox.addItem("mixtral-8x7b-32768");
+                    modelComboBox.addItem("gemma-7b-it");
+                } else if (selectedProvider.equalsIgnoreCase(DeepInfra.getName())) {
+                    // TODO Check which other models are available
+                    modelComboBox.addItem("mistralai/Mixtral-8x7B-Instruct-v0.1");
+                }
+            }
         }
 
         /**

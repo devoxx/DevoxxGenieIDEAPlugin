@@ -25,6 +25,7 @@ public interface ChatModelFactory {
             case GPT4All -> SettingsState.getInstance().getGpt4allModelUrl();
             case LMStudio -> SettingsState.getInstance().getLmstudioModelUrl();
             case Ollama -> SettingsState.getInstance().getOllamaModelUrl();
+            default -> "na";
         };
     }
 }

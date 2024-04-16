@@ -36,6 +36,10 @@
         <UL>
             <LI>Added support for a custom prompt using /custom command</LI>
         </UL>
+        <h2>V0.0.6</h2>
+        <UL>
+            <LI>Support non-local LLM Providers</LI>
+        </UL>
         <h2>V0.0.4</h2>
         <UL>
             <LI>Command prompts are now externalised in Settings</LI>

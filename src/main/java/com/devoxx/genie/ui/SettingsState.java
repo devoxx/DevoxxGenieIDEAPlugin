@@ -20,6 +20,14 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     private String lmstudioModelUrl = Constant.LMSTUDIO_MODEL_URL;
     private String gpt4allModelUrl = Constant.GPT4ALL_MODEL_URL;
 
+    // LLM API Keys
+    private String openAIKey = "";
+    private String mistralKey = "";
+    private String anthropicKey = "";
+    private String groqKey = "";
+    private String fireworksKey = "";
+    private String deepInfraKey = "";
+
     // Prompt fields
     private String testPrompt = Constant.TEST_PROMPT;
     private String reviewPrompt = Constant.REVIEW_PROMPT;
@@ -135,5 +143,53 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     public void setCustomPrompt(String customPrompt) {
         this.customPrompt = customPrompt;
+    }
+
+    public String getOpenAIKey() {
+        return openAIKey;
+    }
+
+    public void setOpenAIKey(String openAIKey) {
+        this.openAIKey = openAIKey;
+    }
+
+    public String getMistralKey() {
+        return mistralKey;
+    }
+
+    public void setMistralKey(String mistralKey) {
+        this.mistralKey = mistralKey;
+    }
+
+    public String getAnthropicKey() {
+        return anthropicKey;
+    }
+
+    public void setAnthropicKey(String anthropicKey) {
+        this.anthropicKey = anthropicKey;
+    }
+
+    public String getGroqKey() {
+        return groqKey;
+    }
+
+    public void setGroqKey(String groqKey) {
+        this.groqKey = groqKey;
+    }
+
+    public String getFireworksKey() {
+        return fireworksKey;
+    }
+
+    public void setFireworksKey(String fireworksKey) {
+        this.fireworksKey = fireworksKey;
+    }
+
+    public String getDeepInfraKey() {
+        return deepInfraKey;
+    }
+
+    public void setDeepInfraKey(String deepInfraKey) {
+        this.deepInfraKey = deepInfraKey;
     }
 }
