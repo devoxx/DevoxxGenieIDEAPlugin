@@ -27,16 +27,18 @@ public class CommandHandler {
      * Initialize the available commands.
      */
     private void initializeCommands() {
+        SettingsState settings = SettingsState.getInstance();
+
         commandMap.put(COMMAND_HELP, listener::showHelp);
 
         commandMap.put(COMMAND_TEST,
-            () -> listener.executePrompt("Write a unit test for this code using JUnit."));
+            () -> listener.executePrompt(settings.getTestPrompt()));
 
         commandMap.put(COMMAND_REVIEW,
-            () -> listener.executePrompt("Review the selected code, can it be improved or are there bugs?"));
+            () -> listener.executePrompt(settings.getReviewPrompt()));
 
         commandMap.put(COMMAND_EXPLAIN,
-            () -> listener.executePrompt("Explain the code so a junior developer can understand it."));
+            () -> listener.executePrompt(settings.getExplainPrompt()));
     }
 
     /**
