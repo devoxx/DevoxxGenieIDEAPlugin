@@ -32,6 +32,9 @@ public class Settings implements Configurable {
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
 
+    private JTextField testPromptField;
+    private JTextField explainPromptField;
+    private JTextField reviewPromptField;
 
     public Settings() {
         doubleConverter = new DoubleConverter();
@@ -68,6 +71,16 @@ public class Settings implements Configurable {
 
         timeoutField = new JFormattedTextField();
         setValue(timeoutField, settings.getTimeout());
+
+        // Prompts
+        testPromptField = new JTextField();
+        testPromptField.setText(settings.getTestPrompt());
+
+        explainPromptField = new JTextField();
+        explainPromptField.setText(settings.getExplainPrompt());
+
+        reviewPromptField = new JTextField();
+        reviewPromptField.setText(settings.getReviewPrompt());
 
         // retryField
         retryField = new JFormattedTextField();
@@ -159,6 +172,42 @@ public class Settings implements Configurable {
         gbc.weightx = 1.0;
         settingsPanel.add(retryField, gbc);
 
+        // Test prompt field
+        gbc.gridx = 0;
+        gbc.gridy = 7;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
+        settingsPanel.add(new JLabel("Test prompt :"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        settingsPanel.add(testPromptField, gbc);
+
+        // Explain prompt field
+        gbc.gridx = 0;
+        gbc.gridy = 8;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
+        settingsPanel.add(new JLabel("Explain prompt :"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        settingsPanel.add(explainPromptField, gbc);
+
+        // Review prompt field
+        gbc.gridx = 0;
+        gbc.gridy = 9;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
+        settingsPanel.add(new JLabel("Review prompt :"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        settingsPanel.add(reviewPromptField, gbc);
+
         return settingsPanel;
     }
 
@@ -173,7 +222,9 @@ public class Settings implements Configurable {
         isModified |= isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())));
         isModified |= isFieldModified(timeoutField, settings.getTimeout());
         isModified |= isFieldModified(retryField, settings.getMaxRetries());
-
+        isModified |= isFieldModified(testPromptField, settings.getTestPrompt());
+        isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
+        isModified |= isFieldModified(reviewPromptField, settings.getReviewPrompt());
         return isModified;
     }
 
@@ -210,14 +261,31 @@ public class Settings implements Configurable {
             settings.setMaxRetries(safeCastToInteger(retryField.getValue()));
         }
 
+        if (isFieldModified(testPromptField, settings.getTestPrompt())) {
+            settings.setTestPrompt(testPromptField.getText());
+        }
+
+        if (isFieldModified(explainPromptField, settings.getExplainPrompt())) {
+            settings.setExplainPrompt(explainPromptField.getText());
+        }
+
+        if (isFieldModified(reviewPromptField, settings.getReviewPrompt())) {
+            settings.setReviewPrompt(reviewPromptField.getText());
+        }
     }
 
     @Override
     public void reset() {
         SettingsState settingsState = SettingsState.getInstance();
+
         ollamaUrlField.setText(settingsState.getOllamaModelUrl());
         lmstudioUrlField.setText(settingsState.getLmstudioModelUrl());
         gpt4allUrlField.setText(settingsState.getGpt4allModelUrl());
+
+        testPromptField.setText(settingsState.getTestPrompt());
+        explainPromptField.setText(settingsState.getExplainPrompt());
+        reviewPromptField.setText(settingsState.getReviewPrompt());
+
         setValue(temperatureField, settingsState.getTemperature());
         setValue(topPField, settingsState.getTopP());
         setValue(timeoutField, settingsState.getTimeout());
