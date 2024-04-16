@@ -15,10 +15,17 @@ import org.jetbrains.annotations.NotNull;
 @State(name = "com.devoxx.genie.ui.SettingsState", storages = @Storage("DevoxxGenieSettingsPlugin.xml"))
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
 
+    // LLM URL fields
     private String ollamaModelUrl = Constant.OLLAMA_MODEL_URL;
     private String lmstudioModelUrl = Constant.LMSTUDIO_MODEL_URL;
     private String gpt4allModelUrl = Constant.GPT4ALL_MODEL_URL;
 
+    // Prompt fields
+    private String testPrompt = Constant.TEST_PROMPT;
+    private String reviewPrompt = Constant.REVIEW_PROMPT;
+    private String explainPrompt = Constant.EXLAIN_PROMPT;
+
+    // LLM settings
     @OptionTag(converter = DoubleConverter.class)
     private Double temperature = Constant.TEMPERATURE;
     @OptionTag(converter = DoubleConverter.class)
@@ -95,5 +102,29 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     public void setMaxRetries(Integer maxRetries) {
         this.maxRetries = maxRetries;
+    }
+
+    public String getTestPrompt() {
+        return testPrompt;
+    }
+
+    public void setTestPrompt(String testPrompt) {
+        this.testPrompt = testPrompt;
+    }
+
+    public String getReviewPrompt() {
+        return reviewPrompt;
+    }
+
+    public void setReviewPrompt(String reviewPrompt) {
+        this.reviewPrompt = reviewPrompt;
+    }
+
+    public String getExplainPrompt() {
+        return explainPrompt;
+    }
+
+    public void setExplainPrompt(String explainPrompt) {
+        this.explainPrompt = explainPrompt;
     }
 }
