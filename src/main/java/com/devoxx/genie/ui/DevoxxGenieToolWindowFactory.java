@@ -28,7 +28,7 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
-import com.devoxx.genie.model.Pair;
+import com.devoxx.genie.model.LanguageTextPair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -267,7 +267,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * @param editor the editor
          * @return the language and text
          */
-        private Pair getEditorLanguageAndText(Editor editor) {
+        private LanguageTextPair getEditorLanguageAndText(Editor editor) {
             String languageName = DEFAULT_LANGUAGE;
             Document document = editor.getDocument();
             VirtualFile file = FileDocumentManager.getInstance().getFile(document);
@@ -284,7 +284,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 selectedText = document.getText();
             }
 
-            return new Pair(languageName, selectedText);
+            return new LanguageTextPair(languageName, selectedText);
         }
 
         /**
@@ -294,11 +294,13 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         public void executePrompt(String userPrompt) {
             Editor editor = fileEditorManager.getSelectedTextEditor();
             if (editor != null) {
-                Pair value = getEditorLanguageAndText(editor);
+                LanguageTextPair languageAndText = getEditorLanguageAndText(editor);
                 new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
                     @Override
                     public void run(@NotNull ProgressIndicator progressIndicator) {
-                        String response = genieClient.executeGeniePrompt(userPrompt, value.language(), value.text());
+                        String response = genieClient.executeGeniePrompt(userPrompt,
+                                                                         languageAndText.getLanguage(),
+                                                                         languageAndText.getText());
                         updateUIWithResponse(response);
                     }
                 }.queue();
