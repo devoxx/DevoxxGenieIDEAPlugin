@@ -17,8 +17,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/7c7e8744-4bcf-4730
 ### Installation:
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find plugin (pending approval) OR Install plugin from Disk
-- **Using Jar file**: Copy the "DevoxxGenie-0.0.2.jar" from 'dist' directory and using 'Install plugin from Disk' to enable it.
-- **From Source Code**: Clone the repository, build the plugin using `./gradlew shadowJar`, and install the plugin from the `build/libs` directory and select file 'DevoxxGenie-0.0.2-all.jar'
+- **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-0.0.3.zip'
 
  
 ### LLM Settings
@@ -30,6 +29,24 @@ In the IDEA settings you can modify the REST endpoints and the LLM parameters.  
 
 - **IntelliJ** minimum version is 2023.3.4
 - **Java** minimum version is JDK 17
+
+### Build
+
+Gradle IntelliJ Plugin prepares a ZIP archive when running the buildPlugin task.  
+You'll find it in the build/distributions/ directory
+
+```shell
+./gradlew buildPlugin 
+```
+
+### Publish plugin
+
+It is recommended to use the publishPlugin task for releasing the plugin
+
+```shell
+./gradlew publishPlugin
+```
+
 
 ### Usage:
 1) Select an LLM provider from the DevoxxGenie panel (right corner)
