@@ -31,8 +31,12 @@
     <change-notes><![CDATA[
         <UL>
             <LI>Initial release</LI>
+        </UL>
+        <h2>V.0.0.2</h2>
+        <UL>
             <LI>I18N labels and support for the French language</LI>
             <LI>Introduced CommandHandler for the predefined commands</LI>
+            <LI>Settings now uses persistent store</LI>
         </UL>
     ]]></change-notes>
 
