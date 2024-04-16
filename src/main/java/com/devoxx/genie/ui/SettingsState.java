@@ -23,7 +23,8 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     // Prompt fields
     private String testPrompt = Constant.TEST_PROMPT;
     private String reviewPrompt = Constant.REVIEW_PROMPT;
-    private String explainPrompt = Constant.EXLAIN_PROMPT;
+    private String explainPrompt = Constant.EXPLAIN_PROMPT;
+    private String customPrompt = Constant.CUSTOM_PROMPT;
 
     // LLM settings
     @OptionTag(converter = DoubleConverter.class)
@@ -126,5 +127,13 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     public void setExplainPrompt(String explainPrompt) {
         this.explainPrompt = explainPrompt;
+    }
+
+    public String getCustomPrompt() {
+        return customPrompt;
+    }
+
+    public void setCustomPrompt(String customPrompt) {
+        this.customPrompt = customPrompt;
     }
 }
