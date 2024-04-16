@@ -1,8 +1,13 @@
 package com.devoxx.genie;
 
+import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
+import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
+import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
@@ -69,10 +74,16 @@ public class DevoxxGenieClient {
     private ChatLanguageModel getChatLanguageModel() {
         log.debug("Get chat language model: {}", modelProvider);
         ChatModel chatModel = initChatModelSettings();
+        SettingsState settings = SettingsState.getInstance();
         return switch (modelProvider) {
             case Ollama -> createOllamaModel(chatModel);
             case LMStudio -> createLmStudioModel(chatModel);
             case GPT4All -> createGPT4AllModel(chatModel);
+            case OpenAI -> new OpenAIChatModelFactory(settings.getOpenAIKey(), modelName).createChatModel(chatModel);
+            case Mistral -> new MistralChatModelFactory(settings.getMistralKey(), modelName).createChatModel(chatModel);
+            case Anthropic -> new AnthropicChatModelFactory(settings.getAnthropicKey(), modelName).createChatModel(chatModel);
+            case Groq -> new GroqChatModelFactory(settings.getGroqKey(), modelName).createChatModel(chatModel);
+            case DeepInfra -> new DeepInfraChatModelFactory(settings.getDeepInfraKey(), modelName).createChatModel(chatModel);
         };
     }
 
@@ -128,12 +139,12 @@ public class DevoxxGenieClient {
         if (modelName == null) {
             try {
                 OllamaModelEntryDTO[] models = new OllamaService().getModels();
-                chatModel.name = models[0].getName();
+                chatModel.modelName = models[0].getName();
             } catch (IOException e) {
                 log.error("Failed to get Ollama models", e);
             }
         } else {
-            chatModel.name = modelName;
+            chatModel.modelName = modelName;
         }
     }
 

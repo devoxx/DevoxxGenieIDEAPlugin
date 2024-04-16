@@ -26,6 +26,12 @@ public class Settings implements Configurable {
     private JTextField lmstudioUrlField;
     private JTextField gpt4allUrlField;
 
+    private JPasswordField openAiKeyField;
+    private JPasswordField mistralKeyField;
+    private JPasswordField anthropicKeyField;
+    private JPasswordField groqKeyField;
+    private JPasswordField deepInfraKeyField;
+
     private JFormattedTextField temperatureField;
     private JFormattedTextField topPField;
 
@@ -50,182 +56,77 @@ public class Settings implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-
-        JPanel settingsPanel = new JPanel(new GridBagLayout());
         SettingsState settings = SettingsState.getInstance();
 
-        // Add 3 input fields to provide URL per Language model
-        ollamaUrlField = new JTextField();
-        ollamaUrlField.setText(settings.getOllamaModelUrl());
-
-        lmstudioUrlField = new JTextField();
-        lmstudioUrlField.setText(settings.getLmstudioModelUrl());
-
-        gpt4allUrlField = new JTextField();
-        gpt4allUrlField.setText(settings.getGpt4allModelUrl());
-
-        temperatureField = new JFormattedTextField();
-        setValue(temperatureField, settings.getTemperature());
-
-        topPField = new JFormattedTextField();
-        setValue(topPField, settings.getTopP());
-
-        timeoutField = new JFormattedTextField();
-        setValue(timeoutField, settings.getTimeout());
-
-        // Prompts
-        testPromptField = new JTextField();
-        testPromptField.setText(settings.getTestPrompt());
-
-        explainPromptField = new JTextField();
-        explainPromptField.setText(settings.getExplainPrompt());
-
-        reviewPromptField = new JTextField();
-        reviewPromptField.setText(settings.getReviewPrompt());
-
-        customPromptField = new JTextField();
-        customPromptField.setText(settings.getCustomPrompt());
-
-        // retryField
-        retryField = new JFormattedTextField();
-        setValue(retryField, settings.getMaxRetries());
-
+        JPanel settingsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-
-        int row = 0;
-        // Ollama URL field
         gbc.gridx = 0;
-        gbc.gridy = row++;
+        gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
-        settingsPanel.add(new JLabel("Ollama URL:"), gbc);
 
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0; // Give extra horizontal space to the input field
-        settingsPanel.add(ollamaUrlField, gbc);
-
-        // LMStudio URL field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("LMStudio URL:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(lmstudioUrlField, gbc);
-
-        // GPT4All URL field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("GPT4All URL:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(gpt4allUrlField, gbc);
-
-        // Temperature field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Temperature:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(temperatureField, gbc);
-
-        // TopP field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Top-P:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(topPField, gbc);
-
-        // Timeout field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Timeout (in secs):"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(timeoutField, gbc);
-
-        // Retry field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Maximum retries :"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(retryField, gbc);
-
-        // Test prompt field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Test prompt :"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(testPromptField, gbc);
-
-        // Explain prompt field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Explain prompt :"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(explainPromptField, gbc);
-
-        // Review prompt field
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Review prompt :"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(reviewPromptField, gbc);
-
-        // Review prompt field
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.0;
-        settingsPanel.add(new JLabel("Custom prompt :"), gbc);
-
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        settingsPanel.add(customPromptField, gbc);
-
+        // Helper method to add a text field with label
+        ollamaUrlField = addTextFieldWithLabel(settingsPanel, gbc, "Ollama URL:", settings.getOllamaModelUrl());
+        lmstudioUrlField = addTextFieldWithLabel(settingsPanel, gbc, "LMStudio URL:", settings.getLmstudioModelUrl());
+        gpt4allUrlField = addTextFieldWithLabel(settingsPanel, gbc, "GPT4All URL:", settings.getGpt4allModelUrl());
+        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
+        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
+        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
+        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
+        testPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Test prompt :", settings.getTestPrompt());
+        explainPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Explain prompt :", settings.getExplainPrompt());
+        reviewPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Review prompt :", settings.getReviewPrompt());
+        customPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Custom prompt :", settings.getCustomPrompt());
+        openAiKeyField = addPasswordFieldWithLabel(settingsPanel, gbc, "OpenAI API Key :", settings.getOpenAIKey());
+        mistralKeyField = addPasswordFieldWithLabel(settingsPanel, gbc, "Mistral API Key :", settings.getMistralKey());
+        anthropicKeyField = addPasswordFieldWithLabel(settingsPanel, gbc, "Anthropic API Key :", settings.getAnthropicKey());
+        groqKeyField = addPasswordFieldWithLabel(settingsPanel, gbc, "Groq API Key :", settings.getGroqKey());
+        deepInfraKeyField = addPasswordFieldWithLabel(settingsPanel, gbc, "DeepInfra API Key :", settings.getDeepInfraKey());
         return settingsPanel;
+    }
+
+    private JTextField addTextFieldWithLabel(JPanel panel,
+                                             GridBagConstraints gbc,
+                                             String label,
+                                             String value) {
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx++;
+        JTextField textField = new JTextField(value);
+        panel.add(textField, gbc);
+        resetGbc(gbc);
+        return textField;
+    }
+
+    private JPasswordField addPasswordFieldWithLabel(JPanel panel,
+                                                     GridBagConstraints gbc,
+                                                     String label,
+                                                     String value) {
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx++;
+        JPasswordField passwordField = new JPasswordField(value);
+        passwordField.setEchoChar('*');
+        panel.add(passwordField, gbc);
+        resetGbc(gbc);
+        return passwordField;
+    }
+
+    private JFormattedTextField addFormattedFieldWithLabel(JPanel panel,
+                                                           GridBagConstraints gbc,
+                                                           String label,
+                                                           Number value) {
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx++;
+        JFormattedTextField formattedField = new JFormattedTextField();
+        setValue(formattedField, value);
+        panel.add(formattedField, gbc);
+        resetGbc(gbc);
+        return formattedField;
+    }
+
+    private void resetGbc(GridBagConstraints gbc) {
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
     }
 
     @Override
@@ -243,6 +144,11 @@ public class Settings implements Configurable {
         isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
         isModified |= isFieldModified(reviewPromptField, settings.getReviewPrompt());
         isModified |= isFieldModified(customPromptField, settings.getCustomPrompt());
+        isModified |= isFieldModified(openAiKeyField, settings.getOpenAIKey());
+        isModified |= isFieldModified(mistralKeyField, settings.getMistralKey());
+        isModified |= isFieldModified(anthropicKeyField, settings.getAnthropicKey());
+        isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
+        isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
         return isModified;
     }
 
@@ -294,6 +200,26 @@ public class Settings implements Configurable {
         if (isFieldModified(customPromptField, settings.getCustomPrompt())) {
             settings.setCustomPrompt(customPromptField.getText());
         }
+
+        if (isFieldModified(openAiKeyField, settings.getOpenAIKey())) {
+            settings.setOpenAIKey(new String(openAiKeyField.getPassword()));
+        }
+
+        if (isFieldModified(mistralKeyField, settings.getMistralKey())) {
+            settings.setMistralKey(new String(mistralKeyField.getPassword()));
+        }
+
+        if (isFieldModified(anthropicKeyField, settings.getAnthropicKey())) {
+            settings.setAnthropicKey(new String(anthropicKeyField.getPassword()));
+        }
+
+        if (isFieldModified(groqKeyField, settings.getGroqKey())) {
+            settings.setGroqKey(new String(groqKeyField.getPassword()));
+        }
+
+        if (isFieldModified(deepInfraKeyField, settings.getDeepInfraKey())) {
+            settings.setDeepInfraKey(new String(deepInfraKeyField.getPassword()));
+        }
     }
 
     @Override
@@ -307,6 +233,7 @@ public class Settings implements Configurable {
         testPromptField.setText(settingsState.getTestPrompt());
         explainPromptField.setText(settingsState.getExplainPrompt());
         reviewPromptField.setText(settingsState.getReviewPrompt());
+        customPromptField.setText(settingsState.getCustomPrompt());
 
         setValue(temperatureField, settingsState.getTemperature());
         setValue(topPField, settingsState.getTopP());

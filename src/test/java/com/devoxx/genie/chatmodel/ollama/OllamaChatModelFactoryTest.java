@@ -26,7 +26,7 @@ class OllamaChatModelFactoryTest {
 
             // Create a dummy ChatModel
             ChatModel chatModel = new ChatModel();
-            chatModel.name = "ollama";
+            chatModel.modelName = "ollama";
 
             // Call the method
             ChatLanguageModel result = factory.createChatModel(chatModel);

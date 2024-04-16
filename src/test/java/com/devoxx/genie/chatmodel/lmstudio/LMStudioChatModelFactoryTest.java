@@ -26,7 +26,7 @@ class LMStudioChatModelFactoryTest {
 
             // Create a dummy ChatModel
             ChatModel chatModel = new ChatModel();
-            chatModel.name = "lmstudio";
+            chatModel.modelName = "lmstudio";
 
             // Call the method
             ChatLanguageModel result = factory.createChatModel(chatModel);
