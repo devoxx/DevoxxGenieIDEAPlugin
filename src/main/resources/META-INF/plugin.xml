@@ -32,6 +32,10 @@
         <UL>
             <LI>Initial release</LI>
         </UL>
+        <h2>V0.0.5</h2>
+        <UL>
+            <LI>Added support for a custom prompt using /custom command</LI>
+        </UL>
         <h2>V0.0.4</h2>
         <UL>
             <LI>Command prompts are now externalised in Settings</LI>

@@ -35,6 +35,7 @@ public class Settings implements Configurable {
     private JTextField testPromptField;
     private JTextField explainPromptField;
     private JTextField reviewPromptField;
+    private JTextField customPromptField;
 
     public Settings() {
         doubleConverter = new DoubleConverter();
@@ -82,6 +83,9 @@ public class Settings implements Configurable {
         reviewPromptField = new JTextField();
         reviewPromptField.setText(settings.getReviewPrompt());
 
+        customPromptField = new JTextField();
+        customPromptField.setText(settings.getCustomPrompt());
+
         // retryField
         retryField = new JFormattedTextField();
         setValue(retryField, settings.getMaxRetries());
@@ -89,9 +93,10 @@ public class Settings implements Configurable {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
 
+        int row = 0;
         // Ollama URL field
         gbc.gridx = 0;
-        gbc.gridy = 0;
+        gbc.gridy = row++;
         gbc.anchor = GridBagConstraints.WEST;
         settingsPanel.add(new JLabel("Ollama URL:"), gbc);
 
@@ -102,7 +107,7 @@ public class Settings implements Configurable {
 
         // LMStudio URL field
         gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("LMStudio URL:"), gbc);
@@ -114,7 +119,7 @@ public class Settings implements Configurable {
 
         // GPT4All URL field
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("GPT4All URL:"), gbc);
@@ -126,7 +131,7 @@ public class Settings implements Configurable {
 
         // Temperature field
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Temperature:"), gbc);
@@ -138,7 +143,7 @@ public class Settings implements Configurable {
 
         // TopP field
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Top-P:"), gbc);
@@ -150,7 +155,7 @@ public class Settings implements Configurable {
 
         // Timeout field
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Timeout (in secs):"), gbc);
@@ -162,7 +167,7 @@ public class Settings implements Configurable {
 
         // Retry field
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Maximum retries :"), gbc);
@@ -174,7 +179,7 @@ public class Settings implements Configurable {
 
         // Test prompt field
         gbc.gridx = 0;
-        gbc.gridy = 7;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Test prompt :"), gbc);
@@ -186,7 +191,7 @@ public class Settings implements Configurable {
 
         // Explain prompt field
         gbc.gridx = 0;
-        gbc.gridy = 8;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Explain prompt :"), gbc);
@@ -198,7 +203,7 @@ public class Settings implements Configurable {
 
         // Review prompt field
         gbc.gridx = 0;
-        gbc.gridy = 9;
+        gbc.gridy = row++;
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0.0;
         settingsPanel.add(new JLabel("Review prompt :"), gbc);
@@ -207,6 +212,18 @@ public class Settings implements Configurable {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         settingsPanel.add(reviewPromptField, gbc);
+
+        // Review prompt field
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.0;
+        settingsPanel.add(new JLabel("Custom prompt :"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        settingsPanel.add(customPromptField, gbc);
 
         return settingsPanel;
     }
@@ -225,6 +242,7 @@ public class Settings implements Configurable {
         isModified |= isFieldModified(testPromptField, settings.getTestPrompt());
         isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
         isModified |= isFieldModified(reviewPromptField, settings.getReviewPrompt());
+        isModified |= isFieldModified(customPromptField, settings.getCustomPrompt());
         return isModified;
     }
 
@@ -271,6 +289,10 @@ public class Settings implements Configurable {
 
         if (isFieldModified(reviewPromptField, settings.getReviewPrompt())) {
             settings.setReviewPrompt(reviewPromptField.getText());
+        }
+
+        if (isFieldModified(customPromptField, settings.getCustomPrompt())) {
+            settings.setCustomPrompt(customPromptField.getText());
         }
     }
 

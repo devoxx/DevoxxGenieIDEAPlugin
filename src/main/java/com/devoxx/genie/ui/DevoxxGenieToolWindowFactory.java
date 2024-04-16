@@ -183,6 +183,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                     <li>%s</li>
                     <li>%s</li>
                     <li>%s</li>
+                    <li>%s</li>
                     </ul>
                     </p>
                     <p>%s</p>
@@ -197,6 +198,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 resourceBundle.getString("command.test"),
                 resourceBundle.getString("command.review"),
                 resourceBundle.getString("command.explain"),
+                resourceBundle.getString("command.custom"),
                 resourceBundle.getString("welcome.tip"),
                 resourceBundle.getString("welcome.enjoy")
             );
@@ -231,7 +233,8 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 if (prompt.equalsIgnoreCase(COMMAND_HELP) ||
                     prompt.equalsIgnoreCase(COMMAND_TEST) ||
                     prompt.equalsIgnoreCase(COMMAND_REVIEW) ||
-                    prompt.equalsIgnoreCase(COMMAND_EXPLAIN)) {
+                    prompt.equalsIgnoreCase(COMMAND_EXPLAIN) ||
+                    prompt.equalsIgnoreCase(COMMAND_CUSTOM)) {
                     handleCommand(prompt);
                     enableButtons();
                 } else {
