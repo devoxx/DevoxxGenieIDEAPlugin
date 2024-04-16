@@ -7,6 +7,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
+import com.devoxx.genie.ui.SettingsState;
 import com.intellij.ide.util.PropertiesComponent;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -48,11 +49,6 @@ public class DevoxxGenieClient {
         return InstanceHolder.instance;
     }
 
-    @NotNull
-    protected String getProperty(String key, String defaultValue) {
-        return PropertiesComponent.getInstance().getValue(key, defaultValue);
-    }
-
     protected ModelProvider getModelProvider(String defaultValue) {
         String value = PropertiesComponent.getInstance().getValue(MODEL_PROVIDER, defaultValue);
         return ModelProvider.valueOf(value);
@@ -86,9 +82,7 @@ public class DevoxxGenieClient {
      * @return the chat language model
      */
     private static ChatLanguageModel createGPT4AllModel(ChatModel chatModel) {
-        chatModel.baseUrl = PropertiesComponent
-            .getInstance()
-            .getValue(GPT4ALL_MODEL_URL);
+        chatModel.baseUrl = SettingsState.getInstance().getGpt4allModelUrl();
         return new GPT4AllChatModelFactory().createChatModel(chatModel);
     }
 
@@ -98,9 +92,7 @@ public class DevoxxGenieClient {
      * @return the chat language model
      */
     private static ChatLanguageModel createLmStudioModel(ChatModel chatModel) {
-        chatModel.baseUrl = PropertiesComponent
-            .getInstance()
-            .getValue(LMSTUDIO_MODEL_URL);
+        chatModel.baseUrl = SettingsState.getInstance().getLmstudioModelUrl();
         return new LMStudioChatModelFactory().createChatModel(chatModel);
     }
 
@@ -111,9 +103,7 @@ public class DevoxxGenieClient {
      */
     private ChatLanguageModel createOllamaModel(ChatModel chatModel) {
         setLanguageModelName(chatModel);
-        chatModel.baseUrl = PropertiesComponent
-            .getInstance()
-            .getValue(OLLAMA_MODEL_URL);
+        chatModel.baseUrl = SettingsState.getInstance().getOllamaModelUrl();
         return new OllamaChatModelFactory().createChatModel(chatModel);
     }
 
@@ -123,14 +113,10 @@ public class DevoxxGenieClient {
      */
     private @NotNull ChatModel initChatModelSettings() {
         ChatModel chatModel = new ChatModel();
-        chatModel.temperature =
-            Double.parseDouble(getProperty(TEMPERATURE, "0.7").replace(",", "."));
-        chatModel.maxRetries =
-            Integer.parseInt(getProperty(MAX_RETRIES, "3"));
-        chatModel.topP =
-            Double.parseDouble(getProperty(TOP_P, "0.9").replace(",", "."));
-        chatModel.timeout =
-            Integer.parseInt(getProperty(TIMEOUT, "60"));
+        chatModel.temperature = SettingsState.getInstance().getTemperature();
+        chatModel.maxRetries = SettingsState.getInstance().getMaxRetries();
+        chatModel.topP = SettingsState.getInstance().getTopP();
+        chatModel.timeout = SettingsState.getInstance().getTimeout();
         return chatModel;
     }
 

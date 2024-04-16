@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui;
 
-import com.devoxx.genie.model.Constant;
-import com.intellij.ide.util.PropertiesComponent;
+import com.devoxx.genie.ui.util.DoubleConverter;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -12,115 +11,68 @@ import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.Locale;
 import java.util.Objects;
+
+import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class Settings implements Configurable {
 
     public static final String MODEL_PROVIDER = "com.devoxx.genie.settings.modelProvider";
 
-    public static final String OLLAMA_MODEL_URL = "com.devoxx.genie.settings.ollamaUrl";
-    public static final String LMSTUDIO_MODEL_URL = "com.devoxx.genie.settings.lmstudioUrl";
-    public static final String GPT4ALL_MODEL_URL = "com.devoxx.genie.settings.gpt4allUrl";
+    private final DoubleConverter doubleConverter;
 
-    public static final String TEMPERATURE = "com.devoxx.genie.settings.temperature";
-    public static final String TOP_P = "com.devoxx.genie.settings.topP";
-    public static final String MAX_RETRIES = "com.devoxx.genie.settings.maxRetries";
-    public static final String TIMEOUT = "com.devoxx.genie.settings.timeout";
+    private JTextField ollamaUrlField;
+    private JTextField lmstudioUrlField;
+    private JTextField gpt4allUrlField;
 
-    private final JPanel settingsPanel;
-    private boolean isModified = false;
+    private JFormattedTextField temperatureField;
+    private JFormattedTextField topPField;
+
+    private JFormattedTextField timeoutField;
+    private JFormattedTextField retryField;
+
 
     public Settings() {
+        doubleConverter = new DoubleConverter();
+    }
+
+    @Nls
+    @Override
+    public String getDisplayName() {
+        return "Devoxx Genie Settings";
+    }
+
+    @Nullable
+    @Override
+    public JComponent createComponent() {
+
+        JPanel settingsPanel = new JPanel(new GridBagLayout());
+        SettingsState settings = SettingsState.getInstance();
 
         // Add 3 input fields to provide URL per Language model
-        final JTextField ollamaUrlField = new JTextField();
-        String ollamaUrl = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(OLLAMA_MODEL_URL),
-            Constant.OLLAMA_MODEL_URL);
-        ollamaUrlField.setText(ollamaUrl);
-        ollamaUrlField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(OLLAMA_MODEL_URL, e.getActionCommand());
-            this.isModified = true;
-        });
+        ollamaUrlField = new JTextField();
+        ollamaUrlField.setText(settings.getOllamaModelUrl());
 
-        final JTextField lmstudioUrlField = new JTextField();
-        String lmstudioUrl = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(LMSTUDIO_MODEL_URL),
-            Constant.LMSTUDIO_MODEL_URL);
-        lmstudioUrlField.setText(lmstudioUrl);
-        lmstudioUrlField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(LMSTUDIO_MODEL_URL, e.getActionCommand());
-            this.isModified = true;
-        });
+        lmstudioUrlField = new JTextField();
+        lmstudioUrlField.setText(settings.getLmstudioModelUrl());
 
-        final JTextField gpt4allUrlField = new JTextField();
-        String gpt4allUrl = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(GPT4ALL_MODEL_URL),
-            Constant.GPT4ALL_MODEL_URL);
-        gpt4allUrlField.setText(gpt4allUrl);
-        gpt4allUrlField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(GPT4ALL_MODEL_URL, e.getActionCommand());
-            this.isModified = true;
-        });
+        gpt4allUrlField = new JTextField();
+        gpt4allUrlField.setText(settings.getGpt4allModelUrl());
 
-        final JFormattedTextField temperatureField = new JFormattedTextField();
-        String temperatureValue = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(TEMPERATURE),
-            Constant.TEMPERATURE);
-        setValue(temperatureField, temperatureValue, 0.7);
-        temperatureField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(TEMPERATURE, e.getActionCommand());
-            this.isModified = true;
-        });
+        temperatureField = new JFormattedTextField();
+        setValue(temperatureField, settings.getTemperature());
 
-        final JFormattedTextField topPField = new JFormattedTextField();
-        String topPValue = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(TOP_P),
-            Constant.TOP_P);
-        setValue(topPField, topPValue, 0.7);
-        topPField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(TOP_P, e.getActionCommand());
-            this.isModified = true;
-        });
+        topPField = new JFormattedTextField();
+        setValue(topPField, settings.getTopP());
 
-        final JFormattedTextField timeoutField = new JFormattedTextField();
-        String timeoutValue = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(TIMEOUT),
-            Constant.TIMEOUT);
-        setValue(timeoutField, timeoutValue, 60);
-        timeoutField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(TIMEOUT, e.getActionCommand());
-            this.isModified = true;
-        });
+        timeoutField = new JFormattedTextField();
+        setValue(timeoutField, settings.getTimeout());
 
         // retryField
-        final JFormattedTextField retryField = new JFormattedTextField();
-        String retryValue = Objects.requireNonNullElse(
-            PropertiesComponent.getInstance().getValue(MAX_RETRIES),
-            Constant.MAX_RETRIES);
-        setValue(retryField, retryValue, 3);
-        retryField.addActionListener(e -> {
-            PropertiesComponent
-                .getInstance()
-                .setValue(MAX_RETRIES, e.getActionCommand());
-            this.isModified = true;
-        });
+        retryField = new JFormattedTextField();
+        setValue(retryField, settings.getMaxRetries());
 
-        settingsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
 
@@ -206,13 +158,77 @@ public class Settings implements Configurable {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         settingsPanel.add(retryField, gbc);
+
+        return settingsPanel;
     }
 
-    private static void setValue(JFormattedTextField field, String value, Number defaultValue) {
+    @Override
+    public boolean isModified() {
+        SettingsState settings = SettingsState.getInstance();
+
+        boolean isModified = isFieldModified(ollamaUrlField, settings.getOllamaModelUrl());
+        isModified |= isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl());
+        isModified |= isFieldModified(gpt4allUrlField, settings.getGpt4allModelUrl());
+        isModified |= isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())));
+        isModified |= isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())));
+        isModified |= isFieldModified(timeoutField, settings.getTimeout());
+        isModified |= isFieldModified(retryField, settings.getMaxRetries());
+
+        return isModified;
+    }
+
+    @Override
+    public void apply() {
+
+        SettingsState settings = SettingsState.getInstance();
+
+        if (isFieldModified(ollamaUrlField, settings.getOllamaModelUrl())) {
+            settings.setOllamaModelUrl(ollamaUrlField.getText());
+        }
+
+        if (isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl())) {
+            settings.setLmstudioModelUrl(lmstudioUrlField.getText());
+        }
+
+        if (isFieldModified(gpt4allUrlField, settings.getGpt4allModelUrl())) {
+            settings.setGpt4allModelUrl(gpt4allUrlField.getText());
+        }
+
+        if (isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())))) {
+            settings.setTemperature(doubleConverter.fromString(temperatureField.getText()));
+        }
+
+        if (isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())))) {
+            settings.setTopP(doubleConverter.fromString(topPField.getText()));
+        }
+
+        if (isFieldModified(timeoutField, settings.getTimeout())) {
+            settings.setTimeout(safeCastToInteger(timeoutField.getValue()));
+        }
+
+        if (isFieldModified(retryField, settings.getMaxRetries())) {
+            settings.setMaxRetries(safeCastToInteger(retryField.getValue()));
+        }
+
+    }
+
+    @Override
+    public void reset() {
+        SettingsState settingsState = SettingsState.getInstance();
+        ollamaUrlField.setText(settingsState.getOllamaModelUrl());
+        lmstudioUrlField.setText(settingsState.getLmstudioModelUrl());
+        gpt4allUrlField.setText(settingsState.getGpt4allModelUrl());
+        setValue(temperatureField, settingsState.getTemperature());
+        setValue(topPField, settingsState.getTopP());
+        setValue(timeoutField, settingsState.getTimeout());
+        setValue(retryField, settingsState.getMaxRetries());
+    }
+
+    private static void setValue(JFormattedTextField field, Number value) {
         try {
             NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
 
-            if (defaultValue instanceof Double) {
+            if (value instanceof Double) {
                 if (format instanceof DecimalFormat) {
                     ((DecimalFormat) format).applyPattern("#0.00");  // Ensures one decimal place in the display
                 }
@@ -220,36 +236,17 @@ public class Settings implements Configurable {
                 format.setParseIntegerOnly(true);
             }
             field.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter(format)));
-            Number temperature = format.parse(value);
-            field.setValue(temperature);
-        } catch (ParseException | IllegalArgumentException e) {
+            field.setValue(value);
+        } catch (IllegalArgumentException e) {
             // Handle the case where the string cannot be parsed to a number
-            field.setValue(defaultValue);
+            field.setValue(0);
         }
     }
 
-    @Nls
-    @Override
-    public String getDisplayName() {
-        return "Devoxx Genie Settings";
-    }
-
-    @Nullable
-    @Override
-    public JComponent createComponent() {
-        return settingsPanel;
-    }
-
-    @Override
-    public boolean isModified() {
-        return isModified;
-    }
-
-    @Override
-    public void apply() {
-    }
-
-    @Override
-    public void reset() {
+    private Integer safeCastToInteger(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return 0;
     }
 }

@@ -1,14 +1,9 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.intellij.ide.util.PropertiesComponent;
+import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-
-import java.util.Objects;
-
-import static com.devoxx.genie.ui.Settings.*;
 
 public interface ChatModelFactory {
 
@@ -27,15 +22,9 @@ public interface ChatModelFactory {
     default String getBaseUrlByType(ModelProvider modelProvider) {
 
         return switch (modelProvider) {
-            case GPT4All -> Objects.requireNonNullElse(
-                PropertiesComponent.getInstance().getValue(GPT4ALL_MODEL_URL),
-                Constant.GPT4ALL_MODEL_URL);
-            case LMStudio -> Objects.requireNonNullElse(
-                PropertiesComponent.getInstance().getValue(LMSTUDIO_MODEL_URL),
-                Constant.LMSTUDIO_MODEL_URL);
-            case Ollama -> Objects.requireNonNullElse(
-                PropertiesComponent.getInstance().getValue(OLLAMA_MODEL_URL),
-                Constant.OLLAMA_MODEL_URL);
+            case GPT4All -> SettingsState.getInstance().getGpt4allModelUrl();
+            case LMStudio -> SettingsState.getInstance().getLmstudioModelUrl();
+            case Ollama -> SettingsState.getInstance().getOllamaModelUrl();
         };
     }
 }
