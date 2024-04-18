@@ -24,6 +24,8 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.MessageBusConnection;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -45,7 +47,7 @@ import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 import static com.devoxx.genie.ui.CommandHandler.*;
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
-import static dev.langchain4j.model.openai.OpenAiModelName.*;
+import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
 
 final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
@@ -55,9 +57,16 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         DevoxxGenieToolWindowContent toolWindowContent = new DevoxxGenieToolWindowContent(toolWindow);
         Content content = ContentFactory.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
         toolWindow.getContentManager().addContent(content);
+
+        // Subscribe to settings changes
+        // MessageBusConnection connection = project.getMessageBus().connect(toolWindow.getDisposable()); // Use toolWindow.getDisposable() to manage lifecycle
+        // connection.subscribe(SettingsChangeListener.TOPIC, toolWindowContent.refreshComboBoxes());
+        MessageBus bus = ApplicationManager.getApplication().getMessageBus();
+        MessageBusConnection connection = bus.connect();
+        connection.subscribe(SettingsChangeListener.TOPIC, toolWindowContent);
     }
 
-    public static class DevoxxGenieToolWindowContent implements CommandHandlerListener {
+    public static class DevoxxGenieToolWindowContent implements CommandHandlerListener, SettingsChangeListener {
 
         public static final String DEFAULT_LANGUAGE = "Java";
 
@@ -106,6 +115,11 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             populateProvidersComboBox();
             addOllamaModels();
             setupUIComponents();
+        }
+
+        public void settingsChanged() {
+            providersComboBox.removeAllItems();
+            populateProvidersComboBox();
         }
 
         private void setupUIComponents() {
@@ -399,10 +413,10 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                     modelComboBox.removeAllItems();
                     addOllamaModels();
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.OpenAI.getName())) {
-                    modelComboBox.addItem(GPT_3_5_TURBO);
-                    modelComboBox.addItem(GPT_3_5_TURBO_16K);
-                    modelComboBox.addItem(GPT_4);
-                    modelComboBox.addItem(GPT_4_32K);
+                    modelComboBox.addItem(GPT_3_5_TURBO.toString());
+                    modelComboBox.addItem(GPT_3_5_TURBO_16K.toString());
+                    modelComboBox.addItem(GPT_4.toString());
+                    modelComboBox.addItem(GPT_4_32K.toString());
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Anthropic.getName())) {
                     modelComboBox.addItem(CLAUDE_3_OPUS_20240229.toString());
                     modelComboBox.addItem(CLAUDE_3_SONNET_20240229.toString());

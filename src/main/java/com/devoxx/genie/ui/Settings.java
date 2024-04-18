@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui;
 
 import com.devoxx.genie.ui.util.DoubleConverter;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -220,6 +223,11 @@ public class Settings implements Configurable {
         if (isFieldModified(deepInfraKeyField, settings.getDeepInfraKey())) {
             settings.setDeepInfraKey(new String(deepInfraKeyField.getPassword()));
         }
+
+        // Now notify others
+        MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+        messageBus.syncPublisher(SettingsChangeListener.TOPIC).settingsChanged();
+
     }
 
     @Override
