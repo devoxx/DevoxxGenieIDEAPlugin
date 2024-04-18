@@ -1,17 +1,37 @@
 package com.devoxx.genie.ui;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static org.mockito.Mockito.*;
 
 class CommandHandlerTest {
 
+    @Mock
     private CommandHandlerListener listener;
+
+    @Mock
+    private Application application;
+
+    private SettingsState settingsState = new SettingsState();
+
     private CommandHandler handler;
 
     @BeforeEach
     void setUp() {
-        listener = mock(CommandHandlerListener.class);
+        MockitoAnnotations.openMocks(this); // Initialize mocks
+
+        // Prepare the ApplicationManager mock to return the mocked application
+        // Mockito.mockStatic(ApplicationManager.class);
+        ApplicationManager.setApplication(application);
+
+        // Mock getting the SettingsState service from the application
+        when(application.getService(SettingsState.class)).thenReturn(settingsState);
+
+        // Now, we can create an instance of CommandHandler
         handler = new CommandHandler(listener);
     }
 
@@ -36,7 +56,8 @@ class CommandHandlerTest {
     @Test
     void testHandleExplainCommand() {
         handler.handleCommand(CommandHandler.COMMAND_EXPLAIN);
-        verify(listener, times(1)).executePrompt("Explain the code so a junior developer can understand it.");
+        verify(listener, times(1))
+            .executePrompt("Explain the code so a junior developer can understand it.");
     }
 
     @Test
