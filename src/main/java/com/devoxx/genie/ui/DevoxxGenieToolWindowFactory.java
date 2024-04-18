@@ -203,7 +203,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             JPanel submitPanel = new JPanel(new BorderLayout());
             submitButton.addActionListener(e -> onSubmit());
 
-            clearButton.addActionListener(e -> promptOutputArea.setText("<html><body></body></html>"));
+            clearButton.addActionListener(e -> promptOutputArea.setText(getWelcomeText()));
 
             // The submit button is put in a separate panel to align it to the right
             JPanel buttonPanel = new JPanel(new BorderLayout());
