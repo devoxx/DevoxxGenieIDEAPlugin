@@ -59,8 +59,6 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         toolWindow.getContentManager().addContent(content);
 
         // Subscribe to settings changes
-        // MessageBusConnection connection = project.getMessageBus().connect(toolWindow.getDisposable()); // Use toolWindow.getDisposable() to manage lifecycle
-        // connection.subscribe(SettingsChangeListener.TOPIC, toolWindowContent.refreshComboBoxes());
         MessageBus bus = ApplicationManager.getApplication().getMessageBus();
         MessageBusConnection connection = bus.connect();
         connection.subscribe(SettingsChangeListener.TOPIC, toolWindowContent);
@@ -89,8 +87,8 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         private final DevoxxGenieClient genieClient;
         private final FileEditorManager fileEditorManager;
         private final JPanel contentPanel = new JPanel();
-        private final ComboBox<String> providersComboBox = new ComboBox<>();
-        private final ComboBox<String> modelComboBox = new ComboBox<>();
+        private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
+        private final ComboBox<String> modelNameComboBox = new ComboBox<>();
         private final JButton submitButton = new JButton();
         private final JButton clearButton = new JButton();
         private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
@@ -112,14 +110,15 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             clearButton.setText(resourceBundle.getString("btn.clear.label"));
             promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-            populateProvidersComboBox();
+            populateProvidersToComboBox();
+            processModelProviderSelection();
             addOllamaModels();
             setupUIComponents();
         }
 
         public void settingsChanged() {
-            providersComboBox.removeAllItems();
-            populateProvidersComboBox();
+            llmProvidersComboBox.removeAllItems();
+            populateProvidersToComboBox();
         }
 
         private void setupUIComponents() {
@@ -128,7 +127,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             contentPanel.add(createInputPanel(), BorderLayout.CENTER);
         }
 
-        private void populateProvidersComboBox() {
+        private void populateProvidersToComboBox() {
             SettingsState settingState = SettingsState.getInstance();
 
             Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
@@ -138,6 +137,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             providerKeyMap.put(Groq.getName(), settingState::getGroqKey);
             providerKeyMap.put(DeepInfra.getName(), settingState::getDeepInfraKey);
 
+            // Filter out cloud LLM providers that do not have a key
             List<String> providers = Stream.of(llmProvidersWithKey)
                 .filter(provider -> Optional.ofNullable(providerKeyMap.get(provider))
                     .map(Supplier::get)
@@ -146,22 +146,22 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 .collect(Collectors.toList());
 
             Collections.addAll(providers, llmProviders);
-            providers.forEach(providersComboBox::addItem);
+            providers.forEach(llmProvidersComboBox::addItem);
         }
 
         @NotNull
         private JPanel createSelectionPanel() {
             JPanel toolPanel = new JPanel();
             toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
-            providersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, providersComboBox.getPreferredSize().height));
-            modelComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelComboBox.getPreferredSize().height));
+            llmProvidersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, llmProvidersComboBox.getPreferredSize().height));
+            modelNameComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelNameComboBox.getPreferredSize().height));
 
-            toolPanel.add(providersComboBox);
+            toolPanel.add(llmProvidersComboBox);
             toolPanel.add(Box.createVerticalStrut(5));
-            toolPanel.add(modelComboBox);
+            toolPanel.add(modelNameComboBox);
 
-            providersComboBox.addActionListener(e -> processModelProviderSelection());
-            modelComboBox.addActionListener(e -> processModelNameSelection());
+            llmProvidersComboBox.addActionListener(e -> processModelProviderSelection());
+            modelNameComboBox.addActionListener(e -> processModelNameSelection());
 
             return toolPanel;
         }
@@ -389,7 +389,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * Process the model name selection.
          */
         private void processModelNameSelection() {
-            String selectedModel = (String) modelComboBox.getSelectedItem();
+            String selectedModel = (String) modelNameComboBox.getSelectedItem();
             if (selectedModel != null) {
                 genieClient.setModelName(selectedModel);
             }
@@ -399,43 +399,46 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * Process the model provider selection.
          */
         private void processModelProviderSelection() {
-            String selectedProvider = (String) providersComboBox.getSelectedItem();
+            String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
             if (selectedProvider != null) {
                 genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
             }
 
             if (selectedProvider != null) {
-                modelComboBox.setVisible(true);
-                modelComboBox.removeAllItems();
+                modelNameComboBox.setVisible(true);
+                modelNameComboBox.removeAllItems();
 
                 if (selectedProvider.equalsIgnoreCase(Ollama.getName())) {
-                    modelComboBox.setVisible(true);
-                    modelComboBox.removeAllItems();
+                    modelNameComboBox.setVisible(true);
+                    modelNameComboBox.removeAllItems();
                     addOllamaModels();
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.OpenAI.getName())) {
-                    modelComboBox.addItem(GPT_3_5_TURBO.toString());
-                    modelComboBox.addItem(GPT_3_5_TURBO_16K.toString());
-                    modelComboBox.addItem(GPT_4.toString());
-                    modelComboBox.addItem(GPT_4_32K.toString());
+                    modelNameComboBox.addItem(GPT_3_5_TURBO.toString());
+                    modelNameComboBox.addItem(GPT_3_5_TURBO_16K.toString());
+                    modelNameComboBox.addItem(GPT_4.toString());
+                    modelNameComboBox.addItem(GPT_4_32K.toString());
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Anthropic.getName())) {
-                    modelComboBox.addItem(CLAUDE_3_OPUS_20240229.toString());
-                    modelComboBox.addItem(CLAUDE_3_SONNET_20240229.toString());
-                    modelComboBox.addItem(CLAUDE_3_HAIKU_20240307.toString());
-                    modelComboBox.addItem(CLAUDE_2_1.toString());
-                    modelComboBox.addItem(CLAUDE_2.toString());
-                    modelComboBox.addItem(CLAUDE_INSTANT_1_2.toString());
+                    modelNameComboBox.addItem(CLAUDE_3_OPUS_20240229.toString());
+                    modelNameComboBox.addItem(CLAUDE_3_SONNET_20240229.toString());
+                    modelNameComboBox.addItem(CLAUDE_3_HAIKU_20240307.toString());
+                    modelNameComboBox.addItem(CLAUDE_2_1.toString());
+                    modelNameComboBox.addItem(CLAUDE_2.toString());
+                    modelNameComboBox.addItem(CLAUDE_INSTANT_1_2.toString());
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Mistral.getName())) {
-                    modelComboBox.addItem(OPEN_MISTRAL_7B.toString());
-                    modelComboBox.addItem(OPEN_MIXTRAL_8x7B.toString());
-                    modelComboBox.addItem(MISTRAL_SMALL_LATEST.toString());
-                    modelComboBox.addItem(MISTRAL_MEDIUM_LATEST.toString());
+                    modelNameComboBox.addItem(OPEN_MISTRAL_7B.toString());
+                    modelNameComboBox.addItem(OPEN_MIXTRAL_8x7B.toString());
+                    modelNameComboBox.addItem(MISTRAL_SMALL_LATEST.toString());
+                    modelNameComboBox.addItem(MISTRAL_MEDIUM_LATEST.toString());
                 } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Groq.getName())) {
-                    modelComboBox.addItem("llama2-70b-4096");
-                    modelComboBox.addItem("mixtral-8x7b-32768");
-                    modelComboBox.addItem("gemma-7b-it");
+                    modelNameComboBox.addItem("llama2-70b-4096");
+                    modelNameComboBox.addItem("mixtral-8x7b-32768");
+                    modelNameComboBox.addItem("gemma-7b-it");
                 } else if (selectedProvider.equalsIgnoreCase(DeepInfra.getName())) {
                     // TODO Check which other models are available
-                    modelComboBox.addItem("mistralai/Mixtral-8x7B-Instruct-v0.1");
+                    modelNameComboBox.addItem("mistralai/Mixtral-8x7B-Instruct-v0.1");
+                } else if (selectedProvider.equalsIgnoreCase(LMStudio.getName()) ||
+                           selectedProvider.equalsIgnoreCase(GPT4All.getName())) {
+                    modelNameComboBox.setVisible(false);
                 }
             }
         }
@@ -447,7 +450,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             try {
                 OllamaModelEntryDTO[] ollamaModels = new OllamaService().getModels();
                 for (OllamaModelEntryDTO model : ollamaModels) {
-                    modelComboBox.addItem(model.getName());
+                    modelNameComboBox.addItem(model.getName());
                 }
             } catch (IOException e) {
                 NotificationUtil.sendNotification(project, resourceBundle.getString("ollama.not_running"));

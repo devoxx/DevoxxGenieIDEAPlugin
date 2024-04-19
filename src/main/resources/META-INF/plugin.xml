@@ -32,13 +32,18 @@
         <UL>
             <LI>Initial release</LI>
         </UL>
+        <h2>V0.0.8</h2>
+        <UL>
+            <LI>Hide model selection for LMStudio and GPT4All</LI>
+            <LI>Show correct model dropdown for the default visible LLM provider</LI>
+        </UL>
+        <h2>V0.0.7</h2>
+        <UL>
+            <LI>Support non-local LLM Providers</LI>
+        </UL>
         <h2>V0.0.5</h2>
         <UL>
             <LI>Added support for a custom prompt using /custom command</LI>
-        </UL>
-        <h2>V0.0.6</h2>
-        <UL>
-            <LI>Support non-local LLM Providers</LI>
         </UL>
         <h2>V0.0.4</h2>
         <UL>
