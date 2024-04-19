@@ -25,8 +25,7 @@ In the IDEA settings you can modify the REST endpoints and the LLM parameters.  
 
 We now also support Cloud based LLMs (from v0.0.6 onwards), you can paste the API keys on the Settings page. 
 
-![GenieSettings ](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/e696ae0b-5c7c-4b6a-ad0c-58155d154a88)
-
+![SettingsPanelWithApiKeyButtons](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/af825417-692e-4e8c-a4c4-d5d42e44d73b)
 
 ### Requirements:
 
