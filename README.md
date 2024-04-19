@@ -1,4 +1,4 @@
-(9# Devoxx Genie 
+## Devoxx Genie 
 
 <img height="128" src="src/main/resources/META-INF/pluginIcon.svg" width="128"/>
 
