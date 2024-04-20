@@ -2,6 +2,7 @@ package com.devoxx.genie.ui;
 
 import com.devoxx.genie.DevoxxGenieClient;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.ChatMessageHistoryService;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.component.PlaceholderTextArea;
@@ -84,6 +85,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             Ollama.getName()
         };
 
+        private final ChatMessageHistoryService chatMessageHistoryService;
         private final DevoxxGenieClient genieClient;
         private final FileEditorManager fileEditorManager;
         private final JPanel contentPanel = new JPanel();
@@ -91,6 +93,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         private final ComboBox<String> modelNameComboBox = new ComboBox<>();
         private final JButton submitButton = new JButton();
         private final JButton clearButton = new JButton();
+        private final JButton prevChatMsgButton = new JButton();
+        private final JButton nextChatMsgButton = new JButton();
+        private final JLabel chatCounterLabel = new JLabel();
         private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
         private final JEditorPane promptOutputArea = new JEditorPane();
 
@@ -106,8 +111,18 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
             // Load the resource bundle
             resourceBundle = ResourceBundle.getBundle("messages");
+
+            // Create the buttons
             submitButton.setText(resourceBundle.getString("btn.submit.label"));
             clearButton.setText(resourceBundle.getString("btn.clear.label"));
+            clearButton.setToolTipText("Clear chat history");
+
+            prevChatMsgButton.setText("<");
+            nextChatMsgButton.setText(">");
+
+            chatMessageHistoryService = new ChatMessageHistoryService(prevChatMsgButton, nextChatMsgButton, chatCounterLabel, clearButton);
+
+            // Set the placeholder text
             promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
             populateProvidersToComboBox();
@@ -116,6 +131,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             setupUIComponents();
         }
 
+        /**
+         * Refresh the LLM providers dropdown because the Settings have been changed.
+         */
         public void settingsChanged() {
             llmProvidersComboBox.removeAllItems();
             populateProvidersToComboBox();
@@ -127,6 +145,10 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             contentPanel.add(createInputPanel(), BorderLayout.CENTER);
         }
 
+        /**
+         * Add the LLM providers to combobox.
+         * Only show the cloud-based LLM providers for which we have an API Key.
+         */
         private void populateProvidersToComboBox() {
             SettingsState settingState = SettingsState.getInstance();
 
@@ -190,7 +212,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
                         // Check if the input is a command
                         if (text.startsWith("/")) {
-                            handleCommand(text.toLowerCase().trim());
+                            commandHandler.handleCommand(text.toLowerCase().trim());
 
                             // Prevent the enter key from adding a new line
                             e.consume();
@@ -199,23 +221,29 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 }
             });
 
-            // Submit Button - This should be aligned to the right, at the bottom
             JPanel submitPanel = new JPanel(new BorderLayout());
-            submitButton.addActionListener(e -> onSubmit());
 
-            clearButton.addActionListener(e -> promptOutputArea.setText(getWelcomeText()));
+            JPanel nextPrevPanel = new JPanel();
+            nextPrevPanel.add(prevChatMsgButton);
+            prevChatMsgButton.setToolTipText("Show previous chat response");
+            nextPrevPanel.add(nextChatMsgButton);
+            nextChatMsgButton.setToolTipText("Show next chat response");
+            nextPrevPanel.add(chatCounterLabel);
 
-            // The submit button is put in a separate panel to align it to the right
             JPanel buttonPanel = new JPanel(new BorderLayout());
             buttonPanel.add(clearButton, BorderLayout.WEST);
+            buttonPanel.add(nextPrevPanel, BorderLayout.CENTER);
             buttonPanel.add(submitButton, BorderLayout.EAST);
 
-            // The inputScrollPane is added to the submitPanel, not directly to the inputPanel
             submitPanel.add(inputScrollPane, BorderLayout.CENTER);
             submitPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-            // The submitPanel is then added to the inputPanel at the SOUTH border
             inputPanel.add(submitPanel, BorderLayout.SOUTH);
+
+            submitButton.addActionListener(e -> onSubmit());
+            clearButton.addActionListener(e -> promptOutputArea.setText(getWelcomeText()));
+            prevChatMsgButton.addActionListener(e -> chatMessageHistoryService.setPreviousMessage(promptOutputArea));
+            nextChatMsgButton.addActionListener(e -> chatMessageHistoryService.setNextMessage(promptOutputArea));
 
             return inputPanel;
         }
@@ -261,10 +289,6 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             );
         }
 
-        public void handleCommand(String command) {
-            commandHandler.handleCommand(command);
-        }
-
         public void showHelp() {
             String availableCommands = "<html><head><style type=\"text/css\">body { font-family: 'Source Code Pro', monospace; font-size: 14pt; margin: 5px; }</style></head><body>" +
                 resourceBundle.getString("command.available") +
@@ -293,11 +317,12 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                     prompt.equalsIgnoreCase(COMMAND_REVIEW) ||
                     prompt.equalsIgnoreCase(COMMAND_EXPLAIN) ||
                     prompt.equalsIgnoreCase(COMMAND_CUSTOM)) {
-                    handleCommand(prompt);
-                    enableButtons();
+                    commandHandler.handleCommand(prompt);
                 } else {
+                    showHelp();
                     NotificationUtil.sendNotification(project, resourceBundle.getString("command.unknown") +  prompt);
                 }
+                enableButtons();
                 return;
             }
 
@@ -313,14 +338,12 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         private void disableButtons() {
             submitButton.setEnabled(false);
-            clearButton.setEnabled(false);
             promptInputArea.setEnabled(false);
         }
 
         private void enableButtons() {
             promptInputArea.setEnabled(true);
             submitButton.setEnabled(true);
-            clearButton.setEnabled(true);
         }
 
         /**
@@ -362,7 +385,8 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                         String response = genieClient.executeGeniePrompt(userPrompt,
                                                                          languageAndText.getLanguage(),
                                                                          languageAndText.getText());
-                        updateUIWithResponse(response);
+                        String htmlResponse = updateUIWithResponse(response);
+                        chatMessageHistoryService.addMessage(htmlResponse);
                     }
                 }.queue();
             } else {
@@ -373,8 +397,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         /**
          * Update the UI with the response.
          * @param response the response
+         * @return the HTML markdown text
          */
-        private void updateUIWithResponse(String response) {
+        private String updateUIWithResponse(String response) {
             Parser parser = Parser.builder().build();
             HtmlRenderer renderer = HtmlRenderer.builder().build();
 
@@ -383,6 +408,8 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
             promptOutputArea.setText(html);
             enableButtons();
+
+            return html;
         }
 
         /**
