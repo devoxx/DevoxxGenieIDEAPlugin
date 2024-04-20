@@ -33,16 +33,16 @@ public class CommandHandler {
         commandMap.put(COMMAND_HELP, listener::showHelp);
 
         commandMap.put(COMMAND_TEST,
-            () -> listener.executePrompt(settings.getTestPrompt()));
+            () -> listener.executePrompt(COMMAND_TEST, settings.getTestPrompt()));
 
         commandMap.put(COMMAND_REVIEW,
-            () -> listener.executePrompt(settings.getReviewPrompt()));
+            () -> listener.executePrompt(COMMAND_REVIEW, settings.getReviewPrompt()));
 
         commandMap.put(COMMAND_EXPLAIN,
-            () -> listener.executePrompt(settings.getExplainPrompt()));
+            () -> listener.executePrompt(COMMAND_EXPLAIN, settings.getExplainPrompt()));
 
         commandMap.put(COMMAND_CUSTOM,
-            () -> listener.executePrompt(settings.getCustomPrompt()));
+            () -> listener.executePrompt(COMMAND_CUSTOM, settings.getCustomPrompt()));
     }
 
     /**
