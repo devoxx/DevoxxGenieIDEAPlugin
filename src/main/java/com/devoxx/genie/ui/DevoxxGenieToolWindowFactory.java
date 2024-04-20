@@ -120,7 +120,8 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             prevChatMsgButton.setText("<");
             nextChatMsgButton.setText(">");
 
-            chatMessageHistoryService = new ChatMessageHistoryService(prevChatMsgButton, nextChatMsgButton, chatCounterLabel, clearButton);
+            chatMessageHistoryService =
+                new ChatMessageHistoryService(prevChatMsgButton, nextChatMsgButton, chatCounterLabel, clearButton, promptInputArea);
 
             // Set the placeholder text
             promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
@@ -241,7 +242,10 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             inputPanel.add(submitPanel, BorderLayout.SOUTH);
 
             submitButton.addActionListener(e -> onSubmit());
-            clearButton.addActionListener(e -> promptOutputArea.setText(getWelcomeText()));
+            clearButton.addActionListener(e -> {
+                promptOutputArea.setText(getWelcomeText());
+                promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
+            });
             prevChatMsgButton.addActionListener(e -> chatMessageHistoryService.setPreviousMessage(promptOutputArea));
             nextChatMsgButton.addActionListener(e -> chatMessageHistoryService.setNextMessage(promptOutputArea));
 
@@ -330,7 +334,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
                     progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
-                    executePrompt(promptInputArea.getText());
+                    executePrompt("", promptInputArea.getText());
                 }
             };
             task.queue();
@@ -375,7 +379,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * Execute the user prompt.
          * @param userPrompt the user prompt
          */
-        public void executePrompt(String userPrompt) {
+        public void executePrompt(String command, String userPrompt) {
             Editor editor = fileEditorManager.getSelectedTextEditor();
             if (editor != null) {
                 LanguageTextPair languageAndText = getEditorLanguageAndText(editor);
@@ -386,7 +390,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                                                                          languageAndText.getLanguage(),
                                                                          languageAndText.getText());
                         String htmlResponse = updateUIWithResponse(response);
-                        chatMessageHistoryService.addMessage(htmlResponse);
+                        chatMessageHistoryService.addMessage(command.isEmpty()?userPrompt:command, htmlResponse);
                     }
                 }.queue();
             } else {

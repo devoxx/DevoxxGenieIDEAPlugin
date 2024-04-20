@@ -1,29 +1,36 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.ChatInteraction;
+import com.devoxx.genie.ui.component.PlaceholderTextArea;
+
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatMessageHistoryService {
 
-    private final List<String> chatHistory = new ArrayList<>();
+    private final List<ChatInteraction> chatHistory = new ArrayList<>();
     private int chatIndex = -1;
 
     private final JButton nextButton;
     private final JButton prevButton;
     private final JButton clearButton;
     private final JLabel infoLabel;
+    private final PlaceholderTextArea promptInputField;
 
     public ChatMessageHistoryService(JButton prevButton,
                                      JButton nextButton,
                                      JLabel infoLabel,
-                                     JButton clearButton) {
+                                     JButton clearButton,
+                                     PlaceholderTextArea promptInputField) {
         this.nextButton = nextButton;
         this.prevButton = prevButton;
         this.infoLabel = infoLabel;
         this.clearButton = clearButton;
+        this.promptInputField = promptInputField;
         this.clearButton.addActionListener(e -> clearHistory());
         clearButton.setEnabled(false);
+
         updateButtons();
     }
 
@@ -38,8 +45,13 @@ public class ChatMessageHistoryService {
         }
     }
 
-    public void addMessage(String message) {
-        chatHistory.add(message);
+    /**
+     * Add a chat message to the history.
+     * @param question the chat question
+     * @param response the chat response
+     */
+    public void addMessage(String question, String response) {
+        chatHistory.add(new ChatInteraction(question, response));
         chatIndex++;
         updateButtons();
     }
@@ -51,7 +63,9 @@ public class ChatMessageHistoryService {
     public void setPreviousMessage(JEditorPane chatHistoryPane) {
         if (chatIndex > 0) {
             chatIndex--;
-            chatHistoryPane.setText(chatHistory.get(chatIndex));
+            ChatInteraction chatInteraction = chatHistory.get(chatIndex);
+            promptInputField.setText(chatInteraction.getQuestion());
+            chatHistoryPane.setText(chatInteraction.getResponse());
             updateButtons();
         }
     }
@@ -63,14 +77,20 @@ public class ChatMessageHistoryService {
     public void setNextMessage(JEditorPane chatHistoryPane) {
         if (chatIndex < chatHistory.size() - 1) {
             chatIndex++;
-            chatHistoryPane.setText(chatHistory.get(chatIndex));
+            ChatInteraction chatInteraction = chatHistory.get(chatIndex);
+            promptInputField.setText(chatInteraction.getQuestion());
+            chatHistoryPane.setText(chatInteraction.getResponse());
             updateButtons();
         }
     }
 
+    /**
+     * Clear the chat history, reset chat index and disable related buttons.
+     */
     public void clearHistory() {
         chatHistory.clear();
         chatIndex = -1;
+        promptInputField.setText("");
         updateButtons();
     }
 }
