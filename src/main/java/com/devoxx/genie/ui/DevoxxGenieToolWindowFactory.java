@@ -1,11 +1,15 @@
 package com.devoxx.genie.ui;
 
 import com.devoxx.genie.DevoxxGenieClient;
+import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
+import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
+import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatInteraction;
-import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.ChatHistoryObserver;
 import com.devoxx.genie.service.ChatMessageHistoryService;
-import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -38,7 +42,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,9 +51,6 @@ import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 import static com.devoxx.genie.ui.CommandHandler.*;
-import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
-import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
-import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
 
 final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
@@ -132,7 +132,6 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             updateButtonStates();
             addLLMProvidersToComboBox();
             handleModelProviderSelectionChange();
-            // addOllamaModels();
             setupUIComponents();
         }
 
@@ -437,65 +436,39 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         /**
          * Process the model provider selection.
-         * TODO Move this logic to the ModelFactory classes
          */
         private void handleModelProviderSelectionChange() {
             String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
             if (selectedProvider != null) {
-                genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
-            }
-
-            if (selectedProvider != null) {
+                ModelProvider provider = ModelProvider.valueOf(selectedProvider);
                 modelNameComboBox.setVisible(true);
                 modelNameComboBox.removeAllItems();
 
-                if (selectedProvider.equalsIgnoreCase(Ollama.getName())) {
-                    modelNameComboBox.setVisible(true);
-                    modelNameComboBox.removeAllItems();
-                    addOllamaModels();
-                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.OpenAI.getName())) {
-                    modelNameComboBox.addItem(GPT_3_5_TURBO.toString());
-                    modelNameComboBox.addItem(GPT_3_5_TURBO_16K.toString());
-                    modelNameComboBox.addItem(GPT_4.toString());
-                    modelNameComboBox.addItem(GPT_4_32K.toString());
-                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Anthropic.getName())) {
-                    modelNameComboBox.addItem(CLAUDE_3_OPUS_20240229.toString());
-                    modelNameComboBox.addItem(CLAUDE_3_SONNET_20240229.toString());
-                    modelNameComboBox.addItem(CLAUDE_3_HAIKU_20240307.toString());
-                    modelNameComboBox.addItem(CLAUDE_2_1.toString());
-                    modelNameComboBox.addItem(CLAUDE_2.toString());
-                    modelNameComboBox.addItem(CLAUDE_INSTANT_1_2.toString());
-                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Mistral.getName())) {
-                    modelNameComboBox.addItem(OPEN_MISTRAL_7B.toString());
-                    modelNameComboBox.addItem(OPEN_MIXTRAL_8x7B.toString());
-                    modelNameComboBox.addItem(MISTRAL_SMALL_LATEST.toString());
-                    modelNameComboBox.addItem(MISTRAL_MEDIUM_LATEST.toString());
-                } else if (selectedProvider.equalsIgnoreCase(ModelProvider.Groq.getName())) {
-                    modelNameComboBox.addItem("llama2-70b-4096");
-                    modelNameComboBox.addItem("mixtral-8x7b-32768");
-                    modelNameComboBox.addItem("gemma-7b-it");
-                } else if (selectedProvider.equalsIgnoreCase(DeepInfra.getName())) {
-                    // TODO Check which other models are available
-                    modelNameComboBox.addItem("mistralai/Mixtral-8x7B-Instruct-v0.1");
-                } else if (selectedProvider.equalsIgnoreCase(LMStudio.getName()) ||
-                           selectedProvider.equalsIgnoreCase(GPT4All.getName())) {
-                    modelNameComboBox.setVisible(false);
+                switch (provider) {
+                    case Ollama:
+                        new OllamaChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case OpenAI:
+                        new OpenAIChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case Anthropic:
+                        new AnthropicChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case Mistral:
+                        new MistralChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case Groq:
+                        new GroqChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case DeepInfra:
+                        new DeepInfraChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
+                        break;
+                    case LMStudio, GPT4All:
+                        modelNameComboBox.setVisible(false);
+                        break;
+                    default:
+                        break;
                 }
-            }
-        }
-
-        /**
-         * Add Ollama models for the model combo box.
-         * TODO Move this logic to the OllamaChatModelFactory
-         */
-        private void addOllamaModels() {
-            try {
-                OllamaModelEntryDTO[] ollamaModels = new OllamaService().getModels();
-                for (OllamaModelEntryDTO model : ollamaModels) {
-                    modelNameComboBox.addItem(model.getName());
-                }
-            } catch (IOException e) {
-                NotificationUtil.sendNotification(project, resourceBundle.getString("ollama.not_running"));
             }
         }
 

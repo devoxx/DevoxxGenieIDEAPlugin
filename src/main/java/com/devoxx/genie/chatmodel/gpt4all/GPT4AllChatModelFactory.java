@@ -8,6 +8,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 
 import java.time.Duration;
+import java.util.List;
 
 public class GPT4AllChatModelFactory implements ChatModelFactory {
 
@@ -22,5 +23,10 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
             .timeout(Duration.ofSeconds(chatModel.timeout))
             .topP(chatModel.topP)
             .build();
+    }
+
+    @Override
+    public List<String> getModelNames() {
+        return List.of();
     }
 }
