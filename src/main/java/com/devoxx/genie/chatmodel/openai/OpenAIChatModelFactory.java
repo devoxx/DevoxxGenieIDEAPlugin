@@ -4,13 +4,17 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModelName;
 
 import java.time.Duration;
+import java.util.List;
 
 public class OpenAIChatModelFactory implements ChatModelFactory {
 
-    private final String apiKey;
-    private final String modelName;
+    private String apiKey;
+    private String modelName;
+
+    public OpenAIChatModelFactory() {}
 
     public OpenAIChatModelFactory(String apiKey, String modelName) {
         this.apiKey = apiKey;
@@ -28,5 +32,15 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
             .timeout(Duration.ofSeconds(chatModel.timeout))
             .topP(chatModel.topP)
             .build();
+    }
+
+    @Override
+    public List<String> getModelNames() {
+        return List.of(
+            OpenAiChatModelName.GPT_4.toString(),
+            OpenAiChatModelName.GPT_4_32K.toString(),
+            OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString(),
+            OpenAiChatModelName.GPT_3_5_TURBO.toString(),
+            OpenAiChatModelName.GPT_3_5_TURBO_16K.toString());
     }
 }

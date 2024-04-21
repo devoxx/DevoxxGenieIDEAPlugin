@@ -7,6 +7,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 
 import java.time.Duration;
+import java.util.List;
 
 public class LMStudioChatModelFactory implements ChatModelFactory {
 
@@ -21,5 +22,10 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
             .maxRetries(chatModel.maxRetries)
             .timeout(Duration.ofSeconds(chatModel.timeout))
             .build();
+    }
+
+    @Override
+    public List<String> getModelNames() {
+        return List.of("");
     }
 }
