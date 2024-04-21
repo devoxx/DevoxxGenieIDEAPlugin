@@ -5,6 +5,8 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
+import java.util.List;
+
 public interface ChatModelFactory {
 
     /**
@@ -13,6 +15,12 @@ public interface ChatModelFactory {
      * @return the chat model
      */
     ChatLanguageModel createChatModel(ChatModel chatModel);
+
+    /**
+     * List the available model names.
+     * @return the list of model names
+     */
+    List<String> getModelNames();
 
     /**
      * Get the base URL by the model type.
