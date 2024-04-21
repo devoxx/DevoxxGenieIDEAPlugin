@@ -1,7 +1,9 @@
 package com.devoxx.genie.ui;
 
 import com.devoxx.genie.DevoxxGenieClient;
+import com.devoxx.genie.model.ChatInteraction;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.ChatHistoryObserver;
 import com.devoxx.genie.service.ChatMessageHistoryService;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -65,7 +67,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         connection.subscribe(SettingsChangeListener.TOPIC, toolWindowContent);
     }
 
-    public static class DevoxxGenieToolWindowContent implements CommandHandlerListener, SettingsChangeListener {
+    public static class DevoxxGenieToolWindowContent implements CommandHandlerListener,
+                                                                ChatHistoryObserver,
+                                                                SettingsChangeListener {
 
         public static final String DEFAULT_LANGUAGE = "Java";
 
@@ -85,16 +89,16 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             Ollama.getName()
         };
 
-        private final ChatMessageHistoryService chatMessageHistoryService;
         private final DevoxxGenieClient genieClient;
+        private final ChatMessageHistoryService chatMessageHistoryService = new ChatMessageHistoryService();
         private final FileEditorManager fileEditorManager;
         private final JPanel contentPanel = new JPanel();
         private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
         private final ComboBox<String> modelNameComboBox = new ComboBox<>();
-        private final JButton submitButton = new JButton();
-        private final JButton clearButton = new JButton();
-        private final JButton prevChatMsgButton = new JButton();
-        private final JButton nextChatMsgButton = new JButton();
+        private final JButton submitBtn = new JButton();
+        private final JButton clearBtn = new JButton();
+        private final JButton previousInteractionBtn = new JButton();
+        private final JButton nextInteractionBtn = new JButton();
         private final JLabel chatCounterLabel = new JLabel();
         private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
         private final JEditorPane promptOutputArea = new JEditorPane();
@@ -113,22 +117,22 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             resourceBundle = ResourceBundle.getBundle("messages");
 
             // Create the buttons
-            submitButton.setText(resourceBundle.getString("btn.submit.label"));
-            clearButton.setText(resourceBundle.getString("btn.clear.label"));
-            clearButton.setToolTipText("Clear chat history");
+            submitBtn.setText(resourceBundle.getString("btn.submit.label"));
+            clearBtn.setText(resourceBundle.getString("btn.clear.label"));
+            clearBtn.setToolTipText("Clear chat history");
 
-            prevChatMsgButton.setText("<");
-            nextChatMsgButton.setText(">");
+            previousInteractionBtn.setText("<");
+            nextInteractionBtn.setText(">");
 
-            chatMessageHistoryService =
-                new ChatMessageHistoryService(prevChatMsgButton, nextChatMsgButton, chatCounterLabel, clearButton, promptInputArea);
+            chatMessageHistoryService.addObserver(this);
 
             // Set the placeholder text
             promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-            populateProvidersToComboBox();
-            processModelProviderSelection();
-            addOllamaModels();
+            updateButtonStates();
+            addLLMProvidersToComboBox();
+            handleModelProviderSelectionChange();
+            // addOllamaModels();
             setupUIComponents();
         }
 
@@ -137,7 +141,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          */
         public void settingsChanged() {
             llmProvidersComboBox.removeAllItems();
-            populateProvidersToComboBox();
+            addLLMProvidersToComboBox();
         }
 
         private void setupUIComponents() {
@@ -150,7 +154,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          * Add the LLM providers to combobox.
          * Only show the cloud-based LLM providers for which we have an API Key.
          */
-        private void populateProvidersToComboBox() {
+        private void addLLMProvidersToComboBox() {
             SettingsState settingState = SettingsState.getInstance();
 
             Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
@@ -183,7 +187,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             toolPanel.add(Box.createVerticalStrut(5));
             toolPanel.add(modelNameComboBox);
 
-            llmProvidersComboBox.addActionListener(e -> processModelProviderSelection());
+            llmProvidersComboBox.addActionListener(e -> handleModelProviderSelectionChange());
             modelNameComboBox.addActionListener(e -> processModelNameSelection());
 
             return toolPanel;
@@ -225,29 +229,31 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             JPanel submitPanel = new JPanel(new BorderLayout());
 
             JPanel nextPrevPanel = new JPanel();
-            nextPrevPanel.add(prevChatMsgButton);
-            prevChatMsgButton.setToolTipText("Show previous chat response");
-            nextPrevPanel.add(nextChatMsgButton);
-            nextChatMsgButton.setToolTipText("Show next chat response");
+            nextPrevPanel.add(previousInteractionBtn);
+            previousInteractionBtn.setToolTipText("Show previous chat response");
+            nextPrevPanel.add(nextInteractionBtn);
+            nextInteractionBtn.setToolTipText("Show next chat response");
             nextPrevPanel.add(chatCounterLabel);
 
             JPanel buttonPanel = new JPanel(new BorderLayout());
-            buttonPanel.add(clearButton, BorderLayout.WEST);
+            buttonPanel.add(clearBtn, BorderLayout.WEST);
             buttonPanel.add(nextPrevPanel, BorderLayout.CENTER);
-            buttonPanel.add(submitButton, BorderLayout.EAST);
+            buttonPanel.add(submitBtn, BorderLayout.EAST);
 
             submitPanel.add(inputScrollPane, BorderLayout.CENTER);
             submitPanel.add(buttonPanel, BorderLayout.SOUTH);
 
             inputPanel.add(submitPanel, BorderLayout.SOUTH);
 
-            submitButton.addActionListener(e -> onSubmit());
-            clearButton.addActionListener(e -> {
+            submitBtn.addActionListener(e -> onSubmit());
+            clearBtn.addActionListener(e -> {
                 promptOutputArea.setText(getWelcomeText());
                 promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
+                chatMessageHistoryService.clearHistory();
+                updateButtonStates();
             });
-            prevChatMsgButton.addActionListener(e -> chatMessageHistoryService.setPreviousMessage(promptOutputArea));
-            nextChatMsgButton.addActionListener(e -> chatMessageHistoryService.setNextMessage(promptOutputArea));
+            previousInteractionBtn.addActionListener(e -> chatMessageHistoryService.setPreviousMessage());
+            nextInteractionBtn.addActionListener(e -> chatMessageHistoryService.setNextMessage());
 
             return inputPanel;
         }
@@ -341,13 +347,13 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         }
 
         private void disableButtons() {
-            submitButton.setEnabled(false);
+            submitBtn.setEnabled(false);
             promptInputArea.setEnabled(false);
         }
 
         private void enableButtons() {
             promptInputArea.setEnabled(true);
-            submitButton.setEnabled(true);
+            submitBtn.setEnabled(true);
         }
 
         /**
@@ -390,7 +396,10 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                                                                          languageAndText.getLanguage(),
                                                                          languageAndText.getText());
                         String htmlResponse = updateUIWithResponse(response);
-                        chatMessageHistoryService.addMessage(command.isEmpty()?userPrompt:command, htmlResponse);
+                        chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem()==null?"":llmProvidersComboBox.getSelectedItem().toString(),
+                                                             modelNameComboBox.getSelectedItem()==null?"":modelNameComboBox.getSelectedItem().toString(),
+                                                             command.isEmpty()?userPrompt:command,
+                                                             htmlResponse);
                     }
                 }.queue();
             } else {
@@ -399,9 +408,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         }
 
         /**
-         * Update the UI with the response.
+         * Update the UI with the response.  Convert the response to markdown to improve readability.
          * @param response the response
-         * @return the HTML markdown text
+         * @return the markdown text
          */
         private String updateUIWithResponse(String response) {
             Parser parser = Parser.builder().build();
@@ -428,8 +437,9 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         /**
          * Process the model provider selection.
+         * TODO Move this logic to the ModelFactory classes
          */
-        private void processModelProviderSelection() {
+        private void handleModelProviderSelectionChange() {
             String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
             if (selectedProvider != null) {
                 genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
@@ -476,6 +486,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         /**
          * Add Ollama models for the model combo box.
+         * TODO Move this logic to the OllamaChatModelFactory
          */
         private void addOllamaModels() {
             try {
@@ -490,6 +501,27 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
         public JPanel getContentPanel() {
             return contentPanel;
+        }
+
+        @Override
+        public void onHistoryUpdated(int currentIndex, int totalMessages) {
+            ChatInteraction currentInteraction = chatMessageHistoryService.getCurrentChatInteraction();
+            promptInputArea.setText(currentInteraction.getQuestion());
+            promptOutputArea.setText(currentInteraction.getResponse());
+            updateButtonStates();
+        }
+
+        private void updateButtonStates() {
+            int chatIndex = chatMessageHistoryService.getChatIndex();
+            int chatHistorySize = chatMessageHistoryService.getChatHistorySize();
+            nextInteractionBtn.setEnabled(chatIndex < chatHistorySize - 1);
+            previousInteractionBtn.setEnabled(chatIndex > 0);
+            clearBtn.setEnabled(chatHistorySize > 1);
+            if (chatHistorySize > 1) {
+                chatCounterLabel.setText(String.format("%d/%d", (chatIndex + 1), chatHistorySize));
+            } else {
+                chatCounterLabel.setText("");
+            }
         }
     }
 }
