@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static com.devoxx.genie.ui.CommandHandler.*;
 import static org.mockito.Mockito.*;
 
 class CommandHandlerTest {
@@ -43,21 +44,23 @@ class CommandHandlerTest {
 
     @Test
     void test_HandleTestCommand() {
-        handler.handleCommand(CommandHandler.COMMAND_TEST);
-        verify(listener, times(1)).executePrompt("Write a unit test for this code using JUnit.");
+        handler.handleCommand(COMMAND_TEST);
+        verify(listener, times(1))
+            .executePrompt(COMMAND_TEST, "Write a unit test for this code using JUnit.");
     }
 
     @Test
     void test_HandleReviewCommand() {
-        handler.handleCommand(CommandHandler.COMMAND_REVIEW);
-        verify(listener, times(1)).executePrompt("Review the selected code, can it be improved or are there bugs?");
+        handler.handleCommand(COMMAND_REVIEW);
+        verify(listener, times(1))
+            .executePrompt(COMMAND_REVIEW, "Review the selected code, can it be improved or are there bugs?");
     }
 
     @Test
     void testHandleExplainCommand() {
-        handler.handleCommand(CommandHandler.COMMAND_EXPLAIN);
+        handler.handleCommand(COMMAND_EXPLAIN);
         verify(listener, times(1))
-            .executePrompt("Explain the code so a junior developer can understand it.");
+            .executePrompt(COMMAND_EXPLAIN, "Explain the code so a junior developer can understand it.");
     }
 
     @Test
