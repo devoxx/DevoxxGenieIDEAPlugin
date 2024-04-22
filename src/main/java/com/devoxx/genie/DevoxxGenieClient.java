@@ -24,7 +24,6 @@ import dev.langchain4j.data.message.SystemMessage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,21 +36,16 @@ public class DevoxxGenieClient {
 
     public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
         "You are a software developer with expert knowledge in ";
-
-    public static final String PROGRAMMING_LANGUAGE =
-        " programming language.";
-
+    public static final String PROGRAMMING_LANGUAGE = " programming language.";
     private ModelProvider modelProvider = getModelProvider(ModelProvider.Ollama.name());
-
     private String modelName;
-
     private CircularQueue<ChatMessage> chatMessages;
 
     private DevoxxGenieClient() {
         setChatMemorySize(SettingsState.getInstance().getMaxMemory());
     }
 
-    public static final class InstanceHolder {
+    private static final class InstanceHolder {
         private static final DevoxxGenieClient instance = new DevoxxGenieClient();
     }
 
@@ -85,7 +79,6 @@ public class DevoxxGenieClient {
      * @return the chat language model
      */
     private ChatLanguageModel getChatLanguageModel() {
-        log.debug("Get chat language model: {}", modelProvider);
         ChatModel chatModel = initChatModelSettings();
         SettingsState settings = SettingsState.getInstance();
         return switch (modelProvider) {
@@ -177,7 +170,9 @@ public class DevoxxGenieClient {
                     "Always return the response in Markdown." +
                     "\n\nSelected code: " + selectedText));
         }
+
         chatMessages.add(new UserMessage(userPrompt));
+
         try {
             Response<AiMessage> generate = chatLanguageModel.generate(chatMessages.asList());
             String response = generate.content().text();
@@ -190,6 +185,7 @@ public class DevoxxGenieClient {
 
     /**
      * EXPERIMENTAL : Execute continue prompt
+     * TODO : This is an experimental feature and may not work as expected.
      * @param selectedText the selected text
      * @return the prompt
      */
