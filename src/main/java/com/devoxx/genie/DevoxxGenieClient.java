@@ -36,6 +36,7 @@ public class DevoxxGenieClient {
 
     public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
         "You are a software developer with expert knowledge in ";
+
     public static final String PROGRAMMING_LANGUAGE =
         " programming language.";
 
@@ -93,7 +94,7 @@ public class DevoxxGenieClient {
      * @return the chat language model
      */
     private static ChatLanguageModel createGPT4AllModel(ChatModel chatModel) {
-        chatModel.baseUrl = SettingsState.getInstance().getGpt4allModelUrl();
+        chatModel.setBaseUrl(SettingsState.getInstance().getGpt4allModelUrl());
         return new GPT4AllChatModelFactory().createChatModel(chatModel);
     }
 
@@ -103,7 +104,7 @@ public class DevoxxGenieClient {
      * @return the chat language model
      */
     private static ChatLanguageModel createLmStudioModel(ChatModel chatModel) {
-        chatModel.baseUrl = SettingsState.getInstance().getLmstudioModelUrl();
+        chatModel.setBaseUrl(SettingsState.getInstance().getLmstudioModelUrl());
         return new LMStudioChatModelFactory().createChatModel(chatModel);
     }
 
@@ -114,7 +115,7 @@ public class DevoxxGenieClient {
      */
     private ChatLanguageModel createOllamaModel(ChatModel chatModel) {
         setLanguageModelName(chatModel);
-        chatModel.baseUrl = SettingsState.getInstance().getOllamaModelUrl();
+        chatModel.setBaseUrl(SettingsState.getInstance().getOllamaModelUrl());
         return new OllamaChatModelFactory().createChatModel(chatModel);
     }
 
@@ -124,10 +125,10 @@ public class DevoxxGenieClient {
      */
     private @NotNull ChatModel initChatModelSettings() {
         ChatModel chatModel = new ChatModel();
-        chatModel.temperature = SettingsState.getInstance().getTemperature();
-        chatModel.maxRetries = SettingsState.getInstance().getMaxRetries();
-        chatModel.topP = SettingsState.getInstance().getTopP();
-        chatModel.timeout = SettingsState.getInstance().getTimeout();
+        chatModel.setTemperature(SettingsState.getInstance().getTemperature());
+        chatModel.setMaxRetries(SettingsState.getInstance().getMaxRetries());
+        chatModel.setTopP(SettingsState.getInstance().getTopP());
+        chatModel.setTimeout(SettingsState.getInstance().getTimeout());
         return chatModel;
     }
 
@@ -139,12 +140,12 @@ public class DevoxxGenieClient {
         if (modelName == null) {
             try {
                 OllamaModelEntryDTO[] models = new OllamaService().getModels();
-                chatModel.modelName = models[0].getName();
+                chatModel.setModelName(models[0].getName());
             } catch (IOException e) {
                 log.error("Failed to get Ollama models", e);
             }
         } else {
-            chatModel.modelName = modelName;
+            chatModel.setModelName(modelName);
         }
     }
 
@@ -156,7 +157,7 @@ public class DevoxxGenieClient {
      */
     public String executeGeniePrompt(String userPrompt,
                                      String language,
-                                     String selectedText) {
+                                     String selectedText) throws IOException {
         ChatLanguageModel chatLanguageModel = getChatLanguageModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new SystemMessage(
@@ -164,8 +165,12 @@ public class DevoxxGenieClient {
                 "Always return the response in Markdown." +
                 "\n\nSelected code: " + selectedText));
         messages.add(new UserMessage(userPrompt));
-        Response<AiMessage> generate = chatLanguageModel.generate(messages);
-        return generate.content().text();
+        try {
+            Response<AiMessage> generate = chatLanguageModel.generate(messages);
+            return generate.content().text();
+        } catch (Exception e) {
+            return "Failed to execute Genie prompt!\n" + e.getMessage();
+        }
     }
 
     /**

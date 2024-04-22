@@ -28,11 +28,11 @@ public class MistralChatModelFactory implements ChatModelFactory {
         return MistralAiChatModel.builder()
             .apiKey(apiKey)
             .modelName(modelName)
-            .maxRetries(chatModel.maxRetries)
-            .temperature(chatModel.temperature)
-            .maxTokens(chatModel.maxTokens)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
-            .topP(chatModel.topP)
+            .maxRetries(chatModel.getMaxRetries())
+            .temperature(chatModel.getTemperature())
+            .maxTokens(chatModel.getMaxTokens())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .topP(chatModel.getTopP())
             .build();
     }
 

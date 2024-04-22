@@ -17,11 +17,11 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
         return LocalAiChatModel.builder()
             .baseUrl(getBaseUrlByType(ModelProvider.GPT4All))
             .modelName("test-model")
-            .maxRetries(chatModel.maxRetries)
-            .maxTokens(chatModel.maxTokens)
-            .temperature(chatModel.temperature)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
-            .topP(chatModel.topP)
+            .maxRetries(chatModel.getMaxRetries())
+            .maxTokens(chatModel.getMaxTokens())
+            .temperature(chatModel.getTemperature())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .topP(chatModel.getTopP())
             .build();
     }
 
