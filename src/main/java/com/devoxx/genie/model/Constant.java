@@ -17,4 +17,5 @@ public class Constant {
     public static final Double TOP_P = 0.9d;
     public static final Integer MAX_RETRIES = 3;
     public static final Integer TIMEOUT = 60;
+    public static final Integer MAX_MEMORY = 6;
 }

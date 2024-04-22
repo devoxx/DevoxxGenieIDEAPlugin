@@ -18,17 +18,25 @@
 
         <h3>Key Features</h3>
         <UL>
-            <LI>Support for local language models: Ollama, LMStudio and GPT4ALL</LI>
+            <LI>Support for local and cloud based language models: Ollama, OpenAI, Anthropic, Groq, ...</LI>
             <LI>User defined prompts for selected code snippets</LI>
         </UL>
         <h3>Set-Up</h3>
         <UL>
             <LI>Install the plugin</LI>
             <LI>Make sure you have Ollama, LMStudio or GPT4All running</LI>
+            <LI>Optional: Add API Keys for Cloud based LLM providers</LI>
+            <LI>Optional: Update the command prompts in the Settings</LI>
+            <LI>Start using the plugin</LI>
         </UL>
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.0.12</h2>
+        <UL>
+            <LI>Added chat memory (default 10 messages)</LI>
+            <LI>You can turn of the chat memory in the settings</LI>
+        </UL>
         <h2>V0.0.11</h2>
         <UL>
             <LI>Added Settings page link</LI>

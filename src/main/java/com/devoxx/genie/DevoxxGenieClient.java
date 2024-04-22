@@ -13,6 +13,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.ui.util.CircularQueue;
 import com.intellij.ide.util.PropertiesComponent;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -44,7 +45,10 @@ public class DevoxxGenieClient {
 
     private String modelName;
 
+    private CircularQueue<ChatMessage> chatMessages;
+
     private DevoxxGenieClient() {
+        setChatMemorySize(SettingsState.getInstance().getMaxMemory());
     }
 
     public static final class InstanceHolder {
@@ -66,6 +70,14 @@ public class DevoxxGenieClient {
 
     public void setModelName(String modelName) {
         this.modelName = modelName;
+    }
+
+    public void setChatMemorySize(int memorySize) {
+        chatMessages = new CircularQueue<>(memorySize);
+    }
+
+    public int getChatMemorySize() {
+        return chatMessages.size();
     }
 
     /**
@@ -159,15 +171,18 @@ public class DevoxxGenieClient {
                                      String language,
                                      String selectedText) {
         ChatLanguageModel chatLanguageModel = getChatLanguageModel();
-        List<ChatMessage> messages = new ArrayList<>();
-        messages.add(new SystemMessage(
-            YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN + language + PROGRAMMING_LANGUAGE +
-                "Always return the response in Markdown." +
-                "\n\nSelected code: " + selectedText));
-        messages.add(new UserMessage(userPrompt));
+        if (chatMessages.isEmpty()) {
+            chatMessages.add(new SystemMessage(
+                YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN + language + PROGRAMMING_LANGUAGE +
+                    "Always return the response in Markdown." +
+                    "\n\nSelected code: " + selectedText));
+        }
+        chatMessages.add(new UserMessage(userPrompt));
         try {
-            Response<AiMessage> generate = chatLanguageModel.generate(messages);
-            return generate.content().text();
+            Response<AiMessage> generate = chatLanguageModel.generate(chatMessages.asList());
+            String response = generate.content().text();
+            chatMessages.add(new AiMessage(response));
+            return response;
         } catch (Exception e) {
             return "Failed to execute Genie prompt!\n" + e.getMessage();
         }

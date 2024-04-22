@@ -44,6 +44,7 @@ public class Settings implements Configurable {
 
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
+    private JFormattedTextField memoryField;
 
     private JTextField testPromptField;
     private JTextField explainPromptField;
@@ -91,10 +92,11 @@ public class Settings implements Configurable {
 
         setTitle("LLM Parameters", settingsPanel, gbc);
 
-        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
-        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
-        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
-        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
+        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature(), "");
+        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP(), "");
+        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout(), "");
+        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries(), "");
+        memoryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Messages to remember :", settings.getMaxMemory(), "Set the maximum number of previous chat messages to include in the context");
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
@@ -106,12 +108,21 @@ public class Settings implements Configurable {
     }
 
     private void setTitle(String title, JPanel settingsPanel, GridBagConstraints gbc) {
-        JPanel jPanel = new JPanel();
-        jPanel.setLayout(new BorderLayout());
         JLabel titleLabel = new JLabel(title);
-        jPanel.add(titleLabel, BorderLayout.WEST);
-        jPanel.add(new JSeparator(), BorderLayout.CENTER);
+
+        // Add vertical spacing above the title
+        gbc.insets = new Insets(10, 0, 10, 0); // Adjust the top inset as needed
         settingsPanel.add(titleLabel, gbc);
+
+        // Reset the insets for the next component
+        gbc.insets = new Insets(0, 0, 0, 0);
+
+        // Add vertical spacing below the title
+        gbc.weighty = 1.0; // Allow the empty space to expand vertically
+        settingsPanel.add(new JLabel(), gbc);
+
+        // Reset the constraints for the next component
+        gbc.weighty = 0.0;
         resetGbc(gbc);
     }
 
@@ -191,10 +202,14 @@ public class Settings implements Configurable {
     private JFormattedTextField addFormattedFieldWithLabel(JPanel panel,
                                                            GridBagConstraints gbc,
                                                            String label,
-                                                           Number value) {
+                                                           Number value,
+                                                           String toolTipMsg) {
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
         JFormattedTextField formattedField = new JFormattedTextField();
+        if (!toolTipMsg.isBlank()) {
+            formattedField.setToolTipText(toolTipMsg);
+        }
         setValue(formattedField, value);
         panel.add(formattedField, gbc);
         resetGbc(gbc);
@@ -228,6 +243,7 @@ public class Settings implements Configurable {
         isModified |= isFieldModified(anthropicKeyField, settings.getAnthropicKey());
         isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
+        isModified |= isFieldModified(memoryField, settings.getMaxMemory());
         return isModified;
     }
 
@@ -298,6 +314,10 @@ public class Settings implements Configurable {
 
         if (isFieldModified(deepInfraKeyField, settings.getDeepInfraKey())) {
             settings.setDeepInfraKey(new String(deepInfraKeyField.getPassword()));
+        }
+
+        if (isFieldModified(memoryField, settings.getMaxMemory())) {
+            settings.setMaxMemory(safeCastToInteger(memoryField.getValue()));
         }
 
         // Now notify others

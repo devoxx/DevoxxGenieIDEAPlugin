@@ -57,7 +57,8 @@ import static com.devoxx.genie.ui.CommandHandler.*;
 final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
-    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+    public void createToolWindowContent(@NotNull Project project,
+                                        @NotNull ToolWindow toolWindow) {
         DevoxxGenieToolWindowContent toolWindowContent = new DevoxxGenieToolWindowContent(toolWindow);
         Content content = ContentFactory.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
         toolWindow.getContentManager().addContent(content);
@@ -143,6 +144,14 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         public void settingsChanged() {
             llmProvidersComboBox.removeAllItems();
             addLLMProvidersToComboBox();
+            updateChatMemorySize();
+        }
+
+        private static void updateChatMemorySize() {
+            SettingsState settingState = SettingsState.getInstance();
+            if (DevoxxGenieClient.getInstance().getChatMemorySize() != settingState.getMaxMemory()) {
+                DevoxxGenieClient.getInstance().setChatMemorySize(settingState.getMaxMemory());
+            }
         }
 
         private void setupUIComponents() {
