@@ -157,7 +157,7 @@ public class DevoxxGenieClient {
      */
     public String executeGeniePrompt(String userPrompt,
                                      String language,
-                                     String selectedText) throws IOException {
+                                     String selectedText) {
         ChatLanguageModel chatLanguageModel = getChatLanguageModel();
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new SystemMessage(
