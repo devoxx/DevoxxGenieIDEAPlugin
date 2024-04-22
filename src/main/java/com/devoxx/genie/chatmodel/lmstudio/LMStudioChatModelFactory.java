@@ -16,11 +16,11 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
         return LocalAiChatModel.builder()
             .baseUrl(getBaseUrlByType(ModelProvider.LMStudio))
             .modelName("LMStudio")
-            .temperature(chatModel.temperature)
-            .topP(chatModel.topP)
-            .maxTokens(chatModel.maxTokens)
-            .maxRetries(chatModel.maxRetries)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .maxTokens(chatModel.getMaxTokens())
+            .maxRetries(chatModel.getMaxRetries())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .build();
     }
 

@@ -20,6 +20,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAware;
@@ -99,6 +100,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         private final JButton clearBtn = new JButton();
         private final JButton previousInteractionBtn = new JButton();
         private final JButton nextInteractionBtn = new JButton();
+        private final JButton configBtn = new JButton("＋");
         private final JLabel chatCounterLabel = new JLabel();
         private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
         private final JEditorPane promptOutputArea = new JEditorPane();
@@ -111,7 +113,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             project = toolWindow.getProject();
             fileEditorManager = FileEditorManager.getInstance(project);
             genieClient = DevoxxGenieClient.getInstance();
-            commandHandler = new CommandHandler(this); // Initialize with the loaded ResourceBundle
+            commandHandler = new CommandHandler(this);
 
             // Load the resource bundle
             resourceBundle = ResourceBundle.getBundle("messages");
@@ -182,10 +184,20 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             llmProvidersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, llmProvidersComboBox.getPreferredSize().height));
             modelNameComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelNameComboBox.getPreferredSize().height));
 
-            toolPanel.add(llmProvidersComboBox);
+            JPanel providerPanel = new JPanel();
+            providerPanel.setLayout(new BorderLayout());
+            providerPanel.add(configBtn, BorderLayout.WEST);
+            providerPanel.add(llmProvidersComboBox, BorderLayout.CENTER);
+
+            toolPanel.add(providerPanel);
             toolPanel.add(Box.createVerticalStrut(5));
             toolPanel.add(modelNameComboBox);
 
+            configBtn.addActionListener(e -> {
+                if (project != null) {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, "Devoxx Genie Settings");
+                }
+            });
             llmProvidersComboBox.addActionListener(e -> handleModelProviderSelectionChange());
             modelNameComboBox.addActionListener(e -> processModelNameSelection());
 
@@ -235,12 +247,14 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             nextPrevPanel.add(chatCounterLabel);
 
             JPanel buttonPanel = new JPanel(new BorderLayout());
-            buttonPanel.add(clearBtn, BorderLayout.WEST);
+            buttonPanel.add(submitBtn, BorderLayout.WEST);
             buttonPanel.add(nextPrevPanel, BorderLayout.CENTER);
-            buttonPanel.add(submitBtn, BorderLayout.EAST);
+            buttonPanel.add(clearBtn, BorderLayout.EAST);
+
+            JBScrollPane nextPrevScrollPane = new JBScrollPane(buttonPanel);
 
             submitPanel.add(inputScrollPane, BorderLayout.CENTER);
-            submitPanel.add(buttonPanel, BorderLayout.SOUTH);
+            submitPanel.add(nextPrevScrollPane, BorderLayout.SOUTH);
 
             inputPanel.add(submitPanel, BorderLayout.SOUTH);
 
@@ -391,14 +405,21 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
                     @Override
                     public void run(@NotNull ProgressIndicator progressIndicator) {
-                        String response = genieClient.executeGeniePrompt(userPrompt,
-                                                                         languageAndText.getLanguage(),
-                                                                         languageAndText.getText());
-                        String htmlResponse = updateUIWithResponse(response);
-                        chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem()==null?"":llmProvidersComboBox.getSelectedItem().toString(),
-                                                             modelNameComboBox.getSelectedItem()==null?"":modelNameComboBox.getSelectedItem().toString(),
-                                                             command.isEmpty()?userPrompt:command,
-                                                             htmlResponse);
+                        try {
+                            String response = genieClient.executeGeniePrompt(userPrompt,
+                                                                             languageAndText.getLanguage(),
+                                                                             languageAndText.getText());
+                            String htmlResponse = updateUIWithResponse(response);
+
+                            chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
+                                modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
+                                command.isEmpty() ? userPrompt : command,
+                                htmlResponse);
+
+                        } catch (Exception e) {
+                            NotificationUtil.sendNotification(project, e.getMessage());
+                            enableButtons();
+                        }
                     }
                 }.queue();
             } else {
@@ -439,8 +460,10 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
          */
         private void handleModelProviderSelectionChange() {
             String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
+
             if (selectedProvider != null) {
                 ModelProvider provider = ModelProvider.valueOf(selectedProvider);
+                genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
                 modelNameComboBox.setVisible(true);
                 modelNameComboBox.removeAllItems();
 
