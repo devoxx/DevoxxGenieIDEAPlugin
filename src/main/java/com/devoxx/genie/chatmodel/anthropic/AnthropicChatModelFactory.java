@@ -28,10 +28,10 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
         return AnthropicChatModel.builder()
             .apiKey(apiKey)
             .modelName(modelName)
-            .temperature(chatModel.temperature)
-            .topP(chatModel.topP)
-            .maxTokens(chatModel.maxTokens)
-            .maxRetries(chatModel.maxRetries)
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .maxTokens(chatModel.getMaxTokens())
+            .maxRetries(chatModel.getMaxRetries())
             .build();
     }
 

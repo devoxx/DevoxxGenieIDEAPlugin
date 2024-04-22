@@ -32,11 +32,11 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
             .baseUrl("https://api.deepinfra.com/v1/openai")
             .apiKey(apiKey)
             .modelName(modelName)
-            .maxRetries(chatModel.maxRetries)
-            .temperature(chatModel.temperature)
-            .maxTokens(chatModel.maxTokens)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
-            .topP(chatModel.topP)
+            .maxRetries(chatModel.getMaxRetries())
+            .temperature(chatModel.getTemperature())
+            .maxTokens(chatModel.getMaxTokens())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .topP(chatModel.getTopP())
             .build();
     }
 

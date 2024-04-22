@@ -29,8 +29,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.0.11</h2>
         <UL>
-            <LI>Initial release</LI>
+            <LI>Added Settings page link</LI>
+            <LI>Catch LLM communication error</LI>
         </UL>
         <h2>V0.0.10</h2>
         <UL>
@@ -67,6 +69,9 @@
             <LI>I18N labels and support for the French language</LI>
             <LI>Introduced CommandHandler for the predefined commands</LI>
             <LI>Settings now uses persistent store</LI>
+        </UL>
+        <UL>
+            <LI>Initial release</LI>
         </UL>
     ]]></change-notes>
 

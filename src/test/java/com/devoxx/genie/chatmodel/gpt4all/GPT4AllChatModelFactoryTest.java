@@ -26,7 +26,7 @@ class GPT4AllChatModelFactoryTest {
 
             // Create a dummy ChatModel
             ChatModel chatModel = new ChatModel();
-            chatModel.modelName = "gtp4all";
+            chatModel.setModelName("gtp4all");
 
             // Call the method
             ChatLanguageModel result = factory.createChatModel(chatModel);

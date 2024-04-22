@@ -21,11 +21,11 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(ChatModel chatModel) {
         return OllamaChatModel.builder()
             .baseUrl(getBaseUrlByType(ModelProvider.Ollama))
-            .modelName(chatModel.modelName)
-            .temperature(chatModel.temperature)
-            .topP(chatModel.topP)
-            .maxRetries(chatModel.maxRetries)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
+            .modelName(chatModel.getModelName())
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .maxRetries(chatModel.getMaxRetries())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .build();
     }
 
