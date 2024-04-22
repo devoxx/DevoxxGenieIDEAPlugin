@@ -5,10 +5,10 @@ public class WorkingMessage {
     private WorkingMessage() {
     }
 
-    public static final String[] WORKING_MESSAGES = {
+    protected static final String[] WORKING_MESSAGES = {
         "Summoning the wizardry of LLM",
         "Unleashing the genie of LLM",
-        "Spinning the local sorcery wheel of LLM",
+        "Spinning the sorcery wheel of LLM",
         "Firing up the LLM cauldron",
         "Rolling out the LLM magic carpet",
         "Setting off the LLM fireworks",

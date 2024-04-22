@@ -30,7 +30,7 @@ public class CommandHandler {
     private void initializeCommands() {
         SettingsState settings = SettingsState.getInstance();
 
-        commandMap.put(COMMAND_HELP, listener::showHelp);
+        commandMap.put(COMMAND_HELP, listener::showHelpMsg);
 
         commandMap.put(COMMAND_TEST,
             () -> listener.executePrompt(COMMAND_TEST, settings.getTestPrompt()));
@@ -54,7 +54,7 @@ public class CommandHandler {
         if (command != null) {
             command.run();
         } else {
-            listener.showHelp();
+            listener.showHelpMsg();
         }
     }
 }

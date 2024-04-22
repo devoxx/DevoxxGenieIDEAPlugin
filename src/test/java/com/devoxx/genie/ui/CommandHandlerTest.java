@@ -39,7 +39,7 @@ class CommandHandlerTest {
     @Test
     void handleHelpCommand() {
         handler.handleCommand(CommandHandler.COMMAND_HELP);
-        verify(listener, times(1)).showHelp();
+        verify(listener, times(1)).showHelpMsg();
     }
 
     @Test
@@ -66,6 +66,6 @@ class CommandHandlerTest {
     @Test
     void testHandleUnknownCommand() {
         handler.handleCommand("/unknown");
-        verify(listener, times(1)).showHelp(); // Assuming showHelp is the fallback for unknown commands
+        verify(listener, times(1)).showHelpMsg(); // Assuming showHelp is the fallback for unknown commands
     }
 }
