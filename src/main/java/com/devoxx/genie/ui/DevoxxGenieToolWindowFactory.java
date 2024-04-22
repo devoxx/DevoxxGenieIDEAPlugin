@@ -405,21 +405,15 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
                     @Override
                     public void run(@NotNull ProgressIndicator progressIndicator) {
-                        try {
-                            String response = genieClient.executeGeniePrompt(userPrompt,
-                                                                             languageAndText.getLanguage(),
-                                                                             languageAndText.getText());
-                            String htmlResponse = updateUIWithResponse(response);
+                        String response = genieClient.executeGeniePrompt(userPrompt,
+                                                                         languageAndText.getLanguage(),
+                                                                         languageAndText.getText());
+                        String htmlResponse = updateUIWithResponse(response);
 
-                            chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
-                                modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
-                                command.isEmpty() ? userPrompt : command,
-                                htmlResponse);
-
-                        } catch (Exception e) {
-                            NotificationUtil.sendNotification(project, e.getMessage());
-                            enableButtons();
-                        }
+                        chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
+                            modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
+                            command.isEmpty() ? userPrompt : command,
+                            htmlResponse);
                     }
                 }.queue();
             } else {
