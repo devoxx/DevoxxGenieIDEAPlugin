@@ -26,11 +26,11 @@ public class GroqChatModelFactory implements ChatModelFactory {
             .baseUrl("https://api.groq.com/openai/v1")
             .apiKey(apiKey)
             .modelName(modelName)
-            .maxRetries(chatModel.maxRetries)
-            .maxTokens(chatModel.maxTokens)
-            .temperature(chatModel.temperature)
-            .timeout(Duration.ofSeconds(chatModel.timeout))
-            .topP(chatModel.topP)
+            .maxRetries(chatModel.getMaxRetries())
+            .maxTokens(chatModel.getMaxTokens())
+            .temperature(chatModel.getTemperature())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .topP(chatModel.getTopP())
             .build();
     }
 
