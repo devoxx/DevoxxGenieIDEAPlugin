@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.0.14</h2>
+        <UL>
+            <LI>Bug fix : CircularQueue fix for first SystemMessage</LI>
+        </UL>
         <h2>V0.0.13</h2>
         <UL>
             <LI>Bug fix : chat memory context</LI>
