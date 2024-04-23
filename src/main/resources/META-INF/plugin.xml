@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.0.13</h2>
+        <UL>
+            <LI>Bug fix : chat memory context</LI>
+        </UL>
         <h2>V0.0.12</h2>
         <UL>
             <LI>Added chat memory (default 10 messages)</LI>
