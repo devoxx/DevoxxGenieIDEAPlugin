@@ -1,10 +1,15 @@
 package com.devoxx.genie.ui.component;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
+@Setter
+@Getter
 public class PlaceholderTextArea extends JTextArea {
 
     private String placeholder;
@@ -12,14 +17,6 @@ public class PlaceholderTextArea extends JTextArea {
     public PlaceholderTextArea(int rows, int columns) {
         super(rows, columns);
         this.addFocusListener(new FocusAdapter());
-    }
-
-    public void setPlaceholder(String placeholder) {
-        this.placeholder = placeholder;
-    }
-
-    public String getPlaceholder() {
-        return this.placeholder;
     }
 
     @Override

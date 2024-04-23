@@ -2,7 +2,6 @@ package com.devoxx.genie.chatmodel.ollama;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -20,7 +19,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(ChatModel chatModel) {
         return OllamaChatModel.builder()
-            .baseUrl(getBaseUrlByType(ModelProvider.Ollama))
+            .baseUrl(chatModel.getBaseUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())

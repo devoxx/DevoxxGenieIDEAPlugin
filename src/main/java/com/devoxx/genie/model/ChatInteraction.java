@@ -1,5 +1,10 @@
 package com.devoxx.genie.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class ChatInteraction {
     private String llmProvider;
     private String modelName;
@@ -13,38 +18,6 @@ public class ChatInteraction {
         this.llmProvider = llmProvider;
         this.modelName = modelName;
         this.question = question;
-        this.response = response;
-    }
-
-    public String getLlmProvider() {
-        return llmProvider;
-    }
-
-    public void setLlmProvider(String llmProvider) {
-        this.llmProvider = llmProvider;
-    }
-
-    public String getModelName() {
-        return modelName;
-    }
-
-    public void setModelName(String modelName) {
-        this.modelName = modelName;
-    }
-
-    public String getQuestion() {
-        return question;
-    }
-
-    public void setQuestion(String question) {
-        this.question = question;
-    }
-
-    public String getResponse() {
-        return response;
-    }
-
-    public void setResponse(String response) {
         this.response = response;
     }
 }
