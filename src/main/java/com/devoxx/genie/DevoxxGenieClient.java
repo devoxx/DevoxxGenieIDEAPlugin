@@ -167,10 +167,10 @@ public class DevoxxGenieClient {
         if (chatMessages.isEmpty()) {
             chatMessages.add(new SystemMessage(
                 YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN + language + PROGRAMMING_LANGUAGE +
-                    "Always return the response in Markdown." +
-                    "\n\nSelected code: " + selectedText));
+                    "Always return the response in Markdown."));
         }
 
+        userPrompt = userPrompt + "\n\nSelected code: " + selectedText;
         chatMessages.add(new UserMessage(userPrompt));
 
         try {
