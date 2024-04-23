@@ -112,19 +112,19 @@
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </applicationListeners>
 
-    <actions>
-        <group id="MyPluginActions"
-               text="My Plugin"
-               description="Sample Plugin Actions">
-            <action id="com.devoxx.genie.actions.AddToContextAction"
-                    icon="/META-INF/pluginIcon.svg"
-                    class="com.devoxx.genie.actions.AddToContextAction"
-                    text="Add To Context Window"
-                    description="Add the selected text to the context window">
-                <add-to-group group-id="EditorPopupMenu" anchor="first" />
-            </action>
-        </group>
-    </actions>
+<!--    <actions>-->
+<!--        <group id="MyPluginActions"-->
+<!--               text="My Plugin"-->
+<!--               description="Sample Plugin Actions">-->
+<!--            <action id="com.devoxx.genie.actions.AddToContextAction"-->
+<!--                    icon="/META-INF/icons/pluginIcon.svg"-->
+<!--                    class="com.devoxx.genie.actions.AddToContextAction"-->
+<!--                    text="Add To Context Window"-->
+<!--                    description="Add the selected text to the context window">-->
+<!--                <add-to-group group-id="EditorPopupMenu" anchor="first" />-->
+<!--            </action>-->
+<!--        </group>-->
+<!--    </actions>-->
 
 <!-- Not used for now, experimental implementation -->
 <!--        <action id="com.devoxx.genie.action.AcceptAutocompleteAction"-->

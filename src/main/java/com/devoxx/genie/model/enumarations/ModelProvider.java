@@ -1,5 +1,8 @@
 package com.devoxx.genie.model.enumarations;
 
+import lombok.Getter;
+
+@Getter
 public enum ModelProvider {
     Ollama("Ollama"),
     LMStudio("LMStudio"),
@@ -10,13 +13,10 @@ public enum ModelProvider {
     Groq("Groq"),
     DeepInfra("DeepInfra");
 
-    private String name;
+    private final String name;
 
     ModelProvider(String name) {
         this.name = name;
     }
 
-    public String getName() {
-        return name;
-    }
 }

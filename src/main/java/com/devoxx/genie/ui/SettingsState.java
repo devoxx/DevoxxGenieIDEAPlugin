@@ -9,8 +9,12 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+@Getter
+@Setter
 @Service
 @State(name = "com.devoxx.genie.ui.SettingsState", storages = @Storage("DevoxxGenieSettingsPlugin.xml"))
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
@@ -37,6 +41,7 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     // LLM settings
     @OptionTag(converter = DoubleConverter.class)
     private Double temperature = Constant.TEMPERATURE;
+
     @OptionTag(converter = DoubleConverter.class)
     private Double topP = Constant.TOP_P;
 
@@ -56,149 +61,5 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     @Override
     public void loadState(@NotNull SettingsState state) {
         XmlSerializerUtil.copyBean(state, this);
-    }
-
-    public String getOllamaModelUrl() {
-        return ollamaModelUrl;
-    }
-
-    public void setOllamaModelUrl(String ollamaModelUrl) {
-        this.ollamaModelUrl = ollamaModelUrl;
-    }
-
-    public String getLmstudioModelUrl() {
-        return lmstudioModelUrl;
-    }
-
-    public void setLmstudioModelUrl(String lmstudioModelUrl) {
-        this.lmstudioModelUrl = lmstudioModelUrl;
-    }
-
-    public String getGpt4allModelUrl() {
-        return gpt4allModelUrl;
-    }
-
-    public void setGpt4allModelUrl(String gpt4allModelUrl) {
-        this.gpt4allModelUrl = gpt4allModelUrl;
-    }
-
-    public Double getTemperature() {
-        return temperature;
-    }
-
-    public void setTemperature(Double temperature) {
-        this.temperature = temperature;
-    }
-
-    public Double getTopP() {
-        return topP;
-    }
-
-    public void setTopP(Double topP) {
-        this.topP = topP;
-    }
-
-    public Integer getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(Integer timeout) {
-        this.timeout = timeout;
-    }
-
-    public Integer getMaxRetries() {
-        return maxRetries;
-    }
-
-    public void setMaxRetries(Integer maxRetries) {
-        this.maxRetries = maxRetries;
-    }
-
-    public String getTestPrompt() {
-        return testPrompt;
-    }
-
-    public void setTestPrompt(String testPrompt) {
-        this.testPrompt = testPrompt;
-    }
-
-    public String getReviewPrompt() {
-        return reviewPrompt;
-    }
-
-    public void setReviewPrompt(String reviewPrompt) {
-        this.reviewPrompt = reviewPrompt;
-    }
-
-    public String getExplainPrompt() {
-        return explainPrompt;
-    }
-
-    public void setExplainPrompt(String explainPrompt) {
-        this.explainPrompt = explainPrompt;
-    }
-
-    public String getCustomPrompt() {
-        return customPrompt;
-    }
-
-    public void setCustomPrompt(String customPrompt) {
-        this.customPrompt = customPrompt;
-    }
-
-    public String getOpenAIKey() {
-        return openAIKey;
-    }
-
-    public void setOpenAIKey(String openAIKey) {
-        this.openAIKey = openAIKey;
-    }
-
-    public String getMistralKey() {
-        return mistralKey;
-    }
-
-    public void setMistralKey(String mistralKey) {
-        this.mistralKey = mistralKey;
-    }
-
-    public String getAnthropicKey() {
-        return anthropicKey;
-    }
-
-    public void setAnthropicKey(String anthropicKey) {
-        this.anthropicKey = anthropicKey;
-    }
-
-    public String getGroqKey() {
-        return groqKey;
-    }
-
-    public void setGroqKey(String groqKey) {
-        this.groqKey = groqKey;
-    }
-
-    public String getFireworksKey() {
-        return fireworksKey;
-    }
-
-    public void setFireworksKey(String fireworksKey) {
-        this.fireworksKey = fireworksKey;
-    }
-
-    public String getDeepInfraKey() {
-        return deepInfraKey;
-    }
-
-    public void setDeepInfraKey(String deepInfraKey) {
-        this.deepInfraKey = deepInfraKey;
-    }
-
-    public Integer getMaxMemory() {
-        return maxMemory;
-    }
-
-    public void setMaxMemory(Integer maxMemory) {
-        this.maxMemory = maxMemory;
     }
 }

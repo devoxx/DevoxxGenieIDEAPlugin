@@ -27,7 +27,8 @@ public class OllamaService {
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
 
-            // Assuming your JSON root object contains a List<String> of models
+            assert response.body() != null;
+
             OllamaModelDTO ollamaModelDTO = new Gson().fromJson(response.body().string(), OllamaModelDTO.class);
             if (ollamaModelDTO != null && ollamaModelDTO.getModels() != null) {
                 return ollamaModelDTO.getModels();

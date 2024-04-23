@@ -6,8 +6,8 @@ import java.util.List;
 
 public class CircularQueue<E> {
 
-    private ArrayDeque<E> deque;
-    private int maxSize;
+    private final ArrayDeque<E> deque;
+    private final int maxSize;
 
     public CircularQueue(int maxSize) {
         this.maxSize = maxSize;

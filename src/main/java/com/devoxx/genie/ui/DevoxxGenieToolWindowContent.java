@@ -10,8 +10,11 @@ import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatInteraction;
 import com.devoxx.genie.model.LanguageTextPair;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.ChatHistoryObserver;
 import com.devoxx.genie.service.ChatMessageHistoryService;
+import com.devoxx.genie.ui.component.ContextPopupMenu;
+import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.util.*;
 import com.intellij.openapi.editor.Editor;
@@ -21,8 +24,11 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.popup.JBPopup;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
+import lombok.Getter;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -30,10 +36,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.ui.CommandHandler.*;
+import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 
 /**
  * The Devoxx Genie Tool Window Content.
@@ -42,6 +50,8 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
                                                      ChatHistoryObserver,
                                                      SettingsChangeListener {
 
+    private static final GenieLogger log = new GenieLogger(DevoxxGenieToolWindowContent.class);
+
     public static final String WORKING_MESSAGE = "working.message";
 
     private final Project project;
@@ -49,17 +59,20 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     private final DevoxxGenieClient genieClient = DevoxxGenieClient.getInstance();
     private final ChatMessageHistoryService chatMessageHistoryService = new ChatMessageHistoryService();
     private final FileEditorManager fileEditorManager;
+    @Getter
     private final JPanel contentPanel = new JPanel();
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
     private final ComboBox<String> modelNameComboBox = new ComboBox<>();
-    private final JButton submitBtn = new JButton(resourceBundle.getString("btn.submit.label"));
-    private final JButton clearBtn = new JButton(resourceBundle.getString("btn.clear.label"));
     private final JButton previousInteractionBtn = new JButton("<");
     private final JButton nextInteractionBtn = new JButton(">");
     private final JButton configBtn = new JButton("＋");
-    private final JLabel chatCounterLabel = new JLabel();
+
     private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
     private final JEditorPane promptOutputArea = new JEditorPane("text/html", WelcomeUtil.getWelcomeText(resourceBundle));
+
+    private final JButton historyBtn = new JButton(ClockIcon);
+    private final JButton submitBtn = new JHoverButton(SubmitIcon);
+    private final JButton addContextBtn = new JButton(PlusIcon);
 
     private final CommandHandler commandHandler = new CommandHandler(this);
 
@@ -75,7 +88,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
 
         chatMessageHistoryService.addObserver(this);
 
-        updateActionButtonStates();
+//        updateActionButtonStates();
         addLLMProvidersToComboBox();
         handleModelProviderSelectionChange();
     }
@@ -119,6 +132,9 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     private JPanel createSelectionPanel() {
         JPanel toolPanel = new JPanel();
         toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
+
+//        toolBar.add(historyBtn);
+//        providerPanel.add(toolBar, BorderLayout.NORTH);
 
         JPanel providerPanel = new JPanel();
         providerPanel.setLayout(new BorderLayout());
@@ -174,26 +190,20 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         promptInputArea.setWrapStyleWord(true);
         promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        previousInteractionBtn.setToolTipText("Show previous chat response");
-        nextInteractionBtn.setToolTipText("Show next chat response");
-        clearBtn.setToolTipText("Clear chat history");
-
-        JPanel nextPrevPanel = new JPanel();
-        nextPrevPanel.add(previousInteractionBtn);
-        nextPrevPanel.add(nextInteractionBtn);
-        nextPrevPanel.add(chatCounterLabel);
+        addContextBtn.setToolTipText("Add context to the prompt");
+        submitBtn.setToolTipText("Submit the prompt");
+        submitBtn.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(submitBtn, BorderLayout.WEST);
-        buttonPanel.add(nextPrevPanel, BorderLayout.CENTER);
-        buttonPanel.add(clearBtn, BorderLayout.EAST);
+        buttonPanel.add(addContextBtn, BorderLayout.EAST);
 
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
 
         submitBtn.addActionListener(e -> onSubmit());
-        clearBtn.addActionListener(e -> clearInputOutputArea());
+        addContextBtn.addActionListener(e -> addCodeToPromptContext());
         previousInteractionBtn.addActionListener(e -> chatMessageHistoryService.setPreviousMessage());
         nextInteractionBtn.addActionListener(e -> chatMessageHistoryService.setNextMessage());
 
@@ -201,13 +211,20 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     }
 
     /**
-     * Clear the input and output areas.
+     * Add code to the prompt context.
      */
-    private void clearInputOutputArea() {
-        promptOutputArea.setText(WelcomeUtil.getWelcomeText(resourceBundle));
-        promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
-        chatMessageHistoryService.clearHistory();
-        updateActionButtonStates();
+    private void addCodeToPromptContext() {
+        // TODO Show list of open files and allow user to select one or more to add to the prompt context
+        JBPopup popup = JBPopupFactory.getInstance().createPopupChooserBuilder(List.of("File1", "File2"))
+            .setTitle("Select Files To Add To Prompt Context")
+            .setItemChosenCallback(selectedItem -> promptInputArea.append("\n\n" + selectedItem))
+            .createPopup();
+
+        if (addContextBtn.isShowing()) {
+            new ContextPopupMenu().show(submitBtn, popup);
+        } else {
+            System.out.println("addContextBtn is not visible or not properly initialized.");
+        }
     }
 
     /**
@@ -223,9 +240,19 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     private void onSubmit() {
 
         String prompt = promptInputArea.getText();
+
         if (prompt.isEmpty()) {
+            log.info("No prompt entered");
             return;
         }
+
+        Editor editor = fileEditorManager.getSelectedTextEditor();
+        if (editor == null) {
+            log.info("No editor selected");
+            NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
+            return;
+        }
+
         disableButtons();
 
         promptOutputArea.setText(WorkingMessage.getWorkingMessage());
@@ -276,27 +303,26 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
      */
     @Override
     public void executePrompt(String command, String userPrompt) {
-        Editor editor = fileEditorManager.getSelectedTextEditor();
-        if (editor != null) {
-            LanguageTextPair languageAndText = EditorUtil.getEditorLanguageAndText(editor);
-            new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
+        new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
 
-                @Override
-                public void run(@NotNull ProgressIndicator progressIndicator) {
-                    String response = genieClient.executeGeniePrompt(userPrompt,
-                        languageAndText.getLanguage(),
-                        languageAndText.getText());
-                    String htmlResponse = updateUIWithResponse(response);
-
-                    chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
-                        modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
-                        command.isEmpty() ? userPrompt : command,
-                        htmlResponse);
+            @Override
+            public void run(@NotNull ProgressIndicator progressIndicator) {
+                Editor editor = fileEditorManager.getSelectedTextEditor();
+                if (editor == null) {
+                    NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
+                    return;
                 }
-            }.queue();
-        } else {
-            NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
-        }
+                LanguageTextPair languageAndText = EditorUtil.getEditorLanguageAndText(editor);
+
+                String response = genieClient.executeGeniePrompt(userPrompt, languageAndText);
+                String htmlResponse = updateUIWithResponse(response);
+
+                chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
+                    modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
+                    command.isEmpty() ? userPrompt : command,
+                    htmlResponse);
+            }
+        }.queue();
     }
 
     /**
@@ -368,10 +394,6 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         }
     }
 
-    public JPanel getContentPanel() {
-        return contentPanel;
-    }
-
     /**
      * Update the chat history.
      * @param currentIndex the current index
@@ -382,22 +404,22 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         ChatInteraction currentInteraction = chatMessageHistoryService.getCurrentChatInteraction();
         promptInputArea.setText(currentInteraction.getQuestion());
         promptOutputArea.setText(currentInteraction.getResponse());
-        updateActionButtonStates();
+//        updateActionButtonStates();
     }
 
-    /**
-     * Update the action button states: prev/next and clear buttons.
-     */
-    private void updateActionButtonStates() {
-        int chatIndex = chatMessageHistoryService.getChatIndex();
-        int chatHistorySize = chatMessageHistoryService.getChatHistorySize();
-        nextInteractionBtn.setEnabled(chatIndex < chatHistorySize - 1);
-        previousInteractionBtn.setEnabled(chatIndex > 0);
-        clearBtn.setEnabled(chatHistorySize > 1);
-        if (chatHistorySize > 1) {
-            chatCounterLabel.setText(String.format("%d/%d", (chatIndex + 1), chatHistorySize));
-        } else {
-            chatCounterLabel.setText("");
-        }
-    }
+//    /**
+//     * Update the action button states: prev/next and clear buttons.
+//     */
+//    private void updateActionButtonStates() {
+//        int chatIndex = chatMessageHistoryService.getChatIndex();
+//        int chatHistorySize = chatMessageHistoryService.getChatHistorySize();
+//        nextInteractionBtn.setEnabled(chatIndex < chatHistorySize - 1);
+//        previousInteractionBtn.setEnabled(chatIndex > 0);
+//        addContextBtn.setEnabled(chatHistorySize > 1);
+//        if (chatHistorySize > 1) {
+//            chatCounterLabel.setText(String.format("%d/%d", (chatIndex + 1), chatHistorySize));
+//        } else {
+//            chatCounterLabel.setText("");
+//        }
+//    }
 }
