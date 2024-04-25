@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.component;
 
-import com.devoxx.genie.ui.util.DevoxxGenieIcons;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
@@ -11,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.closeSmalllIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CloseSmalllIcon;
 
 public class JFileEntryComponent extends JPanel {
 
@@ -26,7 +25,7 @@ public class JFileEntryComponent extends JPanel {
         );
         fileNameBtn.addActionListener(e -> FileEditorManager.getInstance(project).openFile(virtualFile, true));
 
-        JButton removeBtn = createButton(new JHoverButton(closeSmalllIcon, true));
+        JButton removeBtn = createButton(new JHoverButton(CloseSmalllIcon, true));
         removeBtn.addActionListener(e -> fileRemoveListener.onFileRemoved(virtualFile));
     }
 

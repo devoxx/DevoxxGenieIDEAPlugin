@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.util;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.IconLoader;
 
 import javax.swing.*;
@@ -13,9 +12,8 @@ public final class DevoxxGenieIcons {
     public static final Icon AddFileIcon = load("/icons/addNewFile.svg");
     public static final Icon SubmitIcon = load("/icons/paperPlane.svg");
     public static final Icon TrashIcon = load("/icons/trash.svg");
-    public static final Icon DeleteIcon = load("/icons/delete.svg");
-    public static final Icon closeSmalllIcon = load("/icons/closeSmall_dark.svg");
-
+    public static final Icon CloseSmalllIcon = load("/icons/closeSmall_dark.svg");
+    public static final Icon StopIcon = load("/icons/stop.svg");
     private DevoxxGenieIcons() {
     }
 

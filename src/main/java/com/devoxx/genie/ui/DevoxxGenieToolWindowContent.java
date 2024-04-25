@@ -17,6 +17,7 @@ import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputComponent;
 import com.devoxx.genie.ui.util.*;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -51,6 +52,7 @@ import java.util.ResourceBundle;
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.ui.CommandHandler.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
+import static javax.swing.SwingUtilities.invokeLater;
 
 /**
  * The Devoxx Genie Tool Window Content.
@@ -116,6 +118,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         Splitter splitter = new Splitter(true);
         splitter.setFirstComponent(createOutputPanel());
         splitter.setSecondComponent(createInputPanel());
+        splitter.setProportion(0.7f);
 
         // Add the splitter to the contentPanel
         contentPanel.add(splitter, BorderLayout.CENTER);
@@ -163,8 +166,10 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         conversationPanel.add(newConversationLabel);
 
         JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        conversationButtonPanel.add(historyBtn);
-        conversationButtonPanel.add(newConversationBtn);
+
+        // TODO - Implement chat history and new conversation
+        // conversationButtonPanel.add(historyBtn);
+        // conversationButtonPanel.add(newConversationBtn);
         conversationButtonPanel.add(configBtn);
 
         historyBtn.setToolTipText("Show chat history");
@@ -253,26 +258,28 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         }
 
         // Add listener to enable addFileBtn when files are opened in the IDEA Editor
-        fileEditorManager.addFileEditorManagerListener(new FileEditorManagerListener() {
-            @Override
-            public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                addFileBtn.setEnabled(true);
-            }
-
-            @Override
-            public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                if (fileEditorManager.getSelectedFiles().length == 0) {
-                    addFileBtn.setEnabled(false);
-                    addFileBtn.setToolTipText("No files open in the editor");
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
+                @Override
+                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    addFileBtn.setEnabled(true);
+                    addFileBtn.setToolTipText("Select file(s) for prompt context");
                 }
-            }
-        });
+
+                @Override
+                public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    if (fileEditorManager.getSelectedFiles().length == 0) {
+                        addFileBtn.setEnabled(false);
+                        addFileBtn.setToolTipText("No files open in the editor");
+                    }
+                }
+            });
 
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
 
-        submitBtn.addActionListener(e -> onSubmit());
+        submitBtn.addActionListener(e -> onSubmitPrompt());
         addFileBtn.addActionListener(e -> selectFilesForPromptContext());
 
         return submitPanel;
@@ -284,7 +291,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     private void selectFilesForPromptContext() {
         JBPopup popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project), null)
-            .setTitle("File Selector For Prompt Context")
+            .setTitle("Double-Click To Add To Prompt Context")
             .setRequestFocus(true)
             .setResizable(true)
             .setMovable(false)
@@ -310,7 +317,8 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     /**
      * Submit the user prompt.
      */
-    private void onSubmit() {
+    private void onSubmitPrompt() {
+        invokeLater(() -> submitBtn.setIcon(StopIcon));
 
         String prompt = promptInputArea.getText();
 
@@ -328,13 +336,15 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
 
         disableButtons();
 
-        promptOutputArea.setText(WorkingMessage.getWorkingMessage());
-
-        if (executeCommand(prompt)) return;
-
         Task.Backgroundable task = new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
+                promptOutputArea.setText(WorkingMessage.getWorkingMessage());
+
+                if (executeCommand(prompt.trim())) {
+                    return;
+                }
+
                 progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
                 executePrompt("", promptInputArea.getText());
             }
@@ -389,37 +399,57 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
                     return;
                 }
 
-                LanguageTextPair languageAndText;
-                if (files.isEmpty()) {
-                    languageAndText = EditorUtil.getEditorLanguageAndText(editor);
-                } else {
-                    StringBuilder fileContent = new StringBuilder();
-                    // Read files content and add to languageTextPair
-                    FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-
-                    files.forEach(file -> {
-                        Document document = fileDocumentManager.getDocument(file);
-                        if (document != null) {
-                            fileContent.append("Filename: ").append(file.getName()).append("\n");
-                            String content = document.getText();
-                            fileContent.append(content).append("\n");
-                        } else {
-                            // Handle the case where a document cannot be obtained for the VirtualFile
-                            NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
-                        }
-                    });
-                    languageAndText = new LanguageTextPair(files.get(0).getExtension(), fileContent.toString());
-                }
-
-                String response = genieClient.executeGeniePrompt(userPrompt, languageAndText);
-                String htmlResponse = updateUIWithResponse(response);
-
-                chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
-                    modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
-                    command.isEmpty() ? userPrompt : command,
-                    htmlResponse);
+                LanguageTextPair languageAndText = getLanguageTextPair(files, editor);
+                executeGeniePromptAndStoreResponse(command, languageAndText, userPrompt);
             }
         }.queue();
+    }
+
+    /**
+     * Get the language and text based on selected files or editor.
+     * @param files the files
+     * @param editor the editor
+     * @return the language and text pair
+     */
+    private LanguageTextPair getLanguageTextPair(List<VirtualFile> files,
+                                                 Editor editor) {
+        if (files.isEmpty()) {
+            return EditorUtil.getEditorLanguageAndText(editor);
+        } else {
+            StringBuilder fileContent = new StringBuilder();
+            FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+
+            files.forEach(file -> {
+                Document document = fileDocumentManager.getDocument(file);
+                if (document != null) {
+                    fileContent.append("Filename: ").append(file.getName()).append("\n");
+                    String content = document.getText();
+                    fileContent.append(content).append("\n");
+                } else {
+                    NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
+                }
+            });
+            return new LanguageTextPair(files.get(0).getExtension(), fileContent.toString());
+        }
+    }
+
+    /**
+     * Execute the Genie prompt and store the response.
+     * @param command the command
+     * @param languageAndText the language and text
+     * @param userPrompt the user prompt
+     */
+    private void executeGeniePromptAndStoreResponse(String command,
+                                                    LanguageTextPair languageAndText,
+                                                    String userPrompt) {
+        String response = genieClient.executeGeniePrompt(userPrompt, languageAndText);
+        String htmlResponse = updateUIWithResponse(response);
+        invokeLater(() -> submitBtn.setIcon(SubmitIcon));
+
+        chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
+            modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
+            command.isEmpty() ? userPrompt : command,
+            htmlResponse);
     }
 
     /**
