@@ -3,6 +3,8 @@ package com.devoxx.genie.model;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Setter
 @Getter
 public class ChatInteraction {
@@ -10,6 +12,7 @@ public class ChatInteraction {
     private String modelName;
     private String question;
     private String response;
+    private Instant createdOn = Instant.now();
 
     public ChatInteraction(String llmProvider,
                            String modelName,

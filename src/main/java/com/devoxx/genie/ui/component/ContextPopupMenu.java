@@ -11,7 +11,10 @@ import java.awt.*;
 
 public class ContextPopupMenu {
 
-    public void show(@NotNull JComponent component, @NotNull JBPopup popup) {
+    public void show(@NotNull JComponent component,
+                     @NotNull JBPopup popup,
+                     Integer width,
+                     Integer offset) {
         if (!component.isShowing()) {
             return;
         }
@@ -23,7 +26,10 @@ public class ContextPopupMenu {
             public void beforeShown(@NotNull LightweightWindowEvent event) {
                 JBPopup popup = event.asPopup();
                 Point point = new Point(popup.getLocationOnScreen());
-                point.y = northWest.getScreenPoint().y - popup.getSize().height;
+                point.y = offset - popup.getSize().height;
+                Dimension dimension = new Dimension(width, popup.getSize().height);
+                popup.setSize(dimension);
+                popup.setMinimumSize(dimension);
                 popup.setLocation(point);
             }
         });

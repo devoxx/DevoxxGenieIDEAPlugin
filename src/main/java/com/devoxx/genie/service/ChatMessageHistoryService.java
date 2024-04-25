@@ -9,6 +9,7 @@ import java.util.List;
 public class ChatMessageHistoryService {
 
     private final List<ChatHistoryObserver> observers = new ArrayList<>();
+    @Getter
     private final List<ChatInteraction> chatHistory = new ArrayList<>();
     @Getter
     private int chatIndex = -1;
@@ -28,17 +29,6 @@ public class ChatMessageHistoryService {
             chatIndex--;
             notifyHistoryUpdated();  // Observer pattern implementation
         }
-    }
-
-    public void setNextMessage() {
-        if (chatIndex < chatHistory.size() - 1) {
-            chatIndex++;
-            notifyHistoryUpdated();
-        }
-    }
-
-    public int getChatHistorySize() {
-        return chatHistory.size();
     }
 
     public ChatInteraction getCurrentChatInteraction() {

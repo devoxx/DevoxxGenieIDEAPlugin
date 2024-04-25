@@ -27,6 +27,7 @@ class OllamaChatModelFactoryTest {
             // Create a dummy ChatModel
             ChatModel chatModel = new ChatModel();
             chatModel.setModelName("ollama");
+            chatModel.setBaseUrl("http://localhost:8080");
 
             // Call the method
             ChatLanguageModel result = factory.createChatModel(chatModel);
