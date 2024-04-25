@@ -14,8 +14,8 @@ public class PlaceholderTextArea extends JTextArea {
 
     private String placeholder;
 
-    public PlaceholderTextArea(int rows, int columns) {
-        super(rows, columns);
+    public PlaceholderTextArea() {
+        super();
         this.addFocusListener(new FocusAdapter());
     }
 
