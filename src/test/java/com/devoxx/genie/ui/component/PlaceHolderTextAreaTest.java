@@ -8,7 +8,7 @@ class PlaceHolderTextAreaTest {
 
     @Test
     void testPlaceholderTextArea() {
-         PlaceholderTextArea placeholderTextArea = new PlaceholderTextArea(1, 1);
+         PlaceholderTextArea placeholderTextArea = new PlaceholderTextArea();
          placeholderTextArea.setPlaceholder("Test");
 
          assertTrue(placeholderTextArea.getPlaceholder().equals("Test"));
