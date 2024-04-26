@@ -14,6 +14,10 @@ public final class DevoxxGenieIcons {
     public static final Icon TrashIcon = load("/icons/trash.svg");
     public static final Icon CloseSmalllIcon = load("/icons/closeSmall_dark.svg");
     public static final Icon StopIcon = load("/icons/stop.svg");
+    public static final Icon InterfaceIcon = load("/icons/interface.svg");
+    public static final Icon EnumIcon = load("/icons/enum.svg");
+    public static final Icon ClassIcon = load("/icons/class.svg");
+
     private DevoxxGenieIcons() {
     }
 

@@ -9,9 +9,6 @@ public class LanguageTextPair {
     private String language;
     private String text;
 
-    public LanguageTextPair() {
-    }
-
     public LanguageTextPair(String language, String text) {
         this.language = language;
         this.text = text;

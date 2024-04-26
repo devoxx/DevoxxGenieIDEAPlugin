@@ -24,13 +24,13 @@ public class ContextPopupMenu {
         popup.addListener(new JBPopupListener() {
             @Override
             public void beforeShown(@NotNull LightweightWindowEvent event) {
-                JBPopup popup = event.asPopup();
-                Point point = new Point(popup.getLocationOnScreen());
-                point.y = offset - popup.getSize().height;
-                Dimension dimension = new Dimension(width, popup.getSize().height);
-                popup.setSize(dimension);
-                popup.setMinimumSize(dimension);
-                popup.setLocation(point);
+            JBPopup popup = event.asPopup();
+            Point point = new Point(popup.getLocationOnScreen());
+            point.y = offset - popup.getSize().height;
+            Dimension dimension = new Dimension(width, popup.getSize().height);
+            popup.setSize(dimension);
+            popup.setMinimumSize(dimension);
+            popup.setLocation(point);
             }
         });
 
