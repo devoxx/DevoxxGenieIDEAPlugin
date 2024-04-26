@@ -1,7 +1,8 @@
 package com.devoxx.genie.ui.component;
 
+import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.topic.FileSelectionListener;
+import com.devoxx.genie.ui.listener.FileSelectionListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
@@ -40,8 +41,8 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
         filesScrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
         filesScrollPane.setBorder(null);
         filesScrollPane.setMinimumSize(new Dimension(0, 60));
-        filesScrollPane.setPreferredSize(new Dimension(0, 60)); // Initially set to zero size
-        filesScrollPane.setVisible(false); // Initially invisible
+        filesScrollPane.setPreferredSize(new Dimension(0, 60));
+        filesScrollPane.setVisible(false);
     }
 
     private void updateFilesPanelVisibility() {

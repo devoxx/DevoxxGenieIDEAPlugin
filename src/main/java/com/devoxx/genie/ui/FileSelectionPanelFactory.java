@@ -1,9 +1,7 @@
 package com.devoxx.genie.ui;
 
-import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.renderer.FileListCellRenderer;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.util.PartialNameFileFinderUtil;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -11,14 +9,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBus;
-import com.intellij.util.ui.UIUtil;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
 import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.util.Collection;
 
 /**
  * The factory class for creating a panel with a text field for filtering files and a list of open files

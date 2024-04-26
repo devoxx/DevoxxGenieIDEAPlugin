@@ -1,4 +1,4 @@
-package com.devoxx.genie;
+package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
@@ -9,71 +9,38 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.model.LanguageTextPair;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.SettingsState;
-import com.devoxx.genie.ui.util.CircularQueue;
 import com.intellij.ide.util.PropertiesComponent;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.output.Response;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.data.message.SystemMessage;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import static com.devoxx.genie.ui.Settings.*;
+import static com.devoxx.genie.ui.Settings.MODEL_PROVIDER;
 
-public class DevoxxGenieClient {
+@Setter
+public class ChatModelProvider {
 
-    private static final GenieLogger log = new GenieLogger(DevoxxGenieClient.class);
+    private static final GenieLogger log = new GenieLogger(ChatModelProvider.class);
 
-    public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
-        "You are a software developer with expert knowledge in ";
-    public static final String PROGRAMMING_LANGUAGE = " programming language.";
-    @Setter
     private ModelProvider modelProvider = getModelProvider(ModelProvider.Ollama.name());
-    @Setter
+
     private String modelName;
-    private CircularQueue<ChatMessage> chatMessages;
-
-    private DevoxxGenieClient() {
-        setChatMemorySize(SettingsState.getInstance().getMaxMemory());
-    }
-
-    private static final class InstanceHolder {
-        private static final DevoxxGenieClient instance = new DevoxxGenieClient();
-    }
-
-    public static DevoxxGenieClient getInstance() {
-        return InstanceHolder.instance;
-    }
 
     protected ModelProvider getModelProvider(String defaultValue) {
         String value = PropertiesComponent.getInstance().getValue(MODEL_PROVIDER, defaultValue);
         return ModelProvider.valueOf(value);
     }
 
-    public void setChatMemorySize(int memorySize) {
-        chatMessages = new CircularQueue<>(memorySize);
-    }
-
-    public int getChatMemorySize() {
-        return chatMessages.size();
-    }
-
     /**
      * Get the chat language model for selected model provider.
      * @return the chat language model
      */
-    private ChatLanguageModel getChatLanguageModel() {
+    public ChatLanguageModel getChatLanguageModel() {
         ChatModel chatModel = initChatModelSettings();
         SettingsState settings = SettingsState.getInstance();
         return switch (modelProvider) {
@@ -147,50 +114,5 @@ public class DevoxxGenieClient {
         } else {
             chatModel.setModelName(modelName);
         }
-    }
-
-    /**
-     * Execute the user prompt
-     * @param userPrompt the user prompt
-     * @param languageAndSelectedText the programming language and selected text
-     * @return the prompt
-     */
-    public String executeGeniePrompt(String userPrompt,
-                                     LanguageTextPair languageAndSelectedText) {
-        ChatLanguageModel chatLanguageModel = getChatLanguageModel();
-        if (chatMessages.isEmpty()) {
-            chatMessages.add(new SystemMessage(
-                YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN + languageAndSelectedText.getLanguage() + PROGRAMMING_LANGUAGE +
-                    "Always return the response in Markdown."));
-        }
-
-        userPrompt = userPrompt + "\n\nSelected code: " + languageAndSelectedText.getText();
-        chatMessages.add(new UserMessage(userPrompt));
-
-        try {
-            Response<AiMessage> generate = chatLanguageModel.generate(chatMessages.asList());
-            String response = generate.content().text();
-            chatMessages.add(new AiMessage(response));
-            return response;
-        } catch (Exception e) {
-            return "Failed to execute Genie prompt!\n" + e.getMessage();
-        }
-    }
-
-    /**
-     * EXPERIMENTAL : Execute continue prompt
-     * TODO : This is an experimental feature and may not work as expected.
-     * @param selectedText the selected text
-     * @return the prompt
-     */
-    public String executeGenieContinuePrompt(String selectedText) {
-        ChatLanguageModel chatLanguageModel = getChatLanguageModel();
-        List<ChatMessage> messages = new ArrayList<>();
-        messages.add(new dev.langchain4j.data.message.SystemMessage(
-            YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN + "JAVA" + PROGRAMMING_LANGUAGE +
-                "\n\nSelected code: " + selectedText));
-        messages.add(new UserMessage("Only return the code which finalises the code block."));
-        Response<AiMessage> generate = chatLanguageModel.generate(messages);
-        return generate.content().text();
     }
 }

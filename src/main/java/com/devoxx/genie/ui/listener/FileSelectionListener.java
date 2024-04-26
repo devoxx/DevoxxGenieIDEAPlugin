@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.topic;
+package com.devoxx.genie.ui.listener;
 
 import com.intellij.openapi.vfs.VirtualFile;
 

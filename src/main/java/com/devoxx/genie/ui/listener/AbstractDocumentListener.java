@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.listener;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;

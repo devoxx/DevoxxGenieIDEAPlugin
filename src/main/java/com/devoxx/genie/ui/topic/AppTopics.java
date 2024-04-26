@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.topic;
 
-import com.devoxx.genie.ui.SettingsChangeListener;
+import com.devoxx.genie.ui.listener.FileSelectionListener;
+import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.intellij.util.messages.Topic;
 
 public class AppTopics {
