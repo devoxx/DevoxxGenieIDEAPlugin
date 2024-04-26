@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.util;
 
+import dev.langchain4j.data.message.SystemMessage;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,15 @@ public class CircularQueue<E> {
 
     public void add(E e) {
         if (deque.size() == maxSize) {
-            deque.pollFirst();
+            // Check if the first element is a SystemMessage and skip its removal if so
+            if (deque.peekFirst() instanceof SystemMessage) {
+                // Remove the second element instead
+                E first = deque.pollFirst();
+                deque.pollFirst();
+                deque.offerFirst(first);
+            } else {
+                deque.pollFirst();
+            }
         }
         deque.offerLast(e);
     }
