@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.0.14"
+version = "0.0.15"
 
 repositories {
     mavenCentral()
@@ -19,6 +19,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-anthropic:0.30.0")
     implementation("dev.langchain4j:langchain4j-mistral-ai:0.30.0")
     implementation("org.commonmark:commonmark:0.22.0")
+
+    compileOnly("org.projectlombok:lombok:1.18.32")
+    annotationProcessor("org.projectlombok:lombok:1.18.32")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testImplementation("org.mockito:mockito-core:5.11.0")

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.DoubleConverter;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
@@ -8,6 +9,7 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.messages.MessageBus;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +22,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
@@ -110,12 +113,11 @@ public class Settings implements Configurable {
     private void setTitle(String title, JPanel settingsPanel, GridBagConstraints gbc) {
         JLabel titleLabel = new JLabel(title);
 
-        // Add vertical spacing above the title
-        gbc.insets = new Insets(10, 0, 10, 0); // Adjust the top inset as needed
+        gbc.insets = JBUI.insets(10, 0, 10, 0);
         settingsPanel.add(titleLabel, gbc);
 
         // Reset the insets for the next component
-        gbc.insets = new Insets(0, 0, 0, 0);
+        gbc.insets = JBUI.emptyInsets();
 
         // Add vertical spacing below the title
         gbc.weighty = 1.0; // Allow the empty space to expand vertically
@@ -190,7 +192,6 @@ public class Settings implements Configurable {
         btnApiKey.addActionListener(e -> {
             try {
                 BrowserUtil.open(url);
-                // Desktop.getDesktop().browse(java.net.URI.create(toolTipMsg));
             } catch (Exception ex) {
                 Project project = ProjectManager.getInstance().getOpenProjects()[0];
                 NotificationUtil.sendNotification(project, "Error: Unable to open the link");
@@ -249,81 +250,46 @@ public class Settings implements Configurable {
 
     @Override
     public void apply() {
-
         SettingsState settings = SettingsState.getInstance();
 
-        if (isFieldModified(ollamaUrlField, settings.getOllamaModelUrl())) {
-            settings.setOllamaModelUrl(ollamaUrlField.getText());
-        }
+        updateSettingIfModified(ollamaUrlField, settings.getOllamaModelUrl(), settings::setOllamaModelUrl);
+        updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
+        updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
+        updateSettingIfModified(temperatureField, doubleConverter.toString(settings.getTemperature()), value -> settings.setTemperature(doubleConverter.fromString(value)));
+        updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
+        updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
+        updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
+        updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
+        updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
+        updateSettingIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
+        updateSettingIfModified(customPromptField, settings.getCustomPrompt(), settings::setCustomPrompt);
+        updateSettingIfModified(openAiKeyField, settings.getOpenAIKey(), settings::setOpenAIKey);
+        updateSettingIfModified(mistralKeyField, settings.getMistralKey(), settings::setMistralKey);
+        updateSettingIfModified(anthropicKeyField, settings.getAnthropicKey(), settings::setAnthropicKey);
+        updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
+        updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
+        updateSettingIfModified(memoryField, settings.getMaxMemory(), value -> settings.setMaxMemory(safeCastToInteger(value)));
 
-        if (isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl())) {
-            settings.setLmstudioModelUrl(lmstudioUrlField.getText());
-        }
+        notifySettingsChanged();
+    }
 
-        if (isFieldModified(gpt4allUrlField, settings.getGpt4allModelUrl())) {
-            settings.setGpt4allModelUrl(gpt4allUrlField.getText());
+    public void updateSettingIfModified(JComponent field, Object currentValue, Consumer<String> updateAction) {
+        String newValue = extractStringValue(field); // You need to implement this method based on field type
+        if (newValue != null && !newValue.equals(currentValue)) {
+            updateAction.accept(newValue);
         }
+    }
 
-        if (isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())))) {
-            settings.setTemperature(doubleConverter.fromString(temperatureField.getText()));
+    private String extractStringValue(JComponent field) {
+        if (field instanceof JTextField jtextfield) {
+            return jtextfield.getText();
         }
+        return null;
+    }
 
-        if (isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())))) {
-            settings.setTopP(doubleConverter.fromString(topPField.getText()));
-        }
-
-        if (isFieldModified(timeoutField, settings.getTimeout())) {
-            settings.setTimeout(safeCastToInteger(timeoutField.getValue()));
-        }
-
-        if (isFieldModified(retryField, settings.getMaxRetries())) {
-            settings.setMaxRetries(safeCastToInteger(retryField.getValue()));
-        }
-
-        if (isFieldModified(testPromptField, settings.getTestPrompt())) {
-            settings.setTestPrompt(testPromptField.getText());
-        }
-
-        if (isFieldModified(explainPromptField, settings.getExplainPrompt())) {
-            settings.setExplainPrompt(explainPromptField.getText());
-        }
-
-        if (isFieldModified(reviewPromptField, settings.getReviewPrompt())) {
-            settings.setReviewPrompt(reviewPromptField.getText());
-        }
-
-        if (isFieldModified(customPromptField, settings.getCustomPrompt())) {
-            settings.setCustomPrompt(customPromptField.getText());
-        }
-
-        if (isFieldModified(openAiKeyField, settings.getOpenAIKey())) {
-            settings.setOpenAIKey(new String(openAiKeyField.getPassword()));
-        }
-
-        if (isFieldModified(mistralKeyField, settings.getMistralKey())) {
-            settings.setMistralKey(new String(mistralKeyField.getPassword()));
-        }
-
-        if (isFieldModified(anthropicKeyField, settings.getAnthropicKey())) {
-            settings.setAnthropicKey(new String(anthropicKeyField.getPassword()));
-        }
-
-        if (isFieldModified(groqKeyField, settings.getGroqKey())) {
-            settings.setGroqKey(new String(groqKeyField.getPassword()));
-        }
-
-        if (isFieldModified(deepInfraKeyField, settings.getDeepInfraKey())) {
-            settings.setDeepInfraKey(new String(deepInfraKeyField.getPassword()));
-        }
-
-        if (isFieldModified(memoryField, settings.getMaxMemory())) {
-            settings.setMaxMemory(safeCastToInteger(memoryField.getValue()));
-        }
-
-        // Now notify others
+    private void notifySettingsChanged() {
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
-        messageBus.syncPublisher(SettingsChangeListener.TOPIC).settingsChanged();
-
+        messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged();
     }
 
     @Override
@@ -365,8 +331,8 @@ public class Settings implements Configurable {
     }
 
     private Integer safeCastToInteger(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
+        if (value instanceof Number number) {
+            return number.intValue();
         }
         return 0;
     }

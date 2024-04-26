@@ -1,13 +1,10 @@
 package com.devoxx.genie.model.ollama;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class OllamaModelDTO {
     private OllamaModelEntryDTO[] models;
-
-    public OllamaModelEntryDTO[] getModels() {
-        return models;
-    }
-
-    public void setModels(OllamaModelEntryDTO[] models) {
-        this.models = models;
-    }
 }

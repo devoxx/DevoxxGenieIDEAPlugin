@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.ChatInteraction;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +9,9 @@ import java.util.List;
 public class ChatMessageHistoryService {
 
     private final List<ChatHistoryObserver> observers = new ArrayList<>();
+    @Getter
     private final List<ChatInteraction> chatHistory = new ArrayList<>();
+    @Getter
     private int chatIndex = -1;
 
     public void addObserver(ChatHistoryObserver observer) {
@@ -24,23 +27,8 @@ public class ChatMessageHistoryService {
     public void setPreviousMessage() {
         if (chatIndex > 0) {
             chatIndex--;
-            notifyHistoryUpdated();  // Observer pattern implementation
-        }
-    }
-
-    public void setNextMessage() {
-        if (chatIndex < chatHistory.size() - 1) {
-            chatIndex++;
             notifyHistoryUpdated();
         }
-    }
-
-    public int getChatIndex() {
-        return chatIndex;
-    }
-
-    public int getChatHistorySize() {
-        return chatHistory.size();
     }
 
     public ChatInteraction getCurrentChatInteraction() {
@@ -54,10 +42,5 @@ public class ChatMessageHistoryService {
         chatHistory.add(new ChatInteraction(llmProvider, modelName, question, response));
         chatIndex++;
         notifyHistoryUpdated();
-    }
-
-    public void clearHistory() {
-        chatHistory.clear();
-        chatIndex = -1;
     }
 }
