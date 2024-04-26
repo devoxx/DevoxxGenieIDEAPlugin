@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.util;
 
-import com.devoxx.genie.model.LanguageTextPair;
+import com.devoxx.genie.model.PromptContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class EditorUtil {
@@ -23,10 +24,10 @@ public class EditorUtil {
      * @param editor the editor
      * @return the language and text
      */
-    public static LanguageTextPair getEditorLanguageAndText(Editor editor) {
+    public static PromptContext getPromptContextFromEditor(String userPrompt, Editor editor) {
         String languageName = DEFAULT_LANGUAGE;
         Document document = editor.getDocument();
-        VirtualFile file = FileDocumentManager.getInstance().getFile(document);
+        VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(document);
 
         AtomicReference<String> selectedTextRef = new AtomicReference<>();
         ApplicationManager.getApplication().runReadAction(() ->
@@ -34,12 +35,14 @@ public class EditorUtil {
 
         String selectedText = selectedTextRef.get();
 
-        if (selectedText == null && file != null) {
-            FileType fileType = file.getFileType();
+        if (selectedText == null && virtualFile != null) {
+            FileType fileType = virtualFile.getFileType();
             languageName = fileType.getName();
             selectedText = document.getText();
+            return new PromptContext(userPrompt, languageName, selectedText, List.of(virtualFile));
         }
-
-        return new LanguageTextPair(languageName, selectedText);
+        else {
+            return new PromptContext(userPrompt, languageName, selectedText, List.of());
+        }
     }
 }

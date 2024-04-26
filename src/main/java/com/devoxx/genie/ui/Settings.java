@@ -47,7 +47,6 @@ public class Settings implements Configurable {
 
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
-    private JFormattedTextField memoryField;
 
     private JTextField testPromptField;
     private JTextField explainPromptField;
@@ -99,7 +98,6 @@ public class Settings implements Configurable {
         topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP(), "");
         timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout(), "");
         retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries(), "");
-        memoryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Messages to remember :", settings.getMaxMemory(), "Set the maximum number of previous chat messages to include in the context");
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
@@ -244,7 +242,6 @@ public class Settings implements Configurable {
         isModified |= isFieldModified(anthropicKeyField, settings.getAnthropicKey());
         isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
-        isModified |= isFieldModified(memoryField, settings.getMaxMemory());
         return isModified;
     }
 
@@ -268,7 +265,6 @@ public class Settings implements Configurable {
         updateSettingIfModified(anthropicKeyField, settings.getAnthropicKey(), settings::setAnthropicKey);
         updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
         updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
-        updateSettingIfModified(memoryField, settings.getMaxMemory(), value -> settings.setMaxMemory(safeCastToInteger(value)));
 
         notifySettingsChanged();
     }

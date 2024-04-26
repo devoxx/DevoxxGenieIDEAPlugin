@@ -1,13 +1,11 @@
 package com.devoxx.genie.ui.component;
 
+import com.devoxx.genie.ui.listener.PromptInputFocusListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.JBColor;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -19,42 +17,24 @@ public class PromptInputComponent extends JPanel {
     public PromptInputComponent(Project project) {
         super();
 
-        contextFilePanel = new PromptContextFileListPanel(project);
         setLayout(new BorderLayout());
-
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, getPreferredSize().height));
-
-        // The prompt input area
-        this.promptInputArea = new PlaceholderTextArea();
-        this.promptInputArea.setLineWrap(true);
-        this.promptInputArea.setWrapStyleWord(true);
-        this.promptInputArea.setRows(3);
-        this.promptInputArea.setAutoscrolls(false);
-        this.promptInputArea.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        this.add(promptInputArea, BorderLayout.CENTER);
+        setMaximumSize(new Dimension(0, getPreferredSize().height));
 
         ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-        this.promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        // Instead of adding filesPanel directly, add the JScrollPane
+        // The prompt input area
+        promptInputArea = new PlaceholderTextArea();
+        promptInputArea.setLineWrap(true);
+        promptInputArea.setWrapStyleWord(true);
+        promptInputArea.setRows(3);
+        promptInputArea.setAutoscrolls(false);
+        promptInputArea.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        promptInputArea.addFocusListener(new PromptInputFocusListener(promptInputArea));
+        promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
+        this.add(promptInputArea, BorderLayout.CENTER);
+
+        contextFilePanel = new PromptContextFileListPanel(project);
         this.add(contextFilePanel, BorderLayout.NORTH);
-
-        promptInputArea.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                promptInputArea.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new JBColor(new Color(37, 150, 190), new Color(37, 150, 190))),
-                    BorderFactory.createEmptyBorder(5, 5, 5, 5)
-                ));
-
-                promptInputArea.requestFocusInWindow();
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                promptInputArea.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            }
-        });
     }
 
     public List<VirtualFile> getFiles() {
