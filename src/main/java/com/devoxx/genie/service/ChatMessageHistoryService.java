@@ -27,7 +27,7 @@ public class ChatMessageHistoryService {
     public void setPreviousMessage() {
         if (chatIndex > 0) {
             chatIndex--;
-            notifyHistoryUpdated();  // Observer pattern implementation
+            notifyHistoryUpdated();
         }
     }
 

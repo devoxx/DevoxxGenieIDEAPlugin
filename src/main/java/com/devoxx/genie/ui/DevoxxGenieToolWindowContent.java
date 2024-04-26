@@ -48,6 +48,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.ui.CommandHandler.*;
@@ -400,7 +401,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
                 }
 
                 LanguageTextPair languageAndText = getLanguageTextPair(files, editor);
-                executeGeniePromptAndStoreResponse(command, languageAndText, userPrompt);
+                executeGeniePromptAndStoreResponse(command, files, languageAndText, userPrompt);
             }
         }.queue();
     }
@@ -419,7 +420,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
             StringBuilder fileContent = new StringBuilder();
             FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
-            files.forEach(file -> {
+            files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
                 Document document = fileDocumentManager.getDocument(file);
                 if (document != null) {
                     fileContent.append("Filename: ").append(file.getName()).append("\n");
@@ -428,7 +429,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
                 } else {
                     NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
                 }
-            });
+            }));
             return new LanguageTextPair(files.get(0).getExtension(), fileContent.toString());
         }
     }
@@ -436,14 +437,16 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     /**
      * Execute the Genie prompt and store the response.
      * @param command the command
+     * @param files the files used for the prompt
      * @param languageAndText the language and text
      * @param userPrompt the user prompt
      */
     private void executeGeniePromptAndStoreResponse(String command,
+                                                    List<VirtualFile> files,
                                                     LanguageTextPair languageAndText,
                                                     String userPrompt) {
         String response = genieClient.executeGeniePrompt(userPrompt, languageAndText);
-        String htmlResponse = updateUIWithResponse(response);
+        String htmlResponse = updateUIWithResponse(response, files);
         invokeLater(() -> submitBtn.setIcon(SubmitIcon));
 
         chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
@@ -457,9 +460,11 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
      * @param response the response
      * @return the markdown text
      */
-    private String updateUIWithResponse(String response) {
+    private String updateUIWithResponse(String response, List<VirtualFile> files) {
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
+
+        response = addFilesContextInfo(response, files);
 
         Node document = parser.parse(response);
         String html = renderer.render(document);
@@ -468,6 +473,21 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         enableButtons();
 
         return html;
+    }
+
+    private String addFilesContextInfo(String response, List<VirtualFile> files) {
+        if (files != null && !files.isEmpty()) {
+            StringBuilder responseBuilder = new StringBuilder(response);
+            responseBuilder.append("\n\n**Files used for prompt context:**\n");
+
+            String fileNames = files.stream()
+                .map(VirtualFile::getName)
+                .collect(Collectors.joining("\n- ", "- ", ""));
+
+            responseBuilder.append(fileNames);
+            return responseBuilder.toString();
+        }
+        return response;
     }
 
     /**

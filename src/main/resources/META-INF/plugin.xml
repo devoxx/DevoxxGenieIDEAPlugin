@@ -34,7 +34,7 @@
     <change-notes><![CDATA[
         <h2>V0.0.15</h2>
         <UL>
-            <LI>Allow project source selection for prompt context</LI>
+            <LI>Allow project source selection for prompt RAG</LI>
         </UL>
          <h2>V0.0.14</h2>
         <UL>
@@ -98,6 +98,7 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
