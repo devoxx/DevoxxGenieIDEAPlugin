@@ -37,6 +37,7 @@ dependencies {
 intellij {
     version.set("2023.3.4")
     type.set("IC")
+    plugins.set(listOf("java"))
 }
 
 tasks {
