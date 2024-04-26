@@ -10,19 +10,31 @@ import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatInteraction;
 import com.devoxx.genie.model.LanguageTextPair;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.ChatHistoryObserver;
 import com.devoxx.genie.service.ChatMessageHistoryService;
-import com.devoxx.genie.ui.component.PlaceholderTextArea;
+import com.devoxx.genie.ui.component.ContextPopupMenu;
+import com.devoxx.genie.ui.component.JHoverButton;
+import com.devoxx.genie.ui.component.PromptInputComponent;
 import com.devoxx.genie.ui.util.*;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.Splitter;
+import com.intellij.openapi.ui.popup.JBPopup;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
+import lombok.Getter;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -30,10 +42,18 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.ui.CommandHandler.*;
+import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
+import static javax.swing.SwingUtilities.invokeLater;
 
 /**
  * The Devoxx Genie Tool Window Content.
@@ -42,6 +62,8 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
                                                      ChatHistoryObserver,
                                                      SettingsChangeListener {
 
+    private static final GenieLogger log = new GenieLogger(DevoxxGenieToolWindowContent.class);
+
     public static final String WORKING_MESSAGE = "working.message";
 
     private final Project project;
@@ -49,17 +71,21 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     private final DevoxxGenieClient genieClient = DevoxxGenieClient.getInstance();
     private final ChatMessageHistoryService chatMessageHistoryService = new ChatMessageHistoryService();
     private final FileEditorManager fileEditorManager;
+    @Getter
     private final JPanel contentPanel = new JPanel();
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
     private final ComboBox<String> modelNameComboBox = new ComboBox<>();
-    private final JButton submitBtn = new JButton(resourceBundle.getString("btn.submit.label"));
-    private final JButton clearBtn = new JButton(resourceBundle.getString("btn.clear.label"));
-    private final JButton previousInteractionBtn = new JButton("<");
-    private final JButton nextInteractionBtn = new JButton(">");
-    private final JButton configBtn = new JButton("＋");
-    private final JLabel chatCounterLabel = new JLabel();
-    private final PlaceholderTextArea promptInputArea = new PlaceholderTextArea(3, 80);
-    private final JEditorPane promptOutputArea = new JEditorPane("text/html", WelcomeUtil.getWelcomeText(resourceBundle));
+
+    private final PromptInputComponent promptInputArea;
+    private final JEditorPane promptOutputArea =
+        new JEditorPane("text/html", WelcomeUtil.getWelcomeText(resourceBundle));
+
+    private final JButton configBtn = new JHoverButton(CogIcon, true);
+    private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
+    private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
+    private final JButton historyBtn = new JHoverButton(ClockIcon, true);
+    private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
+    private final JButton deleteConversationBtn = new JHoverButton(TrashIcon);
 
     private final CommandHandler commandHandler = new CommandHandler(this);
 
@@ -70,21 +96,33 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     public DevoxxGenieToolWindowContent(ToolWindow toolWindow) {
         project = toolWindow.getProject();
         fileEditorManager = FileEditorManager.getInstance(project);
+        promptInputArea = new PromptInputComponent(project);
 
         setupUI();
 
         chatMessageHistoryService.addObserver(this);
 
-        updateActionButtonStates();
         addLLMProvidersToComboBox();
         handleModelProviderSelectionChange();
     }
 
     private void setupUI() {
-        contentPanel.setLayout(new BorderLayout(0, 10));
-        contentPanel.add(createSelectionPanel(), BorderLayout.NORTH);
-        contentPanel.add(createOutputPanel(), BorderLayout.CENTER);
-        contentPanel.add(createInputPanel(), BorderLayout.SOUTH);
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout());
+        topPanel.add(createSelectionPanel(), BorderLayout.NORTH);
+        topPanel.add(createConversationPanel(), BorderLayout.CENTER);
+
+        contentPanel.setLayout(new BorderLayout());
+        contentPanel.add(topPanel, BorderLayout.NORTH);
+
+        // Create a new Splitter
+        Splitter splitter = new Splitter(true);
+        splitter.setFirstComponent(createOutputPanel());
+        splitter.setSecondComponent(createInputPanel());
+        splitter.setProportion(0.7f);
+
+        // Add the splitter to the contentPanel
+        contentPanel.add(splitter, BorderLayout.CENTER);
     }
 
     /**
@@ -112,6 +150,45 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     }
 
     /**
+     * Create the conversation panel.
+     * @return the conversation panel
+     */
+    @NotNull
+    private JPanel createConversationPanel() {
+
+        JPanel conversationPanel = new JPanel();
+        conversationPanel.setPreferredSize(new Dimension(0, 30));
+        conversationPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        conversationPanel.setLayout(new GridLayout(1, 2));
+
+        JLabel newConversationLabel = new JLabel("New conversation " + getCurrentTimestamp());
+        newConversationLabel.setForeground(Color.GRAY);
+        newConversationLabel.setPreferredSize(new Dimension(0, 30));
+        conversationPanel.add(newConversationLabel);
+
+        JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+
+        // TODO - Implement chat history and new conversation
+        // conversationButtonPanel.add(historyBtn);
+        // conversationButtonPanel.add(newConversationBtn);
+        conversationButtonPanel.add(configBtn);
+
+        historyBtn.setToolTipText("Show chat history");
+        newConversationBtn.setToolTipText("Start a new conversation");
+        configBtn.setToolTipText("Plugin settings");
+
+        conversationPanel.add(conversationButtonPanel);
+
+        return conversationPanel;
+    }
+
+    private static @NotNull String getCurrentTimestamp() {
+        LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
+        return dateTime.format(formatter);
+    }
+
+    /**
      * Create the LLM and model name selection panel.
      * @return the selection panel
      */
@@ -120,9 +197,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         JPanel toolPanel = new JPanel();
         toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
 
-        JPanel providerPanel = new JPanel();
-        providerPanel.setLayout(new BorderLayout());
-        providerPanel.add(configBtn, BorderLayout.WEST);
+        JPanel providerPanel = new JPanel(new BorderLayout(), true);
         providerPanel.add(llmProvidersComboBox, BorderLayout.CENTER);
 
         toolPanel.add(providerPanel);
@@ -135,7 +210,7 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         configBtn.addActionListener(e -> showSettingsDialog());
         llmProvidersComboBox.addActionListener(e -> handleModelProviderSelectionChange());
         modelNameComboBox.addActionListener(e -> processModelNameSelection());
-
+        deleteConversationBtn.addActionListener(e -> chatMessageHistoryService.setPreviousMessage());
         return toolPanel;
     }
 
@@ -170,44 +245,67 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     @NotNull
     private JPanel createInputPanel() {
 
-        promptInputArea.setLineWrap(true);
-        promptInputArea.setWrapStyleWord(true);
-        promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
-
-        previousInteractionBtn.setToolTipText("Show previous chat response");
-        nextInteractionBtn.setToolTipText("Show next chat response");
-        clearBtn.setToolTipText("Clear chat history");
-
-        JPanel nextPrevPanel = new JPanel();
-        nextPrevPanel.add(previousInteractionBtn);
-        nextPrevPanel.add(nextInteractionBtn);
-        nextPrevPanel.add(chatCounterLabel);
+        addFileBtn.setToolTipText("Add file(s) to prompt context");
+        submitBtn.setToolTipText("Submit the prompt");
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(submitBtn, BorderLayout.WEST);
-        buttonPanel.add(nextPrevPanel, BorderLayout.CENTER);
-        buttonPanel.add(clearBtn, BorderLayout.EAST);
+        buttonPanel.add(addFileBtn, BorderLayout.EAST);
+
+        // Disable addFileBtn if no files are open in the IDEA Editor
+        if (fileEditorManager.getSelectedFiles().length == 0) {
+            addFileBtn.setEnabled(false);
+            addFileBtn.setToolTipText("No files open in the editor");
+        }
+
+        // Add listener to enable addFileBtn when files are opened in the IDEA Editor
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
+                @Override
+                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    addFileBtn.setEnabled(true);
+                    addFileBtn.setToolTipText("Select file(s) for prompt context");
+                }
+
+                @Override
+                public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    if (fileEditorManager.getSelectedFiles().length == 0) {
+                        addFileBtn.setEnabled(false);
+                        addFileBtn.setToolTipText("No files open in the editor");
+                    }
+                }
+            });
 
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
 
-        submitBtn.addActionListener(e -> onSubmit());
-        clearBtn.addActionListener(e -> clearInputOutputArea());
-        previousInteractionBtn.addActionListener(e -> chatMessageHistoryService.setPreviousMessage());
-        nextInteractionBtn.addActionListener(e -> chatMessageHistoryService.setNextMessage());
+        submitBtn.addActionListener(e -> onSubmitPrompt());
+        addFileBtn.addActionListener(e -> selectFilesForPromptContext());
 
         return submitPanel;
     }
 
     /**
-     * Clear the input and output areas.
+     * Add files to the prompt context.
      */
-    private void clearInputOutputArea() {
-        promptOutputArea.setText(WelcomeUtil.getWelcomeText(resourceBundle));
-        promptInputArea.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
-        chatMessageHistoryService.clearHistory();
-        updateActionButtonStates();
+    private void selectFilesForPromptContext() {
+        JBPopup popup = JBPopupFactory.getInstance()
+            .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project), null)
+            .setTitle("Double-Click To Add To Prompt Context")
+            .setRequestFocus(true)
+            .setResizable(true)
+            .setMovable(false)
+            .createPopup();
+
+        if (addFileBtn.isShowing()) {
+            new ContextPopupMenu().show(submitBtn,
+                                        popup,
+                                        this.getContentPanel().getSize().width,
+                                        this.promptInputArea.getLocationOnScreen().y);
+        } else {
+            log.info("addContextBtn is not visible or not properly initialized.");
+        }
     }
 
     /**
@@ -220,21 +318,34 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
     /**
      * Submit the user prompt.
      */
-    private void onSubmit() {
+    private void onSubmitPrompt() {
+        invokeLater(() -> submitBtn.setIcon(StopIcon));
 
         String prompt = promptInputArea.getText();
+
         if (prompt.isEmpty()) {
+            log.info("No prompt entered");
             return;
         }
+
+        Editor editor = fileEditorManager.getSelectedTextEditor();
+        if (editor == null) {
+            log.info("No editor selected");
+            NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
+            return;
+        }
+
         disableButtons();
-
-        promptOutputArea.setText(WorkingMessage.getWorkingMessage());
-
-        if (executeCommand(prompt)) return;
 
         Task.Backgroundable task = new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
+                promptOutputArea.setText(WorkingMessage.getWorkingMessage());
+
+                if (executeCommand(prompt.trim())) {
+                    return;
+                }
+
                 progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
                 executePrompt("", promptInputArea.getText());
             }
@@ -276,27 +387,72 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
      */
     @Override
     public void executePrompt(String command, String userPrompt) {
-        Editor editor = fileEditorManager.getSelectedTextEditor();
-        if (editor != null) {
-            LanguageTextPair languageAndText = EditorUtil.getEditorLanguageAndText(editor);
-            new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
+        new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
 
-                @Override
-                public void run(@NotNull ProgressIndicator progressIndicator) {
-                    String response = genieClient.executeGeniePrompt(userPrompt,
-                        languageAndText.getLanguage(),
-                        languageAndText.getText());
-                    String htmlResponse = updateUIWithResponse(response);
+            @Override
+            public void run(@NotNull ProgressIndicator progressIndicator) {
 
-                    chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
-                        modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
-                        command.isEmpty() ? userPrompt : command,
-                        htmlResponse);
+                List<VirtualFile> files = promptInputArea.getFiles();
+                Editor editor = fileEditorManager.getSelectedTextEditor();
+
+                if (files.isEmpty() && editor == null) {
+                    NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
+                    return;
                 }
-            }.queue();
+
+                LanguageTextPair languageAndText = getLanguageTextPair(files, editor);
+                executeGeniePromptAndStoreResponse(command, files, languageAndText, userPrompt);
+            }
+        }.queue();
+    }
+
+    /**
+     * Get the language and text based on selected files or editor.
+     * @param files the files
+     * @param editor the editor
+     * @return the language and text pair
+     */
+    private LanguageTextPair getLanguageTextPair(List<VirtualFile> files,
+                                                 Editor editor) {
+        if (files.isEmpty()) {
+            return EditorUtil.getEditorLanguageAndText(editor);
         } else {
-            NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
+            StringBuilder fileContent = new StringBuilder();
+            FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+
+            files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
+                Document document = fileDocumentManager.getDocument(file);
+                if (document != null) {
+                    fileContent.append("Filename: ").append(file.getName()).append("\n");
+                    String content = document.getText();
+                    fileContent.append(content).append("\n");
+                } else {
+                    NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
+                }
+            }));
+            return new LanguageTextPair(files.get(0).getExtension(), fileContent.toString());
         }
+    }
+
+    /**
+     * Execute the Genie prompt and store the response.
+     * @param command the command
+     * @param files the files used for the prompt
+     * @param languageAndText the language and text
+     * @param userPrompt the user prompt
+     */
+    private void executeGeniePromptAndStoreResponse(String command,
+                                                    List<VirtualFile> files,
+                                                    LanguageTextPair languageAndText,
+                                                    String userPrompt) {
+        String response = genieClient.executeGeniePrompt(userPrompt, languageAndText);
+        String htmlResponse = updateUIWithResponse(response, files);
+        invokeLater(() -> submitBtn.setIcon(SubmitIcon));
+
+        chatMessageHistoryService.addMessage(llmProvidersComboBox.getSelectedItem() == null ? "" : llmProvidersComboBox.getSelectedItem().toString(),
+            modelNameComboBox.getSelectedItem() == null ? "" : modelNameComboBox.getSelectedItem().toString(),
+            command.isEmpty() ? userPrompt : command,
+            htmlResponse);
     }
 
     /**
@@ -304,9 +460,11 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
      * @param response the response
      * @return the markdown text
      */
-    private String updateUIWithResponse(String response) {
+    private String updateUIWithResponse(String response, List<VirtualFile> files) {
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().build();
+
+        response = addFilesContextInfo(response, files);
 
         Node document = parser.parse(response);
         String html = renderer.render(document);
@@ -315,6 +473,21 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         enableButtons();
 
         return html;
+    }
+
+    private String addFilesContextInfo(String response, List<VirtualFile> files) {
+        if (files != null && !files.isEmpty()) {
+            StringBuilder responseBuilder = new StringBuilder(response);
+            responseBuilder.append("\n\n**Files used for prompt context:**\n");
+
+            String fileNames = files.stream()
+                .map(VirtualFile::getName)
+                .collect(Collectors.joining("\n- ", "- ", ""));
+
+            responseBuilder.append(fileNames);
+            return responseBuilder.toString();
+        }
+        return response;
     }
 
     /**
@@ -368,10 +541,6 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         }
     }
 
-    public JPanel getContentPanel() {
-        return contentPanel;
-    }
-
     /**
      * Update the chat history.
      * @param currentIndex the current index
@@ -382,22 +551,5 @@ public class DevoxxGenieToolWindowContent implements CommandHandlerListener,
         ChatInteraction currentInteraction = chatMessageHistoryService.getCurrentChatInteraction();
         promptInputArea.setText(currentInteraction.getQuestion());
         promptOutputArea.setText(currentInteraction.getResponse());
-        updateActionButtonStates();
-    }
-
-    /**
-     * Update the action button states: prev/next and clear buttons.
-     */
-    private void updateActionButtonStates() {
-        int chatIndex = chatMessageHistoryService.getChatIndex();
-        int chatHistorySize = chatMessageHistoryService.getChatHistorySize();
-        nextInteractionBtn.setEnabled(chatIndex < chatHistorySize - 1);
-        previousInteractionBtn.setEnabled(chatIndex > 0);
-        clearBtn.setEnabled(chatHistorySize > 1);
-        if (chatHistorySize > 1) {
-            chatCounterLabel.setText(String.format("%d/%d", (chatIndex + 1), chatHistorySize));
-        } else {
-            chatCounterLabel.setText("");
-        }
     }
 }

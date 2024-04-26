@@ -1,7 +1,6 @@
 package com.devoxx.genie.chatmodel.openai;
 
 import com.devoxx.genie.model.ChatModel;
-
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
 

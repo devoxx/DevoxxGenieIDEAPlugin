@@ -32,6 +32,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.0.15</h2>
+        <UL>
+            <LI>Allow project source selection for prompt RAG</LI>
+        </UL>
+         <h2>V0.0.14</h2>
+        <UL>
+            <LI>Bug fix : Keep first system prompt in CircularQueue</LI>
         <h2>V0.0.14</h2>
         <UL>
             <LI>Bug fix : CircularQueue fix for first SystemMessage</LI>
@@ -94,6 +101,7 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
@@ -102,9 +110,8 @@
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
-                    icon="/META-INF/pluginIcon.svg"
+                    icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
-
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -115,28 +122,5 @@
         <listener class="com.devoxx.genie.listeners.ApplicationListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </applicationListeners>
-
-    <actions>
-        <group id="MyPluginActions"
-               text="My Plugin"
-               description="Sample Plugin Actions">
-            <action id="com.devoxx.genie.actions.AddToContextAction"
-                    icon="/META-INF/pluginIcon.svg"
-                    class="com.devoxx.genie.actions.AddToContextAction"
-                    text="Add To Context Window"
-                    description="Add the selected text to the context window">
-                <add-to-group group-id="EditorPopupMenu" anchor="first" />
-            </action>
-        </group>
-    </actions>
-
-<!-- Not used for now, experimental implementation -->
-<!--        <action id="com.devoxx.genie.action.AcceptAutocompleteAction"-->
-<!--                class="com.devoxx.genie.actions.AcceptAutocompleteAction"-->
-<!--                text="Accept Autocomplete Suggestion"-->
-<!--                description="Accept autocomplete suggestion">-->
-<!--            <keyboard-shortcut keymap="$default" first-keystroke="TAB"/>-->
-<!--            <keyboard-shortcut keymap="Mac OS X" first-keystroke="TAB"/>-->
-<!--        </action>-->
 
 </idea-plugin>
