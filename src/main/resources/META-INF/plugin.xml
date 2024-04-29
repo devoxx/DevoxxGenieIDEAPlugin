@@ -113,7 +113,13 @@
                     anchor="right"
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
+
+        <applicationService
+            serviceInterface="com.devoxx.genie.service.PromptExecutionService"
+            serviceImplementation="com.devoxx.genie.service.PromptExecutionServiceImpl"/>
+
     </extensions>
+
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
