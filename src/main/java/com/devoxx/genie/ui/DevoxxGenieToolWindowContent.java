@@ -7,7 +7,9 @@ import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.model.PromptContext;
+import com.devoxx.genie.model.request.CompletionResult;
+import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.model.request.PromptContext;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.PromptExecutionService;
@@ -33,6 +35,8 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.input.Prompt;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,8 +66,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
     private final ChatModelProvider genieClient = new ChatModelProvider();
-    private final PromptExecutionService promptExecutionService = new PromptExecutionService();
     private final FileEditorManager fileEditorManager;
+
     @Getter
     private final JPanel contentPanel = new JPanel();
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
@@ -79,6 +83,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final JButton historyBtn = new JHoverButton(ClockIcon, true);
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
 
+    private final PromptExecutionService promptExecutionService;
     /**
      * The Devoxx Genie Tool Window Content constructor.
      * @param toolWindow the tool window
@@ -87,6 +92,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         project = toolWindow.getProject();
         fileEditorManager = FileEditorManager.getInstance(project);
         promptInputArea = new PromptInputComponent(project);
+        promptExecutionService = PromptExecutionService.getInstance();
 
         setupUI();
 
@@ -308,14 +314,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             return;
         }
 
-        PromptContext promptContext = getPromptContext(userPromptText, promptInputArea.getFiles(), fileEditorManager.getSelectedTextEditor());
-
-        Editor editor = fileEditorManager.getSelectedTextEditor();
-        if (editor == null && promptContext.getFiles().isEmpty()) {
-            log.info("No editor selected");
-            NotificationUtil.sendNotification(project, resourceBundle.getString("no.editor"));
-            return;
-        }
+        PromptContext promptContext = getPromptContext(userPromptText,
+                                                       promptInputArea.getFiles(),
+                                                       fileEditorManager.getSelectedTextEditor(),
+                                                       genieClient.getChatLanguageModel());
 
         disableButtons();
 
@@ -327,8 +329,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * @param promptContext the prompt context
      */
     private void runPromptInBackground(PromptContext promptContext) {
+
         Task.Backgroundable task =
-            new Task.Backgroundable(project, resourceBundle.getString(WORKING_MESSAGE), true) {
+            new Task.Backgroundable(promptContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
                     promptOutputArea.setText(WorkingMessage.getWorkingMessage());
@@ -350,10 +353,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private void executePrompt(PromptContext promptContext) {
         disableButtons();
 
-        getCommandFromPrompt(promptContext.getPrompt()).ifPresentOrElse(fixedPrompt -> {
+        getCommandFromPrompt(promptContext.getUserPrompt()).ifPresentOrElse(fixedPrompt -> {
             try {
-                String response = promptExecutionService.executeQuery(promptContext, genieClient.getChatLanguageModel());
-                promptOutputArea.setText(response);
+                promptContext.setUserPrompt(fixedPrompt);
+
+                CompletionResult completionResult = promptExecutionService.executeQuery(promptContext);
+
+                promptOutputArea.setText(completionResult.getResponse());
             } catch (IllegalAccessException e) {
                 promptOutputArea.setText(e.getMessage());
             }
@@ -398,11 +404,30 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      */
     private PromptContext getPromptContext(String userPrompt,
                                            List<VirtualFile> files,
-                                           Editor editor) {
-        if (files.isEmpty()) {
-            return EditorUtil.getPromptContextFromEditor(userPrompt, editor);
+                                           Editor editor,
+                                           ChatLanguageModel chatLanguageModel) {
+        PromptContext promptContext = new PromptContext();
+        promptContext.setProject(project);
+        promptContext.setUserPrompt(userPrompt);
+        promptContext.setChatLanguageModel(chatLanguageModel);
+
+        if (files.isEmpty() && editor == null) {
+            // A regular prompt without any selected code or files
+            return promptContext;
+        } else if (files.isEmpty() && editor.getSelectionModel().getSelectedText() != null) {
+            // A prompt with selected code in the editor
+            EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
+            promptContext.setEditorInfo(editorInfo);
+            return promptContext;
+        } else if (!files.isEmpty()) {
+            // A prompt with selected files
+            return getPromptContextWithSelectedFiles(promptContext, userPrompt, files);
         } else {
-            return getPromptContextWithSelectedFiles(userPrompt, files);
+            // A prompt with full content from open editor
+            EditorInfo editorInfo = new EditorInfo();
+            editorInfo.setSelectedText(editor.getDocument().getText());
+            promptContext.setEditorInfo(editorInfo);
+            return promptContext;
         }
     }
 
@@ -412,21 +437,37 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * @param files the files
      * @return the prompt context
      */
-    private @NotNull PromptContext getPromptContextWithSelectedFiles(String userPrompt, List<VirtualFile> files) {
-        StringBuilder fileContent = new StringBuilder();
+    private @NotNull PromptContext getPromptContextWithSelectedFiles(PromptContext promptContext,
+                                                                     String userPrompt,
+                                                                     List<VirtualFile> files) {
+        promptContext.setEditorInfo(new EditorInfo(files));
+        promptContext.setUserPrompt(getUserPromptWithContext(userPrompt, files).toString());
+        return promptContext;
+    }
+
+    /**
+     * Get user prompt with context.
+     * @param userPrompt the user prompt
+     * @param files the files
+     * @return the user prompt with context
+     */
+    private @NotNull StringBuilder getUserPromptWithContext(String userPrompt, List<VirtualFile> files) {
+        StringBuilder userPromptContext = new StringBuilder();
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
         files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
             Document document = fileDocumentManager.getDocument(file);
             if (document != null) {
-                fileContent.append("Filename: ").append(file.getName()).append("\n");
+                userPromptContext.append("Filename: ").append(file.getName()).append("\n");
                 String content = document.getText();
-                fileContent.append(content).append("\n");
+                userPromptContext.append(content).append("\n");
             } else {
                 NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
             }
         }));
-        return new PromptContext(userPrompt, files.get(0).getExtension(), fileContent.toString(), files);
+
+        userPromptContext.append(userPrompt);
+        return userPromptContext;
     }
 
     private void disableButtons() {
