@@ -17,5 +17,5 @@ public class PromptContext {
     private String llmProvider;
     private String modelName;
     private ChatLanguageModel chatLanguageModel;
-    private LocalDateTime createdOn = LocalDateTime.now();
+    private final LocalDateTime createdOn = LocalDateTime.now();
 }
