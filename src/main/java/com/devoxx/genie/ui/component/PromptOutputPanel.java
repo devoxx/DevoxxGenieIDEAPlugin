@@ -172,7 +172,8 @@ public class PromptOutputPanel extends JBPanel {
         infoPanel.setBackground(PROMPT_BG_COLOR);
 
         topPanel.add(infoPanel, BorderLayout.NORTH);
-        if (promptContext.getEditorInfo().getSelectedFiles() != null &&
+        if (promptContext.getEditorInfo() != null &&
+            promptContext.getEditorInfo().getSelectedFiles() != null &&
             !promptContext.getEditorInfo().getSelectedFiles().isEmpty()) {
             ExpandablePanel fileListPanel = new ExpandablePanel(promptContext);
             topPanel.add(fileListPanel, BorderLayout.SOUTH);
