@@ -77,7 +77,7 @@ class CodeBlockNodeRenderer(
     private fun renderCode(codeSnippet: String, info: String = "", block: Boolean = false) {
         outputHtml.line()
         if (block) outputHtml.tag("pre")
-        outputHtml.tag("code style='font-size:${DocumentationSettings.getMonospaceFontSizeCorrection(true)}%;'")
+        outputHtml.tag("code style='font-size:14pt'")
 
         val highlightingMode = if (block) {
             when (DocumentationSettings.isHighlightingOfCodeBlocksEnabled()) {
