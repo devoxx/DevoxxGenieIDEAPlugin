@@ -49,6 +49,9 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     private Integer maxRetries = Constant.MAX_RETRIES;
     private Integer maxMemory = Constant.MAX_MEMORY;
 
+    private String lastSelectedProvider;
+    private String lastSelectedModel;
+
     public static SettingsState getInstance() {
         return ApplicationManager.getApplication().getService(SettingsState.class);
     }

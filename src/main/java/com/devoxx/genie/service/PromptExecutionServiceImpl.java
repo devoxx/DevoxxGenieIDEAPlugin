@@ -1,30 +1,29 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.model.request.CompletionResult;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.PromptContext;
 import com.devoxx.genie.ui.util.CircularQueue;
-import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.output.Response;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class PromptExecutionServiceImpl implements PromptExecutionService {
 
     public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
         "You are a software developer with expert knowledge in ";
-
     public static final String PROGRAMMING_LANGUAGE = " programming language.";
     public static final String ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN = "Always return the response in Markdown.";
+    public static final String COMMANDS_INFO = "The Devoxx Genie plugin supports the following commands: /test: write unit tests on selected code\n/explain: explain the selected code\n/review: review selected code\n/custom: set custom prompt in settings";
+    public static final String MORE_INFO = "The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.";
+    public static final String NO_HALLUCINATIONS = "Do not include any more info which might be incorrect, like discord, twitter, documentation or website info. Only provide info that is correct and relevant to the code or plugin.";
+
+    public static final String QUESTION = "User question: ";
+    public static final String CONTEXT_PROMPT = "Context: \n";
 
     private final CircularQueue<ChatMessage> chatMessages = new CircularQueue<>(10);
 
@@ -34,97 +33,93 @@ public class PromptExecutionServiceImpl implements PromptExecutionService {
      * @return the response
      */
     @Override
-    public @NotNull CompletionResult executeQuery(@NotNull PromptContext promptContext) throws IllegalAccessException {
+    public @NotNull String executeQuery(@NotNull PromptContext promptContext) throws IllegalAccessException {
 
-        setupChatMessage(promptContext);
+        initChatMessage(promptContext);
 
         try {
             Response<AiMessage> generate = promptContext.getChatLanguageModel().generate(chatMessages.asList());
             String response = generate.content().text();
             chatMessages.add(new AiMessage(response));
-
-            return convertHTMLResponseToMarkdown(response, promptContext.getEditorInfo());
+            return response;
         } catch (Exception e) {
             throw new IllegalAccessException("Failed to execute prompt!\n" + e.getMessage());
         }
     }
 
     /**
-     * Update the UI with the response.  Convert the response to markdown to improve readability.
-     * @param response the response
-     * @return the markdown text
+     * Clear the chat messages.
      */
-    private CompletionResult convertHTMLResponseToMarkdown(String response, EditorInfo editorInfo) {
-        Parser parser = Parser.builder().build();
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
-
-        if (editorInfo!= null && editorInfo.getSelectedFiles() != null) {
-            response = addFilesContextInfo(response, editorInfo.getSelectedFiles());
-        }
-
-        Node document = parser.parse(response);
-
-        return new CompletionResult(renderer.render(document));
-    }
-
-    /**
-     * Add the files used for the prompt context to the response.
-     * @param response the response
-     * @param files the files
-     * @return the response with the files context info
-     */
-    private String addFilesContextInfo(String response, List<VirtualFile> files) {
-        if (files != null && !files.isEmpty()) {
-            StringBuilder responseBuilder = new StringBuilder(response);
-            responseBuilder.append("\n\n**Files used for prompt context:**\n");
-
-            String fileNames = files.stream()
-                .map(VirtualFile::getName)
-                .collect(Collectors.joining("\n- ", "- ", ""));
-
-            responseBuilder.append(fileNames);
-            return responseBuilder.toString();
-        }
-        return response;
+    @Override
+    public void clearChatMessages() {
+        chatMessages.removeAll();
     }
 
     /**
      * Setup the chat message.
      * @param promptContext the language text pair
      */
-    private void setupChatMessage(PromptContext promptContext) {
+    private void initChatMessage(PromptContext promptContext) {
         if (chatMessages.isEmpty()) {
-            if (promptContext.getEditorInfo() != null) {
-                chatMessages.add(new SystemMessage(
-                    YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN +
-                        promptContext.getEditorInfo().getLanguage() + PROGRAMMING_LANGUAGE +
-                        ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN));
-            } else {
-                chatMessages.add(new SystemMessage(
-                    YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN +
-                        " programmming " +
-                        ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN));
-            }
+            chatMessages.add(createSystemMessage(promptContext));
         }
 
         String userPrompt = promptContext.getUserPrompt();
-
         EditorInfo editorInfo = promptContext.getEditorInfo();
 
-        if (editorInfo == null) {
-            chatMessages.add(new UserMessage(userPrompt));
-        } else {
-            if (editorInfo.getSelectedText() != null) {
-                String userPromptWithCode = userPrompt + "\n\nSelected code: " + editorInfo.getSelectedText();
-                chatMessages.add(new UserMessage(userPromptWithCode));
-            } else {
-                chatMessages.add(new UserMessage(userPrompt));
-            }
-        }
+        String prompt = QUESTION + userPrompt + "\n\n";
+        chatMessages.add(createUserMessageWithContext(prompt, editorInfo, promptContext));
     }
 
-    @Override
-    public boolean isRunning() {
-        return false;
+    /**
+     * Create a system message.
+     * @param promptContext the language text pair
+     * @return the system message
+     */
+    private SystemMessage createSystemMessage(PromptContext promptContext) {
+        String language = Optional.ofNullable(promptContext.getEditorInfo())
+            .map(EditorInfo::getLanguage)
+            .orElse("programming");
+
+        return new SystemMessage(
+            YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN +
+                language + PROGRAMMING_LANGUAGE +
+                ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN + "\n" +
+                COMMANDS_INFO + "\n" +
+                MORE_INFO + "\n" +
+                NO_HALLUCINATIONS);
+    }
+
+    /**
+     * Create a user message with context.
+     * @param prompt the prompt
+     * @param editorInfo the editor info
+     * @param promptContext the language text pair
+     * @return the user message
+     */
+    private UserMessage createUserMessageWithContext(String prompt,
+                                                     EditorInfo editorInfo,
+                                                     PromptContext promptContext) {
+        String context = promptContext.getContext();
+        String selectedText = editorInfo != null ? editorInfo.getSelectedText() : "";
+
+        if ((selectedText != null && !selectedText.isEmpty()) ||
+            (context != null && !context.isEmpty())) {
+
+            StringBuilder sb = new StringBuilder(prompt);
+            sb.append(CONTEXT_PROMPT);
+
+            if (selectedText != null && !selectedText.isEmpty()) {
+                sb.append(selectedText).append("\n");
+            }
+
+            if (context != null && !context.isEmpty()) {
+                sb.append(context);
+            }
+
+            prompt = sb.toString();
+        }
+
+        return new UserMessage(prompt);
     }
 }

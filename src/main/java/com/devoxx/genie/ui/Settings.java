@@ -111,7 +111,7 @@ public class Settings implements Configurable {
     private void setTitle(String title, JPanel settingsPanel, GridBagConstraints gbc) {
         JLabel titleLabel = new JLabel(title);
 
-        gbc.insets = JBUI.insets(10, 0, 10, 0);
+        gbc.insets = JBUI.insets(10, 0);
         settingsPanel.add(titleLabel, gbc);
 
         // Reset the insets for the next component
@@ -177,9 +177,10 @@ public class Settings implements Configurable {
 
     /**
      * Create a button with emoji and tooltip message and open the URL in the browser
-     * @param emoji the emoji to use in the button
+     *
+     * @param emoji      the emoji to use in the button
      * @param toolTipMsg the tooltip message
-     * @param url the url to open when clicked
+     * @param url        the url to open when clicked
      * @return the created button
      */
     private @NotNull JButton createButton(String emoji,

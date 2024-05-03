@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.FileRemoveListener;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.listener.FileSelectionListener;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
@@ -66,13 +66,12 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
         this.files.remove(file);
         removeFromFilesPanel(file);
         updateFilesPanelVisibility();
-        revalidate();
-        repaint();
+        updateUIState();
     }
 
     private void removeFromFilesPanel(VirtualFile file) {
         for (Component component : getComponents()) {
-            if (component instanceof JFileEntryComponent fileEntryComponent &&
+            if (component instanceof FileEntryComponent fileEntryComponent &&
                 fileEntryComponent.getVirtualFile().equals(file)) {
                 remove(fileEntryComponent);
                 break;
@@ -85,10 +84,14 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
         if (!files.contains(selectedFile)) {
             files.add(selectedFile);
             updateFilesPanelVisibility();
-            JFileEntryComponent fileLabel = new JFileEntryComponent(project, selectedFile, this);
+            FileEntryComponent fileLabel = new FileEntryComponent(project, selectedFile, this, null);
             add(fileLabel);
-            revalidate();
-            repaint();
+            updateUIState();
         }
+    }
+
+    private void updateUIState() {
+        revalidate();
+        repaint();
     }
 }

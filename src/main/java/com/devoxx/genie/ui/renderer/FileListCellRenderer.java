@@ -1,8 +1,6 @@
 package com.devoxx.genie.ui.renderer;
 
 import com.devoxx.genie.ui.util.FileTypeIconUtil;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 

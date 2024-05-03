@@ -35,6 +35,10 @@ public class CircularQueue<E> {
         return deque.pollFirst();
     }
 
+    public void removeAll() {
+        deque.removeAll(deque.clone());
+    }
+
     public E peek() {
         return deque.peekFirst();
     }

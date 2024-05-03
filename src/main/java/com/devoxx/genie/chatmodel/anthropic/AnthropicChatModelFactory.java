@@ -8,7 +8,6 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.util.List;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
-import static dev.langchain4j.model.anthropic.AnthropicChatModelName.CLAUDE_INSTANT_1_2;
 
 public class AnthropicChatModelFactory implements ChatModelFactory {
 
