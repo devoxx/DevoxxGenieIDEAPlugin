@@ -11,21 +11,19 @@ import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
-import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.SettingsState;
 import com.intellij.ide.util.PropertiesComponent;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 import static com.devoxx.genie.ui.Settings.MODEL_PROVIDER;
 
 @Setter
 public class ChatModelProvider {
-
-    private static final GenieLogger log = new GenieLogger(ChatModelProvider.class);
 
     private ModelProvider modelProvider = getModelProvider(ModelProvider.Ollama.name());
 
@@ -109,7 +107,7 @@ public class ChatModelProvider {
                 OllamaModelEntryDTO[] models = new OllamaService().getModels();
                 chatModel.setModelName(models[0].getName());
             } catch (IOException e) {
-                log.error("Failed to get Ollama models", e);
+                System.err.println("Failed to get Ollama models : " + e.getMessage());
             }
         } else {
             chatModel.setModelName(modelName);

@@ -2,10 +2,11 @@ plugins {
     id("java")
     id("org.jetbrains.intellij") version "1.17.2"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm")
 }
 
 group = "com.devoxx.genie"
-version = "0.0.15"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
@@ -29,22 +30,20 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.25.3")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    implementation(kotlin("stdlib-jdk8"))
 }
-
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.3.4")
     type.set("IC")
-    plugins.set(listOf("java"))
+    plugins.set(listOf("java", "markdown"))
 }
 
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
     }
 
     patchPluginXml {
@@ -75,4 +74,8 @@ tasks {
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }

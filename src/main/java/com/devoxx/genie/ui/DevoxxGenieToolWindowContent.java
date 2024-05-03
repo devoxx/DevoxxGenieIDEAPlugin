@@ -7,17 +7,14 @@ import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.model.request.CompletionResult;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.PromptContext;
-import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.platform.logger.GenieLogger;
 import com.devoxx.genie.service.PromptExecutionService;
-import com.devoxx.genie.ui.component.ContextPopupMenu;
-import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.component.PromptInputComponent;
+import com.devoxx.genie.ui.component.*;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.util.*;
+import com.devoxx.genie.ui.util.EditorUtil;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -34,11 +31,12 @@ import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.input.Prompt;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,8 +57,6 @@ import static javax.swing.SwingUtilities.invokeLater;
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
-    private static final GenieLogger log = new GenieLogger(DevoxxGenieToolWindowContent.class);
-
     public static final String WORKING_MESSAGE = "working.message";
 
     private final Project project;
@@ -73,9 +69,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
     private final ComboBox<String> modelNameComboBox = new ComboBox<>();
 
-    private final PromptInputComponent promptInputArea;
-    private final JEditorPane promptOutputArea =
-        new JEditorPane("text/html", WelcomeUtil.getWelcomeText(resourceBundle));
+    private PromptInputComponent promptInputComponent;
+    private PromptOutputPanel promptOutputPanel;
+    private PromptContextFileListPanel promptContextFileListPanel;
 
     private final JButton configBtn = new JHoverButton(CogIcon, true);
     private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
@@ -84,23 +80,37 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
 
     private final PromptExecutionService promptExecutionService;
+    private String lastSelectedProvider;
+
     /**
      * The Devoxx Genie Tool Window Content constructor.
+     *
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(ToolWindow toolWindow) {
         project = toolWindow.getProject();
         fileEditorManager = FileEditorManager.getInstance(project);
-        promptInputArea = new PromptInputComponent(project);
         promptExecutionService = PromptExecutionService.getInstance();
 
         setupUI();
 
         addLLMProvidersToComboBox();
-        handleModelProviderSelectionChange();
+
+        setLastSelectedProvider();
+    }
+
+    private @Nullable void setLastSelectedProvider() {
+        lastSelectedProvider = SettingsState.getInstance().getLastSelectedProvider();
+        if (lastSelectedProvider != null) {
+            llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
+        }
     }
 
     private void setupUI() {
+        promptInputComponent = new PromptInputComponent(project, resourceBundle);
+        promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
+        promptContextFileListPanel = new PromptContextFileListPanel(project);
+
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
         topPanel.add(createSelectionPanel(), BorderLayout.NORTH);
@@ -109,13 +119,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Create a new Splitter
-        Splitter splitter = new Splitter(true);
-        splitter.setFirstComponent(createOutputPanel());
+        Splitter splitter = new Splitter(true, 0.8f);
+        splitter.setFirstComponent(promptOutputPanel);
         splitter.setSecondComponent(createInputPanel());
-        splitter.setProportion(0.7f);
+        splitter.setHonorComponentsMinimumSize(true);
 
-        // Add the splitter to the contentPanel
         contentPanel.add(splitter, BorderLayout.CENTER);
     }
 
@@ -137,34 +145,43 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Create the conversation panel.
+     *
      * @return the conversation panel
      */
     @NotNull
     private JPanel createConversationPanel() {
 
-        JPanel conversationPanel = new JPanel();
+        JPanel conversationPanel = new JPanel(new BorderLayout());
         conversationPanel.setPreferredSize(new Dimension(0, 30));
         conversationPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        conversationPanel.setLayout(new GridLayout(1, 2));
 
         JLabel newConversationLabel = new JLabel("New conversation " + getCurrentTimestamp());
-        newConversationLabel.setForeground(Color.GRAY);
+        newConversationLabel.setForeground(JBColor.GRAY);
         newConversationLabel.setPreferredSize(new Dimension(0, 30));
-        conversationPanel.add(newConversationLabel);
+
+        newConversationBtn.setPreferredSize(new Dimension(25, 30));
+        configBtn.setPreferredSize(new Dimension(25, 30));
 
         JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-
-        // TODO - Implement chat history and new conversation
-        // conversationButtonPanel.add(historyBtn);
-        // conversationButtonPanel.add(newConversationBtn);
+        conversationButtonPanel.add(newConversationBtn);
         conversationButtonPanel.add(configBtn);
+        conversationButtonPanel.setPreferredSize(new Dimension(60, 30));
+        conversationButtonPanel.setMinimumSize(new Dimension(60, 30));
 
         historyBtn.setToolTipText("Show chat history");
         newConversationBtn.setToolTipText("Start a new conversation");
         configBtn.setToolTipText("Plugin settings");
-        configBtn.addActionListener(e -> showSettingsDialog());
 
-        conversationPanel.add(conversationButtonPanel);
+        configBtn.addActionListener(e -> showSettingsDialog());
+        newConversationBtn.addActionListener(e -> {
+            newConversationLabel.setText("New conversation " + getCurrentTimestamp());
+            promptOutputPanel.clear();
+            promptExecutionService.clearChatMessages();
+            enableButtons();
+        });
+
+        conversationPanel.add(newConversationLabel, BorderLayout.CENTER);
+        conversationPanel.add(conversationButtonPanel, BorderLayout.EAST);
 
         return conversationPanel;
     }
@@ -177,6 +194,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Create the LLM and model name selection panel.
+     *
      * @return the selection panel
      */
     @NotNull
@@ -208,24 +226,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     }
 
     /**
-     * Create the output panel.
-     * @return the output panel
-     */
-    @NotNull
-    private JPanel createOutputPanel() {
-        JPanel outputPanel = new JPanel(new BorderLayout());
-
-        // Output Area - This should expand to fill most of the space
-        promptOutputArea.setEditable(false);
-        promptOutputArea.setContentType("text/html");
-
-        JScrollPane outputScrollPane = new JBScrollPane(promptOutputArea);
-        outputPanel.add(outputScrollPane, BorderLayout.CENTER);
-        return outputPanel;
-    }
-
-    /**
      * Create the input panel.
+     *
      * @return the input panel
      */
     @NotNull
@@ -263,7 +265,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             });
 
         JPanel submitPanel = new JPanel(new BorderLayout());
-        submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
+        submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, 100));
+        submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
+        submitPanel.add(new JBScrollPane(promptInputComponent), BorderLayout.CENTER);
         submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
 
         submitBtn.addActionListener(e -> onSubmitPrompt());
@@ -286,38 +290,31 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
         if (addFileBtn.isShowing()) {
             new ContextPopupMenu().show(submitBtn,
-                                        popup,
-                                        this.getContentPanel().getSize().width,
-                                        this.promptInputArea.getLocationOnScreen().y);
-        } else {
-            log.info("addContextBtn is not visible or not properly initialized.");
+                popup,
+                this.getContentPanel().getSize().width,
+                this.promptInputComponent.getLocationOnScreen().y);
         }
-    }
-
-    /**
-     * Show the help message.
-     */
-    public void showHelpMsg() {
-        promptOutputArea.setText(HelpUtil.getHelpMessage(resourceBundle));
     }
 
     /**
      * Submit the user prompt.
      */
     private void onSubmitPrompt() {
-        invokeLater(() -> submitBtn.setIcon(StopIcon));
+        invokeLater(() -> {
+            submitBtn.setIcon(StopIcon);
+            submitBtn.setToolTipText("Prompt is running, please be patient...");
+        });
 
-        String userPromptText = promptInputArea.getText();
+        String userPromptText = promptInputComponent.getText();
 
         if (userPromptText.isEmpty()) {
-            log.info("No prompt entered");
             return;
         }
 
         PromptContext promptContext = getPromptContext(userPromptText,
-                                                       promptInputArea.getFiles(),
-                                                       fileEditorManager.getSelectedTextEditor(),
-                                                       genieClient.getChatLanguageModel());
+            promptContextFileListPanel.getFiles(),
+            fileEditorManager.getSelectedTextEditor(),
+            genieClient.getChatLanguageModel());
 
         disableButtons();
 
@@ -326,6 +323,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Run the prompt in the background
+     *
      * @param promptContext the prompt context
      */
     private void runPromptInBackground(PromptContext promptContext) {
@@ -334,7 +332,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             new Task.Backgroundable(promptContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    promptOutputArea.setText(WorkingMessage.getWorkingMessage());
+                    promptOutputPanel.addUserPrompt(promptContext.getUserPrompt());
 
                     executePrompt(promptContext);
 
@@ -348,6 +346,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Execute the prompt.
+     *
      * @param promptContext the prompt context
      */
     private void executePrompt(PromptContext promptContext) {
@@ -357,11 +356,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             try {
                 promptContext.setUserPrompt(fixedPrompt);
 
-                CompletionResult completionResult = promptExecutionService.executeQuery(promptContext);
+                String response = promptExecutionService.executeQuery(promptContext);
 
-                promptOutputArea.setText(completionResult.getResponse());
+                promptOutputPanel.addChatResponse(promptContext, response);
             } catch (IllegalAccessException e) {
-                promptOutputArea.setText(e.getMessage());
+                promptOutputPanel.addWarningText(promptContext, e.getMessage());
             }
             enableButtons();
         }, this::enableButtons);
@@ -369,6 +368,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Get the command from the prompt.
+     *
      * @param prompt the prompt
      * @return the command
      */
@@ -384,12 +384,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
                 prompt = settings.getExplainPrompt();
             } else if (prompt.equalsIgnoreCase("/custom")) {
                 prompt = settings.getCustomPrompt();
-            } else if (prompt.equalsIgnoreCase("/help")) {
-                showHelpMsg();
-                return Optional.empty();
             } else {
-                promptOutputArea.setText(HelpUtil.getHelpMessage(resourceBundle));
-                NotificationUtil.sendNotification(project, resourceBundle.getString("command.unknown") + prompt);
+                promptOutputPanel.showHelpText();
                 return Optional.empty();
             }
         }
@@ -398,7 +394,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Get the prompt context
-     * @param files the files
+     *
+     * @param files  the files
      * @param editor the editor
      * @return the prompt context with language and text
      */
@@ -410,6 +407,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         promptContext.setProject(project);
         promptContext.setUserPrompt(userPrompt);
         promptContext.setChatLanguageModel(chatLanguageModel);
+        promptContext.setModelName((String) modelNameComboBox.getSelectedItem());
+        promptContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
 
         if (files.isEmpty() && editor == null) {
             // A regular prompt without any selected code or files
@@ -423,7 +422,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             // A prompt with selected files
             return getPromptContextWithSelectedFiles(promptContext, userPrompt, files);
         } else {
-            // A prompt with full content from open editor
+            // A prompt with alla the content from open editor
             EditorInfo editorInfo = new EditorInfo();
             editorInfo.setSelectedText(editor.getDocument().getText());
             promptContext.setEditorInfo(editorInfo);
@@ -433,28 +432,29 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Get the prompt context from the selected files.
+     *
      * @param userPrompt the user prompt
-     * @param files the files
+     * @param files      the files
      * @return the prompt context
      */
     private @NotNull PromptContext getPromptContextWithSelectedFiles(PromptContext promptContext,
                                                                      String userPrompt,
                                                                      List<VirtualFile> files) {
         promptContext.setEditorInfo(new EditorInfo(files));
-        promptContext.setUserPrompt(getUserPromptWithContext(userPrompt, files).toString());
+        promptContext.setContext(getUserPromptWithContext(userPrompt, files));
         return promptContext;
     }
 
     /**
      * Get user prompt with context.
+     *
      * @param userPrompt the user prompt
-     * @param files the files
+     * @param files      the files
      * @return the user prompt with context
      */
-    private @NotNull StringBuilder getUserPromptWithContext(String userPrompt, List<VirtualFile> files) {
+    private @NotNull String getUserPromptWithContext(String userPrompt, List<VirtualFile> files) {
         StringBuilder userPromptContext = new StringBuilder();
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-
         files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
             Document document = fileDocumentManager.getDocument(file);
             if (document != null) {
@@ -467,17 +467,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         }));
 
         userPromptContext.append(userPrompt);
-        return userPromptContext;
+        return userPromptContext.toString();
     }
 
     private void disableButtons() {
         submitBtn.setEnabled(false);
-        promptInputArea.setEnabled(false);
+        promptInputComponent.setEnabled(false);
     }
 
     private void enableButtons() {
         submitBtn.setIcon(SubmitIcon);
-        promptInputArea.setEnabled(true);
+        promptInputComponent.setEnabled(true);
         submitBtn.setEnabled(true);
     }
 
@@ -488,6 +488,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         String selectedModel = (String) modelNameComboBox.getSelectedItem();
         if (selectedModel != null) {
             genieClient.setModelName(selectedModel);
+            SettingsState.getInstance().setLastSelectedModel(selectedModel);
         }
     }
 
@@ -497,12 +498,15 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      */
     private void handleModelProviderSelectionChange() {
         String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
-
         if (selectedProvider != null) {
             ModelProvider provider = ModelProvider.valueOf(selectedProvider);
             genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
             modelNameComboBox.setVisible(true);
             modelNameComboBox.removeAllItems();
+
+            if (lastSelectedProvider != null && !lastSelectedProvider.equalsIgnoreCase(selectedProvider)) {
+                SettingsState.getInstance().setLastSelectedProvider(selectedProvider);
+            }
 
             switch (provider) {
                 case Ollama:

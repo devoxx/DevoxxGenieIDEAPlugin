@@ -32,6 +32,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.1.0</h2>
+        <UL>
+            <LI>Introduction of chat conversations</LI>
+            <LI>Attach files to chat context</LI>
+            <LI>Output formatting with language highlighting</LI>
+        </UL>
         <h2>V0.0.15</h2>
         <UL>
             <LI>Allow project source selection for prompt RAG</LI>

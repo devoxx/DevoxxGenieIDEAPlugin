@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
@@ -8,12 +9,12 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 
 import javax.swing.*;
-import com.intellij.openapi.application.ApplicationManager;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 
 /**
  * Utility class for getting the icon for a file type
+ *
  * @link <a href="https://jetbrains.design/intellij/resources/icons_list">IDEA icons</a>
  */
 public class FileTypeIconUtil {
@@ -23,7 +24,8 @@ public class FileTypeIconUtil {
 
     /**
      * Returns the icon for the file type, currently only Java files are supported
-     * @param project The current project
+     *
+     * @param project     The current project
      * @param virtualFile The file
      * @return The icon
      */

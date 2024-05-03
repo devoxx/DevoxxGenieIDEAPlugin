@@ -10,7 +10,6 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ContextPopupMenu {
-
     public void show(@NotNull JComponent component,
                      @NotNull JBPopup popup,
                      Integer width,
@@ -20,17 +19,16 @@ public class ContextPopupMenu {
         }
 
         final RelativePoint northWest = new RelativePoint(component, new Point());
-
         popup.addListener(new JBPopupListener() {
             @Override
             public void beforeShown(@NotNull LightweightWindowEvent event) {
-            JBPopup popup = event.asPopup();
-            Point point = new Point(popup.getLocationOnScreen());
-            point.y = offset - popup.getSize().height;
-            Dimension dimension = new Dimension(width, popup.getSize().height);
-            popup.setSize(dimension);
-            popup.setMinimumSize(dimension);
-            popup.setLocation(point);
+                JBPopup popup = event.asPopup();
+                Point point = new Point(popup.getLocationOnScreen());
+                point.y = offset - popup.getSize().height;
+                Dimension dimension = new Dimension(width, popup.getSize().height);
+                popup.setSize(dimension);
+                popup.setMinimumSize(dimension);
+                popup.setLocation(point);
             }
         });
 

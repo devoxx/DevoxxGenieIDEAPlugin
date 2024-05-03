@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
-import static com.devoxx.genie.model.enumarations.ModelProvider.Ollama;
 
 public class LLMProviderConstant {
 

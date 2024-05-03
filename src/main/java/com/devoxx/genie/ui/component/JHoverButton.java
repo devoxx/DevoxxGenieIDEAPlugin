@@ -6,22 +6,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import static com.devoxx.genie.ui.util.DevoxxGenieColors.HOVER_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColors.TRANSPARENT_COLOR;
+
 public class JHoverButton extends JButton {
-
-    private final Color hoverBackgroundColor;
-    private final Color normalBackgroundColor;
-
-    public JHoverButton(String label, boolean tight) {
-        this(label, null, tight);
-    }
-
-    public JHoverButton(Icon icon) {
-        this("", icon, false);
-    }
-
-    public JHoverButton(String text, Icon icon) {
-        this(text, icon, false);
-    }
 
     public JHoverButton(Icon icon, boolean tight) {
         this("", icon, tight);
@@ -29,8 +18,6 @@ public class JHoverButton extends JButton {
 
     public JHoverButton(String text, Icon icon, boolean tight) {
         super(icon);
-        normalBackgroundColor = new Color(0, 0, 0, 0); // Transparent
-        hoverBackgroundColor = new Color(192, 192, 192, 50); // Semi-transparent light grey
 
         if (!text.isBlank()) {
             setText(text);
@@ -60,14 +47,14 @@ public class JHoverButton extends JButton {
             @Override
             public void mouseEntered(MouseEvent e) {
                 setOpaque(true);
-                setBackground(hoverBackgroundColor);
+                setBackground(HOVER_BG_COLOR);
                 repaint();
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 setOpaque(false);
-                setBackground(normalBackgroundColor);
+                setBackground(TRANSPARENT_COLOR);
                 repaint();
             }
         });

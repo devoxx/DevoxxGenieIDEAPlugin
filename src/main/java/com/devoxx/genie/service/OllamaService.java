@@ -4,7 +4,9 @@ import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.SettingsState;
 import com.google.gson.Gson;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import java.io.IOException;
 
