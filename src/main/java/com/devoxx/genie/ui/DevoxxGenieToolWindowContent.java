@@ -107,7 +107,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     }
 
     private void setupUI() {
-        promptInputComponent = new PromptInputComponent(project, resourceBundle);
+        promptInputComponent = new PromptInputComponent(resourceBundle);
         promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);
 
@@ -177,6 +177,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             newConversationLabel.setText("New conversation " + getCurrentTimestamp());
             promptOutputPanel.clear();
             promptExecutionService.clearChatMessages();
+            promptInputComponent.clear();
             enableButtons();
         });
 

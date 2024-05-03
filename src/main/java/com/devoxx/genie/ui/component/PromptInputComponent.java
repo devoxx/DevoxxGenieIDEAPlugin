@@ -11,11 +11,9 @@ public class PromptInputComponent extends PlaceholderTextArea {
 
     /**
      * The prompt input component
-     *
-     * @param project        the project
      * @param resourceBundle the resource bundle
      */
-    public PromptInputComponent(Project project, ResourceBundle resourceBundle) {
+    public PromptInputComponent(ResourceBundle resourceBundle) {
         super();
 
         setLayout(new BorderLayout());
@@ -29,5 +27,9 @@ public class PromptInputComponent extends PlaceholderTextArea {
         setMinimumSize(new Dimension(0, 75));
         addFocusListener(new PromptInputFocusListener(this));
         setPlaceholder(resourceBundle.getString("prompt.placeholder"));
+    }
+
+    public void clear() {
+        setText("");
     }
 }

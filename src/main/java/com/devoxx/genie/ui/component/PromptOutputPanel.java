@@ -37,6 +37,11 @@ public class PromptOutputPanel extends JBPanel {
     private final transient Project project;
     private final JBScrollPane scrollPane;
 
+    /**
+     * The prompt output panel.
+     * @param project        the project
+     * @param resourceBundle the resource bundle
+     */
     public PromptOutputPanel(Project project, ResourceBundle resourceBundle) {
         super();
         this.project = project;
@@ -58,11 +63,7 @@ public class PromptOutputPanel extends JBPanel {
     public void clear() {
         container.removeAll();
         showWelcomeText();
-
-        revalidate();
-        repaint();
-
-        // TODO The list of ChatMessages should also be cleared
+        moveToBottom();
     }
 
     /**
@@ -78,14 +79,11 @@ public class PromptOutputPanel extends JBPanel {
      */
     public void showHelpText() {
         addFiller();
-
         JBPanel helpPanel = getBgPanel();
         helpPanel.setMaximumSize(new Dimension(1500, 125));
         helpPanel.add(new JBLabel(HelpUtil.getHelpMessage(resourceBundle)), BorderLayout.CENTER);
         container.add(helpPanel);
-
-        revalidate();
-        repaint();
+        moveToBottom();
     }
 
     /**
@@ -128,7 +126,7 @@ public class PromptOutputPanel extends JBPanel {
         addFiller();
         container.add(userPromptPanel);
 
-        scrollToBottom();
+        moveToBottom();
     }
 
     private static @NotNull JBPanel getBgPanel() {
@@ -184,8 +182,7 @@ public class PromptOutputPanel extends JBPanel {
 
         container.add(responsePanel);
 
-        revalidate();
-        repaint();
+        moveToBottom();
     }
 
     /**
@@ -244,7 +241,6 @@ public class PromptOutputPanel extends JBPanel {
         // TODO upgrade to `JBHtmlPane` in 2024.2
 
         return JEditorPaneUtilsKt.htmlJEditorPane(charSequence,
-            200,
             emptyList(),
             BrowserHyperlinkListener.INSTANCE);
     }
@@ -277,8 +273,16 @@ public class PromptOutputPanel extends JBPanel {
     /**
      * Scroll to the bottom of the panel after repainting the new content.
      */
-    private void scrollToBottom() {
+    private void moveToBottom() {
+        // This will request a layout update.
+        revalidate();
+        repaint();
+
+        // SwingUtilities.invokeLater will schedule the scrolling to happen
+        // after all pending events are processed, including revalidate and repaint.
         SwingUtilities.invokeLater(() -> {
+            // Ensure the viewport's contents are updated before fetching the maximum scroll value.
+            scrollPane.getViewport().validate();
             JScrollBar vertical = scrollPane.getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
