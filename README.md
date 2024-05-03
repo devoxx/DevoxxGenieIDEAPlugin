@@ -21,7 +21,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 ### Installation:
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
-- **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-0.0.XX.zip'
+- **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-X.Y.Z.zip'
 
  
 ### LLM Settings
