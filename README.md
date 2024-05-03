@@ -12,6 +12,8 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 - **Explain**: Explain code using local and cloud-based LLM's.
 - **Review**: Review and improve your code using local and cloud-based LLM's.
 - **Test**: Generate unit tests for your code using local and cloud-based LLM's.
+- **Code Higlighting**: Supports highlighting of code blocks
+- **Chat conversations**: Supports chat conversations with configurable memory size
 
 ![CodeHighlighting](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/b8f9562f-622c-4cad-8742-817565cfecc0)
 
