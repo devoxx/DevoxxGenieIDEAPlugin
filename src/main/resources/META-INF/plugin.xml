@@ -38,11 +38,6 @@
             <LI>Attach files to chat context</LI>
             <LI>Output formatting with language highlighting</LI>
         </UL>
-        <h2>V0.0.15</h2>
-        <UL>
-            <LI>Allow project source selection for prompt RAG</LI>
-            <LI>Allow user to stop running prompt</LI>
-        </UL>
          <h2>V0.0.14</h2>
         <UL>
             <LI>Bug fix : Keep first system prompt in CircularQueue</LI>
