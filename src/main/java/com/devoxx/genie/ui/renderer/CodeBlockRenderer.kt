@@ -19,7 +19,6 @@ import org.commonmark.node.Node
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.html.HtmlNodeRendererContext
 
-
 /**
  * Special commonmark renderer for code blocks.
  *
@@ -47,7 +46,24 @@ class CodeBlockNodeRenderer(
     private val project: Project,
     context: HtmlNodeRendererContext
 ) : NodeRenderer {
-    private val outputHtml = context.writer
+    private val htmlOutputWriter = context.writer
+
+    override fun render(node: Node) {
+        when (node) {
+            is IndentedCodeBlock -> {
+                renderCode(node.literal, block = true)
+            }
+            is FencedCodeBlock -> {
+                renderCode(node.literal, info = node.info, block = true)
+            }
+            is Code -> {
+                renderCode(node.literal)
+            }
+            else -> {
+                System.err.println("Unknown node type: $node")
+            }
+        }
+    }
 
     override fun getNodeTypes() = setOf(
         IndentedCodeBlock::class.java,
@@ -55,19 +71,17 @@ class CodeBlockNodeRenderer(
         Code::class.java
     )
 
-    override fun render(node: Node) {
-        when (node) {
-            is IndentedCodeBlock -> {
-                renderCode(node.literal, block = true)
-            }
+    private enum class HighlightingMode {
+        SEMANTIC_HIGHLIGHTING,
+        NO_HIGHLIGHTING,
+        INLINE_HIGHLIGHTING  // Assuming this mode exists
+    }
 
-            is FencedCodeBlock -> {
-                renderCode(node.literal, info = node.info, block = true)
-            }
-
-            is Code -> {
-                renderCode(node.literal)
-            }
+    private fun determineHighlightingMode(block: Boolean): HighlightingMode {
+        return when {
+            block && DocumentationSettings.isHighlightingOfCodeBlocksEnabled() -> HighlightingMode.SEMANTIC_HIGHLIGHTING
+            block -> HighlightingMode.NO_HIGHLIGHTING
+            else -> HighlightingMode.INLINE_HIGHLIGHTING
         }
     }
 
@@ -75,19 +89,13 @@ class CodeBlockNodeRenderer(
     // `DocumentationSettings.getMonospaceFontSizeCorrection` is going away possibly 242.
     // Note that styled HTML code would then be `div.styled-code > pre`
     private fun renderCode(codeSnippet: String, info: String = "", block: Boolean = false) {
-        outputHtml.line()
-        if (block) outputHtml.tag("pre")
-        outputHtml.tag("code style='font-size:14pt'")
+        htmlOutputWriter.line()
+        if (block) htmlOutputWriter.tag("pre")
+        htmlOutputWriter.tag("code style='font-size:14pt'")
 
-        val highlightingMode = if (block) {
-            when (DocumentationSettings.isHighlightingOfCodeBlocksEnabled()) {
-                true -> SEMANTIC_HIGHLIGHTING
-                false -> NO_HIGHLIGHTING
-            }
-        } else {
-            DocumentationSettings.getInlineCodeHighlightingMode()
-        }
-        outputHtml.raw(
+        val highlightingMode = determineHighlightingMode(block)
+
+        htmlOutputWriter.raw(
             appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
                 highlightingMode,
                 project,
@@ -95,23 +103,23 @@ class CodeBlockNodeRenderer(
                 codeSnippet
             )
         )
-        outputHtml.tag("/code")
-        if (block) outputHtml.tag("/pre")
-        outputHtml.line()
+        htmlOutputWriter.tag("/code")
+        if (block) htmlOutputWriter.tag("/pre")
+        htmlOutputWriter.line()
     }
 
     /**
      * Inspired by KDocRenderer.appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet
      */
     private fun appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
-        highlightingMode: DocumentationSettings.InlineCodeHighlightingMode,
+        highlightingMode: HighlightingMode,
         project: Project,
         language: Language,
         codeSnippet: String
     ): String {
         var highlightedAndEncodedAsHtmlCodeSnippet = buildString {
             when (highlightingMode) {
-                SEMANTIC_HIGHLIGHTING -> {
+                HighlightingMode.SEMANTIC_HIGHLIGHTING -> {
                     ApplicationManager.getApplication().runReadAction {
                         HtmlSyntaxInfoUtil.appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
                             this,
@@ -123,7 +131,6 @@ class CodeBlockNodeRenderer(
                         )
                     }
                 }
-
                 else -> {
                     // raw code snippet, but escaped
                     append(StringUtil.escapeXmlEntities(codeSnippet))
@@ -131,7 +138,7 @@ class CodeBlockNodeRenderer(
             }
         }
 
-        if (highlightingMode != NO_HIGHLIGHTING) {
+        if (highlightingMode != HighlightingMode.NO_HIGHLIGHTING) {
             // set code text color as editor default code color instead of doc component text color
             // surround by a span using the same editor colors
             val codeAttributes = EditorColorsManager.getInstance()
