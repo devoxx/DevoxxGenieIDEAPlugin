@@ -58,7 +58,7 @@ fun htmlJEditorPane(
             .also {
                 val baseFontSize = UIManager.getFont("Label.font").size
                 val codeFontName = EditorCssFontResolver.EDITOR_FONT_NAME_NO_LIGATURES_PLACEHOLDER
-                val contentCodeFontSizePercent = DocumentationSettings.getMonospaceFontSizeCorrection(true)
+                // val contentCodeFontSizePercent = DocumentationSettings.getMonospaceFontSizeCorrection(true)
 
                 val paragraphSpacing = """padding: ${scale(4)}px 0 ${scale(4)}px 0"""
 
@@ -84,7 +84,7 @@ fun htmlJEditorPane(
                             border-bottom: ${scale(1)}px solid ${ColorUtil.toHtmlColor(UIUtil.getTooltipSeparatorColor())};
                             width: 100%;
                         }
-                        code, pre, .pre { font-family:"$codeFontName"; font-size:$contentCodeFontSizePercent%; }
+                        code, pre, .pre { font-family:"$codeFontName"; font-size:14pt; }
                         a { color: ${ColorUtil.toHtmlColor(JBUI.CurrentTheme.Link.Foreground.ENABLED)}; text-decoration: none; }
                         """.trimIndent()
                     )
