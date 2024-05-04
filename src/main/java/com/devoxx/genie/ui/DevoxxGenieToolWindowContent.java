@@ -180,6 +180,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             promptOutputPanel.clear();
             promptExecutionService.clearChatMessages();
             promptInputComponent.clear();
+            FileListManager.getInstance().clear();
             enableButtons();
         });
 

@@ -52,13 +52,20 @@ public class FileListManager {
         observers.add(observer);
     }
 
-    public void removeObserver(FileListObserver observer) {
-        observers.remove(observer);
+    public void clear() {
+        files.clear();
+        notifyAllObservers();
     }
 
     private void notifyObservers(VirtualFile file) {
         for (FileListObserver observer : observers) {
             observer.fileAdded(file);
+        }
+    }
+
+    private void notifyAllObservers() {
+        for (FileListObserver observer : observers) {
+            observer.allFilesRemoved();
         }
     }
 }

@@ -54,6 +54,13 @@ public class PromptContextFileListPanel extends JPanel
         updateUIState();
     }
 
+    @Override
+    public void allFilesRemoved() {
+        removeAll();
+        updateFilesPanelVisibility();
+        updateUIState();
+    }
+
     private void updateFilesPanelVisibility() {
         if (fileListManager.isEmpty()) {
             filesScrollPane.setVisible(false);
