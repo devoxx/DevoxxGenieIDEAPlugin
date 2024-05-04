@@ -14,7 +14,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 - **Test**: Generate unit tests for your code using local and cloud-based LLM's.
 - **Code Higlighting**: Supports highlighting of code blocks.
 - **Chat conversations**: Supports chat conversations with configurable memory size.
-- **Add files to context**: You can add open files to the chat window context for producing better answers.
+- **Add files & code snippets to context**: You can add open files to the chat window context for producing better answers.
 
 See new features in action @ https://www.youtube.com/watch?v=7IJrKIS1eN8 
 
