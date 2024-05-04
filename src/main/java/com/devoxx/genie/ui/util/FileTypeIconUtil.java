@@ -10,6 +10,7 @@ import com.intellij.psi.PsiManager;
 
 import javax.swing.*;
 
+import static com.devoxx.genie.action.AddSnippetAction.CODE_SNIPPET;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 
 /**
@@ -47,7 +48,11 @@ public class FileTypeIconUtil {
                     }
                 }
             } else {
-                icon[0] = ClassIcon;
+                if (virtualFile.getFileType().getName().equals("UNKNOWN")) {
+                    icon[0] = CodeSnippetIcon;
+                } else {
+                    icon[0] = ClassIcon;
+                }
             }
         });
         return icon[0];

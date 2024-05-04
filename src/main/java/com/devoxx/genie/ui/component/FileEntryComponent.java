@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.devoxx.genie.ui.util.FileTypeIconUtil;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.devoxx.genie.action.AddSnippetAction.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CloseSmalllIcon;
 
 /**
@@ -38,12 +40,30 @@ public class FileEntryComponent extends JPanel {
 
         setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        JButton fileNameButton = new JButton(virtualFile.getName(), FileTypeIconUtil.getFileTypeIcon(project, virtualFile));
+        Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(project, virtualFile);
+        JButton fileNameButton = new JButton(virtualFile.getName(), fileTypeIcon);
         if (fontToUse != null) {
             fileNameButton.setFont(fontToUse);
         }
         JButton fileNameBtn = createButton(fileNameButton);
-        fileNameBtn.addActionListener(e -> FileEditorManager.getInstance(project).openFile(virtualFile, true));
+        fileNameBtn.addActionListener(e -> {
+            VirtualFile originalFile = virtualFile.getUserData(ORIGINAL_FILE_KEY);
+            if (originalFile != null) {
+                FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+                fileEditorManager.openFile(originalFile, true);
+                Editor editor = fileEditorManager.getSelectedTextEditor();
+                if (editor != null) {
+                    String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
+                    Integer selectionStart = virtualFile.getUserData(SELECTION_START_KEY);
+                    Integer selectionEnd = virtualFile.getUserData(SELECTION_END_KEY);
+                    if (selectedText != null && selectionStart != null && selectionEnd != null) {
+                        editor.getSelectionModel().setSelection(selectionStart, selectionEnd);
+                    }
+                }
+            } else {
+                FileEditorManager.getInstance(project).openFile(virtualFile, true);
+            }
+        });
         add(fileNameBtn);
 
         if (fileRemoveListener != null) {

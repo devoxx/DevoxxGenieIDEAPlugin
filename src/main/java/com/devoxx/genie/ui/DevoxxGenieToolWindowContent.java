@@ -10,6 +10,7 @@ import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.PromptExecutionService;
 import com.devoxx.genie.ui.component.*;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 import static javax.swing.SwingUtilities.invokeLater;
@@ -313,7 +315,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         }
 
         PromptContext promptContext = getPromptContext(userPromptText,
-            promptContextFileListPanel.getFiles(),
+            FileListManager.getInstance().getFiles(),
             fileEditorManager.getSelectedTextEditor(),
             genieClient.getChatLanguageModel());
 
@@ -457,13 +459,18 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         StringBuilder userPromptContext = new StringBuilder();
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
         files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
-            Document document = fileDocumentManager.getDocument(file);
-            if (document != null) {
+            if (file.getFileType().getName().equals("UNKNOWN")) {
                 userPromptContext.append("Filename: ").append(file.getName()).append("\n");
-                String content = document.getText();
-                userPromptContext.append(content).append("\n");
+                userPromptContext.append("Code Snippet: ").append( file.getUserData(SELECTED_TEXT_KEY)).append("\n");
             } else {
-                NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
+                Document document = fileDocumentManager.getDocument(file);
+                if (document != null) {
+                    userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                    String content = document.getText();
+                    userPromptContext.append(content).append("\n");
+                } else {
+                    NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
+                }
             }
         }));
 
