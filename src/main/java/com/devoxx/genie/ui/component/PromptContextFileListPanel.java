@@ -1,17 +1,16 @@
 package com.devoxx.genie.ui.component;
 
+import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.FileListObserver;
 import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.devoxx.genie.ui.listener.FileSelectionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
-import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
@@ -20,16 +19,18 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  * Here we have a panel that displays a list of files that are selected by the user.
  * These files are used as context for the prompt input.
  */
-public class PromptContextFileListPanel extends JPanel implements FileRemoveListener, FileSelectionListener {
+public class PromptContextFileListPanel extends JPanel
+    implements FileRemoveListener, FileSelectionListener, FileListObserver {
 
-    @Getter
-    private final List<VirtualFile> files = new ArrayList<>();
-
+    private final FileListManager fileListManager;
     private final JBScrollPane filesScrollPane;
     private final transient Project project;
 
     public PromptContextFileListPanel(Project project) {
         this.project = project;
+        fileListManager = FileListManager.getInstance();
+        fileListManager.addObserver(this);
+
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         // Subscribe to file selection events and handle them in this class
@@ -45,14 +46,22 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
         filesScrollPane.setVisible(false);
     }
 
+    @Override
+    public void fileAdded(VirtualFile file) {
+        updateFilesPanelVisibility();
+        FileEntryComponent fileLabel = new FileEntryComponent(project, file, this, null);
+        add(fileLabel);
+        updateUIState();
+    }
+
     private void updateFilesPanelVisibility() {
-        if (files.isEmpty()) {
+        if (fileListManager.isEmpty()) {
             filesScrollPane.setVisible(false);
             filesScrollPane.setPreferredSize(new Dimension(0, 0));
         } else {
             filesScrollPane.setVisible(true);
             int heightPerFile = 30;
-            int totalHeight = heightPerFile * files.size();
+            int totalHeight = heightPerFile * fileListManager.size();
             int maxHeight = heightPerFile * 3;
             int prefHeight = Math.min(totalHeight, maxHeight);
             filesScrollPane.setPreferredSize(new Dimension(getPreferredSize().width, prefHeight));
@@ -63,7 +72,7 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
 
     @Override
     public void onFileRemoved(VirtualFile file) {
-        this.files.remove(file);
+        fileListManager.removeFile(file);
         removeFromFilesPanel(file);
         updateFilesPanelVisibility();
         updateUIState();
@@ -81,8 +90,8 @@ public class PromptContextFileListPanel extends JPanel implements FileRemoveList
 
     @Override
     public void fileSelected(VirtualFile selectedFile) {
-        if (!files.contains(selectedFile)) {
-            files.add(selectedFile);
+        if (!fileListManager.contains(selectedFile)) {
+            fileListManager.addFile(selectedFile);
             updateFilesPanelVisibility();
             FileEntryComponent fileLabel = new FileEntryComponent(project, selectedFile, this, null);
             add(fileLabel);

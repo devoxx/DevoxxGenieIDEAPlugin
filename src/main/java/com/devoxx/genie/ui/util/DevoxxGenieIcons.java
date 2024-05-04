@@ -19,6 +19,7 @@ public final class DevoxxGenieIcons {
     public static final Icon EnumIcon = load("/icons/enum.svg");
     public static final Icon ClassIcon = load("/icons/class.svg");
     public static final Icon DevoxxIcon = load("/icons/pluginIcon.svg");
+    public static final Icon CodeSnippetIcon = load("/icons/codeSnippet.svg");
 
     private DevoxxGenieIcons() {
     }

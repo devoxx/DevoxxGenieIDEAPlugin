@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.1.1</h2>
+        <UL>
+            <LI>You can now add code snippets (via right-click popup menu) to the chat window context</LI>
+        </UL>
         <h2>V0.1.0</h2>
         <UL>
             <LI>Introduction of chat conversations</LI>
@@ -121,7 +125,6 @@
 
     </extensions>
 
-
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
     </extensions>
@@ -131,4 +134,13 @@
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </applicationListeners>
 
+    <actions>
+        <action id="com.devoxx.genie.AddSnippetAction"
+                class="com.devoxx.genie.action.AddSnippetAction"
+                text="Add To Context Window"
+                icon="/icons/pluginIcon.svg"
+                description="Add code snippet to context window">
+            <add-to-group group-id="EditorPopupMenu" anchor="first" />
+        </action>
+    </actions>
 </idea-plugin>
