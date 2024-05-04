@@ -3,8 +3,6 @@ package com.devoxx.genie.ui.component;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.FileListObserver;
 import com.devoxx.genie.ui.listener.FileRemoveListener;
-import com.devoxx.genie.ui.listener.FileSelectionListener;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
@@ -20,7 +18,7 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  * These files are used as context for the prompt input.
  */
 public class PromptContextFileListPanel extends JPanel
-    implements FileRemoveListener, FileSelectionListener, FileListObserver {
+    implements FileRemoveListener, FileListObserver {
 
     private final FileListManager fileListManager;
     private final JBScrollPane filesScrollPane;
@@ -32,9 +30,6 @@ public class PromptContextFileListPanel extends JPanel
         fileListManager.addObserver(this);
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
-        // Subscribe to file selection events and handle them in this class
-        project.getMessageBus().connect().subscribe(AppTopics.FILE_SELECTION_TOPIC, this);
 
         // Wrap the filesPanel in a JBScrollPane
         filesScrollPane = new JBScrollPane(this);
@@ -92,17 +87,6 @@ public class PromptContextFileListPanel extends JPanel
                 remove(fileEntryComponent);
                 break;
             }
-        }
-    }
-
-    @Override
-    public void fileSelected(VirtualFile selectedFile) {
-        if (!fileListManager.contains(selectedFile)) {
-            fileListManager.addFile(selectedFile);
-            updateFilesPanelVisibility();
-            FileEntryComponent fileLabel = new FileEntryComponent(project, selectedFile, this, null);
-            add(fileLabel);
-            updateUIState();
         }
     }
 

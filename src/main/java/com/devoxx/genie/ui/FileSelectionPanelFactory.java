@@ -1,14 +1,13 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.renderer.FileListCellRenderer;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.util.messages.MessageBus;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -81,8 +80,7 @@ public class FileSelectionPanelFactory implements DumbAware {
      */
     private static void openSelectedFile(Project project, JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
-        MessageBus messageBus = project.getMessageBus();
-        messageBus.syncPublisher(AppTopics.FILE_SELECTION_TOPIC).fileSelected(selectedFile);
+        FileListManager.getInstance().addFile(selectedFile);
     }
 
     /**

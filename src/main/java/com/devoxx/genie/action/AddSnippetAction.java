@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
@@ -52,9 +53,12 @@ public class AddSnippetAction extends AnAction {
      * @param e the action event
      */
     private void ensureToolWindowIsVisible(@NotNull AnActionEvent e) {
-        ToolWindow toolWindow = ToolWindowManager.getInstance(e.getProject()).getToolWindow(TOOL_WINDOW_ID);
-        if (toolWindow != null && !toolWindow.isVisible()) {
-            toolWindow.show();
+        Project project = e.getProject();
+        if (project != null) {
+            ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID);
+            if (toolWindow != null && !toolWindow.isVisible()) {
+                toolWindow.show();
+            }
         }
     }
 
