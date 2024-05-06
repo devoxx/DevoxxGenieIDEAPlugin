@@ -27,7 +27,7 @@ public class ExpandablePanel extends JPanel {
         List<VirtualFile> selectedFiles = promptContext.getEditorInfo().getSelectedFiles();
         String referenceText = "Using " + selectedFiles.size() + " reference" + (selectedFiles.size() > 1 ? "s" : "");
         toggleButton = new JButton(referenceText, ArrowExpand);
-        toggleButton.setFont(SourceCodeProFontPlan12);
+        // toggleButton.setFont(SourceCodeProFontPlan12);
         toggleButton.addActionListener(e -> toggleContent());
         toggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         toggleButton.setBorder(BorderFactory.createEmptyBorder());

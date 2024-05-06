@@ -10,6 +10,11 @@ import javax.swing.UIManager
 import javax.swing.event.HyperlinkListener
 import javax.swing.text.html.StyleSheet
 import org.jetbrains.annotations.Contract
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.awt.datatransfer.UnsupportedFlavorException
+import javax.swing.JComponent
+import javax.swing.TransferHandler
 
 /**
  * Creates a [JEditorPane] tailored for HTML content, utilizing IntelliJ API to enhance display and interaction.

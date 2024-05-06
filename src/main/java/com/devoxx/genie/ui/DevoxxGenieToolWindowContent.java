@@ -37,7 +37,6 @@ import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -71,7 +70,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
     private final ComboBox<String> modelNameComboBox = new ComboBox<>();
 
-    private PromptInputComponent promptInputComponent;
+    private PromptInputArea promptInputComponent;
     private PromptOutputPanel promptOutputPanel;
     private PromptContextFileListPanel promptContextFileListPanel;
 
@@ -86,7 +85,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
-     *
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(ToolWindow toolWindow) {
@@ -101,7 +99,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         setLastSelectedProvider();
     }
 
-    private @Nullable void setLastSelectedProvider() {
+    private void setLastSelectedProvider() {
         lastSelectedProvider = SettingsState.getInstance().getLastSelectedProvider();
         if (lastSelectedProvider != null) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
@@ -109,7 +107,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     }
 
     private void setupUI() {
-        promptInputComponent = new PromptInputComponent(resourceBundle);
+        promptInputComponent = new PromptInputArea(resourceBundle);
         promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);
 
@@ -336,7 +334,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             new Task.Backgroundable(promptContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    promptOutputPanel.addUserPrompt(promptContext.getUserPrompt());
+                    promptOutputPanel.addUserPrompt(promptContext);
 
                     executePrompt(promptContext);
 
@@ -408,6 +406,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
                                            Editor editor,
                                            ChatLanguageModel chatLanguageModel) {
         PromptContext promptContext = new PromptContext();
+        promptContext.setName(String.valueOf(System.currentTimeMillis()));
         promptContext.setProject(project);
         promptContext.setUserPrompt(userPrompt);
         promptContext.setChatLanguageModel(chatLanguageModel);
@@ -436,7 +435,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Get the prompt context from the selected files.
-     *
      * @param userPrompt the user prompt
      * @param files      the files
      * @return the prompt context
@@ -451,7 +449,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Get user prompt with context.
-     *
      * @param userPrompt the user prompt
      * @param files      the files
      * @return the user prompt with context

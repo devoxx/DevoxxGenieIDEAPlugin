@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 public class PromptContext {
+    private String name;
     private Project project;
     private String userPrompt;
     private String context;

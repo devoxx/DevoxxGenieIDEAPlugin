@@ -1,19 +1,19 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui;
 
+import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
-import com.intellij.openapi.project.Project;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
-public class PromptInputComponent extends PlaceholderTextArea {
+public class PromptInputArea extends PlaceholderTextArea {
 
     /**
      * The prompt input component
      * @param resourceBundle the resource bundle
      */
-    public PromptInputComponent(ResourceBundle resourceBundle) {
+    public PromptInputArea(ResourceBundle resourceBundle) {
         super();
 
         setLayout(new BorderLayout());
