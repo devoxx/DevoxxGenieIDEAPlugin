@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.richcopy.HtmlSyntaxInfoUtil
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
+import kotlinx.html.ButtonType
 import org.commonmark.node.Code
 import org.commonmark.node.FencedCodeBlock
 import org.commonmark.node.IndentedCodeBlock
@@ -90,7 +91,10 @@ class CodeBlockNodeRenderer(
     // Note that styled HTML code would then be `div.styled-code > pre`
     private fun renderCode(codeSnippet: String, info: String = "", block: Boolean = false) {
         htmlOutputWriter.line()
-        if (block) htmlOutputWriter.tag("pre")
+
+        if (block) {
+            htmlOutputWriter.tag("pre")
+        }
         htmlOutputWriter.tag("code style='font-size:14pt'")
 
         val highlightingMode = determineHighlightingMode(block)
@@ -104,7 +108,10 @@ class CodeBlockNodeRenderer(
             )
         )
         htmlOutputWriter.tag("/code")
-        if (block) htmlOutputWriter.tag("/pre")
+        if (block) {
+            htmlOutputWriter.tag("/pre")
+        }
+
         htmlOutputWriter.line()
     }
 
