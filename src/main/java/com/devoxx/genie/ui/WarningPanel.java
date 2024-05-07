@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui;
 
-import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.RoundBorder;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
@@ -12,7 +12,7 @@ import java.awt.*;
 public class WarningPanel extends BackgroundPanel {
 
     public WarningPanel(String warning,
-                        PromptContext promptContext,
+                        ChatMessageContext chatMessageContext,
                         String text) {
         super(warning);
 
@@ -27,7 +27,7 @@ public class WarningPanel extends BackgroundPanel {
         JBScrollPane scrollPane = new JBScrollPane(jLabel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        add(new ResponseHeaderPanel(promptContext, null), BorderLayout.NORTH);
+        add(new ResponseHeaderPanel(chatMessageContext, null), BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
     }
 }

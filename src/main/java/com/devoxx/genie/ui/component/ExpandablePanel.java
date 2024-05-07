@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.component;
 
-import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import java.util.List;
@@ -19,15 +19,14 @@ public class ExpandablePanel extends JPanel {
     private final JButton toggleButton;
     private final JPanel contentPanel;
 
-    public ExpandablePanel(PromptContext promptContext) {
+    public ExpandablePanel(ChatMessageContext chatMessageContext) {
         setLayout(new BorderLayout());
         setSize(300, 200);
         setOpaque(false);
         setBackground(PROMPT_BG_COLOR);
-        List<VirtualFile> selectedFiles = promptContext.getEditorInfo().getSelectedFiles();
+        List<VirtualFile> selectedFiles = chatMessageContext.getEditorInfo().getSelectedFiles();
         String referenceText = "Using " + selectedFiles.size() + " reference" + (selectedFiles.size() > 1 ? "s" : "");
         toggleButton = new JButton(referenceText, ArrowExpand);
-        // toggleButton.setFont(SourceCodeProFontPlan12);
         toggleButton.addActionListener(e -> toggleContent());
         toggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         toggleButton.setBorder(BorderFactory.createEmptyBorder());
@@ -38,7 +37,7 @@ public class ExpandablePanel extends JPanel {
 
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        selectedFiles.forEach(file -> contentPanel.add(new FileEntryComponent(promptContext.getProject(), file, null, SourceCodeProFontPlan12)));
+        selectedFiles.forEach(file -> contentPanel.add(new FileEntryComponent(chatMessageContext.getProject(), file, null, SourceCodeProFontPlan12)));
         contentPanel.setVisible(false);
 
         setMinimumSize(new Dimension(0, 14 * selectedFiles.size()));
