@@ -16,6 +16,7 @@ import com.devoxx.genie.ui.SettingsState;
 import com.intellij.ide.util.PropertiesComponent;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Setter;
+import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -26,8 +27,12 @@ import static com.devoxx.genie.ui.Settings.MODEL_PROVIDER;
 public class ChatModelProvider {
 
     private ModelProvider modelProvider = getModelProvider(ModelProvider.Ollama.name());
-
     private String modelName;
+    private final OkHttpClient client;
+
+    public ChatModelProvider() {
+        this.client = new OkHttpClient();
+    }
 
     protected ModelProvider getModelProvider(String defaultValue) {
         String value = PropertiesComponent.getInstance().getValue(MODEL_PROVIDER, defaultValue);
@@ -104,7 +109,7 @@ public class ChatModelProvider {
     private void setLanguageModelName(ChatModel chatModel) {
         if (modelName == null) {
             try {
-                OllamaModelEntryDTO[] models = new OllamaService().getModels();
+                OllamaModelEntryDTO[] models = new OllamaService(client).getModels();
                 chatModel.setModelName(models[0].getName());
             } catch (IOException e) {
                 System.err.println("Failed to get Ollama models : " + e.getMessage());
