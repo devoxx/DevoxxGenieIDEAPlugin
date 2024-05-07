@@ -16,7 +16,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 - **Chat conversations**: Supports chat conversations with configurable memory size.
 - **Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window context! 
 
-See new features in action @ https://www.youtube.com/watch?v=7IJrKIS1eN8 
+See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](https://www.youtube.com/watch?v=E9PcKBSMv8U)
 
 ![CodeHighlighting](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/b8f9562f-622c-4cad-8742-817565cfecc0)
 
