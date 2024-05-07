@@ -22,6 +22,9 @@ public class WarningPanel extends BackgroundPanel {
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
             ));
 
+        withPreferredHeight(75);
+        withMinimumHeight(50);
+
         JBLabel jLabel = new JBLabel(text, SwingConstants.LEFT);
 
         JBScrollPane scrollPane = new JBScrollPane(jLabel);

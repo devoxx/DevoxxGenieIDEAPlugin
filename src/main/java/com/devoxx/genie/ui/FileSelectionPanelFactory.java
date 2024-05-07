@@ -26,7 +26,6 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Creates a panel with a text field for filtering files and a list of files
-     *
      * @param project The current project
      * @return The panel
      */
@@ -39,7 +38,6 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Creates a list of open files and files from the FilenameIndex search
-     *
      * @param project The current project
      * @return The list of files
      */
@@ -48,7 +46,7 @@ public class FileSelectionPanelFactory implements DumbAware {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
         resultList.setCellRenderer(new FileListCellRenderer(project));
 
-        addMouseListenerToResultList(project, resultList);
+        addMouseListenerToResultList(resultList);
         populateListModelWithOpenFiles(project, listModel);
 
         return resultList;
@@ -56,36 +54,30 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Adds a mouse listener to the result list to open the selected file
-     *
-     * @param project    The current project
      * @param resultList The list of files
      */
-    private static void addMouseListenerToResultList(Project project,
-                                                     JBList<VirtualFile> resultList) {
+    private static void addMouseListenerToResultList(JBList<VirtualFile> resultList) {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == DOUBLE_CLICK) {
-                    openSelectedFile(project, resultList);
-                }
+            if (e.getClickCount() == DOUBLE_CLICK) {
+                openSelectedFile(resultList);
+            }
             }
         });
     }
 
     /**
      * Opens the selected file in the editor
-     *
-     * @param project    The current project
      * @param resultList The list of files
      */
-    private static void openSelectedFile(Project project, JBList<VirtualFile> resultList) {
+    private static void openSelectedFile(JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         FileListManager.getInstance().addFile(selectedFile);
     }
 
     /**
      * Populates the list model with the open files
-     *
      * @param project   The current project
      * @param listModel The list model
      */

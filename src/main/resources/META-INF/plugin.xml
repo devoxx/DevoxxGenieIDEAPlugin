@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.1.4</h2>
+        <UL>
+            <LI>Feat #41: Support for GoLand</LI>
+        </UL>
         <h2>V0.1.3</h2>
         <UL>
             <LI>Feat: Allow user to remove chat messages</LI>
