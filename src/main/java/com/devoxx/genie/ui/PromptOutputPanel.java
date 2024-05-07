@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui;
 
-import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.JEditorPaneUtilsKt;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.devoxx.genie.ui.util.HelpUtil;
@@ -91,14 +91,14 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a user prompt to the panel.
-     * @param promptContext the prompt context
+     * @param chatMessageContext the prompt context
      */
-    public void addUserPrompt(PromptContext promptContext) {
+    public void addUserPrompt(ChatMessageContext chatMessageContext) {
         container.remove(welcomePanel);
         waitingPanel.showMsg();
-        UserPromptPanel userPromptPanel = new UserPromptPanel(promptContext);
+        UserPromptPanel userPromptPanel = new UserPromptPanel(chatMessageContext);
         userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
-        addFiller(promptContext.getName());
+        addFiller(chatMessageContext.getName());
         container.add(userPromptPanel);
         moveToBottom();
     }
@@ -106,17 +106,16 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     /**
      * Add a response to the panel.
      *
-     * @param promptContext  the prompt context
-     * @param promptResponse the completion response
+     * @param chatMessageContext  the prompt context
      */
-    public void addChatResponse(PromptContext promptContext, String promptResponse) {
+    public void addChatResponse(ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
 
-        addFiller(promptContext.getName());
+        addFiller(chatMessageContext.getName());
 
-        ResponsePromptPanel responsePromptPanel = new ResponsePromptPanel(promptContext);
-        responsePromptPanel.add(new ResponseHeaderPanel(promptContext, container).withBackground(PROMPT_BG_COLOR), BorderLayout.NORTH);
-        responsePromptPanel.add(getResponsePane(promptResponse), BorderLayout.CENTER);
+        ResponsePromptPanel responsePromptPanel = new ResponsePromptPanel(chatMessageContext);
+        responsePromptPanel.add(new ResponseHeaderPanel(chatMessageContext, container).withBackground(PROMPT_BG_COLOR), BorderLayout.NORTH);
+        responsePromptPanel.add(getResponsePane(chatMessageContext), BorderLayout.CENTER);
         container.add(responsePromptPanel);
 
         moveToBottom();
@@ -125,24 +124,23 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     /**
      * Add a warning text to the panel.
      *
-     * @param promptContext the prompt context
+     * @param chatMessageContext the prompt context
      * @param text          the warning text
      */
-    public void addWarningText(PromptContext promptContext, String text) {
+    public void addWarningText(ChatMessageContext chatMessageContext, String text) {
         welcomePanel.setVisible(false);
         addFiller("warning");
-        container.add(new WarningPanel(text, promptContext, text));
+        container.add(new WarningPanel(text, chatMessageContext, text));
     }
 
     /**
      * Get the response pane with rendered HTML.
-     *
-     * @param promptResponse the completion response
+     * @param chatMessageContext the chat message context
      * @return the response pane
      */
-    private @NotNull JEditorPane getResponsePane(String promptResponse) {
+    private @NotNull JEditorPane getResponsePane(ChatMessageContext chatMessageContext) {
 
-        Node node = Parser.builder().build().parse(promptResponse);
+        Node node = Parser.builder().build().parse(chatMessageContext.getAiMessage().text());
 
         HtmlRenderer renderer = HtmlRenderer
             .builder()
@@ -170,7 +168,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
      * Scroll to the bottom of the panel after repainting the new content.
      */
     private void moveToBottom() {
-        // This will request a layout update.
         revalidate();
         repaint();
 

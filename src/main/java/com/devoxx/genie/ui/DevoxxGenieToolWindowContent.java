@@ -8,8 +8,8 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.model.request.PromptContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.PromptExecutionService;
 import com.devoxx.genie.ui.component.*;
@@ -34,6 +34,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -313,30 +315,30 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             return;
         }
 
-        PromptContext promptContext = getPromptContext(userPromptText,
+        ChatMessageContext chatMessageContext = createChatMessageContext(userPromptText,
             FileListManager.getInstance().getFiles(),
             fileEditorManager.getSelectedTextEditor(),
             genieClient.getChatLanguageModel());
 
         disableButtons();
 
-        runPromptInBackground(promptContext);
+        runPromptInBackground(chatMessageContext);
     }
 
     /**
      * Run the prompt in the background
      *
-     * @param promptContext the prompt context
+     * @param chatMessageContext the prompt context
      */
-    private void runPromptInBackground(PromptContext promptContext) {
+    private void runPromptInBackground(ChatMessageContext chatMessageContext) {
 
         Task.Backgroundable task =
-            new Task.Backgroundable(promptContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
+            new Task.Backgroundable(chatMessageContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    promptOutputPanel.addUserPrompt(promptContext);
+                    promptOutputPanel.addUserPrompt(chatMessageContext);
 
-                    executePrompt(promptContext);
+                    executePrompt(chatMessageContext);
 
                     progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
                 }
@@ -349,20 +351,20 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     /**
      * Execute the prompt.
      *
-     * @param promptContext the prompt context
+     * @param chatMessageContext the prompt context
      */
-    private void executePrompt(PromptContext promptContext) {
+    private void executePrompt(ChatMessageContext chatMessageContext) {
         disableButtons();
 
-        getCommandFromPrompt(promptContext.getUserPrompt()).ifPresentOrElse(fixedPrompt -> {
+        getCommandFromPrompt(chatMessageContext.getUserMessage().singleText()).ifPresentOrElse(fixedPrompt -> {
             try {
-                promptContext.setUserPrompt(fixedPrompt);
+                chatMessageContext.setUserPrompt(fixedPrompt);
 
-                String response = promptExecutionService.executeQuery(promptContext);
-
-                promptOutputPanel.addChatResponse(promptContext, response);
+                AiMessage responseMessage = promptExecutionService.executeQuery(chatMessageContext);
+                chatMessageContext.setAiMessage(responseMessage);
+                promptOutputPanel.addChatResponse(chatMessageContext);
             } catch (IllegalAccessException e) {
-                promptOutputPanel.addWarningText(promptContext, e.getMessage());
+                promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
             }
             enableButtons();
         }, this::enableButtons);
@@ -401,35 +403,35 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * @param editor the editor
      * @return the prompt context with language and text
      */
-    private PromptContext getPromptContext(String userPrompt,
-                                           List<VirtualFile> files,
-                                           Editor editor,
-                                           ChatLanguageModel chatLanguageModel) {
-        PromptContext promptContext = new PromptContext();
-        promptContext.setName(String.valueOf(System.currentTimeMillis()));
-        promptContext.setProject(project);
-        promptContext.setUserPrompt(userPrompt);
-        promptContext.setChatLanguageModel(chatLanguageModel);
-        promptContext.setModelName((String) modelNameComboBox.getSelectedItem());
-        promptContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
+    private ChatMessageContext createChatMessageContext(String userPrompt,
+                                                        List<VirtualFile> files,
+                                                        Editor editor,
+                                                        ChatLanguageModel chatLanguageModel) {
+        ChatMessageContext chatMessageContext = new ChatMessageContext();
+        chatMessageContext.setProject(project);
+        chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
+        chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
+        chatMessageContext.setChatLanguageModel(chatLanguageModel);
+        chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
+        chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
 
         if (files.isEmpty() && editor == null) {
             // A regular prompt without any selected code or files
-            return promptContext;
+            return chatMessageContext;
         } else if (files.isEmpty() && editor.getSelectionModel().getSelectedText() != null) {
             // A prompt with selected code in the editor
             EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
-            promptContext.setEditorInfo(editorInfo);
-            return promptContext;
+            chatMessageContext.setEditorInfo(editorInfo);
+            return chatMessageContext;
         } else if (!files.isEmpty()) {
             // A prompt with selected files
-            return getPromptContextWithSelectedFiles(promptContext, userPrompt, files);
+            return getPromptContextWithSelectedFiles(chatMessageContext, userPrompt, files);
         } else {
             // A prompt with alla the content from open editor
             EditorInfo editorInfo = new EditorInfo();
             editorInfo.setSelectedText(editor.getDocument().getText());
-            promptContext.setEditorInfo(editorInfo);
-            return promptContext;
+            chatMessageContext.setEditorInfo(editorInfo);
+            return chatMessageContext;
         }
     }
 
@@ -439,12 +441,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * @param files      the files
      * @return the prompt context
      */
-    private @NotNull PromptContext getPromptContextWithSelectedFiles(PromptContext promptContext,
-                                                                     String userPrompt,
-                                                                     List<VirtualFile> files) {
-        promptContext.setEditorInfo(new EditorInfo(files));
-        promptContext.setContext(getUserPromptWithContext(userPrompt, files));
-        return promptContext;
+    private @NotNull ChatMessageContext getPromptContextWithSelectedFiles(ChatMessageContext chatMessageContext,
+                                                                          String userPrompt,
+                                                                          List<VirtualFile> files) {
+        chatMessageContext.setEditorInfo(new EditorInfo(files));
+        chatMessageContext.setContext(getUserPromptWithContext(userPrompt, files));
+        return chatMessageContext;
     }
 
     /**
