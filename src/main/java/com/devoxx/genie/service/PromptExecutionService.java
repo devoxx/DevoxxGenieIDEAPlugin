@@ -1,7 +1,8 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.intellij.openapi.application.ApplicationManager;
+import dev.langchain4j.data.message.AiMessage;
 import org.jetbrains.annotations.NotNull;
 
 public interface PromptExecutionService {
@@ -12,7 +13,7 @@ public interface PromptExecutionService {
     }
 
     @NotNull
-    String executeQuery(@NotNull PromptContext promptContext) throws IllegalAccessException;
+    AiMessage executeQuery(@NotNull ChatMessageContext chatMessageContext) throws IllegalAccessException;
 
     void clearChatMessages();
 }

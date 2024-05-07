@@ -1,6 +1,6 @@
 package com.devoxx.genie.model;
 
-import com.devoxx.genie.model.request.PromptContext;
+import com.devoxx.genie.model.request.ChatMessageContext;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class ChatInteraction {
-    private PromptContext promptContext;
+    private ChatMessageContext chatMessageContext;
     private String response;
 }
