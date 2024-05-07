@@ -16,6 +16,7 @@ import com.devoxx.genie.ui.component.*;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -82,6 +83,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final JButton historyBtn = new JHoverButton(ClockIcon, true);
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
 
+    private final ApplicationInfo appInfo = ApplicationManager.getApplication().getService(ApplicationInfo.class);
     private final PromptExecutionService promptExecutionService;
     private String lastSelectedProvider;
 
@@ -242,7 +244,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(submitBtn, BorderLayout.WEST);
-        buttonPanel.add(addFileBtn, BorderLayout.EAST);
+
+        if (isJavaIDE()) {
+            buttonPanel.add(addFileBtn, BorderLayout.EAST);
+        }
 
         // Disable addFileBtn if no files are open in the IDEA Editor
         if (fileEditorManager.getSelectedFiles().length == 0) {
@@ -278,6 +283,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         addFileBtn.addActionListener(e -> selectFilesForPromptContext());
 
         return submitPanel;
+    }
+
+    private boolean isJavaIDE() {
+        return appInfo.getVersionName().contains("IDEA");
     }
 
     /**
