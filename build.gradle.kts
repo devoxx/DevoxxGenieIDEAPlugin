@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.1.3"
+version = "0.1.4"
 
 repositories {
     mavenCentral()
@@ -55,8 +55,8 @@ tasks {
         mergeServiceFiles()
         manifest {
             attributes(
-                    "Implementation-Title" to "DevoxxGenie",
-                    "Implementation-Version" to version,
+                "Implementation-Title" to "DevoxxGenie",
+                "Implementation-Version" to version,
             )
         }
     }
