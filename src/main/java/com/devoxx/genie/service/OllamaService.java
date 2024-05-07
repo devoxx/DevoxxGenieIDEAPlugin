@@ -11,31 +11,38 @@ import okhttp3.Response;
 import java.io.IOException;
 
 public class OllamaService {
+    private final OkHttpClient client;
+
+    public OllamaService(OkHttpClient client) {
+        this.client = client;
+    }
 
     public OllamaModelEntryDTO[] getModels() throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
-        String baseUrl = SettingsState.getInstance().getOllamaModelUrl();
-
-        // Ensure the base URL ends with exactly one slash
-        if (!baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
+        String baseUrl = ensureEndsWithSlash(SettingsState.getInstance().getOllamaModelUrl());
 
         Request request = new Request.Builder()
-            .url(baseUrl+"api/tags")
+            .url(baseUrl + "api/tags")
             .build();
 
         try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+            if (!response.isSuccessful()) {
+                throw new UnsuccessfulRequestException("Unexpected code " + response);
+            }
 
             assert response.body() != null;
 
             OllamaModelDTO ollamaModelDTO = new Gson().fromJson(response.body().string(), OllamaModelDTO.class);
-            if (ollamaModelDTO != null && ollamaModelDTO.getModels() != null) {
-                return ollamaModelDTO.getModels();
-            }
+            return ollamaModelDTO != null && ollamaModelDTO.getModels() != null ? ollamaModelDTO.getModels() : new OllamaModelEntryDTO[0];
         }
-        return new OllamaModelEntryDTO[0];
+    }
+
+    private String ensureEndsWithSlash(String url) {
+        return url.endsWith("/") ? url : url + "/";
+    }
+
+    public static class UnsuccessfulRequestException extends IOException {
+        public UnsuccessfulRequestException(String message) {
+            super(message);
+        }
     }
 }
