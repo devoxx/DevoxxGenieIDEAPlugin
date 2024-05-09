@@ -18,7 +18,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 
 See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](https://www.youtube.com/watch?v=E9PcKBSMv8U)
 
-![CodeHighlighting](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/b8f9562f-622c-4cad-8742-817565cfecc0)
+![GenieExample](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/5064cef3-e7f8-4ab8-9485-2dbd0a7788df)
 
 ### Installation:
 
