@@ -26,40 +26,33 @@ public class UserPromptPanel extends BackgroundPanel {
         this.container = container;
         setLayout(new BorderLayout());
 
-        JPanel iconPromptPanel = new JPanel(new BorderLayout());
-        iconPromptPanel.setOpaque(false);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
 
         // Icon Label setup
-        JLabel iconLabel = new JLabel(DevoxxIcon);
-        iconLabel.setHorizontalAlignment(JLabel.LEFT);
-        iconLabel.setVerticalAlignment(JLabel.TOP);
-        iconPromptPanel.add(iconLabel, BorderLayout.WEST);
+        JLabel iconLabel = new JLabel("DevoxxGenie", DevoxxIcon, SwingConstants.LEFT);
+        headerPanel.add(iconLabel, BorderLayout.WEST);
+        headerPanel.add(createDeleteButton(chatMessageContext), BorderLayout.EAST);
 
         // User prompt setup
+        String userPrompt = chatMessageContext.getUserMessage().singleText();
         JEditorPane htmlJEditorPane =
-            JEditorPaneUtils.createHtmlJEditorPane(chatMessageContext.getUserMessage().singleText(), null, StyleSheetsFactory.createParagraphStyleSheet());
-        iconPromptPanel.add(htmlJEditorPane, BorderLayout.CENTER);
+            JEditorPaneUtils.createHtmlJEditorPane(userPrompt, null, StyleSheetsFactory.createParagraphStyleSheet());
 
-        JPanel userPromptPanel = new JPanel(new BorderLayout());
-        userPromptPanel.setOpaque(false);
-        userPromptPanel.add(iconPromptPanel, BorderLayout.WEST);
-
-        // Delete button setup
-        JPanel deleteButtonPanel = createDeleteButton(chatMessageContext);
-        add(deleteButtonPanel, BorderLayout.EAST);
-        add(userPromptPanel, BorderLayout.CENTER);
+        add(headerPanel, BorderLayout.NORTH);
+        add(htmlJEditorPane, BorderLayout.CENTER);
     }
 
-    private @NotNull JPanel createDeleteButton(ChatMessageContext chatMessageContext) {
+    /**
+     * Create the delete button to remove user prompt & response.
+     * @param chatMessageContext the chat message context
+     * @return the panel with delete button
+     */
+    private @NotNull JButton createDeleteButton(ChatMessageContext chatMessageContext) {
         JButton deleteButton = new JHoverButton(TrashIcon, true);
         deleteButton.setToolTipText("Remove the prompt & response");
         deleteButton.addActionListener(e -> removeChat(chatMessageContext));
-
-        JPanel deleteButtonPanel = new JPanel(new BorderLayout());
-        deleteButtonPanel.setOpaque(false);
-        deleteButtonPanel.add(deleteButton, BorderLayout.NORTH); // Should align to top-right
-
-        return deleteButtonPanel;
+        return deleteButton;
     }
 
     /**
