@@ -10,7 +10,6 @@ import com.intellij.psi.PsiManager;
 
 import javax.swing.*;
 
-import static com.devoxx.genie.action.AddSnippetAction.CODE_SNIPPET;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 
 /**

@@ -8,5 +8,5 @@ public class DevoxxGenieFonts {
 
     public static final String SOURCE_CODE_PRO_FONT = "Source Code Pro";
 
-    public static final Font SourceCodeProFontPlan12 = new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, 12);
+    public static final Font SourceCodeProFontPlan14 = new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, 14);
 }

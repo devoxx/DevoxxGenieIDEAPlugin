@@ -1,8 +1,7 @@
 plugins {
-    id("java")
+    java
     id("org.jetbrains.intellij") version "1.17.2"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    kotlin("jvm")
 }
 
 group = "com.devoxx.genie"
@@ -24,13 +23,12 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.0-M1")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.assertj:assertj-core:3.25.3")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
-    implementation(kotlin("stdlib-jdk8"))
 }
 
 // Configure Gradle IntelliJ Plugin
@@ -76,6 +74,7 @@ tasks {
     }
 }
 
-kotlin {
-    jvmToolchain(17)
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }

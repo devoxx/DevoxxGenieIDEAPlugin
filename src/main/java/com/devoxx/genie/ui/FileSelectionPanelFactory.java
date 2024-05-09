@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -29,7 +30,7 @@ public class FileSelectionPanelFactory implements DumbAware {
      * @param project The current project
      * @return The panel
      */
-    public static JPanel createPanel(Project project) {
+    public static @NotNull JPanel createPanel(Project project) {
         JBList<VirtualFile> resultList = createResultList(project);
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(new JBScrollPane(resultList), BorderLayout.CENTER);
@@ -41,7 +42,7 @@ public class FileSelectionPanelFactory implements DumbAware {
      * @param project The current project
      * @return The list of files
      */
-    private static JBList<VirtualFile> createResultList(Project project) {
+    private static @NotNull JBList<VirtualFile> createResultList(Project project) {
         DefaultListModel<VirtualFile> listModel = new DefaultListModel<>();
         JBList<VirtualFile> resultList = new JBList<>(listModel);
         resultList.setCellRenderer(new FileListCellRenderer(project));
@@ -56,7 +57,7 @@ public class FileSelectionPanelFactory implements DumbAware {
      * Adds a mouse listener to the result list to open the selected file
      * @param resultList The list of files
      */
-    private static void addMouseListenerToResultList(JBList<VirtualFile> resultList) {
+    private static void addMouseListenerToResultList(@NotNull JBList<VirtualFile> resultList) {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -71,7 +72,7 @@ public class FileSelectionPanelFactory implements DumbAware {
      * Opens the selected file in the editor
      * @param resultList The list of files
      */
-    private static void openSelectedFile(JBList<VirtualFile> resultList) {
+    private static void openSelectedFile(@NotNull JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         FileListManager.getInstance().addFile(selectedFile);
     }

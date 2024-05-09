@@ -8,14 +8,21 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class WelcomePanel extends JBPanel<WelcomePanel> {
-    JBLabel jbLabel;
+    private JBLabel jbLabel;
 
+    /**
+     * Create a welcome panel
+     * @param resourceBundle the resource bundle
+     */
     public WelcomePanel(ResourceBundle resourceBundle) {
         super(new BorderLayout());
         jbLabel = new JBLabel(WelcomeUtil.getWelcomeText(resourceBundle));
         add(jbLabel, BorderLayout.NORTH);
     }
 
+    /**
+     * Show the message
+     */
     public void showMsg() {
         setVisible(true);
         jbLabel.setVisible(true);

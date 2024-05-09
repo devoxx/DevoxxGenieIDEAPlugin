@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -26,44 +27,22 @@ public class FileEntryComponent extends JPanel {
 
     /**
      * File entry component
-     *
      * @param project            the project
      * @param virtualFile        the virtual file
      * @param fileRemoveListener the file remove listener
-     * @param fontToUse          the font to use
      */
     public FileEntryComponent(Project project,
                               VirtualFile virtualFile,
-                              FileRemoveListener fileRemoveListener,
-                              Font fontToUse) {
+                              FileRemoveListener fileRemoveListener) {
         this.virtualFile = virtualFile;
 
         setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
         Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(project, virtualFile);
         JButton fileNameButton = new JButton(virtualFile.getName(), fileTypeIcon);
-        if (fontToUse != null) {
-            fileNameButton.setFont(fontToUse);
-        }
+
         JButton fileNameBtn = createButton(fileNameButton);
-        fileNameBtn.addActionListener(e -> {
-            VirtualFile originalFile = virtualFile.getUserData(ORIGINAL_FILE_KEY);
-            if (originalFile != null) {
-                FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-                fileEditorManager.openFile(originalFile, true);
-                Editor editor = fileEditorManager.getSelectedTextEditor();
-                if (editor != null) {
-                    String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
-                    Integer selectionStart = virtualFile.getUserData(SELECTION_START_KEY);
-                    Integer selectionEnd = virtualFile.getUserData(SELECTION_END_KEY);
-                    if (selectedText != null && selectionStart != null && selectionEnd != null) {
-                        editor.getSelectionModel().setSelection(selectionStart, selectionEnd);
-                    }
-                }
-            } else {
-                FileEditorManager.getInstance(project).openFile(virtualFile, true);
-            }
-        });
+        fileNameBtn.addActionListener(e -> openFileWithSelectedCode(project, virtualFile));
         add(fileNameBtn);
 
         if (fileRemoveListener != null) {
@@ -73,7 +52,46 @@ public class FileEntryComponent extends JPanel {
         }
     }
 
-    private @NotNull JButton createButton(JButton button) {
+    /**
+     * Open the file with selected code and highlight the selected text in the editor when applicable.
+     * @param project the project
+     * @param virtualFile the virtual file
+     */
+    private static void openFileWithSelectedCode(Project project, @NotNull VirtualFile virtualFile) {
+        VirtualFile originalFile = virtualFile.getUserData(ORIGINAL_FILE_KEY);
+        if (originalFile != null) {
+            FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+            fileEditorManager.openFile(originalFile, true);
+            Editor editor = fileEditorManager.getSelectedTextEditor();
+            if (editor != null) {
+                highlightSelectedText(virtualFile, editor);
+            }
+        } else {
+            FileEditorManager.getInstance(project).openFile(virtualFile, true);
+        }
+    }
+
+    /**
+     * Highlight the selected text in the editor.
+     * @param virtualFile the virtual file
+     * @param editor the editor
+     */
+    private static void highlightSelectedText(@NotNull VirtualFile virtualFile, Editor editor) {
+        String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
+        Integer selectionStart = virtualFile.getUserData(SELECTION_START_KEY);
+        Integer selectionEnd = virtualFile.getUserData(SELECTION_END_KEY);
+        if (selectedText != null && selectionStart != null && selectionEnd != null) {
+            editor.getSelectionModel().setSelection(selectionStart, selectionEnd);
+        }
+    }
+
+    /**
+     * Create a button.
+     * @param button the button
+     * @return the button
+     */
+    @Contract("_ -> param1")
+    private @NotNull JButton createButton(@NotNull JButton button) {
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setOpaque(true);

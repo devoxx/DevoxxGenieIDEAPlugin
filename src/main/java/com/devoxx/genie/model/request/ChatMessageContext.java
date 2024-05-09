@@ -23,4 +23,8 @@ public class ChatMessageContext {
     private String context;
     private EditorInfo editorInfo;
     private ChatLanguageModel chatLanguageModel;
+
+    public boolean hasFiles() {
+        return editorInfo != null && editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty();
+    }
 }

@@ -91,7 +91,7 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @param chatMessageContext the language text pair
      * @return the system message
      */
-    private SystemMessage createSystemMessage(ChatMessageContext chatMessageContext) {
+    private @NotNull SystemMessage createSystemMessage(@NotNull ChatMessageContext chatMessageContext) {
         String language = Optional.ofNullable(chatMessageContext.getEditorInfo())
             .map(EditorInfo::getLanguage)
             .orElse("programming");
@@ -109,7 +109,7 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * Create a user message with context.
      * @param chatMessageContext the chat message context
      */
-    private void createUserMessage(ChatMessageContext chatMessageContext) {
+    private void createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
         String context = chatMessageContext.getContext();
         String selectedText = chatMessageContext.getEditorInfo() != null ? chatMessageContext.getEditorInfo().getSelectedText() : "";
         if ((selectedText != null && !selectedText.isEmpty()) ||
@@ -122,8 +122,15 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
         }
     }
 
-    private static void addContext(ChatMessageContext chatMessageContext,
-                                   StringBuilder sb,
+    /**
+     * Add prompt context (selected code snippet) to the chat message.
+     * @param chatMessageContext the chat message context
+     * @param sb the string builder
+     * @param selectedText the selected text
+     * @param context the context
+     */
+    private static void addContext(@NotNull ChatMessageContext chatMessageContext,
+                                   @NotNull StringBuilder sb,
                                    String selectedText,
                                    String context) {
         sb.append(chatMessageContext.getUserPrompt());
@@ -138,6 +145,10 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
         }
     }
 
+    /**
+     * Removes the user and AI response message from the chat memory.
+     * @param chatMessageContext the chat message context
+     */
     public void removeMessagePair(ChatMessageContext chatMessageContext) {
         List<ChatMessage> messages = messageWindowChatMemory.messages();
 
