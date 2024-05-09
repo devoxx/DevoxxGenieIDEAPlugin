@@ -16,7 +16,7 @@ public class BackgroundPanel extends JBPanel<BackgroundPanel> {
      * @param name the name of the panel
      */
     public BackgroundPanel(String name) {
-        super(new BorderLayout());
+        super.setName(name);
         setName(name);
         setBackground(DEFAULT_BG_COLOR);
         setBorder(BorderFactory.createCompoundBorder(

@@ -2,69 +2,54 @@ package com.devoxx.genie.ui;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.listener.ChatChangeListener;
-import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
-import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.TrashIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
-    private final JComponent container;
-
-    public ResponseHeaderPanel(ChatMessageContext chatMessageContext,
-                               JComponent container) {
+    /**
+     * The response header panel.
+     * @param chatMessageContext the chat message context
+     */
+    public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
         super(new BorderLayout());
-        this.container = container;
 
-        andTransparent()
-        .withMaximumSize(500, 30)
-        .withPreferredHeight(30)
-        .withPreferredWidth(500);
+        andTransparent().withMaximumHeight(30).withPreferredHeight(30);
 
         String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
             (chatMessageContext.getModelName() != null ? " - " + chatMessageContext.getModelName() : "");
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
-        JBLabel createdOnLabel = new JBLabel(label);
+        JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
         add(createdOnLabel, BorderLayout.WEST);
 
-        if (container != null) {
-            JButton deleteButton = getDeleteButton(chatMessageContext);
-            add(deleteButton, BorderLayout.EAST);
-        }
+        JButton copyButton = createCopyButton(chatMessageContext);
+        add(copyButton, BorderLayout.EAST);
     }
 
-    private @NotNull JButton getDeleteButton(ChatMessageContext chatMessageContext) {
-        JButton deleteButton = new JHoverButton(TrashIcon, true);
-        deleteButton.setToolTipText("Remove the prompt & response");
-        deleteButton.addActionListener(e -> removeComponent(chatMessageContext));
+    private @NotNull JButton createCopyButton(ChatMessageContext chatMessageContext) {
+        JButton deleteButton = new JHoverButton(CopyIcon, true);
+        deleteButton.setToolTipText("Copy prompt response");
+        deleteButton.addActionListener(e -> copyPrompt(chatMessageContext));
         return deleteButton;
     }
 
-    private void removeComponent(ChatMessageContext chatMessageContext) {
-        // Get all children of container and delete by name
-        Arrays.stream(container.getComponents())
-            .filter(c -> c.getName() != null && c.getName().equals(chatMessageContext.getName()))
-            .forEach(container::remove);
-
-        container.revalidate();
-        container.repaint();
-
-        // Delete from message list
-        MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-        ChatChangeListener chatChangeListener = bus.syncPublisher(AppTopics.CHAT_MESSAGES_CHANGED_TOPIC);
-        chatChangeListener.removeMessagePair(chatMessageContext);
+    private void copyPrompt(ChatMessageContext chatMessageContext) {
+        String response = chatMessageContext.getAiMessage().text();
+        Transferable transferable = new StringSelection(response);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
+        NotificationUtil.sendNotification(chatMessageContext.getProject(), "The prompt response has been copied to the clipboard");
     }
 }

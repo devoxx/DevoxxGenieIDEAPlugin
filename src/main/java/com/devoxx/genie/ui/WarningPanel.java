@@ -11,11 +11,17 @@ import java.awt.*;
 
 public class WarningPanel extends BackgroundPanel {
 
+    /**
+     * Something went wrong, create a warning panel
+     * @param warning the warning message
+     * @param chatMessageContext the chat message context
+     * @param text the text
+     */
     public WarningPanel(String warning,
                         ChatMessageContext chatMessageContext,
                         String text) {
         super(warning);
-
+        setLayout(new BorderLayout());
         withMaximumSize(1500, 75)
             .withBorder(BorderFactory.createCompoundBorder(
                 new RoundBorder(JBColor.RED, 1, 5),
@@ -30,7 +36,7 @@ public class WarningPanel extends BackgroundPanel {
         JBScrollPane scrollPane = new JBScrollPane(jLabel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        add(new ResponseHeaderPanel(chatMessageContext, null), BorderLayout.NORTH);
+        add(new ResponseHeaderPanel(chatMessageContext), BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
     }
 }

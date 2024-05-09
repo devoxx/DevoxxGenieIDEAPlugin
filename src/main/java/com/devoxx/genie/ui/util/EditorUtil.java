@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -19,11 +20,10 @@ public class EditorUtil {
 
     /**
      * Get the editor info.
-     *
      * @param editor the editor
      * @return the editor info
      */
-    public static EditorInfo getEditorInfo(Project project, Editor editor) {
+    public static @NotNull EditorInfo getEditorInfo(Project project, Editor editor) {
 
         EditorInfo editorInfo = new EditorInfo();
 
