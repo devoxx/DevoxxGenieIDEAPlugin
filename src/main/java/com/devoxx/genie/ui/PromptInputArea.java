@@ -29,6 +29,9 @@ public class PromptInputArea extends PlaceholderTextArea {
         setPlaceholder(resourceBundle.getString("prompt.placeholder"));
     }
 
+    /**
+     * Clear the text
+     */
     public void clear() {
         setText("");
     }

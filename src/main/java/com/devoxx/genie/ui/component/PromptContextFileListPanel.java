@@ -44,7 +44,7 @@ public class PromptContextFileListPanel extends JPanel
     @Override
     public void fileAdded(VirtualFile file) {
         updateFilesPanelVisibility();
-        FileEntryComponent fileLabel = new FileEntryComponent(project, file, this, null);
+        FileEntryComponent fileLabel = new FileEntryComponent(project, file, this);
         add(fileLabel);
         updateUIState();
     }
