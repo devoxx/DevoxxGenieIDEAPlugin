@@ -11,6 +11,9 @@ import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
 
 public class WaitingPanel extends JBPanel<WaitingPanel> {
 
+    /**
+     * Create a waiting panel using a random working message.
+     */
     public WaitingPanel() {
         super(new BorderLayout());
         andTransparent();

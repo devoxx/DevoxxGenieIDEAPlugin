@@ -1,31 +1,19 @@
 package com.devoxx.genie.ui;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.component.JEditorPaneUtilsKt;
-import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.devoxx.genie.ui.util.HelpUtil;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.*;
-import static java.util.Collections.emptyList;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
-    private final transient Project project;
     private final JPanel container = new JPanel();
     private final WelcomePanel welcomePanel;
     private final HelpPanel helpPanel;
@@ -34,12 +22,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * The prompt output panel.
-     * @param project        the project
      * @param resourceBundle the resource bundle
      */
-    public PromptOutputPanel(Project project, ResourceBundle resourceBundle) {
+    public PromptOutputPanel(ResourceBundle resourceBundle) {
         super();
-        this.project = project;
 
         welcomePanel = new WelcomePanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage(resourceBundle));
@@ -96,7 +82,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
         container.remove(welcomePanel);
         waitingPanel.showMsg();
-        UserPromptPanel userPromptPanel = new UserPromptPanel(chatMessageContext);
+
+        UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
         userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         addFiller(chatMessageContext.getName());
         container.add(userPromptPanel);
@@ -113,10 +100,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
         addFiller(chatMessageContext.getName());
 
-        ResponsePromptPanel responsePromptPanel = new ResponsePromptPanel(chatMessageContext);
-        responsePromptPanel.add(new ResponseHeaderPanel(chatMessageContext, container).withBackground(PROMPT_BG_COLOR), BorderLayout.NORTH);
-        responsePromptPanel.add(getResponsePane(chatMessageContext), BorderLayout.CENTER);
-        container.add(responsePromptPanel);
+        ChatResponsePanel chatResponsePanel = new ChatResponsePanel(chatMessageContext);
+        chatResponsePanel.setName(chatMessageContext.getName());
+
+        container.add(chatResponsePanel);
 
         moveToBottom();
     }
@@ -134,48 +121,17 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     /**
-     * Get the response pane with rendered HTML.
-     * @param chatMessageContext the chat message context
-     * @return the response pane
-     */
-    private @NotNull JEditorPane getResponsePane(ChatMessageContext chatMessageContext) {
-
-        Node node = Parser.builder().build().parse(chatMessageContext.getAiMessage().text());
-
-        HtmlRenderer renderer = HtmlRenderer
-            .builder()
-            .nodeRendererFactory(context -> {
-                final CodeBlockNodeRenderer[] codeBlockRenderer = new CodeBlockNodeRenderer[1];
-                ApplicationManager.getApplication().runReadAction(() -> {
-                    codeBlockRenderer[0] = new CodeBlockNodeRenderer(project, context);
-                });
-                return codeBlockRenderer[0];
-            })
-            .escapeHtml(true).build();
-
-        String htmlResponse = renderer.render(node);
-
-        CharSequence charSequence = htmlResponse.subSequence(0, htmlResponse.length() - 1);
-
-        // TODO upgrade to `JBHtmlPane` in 2024.2
-
-        return JEditorPaneUtilsKt.htmlJEditorPane(charSequence,
-            emptyList(),
-            BrowserHyperlinkListener.INSTANCE);
-    }
-
-    /**
      * Scroll to the bottom of the panel after repainting the new content.
+     * SwingUtilities.invokeLater will schedule the scrolling to happen after all pending events are processed,
      */
     private void moveToBottom() {
+
         revalidate();
         repaint();
 
-        // SwingUtilities.invokeLater will schedule the scrolling to happen
-        // after all pending events are processed, including revalidate and repaint.
         SwingUtilities.invokeLater(() -> {
             // Ensure the viewport's contents are updated before fetching the maximum scroll value.
-            scrollPane.getViewport().validate();
+            // scrollPane.getViewport().validate();
             JScrollBar vertical = scrollPane.getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
