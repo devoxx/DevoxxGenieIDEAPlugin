@@ -149,10 +149,18 @@
     <actions>
         <action id="com.devoxx.genie.AddSnippetAction"
                 class="com.devoxx.genie.action.AddSnippetAction"
+                text="Add File To Context Window"
+                icon="/icons/pluginIcon.svg"
+                description="Add file to context window">
+            <add-to-group group-id="EditorPopupMenu" anchor="first" />
+        </action>
+
+        <action id="com.devoxx.genie.AddFileAction"
+                class="com.devoxx.genie.action.AddFileAction"
                 text="Add To Context Window"
                 icon="/icons/pluginIcon.svg"
                 description="Add code snippet to context window">
-            <add-to-group group-id="EditorPopupMenu" anchor="first" />
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first" />
         </action>
     </actions>
 </idea-plugin>
