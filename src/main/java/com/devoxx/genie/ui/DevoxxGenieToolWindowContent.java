@@ -149,7 +149,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * Only show the cloud-based LLM providers for which we have an API Key.
      */
     private void addLLMProvidersToComboBox() {
-        getLLMProviders().forEach(llmProvidersComboBox::addItem);
+        getLLMProviders().stream()
+            .sorted()
+            .forEach(llmProvidersComboBox::addItem);
     }
 
     /**
@@ -554,7 +556,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
         ChatModelFactory factory = getFactoryByProvider(provider);
         if (factory != null) {
-            factory.getModelNames().forEach(modelNameComboBox::addItem);
+            factory.getModelNames()
+                .stream()
+                .sorted()
+                .forEach(modelNameComboBox::addItem);
         } else if (provider == ModelProvider.LMStudio || provider == ModelProvider.GPT4All) {
             modelNameComboBox.setVisible(false);
         }
