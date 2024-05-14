@@ -1,11 +1,14 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import org.jetbrains.annotations.NotNull;
 
 public class AddFileAction extends AnAction {
@@ -21,10 +24,26 @@ public class AddFileAction extends AnAction {
             return;
         }
 
+        ensureToolWindowVisible(project);
+        FileListManager fileListManager = FileListManager.getInstance();
         VirtualFile selectedFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        if (selectedFile != null) {
-            // Perform actions with the selected file
-            FileListManager.getInstance().addFile(selectedFile);
+        if (selectedFile != null && !fileListManager.contains(selectedFile)) {
+            fileListManager.addFile(selectedFile);
+        } else {
+            NotificationUtil.sendNotification(project, "File already added");
+        }
+    }
+
+    /**
+     * Open the tool window if it is not visible.
+     * @param project the project
+     */
+    public void ensureToolWindowVisible(Project project) {
+        ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+        ToolWindow toolWindow = toolWindowManager.getToolWindow("DevoxxGenie");
+
+        if (toolWindow != null && !toolWindow.isVisible()) {
+            toolWindow.show(null);
         }
     }
 }

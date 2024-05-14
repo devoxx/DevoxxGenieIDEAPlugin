@@ -33,7 +33,11 @@ public class FileSelectionPanelFactory implements DumbAware {
     public static @NotNull JPanel createPanel(Project project) {
         JBList<VirtualFile> resultList = createResultList(project);
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.add(new JBScrollPane(resultList), BorderLayout.CENTER);
+        mainPanel.setMaximumSize(new Dimension(300, 60));
+
+        JBScrollPane jScrollPane = new JBScrollPane(resultList);
+        jScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        mainPanel.add(jScrollPane, BorderLayout.CENTER);
         return mainPanel;
     }
 
@@ -61,9 +65,9 @@ public class FileSelectionPanelFactory implements DumbAware {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-            if (e.getClickCount() == DOUBLE_CLICK) {
-                openSelectedFile(resultList);
-            }
+                if (e.getClickCount() == DOUBLE_CLICK) {
+                    openSelectedFile(resultList);
+                }
             }
         });
     }
