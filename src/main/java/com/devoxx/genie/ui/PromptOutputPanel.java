@@ -97,14 +97,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
      */
     public void addChatResponse(ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
-
         addFiller(chatMessageContext.getName());
-
-        ChatResponsePanel chatResponsePanel = new ChatResponsePanel(chatMessageContext);
-        chatResponsePanel.setName(chatMessageContext.getName());
-
-        container.add(chatResponsePanel);
-
+        container.add(new ChatResponsePanel(chatMessageContext));
         moveToBottom();
     }
 
@@ -117,7 +111,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     public void addWarningText(ChatMessageContext chatMessageContext, String text) {
         welcomePanel.setVisible(false);
         addFiller("warning");
-        container.add(new WarningPanel(text, chatMessageContext, text));
+        container.add(new WarningPanel(text, chatMessageContext));
     }
 
     /**

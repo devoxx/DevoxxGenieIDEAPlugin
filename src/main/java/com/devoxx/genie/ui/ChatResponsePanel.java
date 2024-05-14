@@ -25,15 +25,11 @@ public class ChatResponsePanel extends BackgroundPanel {
      */
     public ChatResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
         super(chatMessageContext.getName());
-
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
-        setName(chatMessageContext.getName());
 
         this.chatMessageContext = chatMessageContext;
 
-        add(new ResponseHeaderPanel(chatMessageContext)
-            .withBackground(PROMPT_BG_COLOR));
+        add(new ResponseHeaderPanel(chatMessageContext).withBackground(PROMPT_BG_COLOR));
 
         addResponsePane(chatMessageContext);
 

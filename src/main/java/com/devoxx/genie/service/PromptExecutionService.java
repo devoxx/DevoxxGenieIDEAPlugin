@@ -5,6 +5,9 @@ import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.AiMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 public interface PromptExecutionService {
 
     @NotNull
@@ -13,7 +16,9 @@ public interface PromptExecutionService {
     }
 
     @NotNull
-    AiMessage executeQuery(@NotNull ChatMessageContext chatMessageContext) throws IllegalAccessException;
+    CompletableFuture<Optional<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) throws IllegalAccessException;
 
     void clearChatMessages();
+
+    boolean isRunning();
 }
