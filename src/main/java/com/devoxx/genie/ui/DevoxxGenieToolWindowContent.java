@@ -5,21 +5,23 @@ import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.service.ChatPromptExecutor;
 import com.devoxx.genie.service.FileListManager;
 
-import com.devoxx.genie.service.PromptExecutor;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptContextFileListPanel;
+import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
+import com.devoxx.genie.ui.panel.ConversationPanel;
+import com.devoxx.genie.ui.panel.FileSelectionPanelFactory;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -37,10 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -57,7 +55,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-    private final FileEditorManager fileEditorManager;
+
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
     @Getter
@@ -72,10 +70,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
     private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
 
-    private final PromptExecutor promptExecutor;
+    private final ChatPromptExecutor chatPromptExecutor;
     private final SettingsState settingsState;
     private ConversationPanel conversationPanel;
     private boolean isInitializationComplete = false;
+    private final EditorFileButtonManager editorFileButtonManager;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -85,19 +84,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
 
         project = toolWindow.getProject();
-        fileEditorManager = FileEditorManager.getInstance(project);
         settingsState = SettingsState.getInstance();
-        promptExecutor = new PromptExecutor();
+        chatPromptExecutor = new ChatPromptExecutor();
+
+        editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
 
         setupUI();
-
-        // addLLMProvidersToComboBox();
 
         setLastSelectedProvider();
 
         isInitializationComplete = true;
     }
 
+    /**
+     * Set the last selected LLM provider.
+     */
     private void setLastSelectedProvider() {
         String lastSelectedProvider = settingsState.getLastSelectedProvider();
         if (lastSelectedProvider != null) {
@@ -106,6 +107,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         }
     }
 
+    /**
+     * Set up the UI Components: top panel and splitter.
+     */
     private void setupUI() {
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(createTopPanel(), BorderLayout.NORTH);
@@ -159,16 +163,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Get the current timestamp.
-     * @return the current timestamp
-     */
-    public static @NotNull String getCurrentTimestamp() {
-        LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
-        return dateTime.format(formatter);
-    }
-
-    /**
      * Create the LLM and model name selection panel.
      * @return the selection panel
      */
@@ -214,51 +208,40 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      */
     @NotNull
     private JPanel createInputPanel() {
+        JPanel buttonPanel = createButtonPanel();
+        return createSubmitPanel(buttonPanel);
+    }
+
+    /**
+     * Create the Submit and add File button Panel.
+     * @return the button panel
+     */
+    private @NotNull JPanel createButtonPanel() {
         addFileBtn.setToolTipText("Add file(s) to prompt context");
+        addFileBtn.addActionListener(this::selectFilesForPromptContext);
+
         submitBtn.setToolTipText("Submit the prompt");
+        submitBtn.addActionListener(this::onSubmitPrompt);
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(submitBtn, BorderLayout.WEST);
         buttonPanel.add(addFileBtn, BorderLayout.EAST);
+        return buttonPanel;
+    }
 
-        handleFileOpenClose();
-
+    /**
+     * Create the Submit panel.
+     * @param buttonPanel the button panel
+     * @return the Submit panel
+     */
+    private @NotNull JPanel createSubmitPanel(JPanel buttonPanel) {
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, 100));
         submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
         submitPanel.add(new JBScrollPane(promptInputComponent), BorderLayout.CENTER);
         submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
-
-        submitBtn.addActionListener(this::onSubmitPrompt);
-        addFileBtn.addActionListener(this::selectFilesForPromptContext);
-
         return submitPanel;
     }
-
-    private void handleFileOpenClose() {
-        if (fileEditorManager.getSelectedFiles().length == 0) {
-            addFileBtn.setEnabled(false);
-            addFileBtn.setToolTipText("No files open in the editor");
-        }
-
-        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
-            FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
-                @Override
-                public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    addFileBtn.setEnabled(true);
-                    addFileBtn.setToolTipText("Select file(s) for prompt context");
-                }
-
-                @Override
-                public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    if (fileEditorManager.getSelectedFiles().length == 0) {
-                        addFileBtn.setEnabled(false);
-                        addFileBtn.setToolTipText("No files open in the editor");
-                    }
-                }
-            });
-    }
-
 
     /**
      * Start a new conversation.
@@ -267,7 +250,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     public void startNewConversation() {
         conversationPanel.updateNewConversationLabel();
         promptOutputPanel.clear();
-        // TODO promptExecutor.clearChatMessages();
+        chatPromptExecutor.clearChatMessages();
         promptInputComponent.clear();
         FileListManager.getInstance().clear();
         enableButtons();
@@ -309,9 +292,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         });
 
         ChatMessageContext chatMessageContext = createChatMessageContext(userPromptText,
-            FileListManager.getInstance().getFiles(),
-            fileEditorManager.getSelectedTextEditor(),
-            chatModelProvider.getChatLanguageModel());
+                                                                         FileListManager.getInstance().getFiles(),
+                                                                         editorFileButtonManager.getSelectedTextEditor(),
+                                                                         chatModelProvider.getChatLanguageModel());
 
         disableButtons();
 
@@ -320,7 +303,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         disableButtons();
 
-        promptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
+        chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
     }
 
     /**
@@ -380,7 +363,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get user prompt with context.
-     *
      * @param userPrompt the user prompt
      * @param files      the files
      * @return the user prompt with context
@@ -410,14 +392,14 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Disable the Submit button and prompt input component.
+     * Disable the prompt input component.
      */
     private void disableButtons() {
         promptInputComponent.setEnabled(false);
     }
 
     /**
-     * Enable the Submit button and prompt input component.
+     * Enable the prompt input component and reset submit icon.
      */
     private void enableButtons() {
         submitBtn.setIcon(SubmitIcon);
@@ -461,7 +443,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Update the model names combobox.
-     *
      * @param provider the model provider
      */
     private void updateModelNamesComboBox(ModelProvider provider) {

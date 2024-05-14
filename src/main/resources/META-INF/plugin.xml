@@ -137,7 +137,7 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <projectConfigurable instance="com.devoxx.genie.ui.Settings" displayName="Devoxx Genie Settings"/>
+        <projectConfigurable instance="com.devoxx.genie.ui.DevoxxGenieSettingsManager" displayName="Devoxx Genie Settings"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"

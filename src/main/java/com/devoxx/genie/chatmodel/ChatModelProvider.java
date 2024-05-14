@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import static com.devoxx.genie.ui.Settings.MODEL_PROVIDER;
+import static com.devoxx.genie.ui.DevoxxGenieSettingsManager.MODEL_PROVIDER;
 
 @Setter
 public class ChatModelProvider {

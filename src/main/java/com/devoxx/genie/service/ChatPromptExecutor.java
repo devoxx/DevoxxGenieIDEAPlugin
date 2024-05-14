@@ -1,7 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.PromptOutputPanel;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.SettingsState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -9,12 +9,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public class PromptExecutor {
+public class ChatPromptExecutor {
 
     private final PromptExecutionService promptExecutionService = PromptExecutionService.getInstance();
     private final SettingsState settingsState = SettingsState.getInstance();
 
-    public PromptExecutor() {
+    public ChatPromptExecutor() {
     }
 
     /**
@@ -40,13 +40,21 @@ public class PromptExecutor {
         task.queue();
     }
 
+    /**
+     * Clear the chat messages.
+     */
+    public void clearChatMessages() {
+        promptExecutionService.clearChatMessages();
+    }
 
     /**
      * Get the command from the prompt.
      * @param prompt the prompt
+     * @param promptOutputPanel the prompt output panel
      * @return the command
      */
-    private Optional<String> getCommandFromPrompt(@NotNull String prompt, PromptOutputPanel promptOutputPanel) {
+    private Optional<String> getCommandFromPrompt(@NotNull String prompt,
+                                                  PromptOutputPanel promptOutputPanel) {
         if (prompt.startsWith("/")) {
 
             if (prompt.equalsIgnoreCase("/test")) {
@@ -69,7 +77,7 @@ public class PromptExecutor {
      * Run the prompt.
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel the prompt output panel
-     * @param enableButtons the enable buttons
+     * @param enableButtons the Enable buttons
      */
     private void runPrompt(@NotNull ChatMessageContext chatMessageContext,
                            PromptOutputPanel promptOutputPanel,
