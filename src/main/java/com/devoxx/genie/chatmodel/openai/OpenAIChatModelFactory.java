@@ -37,6 +37,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
     @Override
     public List<String> getModelNames() {
         return List.of(
+            "gpt-4o",
             OpenAiChatModelName.GPT_4.toString(),
             OpenAiChatModelName.GPT_4_32K.toString(),
             OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString(),
