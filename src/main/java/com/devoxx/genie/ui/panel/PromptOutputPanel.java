@@ -92,7 +92,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a response to the panel.
-     *
      * @param chatMessageContext  the prompt context
      */
     public void addChatResponse(ChatMessageContext chatMessageContext) {
@@ -104,7 +103,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a warning text to the panel.
-     *
      * @param chatMessageContext the prompt context
      * @param text          the warning text
      */

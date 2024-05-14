@@ -26,7 +26,8 @@ public class UserPromptPanel extends BackgroundPanel {
      * @param container the container
      * @param chatMessageContext the chat message context
      */
-    public UserPromptPanel(JPanel container, @NotNull ChatMessageContext chatMessageContext) {
+    public UserPromptPanel(JPanel container,
+                           @NotNull ChatMessageContext chatMessageContext) {
         super(chatMessageContext.getName());
         this.container = container;
         setLayout(new BorderLayout());
@@ -48,9 +49,9 @@ public class UserPromptPanel extends BackgroundPanel {
     }
 
     /**
-     * Create the delete button to remove user prompt & response.
+     * Create the Delete button to remove user prompt & response.
      * @param chatMessageContext the chat message context
-     * @return the panel with delete button
+     * @return the panel with Delete button
      */
     private @NotNull JButton createDeleteButton(ChatMessageContext chatMessageContext) {
         JButton deleteButton = new JHoverButton(TrashIcon, true);
@@ -60,7 +61,7 @@ public class UserPromptPanel extends BackgroundPanel {
     }
 
     /**
-     * Remove the component.
+     * Remove the chat components based on chat UUID name.
      * @param chatMessageContext the chat message context
      */
     private void removeChat(ChatMessageContext chatMessageContext) {
@@ -70,9 +71,19 @@ public class UserPromptPanel extends BackgroundPanel {
             .filter(c -> c.getName() != null && c.getName().equals(chatMessageContext.getName()))
             .forEach(container::remove);
 
+        // Repaint the container
         container.revalidate();
         container.repaint();
 
+        // Broadcast that the chat message has been removed, this way the chat memory can be updated
+        notifyChatMessageRemoval(chatMessageContext);
+    }
+
+    /**
+     * Notify the chat message removal.
+     * @param chatMessageContext the chat message context
+     */
+    private void notifyChatMessageRemoval(ChatMessageContext chatMessageContext) {
         // Trigger the chat message change listener
         MessageBus bus = ApplicationManager.getApplication().getMessageBus();
         ChatChangeListener chatChangeListener = bus.syncPublisher(AppTopics.CHAT_MESSAGES_CHANGED_TOPIC);

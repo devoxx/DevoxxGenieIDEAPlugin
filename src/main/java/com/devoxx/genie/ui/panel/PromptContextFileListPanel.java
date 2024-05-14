@@ -1,8 +1,10 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.FileListObserver;
+import com.devoxx.genie.ui.component.FileEntryComponent;
 import com.devoxx.genie.ui.listener.FileRemoveListener;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
@@ -22,6 +24,7 @@ public class PromptContextFileListPanel extends JPanel
 
     private final FileListManager fileListManager;
     private final JBScrollPane filesScrollPane;
+    private final JPanel filesPanel; // new panel for files
     private final transient Project project;
 
     public PromptContextFileListPanel(Project project) {
@@ -31,27 +34,32 @@ public class PromptContextFileListPanel extends JPanel
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+        filesPanel = new JPanel();
+        filesPanel.setLayout(new BoxLayout(filesPanel, BoxLayout.Y_AXIS));
+
         // Wrap the filesPanel in a JBScrollPane
-        filesScrollPane = new JBScrollPane(this);
+        filesScrollPane = new JBScrollPane(filesPanel);
         filesScrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
         filesScrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
-        filesScrollPane.setBorder(null);
         filesScrollPane.setMinimumSize(new Dimension(0, 60));
         filesScrollPane.setPreferredSize(new Dimension(0, 60));
+        filesScrollPane.setBorder(null);
         filesScrollPane.setVisible(false);
+
+        add(filesScrollPane);
     }
 
     @Override
     public void fileAdded(VirtualFile file) {
         updateFilesPanelVisibility();
         FileEntryComponent fileLabel = new FileEntryComponent(project, file, this);
-        add(fileLabel);
+        filesPanel.add(fileLabel);
         updateUIState();
     }
 
     @Override
     public void allFilesRemoved() {
-        removeAll();
+        filesPanel.removeAll();
         updateFilesPanelVisibility();
         updateUIState();
     }
@@ -81,10 +89,10 @@ public class PromptContextFileListPanel extends JPanel
     }
 
     private void removeFromFilesPanel(VirtualFile file) {
-        for (Component component : getComponents()) {
+        for (Component component : filesPanel.getComponents()) {
             if (component instanceof FileEntryComponent fileEntryComponent &&
                 fileEntryComponent.getVirtualFile().equals(file)) {
-                remove(fileEntryComponent);
+                filesPanel.remove(fileEntryComponent);
                 break;
             }
         }
