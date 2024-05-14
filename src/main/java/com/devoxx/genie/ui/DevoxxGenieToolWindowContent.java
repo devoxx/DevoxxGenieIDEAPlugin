@@ -97,13 +97,18 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Set the last selected LLM provider.
+     * Set the last selected LLM provider or show default.
      */
     private void setLastSelectedProvider() {
         String lastSelectedProvider = settingsState.getLastSelectedProvider();
         if (lastSelectedProvider != null) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
             updateModelNamesComboBox(ModelProvider.valueOf(lastSelectedProvider));
+        } else {
+            Object selectedItem = llmProvidersComboBox.getSelectedItem();
+            if (selectedItem != null) {
+                updateModelNamesComboBox(ModelProvider.valueOf((String) selectedItem));
+            }
         }
     }
 
