@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.renderer.FileListCellRenderer;

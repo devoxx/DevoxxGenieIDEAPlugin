@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.panel;
 
 import javax.swing.*;
 import java.awt.*;
