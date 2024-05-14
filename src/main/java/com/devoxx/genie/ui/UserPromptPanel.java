@@ -21,6 +21,11 @@ public class UserPromptPanel extends BackgroundPanel {
 
     private final JPanel container;
 
+    /**
+     * The user prompt panel.
+     * @param container the container
+     * @param chatMessageContext the chat message context
+     */
     public UserPromptPanel(JPanel container, @NotNull ChatMessageContext chatMessageContext) {
         super(chatMessageContext.getName());
         this.container = container;
@@ -35,9 +40,8 @@ public class UserPromptPanel extends BackgroundPanel {
         headerPanel.add(createDeleteButton(chatMessageContext), BorderLayout.EAST);
 
         // User prompt setup
-        String userPrompt = chatMessageContext.getUserMessage().singleText();
         JEditorPane htmlJEditorPane =
-            JEditorPaneUtils.createHtmlJEditorPane(userPrompt, null, StyleSheetsFactory.createParagraphStyleSheet());
+            JEditorPaneUtils.createHtmlJEditorPane(chatMessageContext.getUserPrompt(), null, StyleSheetsFactory.createParagraphStyleSheet());
 
         add(headerPanel, BorderLayout.NORTH);
         add(htmlJEditorPane, BorderLayout.CENTER);

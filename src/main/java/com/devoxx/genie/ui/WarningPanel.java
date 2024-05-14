@@ -15,12 +15,11 @@ public class WarningPanel extends BackgroundPanel {
      * Something went wrong, create a warning panel
      * @param warning the warning message
      * @param chatMessageContext the chat message context
-     * @param text the text
      */
     public WarningPanel(String warning,
-                        ChatMessageContext chatMessageContext,
-                        String text) {
+                        ChatMessageContext chatMessageContext) {
         super(warning);
+        setName(chatMessageContext.getName());
         setLayout(new BorderLayout());
         withMaximumSize(1500, 75)
             .withBorder(BorderFactory.createCompoundBorder(
@@ -31,7 +30,7 @@ public class WarningPanel extends BackgroundPanel {
         withPreferredHeight(75);
         withMinimumHeight(50);
 
-        JBLabel jLabel = new JBLabel(text, SwingConstants.LEFT);
+        JBLabel jLabel = new JBLabel(warning, SwingConstants.LEFT);
 
         JBScrollPane scrollPane = new JBScrollPane(jLabel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
