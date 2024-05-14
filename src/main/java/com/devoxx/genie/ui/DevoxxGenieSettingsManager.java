@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
-public class Settings implements Configurable {
+public class DevoxxGenieSettingsManager implements Configurable {
 
     public static final String MODEL_PROVIDER = "com.devoxx.genie.settings.modelProvider";
 
@@ -56,7 +56,7 @@ public class Settings implements Configurable {
     private final String keyEmoji = "\uD83D\uDD11";
     private final String wwwEmoji = "\uD83D\uDD17";
 
-    public Settings() {
+    public DevoxxGenieSettingsManager() {
         doubleConverter = new DoubleConverter();
     }
 
