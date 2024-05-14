@@ -93,6 +93,10 @@ public class ChatPromptExecutor {
                     }
                 }).exceptionally(e -> {
                     enableButtons.run();
+                    if (e.getCause() instanceof java.util.concurrent.CancellationException) {
+                        // This means the user has cancelled the prompt, so no warning required
+                        return null;
+                    }
                     promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
                     return null;
                 });

@@ -39,6 +39,11 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         add(copyButton, BorderLayout.EAST);
     }
 
+    /**
+     * Create the Copy button to copy prompt response.
+     * @param chatMessageContext the chat message context
+     * @return the Delete button
+     */
     private @NotNull JButton createCopyButton(ChatMessageContext chatMessageContext) {
         JButton deleteButton = new JHoverButton(CopyIcon, true);
         deleteButton.setToolTipText("Copy prompt response");
@@ -46,10 +51,17 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         return deleteButton;
     }
 
+    /**
+     * Copy the prompt response to the system clipboard.
+     * @param chatMessageContext the chat message context
+     */
     private void copyPrompt(ChatMessageContext chatMessageContext) {
         String response = chatMessageContext.getAiMessage().text();
         Transferable transferable = new StringSelection(response);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
-        NotificationUtil.sendNotification(chatMessageContext.getProject(), "The prompt response has been copied to the clipboard");
+        NotificationUtil.sendNotification(
+            chatMessageContext.getProject(),
+            "The prompt response has been copied to the clipboard"
+        );
     }
 }

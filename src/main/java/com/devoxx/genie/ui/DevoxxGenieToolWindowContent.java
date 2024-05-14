@@ -10,7 +10,7 @@ import com.devoxx.genie.service.FileListManager;
 
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.component.PromptContextFileListPanel;
+import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
