@@ -8,13 +8,12 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.testFramework.LightVirtualFile;
 import org.jetbrains.annotations.NotNull;
+
+import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
 public class AddSnippetAction extends AnAction {
 
@@ -23,7 +22,6 @@ public class AddSnippetAction extends AnAction {
     public static final Key<String> SELECTED_TEXT_KEY = Key.create("SELECTED_TEXT");
     public static final Key<Integer> SELECTION_START_KEY = Key.create("SELECTION_START");
     public static final Key<Integer> SELECTION_END_KEY = Key.create("SELECTION_END");
-    public static final String TOOL_WINDOW_ID = "DevoxxGenie";
 
     // We use an unknown file type to represent code snippets
     private final FileType fileType =
@@ -36,30 +34,33 @@ public class AddSnippetAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
-        VirtualFile originalFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
+        VirtualFile selectedFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
 
-        if (editor != null && originalFile != null) {
+        if (editor != null && selectedFile != null) {
+
+            ensureToolWindowVisible(e.getProject());
+
             SelectionModel selectionModel = editor.getSelectionModel();
             String selectedText = selectionModel.getSelectedText();
             if (selectedText != null) {
-                ensureToolWindowIsVisible(e);
-                createAndAddVirtualFile(originalFile, selectionModel, selectedText);
+                createAndAddVirtualFile(selectedFile, selectionModel, selectedText);
+            } else {
+                // No text selected, add complete file
+                addSelectedFile(selectedFile);
             }
         }
     }
 
     /**
-     * Ensure that the tool window is visible.
-     * @param e the action event
+     * Add the selected file to the file list manager.
+     * @param selectedFile the selected file
      */
-    private void ensureToolWindowIsVisible(@NotNull AnActionEvent e) {
-        Project project = e.getProject();
-        if (project != null) {
-            ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID);
-            if (toolWindow != null && !toolWindow.isVisible()) {
-                toolWindow.show();
-            }
+    private static void addSelectedFile(VirtualFile selectedFile) {
+        FileListManager fileListManager = FileListManager.getInstance();
+        if (fileListManager.contains(selectedFile)) {
+            return;
         }
+        fileListManager.addFile(selectedFile);
     }
 
     /**

@@ -11,6 +11,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import org.jetbrains.annotations.NotNull;
 
+import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
+
 public class AddFileAction extends AnAction {
 
     /**
@@ -25,25 +27,13 @@ public class AddFileAction extends AnAction {
         }
 
         ensureToolWindowVisible(project);
+
         FileListManager fileListManager = FileListManager.getInstance();
         VirtualFile selectedFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
         if (selectedFile != null && !fileListManager.contains(selectedFile)) {
             fileListManager.addFile(selectedFile);
         } else {
             NotificationUtil.sendNotification(project, "File already added");
-        }
-    }
-
-    /**
-     * Open the tool window if it is not visible.
-     * @param project the project
-     */
-    public void ensureToolWindowVisible(Project project) {
-        ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-        ToolWindow toolWindow = toolWindowManager.getToolWindow("DevoxxGenie");
-
-        if (toolWindow != null && !toolWindow.isVisible()) {
-            toolWindow.show(null);
         }
     }
 }
