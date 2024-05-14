@@ -41,6 +41,7 @@
             <LI>Feat #51: Refactored DevoxxGenieToolWindowContent</LI>
             <LI>Fix #55: Files scroll panel</LI>
             <LI>Fix #57: Hide model combobox for LMStudio & GPT4All at very first startup</LI>
+            <LI>Feat #59: Add complete file to context window when no code is selected</LI>
         </UL>
         <h2>V0.1.5</h2>
         <UL>
