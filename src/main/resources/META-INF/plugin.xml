@@ -35,6 +35,8 @@
         <h2>V0.1.6</h2>
         <UL>
             <LI>Feat #47: Support for GPT-4o</LI>
+            <LI>Feat #34: User can cancel prompt execution</LI>
+            <LI>Feat #19: Sort LLM providers</LI>
         </UL>
         <h2>V0.1.5</h2>
         <UL>
