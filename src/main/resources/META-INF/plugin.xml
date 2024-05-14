@@ -38,6 +38,7 @@
             <LI>Feat #34: User can cancel prompt execution</LI>
             <LI>Feat #19: Sort LLM providers</LI>
             <LI>Feat #38: Remember last chosen LLM provider and model</LI>
+            <LI>Feat #51: Refactored DevoxxGenieToolWindowContent</LI>
         </UL>
         <h2>V0.1.5</h2>
         <UL>
@@ -136,7 +137,7 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <projectConfigurable instance="com.devoxx.genie.ui.Settings" displayName="Devoxx Genie Settings"/>
+        <projectConfigurable instance="com.devoxx.genie.ui.DevoxxGenieSettingsManager" displayName="Devoxx Genie Settings"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"

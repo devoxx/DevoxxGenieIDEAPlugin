@@ -1,6 +1,5 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.component;
 
-import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
 
 import javax.swing.*;
