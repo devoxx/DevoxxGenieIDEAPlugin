@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
@@ -18,7 +19,6 @@ import com.devoxx.genie.ui.component.PromptContextFileListPanel;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -37,21 +37,24 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.Supplier;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
@@ -67,8 +70,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-    private final ChatModelProvider genieClient = new ChatModelProvider();
     private final FileEditorManager fileEditorManager;
+    private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
     @Getter
     private final JPanel contentPanel = new JPanel();
@@ -85,9 +88,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     private final JButton historyBtn = new JHoverButton(ClockIcon, true);
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
 
-    private final ApplicationInfo appInfo = ApplicationManager.getApplication().getService(ApplicationInfo.class);
     private final PromptExecutionService promptExecutionService;
-    private String lastSelectedProvider;
+    private final SettingsState settingsState;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -97,6 +99,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         project = toolWindow.getProject();
         fileEditorManager = FileEditorManager.getInstance(project);
         promptExecutionService = PromptExecutionService.getInstance();
+        settingsState = SettingsState.getInstance();
 
         setupUI();
 
@@ -106,7 +109,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     }
 
     private void setLastSelectedProvider() {
-        lastSelectedProvider = SettingsState.getInstance().getLastSelectedProvider();
+        String lastSelectedProvider = SettingsState.getInstance().getLastSelectedProvider();
         if (lastSelectedProvider != null) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
         }
@@ -216,16 +219,14 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
         JPanel providerPanel = new JPanel(new BorderLayout(), true);
         providerPanel.add(llmProvidersComboBox, BorderLayout.CENTER);
+        llmProvidersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, llmProvidersComboBox.getPreferredSize().height));
+        llmProvidersComboBox.addActionListener(this::handleModelProviderSelectionChange);
 
         toolPanel.add(providerPanel);
         toolPanel.add(Box.createVerticalStrut(5));
         toolPanel.add(modelNameComboBox);
-
-        llmProvidersComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, llmProvidersComboBox.getPreferredSize().height));
         modelNameComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelNameComboBox.getPreferredSize().height));
-
-        llmProvidersComboBox.addActionListener(e -> handleModelProviderSelectionChange());
-        modelNameComboBox.addActionListener(e -> processModelNameSelection());
+        modelNameComboBox.addActionListener(this::processModelNameSelection);
 
         return toolPanel;
     }
@@ -250,10 +251,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(submitBtn, BorderLayout.WEST);
-
-        if (isJavaIDE()) {
-            buttonPanel.add(addFileBtn, BorderLayout.EAST);
-        }
 
         // Disable addFileBtn if no files are open in the IDEA Editor
         if (fileEditorManager.getSelectedFiles().length == 0) {
@@ -291,10 +288,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         return submitPanel;
     }
 
-    private boolean isJavaIDE() {
-        return appInfo.getVersionName().contains("IDEA");
-    }
-
     /**
      * Add files to the prompt context.
      */
@@ -319,21 +312,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * Submit the user prompt.
      */
     private void onSubmitPrompt() {
-        invokeLater(() -> {
-            submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText("Prompt is running, please be patient...");
-        });
-
         String userPromptText = promptInputComponent.getText();
 
         if (userPromptText.isEmpty()) {
             return;
         }
 
+        invokeLater(() -> {
+            submitBtn.setIcon(StopIcon);
+            submitBtn.setToolTipText("Prompt is running, please be patient...");
+        });
+
         ChatMessageContext chatMessageContext = createChatMessageContext(userPromptText,
-            FileListManager.getInstance().getFiles(),
-            fileEditorManager.getSelectedTextEditor(),
-            genieClient.getChatLanguageModel());
+                                                                         FileListManager.getInstance().getFiles(),
+                                                                         fileEditorManager.getSelectedTextEditor(),
+                                                                         chatModelProvider.getChatLanguageModel());
 
         disableButtons();
 
@@ -342,7 +335,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Run the prompt in the background
-     *
      * @param chatMessageContext the prompt context
      */
     private void runPromptInBackground(@NotNull ChatMessageContext chatMessageContext) {
@@ -351,37 +343,46 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
             new Task.Backgroundable(chatMessageContext.getProject(), resourceBundle.getString(WORKING_MESSAGE), true) {
                 @Override
                 public void run(@NotNull ProgressIndicator progressIndicator) {
-                    promptOutputPanel.addUserPrompt(chatMessageContext);
-
                     executePrompt(chatMessageContext);
-
                     progressIndicator.setText(resourceBundle.getString(WORKING_MESSAGE));
                 }
             };
         task.queue();
-
-        // TODO Check if user cancels the prompt, if se we can cancel/kill the task
     }
 
     /**
      * Execute the prompt.
-     *
      * @param chatMessageContext the prompt context
      */
     private void executePrompt(@NotNull ChatMessageContext chatMessageContext) {
         disableButtons();
 
         getCommandFromPrompt(chatMessageContext.getUserMessage().singleText()).ifPresentOrElse(fixedPrompt -> {
-            try {
-                chatMessageContext.setUserPrompt(fixedPrompt);
 
-                AiMessage responseMessage = promptExecutionService.executeQuery(chatMessageContext);
-                chatMessageContext.setAiMessage(responseMessage);
-                promptOutputPanel.addChatResponse(chatMessageContext);
+            try {
+                promptExecutionService.executeQuery(chatMessageContext)
+                    .thenAccept(aiMessageOptional -> {
+                        enableButtons();
+                        if (aiMessageOptional.isPresent()) {
+                            chatMessageContext.setAiMessage(aiMessageOptional.get());
+                            promptOutputPanel.addChatResponse(chatMessageContext);
+                        }
+                    }).exceptionally(e -> {
+                        enableButtons();
+                        promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
+                        return null;
+                    });
+
             } catch (IllegalAccessException e) {
-                promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
+                enableButtons();
             }
-            enableButtons();
+
+            if (promptExecutionService.isRunning()) {
+                promptOutputPanel.addUserPrompt(chatMessageContext);
+            } else {
+                enableButtons();
+            }
+
         }, this::enableButtons);
     }
 
@@ -426,35 +427,27 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         ChatMessageContext chatMessageContext = new ChatMessageContext();
         chatMessageContext.setProject(project);
         chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
+        chatMessageContext.setUserPrompt(userPrompt);
         chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
         chatMessageContext.setChatLanguageModel(chatLanguageModel);
-        chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
+        chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
 
-        if (files.isEmpty() && editor == null) {
-            // A regular prompt without any selected code or files
-            return chatMessageContext;
-        } else if (files.isEmpty() && editor.getSelectionModel().getSelectedText() != null) {
-            // A prompt with selected code in the editor
-            EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
-            chatMessageContext.setEditorInfo(editorInfo);
-
-            // TODO Should use a code snippet icon because it's a based on selected text
-            VirtualFile virtualFile = editor.getVirtualFile();
-            chatMessageContext.getEditorInfo().setSelectedText(editor.getSelectionModel().getSelectedText());
-
-            return chatMessageContext;
-        } else if (!files.isEmpty()) {
-            // A prompt with selected files
-            return getPromptContextWithSelectedFiles(chatMessageContext, userPrompt, files);
-        } else {
-            // A prompt with the content from open editor
-            EditorInfo editorInfo = new EditorInfo();
+        EditorInfo editorInfo = new EditorInfo();
+        if (editor != null && editor.getSelectionModel().getSelectedText() != null) {
+            editorInfo = EditorUtil.getEditorInfo(project, editor);
+            editorInfo.setSelectedText(editor.getSelectionModel().getSelectedText());
+        } else if (editor != null) {
             editorInfo.setSelectedText(editor.getDocument().getText());
-            chatMessageContext.setEditorInfo(editorInfo);
-            chatMessageContext.getEditorInfo().setSelectedFiles(List.of(editor.getVirtualFile()));
-            return chatMessageContext;
+            editorInfo.setSelectedFiles(List.of(editor.getVirtualFile()));
         }
+        chatMessageContext.setEditorInfo(editorInfo);
+
+        if (!files.isEmpty()) {
+            return getPromptContextWithSelectedFiles(chatMessageContext, userPrompt, files);
+        }
+
+        return chatMessageContext;
     }
 
     /**
@@ -503,30 +496,33 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
     }
 
     /**
-     * Disable the submit button and prompt input component.
+     * Disable the Submit button and prompt input component.
      */
     private void disableButtons() {
-        submitBtn.setEnabled(false);
         promptInputComponent.setEnabled(false);
     }
 
     /**
-     * Enable the submit button and prompt input component.
+     * Enable the Submit button and prompt input component.
      */
     private void enableButtons() {
         submitBtn.setIcon(SubmitIcon);
-        submitBtn.setEnabled(true);
         promptInputComponent.setEnabled(true);
     }
 
     /**
      * Process the model name selection.
      */
-    private void processModelNameSelection() {
-        String selectedModel = (String) modelNameComboBox.getSelectedItem();
-        if (selectedModel != null) {
-            genieClient.setModelName(selectedModel);
-            SettingsState.getInstance().setLastSelectedModel(selectedModel);
+    private void processModelNameSelection(@NotNull ActionEvent e) {
+        if (e.getActionCommand().equals("comboBoxChanged")) {
+            JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+            if (comboBox.getSelectedIndex() > 0) {
+                String selectedModel = (String) comboBox.getSelectedItem();
+                if (selectedModel != null) {
+                    chatModelProvider.setModelName(selectedModel);
+                    settingsState.setLastSelectedModel(selectedModel);
+                }
+            }
         }
     }
 
@@ -534,43 +530,54 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
      * Process the model provider selection change.
      * Set the model provider and update the model names.
      */
-    private void handleModelProviderSelectionChange() {
-        String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
-        if (selectedProvider != null) {
-            ModelProvider provider = ModelProvider.valueOf(selectedProvider);
-            genieClient.setModelProvider(ModelProvider.valueOf(selectedProvider));
-            modelNameComboBox.setVisible(true);
-            modelNameComboBox.removeAllItems();
+    private void handleModelProviderSelectionChange(@NotNull ActionEvent e) {
+        if (!e.getActionCommand().equals("comboBoxChanged")) return;
 
-            if (lastSelectedProvider != null && !lastSelectedProvider.equalsIgnoreCase(selectedProvider)) {
-                SettingsState.getInstance().setLastSelectedProvider(selectedProvider);
-            }
+        JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
 
-            switch (provider) {
-                case Ollama:
-                    new OllamaChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case OpenAI:
-                    new OpenAIChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case Anthropic:
-                    new AnthropicChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case Mistral:
-                    new MistralChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case Groq:
-                    new GroqChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case DeepInfra:
-                    new DeepInfraChatModelFactory().getModelNames().forEach(modelNameComboBox::addItem);
-                    break;
-                case LMStudio, GPT4All:
-                    modelNameComboBox.setVisible(false);
-                    break;
-                default:
-                    break;
-            }
+        String selectedProvider = (String) comboBox.getSelectedItem();
+        if (selectedProvider == null) return;
+
+        ModelProvider provider = ModelProvider.valueOf(selectedProvider);
+        chatModelProvider.setModelProvider(provider);
+
+        updateModelNamesComboBox(provider);
+    }
+
+    /**
+     * Update the model names combobox.
+     * @param provider the model provider
+     */
+    private void updateModelNamesComboBox(ModelProvider provider) {
+        modelNameComboBox.setVisible(true);
+        modelNameComboBox.removeAllItems();
+
+        ChatModelFactory factory = getFactoryByProvider(provider);
+        if (factory != null) {
+            factory.getModelNames().forEach(modelNameComboBox::addItem);
+        } else if (provider == ModelProvider.LMStudio || provider == ModelProvider.GPT4All) {
+            modelNameComboBox.setVisible(false);
         }
+    }
+
+    /**
+     * Get the factory by provider.
+     */
+    private static final Map<ModelProvider, Supplier<ChatModelFactory>> FACTORY_SUPPLIERS = Map.of(
+        ModelProvider.Ollama, OllamaChatModelFactory::new,
+        ModelProvider.OpenAI, OpenAIChatModelFactory::new,
+        ModelProvider.Anthropic, AnthropicChatModelFactory::new,
+        ModelProvider.Mistral, MistralChatModelFactory::new,
+        ModelProvider.Groq, GroqChatModelFactory::new,
+        ModelProvider.DeepInfra, DeepInfraChatModelFactory::new
+    );
+
+    /**
+     * Get the factory by provider.
+     * @param provider the model provider
+     * @return the chat model factory
+     */
+    private @Nullable ChatModelFactory getFactoryByProvider(@NotNull ModelProvider provider) {
+        return FACTORY_SUPPLIERS.getOrDefault(provider, () -> null).get();
     }
 }

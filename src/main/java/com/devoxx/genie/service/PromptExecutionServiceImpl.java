@@ -17,6 +17,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PromptExecutionServiceImpl implements PromptExecutionService, ChatChangeListener {
 
@@ -36,6 +40,10 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
 
     private final MessageWindowChatMemory messageWindowChatMemory = MessageWindowChatMemory.withMaxMessages(10);
 
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private CompletableFuture<Optional<AiMessage>> futureTask = null;
+    private boolean running = false;
+
     /**
      * Constructor.
      */
@@ -51,17 +59,33 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @return the response
      */
     @Override
-    public @NotNull AiMessage executeQuery(@NotNull ChatMessageContext chatMessageContext) throws IllegalAccessException {
+    public @NotNull CompletableFuture<Optional<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
 
-        initChatMessage(chatMessageContext);
+        synchronized (this) {
+            // If the future task is not null this means we need to cancel it
+            if (futureTask != null && !futureTask.isDone()) {
+                futureTask.cancel(true);
+                running = false;
+                return futureTask;
+            } else {
+                running = true;
+            }
 
-        try {
-            Response<AiMessage> response = chatMessageContext.getChatLanguageModel().generate(messageWindowChatMemory.messages());
-            messageWindowChatMemory.add(response.content());
-            return response.content();
-        } catch (Exception e) {
-            throw new IllegalAccessException("Failed to execute prompt!\n" + e.getMessage());
+            // Start a new future task
+            futureTask = CompletableFuture.supplyAsync(() -> {
+                initChatMessage(chatMessageContext);
+
+                try {
+                    Response<AiMessage> response = chatMessageContext.getChatLanguageModel().generate(messageWindowChatMemory.messages());
+                    messageWindowChatMemory.add(response.content());
+                    return Optional.of(response.content());
+                } catch (Exception e) {
+                    throw new CompletionException(new RuntimeException("Failed to execute prompt!\n" + e.getMessage()));
+                }
+            }, executorService);
         }
+
+        return futureTask;
     }
 
     /**
@@ -70,6 +94,11 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
     @Override
     public void clearChatMessages() {
         messageWindowChatMemory.clear();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 
     /**
