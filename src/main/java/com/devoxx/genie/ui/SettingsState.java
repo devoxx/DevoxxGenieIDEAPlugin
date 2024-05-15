@@ -47,6 +47,7 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     private Integer timeout = Constant.TIMEOUT;
     private Integer maxRetries = Constant.MAX_RETRIES;
+    private Integer maxOutputTokens = Constant.MAX_OUTPUT_TOKENS;
     private Integer maxMemory = Constant.MAX_MEMORY;
 
     private String lastSelectedProvider;
