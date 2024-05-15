@@ -27,7 +27,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         andTransparent().withMaximumHeight(30).withPreferredHeight(30);
 
         String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
-            (chatMessageContext.getModelName() != null ? " - " + chatMessageContext.getModelName() : "");
+            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
         JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);

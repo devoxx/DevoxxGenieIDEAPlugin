@@ -2,8 +2,10 @@ package com.devoxx.genie.chatmodel.anthropic;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -11,22 +13,11 @@ import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 
 public class AnthropicChatModelFactory implements ChatModelFactory {
 
-    private String apiKey;
-    private String modelName;
-
-    public AnthropicChatModelFactory() {
-    }
-
-    public AnthropicChatModelFactory(String apiKey, String modelName) {
-        this.apiKey = apiKey;
-        this.modelName = modelName;
-    }
-
     @Override
-    public ChatLanguageModel createChatModel(ChatModel chatModel) {
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return AnthropicChatModel.builder()
-            .apiKey(apiKey)
-            .modelName(modelName)
+            .apiKey(SettingsState.getInstance().getAnthropicKey())
+            .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .maxTokens(chatModel.getMaxTokens())

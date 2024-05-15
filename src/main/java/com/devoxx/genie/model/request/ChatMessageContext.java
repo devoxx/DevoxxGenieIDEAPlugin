@@ -17,6 +17,7 @@ public class ChatMessageContext {
     private Project project;
     private String llmProvider;
     private String modelName;
+    private Integer timeout;
     private String userPrompt;
     private UserMessage userMessage;
     private AiMessage aiMessage;

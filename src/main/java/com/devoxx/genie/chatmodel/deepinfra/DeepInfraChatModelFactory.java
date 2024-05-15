@@ -2,30 +2,22 @@ package com.devoxx.genie.chatmodel.deepinfra;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
 
 public class DeepInfraChatModelFactory implements ChatModelFactory {
 
-    private String apiKey;
-    private String modelName;
-
-    public DeepInfraChatModelFactory() {}
-
-    public DeepInfraChatModelFactory(String apiKey, String modelName) {
-        this.apiKey = apiKey;
-        this.modelName = modelName;
-    }
-
     @Override
-    public ChatLanguageModel createChatModel(ChatModel chatModel) {
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.deepinfra.com/v1/openai")
-            .apiKey(apiKey)
-            .modelName(modelName)
+            .apiKey(SettingsState.getInstance().getDeepInfraKey())
+            .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
             .maxTokens(chatModel.getMaxTokens())

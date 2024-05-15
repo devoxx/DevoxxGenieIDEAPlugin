@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.html.StyleSheet;
@@ -24,7 +25,7 @@ public interface NodeProcessor {
      * @param htmlResponse the HTML response
      * @return the editor pane
      */
-    default JEditorPane createEditorPane(String htmlResponse, StyleSheet styleSheet) {
+    default JEditorPane createEditorPane(@NotNull String htmlResponse, StyleSheet styleSheet) {
         JEditorPane jEditorPane =
             JEditorPaneUtils.createHtmlJEditorPane(htmlResponse.subSequence(0, htmlResponse.length()),
                                                    BrowserHyperlinkListener.INSTANCE,
