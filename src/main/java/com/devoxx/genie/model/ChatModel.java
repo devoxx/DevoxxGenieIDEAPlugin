@@ -8,11 +8,10 @@ import lombok.Setter;
 public class ChatModel {
 
     private String baseUrl;
-    private String modelName; // the model name to use
-    private Double temperature = 0.7;
-    private Double topP = 0.7;
-    private int maxTokens = 2_000;
-    private int maxRetries = 5;
-    private int timeout = 60;
-
+    private String modelName;
+    private Double temperature = Constant.TEMPERATURE;
+    private Double topP = Constant.TOP_P;
+    private int maxTokens = Constant.MAX_OUTPUT_TOKENS;
+    private int maxRetries = Constant.MAX_RETRIES;
+    private int timeout = Constant.TIMEOUT;
 }

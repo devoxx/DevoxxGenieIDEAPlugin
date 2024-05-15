@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
@@ -37,6 +38,7 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Mistral, new MistralChatModelFactory());
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
+        factories.put(ModelProvider.Gemini, new GeminiChatModelFactory());
     }
 
     /**
@@ -82,15 +84,22 @@ public class ChatModelProvider {
 
     /**
      * Set max output tokens.
+     * Some extra work because of the settings state that didn't like the integer input field.
      * @param settingsState the settings state
      * @param chatModel the chat model
      */
     private static void setMaxOutputTokens(@NotNull SettingsState settingsState, ChatModel chatModel) {
-        Integer maxOutputTokens = settingsState.getMaxOutputTokens();
-        if (maxOutputTokens == 0) {
+        String maxOutputTokens = settingsState.getMaxOutputTokens();
+        if (maxOutputTokens.isBlank()) {
             chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
         } else {
-            chatModel.setMaxTokens(maxOutputTokens);
+            int value;
+            try {
+                value = Integer.parseInt(maxOutputTokens);
+                chatModel.setMaxTokens(value);
+            } catch (NumberFormatException e) {
+                chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
+            }
         }
     }
 }
