@@ -31,6 +31,7 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     private String groqKey = "";
     private String fireworksKey = "";
     private String deepInfraKey = "";
+    private String geminiKey = "";
 
     // Prompt fields
     private String testPrompt = Constant.TEST_PROMPT;
@@ -47,9 +48,12 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     private Integer timeout = Constant.TIMEOUT;
     private Integer maxRetries = Constant.MAX_RETRIES;
-    private Integer maxOutputTokens = Constant.MAX_OUTPUT_TOKENS;
     private Integer maxMemory = Constant.MAX_MEMORY;
 
+    // Was unable to make it work with Integer for some unknown reason
+    private String maxOutputTokens = Constant.MAX_OUTPUT_TOKENS.toString();
+
+    // Last selected LLM provider and model name
     private String lastSelectedProvider;
     private String lastSelectedModel;
 

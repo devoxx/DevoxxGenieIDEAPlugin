@@ -16,13 +16,18 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return AnthropicChatModel.builder()
-            .apiKey(SettingsState.getInstance().getAnthropicKey())
+            .apiKey(getApiKey())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .maxTokens(chatModel.getMaxTokens())
             .maxRetries(chatModel.getMaxRetries())
             .build();
+    }
+
+    @Override
+    public String getApiKey() {
+        return SettingsState.getInstance().getAnthropicKey();
     }
 
     @Override
@@ -36,5 +41,4 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             CLAUDE_INSTANT_1_2.toString()
         );
     }
-
 }
