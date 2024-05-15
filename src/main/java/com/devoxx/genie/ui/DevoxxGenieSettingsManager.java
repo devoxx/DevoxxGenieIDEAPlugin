@@ -44,7 +44,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     private JFormattedTextField temperatureField;
     private JFormattedTextField topPField;
-
+    private JFormattedTextField maxOutputTokensField;
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
 
@@ -52,9 +52,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JTextField explainPromptField;
     private JTextField reviewPromptField;
     private JTextField customPromptField;
-
-    private final String keyEmoji = "\uD83D\uDD11";
-    private final String wwwEmoji = "\uD83D\uDD17";
 
     public DevoxxGenieSettingsManager() {
         doubleConverter = new DoubleConverter();
@@ -94,10 +91,11 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
         setTitle("LLM Parameters", settingsPanel, gbc);
 
-        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature(), "");
-        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP(), "");
-        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout(), "");
-        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries(), "");
+        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
+        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
+        maxOutputTokensField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
+        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
+        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
@@ -108,7 +106,15 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return settingsPanel;
     }
 
-    private void setTitle(String title, JPanel settingsPanel, GridBagConstraints gbc) {
+    /**
+     * Set the title of the settings panel
+     * @param title the title
+     * @param settingsPanel the settings panel
+     * @param gbc the gridbag constraints
+     */
+    private void setTitle(String title,
+                          @NotNull JPanel settingsPanel,
+                          @NotNull GridBagConstraints gbc) {
         JLabel titleLabel = new JLabel(title);
 
         gbc.insets = JBUI.insets(10, 0);
@@ -126,10 +132,18 @@ public class DevoxxGenieSettingsManager implements Configurable {
         resetGbc(gbc);
     }
 
-    private JTextField addTextFieldWithLabel(JPanel panel,
-                                             GridBagConstraints gbc,
-                                             String label,
-                                             String value) {
+    /**
+     * Add a text field with label
+     * @param panel the panel
+     * @param gbc the gridbag constraints
+     * @param label the label
+     * @param value the value
+     * @return the text field
+     */
+    private @NotNull JTextField addTextFieldWithLabel(@NotNull JPanel panel,
+                                                      GridBagConstraints gbc,
+                                                      String label,
+                                                      String value) {
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
         JTextField textField = new JTextField(value);
@@ -138,11 +152,21 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return textField;
     }
 
-    private JTextField addFieldWithLinkButton(JPanel panel,
-                                              GridBagConstraints gbc,
-                                              String label,
-                                              String value,
-                                              String url) {
+    /**
+     * Add a field with label and a link button
+     * @param panel the panel
+     * @param gbc the gridbag constraints
+     * @param label the label
+     * @param value the value
+     * @param url the url
+     * @return the text field
+     */
+    private @NotNull JTextField addFieldWithLinkButton(@NotNull JPanel panel,
+                                                       GridBagConstraints gbc,
+                                                       String label,
+                                                       String value,
+                                                       String url) {
+        String wwwEmoji = "\uD83D\uDD17";
         JButton btnApiKey = createButton(wwwEmoji, "Download from", url);
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
@@ -156,11 +180,21 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return textField;
     }
 
-    private JPasswordField addFieldWithLabelPasswordAndLinkButton(JPanel panel,
-                                                                  GridBagConstraints gbc,
-                                                                  String label,
-                                                                  String value,
-                                                                  String url) {
+    /**
+     * Add field with label, password and link button
+     * @param panel the panel
+     * @param gbc the gridbag constraints
+     * @param label the label
+     * @param value the value
+     * @param url the url
+     * @return the password field
+     */
+    private @NotNull JPasswordField addFieldWithLabelPasswordAndLinkButton(@NotNull JPanel panel,
+                                                                           GridBagConstraints gbc,
+                                                                           String label,
+                                                                           String value,
+                                                                           String url) {
+        String keyEmoji = "\uD83D\uDD11";
         JButton btnApiKey = createButton(keyEmoji, "Get your API Key from ", url);
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
@@ -177,7 +211,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Create a button with emoji and tooltip message and open the URL in the browser
-     *
      * @param emoji      the emoji to use in the button
      * @param toolTipMsg the tooltip message
      * @param url        the url to open when clicked
@@ -199,17 +232,21 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return btnApiKey;
     }
 
-    private JFormattedTextField addFormattedFieldWithLabel(JPanel panel,
-                                                           GridBagConstraints gbc,
-                                                           String label,
-                                                           Number value,
-                                                           String toolTipMsg) {
+    /**
+     * Add a formatted field with label
+     * @param panel the panel
+     * @param gbc the gridbag constraints
+     * @param label the label
+     * @param value the value
+     * @return the formatted field
+     */
+    private @NotNull JFormattedTextField addFormattedFieldWithLabel(@NotNull JPanel panel,
+                                                                    GridBagConstraints gbc,
+                                                                    String label,
+                                                                    Number value) {
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
         JFormattedTextField formattedField = new JFormattedTextField();
-        if (!toolTipMsg.isBlank()) {
-            formattedField.setToolTipText(toolTipMsg);
-        }
         setValue(formattedField, value);
         panel.add(formattedField, gbc);
         resetGbc(gbc);
@@ -233,6 +270,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())));
         isModified |= isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())));
         isModified |= isFieldModified(timeoutField, settings.getTimeout());
+        isModified |= isFieldModified(maxOutputTokensField, settings.getMaxOutputTokens());
         isModified |= isFieldModified(retryField, settings.getMaxRetries());
         isModified |= isFieldModified(testPromptField, settings.getTestPrompt());
         isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
@@ -257,6 +295,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
+        updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), value -> settings.setMaxOutputTokens(safeCastToInteger(value)));
         updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
         updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
         updateSettingIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
@@ -270,13 +309,26 @@ public class DevoxxGenieSettingsManager implements Configurable {
         notifySettingsChanged();
     }
 
-    public void updateSettingIfModified(JComponent field, Object currentValue, Consumer<String> updateAction) {
-        String newValue = extractStringValue(field); // You need to implement this method based on field type
+    /**
+     * Update the setting if the field value has changed
+     * @param field the field
+     * @param currentValue the current value
+     * @param updateAction the update action
+     */
+    public void updateSettingIfModified(JComponent field,
+                                        Object currentValue,
+                                        Consumer<String> updateAction) {
+        String newValue = extractStringValue(field);
         if (newValue != null && !newValue.equals(currentValue)) {
             updateAction.accept(newValue);
         }
     }
 
+    /**
+     * Extract the string value from the field
+     * @param field the field
+     * @return the string value
+     */
     private String extractStringValue(JComponent field) {
         if (field instanceof JTextField jtextfield) {
             return jtextfield.getText();
@@ -284,6 +336,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return null;
     }
 
+    /**
+     * Notify the listeners that the settings have changed
+     */
     private void notifySettingsChanged() {
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
         messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged();
@@ -306,8 +361,14 @@ public class DevoxxGenieSettingsManager implements Configurable {
         setValue(topPField, settingsState.getTopP());
         setValue(timeoutField, settingsState.getTimeout());
         setValue(retryField, settingsState.getMaxRetries());
+        setValue(maxOutputTokensField, settingsState.getMaxOutputTokens());
     }
 
+    /**
+     * Set the value of the field
+     * @param field the field
+     * @param value the value
+     */
     private static void setValue(JFormattedTextField field, Number value) {
         try {
             NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
@@ -327,10 +388,16 @@ public class DevoxxGenieSettingsManager implements Configurable {
         }
     }
 
-    private Integer safeCastToInteger(Object value) {
-        if (value instanceof Number number) {
-            return number.intValue();
+    /**
+     * Safely cast a string to an integer
+     * @param value the string value
+     * @return the integer value
+     */
+    private @NotNull Integer safeCastToInteger(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return 0;
         }
-        return 0;
     }
 }

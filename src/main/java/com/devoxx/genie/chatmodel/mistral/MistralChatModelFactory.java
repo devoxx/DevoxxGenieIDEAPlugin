@@ -2,8 +2,10 @@ package com.devoxx.genie.chatmodel.mistral;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
@@ -12,22 +14,11 @@ import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 
 public class MistralChatModelFactory implements ChatModelFactory {
 
-    private String apiKey;
-    private String modelName;
-
-    public MistralChatModelFactory() {
-    }
-
-    public MistralChatModelFactory(String apiKey, String modelName) {
-        this.apiKey = apiKey;
-        this.modelName = modelName;
-    }
-
     @Override
-    public ChatLanguageModel createChatModel(ChatModel chatModel) {
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return MistralAiChatModel.builder()
-            .apiKey(apiKey)
-            .modelName(modelName)
+            .apiKey(SettingsState.getInstance().getMistralKey())
+            .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
             .maxTokens(chatModel.getMaxTokens())

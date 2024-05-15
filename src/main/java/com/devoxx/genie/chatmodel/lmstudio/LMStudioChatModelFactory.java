@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel.lmstudio;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 
@@ -13,6 +14,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(ChatModel chatModel) {
+        chatModel.setBaseUrl(SettingsState.getInstance().getLmstudioModelUrl());
         return LocalAiChatModel.builder()
             .baseUrl(getBaseUrlByType(ModelProvider.LMStudio))
             .modelName("LMStudio")

@@ -12,15 +12,14 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class PromptExecutionServiceImpl implements PromptExecutionService, ChatChangeListener {
 
@@ -38,11 +37,12 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
     public static final String QUESTION = "The user question: ";
     public static final String CONTEXT_PROMPT = "Question context: \n";
 
-    private final MessageWindowChatMemory messageWindowChatMemory = MessageWindowChatMemory.withMaxMessages(10);
+    private final MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private CompletableFuture<Optional<AiMessage>> futureTask = null;
+    private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
+    private CompletableFuture<Optional<AiMessage>> queryFuture = null;
     private boolean running = false;
+    private final ReentrantLock queryLock = new ReentrantLock();
 
     /**
      * Constructor.
@@ -58,34 +58,47 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @param chatMessageContext the chat message context
      * @return the response
      */
-    @Override
     public @NotNull CompletableFuture<Optional<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
-
-        synchronized (this) {
-            // If the future task is not null this means we need to cancel it
-            if (futureTask != null && !futureTask.isDone()) {
-                futureTask.cancel(true);
-                running = false;
-                return futureTask;
-            } else {
-                running = true;
-            }
-
-            // Start a new future task
-            futureTask = CompletableFuture.supplyAsync(() -> {
-                initChatMessage(chatMessageContext);
-
-                try {
-                    Response<AiMessage> response = chatMessageContext.getChatLanguageModel().generate(messageWindowChatMemory.messages());
-                    messageWindowChatMemory.add(response.content());
-                    return Optional.of(response.content());
-                } catch (Exception e) {
-                    throw new CompletionException(new RuntimeException("Failed to execute prompt!\n" + e.getMessage()));
-                }
-            }, executorService);
+        queryLock.lock();
+        try {
+            if (isCanceled()) return queryFuture;
+            queryFuture = CompletableFuture.supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
+                    .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
+        } finally {
+            queryLock.unlock();
         }
+        return queryFuture;
+    }
 
-        return futureTask;
+    /**
+     * If the future task is not null this means we need to cancel it
+     * @return true if the task is canceled
+     */
+    private boolean isCanceled() {
+        if (queryFuture != null && !queryFuture.isDone()) {
+            queryFuture.cancel(true);
+            running = false;
+            return true;
+        }
+        running = true;
+        return false;
+    }
+
+    /**
+     * Process the chat message.
+     * @param chatMessageContext the chat message context
+     * @return the AI message
+     */
+    private @NotNull Optional<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
+        initChatMessage(chatMessageContext);
+        try {
+            ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
+            Response<AiMessage> response = chatLanguageModel.generate(chatMemory.messages());
+            chatMemory.add(response.content());
+            return Optional.of(response.content());
+        } catch (Exception e) {
+            throw new CompletionException(e);
+        }
     }
 
     /**
@@ -93,9 +106,13 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      */
     @Override
     public void clearChatMessages() {
-        messageWindowChatMemory.clear();
+        chatMemory.clear();
     }
 
+    /**
+     * Check if the service is running.
+     * @return true if the service is running
+     */
     @Override
     public boolean isRunning() {
         return running;
@@ -106,13 +123,13 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @param chatMessageContext the chat message context
      */
     private void initChatMessage(ChatMessageContext chatMessageContext) {
-        if (messageWindowChatMemory.messages().isEmpty()) {
-            messageWindowChatMemory.add(createSystemMessage(chatMessageContext));
+        if (chatMemory.messages().isEmpty()) {
+            chatMemory.add(createSystemMessage(chatMessageContext));
         }
 
         createUserMessage(chatMessageContext);
 
-        messageWindowChatMemory.add(chatMessageContext.getUserMessage());
+        chatMemory.add(chatMessageContext.getUserMessage());
     }
 
     /**
@@ -164,13 +181,13 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
                                    String context) {
         sb.append(chatMessageContext.getUserPrompt());
         sb.append(CONTEXT_PROMPT);
+        appendIfNotEmpty(sb, selectedText);
+        appendIfNotEmpty(sb, context);
+    }
 
-        if (selectedText != null && !selectedText.isEmpty()) {
-            sb.append(selectedText).append("\n");
-        }
-
-        if (context != null && !context.isEmpty()) {
-            sb.append(context);
+    private static void appendIfNotEmpty(StringBuilder sb, String text) {
+        if (text != null && !text.isEmpty()) {
+            sb.append(text).append("\n");
         }
     }
 
@@ -179,11 +196,11 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @param chatMessageContext the chat message context
      */
     public void removeMessagePair(ChatMessageContext chatMessageContext) {
-        List<ChatMessage> messages = messageWindowChatMemory.messages();
+        List<ChatMessage> messages = chatMemory.messages();
 
         messages.removeIf(m -> (m.equals(chatMessageContext.getAiMessage()) || m.equals(chatMessageContext.getUserMessage())));
 
-        messageWindowChatMemory.clear();
-        messages.forEach(messageWindowChatMemory::add);
+        chatMemory.clear();
+        messages.forEach(chatMemory::add);
     }
 }

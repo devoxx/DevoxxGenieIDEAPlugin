@@ -4,11 +4,13 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
+import com.devoxx.genie.ui.SettingsState;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import okhttp3.OkHttpClient;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -21,7 +23,8 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     private final OkHttpClient client = new OkHttpClient();
 
     @Override
-    public ChatLanguageModel createChatModel(ChatModel chatModel) {
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+        chatModel.setBaseUrl(SettingsState.getInstance().getOllamaModelUrl());
         return OllamaChatModel.builder()
             .baseUrl(chatModel.getBaseUrl())
             .modelName(chatModel.getModelName())
