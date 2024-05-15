@@ -33,7 +33,8 @@ public class MistralChatModelFactory implements ChatModelFactory {
             OPEN_MISTRAL_7B.toString(),
             OPEN_MIXTRAL_8x7B.toString(),
             MISTRAL_SMALL_LATEST.toString(),
-            MISTRAL_MEDIUM_LATEST.toString()
+            MISTRAL_MEDIUM_LATEST.toString(),
+            MISTRAL_LARGE_LATEST.toString()
         );
     }
 }
