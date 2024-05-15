@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.8</h2>
+        <UL>
+            <LI>Feat #63: Support for Gemini Pro 1.5 & Flash using API Keys</LI>
+        </UL>
         <h2>v0.1.7</h2>
         <UL>
             <LI>Fix #61: Use correctly the chosen LLM provider and model name</LI>

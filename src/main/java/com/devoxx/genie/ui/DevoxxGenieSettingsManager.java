@@ -41,10 +41,11 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JPasswordField anthropicKeyField;
     private JPasswordField groqKeyField;
     private JPasswordField deepInfraKeyField;
+    private JPasswordField geminiKeyField;
 
     private JFormattedTextField temperatureField;
     private JFormattedTextField topPField;
-    private JFormattedTextField maxOutputTokensField;
+
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
 
@@ -52,6 +53,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JTextField explainPromptField;
     private JTextField reviewPromptField;
     private JTextField customPromptField;
+    private JTextField maxOutputTokensField;
 
     public DevoxxGenieSettingsManager() {
         doubleConverter = new DoubleConverter();
@@ -88,12 +90,13 @@ public class DevoxxGenieSettingsManager implements Configurable {
         anthropicKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Anthropic API Key :", settings.getAnthropicKey(), "https://console.anthropic.com/settings/keys");
         groqKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Groq API Key :", settings.getGroqKey(), "https://console.groq.com/keys");
         deepInfraKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "DeepInfra API Key :", settings.getDeepInfraKey(), "https://deepinfra.com/dash/api_keys");
+        geminiKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Gemini API Key :", settings.getGeminiKey(), "https://aistudio.google.com/app/apikey");
 
         setTitle("LLM Parameters", settingsPanel, gbc);
 
         temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
         topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
-        maxOutputTokensField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
+        maxOutputTokensField = addTextFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
         timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
         retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
 
@@ -253,7 +256,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return formattedField;
     }
 
-    private void resetGbc(GridBagConstraints gbc) {
+    private void resetGbc(@NotNull GridBagConstraints gbc) {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -281,6 +284,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(anthropicKeyField, settings.getAnthropicKey());
         isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
+        isModified |= isFieldModified(geminiKeyField, settings.getGeminiKey());
         return isModified;
     }
 
@@ -295,7 +299,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
-        updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), value -> settings.setMaxOutputTokens(safeCastToInteger(value)));
+        updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
         updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
         updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
         updateSettingIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
@@ -305,7 +309,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(anthropicKeyField, settings.getAnthropicKey(), settings::setAnthropicKey);
         updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
         updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
-
+        updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
         notifySettingsChanged();
     }
 
@@ -356,12 +360,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
         explainPromptField.setText(settingsState.getExplainPrompt());
         reviewPromptField.setText(settingsState.getReviewPrompt());
         customPromptField.setText(settingsState.getCustomPrompt());
+        maxOutputTokensField.setText(settingsState.getMaxOutputTokens());
 
         setValue(temperatureField, settingsState.getTemperature());
         setValue(topPField, settingsState.getTopP());
         setValue(timeoutField, settingsState.getTimeout());
         setValue(retryField, settingsState.getMaxRetries());
-        setValue(maxOutputTokensField, settingsState.getMaxOutputTokens());
     }
 
     /**

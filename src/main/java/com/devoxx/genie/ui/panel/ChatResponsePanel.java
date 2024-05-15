@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
+import java.awt.*;
+
 import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
 
@@ -46,51 +48,53 @@ public class ChatResponsePanel extends BackgroundPanel {
     private void addResponsePane(@NotNull ChatMessageContext chatMessageContext) {
         String markDownResponse = chatMessageContext.getAiMessage().text();
         Node document = Parser.builder().build().parse(markDownResponse);
-        addDocumentNodes(document);
+        addDocumentNodesToPanel(document);
     }
 
     /**
      * Add document nodes to the panel.
      * @param document the document
      */
-    private void addDocumentNodes(@NotNull Node document) {
+    private void addDocumentNodesToPanel(@NotNull Node document) {
         JPanel jPanel = createPanel();
 
         Node node = document.getFirstChild();
 
         while (node != null) {
+            JPanel panel;
             if (node instanceof FencedCodeBlock fencedCodeBlock) {
-                addFencedCodeBlockNode(jPanel, fencedCodeBlock);
+                panel = processBlock(fencedCodeBlock);
             } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
-                addIndentedCodeBlock(jPanel, indentedCodeBlock);
+                panel = processBlock(indentedCodeBlock);
             } else {
-                addBlockNode(jPanel, node);
+                panel = processBlock((Block) node);
             }
+
+            setFullWidth(panel);
+            jPanel.add(panel);
             node = node.getNext();
         }
 
         add(jPanel);
     }
 
-    private @NotNull JPanel createPanel() {
+    private void setFullWidth(@NotNull JPanel panel) {
+        Dimension maximumSize = getMaximumSize();
+        maximumSize.width = Integer.MAX_VALUE;
+        panel.setMaximumSize(maximumSize);
+        panel.setMinimumSize(maximumSize);
+    }
 
+    /**
+     * Create a panel.
+     * @return the panel
+     */
+    private @NotNull JPanel createPanel() {
         JPanel jPanel = new JPanel();
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
         jPanel.setOpaque(false);
         jPanel.setFont(SourceCodeProFontPlan14);
         return jPanel;
-    }
-
-    private void addFencedCodeBlockNode(@NotNull JPanel panel, FencedCodeBlock fencedCodeBlock) {
-        panel.add(processBlock(fencedCodeBlock));
-    }
-
-    private void addIndentedCodeBlock(@NotNull JPanel panel, IndentedCodeBlock indentedCodeBlock) {
-        panel.add(processBlock(indentedCodeBlock));
-    }
-
-    private void addBlockNode(@NotNull JPanel panel, Node node) {
-        panel.add(processBlock((Block) node));
     }
 
     /**

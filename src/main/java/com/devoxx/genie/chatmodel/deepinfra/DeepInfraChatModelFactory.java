@@ -16,7 +16,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.deepinfra.com/v1/openai")
-            .apiKey(SettingsState.getInstance().getDeepInfraKey())
+            .apiKey(getApiKey())
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
@@ -24,6 +24,11 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .topP(chatModel.getTopP())
             .build();
+    }
+
+    @Override
+    public String getApiKey() {
+        return SettingsState.getInstance().getDeepInfraKey();
     }
 
     @Override

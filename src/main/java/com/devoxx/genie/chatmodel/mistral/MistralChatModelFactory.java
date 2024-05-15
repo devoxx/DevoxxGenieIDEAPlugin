@@ -17,7 +17,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return MistralAiChatModel.builder()
-            .apiKey(SettingsState.getInstance().getMistralKey())
+            .apiKey(getApiKey())
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
@@ -25,6 +25,11 @@ public class MistralChatModelFactory implements ChatModelFactory {
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .topP(chatModel.getTopP())
             .build();
+    }
+
+    @Override
+    public String getApiKey() {
+        return SettingsState.getInstance().getMistralKey();
     }
 
     @Override

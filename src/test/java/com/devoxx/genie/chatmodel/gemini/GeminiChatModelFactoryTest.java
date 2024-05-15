@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.mistral;
+package com.devoxx.genie.chatmodel.gemini;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
@@ -6,37 +6,46 @@ import com.devoxx.genie.ui.SettingsState;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
+public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         // Mock SettingsState
         SettingsState settingsStateMock = mock(SettingsState.class);
-        when(settingsStateMock.getMistralKey()).thenReturn("dummy-api-key");
+        when(settingsStateMock.getGeminiKey()).thenReturn("dummy-key");
 
         // Replace the service instance with the mock
-        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), SettingsState.class, settingsStateMock, getTestRootDisposable());
+        ServiceContainerUtil.replaceService(
+            ApplicationManager.getApplication(),
+            SettingsState.class,
+            settingsStateMock,
+            getTestRootDisposable()
+        );
     }
 
     @Test
-    void createChatModel() {
+    public void createChatModel() {
         // Instance of the class containing the method to be tested
-        MistralChatModelFactory factory = new MistralChatModelFactory();
+        var factory = new GeminiChatModelFactory();
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();
-        chatModel.setBaseUrl("http://localhost:8080");
+        chatModel.setModelName("gemini-pro");
+        chatModel.setTemperature(0.7);
+        chatModel.setTopP(0.9);
+        chatModel.setMaxTokens(256);
+        chatModel.setMaxRetries(3);
 
         // Call the method
         ChatLanguageModel result = factory.createChatModel(chatModel);
-        assertThat(result).isNotNull();
+        Assertions.assertThat(result).isNotNull();
     }
 }

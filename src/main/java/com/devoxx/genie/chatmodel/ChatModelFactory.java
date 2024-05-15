@@ -21,7 +21,13 @@ public interface ChatModelFactory {
      * List the available model names.
      * @return the list of model names
      */
-    List<String> getModelNames();
+    default List<String> getModelNames() {
+        return List.of();
+    }
+
+    default String getApiKey() {
+        return "";
+    }
 
     /**
      * Get the base URL by the model type.

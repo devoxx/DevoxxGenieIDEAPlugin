@@ -97,6 +97,10 @@ public class ChatPromptExecutor {
                         // This means the user has cancelled the prompt, so no warning required
                         return null;
                     }
+                    if (e.getCause() instanceof java.util.concurrent.TimeoutException) {
+                        promptOutputPanel.addWarningText(chatMessageContext, "Timeout occurred. Please try again.");
+                        return null;
+                    }
                     promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
                     return null;
                 });
