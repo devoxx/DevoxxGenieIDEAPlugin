@@ -298,8 +298,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         ChatMessageContext chatMessageContext = createChatMessageContext(userPromptText,
                                                                          FileListManager.getInstance().getFiles(),
-                                                                         editorFileButtonManager.getSelectedTextEditor(),
-                                                                         chatModelProvider.getChatLanguageModel());
+                                                                         editorFileButtonManager.getSelectedTextEditor());
 
         disableButtons();
 
@@ -317,21 +316,22 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param userPrompt        the user prompt
      * @param files             the files
      * @param editor            the editor
-     * @param chatLanguageModel the chat language model
      * @return the prompt context with language and text
      */
     private @NotNull ChatMessageContext createChatMessageContext(String userPrompt,
                                                                  @NotNull List<VirtualFile> files,
-                                                                 Editor editor,
-                                                                 ChatLanguageModel chatLanguageModel) {
+                                                                 Editor editor) {
         ChatMessageContext chatMessageContext = new ChatMessageContext();
         chatMessageContext.setProject(project);
         chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
         chatMessageContext.setUserPrompt(userPrompt);
         chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
-        chatMessageContext.setChatLanguageModel(chatLanguageModel);
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
         chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
+        ChatLanguageModel chatLanguageModel = chatModelProvider.getChatLanguageModel(chatMessageContext);
+        chatMessageContext.setChatLanguageModel(chatLanguageModel);
+
+        setChatTimeout(chatMessageContext);
 
         EditorInfo editorInfo = new EditorInfo();
         if (editor != null && editor.getSelectionModel().getSelectedText() != null) {
@@ -348,6 +348,19 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         }
 
         return chatMessageContext;
+    }
+
+    /**
+     * Set the timeout for the chat message context.
+     * @param chatMessageContext the chat message context
+     */
+    private void setChatTimeout(ChatMessageContext chatMessageContext) {
+        Integer timeout = settingsState.getTimeout();
+        if (timeout == 0) {
+            chatMessageContext.setTimeout(60);
+        } else {
+            chatMessageContext.setTimeout(timeout);
+        }
     }
 
     /**
@@ -420,7 +433,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
             if (comboBox.getSelectedIndex() > 0) {
                 String selectedModel = (String) comboBox.getSelectedItem();
                 if (selectedModel != null) {
-                    chatModelProvider.setModelName(selectedModel);
                     settingsState.setLastSelectedModel(selectedModel);
                 }
             }
@@ -441,7 +453,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         settingsState.setLastSelectedProvider(selectedLLMProvider);
         ModelProvider provider = ModelProvider.valueOf(selectedLLMProvider);
-        chatModelProvider.setModelProvider(provider);
 
         updateModelNamesComboBox(provider);
     }
@@ -466,7 +477,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
             );
 
         if (settingsState.getLastSelectedModel() != null) {
-            modelNameComboBox.setSelectedItem(settingsState.getLastSelectedModel());
+            String lastSelectedModel = settingsState.getLastSelectedModel();
+            modelNameComboBox.setSelectedItem(lastSelectedModel);
         }
     }
 }

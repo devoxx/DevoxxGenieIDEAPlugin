@@ -4,6 +4,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -27,8 +28,7 @@ public interface ChatModelFactory {
      * @param modelProvider the language model provider
      * @return the base URL
      */
-    default String getBaseUrlByType(ModelProvider modelProvider) {
-
+    default String getBaseUrlByType(@NotNull ModelProvider modelProvider) {
         return switch (modelProvider) {
             case GPT4All -> SettingsState.getInstance().getGpt4allModelUrl();
             case LMStudio -> SettingsState.getInstance().getLmstudioModelUrl();
