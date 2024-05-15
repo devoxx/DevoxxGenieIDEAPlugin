@@ -16,7 +16,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.groq.com/openai/v1")
-            .apiKey(SettingsState.getInstance().getGroqKey())
+            .apiKey(getApiKey())
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .maxTokens(chatModel.getMaxTokens())
@@ -27,7 +27,18 @@ public class GroqChatModelFactory implements ChatModelFactory {
     }
 
     @Override
+    public String getApiKey() {
+        return SettingsState.getInstance().getGroqKey();
+    }
+
+    @Override
     public List<String> getModelNames() {
-        return List.of("gemma-7b-it", "llama3-8b-8192", "llama3-70b-8192", "llama2-70b-4096", "mixtral-8x7b-32768");
+        return List.of(
+            "gemma-7b-it",
+            "llama3-8b-8192",
+            "llama3-70b-8192",
+            "llama2-70b-4096",
+            "mixtral-8x7b-32768"
+        );
     }
 }

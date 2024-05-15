@@ -1,17 +1,35 @@
 package com.devoxx.genie.chatmodel.groq;
 
+import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.ui.SettingsState;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-class GroqChatModelFactoryTest {
+class GroqChatModelFactoryTest extends AbstractLightPlatformTestCase {
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        super.setUp();
+        // Mock SettingsState
+        SettingsState settingsStateMock = mock(SettingsState.class);
+        when(settingsStateMock.getGroqKey()).thenReturn("dummy-api-key");
+
+        // Replace the service instance with the mock
+        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), SettingsState.class, settingsStateMock, getTestRootDisposable());
+    }
 
     @Test
-    void testCreateChatModel() {
+    void createChatModel() {
         // Instance of the class containing the method to be tested
-        GroqChatModelFactory factory = new GroqChatModelFactory("apiKey", "modelName");
+        GroqChatModelFactory factory = new GroqChatModelFactory();
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();

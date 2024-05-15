@@ -18,6 +18,7 @@ public class LLMProviderConstant {
     protected static final String[] llmProvidersWithKey = {
         Anthropic.getName(),
         DeepInfra.getName(),
+        Gemini.getName(),
         Groq.getName(),
         Mistral.getName(),
         OpenAI.getName()
@@ -37,6 +38,7 @@ public class LLMProviderConstant {
         providerKeyMap.put(Mistral.getName(), settingState::getMistralKey);
         providerKeyMap.put(Groq.getName(), settingState::getGroqKey);
         providerKeyMap.put(DeepInfra.getName(), settingState::getDeepInfraKey);
+        providerKeyMap.put(Gemini.getName(), settingState::getGeminiKey);
 
         // Filter out cloud LLM providers that do not have a key
         var providers = Stream.of(llmProvidersWithKey)
