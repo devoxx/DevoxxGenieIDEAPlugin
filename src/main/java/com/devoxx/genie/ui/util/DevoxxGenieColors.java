@@ -13,7 +13,7 @@ public class DevoxxGenieColors {
     public static final Color TRANSPARENT_COLOR = new JBColor(new Color(0, 0, 0, 0), new Color(0, 0, 0, 0));
     public static final Color HOVER_BG_COLOR = new JBColor(new Color(192, 192, 192, 50), new Color(192, 192, 192, 50));
 
-    public static final Color DEFAULT_BG_COLOR = new JBColor(new Color(61, 63, 66), new Color(45, 48, 52));
+    public static final Color DEFAULT_BG_COLOR = new JBColor(new Color(61, 63, 66), new Color(255, 255, 255));
 
     public static final Color PROMPT_BG_COLOR = new JBColor(new Color(42, 45, 48), new Color(33, 36, 39));
 

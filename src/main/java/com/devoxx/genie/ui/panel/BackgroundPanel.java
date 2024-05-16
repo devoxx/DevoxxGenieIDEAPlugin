@@ -6,7 +6,6 @@ import com.intellij.ui.components.JBPanel;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.DEFAULT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieColors.GRAY_COLOR;
 
 public class BackgroundPanel extends JBPanel<BackgroundPanel> {
@@ -18,7 +17,6 @@ public class BackgroundPanel extends JBPanel<BackgroundPanel> {
     public BackgroundPanel(String name) {
         super.setName(name);
         setName(name);
-        setBackground(DEFAULT_BG_COLOR);
         setBorder(BorderFactory.createCompoundBorder(
             new RoundBorder(GRAY_COLOR, 1, 5),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
