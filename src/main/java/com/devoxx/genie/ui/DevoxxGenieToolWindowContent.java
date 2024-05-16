@@ -19,6 +19,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -35,6 +36,7 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -75,6 +77,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private ConversationPanel conversationPanel;
     private boolean isInitializationComplete = false;
     private final EditorFileButtonManager editorFileButtonManager;
+
+    private Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -333,21 +337,45 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         setChatTimeout(chatMessageContext);
 
-        EditorInfo editorInfo = new EditorInfo();
-        if (editor != null && editor.getSelectionModel().getSelectedText() != null) {
-            editorInfo = EditorUtil.getEditorInfo(project, editor);
-            editorInfo.setSelectedText(editor.getSelectionModel().getSelectedText());
+        addSelectedCode(userPrompt, files, editor, chatMessageContext);
+
+        return chatMessageContext;
+    }
+
+    /**
+     * Add the selected code to the chat message context.
+     * @param userPrompt the user prompt
+     * @param files      the files
+     * @param editor     the editor
+     * @param chatMessageContext the chat message context
+     */
+    private void addSelectedCode(String userPrompt,
+                                 @NotNull List<VirtualFile> files, Editor editor,
+                                 ChatMessageContext chatMessageContext) {
+        if (!files.isEmpty()) {
+            addSelectedFiles(chatMessageContext, userPrompt, files);
         } else if (editor != null) {
+            EditorInfo editorInfo = createEditorInfo(editor);
+            LOG.info("Selected text: " + editorInfo.getSelectedText());
+            chatMessageContext.setEditorInfo(editorInfo);
+        }
+    }
+
+    /**
+     * Create the editor info.
+     * @param editor the editor
+     * @return the editor info
+     */
+    private @NotNull EditorInfo createEditorInfo(Editor editor) {
+        EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
+        String selectedText = editor.getSelectionModel().getSelectedText();
+        if (selectedText != null) {
+            editorInfo.setSelectedText(selectedText);
+        } else {
             editorInfo.setSelectedText(editor.getDocument().getText());
             editorInfo.setSelectedFiles(List.of(editor.getVirtualFile()));
         }
-        chatMessageContext.setEditorInfo(editorInfo);
-
-        if (!files.isEmpty()) {
-            return getPromptContextWithSelectedFiles(chatMessageContext, userPrompt, files);
-        }
-
-        return chatMessageContext;
+        return editorInfo;
     }
 
     /**
@@ -369,14 +397,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
-     * @return the prompt context
      */
-    private @NotNull ChatMessageContext getPromptContextWithSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
-                                                                          String userPrompt,
-                                                                          List<VirtualFile> files) {
+    private void addSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
+                                  String userPrompt,
+                                  List<VirtualFile> files) {
         chatMessageContext.setEditorInfo(new EditorInfo(files));
         chatMessageContext.setContext(getUserPromptWithContext(userPrompt, files));
-        return chatMessageContext;
     }
 
     /**
