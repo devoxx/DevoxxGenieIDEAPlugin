@@ -28,8 +28,6 @@ import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class DevoxxGenieSettingsManager implements Configurable {
 
-    public static final String MODEL_PROVIDER = "com.devoxx.genie.settings.modelProvider";
-
     private final DoubleConverter doubleConverter;
 
     private JTextField ollamaUrlField;

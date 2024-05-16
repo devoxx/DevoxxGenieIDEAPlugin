@@ -13,7 +13,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.SettingsState;
-import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.devoxx.genie.ui.DevoxxGenieSettingsManager.MODEL_PROVIDER;
-
 @Setter
 public class ChatModelProvider {
+    private static final Logger LOG = Logger.getInstance(ChatModelProvider.class);
 
     private final Map<ModelProvider, ChatModelFactory> factories = new HashMap<>();
 
@@ -47,22 +46,14 @@ public class ChatModelProvider {
      * @return the chat language model
      */
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
-        ModelProvider provider = getLanguageModelProvider(chatMessageContext.getLlmProvider());
+        ModelProvider provider = ModelProvider.valueOf(chatMessageContext.getLlmProvider());
+        LOG.info("Chat model provider: " + provider);
         ChatModelFactory factory = factories.get(provider);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for provider: " + provider);
         }
-        return factory.createChatModel(initChatModel(chatMessageContext));
-    }
-
-    /**
-     * Get the model provider.
-     * @param defaultValue the default value
-     * @return the model provider
-     */
-    private ModelProvider getLanguageModelProvider(String defaultValue) {
-        String value = PropertiesComponent.getInstance().getValue(MODEL_PROVIDER, defaultValue);
-        return ModelProvider.valueOf(value);
+        ChatModel chatModel = initChatModel(chatMessageContext);
+        return factory.createChatModel(chatModel);
     }
 
     /**

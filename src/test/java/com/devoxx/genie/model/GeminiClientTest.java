@@ -24,7 +24,7 @@ public class GeminiClientTest extends AbstractLightPlatformTestCase {
         super.setUp();
         // Mock SettingsState
         SettingsState settingsStateMock = mock(SettingsState.class);
-        when(settingsStateMock.getGeminiKey()).thenReturn("AIzaSyD0QtB3GciA5VVWODSMZEeLCWBKGEh27jY");
+        when(settingsStateMock.getGeminiKey()).thenReturn("dummy-key");
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), SettingsState.class, settingsStateMock, getTestRootDisposable());
@@ -33,7 +33,7 @@ public class GeminiClientTest extends AbstractLightPlatformTestCase {
     @Test
     public void testGeminiRequest() {
         String baseUrl = "https://generativelanguage.googleapis.com";
-        String apiKey = "AIzaSyD0QtB3GciA5VVWODSMZEeLCWBKGEh27jY";
+        String apiKey = "dummy-key";
         String modelName = "gemini-pro";
 
         GeminiClient geminiClient = new GeminiClient(baseUrl, apiKey, modelName, Duration.ofSeconds(60));
