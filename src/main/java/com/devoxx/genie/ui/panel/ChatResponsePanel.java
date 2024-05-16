@@ -78,10 +78,9 @@ public class ChatResponsePanel extends BackgroundPanel {
     }
 
     private void setFullWidth(@NotNull JPanel panel) {
-        Dimension maximumSize = getMaximumSize();
-        maximumSize.width = Integer.MAX_VALUE;
+        Dimension maximumSize = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
         panel.setMaximumSize(maximumSize);
-        panel.setMinimumSize(maximumSize);
+        panel.setMinimumSize(new Dimension(panel.getPreferredSize().width, panel.getPreferredSize().height));
     }
 
     /**
