@@ -32,7 +32,6 @@ public class ChatResponsePanel extends BackgroundPanel {
         this.chatMessageContext = chatMessageContext;
 
         add(new ResponseHeaderPanel(chatMessageContext).withBackground(PROMPT_BG_COLOR));
-
         addResponsePane(chatMessageContext);
 
         if (chatMessageContext.hasFiles()) {

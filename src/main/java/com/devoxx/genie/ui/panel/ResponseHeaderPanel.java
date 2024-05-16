@@ -14,6 +14,7 @@ import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIcons.DevoxxIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
@@ -26,11 +27,8 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
         andTransparent().withMaximumHeight(30).withPreferredHeight(30);
 
-        String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
-            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
-
-        String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
-        JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);
+        String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm"));
+        JBLabel createdOnLabel = new JBLabel(label, DevoxxIcon, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
         add(createdOnLabel, BorderLayout.WEST);

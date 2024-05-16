@@ -16,12 +16,16 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
 
+import com.intellij.openapi.diagnostic.Logger;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PromptExecutionServiceImpl implements PromptExecutionService, ChatChangeListener {
+
+    private static final Logger LOG = Logger.getInstance(PromptExecutionServiceImpl.class);
 
     public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
         "You are a software developer with expert knowledge in ";
@@ -59,9 +63,16 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @return the response
      */
     public @NotNull CompletableFuture<Optional<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
+        LOG.info("Execute query : " + chatMessageContext);
+
         queryLock.lock();
         try {
             if (isCanceled()) return queryFuture;
+
+            initChatMemory(chatMessageContext);
+
+            createUserMessage(chatMessageContext);
+
             queryFuture = CompletableFuture.supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
                     .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
         } finally {
@@ -90,7 +101,6 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
      * @return the AI message
      */
     private @NotNull Optional<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
-        initChatMessage(chatMessageContext);
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             Response<AiMessage> response = chatLanguageModel.generate(chatMemory.messages());
@@ -119,16 +129,13 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
     }
 
     /**
-     * Set up the chat message.
+     * Init chat memory.
      * @param chatMessageContext the chat message context
      */
-    private void initChatMessage(ChatMessageContext chatMessageContext) {
+    private void initChatMemory(ChatMessageContext chatMessageContext) {
         if (chatMemory.messages().isEmpty()) {
             chatMemory.add(createSystemMessage(chatMessageContext));
         }
-
-        createUserMessage(chatMessageContext);
-
         chatMemory.add(chatMessageContext.getUserMessage());
     }
 

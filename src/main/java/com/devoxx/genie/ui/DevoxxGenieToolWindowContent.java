@@ -430,11 +430,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private void processModelNameSelection(@NotNull ActionEvent e) {
         if (e.getActionCommand().equals(COMBO_BOX_CHANGED)) {
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            if (comboBox.getSelectedIndex() > 0) {
-                String selectedModel = (String) comboBox.getSelectedItem();
-                if (selectedModel != null) {
-                    settingsState.setLastSelectedModel(selectedModel);
-                }
+            String selectedModel = (String) comboBox.getSelectedItem();
+            if (selectedModel != null) {
+                settingsState.setLastSelectedModel(selectedModel);
             }
         }
     }

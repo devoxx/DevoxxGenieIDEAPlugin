@@ -7,12 +7,14 @@ import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.devoxx.genie.ui.listener.ChatChangeListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
+import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.TrashIcon;
@@ -34,10 +36,7 @@ public class UserPromptPanel extends BackgroundPanel {
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false);
-
-        // Icon Label setup
-        JLabel iconLabel = new JLabel("DevoxxGenie", DevoxxIcon, SwingConstants.LEFT);
-        headerPanel.add(iconLabel, BorderLayout.WEST);
+        headerPanel.add(createHeaderLabel(chatMessageContext), BorderLayout.WEST);
         headerPanel.add(createDeleteButton(chatMessageContext), BorderLayout.EAST);
 
         // User prompt setup
@@ -46,6 +45,21 @@ public class UserPromptPanel extends BackgroundPanel {
 
         add(headerPanel, BorderLayout.NORTH);
         add(htmlJEditorPane, BorderLayout.CENTER);
+    }
+
+    /**
+     * Create the header label.
+     * @param chatMessageContext the chat message context
+     */
+    private JBLabel createHeaderLabel(@NotNull ChatMessageContext chatMessageContext) {
+        String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
+            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
+
+        String label = "DevoxxGenie: : " + modelInfo;
+        JBLabel createdOnLabel = new JBLabel(label, DevoxxIcon, SwingConstants.LEFT);
+        createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
+        createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
+        return createdOnLabel;
     }
 
     /**
