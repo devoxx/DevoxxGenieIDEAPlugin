@@ -52,11 +52,7 @@ public class UserPromptPanel extends BackgroundPanel {
      * @param chatMessageContext the chat message context
      */
     private JBLabel createHeaderLabel(@NotNull ChatMessageContext chatMessageContext) {
-        String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
-            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
-
-        String label = "DevoxxGenie: : " + modelInfo;
-        JBLabel createdOnLabel = new JBLabel(label, DevoxxIcon, SwingConstants.LEFT);
+        JBLabel createdOnLabel = new JBLabel("DevoxxGenie", DevoxxIcon, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
         return createdOnLabel;
