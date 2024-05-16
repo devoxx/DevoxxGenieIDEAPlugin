@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
-import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.TrashIcon;
@@ -51,7 +50,7 @@ public class UserPromptPanel extends BackgroundPanel {
      * Create the header label.
      * @param chatMessageContext the chat message context
      */
-    private JBLabel createHeaderLabel(@NotNull ChatMessageContext chatMessageContext) {
+    private @NotNull JBLabel createHeaderLabel(@NotNull ChatMessageContext chatMessageContext) {
         JBLabel createdOnLabel = new JBLabel("DevoxxGenie", DevoxxIcon, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));

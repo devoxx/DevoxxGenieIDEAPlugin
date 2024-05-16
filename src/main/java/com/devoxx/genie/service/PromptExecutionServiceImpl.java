@@ -38,7 +38,7 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
         "The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.";
     public static final String NO_HALLUCINATIONS =
         "Do not include any more info which might be incorrect, like discord, twitter, documentation or website info. Only provide info that is correct and relevant to the code or plugin.";
-    public static final String QUESTION = "The user question: ";
+    public static final String QUESTION = "Answer the user question: ";
     public static final String CONTEXT_PROMPT = "Question context: \n";
 
     private final MessageWindowChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
@@ -69,9 +69,13 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
         try {
             if (isCanceled()) return queryFuture;
 
-            initChatMemory(chatMessageContext);
+            if (chatMemory.messages().isEmpty()) {
+                chatMemory.add(createSystemMessage(chatMessageContext));
+            }
 
             createUserMessage(chatMessageContext);
+
+            chatMemory.add(chatMessageContext.getUserMessage());
 
             queryFuture = CompletableFuture.supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
                     .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
@@ -103,7 +107,8 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
     private @NotNull Optional<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-            Response<AiMessage> response = chatLanguageModel.generate(chatMemory.messages());
+            List<ChatMessage> messages = chatMemory.messages();
+            Response<AiMessage> response = chatLanguageModel.generate(messages);
             chatMemory.add(response.content());
             return Optional.of(response.content());
         } catch (Exception e) {
@@ -169,7 +174,8 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
             (context != null && !context.isEmpty())) {
             StringBuilder sb = new StringBuilder(QUESTION);
             addContext(chatMessageContext, sb, selectedText, context);
-            chatMessageContext.setUserMessage(new UserMessage(sb.toString()));
+            UserMessage userMessage = new UserMessage(sb.toString());
+            chatMessageContext.setUserMessage(userMessage);
         } else {
             chatMessageContext.setUserMessage(new UserMessage(QUESTION + " " + chatMessageContext.getUserPrompt()));
         }
@@ -186,8 +192,8 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
                                    @NotNull StringBuilder sb,
                                    String selectedText,
                                    String context) {
-        sb.append(chatMessageContext.getUserPrompt());
-        sb.append(CONTEXT_PROMPT);
+        appendIfNotEmpty(sb, chatMessageContext.getUserPrompt());
+        appendIfNotEmpty(sb, CONTEXT_PROMPT);
         appendIfNotEmpty(sb, selectedText);
         appendIfNotEmpty(sb, context);
     }
