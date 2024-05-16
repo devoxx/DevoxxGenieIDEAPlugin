@@ -37,6 +37,7 @@
             <LI>Feat #63: Support for Gemini Pro 1.5 & Flash using API Keys</LI>
             <LI>Fix for incorrect LLM selection</LI>
             <LI>Fix for chat response styling issue<LI>
+            <LI>Fix prompt context issue</LI>
         </UL>
         <h2>v0.1.7</h2>
         <UL>
