@@ -6,7 +6,6 @@ import javax.swing.*;
 
 public final class DevoxxGenieIcons {
 
-    public static final Icon ClockIcon = load("/icons/clock.svg");
     public static final Icon CogIcon = load("/icons/cog.svg");
     public static final Icon PlusIcon = load("/icons/plus.svg");
     public static final Icon AddFileIcon = load("/icons/addNewFile.svg");
