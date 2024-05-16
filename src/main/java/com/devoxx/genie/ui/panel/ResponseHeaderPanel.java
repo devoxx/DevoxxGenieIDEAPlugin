@@ -14,7 +14,6 @@ import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.DevoxxIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
@@ -25,16 +24,28 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
     public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
         super(new BorderLayout());
 
-        andTransparent().withMaximumHeight(30).withPreferredHeight(30);
+        andTransparent()
+            .withMaximumHeight(30)
+            .withPreferredHeight(30);
 
-        String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm"));
-        JBLabel createdOnLabel = new JBLabel(label, DevoxxIcon, SwingConstants.LEFT);
+        add(getCreatedOnLabel(chatMessageContext), BorderLayout.WEST);
+        add(createCopyButton(chatMessageContext), BorderLayout.EAST);
+    }
+
+    /**
+     * Get the created on label.
+     * @param chatMessageContext the chat message context
+     * @return the created on label
+     */
+    private static @NotNull JBLabel getCreatedOnLabel(@NotNull ChatMessageContext chatMessageContext) {
+        String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
+            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
+
+        String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
+        JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
-        add(createdOnLabel, BorderLayout.WEST);
-
-        JButton copyButton = createCopyButton(chatMessageContext);
-        add(copyButton, BorderLayout.EAST);
+        return createdOnLabel;
     }
 
     /**
@@ -53,7 +64,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      * Copy the prompt response to the system clipboard.
      * @param chatMessageContext the chat message context
      */
-    private void copyPrompt(ChatMessageContext chatMessageContext) {
+    private void copyPrompt(@NotNull ChatMessageContext chatMessageContext) {
         String response = chatMessageContext.getAiMessage().text();
         Transferable transferable = new StringSelection(response);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
