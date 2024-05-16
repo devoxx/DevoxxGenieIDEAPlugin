@@ -134,17 +134,6 @@ public class PromptExecutionServiceImpl implements PromptExecutionService, ChatC
     }
 
     /**
-     * Init chat memory.
-     * @param chatMessageContext the chat message context
-     */
-    private void initChatMemory(ChatMessageContext chatMessageContext) {
-        if (chatMemory.messages().isEmpty()) {
-            chatMemory.add(createSystemMessage(chatMessageContext));
-        }
-        chatMemory.add(chatMessageContext.getUserMessage());
-    }
-
-    /**
      * Create a system message.
      * @param chatMessageContext the language text pair
      * @return the system message
