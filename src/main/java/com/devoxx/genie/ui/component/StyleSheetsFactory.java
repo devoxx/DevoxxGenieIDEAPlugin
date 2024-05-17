@@ -5,6 +5,8 @@ import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StyleSheetUtil;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.html.StyleSheet;
@@ -13,17 +15,18 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SOURCE_CODE_PRO_FONT;
 
 public class StyleSheetsFactory {
 
-    public static StyleSheet createCodeStyleSheet() {
+    @Contract(" -> new")
+    public static @NotNull StyleSheet createCodeStyleSheet() {
         return StyleSheetUtil.loadStyleSheet(
                 "code, pre, .pre { " +
                 "   font-family: '" + SOURCE_CODE_PRO_FONT + "'; " +
                 "   font-size: 14pt;" +
-                "   background-color: black;" +
                 "}"
         );
     }
 
-    public static StyleSheet createParagraphStyleSheet() {
+    @Contract(" -> new")
+    public static @NotNull StyleSheet createParagraphStyleSheet() {
         return StyleSheetUtil.loadStyleSheet(
             "h6 { font-size: " + scaleFontSize(1) + "}" +
                 "h5 { font-size: " + scaleFontSize(2) + "}" +
@@ -50,11 +53,12 @@ public class StyleSheetsFactory {
         );
     }
 
-    private static String scaleFontSize(int increment) {
+    @Contract("_ -> new")
+    private static @NotNull String scaleFontSize(int increment) {
         return Integer.toString(UIManager.getFont("Label.font").getSize() + increment);
     }
 
-    private static String paragraphSpacing() {
+    private static @NotNull String paragraphSpacing() {
         return "padding: " + JBUIScale.scale(4) + "px 0 " + JBUIScale.scale(4) + "px 0";
     }
 }
