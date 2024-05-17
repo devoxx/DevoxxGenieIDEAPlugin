@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.ui.components.JBPanel;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.renderer.html.HtmlRenderer;
 
@@ -18,6 +19,8 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 
+import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BORDER_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.InsertCodeIcon;
 
@@ -41,11 +44,12 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
         HtmlRenderer htmlRenderer = createHtmlRenderer(chatMessageContext.getProject());
         String htmlOutput = htmlRenderer.render(fencedCodeBlock);
         JEditorPane editorPane = createEditorPane(htmlOutput, StyleSheetsFactory.createCodeStyleSheet());
-        editorPane.setBorder(BorderFactory.createLineBorder(Color.BLACK, 4));
+        editorPane.setBorder(BorderFactory.createLineBorder(CODE_BORDER_BG_COLOR, 1));
 
         // Initialize the overlay panel and set the OverlayLayout correctly
         JPanel overlayPanel = new JPanel(new BorderLayout());
-        overlayPanel.setBackground(Color.BLACK);
+        overlayPanel.setBackground(CODE_BG_COLOR);
+        overlayPanel.setOpaque(true);
 
         // Add components to the overlay panel in the correct order
         overlayPanel.add(editorPane, BorderLayout.CENTER);  // Editor pane at the bottom
@@ -76,24 +80,6 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
         insertButton.setVisible(true);
         insertButton.setOpaque(true);
         buttonPanel.add(insertButton);
-//
-//        editorPane.addMouseMotionListener(new MouseAdapter() {
-//            @Override
-//            public void mouseMoved(MouseEvent e) {
-//                copyButton.setVisible(true);
-//                insertButton.setVisible(true);
-//            }
-//        });
-//
-//        editorPane.addMouseListener(new MouseAdapter() {
-//            @Override
-//            public void mouseExited(MouseEvent e) {
-//                copyButton.setVisible(false);
-//                insertButton.setVisible(false);
-//                buttonPanel.revalidate();
-//            }
-//        });
-
         return buttonPanel;
     }
 

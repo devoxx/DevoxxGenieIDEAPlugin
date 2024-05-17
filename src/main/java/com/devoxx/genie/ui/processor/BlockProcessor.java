@@ -31,11 +31,9 @@ public class BlockProcessor implements NodeProcessor {
 
         JEditorPane editorPane = createEditorPane(htmlOutput, StyleSheetsFactory.createParagraphStyleSheet());
         editorPane.setOpaque(false);
-        editorPane.setBackground(PROMPT_BG_COLOR);
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        panel.setBackground(PROMPT_BG_COLOR);
         panel.add(editorPane, BorderLayout.CENTER);
         return panel;
     }

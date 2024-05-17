@@ -14,7 +14,6 @@ import javax.swing.*;
 
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
 
 public class ChatResponsePanel extends BackgroundPanel {
@@ -31,7 +30,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         this.chatMessageContext = chatMessageContext;
 
-        add(new ResponseHeaderPanel(chatMessageContext).withBackground(PROMPT_BG_COLOR));
+        add(new ResponseHeaderPanel(chatMessageContext));
         addResponsePane(chatMessageContext);
 
         if (chatMessageContext.hasFiles()) {
