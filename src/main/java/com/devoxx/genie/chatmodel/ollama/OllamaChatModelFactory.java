@@ -50,6 +50,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
                 "Ollama is not running, please start it.");
+            return List.of();
         }
         return modelNames;
     }

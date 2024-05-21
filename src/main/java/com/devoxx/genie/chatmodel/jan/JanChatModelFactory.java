@@ -49,7 +49,8 @@ public class JanChatModelFactory implements ChatModelFactory {
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "Jan is not running or model not installed.");
+                "Jan is not running, please start it.");
+            return List.of();
         }
         return modelNames;
     }
