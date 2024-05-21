@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -486,23 +487,35 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param provider the model provider
      */
     private void updateModelNamesComboBox(ModelProvider provider) {
+        if (provider == null) {
+            return;
+        }
+
         modelNameComboBox.setVisible(true);
         modelNameComboBox.removeAllItems();
 
         ChatModelFactoryProvider
             .getFactoryByProvider(provider)
-            .ifPresentOrElse(
-                chatModelFactory ->
-                    chatModelFactory.getModelNames()
-                                    .stream()
-                                    .sorted()
-                                    .forEach(modelNameComboBox::addItem),
-                () -> modelNameComboBox.setVisible(false)
-            );
+            .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
 
-        if (settingsState.getLastSelectedModel() != null) {
-            String lastSelectedModel = settingsState.getLastSelectedModel();
+        String lastSelectedModel = settingsState.getLastSelectedModel();
+        if (lastSelectedModel != null) {
             modelNameComboBox.setSelectedItem(lastSelectedModel);
         }
+    }
+
+    private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
+        List<String> modelNames = chatModelFactory.getModelNames();
+        if (modelNames.isEmpty()) {
+            hideModelNameComboBox();
+        } else {
+            modelNames.stream()
+                .sorted()
+                .forEach(modelNameComboBox::addItem);
+        }
+    }
+
+    private void hideModelNameComboBox() {
+        modelNameComboBox.setVisible(false);
     }
 }
