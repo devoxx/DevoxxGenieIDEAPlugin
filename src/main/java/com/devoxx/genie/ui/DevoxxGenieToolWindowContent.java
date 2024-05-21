@@ -78,7 +78,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private boolean isInitializationComplete = false;
     private final EditorFileButtonManager editorFileButtonManager;
 
-    private Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
+    private final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
