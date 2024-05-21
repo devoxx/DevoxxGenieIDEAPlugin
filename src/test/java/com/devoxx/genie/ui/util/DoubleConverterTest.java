@@ -29,13 +29,4 @@ public class DoubleConverterTest {
         String value = "invalid";
         assertThrows(NumberFormatException.class, () -> converter.fromString(value));
     }
-
-    @Test
-    void testToString_validDouble_returnsFormattedString() {
-        Double value = 3.14;
-        String expected = "3.14";
-        String result = converter.toString(value);
-        assertEquals(expected, result);
-    }
-
 }

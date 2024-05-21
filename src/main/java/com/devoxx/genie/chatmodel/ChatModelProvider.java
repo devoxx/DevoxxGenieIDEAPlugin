@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
@@ -38,6 +39,7 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
         factories.put(ModelProvider.Gemini, new GeminiChatModelFactory());
+        factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
 
     /**

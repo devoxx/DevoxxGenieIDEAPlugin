@@ -33,6 +33,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JTextField ollamaUrlField;
     private JTextField lmstudioUrlField;
     private JTextField gpt4allUrlField;
+    private JTextField janUrlField;
 
     private JPasswordField openAiKeyField;
     private JPasswordField mistralKeyField;
@@ -80,6 +81,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         ollamaUrlField = addFieldWithLinkButton(settingsPanel, gbc, "Ollama URL:", settings.getOllamaModelUrl(), "https://ollama.com/");
         lmstudioUrlField = addFieldWithLinkButton(settingsPanel, gbc, "LMStudio URL:", settings.getLmstudioModelUrl(), "https://lmstudio.ai/");
         gpt4allUrlField = addFieldWithLinkButton(settingsPanel, gbc, "GPT4All URL:", settings.getGpt4allModelUrl(), "https://gpt4all.io/");
+        janUrlField = addFieldWithLinkButton(settingsPanel, gbc, "Jan URL:", settings.getJanModelUrl(), "https://jan.ai/download");
 
         setTitle("Cloud based Large Language Models", settingsPanel, gbc);
 
@@ -268,6 +270,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         boolean isModified = isFieldModified(ollamaUrlField, settings.getOllamaModelUrl());
         isModified |= isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl());
         isModified |= isFieldModified(gpt4allUrlField, settings.getGpt4allModelUrl());
+        isModified |= isFieldModified(janUrlField, settings.getJanModelUrl());
         isModified |= isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())));
         isModified |= isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())));
         isModified |= isFieldModified(timeoutField, settings.getTimeout());
@@ -293,6 +296,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(ollamaUrlField, settings.getOllamaModelUrl(), settings::setOllamaModelUrl);
         updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
         updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
+        updateSettingIfModified(janUrlField, settings.getJanModelUrl(), settings::setJanModelUrl);
         updateSettingIfModified(temperatureField, doubleConverter.toString(settings.getTemperature()), value -> settings.setTemperature(doubleConverter.fromString(value)));
         updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));

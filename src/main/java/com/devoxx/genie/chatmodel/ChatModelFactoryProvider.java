@@ -8,6 +8,7 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
+import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -26,8 +27,9 @@ public class ChatModelFactoryProvider {
         ModelProvider.Mistral, MistralChatModelFactory::new,
         ModelProvider.Groq, GroqChatModelFactory::new,
         ModelProvider.DeepInfra, DeepInfraChatModelFactory::new,
-        ModelProvider.Gemini, GeminiChatModelFactory::new
-    );
+        ModelProvider.Gemini, GeminiChatModelFactory::new,
+        ModelProvider.Jan, JanChatModelFactory::new
+        );
 
     /**
      * Get the factory by provider.

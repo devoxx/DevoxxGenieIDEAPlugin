@@ -19,10 +19,11 @@ import org.jetbrains.annotations.NotNull;
 @State(name = "com.devoxx.genie.ui.SettingsState", storages = @Storage("DevoxxGenieSettingsPlugin.xml"))
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
 
-    // LLM URL fields
+    // Local LLM URL fields
     private String ollamaModelUrl = Constant.OLLAMA_MODEL_URL;
     private String lmstudioModelUrl = Constant.LMSTUDIO_MODEL_URL;
     private String gpt4allModelUrl = Constant.GPT4ALL_MODEL_URL;
+    private String janModelUrl = Constant.JAN_MODEL_URL;
 
     // LLM API Keys
     private String openAIKey = "";
