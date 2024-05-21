@@ -27,7 +27,8 @@ public class LLMProviderConstant {
     protected static final String[] llmProviders = {
         GPT4All.getName(),
         LMStudio.getName(),
-        Ollama.getName()
+        Ollama.getName(),
+        Jan.getName()
     };
 
     public static @NotNull List<String> getLLMProviders() {
