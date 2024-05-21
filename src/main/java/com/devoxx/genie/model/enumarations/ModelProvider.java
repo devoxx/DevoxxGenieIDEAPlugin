@@ -12,7 +12,8 @@ public enum ModelProvider {
     Mistral("Mistral"),
     Groq("Groq"),
     DeepInfra("DeepInfra"),
-    Gemini("Gemini");
+    Gemini("Gemini"),
+    Jan("Jan");
 
     private final String name;
 

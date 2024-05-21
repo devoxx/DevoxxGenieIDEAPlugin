@@ -1,7 +1,7 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.model.ollama.OllamaModelDTO;
-import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.model.jan.Data;
+import com.devoxx.genie.model.jan.ResponseDTO;
 import com.devoxx.genie.ui.SettingsState;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
@@ -11,19 +11,20 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.List;
 
-public class OllamaService {
+public class JanService {
     private final OkHttpClient client;
 
-    public OllamaService(OkHttpClient client) {
+    public JanService(OkHttpClient client) {
         this.client = client;
     }
 
-    public OllamaModelEntryDTO[] getModels() throws IOException {
-        String baseUrl = ensureEndsWithSlash(SettingsState.getInstance().getOllamaModelUrl());
+    public List<Data> getModels() throws IOException {
+        String baseUrl = ensureEndsWithSlash(SettingsState.getInstance().getJanModelUrl());
 
         Request request = new Request.Builder()
-            .url(baseUrl + "api/tags")
+            .url(baseUrl + "models")
             .build();
 
         try (Response response = client.newCall(request).execute()) {
@@ -33,8 +34,8 @@ public class OllamaService {
 
             assert response.body() != null;
 
-            OllamaModelDTO ollamaModelDTO = new Gson().fromJson(response.body().string(), OllamaModelDTO.class);
-            return ollamaModelDTO != null && ollamaModelDTO.getModels() != null ? ollamaModelDTO.getModels() : new OllamaModelEntryDTO[0];
+            ResponseDTO responseDTO = new Gson().fromJson(response.body().string(), ResponseDTO.class);
+            return responseDTO != null && responseDTO.getData() != null ? responseDTO.getData() : List.of();
         }
     }
 
