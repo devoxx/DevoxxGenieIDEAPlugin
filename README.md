@@ -2,7 +2,7 @@
 
 <img height="128" src="src/main/resources/icons/pluginIcon.svg" width="128"/>
 
-Devoxx Genie is a fully Java-based LLM plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), and [GPT4All](https://gpt4all.io/index.html) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey). This plugin aids in reviewing, testing, and explaining your project code, enhancing your development workflow.
+Devoxx Genie is a fully Java-based LLM plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html) and [Jan](https://jan.ai) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey). This plugin aids in reviewing, testing, and explaining your project code, enhancing your development workflow.
 
 https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd-add9-c0bca852c21c
 
