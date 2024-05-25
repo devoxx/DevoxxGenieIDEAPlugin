@@ -16,7 +16,10 @@ import org.jetbrains.annotations.NotNull;
 @Getter
 @Setter
 @Service
-@State(name = "com.devoxx.genie.ui.SettingsState", storages = @Storage("DevoxxGenieSettingsPlugin.xml"))
+@State(
+    name = "com.devoxx.genie.ui.SettingsState",
+    storages = @Storage("DevoxxGenieSettingsPlugin.xml")
+)
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
 
     // Local LLM URL fields
@@ -57,6 +60,9 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     // Last selected LLM provider and model name
     private String lastSelectedProvider;
     private String lastSelectedModel;
+
+    // Enable stream mode
+    private Boolean streamMode = Constant.STREAM_MODE;
 
     public static SettingsState getInstance() {
         return ApplicationManager.getApplication().getService(SettingsState.class);
