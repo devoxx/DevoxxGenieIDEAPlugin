@@ -4,6 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -91,13 +92,22 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     /**
-     * Add a response to the panel.
+     * Add a (non-streaming) response to the panel.
      * @param chatMessageContext  the prompt context
      */
-    public void addChatResponse(ChatMessageContext chatMessageContext) {
+    public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getName());
         container.add(new ChatResponsePanel(chatMessageContext));
+        moveToBottom();
+    }
+
+    /**
+     * Add a streaming response to the panel.
+     * @param chatResponseStreamingPanel the streaming response panel
+     */
+    public void addStreamResponse(StreamingChatResponsePanel chatResponseStreamingPanel) {
+        container.add(chatResponseStreamingPanel);
         moveToBottom();
     }
 

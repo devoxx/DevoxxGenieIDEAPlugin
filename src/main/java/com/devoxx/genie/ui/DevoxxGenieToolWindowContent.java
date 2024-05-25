@@ -6,6 +6,7 @@ import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ChatPromptExecutor;
 import com.devoxx.genie.service.FileListManager;
 
@@ -34,10 +35,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -55,9 +54,11 @@ import static javax.swing.SwingUtilities.invokeLater;
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener, ConversationStarter {
 
-    public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
+    private final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
+
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
+    public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
 
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
@@ -79,11 +80,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private boolean isInitializationComplete = false;
     private final EditorFileButtonManager editorFileButtonManager;
 
-    private final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
-
     /**
      * The Devoxx Genie Tool Window Content constructor.
-     *
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
@@ -95,7 +93,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
 
         setupUI();
-
         setLastSelectedProvider();
 
         isInitializationComplete = true;
@@ -260,7 +257,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     public void startNewConversation() {
         conversationPanel.updateNewConversationLabel();
         promptOutputPanel.clear();
-        chatPromptExecutor.clearChatMessages();
+        ChatMemoryService.getInstance().clear();
         promptInputComponent.clear();
         FileListManager.getInstance().clear();
         enableButtons();
@@ -317,7 +314,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get the chat message context.
-     *
      * @param userPrompt        the user prompt
      * @param files             the files
      * @param editor            the editor
@@ -333,8 +329,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
         chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
-        ChatLanguageModel chatLanguageModel = chatModelProvider.getChatLanguageModel(chatMessageContext);
-        chatMessageContext.setChatLanguageModel(chatLanguageModel);
+
+        if (settingsState.getStreamMode()) {
+            chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
+        } else {
+            chatMessageContext.setChatLanguageModel(chatModelProvider.getChatLanguageModel(chatMessageContext));
+        }
 
         setChatTimeout(chatMessageContext);
 
@@ -394,7 +394,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get the prompt context from the selected files.
-     *
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
@@ -408,6 +407,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get user prompt with context.
+     * TODO move this to a dedicated class
      * @param userPrompt the user prompt
      * @param files      the files
      * @return the user prompt with context
@@ -504,6 +504,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         }
     }
 
+    /**
+     * Populate the model names.
+     * @param chatModelFactory the chat model factory
+     */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
         List<String> modelNames = chatModelFactory.getModelNames();
         if (modelNames.isEmpty()) {
@@ -515,6 +519,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         }
     }
 
+    /**
+     * Hide the model name combobox.
+     */
     private void hideModelNameComboBox() {
         modelNameComboBox.setVisible(false);
     }

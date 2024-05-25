@@ -1,10 +1,8 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import org.jetbrains.annotations.NotNull;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 
 import java.util.List;
 
@@ -18,6 +16,15 @@ public interface ChatModelFactory {
     ChatLanguageModel createChatModel(ChatModel chatModel);
 
     /**
+     * Create a streaming chat model with the given parameters.
+     * @param chatModel the chat model
+     * @return the streaming chat model
+     */
+    default StreamingChatLanguageModel createStreamingChatModel(ChatModel chatModel) {
+        return null;
+    }
+
+    /**
      * List the available model names.
      * @return the list of model names
      */
@@ -25,21 +32,11 @@ public interface ChatModelFactory {
         return List.of();
     }
 
+    /**
+     * Get the model provider API key.
+     * @return the API key
+     */
     default String getApiKey() {
         return "";
-    }
-
-    /**
-     * Get the base URL by the model type.
-     * @param modelProvider the language model provider
-     * @return the base URL
-     */
-    default String getBaseUrlByType(@NotNull ModelProvider modelProvider) {
-        return switch (modelProvider) {
-            case GPT4All -> SettingsState.getInstance().getGpt4allModelUrl();
-            case LMStudio -> SettingsState.getInstance().getLmstudioModelUrl();
-            case Ollama -> SettingsState.getInstance().getOllamaModelUrl();
-            default -> "na";
-        };
     }
 }

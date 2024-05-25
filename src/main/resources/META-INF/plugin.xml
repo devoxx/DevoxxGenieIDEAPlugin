@@ -170,9 +170,8 @@
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
 
-        <applicationService
-            serviceInterface="com.devoxx.genie.service.PromptExecutionService"
-            serviceImplementation="com.devoxx.genie.service.PromptExecutionServiceImpl"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
 
     </extensions>
 

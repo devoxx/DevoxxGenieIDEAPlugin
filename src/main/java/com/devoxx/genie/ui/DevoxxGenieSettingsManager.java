@@ -48,6 +48,8 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
 
+    private JCheckBox streamModeCheckBox;
+
     private JTextField testPromptField;
     private JTextField explainPromptField;
     private JTextField reviewPromptField;
@@ -99,6 +101,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         maxOutputTokensField = addTextFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
         timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
         retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
+        streamModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable Stream Mode (Beta)", settings.getStreamMode());
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
@@ -256,6 +259,29 @@ public class DevoxxGenieSettingsManager implements Configurable {
         return formattedField;
     }
 
+    /**
+     * Add a formatted field with label
+     * @param panel the panel
+     * @param gbc the grid bag constraints
+     * @param label the label
+     * @param value the value
+     * @return the formatted field
+     */
+    private @NotNull JCheckBox addCheckBoxWithLabel(@NotNull JPanel panel,
+                                                    GridBagConstraints gbc,
+                                                    String label,
+                                                    Boolean value) {
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx++;
+        JCheckBox checkBox = new JCheckBox();
+        if (value != null) {
+            checkBox.setSelected(value);
+        }
+        panel.add(checkBox, gbc);
+        resetGbc(gbc);
+        return checkBox;
+    }
+
     private void resetGbc(@NotNull GridBagConstraints gbc) {
         gbc.gridx = 0;
         gbc.gridy++;
@@ -286,6 +312,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
         isModified |= isFieldModified(geminiKeyField, settings.getGeminiKey());
+        isModified |= !settings.getStreamMode().equals(streamModeCheckBox.isSelected());
         return isModified;
     }
 
@@ -312,6 +339,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
         updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
         updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
+        updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
         notifySettingsChanged();
     }
 
@@ -335,9 +363,11 @@ public class DevoxxGenieSettingsManager implements Configurable {
      * @param field the field
      * @return the string value
      */
-    private String extractStringValue(JComponent field) {
+    private @Nullable String extractStringValue(JComponent field) {
         if (field instanceof JTextField jtextfield) {
             return jtextfield.getText();
+        } else if (field instanceof JCheckBox jcheckbox) {
+            return Boolean.toString(jcheckbox.isSelected());
         }
         return null;
     }
