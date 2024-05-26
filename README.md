@@ -22,6 +22,10 @@ See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](http
 
 ![GenieExample](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/5064cef3-e7f8-4ab8-9485-2dbd0a7788df)
 
+We now support also streaming responses which you can enable in the Settings page 🤩 🚀
+
+https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283-af1d-19061b7ae7bf
+
 ### Installation:
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
