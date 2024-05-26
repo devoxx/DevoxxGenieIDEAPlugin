@@ -14,8 +14,8 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.SettingsState;
-import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,11 +24,8 @@ import java.util.Map;
 
 @Setter
 public class ChatModelProvider {
-    private static final Logger LOG = Logger.getInstance(ChatModelProvider.class);
 
     private final Map<ModelProvider, ChatModelFactory> factories = new HashMap<>();
-
-    private String modelName;
 
     public ChatModelProvider() {
         factories.put(ModelProvider.Ollama, new OllamaChatModelFactory());
@@ -44,22 +41,44 @@ public class ChatModelProvider {
 
     /**
      * Get the chat language model for selected model provider.
+     *
      * @param chatMessageContext the chat message context
      * @return the chat language model
      */
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        ChatModel chatModel = initChatModel(chatMessageContext);
+        return getFactory(chatMessageContext).createChatModel(chatModel);
+    }
+
+    /**
+     * Get the streaming chat language model for selected model provider.
+     *
+     * @param chatMessageContext the chat message context
+     * @return the streaming chat language model
+     */
+    public StreamingChatLanguageModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        ChatModel chatModel = initChatModel(chatMessageContext);
+        return getFactory(chatMessageContext).createStreamingChatModel(chatModel);
+    }
+
+    /**
+     * Get the chat model factory for the selected model provider.
+     *
+     * @param chatMessageContext the chat message context
+     * @return the chat model factory
+     */
+    private @NotNull ChatModelFactory getFactory(@NotNull ChatMessageContext chatMessageContext) {
         ModelProvider provider = ModelProvider.valueOf(chatMessageContext.getLlmProvider());
-        LOG.info("Chat model provider: " + provider);
         ChatModelFactory factory = factories.get(provider);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for provider: " + provider);
         }
-        ChatModel chatModel = initChatModel(chatMessageContext);
-        return factory.createChatModel(chatModel);
+        return factory;
     }
 
     /**
      * Initialize chat model settings by default or by user settings.
+     *
      * @return the chat model
      */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
@@ -78,8 +97,9 @@ public class ChatModelProvider {
     /**
      * Set max output tokens.
      * Some extra work because of the settings state that didn't like the integer input field.
+     *
      * @param settingsState the settings state
-     * @param chatModel the chat model
+     * @param chatModel     the chat model
      */
     private static void setMaxOutputTokens(@NotNull SettingsState settingsState, ChatModel chatModel) {
         String maxOutputTokens = settingsState.getMaxOutputTokens();

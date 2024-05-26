@@ -5,19 +5,19 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.1.11"
+version = "0.1.12"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("dev.langchain4j:langchain4j:0.30.0")
-    implementation("dev.langchain4j:langchain4j-ollama:0.30.0")
-    implementation("dev.langchain4j:langchain4j-local-ai:0.30.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:0.30.0")
-    implementation("dev.langchain4j:langchain4j-anthropic:0.30.0")
-    implementation("dev.langchain4j:langchain4j-mistral-ai:0.30.0")
+    implementation("dev.langchain4j:langchain4j:0.31.0")
+    implementation("dev.langchain4j:langchain4j-ollama:0.31.0")
+    implementation("dev.langchain4j:langchain4j-local-ai:0.31.0")
+    implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
+    implementation("dev.langchain4j:langchain4j-anthropic:0.31.0")
+    implementation("dev.langchain4j:langchain4j-mistral-ai:0.31.0")
     implementation("org.commonmark:commonmark:0.22.0")
 
     compileOnly("org.projectlombok:lombok:1.18.32")

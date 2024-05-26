@@ -13,7 +13,8 @@ public class WarningPanel extends BackgroundPanel {
 
     /**
      * Something went wrong, create a warning panel
-     * @param warning the warning message
+     *
+     * @param warning            the warning message
      * @param chatMessageContext the chat message context
      */
     public WarningPanel(String warning,

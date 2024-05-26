@@ -29,6 +29,7 @@ public class AddSnippetAction extends AnAction {
 
     /**
      * Add a snippet to the tool window.
+     *
      * @param e the action event
      */
     @Override
@@ -53,6 +54,7 @@ public class AddSnippetAction extends AnAction {
 
     /**
      * Add the selected file to the file list manager.
+     *
      * @param selectedFile the selected file
      */
     private static void addSelectedFile(VirtualFile selectedFile) {
@@ -65,9 +67,10 @@ public class AddSnippetAction extends AnAction {
 
     /**
      * Create a virtual file and add it to the file list manager.
-     * @param originalFile the original file
+     *
+     * @param originalFile   the original file
      * @param selectionModel the selection model
-     * @param selectedText the selected text
+     * @param selectedText   the selected text
      */
     private void createAndAddVirtualFile(VirtualFile originalFile,
                                          SelectionModel selectionModel,

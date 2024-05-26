@@ -18,7 +18,7 @@ public class StyleSheetsFactory {
     @Contract(" -> new")
     public static @NotNull StyleSheet createCodeStyleSheet() {
         return StyleSheetUtil.loadStyleSheet(
-                "code, pre, .pre { " +
+            "code, pre, .pre { " +
                 "   font-family: '" + SOURCE_CODE_PRO_FONT + "'; " +
                 "   font-size: 14pt;" +
                 "}"

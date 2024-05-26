@@ -27,6 +27,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Creates a panel with a text field for filtering files and a list of files
+     *
      * @param project The current project
      * @return The panel
      */
@@ -43,6 +44,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Creates a list of open files and files from the FilenameIndex search
+     *
      * @param project The current project
      * @return The list of files
      */
@@ -59,6 +61,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Adds a mouse listener to the result list to open the selected file
+     *
      * @param resultList The list of files
      */
     private static void addMouseListenerToResultList(@NotNull JBList<VirtualFile> resultList) {
@@ -74,6 +77,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Opens the selected file in the editor
+     *
      * @param resultList The list of files
      */
     private static void openSelectedFile(@NotNull JBList<VirtualFile> resultList) {
@@ -83,6 +87,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Populates the list model with the open files
+     *
      * @param project   The current project
      * @param listModel The list model
      */

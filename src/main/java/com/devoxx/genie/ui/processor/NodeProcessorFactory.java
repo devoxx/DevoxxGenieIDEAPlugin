@@ -11,8 +11,9 @@ public class NodeProcessorFactory {
 
     /**
      * Create a processor for the given block
+     *
      * @param chatMessageContext the chat message context
-     * @param theBlock the block
+     * @param theBlock           the block
      * @return the processor
      */
     @Contract("_, _ -> new")

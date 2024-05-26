@@ -8,8 +8,9 @@ import com.devoxx.genie.ui.SettingsState;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
-import okhttp3.OkHttpClient;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,14 +20,10 @@ import java.util.List;
 
 public class OllamaChatModelFactory implements ChatModelFactory {
 
-    // Moved client instance here for the sake of better performance
-    private final OkHttpClient client = new OkHttpClient();
-
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        chatModel.setBaseUrl(SettingsState.getInstance().getOllamaModelUrl());
         return OllamaChatModel.builder()
-            .baseUrl(chatModel.getBaseUrl())
+            .baseUrl(SettingsState.getInstance().getOllamaModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -35,15 +32,27 @@ public class OllamaChatModelFactory implements ChatModelFactory {
             .build();
     }
 
+    @Override
+    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        return OllamaStreamingChatModel.builder()
+            .baseUrl(SettingsState.getInstance().getOllamaModelUrl())
+            .modelName(chatModel.getModelName())
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .build();
+    }
+
     /**
      * Get the model names from the Ollama service.
+     *
      * @return List of model names
      */
     @Override
     public List<String> getModelNames() {
         List<String> modelNames = new ArrayList<>();
         try {
-            OllamaModelEntryDTO[] ollamaModels = new OllamaService(client).getModels();
+            OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
                 modelNames.add(model.getName());
             }

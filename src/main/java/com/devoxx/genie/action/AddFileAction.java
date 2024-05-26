@@ -7,8 +7,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
 import org.jetbrains.annotations.NotNull;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
@@ -17,6 +15,7 @@ public class AddFileAction extends AnAction {
 
     /**
      * Add file to the window context.
+     *
      * @param e the action event
      */
     @Override
