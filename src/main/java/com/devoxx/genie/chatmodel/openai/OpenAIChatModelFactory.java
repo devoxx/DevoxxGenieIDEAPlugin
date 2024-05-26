@@ -4,8 +4,10 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -23,6 +25,17 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
             .maxTokens(chatModel.getMaxTokens())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .topP(chatModel.getTopP())
+            .build();
+    }
+
+    @Override
+    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        return OpenAiStreamingChatModel.builder()
+            .apiKey(getApiKey())
+            .modelName(chatModel.getModelName())
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .build();
     }
 

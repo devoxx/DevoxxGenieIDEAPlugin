@@ -10,6 +10,7 @@ public class PromptInputArea extends PlaceholderTextArea {
 
     /**
      * The prompt input component
+     *
      * @param resourceBundle the resource bundle
      */
     public PromptInputArea(ResourceBundle resourceBundle) {

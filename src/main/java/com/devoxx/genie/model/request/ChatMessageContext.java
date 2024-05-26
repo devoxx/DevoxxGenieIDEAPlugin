@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,6 +27,7 @@ public class ChatMessageContext {
     private String context;
     private EditorInfo editorInfo;
     private ChatLanguageModel chatLanguageModel;
+    private StreamingChatLanguageModel streamingChatLanguageModel;
 
     public boolean hasFiles() {
         return editorInfo != null && editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty();

@@ -1,14 +1,14 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
+import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
-import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -29,10 +29,11 @@ public class ChatModelFactoryProvider {
         ModelProvider.DeepInfra, DeepInfraChatModelFactory::new,
         ModelProvider.Gemini, GeminiChatModelFactory::new,
         ModelProvider.Jan, JanChatModelFactory::new
-        );
+    );
 
     /**
      * Get the factory by provider.
+     *
      * @param provider the provider
      * @return the factory
      */

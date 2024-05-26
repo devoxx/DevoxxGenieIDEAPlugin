@@ -20,6 +20,7 @@ public class EditorUtil {
 
     /**
      * Get the editor info.
+     *
      * @param editor the editor
      * @return the editor info
      */

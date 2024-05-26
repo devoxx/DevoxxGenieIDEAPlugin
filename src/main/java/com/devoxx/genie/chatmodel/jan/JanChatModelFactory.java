@@ -8,7 +8,9 @@ import com.devoxx.genie.ui.SettingsState;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
+import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,8 +37,21 @@ public class JanChatModelFactory implements ChatModelFactory {
             .build();
     }
 
+
+    @Override
+    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        return LocalAiStreamingChatModel.builder()
+            .baseUrl(SettingsState.getInstance().getJanModelUrl())
+            .modelName(chatModel.getModelName())
+            .temperature(chatModel.getTemperature())
+            .topP(chatModel.getTopP())
+            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .build();
+    }
+
     /**
      * Get the model names from the Jan service.
+     *
      * @return List of model names
      */
     @Override
