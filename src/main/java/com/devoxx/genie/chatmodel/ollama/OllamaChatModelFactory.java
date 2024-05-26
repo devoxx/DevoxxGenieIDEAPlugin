@@ -11,7 +11,6 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
-import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -20,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OllamaChatModelFactory implements ChatModelFactory {
-
-    // Moved client instance here for the sake of better performance
-    private final OkHttpClient client = new OkHttpClient();
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -49,13 +45,14 @@ public class OllamaChatModelFactory implements ChatModelFactory {
 
     /**
      * Get the model names from the Ollama service.
+     *
      * @return List of model names
      */
     @Override
     public List<String> getModelNames() {
         List<String> modelNames = new ArrayList<>();
         try {
-            OllamaModelEntryDTO[] ollamaModels = new OllamaService(client).getModels();
+            OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
                 modelNames.add(model.getName());
             }

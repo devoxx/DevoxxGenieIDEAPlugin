@@ -1,6 +1,8 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -23,6 +25,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * The prompt output panel.
+     *
      * @param resourceBundle the resource bundle
      */
     public PromptOutputPanel(ResourceBundle resourceBundle) {
@@ -78,14 +81,19 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a user prompt to the panel.
+     *
      * @param chatMessageContext the prompt context
      */
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
         container.remove(welcomePanel);
-        waitingPanel.showMsg();
 
         UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
-        userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
+
+        if (!SettingsState.getInstance().getStreamMode()) {
+            waitingPanel.showMsg();
+            userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
+        }
+
         addFiller(chatMessageContext.getName());
         container.add(userPromptPanel);
         moveToBottom();
@@ -93,7 +101,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a (non-streaming) response to the panel.
-     * @param chatMessageContext  the prompt context
+     *
+     * @param chatMessageContext the prompt context
      */
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
@@ -104,17 +113,24 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a streaming response to the panel.
+     *
      * @param chatResponseStreamingPanel the streaming response panel
      */
-    public void addStreamResponse(StreamingChatResponsePanel chatResponseStreamingPanel) {
+    public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
         container.add(chatResponseStreamingPanel);
+        moveToBottom();
+    }
+
+    public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
+        container.add(fileListPanel);
         moveToBottom();
     }
 
     /**
      * Add a warning text to the panel.
+     *
      * @param chatMessageContext the prompt context
-     * @param text          the warning text
+     * @param text               the warning text
      */
     public void addWarningText(ChatMessageContext chatMessageContext, String text) {
         welcomePanel.setVisible(false);

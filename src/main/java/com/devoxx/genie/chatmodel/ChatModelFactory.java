@@ -10,6 +10,7 @@ public interface ChatModelFactory {
 
     /**
      * Create a chat model with the given parameters.
+     *
      * @param chatModel the chat model
      * @return the chat model
      */
@@ -17,6 +18,7 @@ public interface ChatModelFactory {
 
     /**
      * Create a streaming chat model with the given parameters.
+     *
      * @param chatModel the chat model
      * @return the streaming chat model
      */
@@ -26,6 +28,7 @@ public interface ChatModelFactory {
 
     /**
      * List the available model names.
+     *
      * @return the list of model names
      */
     default List<String> getModelNames() {
@@ -34,6 +37,7 @@ public interface ChatModelFactory {
 
     /**
      * Get the model provider API key.
+     *
      * @return the API key
      */
     default String getApiKey() {

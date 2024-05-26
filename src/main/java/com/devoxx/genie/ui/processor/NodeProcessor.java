@@ -16,20 +16,22 @@ public interface NodeProcessor {
 
     /**
      * Process the node.
+     *
      * @return the panel
      */
     JPanel process();
 
     /**
      * Create an editor pane.
+     *
      * @param htmlResponse the HTML response
      * @return the editor pane
      */
     default JEditorPane createEditorPane(@NotNull String htmlResponse, StyleSheet styleSheet) {
         JEditorPane jEditorPane =
             JEditorPaneUtils.createHtmlJEditorPane(htmlResponse.subSequence(0, htmlResponse.length()),
-                                                   BrowserHyperlinkListener.INSTANCE,
-                                                   styleSheet);
+                BrowserHyperlinkListener.INSTANCE,
+                styleSheet);
         jEditorPane.setOpaque(false);
         jEditorPane.setEditable(false);
         return jEditorPane;
@@ -37,6 +39,7 @@ public interface NodeProcessor {
 
     /**
      * Create an HTML renderer.
+     *
      * @return the HTML renderer
      */
     default HtmlRenderer createHtmlRenderer(Project project) {

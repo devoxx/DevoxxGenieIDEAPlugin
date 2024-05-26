@@ -27,7 +27,8 @@ public class ConversationPanel extends JPanel {
 
     /**
      * The conversation panel constructor.
-     * @param project the project
+     *
+     * @param project             the project
      * @param conversationStarter the conversation starter
      */
     public ConversationPanel(Project project, ConversationStarter conversationStarter) {
@@ -64,6 +65,7 @@ public class ConversationPanel extends JPanel {
 
     /**
      * Create the button panel.
+     *
      * @return the button panel
      */
     private @NotNull JPanel createButtonPanel() {

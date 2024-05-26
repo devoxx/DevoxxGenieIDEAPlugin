@@ -5,7 +5,6 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.SettingsState;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;

@@ -41,6 +41,7 @@ public class ChatModelProvider {
 
     /**
      * Get the chat language model for selected model provider.
+     *
      * @param chatMessageContext the chat message context
      * @return the chat language model
      */
@@ -51,6 +52,7 @@ public class ChatModelProvider {
 
     /**
      * Get the streaming chat language model for selected model provider.
+     *
      * @param chatMessageContext the chat message context
      * @return the streaming chat language model
      */
@@ -61,6 +63,7 @@ public class ChatModelProvider {
 
     /**
      * Get the chat model factory for the selected model provider.
+     *
      * @param chatMessageContext the chat message context
      * @return the chat model factory
      */
@@ -75,6 +78,7 @@ public class ChatModelProvider {
 
     /**
      * Initialize chat model settings by default or by user settings.
+     *
      * @return the chat model
      */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
@@ -93,8 +97,9 @@ public class ChatModelProvider {
     /**
      * Set max output tokens.
      * Some extra work because of the settings state that didn't like the integer input field.
+     *
      * @param settingsState the settings state
-     * @param chatModel the chat model
+     * @param chatModel     the chat model
      */
     private static void setMaxOutputTokens(@NotNull SettingsState settingsState, ChatModel chatModel) {
         String maxOutputTokens = settingsState.getMaxOutputTokens();

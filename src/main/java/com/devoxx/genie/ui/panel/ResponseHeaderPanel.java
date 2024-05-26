@@ -19,6 +19,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
     /**
      * The response header panel.
+     *
      * @param chatMessageContext the chat message context
      */
     public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
@@ -34,6 +35,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
     /**
      * Get the created on label.
+     *
      * @param chatMessageContext the chat message context
      * @return the created on label
      */
@@ -50,6 +52,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
     /**
      * Create the Copy button to copy prompt response.
+     *
      * @param chatMessageContext the chat message context
      * @return the Delete button
      */
@@ -62,6 +65,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
     /**
      * Copy the prompt response to the system clipboard.
+     *
      * @param chatMessageContext the chat message context
      */
     private void copyPrompt(@NotNull ChatMessageContext chatMessageContext) {

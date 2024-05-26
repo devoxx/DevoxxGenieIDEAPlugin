@@ -47,18 +47,18 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<String> getModelNames() {
-       return List.of(
-           "meta-llama/Meta-Llama-3-70B-Instruct",
-           "meta-llama/Meta-Llama-3-8B-Instruct",
-           "mistralai/Mixtral-8x7B-Instruct-v0.1",
-           "mistralai/Mixtral-8x22B-Instruct-v0.1",
-           "microsoft/WizardLM-2-8x22B",
-           "microsoft/WizardLM-2-7B",
-           "databricks/dbrx-instruct",
-           "openchat/openchat_3.5",
-           "google/gemma-7b-it",
-           "Phind/Phind-CodeLlama-34B-v2",
-           "bigcode/starcoder2-15b"
-       );
+        return List.of(
+            "meta-llama/Meta-Llama-3-70B-Instruct",
+            "meta-llama/Meta-Llama-3-8B-Instruct",
+            "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "mistralai/Mixtral-8x22B-Instruct-v0.1",
+            "microsoft/WizardLM-2-8x22B",
+            "microsoft/WizardLM-2-7B",
+            "databricks/dbrx-instruct",
+            "openchat/openchat_3.5",
+            "google/gemma-7b-it",
+            "Phind/Phind-CodeLlama-34B-v2",
+            "bigcode/starcoder2-15b"
+        );
     }
 }

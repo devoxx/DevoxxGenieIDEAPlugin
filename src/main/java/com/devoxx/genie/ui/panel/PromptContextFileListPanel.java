@@ -4,7 +4,6 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.FileListObserver;
 import com.devoxx.genie.ui.component.FileEntryComponent;
 import com.devoxx.genie.ui.listener.FileRemoveListener;
-import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;

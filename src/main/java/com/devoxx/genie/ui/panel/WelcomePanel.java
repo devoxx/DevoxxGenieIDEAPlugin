@@ -8,10 +8,11 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class WelcomePanel extends JBPanel<WelcomePanel> {
-    private JBLabel jbLabel;
+    private final JBLabel jbLabel;
 
     /**
      * Create a welcome panel
+     *
      * @param resourceBundle the resource bundle
      */
     public WelcomePanel(ResourceBundle resourceBundle) {

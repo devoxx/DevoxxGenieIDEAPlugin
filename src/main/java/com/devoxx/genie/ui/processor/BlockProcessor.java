@@ -8,8 +8,6 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
-
 public class BlockProcessor implements NodeProcessor {
     private final ChatMessageContext chatMessageContext;
     private final Block block;
@@ -22,6 +20,7 @@ public class BlockProcessor implements NodeProcessor {
 
     /**
      * Process the paragraph
+     *
      * @return the panel
      */
     @Override

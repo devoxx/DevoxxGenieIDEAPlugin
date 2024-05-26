@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.ui.components.JBPanel;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.renderer.html.HtmlRenderer;
 
@@ -37,6 +36,7 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Process the fenced code block.
+     *
      * @return the panel
      */
     @Override
@@ -60,6 +60,7 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Add a clipboard button to the panel.
+     *
      * @param fencedCodeBlock the fenced code block
      */
     private JPanel createClipBoardButtonPanel(FencedCodeBlock fencedCodeBlock, JEditorPane editorPane) {
@@ -85,6 +86,7 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Copy the text to the clipboard.
+     *
      * @param codeSnippet the code snippet to copy
      */
     private void copyToClipboard(String codeSnippet) {
@@ -95,6 +97,7 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Insert the code snippet into the editor.
+     *
      * @param codeSnippet the code snippet to insert
      */
     private void insertCode(String codeSnippet) {

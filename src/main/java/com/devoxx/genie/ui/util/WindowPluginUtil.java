@@ -10,6 +10,7 @@ public class WindowPluginUtil {
 
     /**
      * Open the tool window if it is not visible.
+     *
      * @param project the project
      */
     public static void ensureToolWindowVisible(Project project) {

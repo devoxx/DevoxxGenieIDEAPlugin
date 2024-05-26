@@ -9,14 +9,13 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ChatPromptExecutor;
 import com.devoxx.genie.service.FileListManager;
-
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.FileSelectionPanelFactory;
+import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -25,7 +24,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Splitter;
@@ -82,6 +80,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
+     *
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
@@ -125,6 +124,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the top panel.
+     *
      * @return the top panel
      */
     private @NotNull JPanel createTopPanel() {
@@ -141,6 +141,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the splitter.
+     *
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
@@ -171,6 +172,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the LLM and model name selection panel.
+     *
      * @return the selection panel
      */
     @NotNull
@@ -186,6 +188,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the tool panel.
+     *
      * @return the tool panel
      */
     private @NotNull JPanel createToolPanel() {
@@ -199,6 +202,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the LLM provider panel.
+     *
      * @return the provider panel
      */
     private @NotNull JPanel createProviderPanel() {
@@ -211,6 +215,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the chat input panel.
+     *
      * @return the input panel
      */
     @NotNull
@@ -221,6 +226,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the Submit and add File button Panel.
+     *
      * @return the button panel
      */
     private @NotNull JPanel createButtonPanel() {
@@ -238,6 +244,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the Submit panel.
+     *
      * @param buttonPanel the button panel
      * @return the Submit panel
      */
@@ -256,10 +263,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     @Override
     public void startNewConversation() {
         conversationPanel.updateNewConversationLabel();
-        promptOutputPanel.clear();
-        ChatMemoryService.getInstance().clear();
         promptInputComponent.clear();
+        promptOutputPanel.clear();
         FileListManager.getInstance().clear();
+        ChatMemoryService.getInstance().clear();
         enableButtons();
     }
 
@@ -288,39 +295,36 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      */
     private void onSubmitPrompt(ActionEvent e) {
         String userPromptText = promptInputComponent.getText();
-
         if (userPromptText.isEmpty()) {
             return;
         }
 
         invokeLater(() -> {
+            if (SettingsState.getInstance().getStreamMode()) {
+                submitBtn.setEnabled(false);
+            }
             submitBtn.setIcon(StopIcon);
             submitBtn.setToolTipText("Prompt is running, please be patient...");
         });
 
-        ChatMessageContext chatMessageContext = createChatMessageContext(userPromptText,
-                                                                         FileListManager.getInstance().getFiles(),
-                                                                         editorFileButtonManager.getSelectedTextEditor());
+        ChatMessageContext chatMessageContext =
+            createChatMessageContext(userPromptText, editorFileButtonManager.getSelectedTextEditor());
 
         disableButtons();
 
-        submitBtn.setIcon(StopIcon);
-        submitBtn.setToolTipText("Prompt is running, please be patient...");
-
-        disableButtons();
+        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel);
 
         chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
     }
 
     /**
      * Get the chat message context.
-     * @param userPrompt        the user prompt
-     * @param files             the files
-     * @param editor            the editor
+     *
+     * @param userPrompt the user prompt
+     * @param editor     the editor
      * @return the prompt context with language and text
      */
     private @NotNull ChatMessageContext createChatMessageContext(String userPrompt,
-                                                                 @NotNull List<VirtualFile> files,
                                                                  Editor editor) {
         ChatMessageContext chatMessageContext = new ChatMessageContext();
         chatMessageContext.setProject(project);
@@ -338,32 +342,33 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         setChatTimeout(chatMessageContext);
 
-        addSelectedCode(userPrompt, files, editor, chatMessageContext);
+        addSelectedCode(userPrompt, editor, chatMessageContext);
 
         return chatMessageContext;
     }
 
     /**
      * Add the selected code to the chat message context.
-     * @param userPrompt the user prompt
-     * @param files      the files
-     * @param editor     the editor
+     *
+     * @param userPrompt         the user prompt
+     * @param editor             the editor
      * @param chatMessageContext the chat message context
      */
     private void addSelectedCode(String userPrompt,
-                                 @NotNull List<VirtualFile> files, Editor editor,
+                                 Editor editor,
                                  ChatMessageContext chatMessageContext) {
+        List<VirtualFile> files = FileListManager.getInstance().getFiles();
         if (!files.isEmpty()) {
             addSelectedFiles(chatMessageContext, userPrompt, files);
         } else if (editor != null) {
             EditorInfo editorInfo = createEditorInfo(editor);
-            LOG.info("Selected text: " + editorInfo.getSelectedText());
             chatMessageContext.setEditorInfo(editorInfo);
         }
     }
 
     /**
      * Create the editor info.
+     *
      * @param editor the editor
      * @return the editor info
      */
@@ -381,6 +386,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Set the timeout for the chat message context.
+     *
      * @param chatMessageContext the chat message context
      */
     private void setChatTimeout(ChatMessageContext chatMessageContext) {
@@ -394,6 +400,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get the prompt context from the selected files.
+     *
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
@@ -408,6 +415,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     /**
      * Get user prompt with context.
      * TODO move this to a dedicated class
+     *
      * @param userPrompt the user prompt
      * @param files      the files
      * @return the user prompt with context
@@ -448,6 +456,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      */
     private void enableButtons() {
         submitBtn.setIcon(SubmitIcon);
+        submitBtn.setEnabled(true);
         promptInputComponent.setEnabled(true);
     }
 
@@ -484,6 +493,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Update the model names combobox.
+     *
      * @param provider the model provider
      */
     private void updateModelNamesComboBox(ModelProvider provider) {
@@ -506,6 +516,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Populate the model names.
+     *
      * @param chatModelFactory the chat model factory
      */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {

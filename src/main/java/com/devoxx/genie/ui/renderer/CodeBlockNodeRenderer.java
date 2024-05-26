@@ -18,6 +18,7 @@ import org.commonmark.node.Node;
 import org.commonmark.renderer.NodeRenderer;
 import org.commonmark.renderer.html.HtmlNodeRendererContext;
 import org.commonmark.renderer.html.HtmlWriter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -29,15 +30,16 @@ import java.util.Set;
  * the HTML for the code blocks in the documentation.
  * Use this way
  * HtmlRenderer renderer = HtmlRenderer.builder()
- *    .nodeRendererFactory(context -> new CodeBlockNodeRenderer(project, context))
- *    .build();
+ * .nodeRendererFactory(context -> new CodeBlockNodeRenderer(project, context))
+ * .build();
  * String html = renderer.render(node);
  */
 public class CodeBlockNodeRenderer implements NodeRenderer {
     private final Project project;
     private final HtmlWriter htmlOutputWriter;
 
-    public CodeBlockNodeRenderer(Project project, HtmlNodeRendererContext context) {
+    public CodeBlockNodeRenderer(Project project, @NotNull
+    HtmlNodeRendererContext context) {
         this.project = project;
         this.htmlOutputWriter = context.getWriter();
     }
@@ -109,7 +111,7 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
         }
     }
 
-    private String appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
+    private @NotNull String appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
         HighlightingMode highlightingMode, Project project, Language language, String codeSnippet) {
         StringBuilder highlightedAndEncodedAsHtmlCodeSnippet = new StringBuilder();
         ApplicationManager.getApplication().runReadAction(() -> {

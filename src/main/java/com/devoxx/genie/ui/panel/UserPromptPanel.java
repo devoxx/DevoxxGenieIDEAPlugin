@@ -4,7 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.JEditorPaneUtils;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.StyleSheetsFactory;
-import com.devoxx.genie.ui.listener.ChatChangeListener;
+import com.devoxx.genie.ui.listener.ChatMessageManagementService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.components.JBLabel;
@@ -24,7 +24,8 @@ public class UserPromptPanel extends BackgroundPanel {
 
     /**
      * The user prompt panel.
-     * @param container the container
+     *
+     * @param container          the container
      * @param chatMessageContext the chat message context
      */
     public UserPromptPanel(JPanel container,
@@ -48,6 +49,7 @@ public class UserPromptPanel extends BackgroundPanel {
 
     /**
      * Create the header label.
+     *
      * @param chatMessageContext the chat message context
      */
     private @NotNull JBLabel createHeaderLabel(@NotNull ChatMessageContext chatMessageContext) {
@@ -59,6 +61,7 @@ public class UserPromptPanel extends BackgroundPanel {
 
     /**
      * Create the Delete button to remove user prompt & response.
+     *
      * @param chatMessageContext the chat message context
      * @return the panel with Delete button
      */
@@ -71,6 +74,7 @@ public class UserPromptPanel extends BackgroundPanel {
 
     /**
      * Remove the chat components based on chat UUID name.
+     *
      * @param chatMessageContext the chat message context
      */
     private void removeChat(ChatMessageContext chatMessageContext) {
@@ -90,12 +94,13 @@ public class UserPromptPanel extends BackgroundPanel {
 
     /**
      * Notify the chat message removal.
+     *
      * @param chatMessageContext the chat message context
      */
     private void notifyChatMessageRemoval(ChatMessageContext chatMessageContext) {
         // Trigger the chat message change listener
         MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-        ChatChangeListener chatChangeListener = bus.syncPublisher(AppTopics.CHAT_MESSAGES_CHANGED_TOPIC);
+        ChatMessageManagementService chatChangeListener = bus.syncPublisher(AppTopics.CHAT_MESSAGES_CHANGED_TOPIC);
         chatChangeListener.removeMessagePair(chatMessageContext);
     }
 }
