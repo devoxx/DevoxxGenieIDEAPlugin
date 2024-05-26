@@ -8,6 +8,7 @@ public class HelpPanel extends BackgroundPanel {
 
     /**
      * Create a help panel, listing the fixed prompt commands available
+     *
      * @param helpMsg the help message
      */
     public HelpPanel(String helpMsg) {

@@ -11,7 +11,6 @@ import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-
 import java.awt.*;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
@@ -22,6 +21,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Create a new chat response panel.
+     *
      * @param chatMessageContext the chat message context
      */
     public ChatResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
@@ -41,6 +41,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Get the response pane with rendered HTML.
+     *
      * @param chatMessageContext the chat message context
      */
     private void addResponsePane(@NotNull ChatMessageContext chatMessageContext) {
@@ -51,6 +52,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Add document nodes to the panel.
+     *
      * @param document the document
      */
     private void addDocumentNodesToPanel(@NotNull Node document) {
@@ -84,6 +86,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Create a panel.
+     *
      * @return the panel
      */
     private @NotNull JPanel createPanel() {
@@ -96,6 +99,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Process a block and return a panel.
+     *
      * @param theBlock the block
      * @return the panel
      */

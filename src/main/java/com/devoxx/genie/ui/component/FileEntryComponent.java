@@ -27,6 +27,7 @@ public class FileEntryComponent extends JPanel {
 
     /**
      * File entry component
+     *
      * @param project            the project
      * @param virtualFile        the virtual file
      * @param fileRemoveListener the file remove listener
@@ -54,7 +55,8 @@ public class FileEntryComponent extends JPanel {
 
     /**
      * Open the file with selected code and highlight the selected text in the editor when applicable.
-     * @param project the project
+     *
+     * @param project     the project
      * @param virtualFile the virtual file
      */
     private static void openFileWithSelectedCode(Project project, @NotNull VirtualFile virtualFile) {
@@ -73,8 +75,9 @@ public class FileEntryComponent extends JPanel {
 
     /**
      * Highlight the selected text in the editor.
+     *
      * @param virtualFile the virtual file
-     * @param editor the editor
+     * @param editor      the editor
      */
     private static void highlightSelectedText(@NotNull VirtualFile virtualFile, Editor editor) {
         String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
@@ -87,6 +90,7 @@ public class FileEntryComponent extends JPanel {
 
     /**
      * Create a button.
+     *
      * @param button the button
      * @return the button
      */

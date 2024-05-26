@@ -11,6 +11,7 @@ public class TimestampUtil {
 
     /**
      * Get the current timestamp.
+     *
      * @return the current timestamp
      */
     public static @NotNull String getCurrentTimestamp() {

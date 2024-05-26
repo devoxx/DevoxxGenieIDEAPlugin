@@ -57,10 +57,5 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
 
         Rectangle rectangle = SwingUtilities.calculateInnerArea(contentPanel, contentPanel.getBounds());
         contentPanel.scrollRectToVisible(rectangle);
-
-//        SwingUtilities.invokeLater(() -> {
-//            contentPanel.revalidate();
-//            contentPanel.repaint();
-//        });
     }
 }

@@ -1,22 +1,29 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.panel.StreamingChatResponsePanel;
+import com.devoxx.genie.ui.component.ExpandablePanel;
+import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+
 public class StreamingResponseHandler implements dev.langchain4j.model.StreamingResponseHandler<AiMessage> {
 
+    private final ChatMessageContext chatMessageContext;
     private final Runnable enableButtons;
-    private final StreamingChatResponsePanel streamingChatResponsePanel;
+    private final ChatStreamingResponsePanel streamingChatResponsePanel;
+    private final PromptOutputPanel promptOutputPanel;
 
     public StreamingResponseHandler(ChatMessageContext chatMessageContext,
-                                    Runnable enableButtons,
-                                    @NotNull PromptOutputPanel promptOutputPanel) {
+                                    @NotNull PromptOutputPanel promptOutputPanel,
+                                    Runnable enableButtons) {
+        this.chatMessageContext = chatMessageContext;
         this.enableButtons = enableButtons;
-        streamingChatResponsePanel = new StreamingChatResponsePanel(chatMessageContext);
+        this.promptOutputPanel = promptOutputPanel;
+        streamingChatResponsePanel = new ChatStreamingResponsePanel(chatMessageContext);
         promptOutputPanel.addStreamResponse(streamingChatResponsePanel);
     }
 
@@ -30,6 +37,13 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
         AiMessage content = response.content();
         ChatMemoryService.getInstance().add(content);
         enableButtons.run();
+        if (chatMessageContext.hasFiles()) {
+            SwingUtilities.invokeLater(() -> {
+                ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext);
+                fileListPanel.setName(chatMessageContext.getName());
+                promptOutputPanel.addStreamFileReferencesResponse(fileListPanel);
+            });
+        }
     }
 
     @Override

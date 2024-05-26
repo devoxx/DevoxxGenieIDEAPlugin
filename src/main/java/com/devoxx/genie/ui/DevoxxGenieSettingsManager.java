@@ -114,9 +114,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Set the title of the settings panel
-     * @param title the title
+     *
+     * @param title         the title
      * @param settingsPanel the settings panel
-     * @param gbc the gridbag constraints
+     * @param gbc           the grid bag constraints
      */
     private void setTitle(String title,
                           @NotNull JPanel settingsPanel,
@@ -140,8 +141,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add a text field with label
+     *
      * @param panel the panel
-     * @param gbc the gridbag constraints
+     * @param gbc   the gridbag constraints
      * @param label the label
      * @param value the value
      * @return the text field
@@ -160,11 +162,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add a field with label and a link button
+     *
      * @param panel the panel
-     * @param gbc the gridbag constraints
+     * @param gbc   the gridbag constraints
      * @param label the label
      * @param value the value
-     * @param url the url
+     * @param url   the url
      * @return the text field
      */
     private @NotNull JTextField addFieldWithLinkButton(@NotNull JPanel panel,
@@ -188,11 +191,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add field with label, password and link button
+     *
      * @param panel the panel
-     * @param gbc the gridbag constraints
+     * @param gbc   the gridbag constraints
      * @param label the label
      * @param value the value
-     * @param url the url
+     * @param url   the url
      * @return the password field
      */
     private @NotNull JPasswordField addFieldWithLabelPasswordAndLinkButton(@NotNull JPanel panel,
@@ -217,6 +221,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Create a button with emoji and tooltip message and open the URL in the browser
+     *
      * @param emoji      the emoji to use in the button
      * @param toolTipMsg the tooltip message
      * @param url        the url to open when clicked
@@ -240,8 +245,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add a formatted field with label
+     *
      * @param panel the panel
-     * @param gbc the gridbag constraints
+     * @param gbc   the gridbag constraints
      * @param label the label
      * @param value the value
      * @return the formatted field
@@ -261,8 +267,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add a formatted field with label
+     *
      * @param panel the panel
-     * @param gbc the grid bag constraints
+     * @param gbc   the grid bag constraints
      * @param label the label
      * @param value the value
      * @return the formatted field
@@ -320,6 +327,18 @@ public class DevoxxGenieSettingsManager implements Configurable {
     public void apply() {
         SettingsState settings = SettingsState.getInstance();
 
+        boolean apiKeyModified = false;
+        apiKeyModified |= updateSettingIfModified(openAiKeyField, settings.getOpenAIKey(), settings::setOpenAIKey);
+        apiKeyModified |= updateSettingIfModified(mistralKeyField, settings.getMistralKey(), settings::setMistralKey);
+        apiKeyModified |= updateSettingIfModified(anthropicKeyField, settings.getAnthropicKey(), settings::setAnthropicKey);
+        apiKeyModified |= updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
+        apiKeyModified |= updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
+        apiKeyModified |= updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
+        if (apiKeyModified) {
+            // Only notify the listener if an API key has changed
+            notifySettingsChanged();
+        }
+
         updateSettingIfModified(ollamaUrlField, settings.getOllamaModelUrl(), settings::setOllamaModelUrl);
         updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
         updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
@@ -340,26 +359,29 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
         updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
         updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
-        notifySettingsChanged();
     }
 
     /**
      * Update the setting if the field value has changed
-     * @param field the field
+     *
+     * @param field        the field
      * @param currentValue the current value
      * @param updateAction the update action
      */
-    public void updateSettingIfModified(JComponent field,
-                                        Object currentValue,
-                                        Consumer<String> updateAction) {
+    public boolean updateSettingIfModified(JComponent field,
+                                           Object currentValue,
+                                           Consumer<String> updateAction) {
         String newValue = extractStringValue(field);
         if (newValue != null && !newValue.equals(currentValue)) {
             updateAction.accept(newValue);
+            return true;
         }
+        return false;
     }
 
     /**
      * Extract the string value from the field
+     *
      * @param field the field
      * @return the string value
      */
@@ -402,6 +424,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Set the value of the field
+     *
      * @param field the field
      * @param value the value
      */
@@ -426,6 +449,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Safely cast a string to an integer
+     *
      * @param value the string value
      * @return the integer value
      */

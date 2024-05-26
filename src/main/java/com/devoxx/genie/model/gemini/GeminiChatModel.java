@@ -4,10 +4,10 @@ import com.devoxx.genie.model.gemini.model.Content;
 import com.devoxx.genie.model.gemini.model.Part;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
-import dev.langchain4j.data.message.SystemMessage;
 import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,7 +80,8 @@ public class GeminiChatModel implements ChatLanguageModel {
 
     /**
      * Create a message for the Gemini API
-     * @param role the user role
+     *
+     * @param role    the user role
      * @param message a chat message
      */
     private static Content createMessage(String role, String message) {
