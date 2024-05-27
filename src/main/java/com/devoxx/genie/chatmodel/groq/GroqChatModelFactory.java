@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.groq;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -28,21 +28,21 @@ public class GroqChatModelFactory implements ChatModelFactory {
             .build();
     }
 
-
-    @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        return OpenAiStreamingChatModel.builder()
-            .apiKey(getApiKey())
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .build();
-    }
+//    Streaming gives error for Groq model provider
+//    @Override
+//    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+//        return OpenAiStreamingChatModel.builder()
+//            .apiKey(getApiKey())
+//            .modelName(chatModel.getModelName())
+//            .temperature(chatModel.getTemperature())
+//            .topP(chatModel.getTopP())
+//            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+//            .build();
+//    }
 
     @Override
     public String getApiKey() {
-        return SettingsState.getInstance().getGroqKey();
+        return SettingsStateService.getInstance().getGroqKey();
     }
 
     @Override

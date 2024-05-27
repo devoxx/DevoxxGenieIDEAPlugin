@@ -13,7 +13,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
@@ -83,7 +83,7 @@ public class ChatModelProvider {
      */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = new ChatModel();
-        SettingsState settingsState = SettingsState.getInstance();
+        SettingsStateService settingsState = SettingsStateService.getInstance();
         setMaxOutputTokens(settingsState, chatModel);
 
         chatModel.setTemperature(settingsState.getTemperature());
@@ -101,7 +101,7 @@ public class ChatModelProvider {
      * @param settingsState the settings state
      * @param chatModel     the chat model
      */
-    private static void setMaxOutputTokens(@NotNull SettingsState settingsState, ChatModel chatModel) {
+    private static void setMaxOutputTokens(@NotNull SettingsStateService settingsState, ChatModel chatModel) {
         String maxOutputTokens = settingsState.getMaxOutputTokens();
         if (maxOutputTokens.isBlank()) {
             chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);

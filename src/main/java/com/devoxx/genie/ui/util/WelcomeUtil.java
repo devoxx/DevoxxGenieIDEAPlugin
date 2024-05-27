@@ -19,14 +19,23 @@ public class WelcomeUtil {
                 <h2>%s</h2>
                 <p>%s</p>
                 <p>%s</p>
-                <p>%s
+                <h2>New features 🚀</h2>
+                Enable these new features in the settings page.<br>
                 <ul>
-                <li>%s</li>
-                <li>%s</li>
-                <li>%s</li>
-                <li>%s</li>
+                     <li><strong>Streaming responses (beta)</strong>: See each token as it's received from the LLM in real-time.</li>
+                     <BR>
+                     <li><strong>Abstract Syntax Tree (AST) context</strong>: Include information about the superclass
+                     and class fields in the context for better code analysis and understanding.  Make sure you select an LLM which has a big enough window context!</li>
+                     <BR>
+                     <li><strong>Chat Memory Size</strong>: Set the size of your chat memory, by default its set to a total of 10 messages (system + user msgs).</li>
                 </ul>
-                </p>
+                <p>%s</p>
+                <ul>
+                    <li>%s</li>
+                    <li>%s</li>
+                    <li>%s</li>
+                    <li>%s</li>
+                </ul>
                 <p>%s</p>
                 <p>%s</p>
             </body>

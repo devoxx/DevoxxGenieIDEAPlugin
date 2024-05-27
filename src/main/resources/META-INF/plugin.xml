@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.13</h2>
+        <UL>
+            <LI>Feat #71: Auto Abstract Syntax Tree (AST) context</span>: Automatically includes information about the superclass and class fields in the context for better code analysis and understanding.</LI>
+        </UL>
         <h2>v0.1.12<h2>
         <UL>
             <LI>Feat #70: Support for streaming responses</LI>
@@ -179,6 +183,8 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMessageRemovalService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.SettingsStateService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
