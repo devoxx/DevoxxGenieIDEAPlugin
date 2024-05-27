@@ -49,6 +49,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     private JFormattedTextField timeoutField;
     private JFormattedTextField retryField;
+    private JFormattedTextField chatMemorySizeField;
 
     private JCheckBox streamModeCheckBox;
 
@@ -103,6 +104,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
         setTitle("LLM Parameters", settingsPanel, gbc);
 
+        chatMemorySizeField = addFormattedFieldWithLabel(settingsPanel, gbc, "Chat memory size:", settings.getTemperature());
         temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
         topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
         maxOutputTokensField = addTextFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
@@ -348,6 +350,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(timeoutField, settings.getTimeout());
         isModified |= isFieldModified(maxOutputTokensField, settings.getMaxOutputTokens());
         isModified |= isFieldModified(retryField, settings.getMaxRetries());
+        isModified |= isFieldModified(chatMemorySizeField, settings.getChatMemorySize());
         isModified |= isFieldModified(testPromptField, settings.getTestPrompt());
         isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
         isModified |= isFieldModified(reviewPromptField, settings.getReviewPrompt());
@@ -383,6 +386,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
             notifySettingsChanged();
         }
 
+        boolean chatMemoryModified = false;
         updateSettingIfModified(ollamaUrlField, settings.getOllamaModelUrl(), settings::setOllamaModelUrl);
         updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
         updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
@@ -391,6 +395,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
+        chatMemoryModified = updateSettingIfModified(chatMemorySizeField, settings.getChatMemorySize(), value -> settings.setChatMemorySize(safeCastToInteger(value)));
         updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
         updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
         updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
@@ -407,6 +412,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(astParentClassCheckBox, settings.getAstParentClass(), value -> settings.setAstParentClass(Boolean.parseBoolean(value)));
         updateSettingIfModified(astReferenceClassesCheckBox, settings.getAstClassReference(), value -> settings.setAstClassReference(Boolean.parseBoolean(value)));
         updateSettingIfModified(astReferenceFieldCheckBox, settings.getAstFieldReference(), value -> settings.setAstFieldReference(Boolean.parseBoolean(value)));
+
+        if (chatMemoryModified) {
+            notifyChatMemorySizeChangeListeners();
+        }
     }
 
     /**
@@ -425,6 +434,15 @@ public class DevoxxGenieSettingsManager implements Configurable {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Notify the chat memory size change listeners
+     */
+    public void notifyChatMemorySizeChangeListeners() {
+        ApplicationManager.getApplication().getMessageBus()
+            .syncPublisher(AppTopics.CHAT_MEMORY_SIZE_TOPIC)
+            .onChatMemorySizeChanged(SettingsStateService.getInstance().getChatMemorySize());
     }
 
     /**
@@ -468,6 +486,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         setValue(topPField, settingsState.getTopP());
         setValue(timeoutField, settingsState.getTimeout());
         setValue(retryField, settingsState.getMaxRetries());
+        setValue(chatMemorySizeField, settingsState.getChatMemorySize());
     }
 
     /**
