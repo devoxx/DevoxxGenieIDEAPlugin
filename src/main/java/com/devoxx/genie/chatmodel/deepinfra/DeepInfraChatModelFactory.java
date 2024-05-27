@@ -52,13 +52,16 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
             "meta-llama/Meta-Llama-3-8B-Instruct",
             "mistralai/Mixtral-8x7B-Instruct-v0.1",
             "mistralai/Mixtral-8x22B-Instruct-v0.1",
+            "mistralai/Mistral-7B-Instruct-v0.2",
             "microsoft/WizardLM-2-8x22B",
             "microsoft/WizardLM-2-7B",
             "databricks/dbrx-instruct",
             "openchat/openchat_3.5",
             "google/gemma-7b-it",
+            "google/gemma-1.1-7b-it",
             "Phind/Phind-CodeLlama-34B-v2",
-            "bigcode/starcoder2-15b"
+            "bigcode/starcoder2-15b",
+            "cognitivecomputations/dolphin-2.6-mixtral-8x7b"
         );
     }
 }
