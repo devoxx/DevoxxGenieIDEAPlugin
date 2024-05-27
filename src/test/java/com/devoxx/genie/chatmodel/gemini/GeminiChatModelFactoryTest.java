@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.gemini;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -19,13 +19,13 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     public void setUp() throws Exception {
         super.setUp();
         // Mock SettingsState
-        SettingsState settingsStateMock = mock(SettingsState.class);
+        SettingsStateService settingsStateMock = mock(SettingsStateService.class);
         when(settingsStateMock.getGeminiKey()).thenReturn("dummy-key");
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(
             ApplicationManager.getApplication(),
-            SettingsState.class,
+            SettingsStateService.class,
             settingsStateMock,
             getTestRootDisposable()
         );

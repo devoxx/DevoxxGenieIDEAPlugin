@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.deepinfra;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -42,7 +42,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsState.getInstance().getDeepInfraKey();
+        return SettingsStateService.getInstance().getDeepInfraKey();
     }
 
     @Override

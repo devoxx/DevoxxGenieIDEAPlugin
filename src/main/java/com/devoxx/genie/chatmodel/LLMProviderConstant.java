@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -32,7 +32,7 @@ public class LLMProviderConstant {
     };
 
     public static @NotNull List<String> getLLMProviders() {
-        SettingsState settingState = SettingsState.getInstance();
+        SettingsStateService settingState = SettingsStateService.getInstance();
         Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
         providerKeyMap.put(OpenAI.getName(), settingState::getOpenAIKey);
         providerKeyMap.put(Anthropic.getName(), settingState::getAnthropicKey);

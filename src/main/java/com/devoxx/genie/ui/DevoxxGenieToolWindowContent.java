@@ -9,6 +9,7 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ChatPromptExecutor;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
@@ -73,7 +74,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
 
     private final ChatPromptExecutor chatPromptExecutor;
-    private final SettingsState settingsState;
+    private final SettingsStateService settingsState;
     private ConversationPanel conversationPanel;
     private boolean isInitializationComplete = false;
     private final EditorFileButtonManager editorFileButtonManager;
@@ -86,7 +87,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
 
         project = toolWindow.getProject();
-        settingsState = SettingsState.getInstance();
+        settingsState = SettingsStateService.getInstance();
         chatPromptExecutor = new ChatPromptExecutor();
 
         editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
@@ -300,7 +301,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         }
 
         invokeLater(() -> {
-            if (SettingsState.getInstance().getStreamMode()) {
+            if (SettingsStateService.getInstance().getStreamMode()) {
                 submitBtn.setEnabled(false);
             }
             submitBtn.setIcon(StopIcon);
