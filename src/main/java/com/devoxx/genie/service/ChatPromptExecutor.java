@@ -1,7 +1,6 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.SettingsState;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -17,7 +16,7 @@ import java.util.concurrent.TimeoutException;
 public class ChatPromptExecutor {
 
     private final PromptExecutionService promptExecutionService = PromptExecutionService.getInstance();
-    private final SettingsState settingsState = SettingsState.getInstance();
+    private final SettingsStateService settingsState = SettingsStateService.getInstance();
 
     public ChatPromptExecutor() {
     }
@@ -36,7 +35,7 @@ public class ChatPromptExecutor {
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                if (SettingsState.getInstance().getStreamMode()) {
+                if (SettingsStateService.getInstance().getStreamMode()) {
                     setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
                     runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
