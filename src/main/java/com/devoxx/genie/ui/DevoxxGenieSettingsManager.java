@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.DoubleConverter;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -18,6 +19,7 @@ import javax.swing.*;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -50,6 +52,11 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     private JCheckBox streamModeCheckBox;
 
+    private JCheckBox astModeCheckBox;
+    private JCheckBox astParentClassCheckBox;
+    private JCheckBox astReferenceFieldCheckBox;
+    private JCheckBox astReferenceClassesCheckBox;
+
     private JTextField testPromptField;
     private JTextField explainPromptField;
     private JTextField reviewPromptField;
@@ -69,7 +76,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        SettingsState settings = SettingsState.getInstance();
+        SettingsStateService settings = SettingsStateService.getInstance();
 
         JPanel settingsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -101,7 +108,22 @@ public class DevoxxGenieSettingsManager implements Configurable {
         maxOutputTokensField = addTextFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
         timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
         retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
-        streamModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable Stream Mode (Beta)", settings.getStreamMode());
+        streamModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable Stream Mode (Beta)", settings.getStreamMode(),
+            "Streaming response does not support (yet) copy code buttons to clipboard", false);
+
+        setTitle("Abstract Syntax Tree Config", settingsPanel, gbc);
+        astModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable AST Mode (Beta)", settings.getAstMode(),
+            "Enable Abstract Syntax Tree mode for code generation, results in including related classes in the prompt.", false);
+        astParentClassCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include project parent class(es)", settings.getAstParentClass(), "", true);
+        astReferenceClassesCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include class references", settings.getAstClassReference(), "", true);
+        astReferenceFieldCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include field references", settings.getAstFieldReference(), "", true);
+
+        astModeCheckBox.addItemListener(e -> {
+            boolean selected = e.getStateChange() == ItemEvent.SELECTED;
+            astParentClassCheckBox.setEnabled(selected);
+            astReferenceClassesCheckBox.setEnabled(selected);
+            astReferenceFieldCheckBox.setEnabled(selected);
+        });
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
@@ -272,19 +294,36 @@ public class DevoxxGenieSettingsManager implements Configurable {
      * @param gbc   the grid bag constraints
      * @param label the label
      * @param value the value
+     * @param tooltip the tooltip
      * @return the formatted field
      */
     private @NotNull JCheckBox addCheckBoxWithLabel(@NotNull JPanel panel,
                                                     GridBagConstraints gbc,
                                                     String label,
-                                                    Boolean value) {
-        panel.add(new JLabel(label), gbc);
-        gbc.gridx++;
+                                                    Boolean value,
+                                                    @NotNull String tooltip,
+                                                    boolean labelInNextColumn) {
         JCheckBox checkBox = new JCheckBox();
+        if (!tooltip.isEmpty()) {
+            checkBox.setToolTipText(tooltip);
+        }
         if (value != null) {
             checkBox.setSelected(value);
         }
-        panel.add(checkBox, gbc);
+
+        if (labelInNextColumn) {
+            JPanel jPanel = new JPanel();
+            jPanel.setLayout(new BorderLayout());
+            jPanel.add(new JLabel(label), BorderLayout.CENTER);
+            jPanel.add(checkBox, BorderLayout.WEST);
+            gbc.gridx++;
+            panel.add(jPanel, gbc);
+        } else {
+            panel.add(checkBox, gbc);
+            gbc.gridx++;
+            panel.add(new JLabel(label), gbc);
+        }
+
         resetGbc(gbc);
         return checkBox;
     }
@@ -298,7 +337,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     @Override
     public boolean isModified() {
-        SettingsState settings = SettingsState.getInstance();
+        SettingsStateService settings = SettingsStateService.getInstance();
 
         boolean isModified = isFieldModified(ollamaUrlField, settings.getOllamaModelUrl());
         isModified |= isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl());
@@ -320,12 +359,17 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
         isModified |= isFieldModified(geminiKeyField, settings.getGeminiKey());
         isModified |= !settings.getStreamMode().equals(streamModeCheckBox.isSelected());
+        isModified |= !settings.getAstMode().equals(astModeCheckBox.isSelected());
+        isModified |= !settings.getAstParentClass().equals(astParentClassCheckBox.isSelected());
+        isModified |= !settings.getAstClassReference().equals(astReferenceClassesCheckBox.isSelected());
+        isModified |= !settings.getAstFieldReference().equals(astReferenceFieldCheckBox.isSelected());
+
         return isModified;
     }
 
     @Override
     public void apply() {
-        SettingsState settings = SettingsState.getInstance();
+        SettingsStateService settings = SettingsStateService.getInstance();
 
         boolean apiKeyModified = false;
         apiKeyModified |= updateSettingIfModified(openAiKeyField, settings.getOpenAIKey(), settings::setOpenAIKey);
@@ -335,7 +379,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         apiKeyModified |= updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
         apiKeyModified |= updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
         if (apiKeyModified) {
-            // Only notify the listener if an API key has changed
+            // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
             notifySettingsChanged();
         }
 
@@ -359,6 +403,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
         updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
         updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
+        updateSettingIfModified(astModeCheckBox, settings.getAstMode(), value -> settings.setAstMode(Boolean.parseBoolean(value)));
+        updateSettingIfModified(astParentClassCheckBox, settings.getAstParentClass(), value -> settings.setAstParentClass(Boolean.parseBoolean(value)));
+        updateSettingIfModified(astReferenceClassesCheckBox, settings.getAstClassReference(), value -> settings.setAstClassReference(Boolean.parseBoolean(value)));
+        updateSettingIfModified(astReferenceFieldCheckBox, settings.getAstFieldReference(), value -> settings.setAstFieldReference(Boolean.parseBoolean(value)));
     }
 
     /**
@@ -404,7 +452,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     @Override
     public void reset() {
-        SettingsState settingsState = SettingsState.getInstance();
+        SettingsStateService settingsState = SettingsStateService.getInstance();
 
         ollamaUrlField.setText(settingsState.getOllamaModelUrl());
         lmstudioUrlField.setText(settingsState.getLmstudioModelUrl());

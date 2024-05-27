@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.ui.util.DoubleConverter;
@@ -20,7 +20,11 @@ import org.jetbrains.annotations.NotNull;
     name = "com.devoxx.genie.ui.SettingsState",
     storages = @Storage("DevoxxGenieSettingsPlugin.xml")
 )
-public final class SettingsState implements PersistentStateComponent<SettingsState> {
+public final class SettingsStateService implements PersistentStateComponent<SettingsStateService> {
+
+    public static SettingsStateService getInstance() {
+        return ApplicationManager.getApplication().getService(SettingsStateService.class);
+    }
 
     // Local LLM URL fields
     private String ollamaModelUrl = Constant.OLLAMA_MODEL_URL;
@@ -64,17 +68,19 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     // Enable stream mode
     private Boolean streamMode = Constant.STREAM_MODE;
 
-    public static SettingsState getInstance() {
-        return ApplicationManager.getApplication().getService(SettingsState.class);
-    }
+    // Enable AST mode
+    private Boolean astMode = Constant.AST_MODE;
+    private Boolean astParentClass = Constant.AST_PARENT_CLASS;
+    private Boolean astClassReference = Constant.AST_CLASS_REFERENCE;
+    private Boolean astFieldReference = Constant.AST_FIELD_REFERENCE;
 
     @Override
-    public SettingsState getState() {
+    public SettingsStateService getState() {
         return this;
     }
 
     @Override
-    public void loadState(@NotNull SettingsState state) {
+    public void loadState(@NotNull SettingsStateService state) {
         XmlSerializerUtil.copyBean(state, this);
     }
 }

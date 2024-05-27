@@ -25,4 +25,9 @@ public class Constant {
     public static final Integer MAX_MEMORY = 6;
 
     public static final Boolean STREAM_MODE = false;
+
+    public static final Boolean AST_MODE = false;
+    public static final Boolean AST_PARENT_CLASS = true;
+    public static final Boolean AST_CLASS_REFERENCE = true;
+    public static final Boolean AST_FIELD_REFERENCE = true;
 }

@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.SettingsState;
+import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.ui.components.JBPanel;
@@ -89,14 +89,14 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
         UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
 
-        if (!SettingsState.getInstance().getStreamMode()) {
+        if (!SettingsStateService.getInstance().getStreamMode()) {
             waitingPanel.showMsg();
             userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         }
 
         addFiller(chatMessageContext.getName());
         container.add(userPromptPanel);
-        moveToBottom();
+        // moveToBottom();
     }
 
     /**
@@ -108,7 +108,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getName());
         container.add(new ChatResponsePanel(chatMessageContext));
-        moveToBottom();
+        // moveToBottom();
     }
 
     /**
@@ -118,12 +118,12 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
      */
     public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
         container.add(chatResponseStreamingPanel);
-        moveToBottom();
+        // moveToBottom();
     }
 
     public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
         container.add(fileListPanel);
-        moveToBottom();
+        // moveToBottom();
     }
 
     /**
