@@ -24,8 +24,7 @@ public class WelcomeUtil {
                 <ul>
                      <li><strong>Streaming responses (beta)</strong>: See each token as it's received from the LLM in real-time.</li>
                      <BR>
-                     <li><strong>Abstract Syntax Tree (AST) context</strong>: Include information about the superclass
-                     and class fields in the context for better code analysis and understanding.  Make sure you select an LLM which has a big enough window context!</li>
+                     <li><strong>Abstract Syntax Tree (AST) context</strong>: Automatically include parent class and class/field references in the prompt for better code analysis. Ensure the LLM has a large enough context window.</li>
                      <BR>
                      <li><strong>Chat Memory Size</strong>: Set the size of your chat memory, by default its set to a total of 10 messages (system + user msgs).</li>
                 </ul>
