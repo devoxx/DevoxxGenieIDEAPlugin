@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.14</h2>
+        <UL>
+            <LI>Feat #78: Set chat memory size in Settings page.</LI>
+        </UL>
         <h2>v0.1.13</h2>
         <UL>
             <LI>Feat #71: Auto Abstract Syntax Tree (AST) context</span>: Automatically includes information about the superclass and class fields in the context for better code analysis and understanding.</LI>
@@ -189,6 +193,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
+        <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
     </extensions>
 
     <actions>
