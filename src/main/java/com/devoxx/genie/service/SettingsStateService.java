@@ -56,7 +56,7 @@ public final class SettingsStateService implements PersistentStateComponent<Sett
 
     private Integer timeout = Constant.TIMEOUT;
     private Integer maxRetries = Constant.MAX_RETRIES;
-    private Integer maxMemory = Constant.MAX_MEMORY;
+    private Integer chatMemorySize = Constant.MAX_MEMORY;
 
     // Was unable to make it work with Integer for some unknown reason
     private String maxOutputTokens = Constant.MAX_OUTPUT_TOKENS.toString();
