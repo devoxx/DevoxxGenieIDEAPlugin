@@ -8,6 +8,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
@@ -32,8 +33,14 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         add(new ResponseHeaderPanel(chatMessageContext));
         add(editorPane);
 
+        setMaxWidth();
+
         parser = Parser.builder().build();
-        renderer = HtmlRenderer
+        renderer = createHTMLRenderer(chatMessageContext);
+    }
+
+    private static HtmlRenderer createHTMLRenderer(@NotNull ChatMessageContext chatMessageContext) {
+        return HtmlRenderer
             .builder()
             .nodeRendererFactory(context -> {
                 AtomicReference<CodeBlockNodeRenderer> codeBlockRenderer = new AtomicReference<>();
@@ -44,6 +51,12 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
             })
             .escapeHtml(true)
             .build();
+    }
+
+    private void setMaxWidth() {
+        Dimension maximumSize = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        editorPane.setMaximumSize(maximumSize);
+        editorPane.setMinimumSize(new Dimension(editorPane.getPreferredSize().width, editorPane.getPreferredSize().height));
     }
 
     /**
