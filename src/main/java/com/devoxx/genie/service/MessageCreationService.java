@@ -2,7 +2,11 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -11,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 
 /**
  * The message creation service for user and system messages.
@@ -74,12 +80,44 @@ public class MessageCreationService {
     }
 
     /**
+     * Create user prompt with context.
+     * @param project    the project
+     * @param userPrompt the user prompt
+     * @param files      the files
+     * @return the user prompt with context
+     */
+    public @NotNull String createUserPromptWithContext(Project project,
+                                                       String userPrompt,
+                                                       @NotNull List<VirtualFile> files) {
+        StringBuilder userPromptContext = new StringBuilder();
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+        files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
+            if (file.getFileType().getName().equals("UNKNOWN")) {
+                userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
+            } else {
+                Document document = fileDocumentManager.getDocument(file);
+                if (document != null) {
+                    userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                    String content = document.getText();
+                    userPromptContext.append(content).append("\n");
+                } else {
+                    NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
+                }
+            }
+        }));
+
+        userPromptContext.append(userPrompt);
+        return userPromptContext.toString();
+    }
+
+    /**
      * Construct a user message with context.
      * @param chatMessageContext the chat message context
      * @param context the context
      * @return the user message
      */
-    private static @NotNull UserMessage constructUserMessage(@NotNull ChatMessageContext chatMessageContext,
+    private @NotNull UserMessage constructUserMessage(@NotNull ChatMessageContext chatMessageContext,
                                                              String context) {
         StringBuilder sb = new StringBuilder(QUESTION);
 
@@ -108,7 +146,7 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      * @param sb                 the string builder
      */
-    private static void addASTContext(@NotNull ChatMessageContext chatMessageContext,
+    private void addASTContext(@NotNull ChatMessageContext chatMessageContext,
                                       @NotNull StringBuilder sb) {
         sb.append("\n\nRelated classes:\n\n");
         List<VirtualFile> tempFiles = new ArrayList<>();
@@ -129,7 +167,7 @@ public class MessageCreationService {
      * @param sb   the string builder
      * @param text the text
      */
-    private static void appendIfNotEmpty(StringBuilder sb, String text) {
+    private void appendIfNotEmpty(StringBuilder sb, String text) {
         if (text != null && !text.isEmpty()) {
             sb.append(text).append("\n");
         }

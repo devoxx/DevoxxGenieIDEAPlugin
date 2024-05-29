@@ -3,13 +3,11 @@ package com.devoxx.genie.ui;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.ChatModelProvider;
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.service.ChatMemoryService;
-import com.devoxx.genie.service.ChatPromptExecutor;
-import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.*;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
@@ -20,11 +18,7 @@ import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Splitter;
@@ -36,6 +30,7 @@ import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.data.message.UserMessage;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,9 +38,10 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
+import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
+import static com.devoxx.genie.ui.util.SettingsDialogUtil.showSettingsDialog;
 import static javax.swing.SwingUtilities.invokeLater;
 
 /**
@@ -53,12 +49,8 @@ import static javax.swing.SwingUtilities.invokeLater;
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener, ConversationStarter {
 
-    private final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
-
     private final Project project;
-    private final ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-    public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
-
+    private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
     @Getter
@@ -66,18 +58,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
     private final ComboBox<String> modelNameComboBox = new ComboBox<>();
 
+    private ConversationPanel conversationPanel;
     private PromptInputArea promptInputComponent;
     private PromptOutputPanel promptOutputPanel;
     private PromptContextFileListPanel promptContextFileListPanel;
 
     private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
+    private final JButton tavilySearchBtn = new JHoverButton(WebSearchIcon, true);
+    private final JButton googleSearchBtn = new JHoverButton(GoogleIcon, true);
     private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
 
     private final ChatPromptExecutor chatPromptExecutor;
     private final SettingsStateService settingsState;
-    private ConversationPanel conversationPanel;
-    private boolean isInitializationComplete = false;
     private final EditorFileButtonManager editorFileButtonManager;
+
+    private boolean isInitializationComplete = false;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -94,6 +89,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         setupUI();
         setLastSelectedProvider();
+        configureSearchButtonsVisibility();
 
         isInitializationComplete = true;
     }
@@ -142,7 +138,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the splitter.
-     *
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
@@ -154,11 +149,35 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Refresh the LLM providers dropdown because the Settings have been changed.
+     * Check if web search is enabled.
+     * @return true if web search is enabled
+     */
+    private boolean isWebSearchEnabled() {
+        return !SettingsStateService.getInstance().getTavilySearchKey().isEmpty() ||
+               !SettingsStateService.getInstance().getGoogleSearchKey().isEmpty();
+    }
+
+    /**
+     * Refresh the UI elements because the settings have changed.
      */
     public void settingsChanged() {
         llmProvidersComboBox.removeAllItems();
         addLLMProvidersToComboBox();
+        configureSearchButtonsVisibility();
+    }
+
+    /**
+     * Set the search buttons visibility based on settings.
+     */
+    private void configureSearchButtonsVisibility() {
+        if (settingsState.getHideSearchButtonsFlag()) {
+            tavilySearchBtn.setVisible(false);
+            googleSearchBtn.setVisible(false);
+        } else {
+            tavilySearchBtn.setVisible(!SettingsStateService.getInstance().getTavilySearchKey().isEmpty());
+            googleSearchBtn.setVisible(!SettingsStateService.getInstance().getGoogleSearchKey().isEmpty() &&
+                                       !SettingsStateService.getInstance().getGoogleCSIKey().isEmpty());
+        }
     }
 
     /**
@@ -173,7 +192,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the LLM and model name selection panel.
-     *
      * @return the selection panel
      */
     @NotNull
@@ -189,7 +207,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the tool panel.
-     *
      * @return the tool panel
      */
     private @NotNull JPanel createToolPanel() {
@@ -203,7 +220,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the LLM provider panel.
-     *
      * @return the provider panel
      */
     private @NotNull JPanel createProviderPanel() {
@@ -215,46 +231,52 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Create the chat input panel.
-     *
-     * @return the input panel
-     */
-    @NotNull
-    private JPanel createInputPanel() {
-        JPanel buttonPanel = createButtonPanel();
-        return createSubmitPanel(buttonPanel);
-    }
-
-    /**
-     * Create the Submit and add File button Panel.
-     *
+     * Create the Action button panel with Submit, the Web Search and Add file buttons.
      * @return the button panel
      */
-    private @NotNull JPanel createButtonPanel() {
-        addFileBtn.setToolTipText("Add file(s) to prompt context");
+    private @NotNull JPanel createActionButtonsPanel() {
+
+        JPanel actionButtonsPanel = new JPanel(new BorderLayout());
+
+        submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
+        submitBtn.setActionCommand(Constant.SUBMIT_ACTION);
+        submitBtn.addActionListener(this::onSubmitPrompt);
+        actionButtonsPanel.add(submitBtn, BorderLayout.WEST);
+
+        JPanel searchPanel = new JPanel(new FlowLayout());
+        createSearchButton(searchPanel, tavilySearchBtn, TAVILY_SEARCH_ACTION, SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER);
+        createSearchButton(searchPanel, googleSearchBtn, GOOGLE_SEARCH_ACTION, SEARCH_GOOGLE_FOR_AN_ANSWER);
+        actionButtonsPanel.add(searchPanel, BorderLayout.CENTER);
+
+        addFileBtn.setToolTipText(ADD_FILE_S_TO_PROMPT_CONTEXT);
         addFileBtn.addActionListener(this::selectFilesForPromptContext);
 
-        submitBtn.setToolTipText("Submit the prompt");
-        submitBtn.addActionListener(this::onSubmitPrompt);
+        actionButtonsPanel.add(addFileBtn, BorderLayout.EAST);
 
-        JPanel buttonPanel = new JPanel(new BorderLayout());
-        buttonPanel.add(submitBtn, BorderLayout.WEST);
-        buttonPanel.add(addFileBtn, BorderLayout.EAST);
-        return buttonPanel;
+        return actionButtonsPanel;
+    }
+
+    private void createSearchButton(@NotNull JPanel panel,
+                                    @NotNull JButton searchBtn,
+                                    String searchAction,
+                                    String tooltipText) {
+        searchBtn.setMaximumSize(new Dimension(30, 30));
+        searchBtn.setActionCommand(searchAction);
+        searchBtn.setToolTipText(tooltipText);
+        searchBtn.addActionListener(this::onSubmitPrompt);
+        panel.add(searchBtn);
     }
 
     /**
      * Create the Submit panel.
-     *
-     * @param buttonPanel the button panel
      * @return the Submit panel
      */
-    private @NotNull JPanel createSubmitPanel(JPanel buttonPanel) {
+    private @NotNull JPanel createInputPanel() {
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, 100));
         submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
         submitPanel.add(new JBScrollPane(promptInputComponent), BorderLayout.CENTER);
-        submitPanel.add(new JBScrollPane(buttonPanel), BorderLayout.SOUTH);
+        submitPanel.add(createActionButtonsPanel(), BorderLayout.SOUTH);
         return submitPanel;
     }
 
@@ -294,38 +316,74 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     /**
      * Submit the user prompt.
      */
-    private void onSubmitPrompt(ActionEvent e) {
-        String userPromptText = promptInputComponent.getText();
-        if (userPromptText.isEmpty()) {
-            return;
-        }
+    private void onSubmitPrompt(ActionEvent actionEvent) {
+        String userPromptText = isUserPromptProvided();
+        if (userPromptText == null) return;
 
+        if (isWebSearchTriggeredAndConfigured(actionEvent)) return;
+
+        disableSubmitBtn();
+
+        ChatMessageContext chatMessageContext =
+            createChatMessageContext(actionEvent, userPromptText, editorFileButtonManager.getSelectedTextEditor());
+
+        disableButtons();
+
+        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel);
+        chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
+    }
+
+    /**
+     * Disable the Submit button.
+     */
+    private void disableSubmitBtn() {
         invokeLater(() -> {
             if (SettingsStateService.getInstance().getStreamMode()) {
                 submitBtn.setEnabled(false);
             }
             submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText("Prompt is running, please be patient...");
+            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
+    }
 
-        ChatMessageContext chatMessageContext =
-            createChatMessageContext(userPromptText, editorFileButtonManager.getSelectedTextEditor());
+    /**
+     * Check if web search is triggered and configured, if not show Settings page.
+     * @param actionEvent the action event
+     * @return true if the web search is triggered and configured
+     */
+    private boolean isWebSearchTriggeredAndConfigured(@NotNull ActionEvent actionEvent) {
+        if (actionEvent.getActionCommand().toLowerCase().contains("search") && !isWebSearchEnabled()) {
+            SwingUtilities.invokeLater(() ->
+                NotificationUtil.sendNotification(project, "No Search API keys found, please add one in the settings.")
+            );
+            showSettingsDialog(project);
+            return true;
+        }
+        return false;
+    }
 
-        disableButtons();
-
-        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel);
-
-        chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
+    /**
+     * Check if the user prompt is provided.
+     * @return the user prompt text
+     */
+    private @Nullable String isUserPromptProvided() {
+        String userPromptText = promptInputComponent.getText();
+        if (userPromptText.isEmpty()) {
+            NotificationUtil.sendNotification(project, "Please enter a prompt.");
+            return null;
+        }
+        return userPromptText;
     }
 
     /**
      * Get the chat message context.
-     *
+     * @param actionEvent the action event
      * @param userPrompt the user prompt
      * @param editor     the editor
      * @return the prompt context with language and text
      */
-    private @NotNull ChatMessageContext createChatMessageContext(String userPrompt,
+    private @NotNull ChatMessageContext createChatMessageContext(ActionEvent actionEvent,
+                                                                 String userPrompt,
                                                                  Editor editor) {
         ChatMessageContext chatMessageContext = new ChatMessageContext();
         chatMessageContext.setProject(project);
@@ -335,7 +393,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
         chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
 
-        if (settingsState.getStreamMode()) {
+        if (settingsState.getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
             chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
         } else {
             chatMessageContext.setChatLanguageModel(chatModelProvider.getChatLanguageModel(chatMessageContext));
@@ -343,14 +401,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         setChatTimeout(chatMessageContext);
 
-        addSelectedCode(userPrompt, editor, chatMessageContext);
+        if (actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
+            addSelectedCode(userPrompt, editor, chatMessageContext);
+        } else {
+            chatMessageContext.setContext(actionEvent.getActionCommand());
+        }
 
         return chatMessageContext;
     }
 
     /**
      * Add the selected code to the chat message context.
-     *
      * @param userPrompt         the user prompt
      * @param editor             the editor
      * @param chatMessageContext the chat message context
@@ -369,7 +430,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Create the editor info.
-     *
      * @param editor the editor
      * @return the editor info
      */
@@ -387,7 +447,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Set the timeout for the chat message context.
-     *
      * @param chatMessageContext the chat message context
      */
     private void setChatTimeout(ChatMessageContext chatMessageContext) {
@@ -401,7 +460,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Get the prompt context from the selected files.
-     *
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
@@ -410,39 +468,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
                                   String userPrompt,
                                   List<VirtualFile> files) {
         chatMessageContext.setEditorInfo(new EditorInfo(files));
-        chatMessageContext.setContext(getUserPromptWithContext(userPrompt, files));
-    }
 
-    /**
-     * Get user prompt with context.
-     * TODO move this to a dedicated class
-     *
-     * @param userPrompt the user prompt
-     * @param files      the files
-     * @return the user prompt with context
-     */
-    private @NotNull String getUserPromptWithContext(String userPrompt,
-                                                     @NotNull List<VirtualFile> files) {
-        StringBuilder userPromptContext = new StringBuilder();
-        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-        files.forEach(file -> ApplicationManager.getApplication().runReadAction(() -> {
-            if (file.getFileType().getName().equals("UNKNOWN")) {
-                userPromptContext.append("Filename: ").append(file.getName()).append("\n");
-                userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
-            } else {
-                Document document = fileDocumentManager.getDocument(file);
-                if (document != null) {
-                    userPromptContext.append("Filename: ").append(file.getName()).append("\n");
-                    String content = document.getText();
-                    userPromptContext.append(content).append("\n");
-                } else {
-                    NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
-                }
-            }
-        }));
+        String userPromptWithContext = MessageCreationService
+                .getInstance()
+                .createUserPromptWithContext(chatMessageContext.getProject(), userPrompt, files);
 
-        userPromptContext.append(userPrompt);
-        return userPromptContext.toString();
+        chatMessageContext.setContext(userPromptWithContext);
     }
 
     /**
@@ -453,11 +484,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     }
 
     /**
-     * Enable the prompt input component and reset submit icon.
+     * Enable the prompt input component and reset the Submit button icon.
      */
     private void enableButtons() {
         submitBtn.setIcon(SubmitIcon);
         submitBtn.setEnabled(true);
+        submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
         promptInputComponent.setEnabled(true);
     }
 
@@ -465,7 +497,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Process the model name selection.
      */
     private void processModelNameSelection(@NotNull ActionEvent e) {
-        if (e.getActionCommand().equals(COMBO_BOX_CHANGED)) {
+        if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED)) {
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             String selectedModel = (String) comboBox.getSelectedItem();
             if (selectedModel != null) {
@@ -479,7 +511,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Set the model provider and update the model names.
      */
     private void handleModelProviderSelectionChange(@NotNull ActionEvent e) {
-        if (!e.getActionCommand().equals(COMBO_BOX_CHANGED) || !isInitializationComplete) return;
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete) return;
 
         JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
 
@@ -487,7 +519,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         if (selectedLLMProvider == null) return;
 
         settingsState.setLastSelectedProvider(selectedLLMProvider);
-        ModelProvider provider = ModelProvider.valueOf(selectedLLMProvider);
+        ModelProvider provider = ModelProvider.fromString(selectedLLMProvider);
 
         updateModelNamesComboBox(provider);
     }
@@ -517,7 +549,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Populate the model names.
-     *
      * @param chatModelFactory the chat model factory
      */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
