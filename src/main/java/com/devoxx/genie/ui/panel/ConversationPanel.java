@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.component.JHoverButton;
+import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
@@ -19,7 +20,7 @@ import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 public class ConversationPanel extends JPanel {
 
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
-    private final JButton configBtn = new JHoverButton(CogIcon, true);
+    private final JButton settingsBtn = new JHoverButton(CogIcon, true);
 
     private final Project project;
     private final ConversationStarter conversationStarter;
@@ -53,13 +54,12 @@ public class ConversationPanel extends JPanel {
      * Setup the conversation buttons.
      */
     private void setupConversationButtons() {
+        settingsBtn.setPreferredSize(new Dimension(25, 30));
+        settingsBtn.setToolTipText("Plugin settings");
+        settingsBtn.addActionListener(e -> SettingsDialogUtil.showSettingsDialog(project));
+
         newConversationBtn.setPreferredSize(new Dimension(25, 30));
-        configBtn.setPreferredSize(new Dimension(25, 30));
-
         newConversationBtn.setToolTipText("Start a new conversation");
-        configBtn.setToolTipText("Plugin settings");
-
-        configBtn.addActionListener(e -> showSettingsDialog());
         newConversationBtn.addActionListener(e -> conversationStarter.startNewConversation());
     }
 
@@ -71,7 +71,7 @@ public class ConversationPanel extends JPanel {
     private @NotNull JPanel createButtonPanel() {
         JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         conversationButtonPanel.add(newConversationBtn);
-        conversationButtonPanel.add(configBtn);
+        conversationButtonPanel.add(settingsBtn);
         conversationButtonPanel.setPreferredSize(new Dimension(60, 30));
         conversationButtonPanel.setMinimumSize(new Dimension(60, 30));
         return conversationButtonPanel;
@@ -82,12 +82,5 @@ public class ConversationPanel extends JPanel {
      */
     public void updateNewConversationLabel() {
         newConversationLabel.setText("New conversation " + getCurrentTimestamp());
-    }
-
-    /**
-     * Show the settings dialog.
-     */
-    private void showSettingsDialog() {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, "Devoxx Genie Settings");
     }
 }

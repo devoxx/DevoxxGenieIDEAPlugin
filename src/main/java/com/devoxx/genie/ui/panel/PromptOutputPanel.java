@@ -81,7 +81,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     /**
      * Add a user prompt to the panel.
-     *
      * @param chatMessageContext the prompt context
      */
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
@@ -96,7 +95,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
         addFiller(chatMessageContext.getName());
         container.add(userPromptPanel);
-        // moveToBottom();
     }
 
     /**
@@ -108,7 +106,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getName());
         container.add(new ChatResponsePanel(chatMessageContext));
-        // moveToBottom();
     }
 
     /**
@@ -118,12 +115,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
      */
     public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
         container.add(chatResponseStreamingPanel);
-        // moveToBottom();
     }
 
     public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
         container.add(fileListPanel);
-        // moveToBottom();
     }
 
     /**

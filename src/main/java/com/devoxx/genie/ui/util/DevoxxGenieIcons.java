@@ -10,6 +10,8 @@ public final class DevoxxGenieIcons {
     public static final Icon PlusIcon = load("/icons/plus.svg");
     public static final Icon AddFileIcon = load("/icons/addNewFile.svg");
     public static final Icon SubmitIcon = load("/icons/paperPlane.svg");
+    public static final Icon WebSearchIcon = load("/icons/web.svg");
+    public static final Icon GoogleIcon = load("/icons/google-small.svg");
     public static final Icon ArrowExpand = load("/icons/arrowExpand.svg");
     public static final Icon ArrowExpanded = load("/icons/arrowExpanded.svg");
     public static final Icon CloseSmalllIcon = load("/icons/closeSmall_dark.svg");

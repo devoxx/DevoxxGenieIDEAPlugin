@@ -68,7 +68,7 @@ public class ChatModelProvider {
      * @return the chat model factory
      */
     private @NotNull ChatModelFactory getFactory(@NotNull ChatMessageContext chatMessageContext) {
-        ModelProvider provider = ModelProvider.valueOf(chatMessageContext.getLlmProvider());
+        ModelProvider provider = ModelProvider.fromString(chatMessageContext.getLlmProvider());
         ChatModelFactory factory = factories.get(provider);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for provider: " + provider);

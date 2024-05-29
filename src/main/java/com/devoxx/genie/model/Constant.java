@@ -1,6 +1,7 @@
 package com.devoxx.genie.model;
 
 public class Constant {
+
     private Constant() {
     }
 
@@ -10,11 +11,20 @@ public class Constant {
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
     public static final String CUSTOM_PROMPT = "Write a custom prompt here.";
 
-    // The Local LLM Model URLs
+    // The Local LLM Model URLs, these can be overridden in the settings page
     public static final String OLLAMA_MODEL_URL = "http://localhost:11434/";
     public static final String LMSTUDIO_MODEL_URL = "http://localhost:1234/v1/";
     public static final String GPT4ALL_MODEL_URL = "http://localhost:4891/v1/";
     public static final String JAN_MODEL_URL = "http://localhost:1337/v1/";
+
+    // ActionCommands
+    public static final String SUBMIT_ACTION = "submit";
+    public static final String TAVILY_SEARCH_ACTION = "tavilySearch";
+    public static final String GOOGLE_SEARCH_ACTION = "googleSearch";
+    public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
+
+    // I18N file name
+    public static final String MESSAGES = "messages";
 
     // The LLM Settings
     public static final Double TEMPERATURE = 0.7d;
@@ -24,10 +34,23 @@ public class Constant {
     public static final Integer TIMEOUT = 60;
     public static final Integer MAX_MEMORY = 10;
 
+    // Hide Search Button
+    public static final Boolean HIDE_SEARCH_BUTTONS = false;
+
+    // Stream mode settings
     public static final Boolean STREAM_MODE = false;
 
+    // AST settings
     public static final Boolean AST_MODE = false;
     public static final Boolean AST_PARENT_CLASS = true;
     public static final Boolean AST_CLASS_REFERENCE = true;
     public static final Boolean AST_FIELD_REFERENCE = true;
+
+    // Button tooltip texts
+    public static final String ADD_FILE_S_TO_PROMPT_CONTEXT = "Add file(s) to prompt context";
+    public static final String SUBMIT_THE_PROMPT = "Submit the prompt";
+    public static final String SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER = "Search the web with Tavily for an answer";
+    public static final String SEARCH_GOOGLE_FOR_AN_ANSWER = "Search Google for an answer";
+    public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
+
 }

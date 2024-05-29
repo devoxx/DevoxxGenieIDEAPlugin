@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -9,6 +10,7 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.event.ActionEvent;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
@@ -23,7 +25,6 @@ public class ChatPromptExecutor {
 
     /**
      * Execute the prompt.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -35,19 +36,39 @@ public class ChatPromptExecutor {
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                if (SettingsStateService.getInstance().getStreamMode()) {
-                    setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
+                if (chatMessageContext.getContext().toLowerCase().contains("search")) {
+                    webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
-                    runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
-                    progressIndicator.setText("Working...");
+                    if (SettingsStateService.getInstance().getStreamMode()) {
+                        setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
+                    } else {
+                        runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
+                    }
                 }
             }
         }.queue();
     }
 
     /**
+     * Web search prompt.
+     * @param chatMessageContext the chat message context
+     * @param promptOutputPanel the prompt output panel
+     * @param enableButtons the Enable buttons
+     */
+    private void webSearchPrompt(@NotNull ChatMessageContext chatMessageContext,
+                                 @NotNull PromptOutputPanel promptOutputPanel,
+                                 Runnable enableButtons) {
+        promptOutputPanel.addUserPrompt(chatMessageContext);
+        WebSearchService.getInstance().searchWeb(chatMessageContext)
+            .ifPresent(aiMessage -> {
+                chatMessageContext.setAiMessage(aiMessage);
+                promptOutputPanel.addChatResponse(chatMessageContext);
+                enableButtons.run();
+            });
+    }
+
+    /**
      * Process possible command prompt.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      */
@@ -59,7 +80,6 @@ public class ChatPromptExecutor {
 
     /**
      * Setup streaming.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -121,7 +141,6 @@ public class ChatPromptExecutor {
 
     /**
      * Run the prompt.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -129,7 +148,6 @@ public class ChatPromptExecutor {
     private void runPrompt(@NotNull ChatMessageContext chatMessageContext,
                            PromptOutputPanel promptOutputPanel,
                            Runnable enableButtons) {
-
 
         promptExecutionService.executeQuery(chatMessageContext)
             .thenAccept(aiMessageOptional -> {
