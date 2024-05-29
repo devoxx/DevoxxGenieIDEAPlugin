@@ -35,6 +35,7 @@
         <h2>v0.1.15</h2>
         <UL>
             <LI>Fix #82: Wrap text to new line for streaming output.</LI>
+            <LI>Feat #85: Support Web Search</LI>
         </UL>
         <h2>v0.1.14</h2>
         <UL>
@@ -193,6 +194,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.SettingsStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

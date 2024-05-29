@@ -21,7 +21,6 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Create a new chat response panel.
-     *
      * @param chatMessageContext the chat message context
      */
     public ChatResponsePanel(@NotNull ChatMessageContext chatMessageContext) {

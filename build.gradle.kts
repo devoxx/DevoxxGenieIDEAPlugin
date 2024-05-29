@@ -18,6 +18,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
     implementation("dev.langchain4j:langchain4j-anthropic:0.31.0")
     implementation("dev.langchain4j:langchain4j-mistral-ai:0.31.0")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:0.31.0")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:0.31.0")
+
     implementation("org.commonmark:commonmark:0.22.0")
 
     compileOnly("org.projectlombok:lombok:1.18.32")

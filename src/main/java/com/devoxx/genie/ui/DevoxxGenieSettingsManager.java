@@ -44,6 +44,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JPasswordField deepInfraKeyField;
     private JPasswordField geminiKeyField;
 
+    private JPasswordField tavilySearchKeyField;
+    private JPasswordField googleSearchKeyField;
+    private JPasswordField googleCSIKeyField;
+
     private JFormattedTextField temperatureField;
     private JFormattedTextField topPField;
 
@@ -52,6 +56,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JFormattedTextField chatMemorySizeField;
 
     private JCheckBox streamModeCheckBox;
+    private JCheckBox hideSearchCheckBox;
 
     private JCheckBox astModeCheckBox;
     private JCheckBox astParentClassCheckBox;
@@ -102,6 +107,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
         deepInfraKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "DeepInfra API Key :", settings.getDeepInfraKey(), "https://deepinfra.com/dash/api_keys");
         geminiKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Gemini API Key :", settings.getGeminiKey(), "https://aistudio.google.com/app/apikey");
 
+        setTitle("Search Providers", settingsPanel, gbc);
+        hideSearchCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Hide Search Providers", false, "", false);
+        tavilySearchKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Tavily Web Search API Key :", settings.getTavilySearchKey(), "https://app.tavily.com/home");
+        googleSearchKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Google Web Search API Key :", settings.getGoogleSearchKey(), "https://developers.google.com/custom-search/docs/paid_element#api_key");
+        googleCSIKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Google Custom Search Engine ID :", settings.getGoogleCSIKey(), "https://programmablesearchengine.google.com/controlpanel/create");
+
         setTitle("LLM Parameters", settingsPanel, gbc);
 
         chatMemorySizeField = addFormattedFieldWithLabel(settingsPanel, gbc, "Chat memory size:", settings.getTemperature());
@@ -125,6 +136,13 @@ public class DevoxxGenieSettingsManager implements Configurable {
             astParentClassCheckBox.setEnabled(selected);
             astReferenceClassesCheckBox.setEnabled(selected);
             astReferenceFieldCheckBox.setEnabled(selected);
+        });
+
+        hideSearchCheckBox.addItemListener(e -> {
+            boolean selected = e.getStateChange() == ItemEvent.SELECTED;
+            tavilySearchKeyField.setEnabled(!selected);
+            googleSearchKeyField.setEnabled(!selected);
+            googleCSIKeyField.setEnabled(!selected);
         });
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
@@ -321,9 +339,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
             gbc.gridx++;
             panel.add(jPanel, gbc);
         } else {
-            panel.add(checkBox, gbc);
-            gbc.gridx++;
             panel.add(new JLabel(label), gbc);
+            gbc.gridx++;
+            panel.add(checkBox, gbc);
         }
 
         resetGbc(gbc);
@@ -361,6 +379,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(groqKeyField, settings.getGroqKey());
         isModified |= isFieldModified(deepInfraKeyField, settings.getDeepInfraKey());
         isModified |= isFieldModified(geminiKeyField, settings.getGeminiKey());
+
+        isModified |= !settings.getHideSearchButtonsFlag().equals(hideSearchCheckBox.isSelected());
+        isModified |= isFieldModified(tavilySearchKeyField, settings.getTavilySearchKey());
+        isModified |= isFieldModified(googleSearchKeyField, settings.getGoogleSearchKey());
+        isModified |= isFieldModified(googleCSIKeyField, settings.getGoogleCSIKey());
+
         isModified |= !settings.getStreamMode().equals(streamModeCheckBox.isSelected());
         isModified |= !settings.getAstMode().equals(astModeCheckBox.isSelected());
         isModified |= !settings.getAstParentClass().equals(astParentClassCheckBox.isSelected());
@@ -381,12 +405,22 @@ public class DevoxxGenieSettingsManager implements Configurable {
         apiKeyModified |= updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
         apiKeyModified |= updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
         apiKeyModified |= updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
+
+        apiKeyModified |= updateSettingIfModified(hideSearchCheckBox, settings.getHideSearchButtonsFlag(), value ->
+            settings.setHideSearchButtonsFlag(Boolean.parseBoolean(value))
+        );
+        apiKeyModified |= updateSettingIfModified(tavilySearchKeyField, settings.getTavilySearchKey(), settings::setTavilySearchKey);
+        apiKeyModified |= updateSettingIfModified(googleSearchKeyField, settings.getGoogleSearchKey(), settings::setGoogleSearchKey);
+        apiKeyModified |= updateSettingIfModified(googleCSIKeyField, settings.getGoogleCSIKey(), settings::setGoogleCSIKey);
+
         if (apiKeyModified) {
             // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
             notifySettingsChanged();
         }
+        updateSettingIfModified(hideSearchCheckBox, settings.getHideSearchButtonsFlag(), value -> {
+            settings.setHideSearchButtonsFlag(Boolean.parseBoolean(value));
+        });
 
-        boolean chatMemoryModified = false;
         updateSettingIfModified(ollamaUrlField, settings.getOllamaModelUrl(), settings::setOllamaModelUrl);
         updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
         updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
@@ -395,32 +429,26 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
-        chatMemoryModified = updateSettingIfModified(chatMemorySizeField, settings.getChatMemorySize(), value -> settings.setChatMemorySize(safeCastToInteger(value)));
         updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
         updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
         updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
         updateSettingIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
         updateSettingIfModified(customPromptField, settings.getCustomPrompt(), settings::setCustomPrompt);
-        updateSettingIfModified(openAiKeyField, settings.getOpenAIKey(), settings::setOpenAIKey);
-        updateSettingIfModified(mistralKeyField, settings.getMistralKey(), settings::setMistralKey);
-        updateSettingIfModified(anthropicKeyField, settings.getAnthropicKey(), settings::setAnthropicKey);
-        updateSettingIfModified(groqKeyField, settings.getGroqKey(), settings::setGroqKey);
-        updateSettingIfModified(deepInfraKeyField, settings.getDeepInfraKey(), settings::setDeepInfraKey);
-        updateSettingIfModified(geminiKeyField, settings.getGeminiKey(), settings::setGeminiKey);
         updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
+
         updateSettingIfModified(astModeCheckBox, settings.getAstMode(), value -> settings.setAstMode(Boolean.parseBoolean(value)));
         updateSettingIfModified(astParentClassCheckBox, settings.getAstParentClass(), value -> settings.setAstParentClass(Boolean.parseBoolean(value)));
         updateSettingIfModified(astReferenceClassesCheckBox, settings.getAstClassReference(), value -> settings.setAstClassReference(Boolean.parseBoolean(value)));
         updateSettingIfModified(astReferenceFieldCheckBox, settings.getAstFieldReference(), value -> settings.setAstFieldReference(Boolean.parseBoolean(value)));
 
-        if (chatMemoryModified) {
+        // Notify the listeners if the chat memory size has changed
+        if (updateSettingIfModified(chatMemorySizeField, settings.getChatMemorySize(), value -> settings.setChatMemorySize(safeCastToInteger(value)))) {
             notifyChatMemorySizeChangeListeners();
         }
     }
 
     /**
      * Update the setting if the field value has changed
-     *
      * @param field        the field
      * @param currentValue the current value
      * @param updateAction the update action
@@ -447,7 +475,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Extract the string value from the field
-     *
      * @param field the field
      * @return the string value
      */
@@ -475,12 +502,21 @@ public class DevoxxGenieSettingsManager implements Configurable {
         ollamaUrlField.setText(settingsState.getOllamaModelUrl());
         lmstudioUrlField.setText(settingsState.getLmstudioModelUrl());
         gpt4allUrlField.setText(settingsState.getGpt4allModelUrl());
+        janUrlField.setText(settingsState.getJanModelUrl());
 
+        chatMemorySizeField.setText(String.valueOf(settingsState.getChatMemorySize()));
         testPromptField.setText(settingsState.getTestPrompt());
         explainPromptField.setText(settingsState.getExplainPrompt());
         reviewPromptField.setText(settingsState.getReviewPrompt());
         customPromptField.setText(settingsState.getCustomPrompt());
         maxOutputTokensField.setText(settingsState.getMaxOutputTokens());
+
+        streamModeCheckBox.setSelected(settingsState.getStreamMode());
+        astReferenceFieldCheckBox.setSelected(settingsState.getAstFieldReference());
+        astParentClassCheckBox.setSelected(settingsState.getAstParentClass());
+        astReferenceClassesCheckBox.setSelected(settingsState.getAstClassReference());
+
+        hideSearchCheckBox.setSelected(settingsState.getHideSearchButtonsFlag());
 
         setValue(temperatureField, settingsState.getTemperature());
         setValue(topPField, settingsState.getTopP());
@@ -491,7 +527,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Set the value of the field
-     *
      * @param field the field
      * @param value the value
      */
