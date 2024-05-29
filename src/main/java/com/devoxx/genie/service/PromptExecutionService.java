@@ -7,6 +7,7 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
+
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,8 +55,9 @@ public class PromptExecutionService {
 
             ChatMemoryService.getInstance().add(userMessage);
 
-            queryFuture = CompletableFuture.supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
-                .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
+            queryFuture = CompletableFuture.supplyAsync(() ->
+                    processChatMessage(chatMessageContext), queryExecutor)
+                        .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
         } finally {
             queryLock.unlock();
         }
@@ -79,7 +81,6 @@ public class PromptExecutionService {
 
     /**
      * Process the chat message.
-     *
      * @param chatMessageContext the chat message context
      * @return the AI message
      */
