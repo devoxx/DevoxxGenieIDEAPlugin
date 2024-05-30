@@ -4,7 +4,7 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html) and [Jan](https://jan.ai) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey) and [DeepInfra](https://deepinfra.com/dash/deployments).
 
-We now also support LLM-driven web search with Google and Tavily.
+We now also support LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 This plugin aids in reviewing, testing, and explaining your project code, enhancing your development workflow.
 
