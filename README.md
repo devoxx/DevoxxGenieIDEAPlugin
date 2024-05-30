@@ -18,7 +18,7 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 - **Explain**: Explain code using local and cloud-based LLM's.
 - **Review**: Review and improve your code using local and cloud-based LLM's.
 - **Test**: Generate unit tests for your code using local and cloud-based LLM's.
-- **Code Higlighting**: Supports highlighting of code blocks.
+- **Code Highlighting**: Supports highlighting of code blocks.
 - **Chat conversations**: Supports chat conversations with configurable memory size.
 - **Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
 - **LLM enabled Web Search**: With support for Google and Tavily 
