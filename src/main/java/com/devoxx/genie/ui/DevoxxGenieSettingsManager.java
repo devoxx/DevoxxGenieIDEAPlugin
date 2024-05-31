@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
@@ -63,10 +64,11 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JCheckBox astReferenceFieldCheckBox;
     private JCheckBox astReferenceClassesCheckBox;
 
-    private JTextField testPromptField;
-    private JTextField explainPromptField;
-    private JTextField reviewPromptField;
-    private JTextField customPromptField;
+    private JTextArea testPromptField;
+    private JTextArea explainPromptField;
+    private JTextArea reviewPromptField;
+    private JTextArea customPromptField;
+
     private JTextField maxOutputTokensField;
 
     public DevoxxGenieSettingsManager() {
@@ -147,10 +149,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
         setTitle("Predefined Command Prompts", settingsPanel, gbc);
 
-        testPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Test prompt :", settings.getTestPrompt());
-        explainPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Explain prompt :", settings.getExplainPrompt());
-        reviewPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Review prompt :", settings.getReviewPrompt());
-        customPromptField = addTextFieldWithLabel(settingsPanel, gbc, "Custom prompt :", settings.getCustomPrompt());
+        testPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Test prompt :", settings.getTestPrompt());
+        explainPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Explain prompt :", settings.getExplainPrompt());
+        reviewPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Review prompt :", settings.getReviewPrompt());
+        customPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Custom prompt :", settings.getCustomPrompt());
         return settingsPanel;
     }
 
@@ -183,7 +185,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
 
     /**
      * Add a text field with label
-     *
      * @param panel the panel
      * @param gbc   the gridbag constraints
      * @param label the label
@@ -200,6 +201,26 @@ public class DevoxxGenieSettingsManager implements Configurable {
         panel.add(textField, gbc);
         resetGbc(gbc);
         return textField;
+    }
+
+    /**
+     * Add a text area with label
+     * @param panel the panel
+     * @param gbc   the gridbag constraints
+     * @param label the label
+     * @param value the value
+     * @return the text field
+     */
+    private @NotNull JTextArea addTextAreaWithLabel(@NotNull JPanel panel,
+                                                     GridBagConstraints gbc,
+                                                     String label,
+                                                     String value) {
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx++;
+        JTextArea textArea = new JTextArea(value, 3, 80);
+        panel.add(textArea, gbc);
+        resetGbc(gbc);
+        return textArea;
     }
 
     /**
@@ -369,10 +390,13 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(maxOutputTokensField, settings.getMaxOutputTokens());
         isModified |= isFieldModified(retryField, settings.getMaxRetries());
         isModified |= isFieldModified(chatMemorySizeField, settings.getChatMemorySize());
-        isModified |= isFieldModified(testPromptField, settings.getTestPrompt());
-        isModified |= isFieldModified(explainPromptField, settings.getExplainPrompt());
-        isModified |= isFieldModified(reviewPromptField, settings.getReviewPrompt());
-        isModified |= isFieldModified(customPromptField, settings.getCustomPrompt());
+
+        isModified |= !StringUtil.equals(testPromptField.getText(), settings.getTestPrompt());
+        isModified |= !StringUtil.equals(explainPromptField.getText(), settings.getExplainPrompt());
+        isModified |= !StringUtil.equals(reviewPromptField.getText(), settings.getReviewPrompt());
+
+        isModified |= !StringUtil.equals(customPromptField.getText(), settings.getCustomPrompt());
+
         isModified |= isFieldModified(openAiKeyField, settings.getOpenAIKey());
         isModified |= isFieldModified(mistralKeyField, settings.getMistralKey());
         isModified |= isFieldModified(anthropicKeyField, settings.getAnthropicKey());
@@ -430,10 +454,12 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
         updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
-        updateSettingIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
-        updateSettingIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
-        updateSettingIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
-        updateSettingIfModified(customPromptField, settings.getCustomPrompt(), settings::setCustomPrompt);
+
+        updateTextAreaIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
+        updateTextAreaIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
+        updateTextAreaIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
+        updateTextAreaIfModified(customPromptField, settings.getCustomPrompt(), settings::setCustomPrompt);
+
         updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
 
         updateSettingIfModified(astModeCheckBox, settings.getAstMode(), value -> settings.setAstMode(Boolean.parseBoolean(value)));
@@ -444,6 +470,21 @@ public class DevoxxGenieSettingsManager implements Configurable {
         // Notify the listeners if the chat memory size has changed
         if (updateSettingIfModified(chatMemorySizeField, settings.getChatMemorySize(), value -> settings.setChatMemorySize(safeCastToInteger(value)))) {
             notifyChatMemorySizeChangeListeners();
+        }
+    }
+
+    /**
+     * Update the text area if the value has changed
+     * @param textArea     the text area
+     * @param currentValue the current value
+     * @param updateAction the update action
+     */
+    public void updateTextAreaIfModified(@NotNull JTextArea textArea,
+                                         Object currentValue,
+                                         Consumer<String> updateAction) {
+        String newValue = textArea.getText();
+        if (newValue != null && !newValue.equals(currentValue)) {
+            updateAction.accept(newValue);
         }
     }
 
