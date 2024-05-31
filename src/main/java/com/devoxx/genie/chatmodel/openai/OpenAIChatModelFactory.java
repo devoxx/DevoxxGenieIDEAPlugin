@@ -41,7 +41,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getOpenAIKey();
+        return SettingsStateService.getInstance().getOpenAIKey().trim();
     }
 
     @Override

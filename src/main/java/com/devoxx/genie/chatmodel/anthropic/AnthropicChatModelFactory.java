@@ -40,7 +40,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getAnthropicKey();
+        return SettingsStateService.getInstance().getAnthropicKey().trim();
     }
 
     @Override

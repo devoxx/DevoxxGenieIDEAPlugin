@@ -42,7 +42,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getMistralKey();
+        return SettingsStateService.getInstance().getMistralKey().trim();
     }
 
     @Override

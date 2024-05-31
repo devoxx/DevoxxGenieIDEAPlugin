@@ -26,7 +26,7 @@ public class GeminiChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getGeminiKey();
+        return SettingsStateService.getInstance().getGeminiKey().trim();
     }
 
     @Override
