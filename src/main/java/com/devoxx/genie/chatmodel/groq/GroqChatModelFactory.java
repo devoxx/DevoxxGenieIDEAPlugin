@@ -42,7 +42,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getGroqKey();
+        return SettingsStateService.getInstance().getGroqKey().trim();
     }
 
     @Override

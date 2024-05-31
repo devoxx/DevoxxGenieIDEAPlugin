@@ -42,7 +42,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getDeepInfraKey();
+        return SettingsStateService.getInstance().getDeepInfraKey().trim();
     }
 
     @Override
