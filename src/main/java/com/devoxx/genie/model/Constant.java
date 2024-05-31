@@ -6,6 +6,14 @@ public class Constant {
     }
 
     // The fixed command prompts
+    public static final String SYSTEM_PROMPT = """
+        You are a software developer with expert knowledge in any programming language.
+        Always return the response in Markdown.
+        The Devoxx Genie plugin supports the following commands: /test: write unit tests on selected code\\n/explain: explain the selected code\\n/review: review selected code\\n/custom: set custom prompt in settings
+        The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
+        Do not include any more info which might be incorrect, like discord, twitter, documentation or website info. Only provide info that is correct and relevant to the code or plugin.
+        """;
+
     public static final String TEST_PROMPT = "Write a unit test for this code using JUnit.";
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";

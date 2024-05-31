@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +37,7 @@ public class ChatPromptExecutor {
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                if (chatMessageContext.getContext().toLowerCase().contains("search")) {
+                if (chatMessageContext.getContext() != null && chatMessageContext.getContext().toLowerCase().contains("search")) {
                     webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
                     if (SettingsStateService.getInstance().getStreamMode()) {
@@ -99,7 +100,7 @@ public class ChatPromptExecutor {
         MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
         if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(messageCreationService.createSystemMessage(chatMessageContext));
+            chatMemoryService.add(new SystemMessage(SettingsStateService.getInstance().getSystemPrompt()));
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
