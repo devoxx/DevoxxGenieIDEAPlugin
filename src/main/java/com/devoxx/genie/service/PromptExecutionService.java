@@ -4,6 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
@@ -48,7 +49,7 @@ public class PromptExecutionService {
             MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
             if (ChatMemoryService.getInstance().isEmpty()) {
-                ChatMemoryService.getInstance().add(messageCreationService.createSystemMessage(chatMessageContext));
+                ChatMemoryService.getInstance().add(new SystemMessage(SettingsStateService.getInstance().getSystemPrompt()));
             }
 
             UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);

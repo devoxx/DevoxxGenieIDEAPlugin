@@ -49,6 +49,7 @@ public final class SettingsStateService implements PersistentStateComponent<Sett
     private String tavilySearchKey = "";
 
     // Prompt fields
+    private String systemPrompt = SYSTEM_PROMPT;
     private String testPrompt = TEST_PROMPT;
     private String reviewPrompt = REVIEW_PROMPT;
     private String explainPrompt = EXPLAIN_PROMPT;

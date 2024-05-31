@@ -64,6 +64,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JCheckBox astReferenceFieldCheckBox;
     private JCheckBox astReferenceClassesCheckBox;
 
+    private JTextArea systemPromptField;
     private JTextArea testPromptField;
     private JTextArea explainPromptField;
     private JTextArea reviewPromptField;
@@ -147,8 +148,9 @@ public class DevoxxGenieSettingsManager implements Configurable {
             googleCSIKeyField.setEnabled(!selected);
         });
 
-        setTitle("Predefined Command Prompts", settingsPanel, gbc);
+        setTitle("The Prompts", settingsPanel, gbc);
 
+        systemPromptField = addTextAreaWithLabel(settingsPanel, gbc, "System prompt :", settings.getSystemPrompt());
         testPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Test prompt :", settings.getTestPrompt());
         explainPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Explain prompt :", settings.getExplainPrompt());
         reviewPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Review prompt :", settings.getReviewPrompt());
@@ -217,7 +219,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
                                                      String value) {
         panel.add(new JLabel(label), gbc);
         gbc.gridx++;
-        JTextArea textArea = new JTextArea(value, 3, 80);
+        JTextArea textArea = new JTextArea(value, 3, 40);
         panel.add(textArea, gbc);
         resetGbc(gbc);
         return textArea;
@@ -391,10 +393,10 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(retryField, settings.getMaxRetries());
         isModified |= isFieldModified(chatMemorySizeField, settings.getChatMemorySize());
 
+        isModified |= !StringUtil.equals(systemPromptField.getText(), settings.getSystemPrompt());
         isModified |= !StringUtil.equals(testPromptField.getText(), settings.getTestPrompt());
         isModified |= !StringUtil.equals(explainPromptField.getText(), settings.getExplainPrompt());
         isModified |= !StringUtil.equals(reviewPromptField.getText(), settings.getReviewPrompt());
-
         isModified |= !StringUtil.equals(customPromptField.getText(), settings.getCustomPrompt());
 
         isModified |= isFieldModified(openAiKeyField, settings.getOpenAIKey());
@@ -455,6 +457,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
         updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
 
+        updateTextAreaIfModified(systemPromptField, settings.getSystemPrompt(), settings::setSystemPrompt);
         updateTextAreaIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
         updateTextAreaIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
         updateTextAreaIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);

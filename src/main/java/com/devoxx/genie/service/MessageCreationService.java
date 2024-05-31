@@ -1,20 +1,17 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 
@@ -24,17 +21,6 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
  */
 public class MessageCreationService {
 
-    public static final String YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN =
-        "You are a software developer with expert knowledge in ";
-    public static final String PROGRAMMING_LANGUAGE = " programming language.";
-    public static final String ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN =
-        "Always return the response in Markdown.";
-    public static final String COMMANDS_INFO =
-        "The Devoxx Genie plugin supports the following commands: /test: write unit tests on selected code\n/explain: explain the selected code\n/review: review selected code\n/custom: set custom prompt in settings";
-    public static final String MORE_INFO =
-        "The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.";
-    public static final String NO_HALLUCINATIONS =
-        "Do not include any more info which might be incorrect, like discord, twitter, documentation or website info. Only provide info that is correct and relevant to the code or plugin.";
 
     public static final String QUESTION = "Answer the user question: ";
     public static final String CONTEXT_PROMPT = "Question context: \n";
@@ -42,25 +28,6 @@ public class MessageCreationService {
     @NotNull
     public static MessageCreationService getInstance() {
         return ApplicationManager.getApplication().getService(MessageCreationService.class);
-    }
-
-    /**
-     * Create a system message.
-     * @param chatMessageContext the language text pair
-     * @return the system message
-     */
-    public @NotNull SystemMessage createSystemMessage(@NotNull ChatMessageContext chatMessageContext) {
-        String language = Optional.ofNullable(chatMessageContext.getEditorInfo())
-            .map(EditorInfo::getLanguage)
-            .orElse("programming");
-
-        return new SystemMessage(
-            YOU_ARE_A_SOFTWARE_DEVELOPER_WITH_EXPERT_KNOWLEDGE_IN +
-                language + PROGRAMMING_LANGUAGE +
-                ALWAYS_RETURN_THE_RESPONSE_IN_MARKDOWN + "\n" +
-                COMMANDS_INFO + "\n" +
-                MORE_INFO + "\n" +
-                NO_HALLUCINATIONS);
     }
 
     /**
