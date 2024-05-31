@@ -32,6 +32,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.16</h2>
+        <UL>
+            <LI>Feat #90: Include System Prompt in Settings page</LI>
+            <LI>Feat #88: Use TextArea for Setting prompts</LI>
+        </UL>
         <h2>v0.1.15</h2>
         <UL>
             <LI>Fix #82: Wrap text to new line for streaming output.</LI>
