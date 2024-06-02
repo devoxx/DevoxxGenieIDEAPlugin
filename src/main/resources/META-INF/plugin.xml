@@ -185,7 +185,21 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <projectConfigurable instance="com.devoxx.genie.ui.DevoxxGenieSettingsManager" displayName="Devoxx Genie Settings"/>
+
+        <projectConfigurable parentId="tools"
+                             id="DevoxxGenie"
+                             displayName="DevoxxGenie"
+                             instance="com.devoxx.genie.ui.DevoxxGenieSettingsManager"/>
+
+        <projectConfigurable id="LLMSettings"
+                             parentId="DevoxxGenie"
+                             instance="com.devoxx.genie.ui.DevoxxGenieLLMSettingsManager"
+                             displayName="LLM Settings"/>
+
+        <projectConfigurable id="PromptSettings"
+                             parentId="DevoxxGenie"
+                             instance="com.devoxx.genie.ui.DevoxxGeniePromptSettingsManager"
+                             displayName="Prompts"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
