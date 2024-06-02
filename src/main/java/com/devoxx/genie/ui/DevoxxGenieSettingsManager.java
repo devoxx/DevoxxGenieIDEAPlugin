@@ -2,14 +2,12 @@ package com.devoxx.genie.ui;
 
 import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.util.DoubleConverter;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
@@ -17,21 +15,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.text.DefaultFormatterFactory;
-import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class DevoxxGenieSettingsManager implements Configurable {
-
-    private final DoubleConverter doubleConverter;
 
     private JTextField ollamaUrlField;
     private JTextField lmstudioUrlField;
@@ -49,32 +39,7 @@ public class DevoxxGenieSettingsManager implements Configurable {
     private JPasswordField googleSearchKeyField;
     private JPasswordField googleCSIKeyField;
 
-    private JFormattedTextField temperatureField;
-    private JFormattedTextField topPField;
-
-    private JFormattedTextField timeoutField;
-    private JFormattedTextField retryField;
-    private JFormattedTextField chatMemorySizeField;
-
-    private JCheckBox streamModeCheckBox;
     private JCheckBox hideSearchCheckBox;
-
-    private JCheckBox astModeCheckBox;
-    private JCheckBox astParentClassCheckBox;
-    private JCheckBox astReferenceFieldCheckBox;
-    private JCheckBox astReferenceClassesCheckBox;
-
-    private JTextArea systemPromptField;
-    private JTextArea testPromptField;
-    private JTextArea explainPromptField;
-    private JTextArea reviewPromptField;
-    private JTextArea customPromptField;
-
-    private JTextField maxOutputTokensField;
-
-    public DevoxxGenieSettingsManager() {
-        doubleConverter = new DoubleConverter();
-    }
 
     @Nls
     @Override
@@ -116,31 +81,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         googleSearchKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Google Web Search API Key :", settings.getGoogleSearchKey(), "https://developers.google.com/custom-search/docs/paid_element#api_key");
         googleCSIKeyField = addFieldWithLabelPasswordAndLinkButton(settingsPanel, gbc, "Google Custom Search Engine ID :", settings.getGoogleCSIKey(), "https://programmablesearchengine.google.com/controlpanel/create");
 
-        setTitle("LLM Parameters", settingsPanel, gbc);
-
-        chatMemorySizeField = addFormattedFieldWithLabel(settingsPanel, gbc, "Chat memory size:", settings.getTemperature());
-        temperatureField = addFormattedFieldWithLabel(settingsPanel, gbc, "Temperature:", settings.getTemperature());
-        topPField = addFormattedFieldWithLabel(settingsPanel, gbc, "Top-P:", settings.getTopP());
-        maxOutputTokensField = addTextFieldWithLabel(settingsPanel, gbc, "Maximum output tokens :", settings.getMaxOutputTokens());
-        timeoutField = addFormattedFieldWithLabel(settingsPanel, gbc, "Timeout (in secs):", settings.getTimeout());
-        retryField = addFormattedFieldWithLabel(settingsPanel, gbc, "Maximum retries :", settings.getMaxRetries());
-        streamModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable Stream Mode (Beta)", settings.getStreamMode(),
-            "Streaming response does not support (yet) copy code buttons to clipboard", false);
-
-        setTitle("Abstract Syntax Tree Config", settingsPanel, gbc);
-        astModeCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Enable AST Mode (Beta)", settings.getAstMode(),
-            "Enable Abstract Syntax Tree mode for code generation, results in including related classes in the prompt.", false);
-        astParentClassCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include project parent class(es)", settings.getAstParentClass(), "", true);
-        astReferenceClassesCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include class references", settings.getAstClassReference(), "", true);
-        astReferenceFieldCheckBox = addCheckBoxWithLabel(settingsPanel, gbc, "Include field references", settings.getAstFieldReference(), "", true);
-
-        astModeCheckBox.addItemListener(e -> {
-            boolean selected = e.getStateChange() == ItemEvent.SELECTED;
-            astParentClassCheckBox.setEnabled(selected);
-            astReferenceClassesCheckBox.setEnabled(selected);
-            astReferenceFieldCheckBox.setEnabled(selected);
-        });
-
         hideSearchCheckBox.addItemListener(e -> {
             boolean selected = e.getStateChange() == ItemEvent.SELECTED;
             tavilySearchKeyField.setEnabled(!selected);
@@ -148,13 +88,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
             googleCSIKeyField.setEnabled(!selected);
         });
 
-        setTitle("The Prompts", settingsPanel, gbc);
-
-        systemPromptField = addTextAreaWithLabel(settingsPanel, gbc, "System prompt :", settings.getSystemPrompt());
-        testPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Test prompt :", settings.getTestPrompt());
-        explainPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Explain prompt :", settings.getExplainPrompt());
-        reviewPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Review prompt :", settings.getReviewPrompt());
-        customPromptField = addTextAreaWithLabel(settingsPanel, gbc, "Custom prompt :", settings.getCustomPrompt());
         return settingsPanel;
     }
 
@@ -183,46 +116,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         // Reset the constraints for the next component
         gbc.weighty = 0.0;
         resetGbc(gbc);
-    }
-
-    /**
-     * Add a text field with label
-     * @param panel the panel
-     * @param gbc   the gridbag constraints
-     * @param label the label
-     * @param value the value
-     * @return the text field
-     */
-    private @NotNull JTextField addTextFieldWithLabel(@NotNull JPanel panel,
-                                                      GridBagConstraints gbc,
-                                                      String label,
-                                                      String value) {
-        panel.add(new JLabel(label), gbc);
-        gbc.gridx++;
-        JTextField textField = new JTextField(value);
-        panel.add(textField, gbc);
-        resetGbc(gbc);
-        return textField;
-    }
-
-    /**
-     * Add a text area with label
-     * @param panel the panel
-     * @param gbc   the gridbag constraints
-     * @param label the label
-     * @param value the value
-     * @return the text field
-     */
-    private @NotNull JTextArea addTextAreaWithLabel(@NotNull JPanel panel,
-                                                     GridBagConstraints gbc,
-                                                     String label,
-                                                     String value) {
-        panel.add(new JLabel(label), gbc);
-        gbc.gridx++;
-        JTextArea textArea = new JTextArea(value, 3, 40);
-        panel.add(textArea, gbc);
-        resetGbc(gbc);
-        return textArea;
     }
 
     /**
@@ -312,28 +205,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
      * Add a formatted field with label
      *
      * @param panel the panel
-     * @param gbc   the gridbag constraints
-     * @param label the label
-     * @param value the value
-     * @return the formatted field
-     */
-    private @NotNull JFormattedTextField addFormattedFieldWithLabel(@NotNull JPanel panel,
-                                                                    GridBagConstraints gbc,
-                                                                    String label,
-                                                                    Number value) {
-        panel.add(new JLabel(label), gbc);
-        gbc.gridx++;
-        JFormattedTextField formattedField = new JFormattedTextField();
-        setValue(formattedField, value);
-        panel.add(formattedField, gbc);
-        resetGbc(gbc);
-        return formattedField;
-    }
-
-    /**
-     * Add a formatted field with label
-     *
-     * @param panel the panel
      * @param gbc   the grid bag constraints
      * @param label the label
      * @param value the value
@@ -386,18 +257,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(lmstudioUrlField, settings.getLmstudioModelUrl());
         isModified |= isFieldModified(gpt4allUrlField, settings.getGpt4allModelUrl());
         isModified |= isFieldModified(janUrlField, settings.getJanModelUrl());
-        isModified |= isFieldModified(temperatureField, Objects.requireNonNull(doubleConverter.toString(settings.getTemperature())));
-        isModified |= isFieldModified(topPField, Objects.requireNonNull(doubleConverter.toString(settings.getTopP())));
-        isModified |= isFieldModified(timeoutField, settings.getTimeout());
-        isModified |= isFieldModified(maxOutputTokensField, settings.getMaxOutputTokens());
-        isModified |= isFieldModified(retryField, settings.getMaxRetries());
-        isModified |= isFieldModified(chatMemorySizeField, settings.getChatMemorySize());
-
-        isModified |= !StringUtil.equals(systemPromptField.getText(), settings.getSystemPrompt());
-        isModified |= !StringUtil.equals(testPromptField.getText(), settings.getTestPrompt());
-        isModified |= !StringUtil.equals(explainPromptField.getText(), settings.getExplainPrompt());
-        isModified |= !StringUtil.equals(reviewPromptField.getText(), settings.getReviewPrompt());
-        isModified |= !StringUtil.equals(customPromptField.getText(), settings.getCustomPrompt());
 
         isModified |= isFieldModified(openAiKeyField, settings.getOpenAIKey());
         isModified |= isFieldModified(mistralKeyField, settings.getMistralKey());
@@ -410,12 +269,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         isModified |= isFieldModified(tavilySearchKeyField, settings.getTavilySearchKey());
         isModified |= isFieldModified(googleSearchKeyField, settings.getGoogleSearchKey());
         isModified |= isFieldModified(googleCSIKeyField, settings.getGoogleCSIKey());
-
-        isModified |= !settings.getStreamMode().equals(streamModeCheckBox.isSelected());
-        isModified |= !settings.getAstMode().equals(astModeCheckBox.isSelected());
-        isModified |= !settings.getAstParentClass().equals(astParentClassCheckBox.isSelected());
-        isModified |= !settings.getAstClassReference().equals(astReferenceClassesCheckBox.isSelected());
-        isModified |= !settings.getAstFieldReference().equals(astReferenceFieldCheckBox.isSelected());
 
         return isModified;
     }
@@ -451,44 +304,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         updateSettingIfModified(lmstudioUrlField, settings.getLmstudioModelUrl(), settings::setLmstudioModelUrl);
         updateSettingIfModified(gpt4allUrlField, settings.getGpt4allModelUrl(), settings::setGpt4allModelUrl);
         updateSettingIfModified(janUrlField, settings.getJanModelUrl(), settings::setJanModelUrl);
-        updateSettingIfModified(temperatureField, doubleConverter.toString(settings.getTemperature()), value -> settings.setTemperature(doubleConverter.fromString(value)));
-        updateSettingIfModified(topPField, doubleConverter.toString(settings.getTopP()), value -> settings.setTopP(doubleConverter.fromString(value)));
-        updateSettingIfModified(timeoutField, settings.getTimeout(), value -> settings.setTimeout(safeCastToInteger(value)));
-        updateSettingIfModified(retryField, settings.getMaxRetries(), value -> settings.setMaxRetries(safeCastToInteger(value)));
-        updateSettingIfModified(maxOutputTokensField, settings.getMaxOutputTokens(), settings::setMaxOutputTokens);
-
-        updateTextAreaIfModified(systemPromptField, settings.getSystemPrompt(), settings::setSystemPrompt);
-        updateTextAreaIfModified(testPromptField, settings.getTestPrompt(), settings::setTestPrompt);
-        updateTextAreaIfModified(explainPromptField, settings.getExplainPrompt(), settings::setExplainPrompt);
-        updateTextAreaIfModified(reviewPromptField, settings.getReviewPrompt(), settings::setReviewPrompt);
-        updateTextAreaIfModified(customPromptField, settings.getCustomPrompt(), settings::setCustomPrompt);
-
-        updateSettingIfModified(streamModeCheckBox, settings.getStreamMode(), value -> settings.setStreamMode(Boolean.parseBoolean(value)));
-
-        updateSettingIfModified(astModeCheckBox, settings.getAstMode(), value -> settings.setAstMode(Boolean.parseBoolean(value)));
-        updateSettingIfModified(astParentClassCheckBox, settings.getAstParentClass(), value -> settings.setAstParentClass(Boolean.parseBoolean(value)));
-        updateSettingIfModified(astReferenceClassesCheckBox, settings.getAstClassReference(), value -> settings.setAstClassReference(Boolean.parseBoolean(value)));
-        updateSettingIfModified(astReferenceFieldCheckBox, settings.getAstFieldReference(), value -> settings.setAstFieldReference(Boolean.parseBoolean(value)));
-
-        // Notify the listeners if the chat memory size has changed
-        if (updateSettingIfModified(chatMemorySizeField, settings.getChatMemorySize(), value -> settings.setChatMemorySize(safeCastToInteger(value)))) {
-            notifyChatMemorySizeChangeListeners();
-        }
-    }
-
-    /**
-     * Update the text area if the value has changed
-     * @param textArea     the text area
-     * @param currentValue the current value
-     * @param updateAction the update action
-     */
-    public void updateTextAreaIfModified(@NotNull JTextArea textArea,
-                                         Object currentValue,
-                                         Consumer<String> updateAction) {
-        String newValue = textArea.getText();
-        if (newValue != null && !newValue.equals(currentValue)) {
-            updateAction.accept(newValue);
-        }
     }
 
     /**
@@ -506,15 +321,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Notify the chat memory size change listeners
-     */
-    public void notifyChatMemorySizeChangeListeners() {
-        ApplicationManager.getApplication().getMessageBus()
-            .syncPublisher(AppTopics.CHAT_MEMORY_SIZE_TOPIC)
-            .onChatMemorySizeChanged(SettingsStateService.getInstance().getChatMemorySize());
     }
 
     /**
@@ -548,62 +354,6 @@ public class DevoxxGenieSettingsManager implements Configurable {
         gpt4allUrlField.setText(settingsState.getGpt4allModelUrl());
         janUrlField.setText(settingsState.getJanModelUrl());
 
-        chatMemorySizeField.setText(String.valueOf(settingsState.getChatMemorySize()));
-        testPromptField.setText(settingsState.getTestPrompt());
-        explainPromptField.setText(settingsState.getExplainPrompt());
-        reviewPromptField.setText(settingsState.getReviewPrompt());
-        customPromptField.setText(settingsState.getCustomPrompt());
-        maxOutputTokensField.setText(settingsState.getMaxOutputTokens());
-
-        streamModeCheckBox.setSelected(settingsState.getStreamMode());
-        astReferenceFieldCheckBox.setSelected(settingsState.getAstFieldReference());
-        astParentClassCheckBox.setSelected(settingsState.getAstParentClass());
-        astReferenceClassesCheckBox.setSelected(settingsState.getAstClassReference());
-
         hideSearchCheckBox.setSelected(settingsState.getHideSearchButtonsFlag());
-
-        setValue(temperatureField, settingsState.getTemperature());
-        setValue(topPField, settingsState.getTopP());
-        setValue(timeoutField, settingsState.getTimeout());
-        setValue(retryField, settingsState.getMaxRetries());
-        setValue(chatMemorySizeField, settingsState.getChatMemorySize());
-    }
-
-    /**
-     * Set the value of the field
-     * @param field the field
-     * @param value the value
-     */
-    private static void setValue(JFormattedTextField field, Number value) {
-        try {
-            NumberFormat format = NumberFormat.getInstance(Locale.getDefault());
-
-            if (value instanceof Double) {
-                if (format instanceof DecimalFormat) {
-                    ((DecimalFormat) format).applyPattern("#0.00");  // Ensures one decimal place in the display
-                }
-            } else {
-                format.setParseIntegerOnly(true);
-            }
-            field.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter(format)));
-            field.setValue(value);
-        } catch (IllegalArgumentException e) {
-            // Handle the case where the string cannot be parsed to a number
-            field.setValue(0);
-        }
-    }
-
-    /**
-     * Safely cast a string to an integer
-     *
-     * @param value the string value
-     * @return the integer value
-     */
-    private @NotNull Integer safeCastToInteger(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 }
