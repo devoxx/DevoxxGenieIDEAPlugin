@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.service.SettingsStateService;
 import com.intellij.openapi.options.Configurable;
@@ -12,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 
-public class DevoxxGeniePromptSettingsManager implements Configurable {
+public class PromptSettingsManager implements Configurable {
 
     private JTextArea systemPromptField;
     private JTextArea testPromptField;

@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
-public class DevoxxGenieLLMSettingsManager implements Configurable {
+public class LLMConfigManager implements Configurable {
 
     private final DoubleConverter doubleConverter;
 
@@ -44,7 +44,7 @@ public class DevoxxGenieLLMSettingsManager implements Configurable {
 
     private JCheckBox streamModeCheckBox;
 
-    public DevoxxGenieLLMSettingsManager() {
+    public LLMConfigManager() {
         doubleConverter = new DoubleConverter();
     }
 

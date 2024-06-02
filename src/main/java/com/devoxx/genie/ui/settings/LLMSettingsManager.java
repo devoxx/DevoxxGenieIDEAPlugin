@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
-public class DevoxxGenieSettingsManager implements Configurable {
+public class LLMSettingsManager implements Configurable {
 
     private JTextField ollamaUrlField;
     private JTextField lmstudioUrlField;
