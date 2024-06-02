@@ -189,16 +189,16 @@
         <projectConfigurable parentId="tools"
                              id="DevoxxGenie"
                              displayName="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.DevoxxGenieSettingsManager"/>
+                             instance="com.devoxx.genie.ui.settings.LLMSettingsManager"/>
 
         <projectConfigurable id="LLMSettings"
                              parentId="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.DevoxxGenieLLMSettingsManager"
+                             instance="com.devoxx.genie.ui.settings.LLMConfigManager"
                              displayName="LLM Settings"/>
 
         <projectConfigurable id="PromptSettings"
                              parentId="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.DevoxxGeniePromptSettingsManager"
+                             instance="com.devoxx.genie.ui.settings.PromptSettingsManager"
                              displayName="Prompts"/>
 
         <toolWindow id="DevoxxGenie"
