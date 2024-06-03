@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.openai;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -19,11 +19,11 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     public void setUp() throws Exception {
         super.setUp();
         // Mock SettingsState
-        SettingsStateService settingsStateMock = mock(SettingsStateService.class);
+        DevoxxGenieStateService settingsStateMock = mock(DevoxxGenieStateService.class);
         when(settingsStateMock.getOpenAIKey()).thenReturn("dummy-api-key");
 
         // Replace the service instance with the mock
-        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), SettingsStateService.class, settingsStateMock, getTestRootDisposable());
+        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
     }
 
     @Test
