@@ -2,11 +2,9 @@ package com.devoxx.genie.chatmodel.groq;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -42,7 +40,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getGroqKey().trim();
+        return DevoxxGenieStateService.getInstance().getGroqKey().trim();
     }
 
     @Override

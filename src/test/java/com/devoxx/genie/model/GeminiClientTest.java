@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.gemini.*;
 import com.devoxx.genie.model.gemini.model.Content;
 import com.devoxx.genie.model.gemini.model.Part;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import org.junit.Ignore;
