@@ -1,31 +1,35 @@
 package com.devoxx.genie.ui.settings.prompt;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.intellij.util.ui.FormBuilder;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
 import com.intellij.ui.components.JBLabel;
 import javax.swing.*;
 
-public class PromptSettingsComponent {
+public class PromptSettingsComponent implements SettingsComponent {
 
-    public PromptSettingsStateService promptSettingsStateService = PromptSettingsStateService.getInstance();
-
-    @Getter
-    private final JTextArea systemPromptField = new JTextArea(promptSettingsStateService.getSystemPrompt());
-    @Getter
-    private final JTextArea testPromptField = new JTextArea(promptSettingsStateService.getTestPrompt());
-    @Getter
-    private final JTextArea explainPromptField = new JTextArea(promptSettingsStateService.getExplainPrompt());
-    @Getter
-    private final JTextArea reviewPromptField = new JTextArea(promptSettingsStateService.getReviewPrompt());
-    @Getter
-    private final JTextArea customPromptField = new JTextArea(promptSettingsStateService.getCustomPrompt());
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     @Getter
-    private final JPanel panel;
+    private final JTextArea systemPromptField = new JTextArea(stateService.getSystemPrompt());
+    @Getter
+    private final JTextArea testPromptField = new JTextArea(stateService.getTestPrompt());
+    @Getter
+    private final JTextArea explainPromptField = new JTextArea(stateService.getExplainPrompt());
+    @Getter
+    private final JTextArea reviewPromptField = new JTextArea(stateService.getReviewPrompt());
+    @Getter
+    private final JTextArea customPromptField = new JTextArea(stateService.getCustomPrompt());
 
     public PromptSettingsComponent() {
-        panel = FormBuilder.createFormBuilder()
+        addListeners();
+    }
+
+    @Override
+    public JPanel createSettingsPanel() {
+        return FormBuilder.createFormBuilder()
             .addComponent(new JXTitledSeparator("Prompts"))
             .addVerticalGap(5)
             .addLabeledComponentFillVertically(
@@ -37,7 +41,7 @@ public class PromptSettingsComponent {
                 testPromptField,
                 10,
                 true
-                )
+            )
             .addLabeledComponent(
                 new JBLabel("Explain Prompt"),
                 explainPromptField,
@@ -57,5 +61,10 @@ public class PromptSettingsComponent {
                 true
             )
             .getPanel();
+    }
+
+    @Override
+    public void addListeners() {
+
     }
 }

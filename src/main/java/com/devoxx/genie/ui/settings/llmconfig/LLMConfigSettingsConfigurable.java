@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -8,7 +9,11 @@ import javax.swing.*;
 
 public class LLMConfigSettingsConfigurable implements Configurable {
 
-    private final LLMConfigSettingsComponent llmConfigSettingsComponent = new LLMConfigSettingsComponent();
+    private final LLMConfigSettingsComponent llmConfigSettingsComponent;
+
+    public LLMConfigSettingsConfigurable() {
+        llmConfigSettingsComponent = new LLMConfigSettingsComponent();
+    }
 
     /**
      * Get the display name
@@ -27,7 +32,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmConfigSettingsComponent.getPanel();
+        return llmConfigSettingsComponent.createSettingsPanel();
     }
 
     /**
@@ -36,21 +41,21 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
-        isModified |= ((Double)llmConfigSettingsComponent.getTemperatureField().getValue()) != settingsState.getTemperature();
-        isModified |= ((Double)llmConfigSettingsComponent.getTopPField().getValue()) != settingsState.getTopP();
-        isModified |= llmConfigSettingsComponent.getMaxOutputTokensField().getNumber() != settingsState.getMaxOutputTokens();
-        isModified |= llmConfigSettingsComponent.getChatMemorySizeField().getNumber() != settingsState.getChatMemorySize();
-        isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != settingsState.getTimeout();
-        isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != settingsState.getMaxRetries();
+        isModified |= llmConfigSettingsComponent.getTemperatureField().getValue() != stateService.getTemperature();
+        isModified |= llmConfigSettingsComponent.getTopPField().getValue() != stateService.getTopP();
+        isModified |= llmConfigSettingsComponent.getMaxOutputTokensField().getNumber() != stateService.getMaxOutputTokens();
+        isModified |= llmConfigSettingsComponent.getChatMemorySizeField().getNumber() != stateService.getChatMemorySize();
+        isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != stateService.getTimeout();
+        isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != stateService.getMaxRetries();
 
-        isModified |= !settingsState.getAstMode().equals(llmConfigSettingsComponent.getAstMode().isSelected());
-        isModified |= !settingsState.getAstParentClass().equals(llmConfigSettingsComponent.getAstParentClassCheckBox().isSelected());
-        isModified |= !settingsState.getAstClassReference().equals(llmConfigSettingsComponent.getAstReferenceClassesCheckBox().isSelected());
-        isModified |= !settingsState.getAstFieldReference().equals(llmConfigSettingsComponent.getAstReferenceFieldCheckBox().isSelected());
+        isModified |= !stateService.getAstMode().equals(llmConfigSettingsComponent.getAstMode().isSelected());
+        isModified |= !stateService.getAstParentClass().equals(llmConfigSettingsComponent.getAstParentClassCheckBox().isSelected());
+        isModified |= !stateService.getAstClassReference().equals(llmConfigSettingsComponent.getAstReferenceClassesCheckBox().isSelected());
+        isModified |= !stateService.getAstFieldReference().equals(llmConfigSettingsComponent.getAstReferenceFieldCheckBox().isSelected());
         return isModified;
     }
     /**
@@ -58,15 +63,15 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        settingsState.setTemperature(((Double)llmConfigSettingsComponent.getTemperatureField().getValue()));
-        settingsState.setTopP(((Double)llmConfigSettingsComponent.getTopPField().getValue()));
+        stateService.setTemperature(((Double)llmConfigSettingsComponent.getTemperatureField().getValue()));
+        stateService.setTopP(((Double)llmConfigSettingsComponent.getTopPField().getValue()));
 
-        settingsState.setChatMemorySize(llmConfigSettingsComponent.getChatMemorySizeField().getNumber());
-        settingsState.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());
-        settingsState.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
-        settingsState.setMaxRetries(llmConfigSettingsComponent.getRetryField().getNumber());
+        stateService.setChatMemorySize(llmConfigSettingsComponent.getChatMemorySizeField().getNumber());
+        stateService.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());
+        stateService.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
+        stateService.setMaxRetries(llmConfigSettingsComponent.getRetryField().getNumber());
     }
 
     /**
@@ -74,14 +79,14 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        llmConfigSettingsComponent.getTemperatureField().setValue(settingsState.getTemperature());
-        llmConfigSettingsComponent.getTopPField().setValue(settingsState.getTopP());
+        llmConfigSettingsComponent.getTemperatureField().setValue(stateService.getTemperature());
+        llmConfigSettingsComponent.getTopPField().setValue(stateService.getTopP());
 
-        llmConfigSettingsComponent.getMaxOutputTokensField().setNumber(settingsState.getMaxOutputTokens());
-        llmConfigSettingsComponent.getChatMemorySizeField().setNumber(settingsState.getChatMemorySize());
-        llmConfigSettingsComponent.getTimeoutField().setNumber(settingsState.getTimeout());
-        llmConfigSettingsComponent.getRetryField().setNumber(settingsState.getMaxRetries());
+        llmConfigSettingsComponent.getMaxOutputTokensField().setNumber(stateService.getMaxOutputTokens());
+        llmConfigSettingsComponent.getChatMemorySizeField().setNumber(stateService.getChatMemorySize());
+        llmConfigSettingsComponent.getTimeoutField().setNumber(stateService.getTimeout());
+        llmConfigSettingsComponent.getRetryField().setNumber(stateService.getMaxRetries());
     }
 }

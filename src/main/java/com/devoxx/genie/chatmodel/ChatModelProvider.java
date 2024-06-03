@@ -13,7 +13,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.settings.llmconfig.LLMConfigStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
@@ -83,13 +83,13 @@ public class ChatModelProvider {
      */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = new ChatModel();
-        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
-        setMaxOutputTokens(settingsState, chatModel);
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        setMaxOutputTokens(stateService, chatModel);
 
-        chatModel.setTemperature(settingsState.getTemperature());
-        chatModel.setMaxRetries(settingsState.getMaxRetries());
-        chatModel.setTopP(settingsState.getTopP());
-        chatModel.setTimeout(settingsState.getTimeout());
+        chatModel.setTemperature(stateService.getTemperature());
+        chatModel.setMaxRetries(stateService.getMaxRetries());
+        chatModel.setTopP(stateService.getTopP());
+        chatModel.setTimeout(stateService.getTimeout());
         chatModel.setModelName(chatMessageContext.getModelName());
         return chatModel;
     }
@@ -101,7 +101,7 @@ public class ChatModelProvider {
      * @param settingsState the settings state
      * @param chatModel     the chat model
      */
-    private static void setMaxOutputTokens(@NotNull LLMConfigStateService settingsState, ChatModel chatModel) {
+    private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState, ChatModel chatModel) {
         Integer maxOutputTokens = settingsState.getMaxOutputTokens();
         if (maxOutputTokens == null) {
             chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);

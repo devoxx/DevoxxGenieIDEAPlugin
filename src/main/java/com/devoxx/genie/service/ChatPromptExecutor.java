@@ -2,8 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.settings.llm.LLMStateService;
-import com.devoxx.genie.ui.settings.prompt.PromptSettingsStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -39,7 +38,7 @@ public class ChatPromptExecutor {
                 if (chatMessageContext.getContext() != null && chatMessageContext.getContext().toLowerCase().contains("search")) {
                     webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
-                    if (LLMStateService.getInstance().getStreamMode()) {
+                    if (DevoxxGenieStateService.getInstance().getStreamMode()) {
                         setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
                     } else {
                         runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
@@ -99,7 +98,7 @@ public class ChatPromptExecutor {
         MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
         if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(new SystemMessage(PromptSettingsStateService.getInstance().getSystemPrompt()));
+            chatMemoryService.add(new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt()));
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
@@ -124,13 +123,13 @@ public class ChatPromptExecutor {
         if (prompt.startsWith("/")) {
 
             if (prompt.equalsIgnoreCase("/test")) {
-                prompt = PromptSettingsStateService.getInstance().getTestPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getTestPrompt();
             } else if (prompt.equalsIgnoreCase("/review")) {
-                prompt = PromptSettingsStateService.getInstance().getReviewPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getReviewPrompt();
             } else if (prompt.equalsIgnoreCase("/explain")) {
-                prompt = PromptSettingsStateService.getInstance().getExplainPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getExplainPrompt();
             } else if (prompt.equalsIgnoreCase("/custom")) {
-                prompt = PromptSettingsStateService.getInstance().getCustomPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getCustomPrompt();
             } else {
                 promptOutputPanel.showHelpText();
                 return Optional.empty();

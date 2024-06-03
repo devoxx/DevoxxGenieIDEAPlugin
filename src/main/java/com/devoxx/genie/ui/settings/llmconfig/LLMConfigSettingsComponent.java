@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.FormBuilder;
@@ -9,38 +11,38 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import javax.swing.*;
 import java.awt.event.ItemEvent;
 
-public class LLMConfigSettingsComponent {
+public class LLMConfigSettingsComponent implements SettingsComponent {
 
-    public LLMConfigStateService llmConfigStateService = LLMConfigStateService.getInstance();
-
-    @Getter
-    private final JPanel panel;
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     @Getter
-    private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(llmConfigStateService.getChatMemorySize(), 1, 100));
+    private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(stateService.getChatMemorySize(), 1, 100));
     @Getter
-    private final JSpinner temperatureField = new JSpinner(new SpinnerNumberModel(llmConfigStateService.getTemperature().doubleValue(), 0.0d, 1.0d, 0.1d));
+    private final JSpinner temperatureField = new JSpinner(new SpinnerNumberModel(stateService.getTemperature().doubleValue(), 0.0d, 1.0d, 0.1d));
     @Getter
-    private final JSpinner topPField = new JSpinner(new SpinnerNumberModel(llmConfigStateService.getTopP().doubleValue(), 0.0d, 1.0d, 0.1d));
+    private final JSpinner topPField = new JSpinner(new SpinnerNumberModel(stateService.getTopP().doubleValue(), 0.0d, 1.0d, 0.1d));
     @Getter
-    private final JBIntSpinner maxOutputTokensField = new JBIntSpinner(new UINumericRange(llmConfigStateService.getMaxOutputTokens(), 1, 1_000_000));
+    private final JBIntSpinner maxOutputTokensField = new JBIntSpinner(new UINumericRange(stateService.getMaxOutputTokens(), 1, 1_000_000));
     @Getter
-    private final JBIntSpinner timeoutField = new JBIntSpinner(new UINumericRange(llmConfigStateService.getTimeout(), 1, 60));
+    private final JBIntSpinner timeoutField = new JBIntSpinner(new UINumericRange(stateService.getTimeout(), 1, 60));
     @Getter
-    private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(llmConfigStateService.getMaxRetries(), 1, 5));
+    private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(stateService.getMaxRetries(), 1, 5));
     @Getter
-    private final JCheckBox astMode = new JCheckBox("", llmConfigStateService.getAstMode());
+    private final JCheckBox astMode = new JCheckBox("", stateService.getAstMode());
     @Getter
-    private final JCheckBox astParentClassCheckBox = new JCheckBox("", llmConfigStateService.getAstParentClass());
+    private final JCheckBox astParentClassCheckBox = new JCheckBox("", stateService.getAstParentClass());
     @Getter
-    private final JCheckBox astReferenceClassesCheckBox = new JCheckBox("", llmConfigStateService.getAstClassReference());
+    private final JCheckBox astReferenceClassesCheckBox = new JCheckBox("", stateService.getAstClassReference());
     @Getter
-    private final JCheckBox astReferenceFieldCheckBox = new JCheckBox("", llmConfigStateService.getAstFieldReference());
-
+    private final JCheckBox astReferenceFieldCheckBox = new JCheckBox("", stateService.getAstFieldReference());
 
     public LLMConfigSettingsComponent() {
+        addListeners();
+    }
 
-        panel = FormBuilder.createFormBuilder()
+    @Override
+    public JPanel createSettingsPanel() {
+        return FormBuilder.createFormBuilder()
             .addComponent(new JXTitledSeparator("Local Large Language Models"))
             .addVerticalGap(5)
             .addComponent(new JLabel("Chat Memory Size"))
@@ -77,7 +79,10 @@ public class LLMConfigSettingsComponent {
             .addComponent(new JLabel("Include Field References"))
             .addComponent(astReferenceFieldCheckBox)
             .getPanel();
+    }
 
+    @Override
+    public void addListeners() {
         astMode.addItemListener(e -> {
             boolean selected = e.getStateChange() == ItemEvent.SELECTED;
             astParentClassCheckBox.setEnabled(selected);

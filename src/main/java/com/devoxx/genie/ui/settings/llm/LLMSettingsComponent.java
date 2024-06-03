@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
@@ -13,49 +15,51 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 
-public class LLMSettingsComponent {
+public class LLMSettingsComponent implements SettingsComponent {
 
-    public LLMStateService llmStateService = LLMStateService.getInstance();
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     public static final String LINK_EMOJI = "\uD83D\uDD17";
     public static final String PASSWORD_EMOJI = "\uD83D\uDD11";
 
     @Getter
-    private final JTextField ollamaModelUrlField = new JTextField(llmStateService.getOllamaModelUrl());
+    private final JTextField ollamaModelUrlField = new JTextField(stateService.getOllamaModelUrl());
     @Getter
-    private final JTextField lmStudioModelUrlField = new JTextField(llmStateService.getLmstudioModelUrl());
+    private final JTextField lmStudioModelUrlField = new JTextField(stateService.getLmstudioModelUrl());
     @Getter
-    private final JTextField gpt4AllModelUrlField = new JTextField(llmStateService.getGpt4allModelUrl());
+    private final JTextField gpt4AllModelUrlField = new JTextField(stateService.getGpt4allModelUrl());
     @Getter
-    private final JTextField janModelUrlField = new JTextField(llmStateService.getJanModelUrl());
+    private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
-    private final JPasswordField openAIKeyField = new JPasswordField(llmStateService.getOpenAIKey());
+    private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
-    private final JPasswordField mistralApiKeyField = new JPasswordField(llmStateService.getMistralKey());
+    private final JPasswordField mistralApiKeyField = new JPasswordField(stateService.getMistralKey());
     @Getter
-    private final JPasswordField anthropicApiKeyField = new JPasswordField(llmStateService.getAnthropicKey());
+    private final JPasswordField anthropicApiKeyField = new JPasswordField(stateService.getAnthropicKey());
     @Getter
-    private final JPasswordField groqApiKeyField = new JPasswordField(llmStateService.getGroqKey());
+    private final JPasswordField groqApiKeyField = new JPasswordField(stateService.getGroqKey());
     @Getter
-    private final JPasswordField deepInfraApiKeyField = new JPasswordField(llmStateService.getDeepInfraKey());
+    private final JPasswordField deepInfraApiKeyField = new JPasswordField(stateService.getDeepInfraKey());
     @Getter
-    private final JPasswordField geminiApiKeyField = new JPasswordField(llmStateService.getGeminiKey());
+    private final JPasswordField geminiApiKeyField = new JPasswordField(stateService.getGeminiKey());
     @Getter
-    private final JCheckBox hideSearchButtonsField = new JCheckBox("", llmStateService.getHideSearchButtonsFlag());
+    private final JCheckBox hideSearchButtonsField = new JCheckBox("", stateService.getHideSearchButtonsFlag());
     @Getter
-    private final JPasswordField tavilySearchApiKeyField = new JPasswordField(llmStateService.getTavilySearchKey());
+    private final JPasswordField tavilySearchApiKeyField = new JPasswordField(stateService.getTavilySearchKey());
     @Getter
-    private final JPasswordField googleSearchApiKeyField = new JPasswordField(llmStateService.getGoogleSearchKey());
+    private final JPasswordField googleSearchApiKeyField = new JPasswordField(stateService.getGoogleSearchKey());
     @Getter
-    private final JPasswordField googleCSIApiKeyField = new JPasswordField(llmStateService.getGoogleCSIKey());
+    private final JPasswordField googleCSIApiKeyField = new JPasswordField(stateService.getGoogleCSIKey());
     @Getter
-    private final JCheckBox streamModeCheckBox = new JCheckBox("", llmStateService.getStreamMode());
-
-    @Getter
-    private final JPanel panel;
+    private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
     public LLMSettingsComponent() {
-        panel = FormBuilder.createFormBuilder()
+        addListeners();
+    }
+
+    @Override
+    public JPanel createSettingsPanel() {
+        return FormBuilder.createFormBuilder()
             .addComponent(new JXTitledSeparator("Local Large Language Response"))
             .addVerticalGap(5)
             .addComponent(new JLabel("Enable Stream Mode (Beta)"))
@@ -98,7 +102,10 @@ public class LLMSettingsComponent {
             .addComponent(new JLabel("Hide Search Providers"))
             .addComponent(hideSearchButtonsField)
             .getPanel();
+    }
 
+    @Override
+    public void addListeners() {
         hideSearchButtonsField.addItemListener(e -> {
             boolean selected = e.getStateChange() == ItemEvent.SELECTED;
             tavilySearchApiKeyField.setEnabled(!selected);
@@ -142,5 +149,4 @@ public class LLMSettingsComponent {
         jPanel.add(btnApiKey, BorderLayout.EAST);
         return jPanel;
     }
-
 }

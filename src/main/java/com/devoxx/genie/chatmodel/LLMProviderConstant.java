@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.ui.settings.llm.LLMStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -32,14 +32,14 @@ public class LLMProviderConstant {
     };
 
     public static @NotNull List<String> getLLMProviders() {
-        LLMStateService settingState = LLMStateService.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
-        providerKeyMap.put(OpenAI.getName(), settingState::getOpenAIKey);
-        providerKeyMap.put(Anthropic.getName(), settingState::getAnthropicKey);
-        providerKeyMap.put(Mistral.getName(), settingState::getMistralKey);
-        providerKeyMap.put(Groq.getName(), settingState::getGroqKey);
-        providerKeyMap.put(DeepInfra.getName(), settingState::getDeepInfraKey);
-        providerKeyMap.put(Gemini.getName(), settingState::getGeminiKey);
+        providerKeyMap.put(OpenAI.getName(), settings::getOpenAIKey);
+        providerKeyMap.put(Anthropic.getName(), settings::getAnthropicKey);
+        providerKeyMap.put(Mistral.getName(), settings::getMistralKey);
+        providerKeyMap.put(Groq.getName(), settings::getGroqKey);
+        providerKeyMap.put(DeepInfra.getName(), settings::getDeepInfraKey);
+        providerKeyMap.put(Gemini.getName(), settings::getGeminiKey);
 
         // Filter out cloud LLM providers that do not have a key
         var providers = Stream.of(llmProvidersWithKey)

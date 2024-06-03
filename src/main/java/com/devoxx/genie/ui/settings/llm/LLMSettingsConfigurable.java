@@ -1,6 +1,10 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,7 +14,11 @@ import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class LLMSettingsConfigurable implements Configurable {
 
-    private final LLMSettingsComponent llmSettingsComponent = new LLMSettingsComponent();
+    private final LLMSettingsComponent llmSettingsComponent;
+
+    public LLMSettingsConfigurable() {
+        llmSettingsComponent = new LLMSettingsComponent();
+    }
 
     /**
      * Get the display name
@@ -29,7 +37,7 @@ public class LLMSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmSettingsComponent.getPanel();
+        return llmSettingsComponent.createSettingsPanel();
     }
 
     /**
@@ -38,14 +46,11 @@ public class LLMSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        LLMStateService settings = LLMStateService.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
-        isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), settings.getGpt4allModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), settings.getJanModelUrl());
+        isModified |= !settings.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
         isModified |= isFieldModified(llmSettingsComponent.getOpenAIKeyField(), settings.getOpenAIKey());
         isModified |= isFieldModified(llmSettingsComponent.getMistralApiKeyField(), settings.getMistralKey());
@@ -54,13 +59,27 @@ public class LLMSettingsConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), settings.getDeepInfraKey());
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
 
-        isModified |= !settings.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
+        isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), settings.getGpt4allModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), settings.getJanModelUrl());
 
         isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
+        llmSettingsComponent.getHideSearchButtonsField().addItemListener(event -> {
+            String text = llmSettingsComponent.getHideSearchButtonsField().getText();
+            settings.setHideSearchButtonsFlag(text.equals("true"));
+        });
+
         isModified |= isFieldModified(llmSettingsComponent.getTavilySearchApiKeyField(), settings.getTavilySearchKey());
         isModified |= isFieldModified(llmSettingsComponent.getGoogleSearchApiKeyField(), settings.getGoogleSearchKey());
         isModified |= isFieldModified(llmSettingsComponent.getGoogleCSIApiKeyField(), settings.getGoogleCSIKey());
+
         return isModified;
+    }
+
+    private void notifySettingsChanged() {
+        MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+        messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged();
     }
 
     /**
@@ -68,7 +87,11 @@ public class LLMSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        LLMStateService settings = LLMStateService.getInstance();
+        boolean isModified = isModified();
+
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
         settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
         settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
@@ -86,6 +109,11 @@ public class LLMSettingsConfigurable implements Configurable {
         settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
         settings.setGoogleSearchKey(new String(llmSettingsComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
+
+        // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
+        if (isModified) {
+            notifySettingsChanged();
+        }
     }
 
     /**
@@ -93,7 +121,9 @@ public class LLMSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        LLMStateService settings = LLMStateService.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
 
         llmSettingsComponent.getOllamaModelUrlField().setText(settings.getOllamaModelUrl());
         llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
@@ -111,6 +141,5 @@ public class LLMSettingsConfigurable implements Configurable {
         llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
         llmSettingsComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
         llmSettingsComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
-
     }
 }
