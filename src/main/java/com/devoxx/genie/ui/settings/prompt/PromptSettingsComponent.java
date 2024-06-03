@@ -1,16 +1,11 @@
 package com.devoxx.genie.ui.settings.prompt;
 
-import com.devoxx.genie.service.settings.PromptSettingsStateService;
-import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.intellij.openapi.options.Configurable;
+import com.devoxx.genie.service.settings.prompts.PromptSettingsStateService;
 import com.intellij.util.ui.FormBuilder;
-import com.intellij.util.ui.JBUI;
 import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
-
+import org.jdesktop.swingx.JXTitledSeparator;
+import com.intellij.ui.components.JBLabel;
 import javax.swing.*;
-import java.awt.*;
-import java.util.function.Consumer;
 
 public class PromptSettingsComponent {
 
@@ -32,16 +27,36 @@ public class PromptSettingsComponent {
 
     public PromptSettingsComponent() {
         panel = FormBuilder.createFormBuilder()
-            .addComponent(new JLabel("System prompt :"))
-            .addComponent(systemPromptField)
-            .addComponent(new JLabel("Test prompt :"))
-            .addComponent(testPromptField)
-            .addComponent(new JLabel("Explain prompt :"))
-            .addComponent(explainPromptField)
-            .addComponent(new JLabel("Review prompt :"))
-            .addComponent(reviewPromptField)
-            .addComponent(new JLabel("Custom prompt :"))
-            .addComponent(customPromptField)
+            .addComponent(new JXTitledSeparator("Prompts"))
+            .addVerticalGap(5)
+            .addLabeledComponentFillVertically(
+                "System Prompt",
+                systemPromptField
+            )
+            .addLabeledComponent(
+                new JBLabel("Test Prompt"),
+                testPromptField,
+                10,
+                true
+                )
+            .addLabeledComponent(
+                new JBLabel("Explain Prompt"),
+                explainPromptField,
+                10,
+                true
+            )
+            .addLabeledComponent(
+                new JBLabel("Review Prompt"),
+                reviewPromptField,
+                10,
+                true
+            )
+            .addLabeledComponent(
+                new JBLabel("Custom Prompt"),
+                customPromptField,
+                10,
+                true
+            )
             .getPanel();
     }
 }

@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.settings;
+package com.devoxx.genie.service.settings.prompts;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -21,16 +21,16 @@ import static com.devoxx.genie.model.Constant.*;
 )
 public final class PromptSettingsStateService implements PersistentStateComponent<PromptSettingsStateService> {
 
-    public static PromptSettingsStateService getInstance() {
-        return ApplicationManager.getApplication().getService(PromptSettingsStateService.class);
-    }
-
     // Prompt fields
     private String systemPrompt = SYSTEM_PROMPT;
     private String testPrompt = TEST_PROMPT;
     private String reviewPrompt = REVIEW_PROMPT;
     private String explainPrompt = EXPLAIN_PROMPT;
     private String customPrompt = CUSTOM_PROMPT;
+
+    public static PromptSettingsStateService getInstance() {
+        return ApplicationManager.getApplication().getService(PromptSettingsStateService.class);
+    }
 
     @Override
     public PromptSettingsStateService getState() {
