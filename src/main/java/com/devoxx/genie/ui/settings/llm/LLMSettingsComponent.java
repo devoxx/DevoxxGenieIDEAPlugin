@@ -146,7 +146,7 @@ public class LLMSettingsComponent implements SettingsComponent {
                 NotificationUtil.sendNotification(project, "Error: Unable to open the link");
             }
         });
-        jPanel.add(btnApiKey, BorderLayout.EAST);
+        jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
     }
 }
