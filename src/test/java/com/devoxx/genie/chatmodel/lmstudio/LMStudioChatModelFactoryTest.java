@@ -1,7 +1,7 @@
 package com.devoxx.genie.chatmodel.lmstudio;
 
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;

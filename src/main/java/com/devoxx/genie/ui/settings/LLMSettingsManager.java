@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;

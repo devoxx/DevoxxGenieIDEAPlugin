@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.google.gson.Gson;
 import com.intellij.openapi.application.ApplicationManager;
 import okhttp3.OkHttpClient;

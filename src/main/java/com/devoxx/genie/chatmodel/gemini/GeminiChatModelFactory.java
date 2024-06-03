@@ -3,7 +3,7 @@ package com.devoxx.genie.chatmodel.gemini;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 

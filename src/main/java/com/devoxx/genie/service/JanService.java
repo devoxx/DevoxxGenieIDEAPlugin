@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.model.jan.ResponseDTO;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

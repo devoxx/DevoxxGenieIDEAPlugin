@@ -1,7 +1,7 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -11,7 +11,6 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;

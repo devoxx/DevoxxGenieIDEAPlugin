@@ -13,7 +13,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;

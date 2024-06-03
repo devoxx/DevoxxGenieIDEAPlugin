@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;

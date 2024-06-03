@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.ui.components.JBPanel;
