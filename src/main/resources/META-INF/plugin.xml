@@ -189,7 +189,7 @@
         <projectConfigurable parentId="tools"
                              id="DevoxxGenie"
                              displayName="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.LLMSettingsManager"/>
+                             instance="com.devoxx.genie.ui.settings.llm.LLMSettingsConfigurable"/>
 
         <projectConfigurable id="LLMSettings"
                              parentId="DevoxxGenie"

@@ -1,5 +1,6 @@
-package com.devoxx.genie.ui.settings.prompt;
+package com.devoxx.genie.ui.settings.llmconfig;
 
+import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.service.settings.prompts.PromptSettingsStateService;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.util.text.StringUtil;
@@ -10,9 +11,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.util.function.Consumer;
 
-public class PromptSettingsConfigurable implements Configurable {
+public class LLMConfigSettingsConfigurable implements Configurable {
 
-    private final PromptSettingsComponent promptSettingsComponent = new PromptSettingsComponent();
+    private final LLMConfigSettingsComponent promptSettingsComponent = new LLMConfigSettingsComponent();
 
     /**
      * Get the display name
@@ -58,7 +59,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        PromptSettingsStateService settings = PromptSettingsStateService.getInstance();
+        SettingsStateService settings = SettingsStateService.getInstance();
         updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getTestPromptField(), settings.getTestPrompt(), settings::setTestPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getExplainPromptField(), settings.getExplainPrompt(), settings::setExplainPrompt);
@@ -71,7 +72,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        PromptSettingsStateService settingsState = PromptSettingsStateService.getInstance();
+        SettingsStateService settingsState = SettingsStateService.getInstance();
         promptSettingsComponent.getSystemPromptField().setText(settingsState.getSystemPrompt());
         promptSettingsComponent.getTestPromptField().setText(settingsState.getTestPrompt());
         promptSettingsComponent.getExplainPromptField().setText(settingsState.getExplainPrompt());
