@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
-import com.devoxx.genie.ui.settings.llm.LLMStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -23,7 +23,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OllamaChatModel.builder()
-            .baseUrl(LLMStateService.getInstance().getOllamaModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getOllamaModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -35,7 +35,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return OllamaStreamingChatModel.builder()
-            .baseUrl(LLMStateService.getInstance().getOllamaModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getOllamaModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())

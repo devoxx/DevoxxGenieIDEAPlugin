@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.settings.llm;
+package com.devoxx.genie.ui.settings;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -19,10 +19,10 @@ import static com.devoxx.genie.model.Constant.*;
     name = "com.devoxx.genie.ui.SettingsState",
     storages = @Storage("DevoxxGenieSettingsPlugin.xml")
 )
-public final class LLMStateService implements PersistentStateComponent<LLMStateService> {
+public final class DevoxxGenieStateService implements PersistentStateComponent<DevoxxGenieStateService> {
 
-    public static LLMStateService getInstance() {
-        return ApplicationManager.getApplication().getService(LLMStateService.class);
+    public static DevoxxGenieStateService getInstance() {
+        return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
 
     // Local LLM URL fields
@@ -45,19 +45,41 @@ public final class LLMStateService implements PersistentStateComponent<LLMStateS
     private String googleCSIKey = "";
     private String tavilySearchKey = "";
 
+    // Last selected LLM provider and model name
     private String lastSelectedProvider = "";
     private String lastSelectedModel = "";
 
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;
 
+    // LLM settings
+    private Double temperature = TEMPERATURE;
+    private Double topP = TOP_P;
+
+    private Integer timeout = TIMEOUT;
+    private Integer maxRetries = MAX_RETRIES;
+    private Integer chatMemorySize = MAX_MEMORY;
+    private Integer maxOutputTokens = MAX_OUTPUT_TOKENS;
+
+    // Enable AST mode
+    private Boolean astMode = AST_MODE;
+    private Boolean astParentClass = AST_PARENT_CLASS;
+    private Boolean astClassReference = AST_CLASS_REFERENCE;
+    private Boolean astFieldReference = AST_FIELD_REFERENCE;
+
+    private String systemPrompt = SYSTEM_PROMPT;
+    private String testPrompt = TEST_PROMPT;
+    private String reviewPrompt = REVIEW_PROMPT;
+    private String explainPrompt = EXPLAIN_PROMPT;
+    private String customPrompt = CUSTOM_PROMPT;
+
     @Override
-    public LLMStateService getState() {
+    public DevoxxGenieStateService getState() {
         return this;
     }
 
     @Override
-    public void loadState(@NotNull LLMStateService state) {
+    public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
     }
 }

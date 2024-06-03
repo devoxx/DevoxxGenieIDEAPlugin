@@ -1,8 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.settings.llm.LLMStateService;
-import com.devoxx.genie.ui.settings.llmconfig.LLMConfigStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -101,7 +100,7 @@ public class MessageCreationService {
 
         appendIfNotEmpty(sb, chatMessageContext.getEditorInfo().getSelectedText());
 
-        if (LLMConfigStateService.getInstance().getAstMode()) {
+        if (DevoxxGenieStateService.getInstance().getAstMode()) {
             addASTContext(chatMessageContext, sb);
         }
 

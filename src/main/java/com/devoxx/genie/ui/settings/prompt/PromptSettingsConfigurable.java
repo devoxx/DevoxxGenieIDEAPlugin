@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.prompt;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
@@ -11,7 +12,11 @@ import java.util.function.Consumer;
 
 public class PromptSettingsConfigurable implements Configurable {
 
-    private final PromptSettingsComponent promptSettingsComponent = new PromptSettingsComponent();
+    private final PromptSettingsComponent promptSettingsComponent;
+
+    public PromptSettingsConfigurable() {
+        promptSettingsComponent = new PromptSettingsComponent();
+    }
 
     /**
      * Get the display name
@@ -30,7 +35,7 @@ public class PromptSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return promptSettingsComponent.getPanel();
+        return promptSettingsComponent.createSettingsPanel();
     }
 
     /**
@@ -39,7 +44,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        PromptSettingsStateService settings = PromptSettingsStateService.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
@@ -57,7 +62,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        PromptSettingsStateService settings = PromptSettingsStateService.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getTestPromptField(), settings.getTestPrompt(), settings::setTestPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getExplainPromptField(), settings.getExplainPrompt(), settings::setExplainPrompt);
@@ -70,14 +75,13 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        PromptSettingsStateService settingsState = PromptSettingsStateService.getInstance();
-        promptSettingsComponent.getSystemPromptField().setText(settingsState.getSystemPrompt());
-        promptSettingsComponent.getTestPromptField().setText(settingsState.getTestPrompt());
-        promptSettingsComponent.getExplainPromptField().setText(settingsState.getExplainPrompt());
-        promptSettingsComponent.getReviewPromptField().setText(settingsState.getReviewPrompt());
-        promptSettingsComponent.getCustomPromptField().setText(settingsState.getCustomPrompt());
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        promptSettingsComponent.getSystemPromptField().setText(settings.getSystemPrompt());
+        promptSettingsComponent.getTestPromptField().setText(settings.getTestPrompt());
+        promptSettingsComponent.getExplainPromptField().setText(settings.getExplainPrompt());
+        promptSettingsComponent.getReviewPromptField().setText(settings.getReviewPrompt());
+        promptSettingsComponent.getCustomPromptField().setText(settings.getCustomPrompt());
     }
-
 
     /**
      * Update the text area if the value has changed
