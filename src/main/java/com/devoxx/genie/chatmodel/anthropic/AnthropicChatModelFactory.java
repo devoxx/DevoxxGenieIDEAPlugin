@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.anthropic;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -40,7 +40,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getAnthropicKey().trim();
+        return LLMStateService.getInstance().getAnthropicKey().trim();
     }
 
     @Override

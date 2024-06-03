@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.prompt;
 
-import com.devoxx.genie.service.settings.prompts.PromptSettingsStateService;
 import com.intellij.util.ui.FormBuilder;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;

@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.settings.prompts;
+package com.devoxx.genie.ui.settings.prompt;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;

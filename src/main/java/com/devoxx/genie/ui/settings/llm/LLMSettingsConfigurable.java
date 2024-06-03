@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.llm;
 
-import com.devoxx.genie.service.settings.llm.LLMStateService;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +54,8 @@ public class LLMSettingsConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), settings.getDeepInfraKey());
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
 
+        isModified |= !settings.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
+
         isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getTavilySearchApiKeyField(), settings.getTavilySearchKey());
         isModified |= isFieldModified(llmSettingsComponent.getGoogleSearchApiKeyField(), settings.getGoogleSearchKey());
@@ -69,6 +70,22 @@ public class LLMSettingsConfigurable implements Configurable {
     public void apply() {
         LLMStateService settings = LLMStateService.getInstance();
 
+        settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
+        settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
+        settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
+        settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
+
+        settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
+        settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
+        settings.setAnthropicKey(new String(llmSettingsComponent.getAnthropicApiKeyField().getPassword()));
+        settings.setGroqKey(new String(llmSettingsComponent.getGroqApiKeyField().getPassword()));
+        settings.setDeepInfraKey(new String(llmSettingsComponent.getDeepInfraApiKeyField().getPassword()));
+        settings.setGeminiKey(new String(llmSettingsComponent.getGeminiApiKeyField().getPassword()));
+
+        settings.setHideSearchButtonsFlag(llmSettingsComponent.getHideSearchButtonsField().isSelected());
+        settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
+        settings.setGoogleSearchKey(new String(llmSettingsComponent.getGoogleSearchApiKeyField().getPassword()));
+        settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
     }
 
     /**
@@ -77,6 +94,23 @@ public class LLMSettingsConfigurable implements Configurable {
     @Override
     public void reset() {
         LLMStateService settings = LLMStateService.getInstance();
+
+        llmSettingsComponent.getOllamaModelUrlField().setText(settings.getOllamaModelUrl());
+        llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
+        llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
+        llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
+
+        llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
+        llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());
+        llmSettingsComponent.getAnthropicApiKeyField().setText(settings.getAnthropicKey());
+        llmSettingsComponent.getGroqApiKeyField().setText(settings.getGroqKey());
+        llmSettingsComponent.getDeepInfraApiKeyField().setText(settings.getDeepInfraKey());
+        llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
+
+        llmSettingsComponent.getHideSearchButtonsField().setSelected(settings.getHideSearchButtonsFlag());
+        llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
+        llmSettingsComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
+        llmSettingsComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
 
     }
 }

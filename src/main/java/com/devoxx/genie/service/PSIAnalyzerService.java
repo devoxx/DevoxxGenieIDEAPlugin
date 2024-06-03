@@ -1,6 +1,6 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llmconfig.LLMConfigStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -36,13 +36,13 @@ public class PSIAnalyzerService {
         }
 
         for (PsiClass psiClass : runReadAction(javaFile::getClasses)) {
-            if (SettingsStateService.getInstance().getAstParentClass()) {
+            if (LLMConfigStateService.getInstance().getAstParentClass()) {
                 extractBaseClass(psiClass, relatedClasses);
             }
-            if (SettingsStateService.getInstance().getAstClassReference()) {
+            if (LLMConfigStateService.getInstance().getAstClassReference()) {
                 extractReferenceClasses(psiClass, relatedClasses);
             }
-            if (SettingsStateService.getInstance().getAstFieldReference()) {
+            if (LLMConfigStateService.getInstance().getAstFieldReference()) {
                 PsiField[] fields = runReadAction(psiClass::getFields);
                 extractPSIFields(fields, relatedClasses);
             }

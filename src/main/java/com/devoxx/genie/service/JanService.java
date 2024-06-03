@@ -2,7 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.model.jan.ResponseDTO;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -21,7 +21,7 @@ public class JanService {
     }
 
     public List<Data> getModels() throws IOException {
-        String baseUrl = ensureEndsWithSlash(SettingsStateService.getInstance().getJanModelUrl());
+        String baseUrl = ensureEndsWithSlash(LLMStateService.getInstance().getJanModelUrl());
 
         Request request = new Request.Builder()
             .url(baseUrl + "models")

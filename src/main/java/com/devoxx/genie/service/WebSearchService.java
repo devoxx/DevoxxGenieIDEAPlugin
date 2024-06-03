@@ -2,7 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -71,15 +71,15 @@ public class WebSearchService {
      */
     private static Optional<WebSearchEngine> getWebSearchEngine(@NotNull ChatMessageContext chatMessageContext) {
         if (chatMessageContext.getContext().equals(TAVILY_SEARCH_ACTION) &&
-            SettingsStateService.getInstance().getTavilySearchKey() != null) {
+            LLMStateService.getInstance().getTavilySearchKey() != null) {
             return Optional.of(TavilyWebSearchEngine.builder()
-                .apiKey(SettingsStateService.getInstance().getTavilySearchKey())
+                .apiKey(LLMStateService.getInstance().getTavilySearchKey())
                 .build());
-        } else if (SettingsStateService.getInstance().getGoogleSearchKey() != null &&
+        } else if (LLMStateService.getInstance().getGoogleSearchKey() != null &&
                    chatMessageContext.getContext().equals(GOOGLE_SEARCH_ACTION)) {
             return Optional.of(GoogleCustomWebSearchEngine.builder()
-                .apiKey(SettingsStateService.getInstance().getGoogleSearchKey())
-                .csi(SettingsStateService.getInstance().getGoogleCSIKey())
+                .apiKey(LLMStateService.getInstance().getGoogleSearchKey())
+                .csi(LLMStateService.getInstance().getGoogleCSIKey())
                 .build());
         } else {
             return Optional.empty();

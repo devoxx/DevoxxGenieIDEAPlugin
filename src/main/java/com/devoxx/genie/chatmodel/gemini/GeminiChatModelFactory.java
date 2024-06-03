@@ -3,7 +3,7 @@ package com.devoxx.genie.chatmodel.gemini;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,7 +26,7 @@ public class GeminiChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getGeminiKey().trim();
+        return LLMStateService.getInstance().getGeminiKey().trim();
     }
 
     @Override

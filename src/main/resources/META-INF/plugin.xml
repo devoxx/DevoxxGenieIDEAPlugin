@@ -193,7 +193,7 @@
 
         <projectConfigurable id="LLMSettings"
                              parentId="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.LLMConfigManager"
+                             instance="com.devoxx.genie.ui.settings.llmconfig.LLMConfigSettingsConfigurable"
                              displayName="LLM Settings"/>
 
         <projectConfigurable id="PromptSettings"
@@ -211,7 +211,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMessageRemovalService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.settings.SettingsStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
     </extensions>

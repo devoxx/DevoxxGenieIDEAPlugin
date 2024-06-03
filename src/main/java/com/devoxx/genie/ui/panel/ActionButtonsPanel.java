@@ -7,12 +7,13 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.ChatPromptExecutor;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
-import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
+import com.devoxx.genie.ui.settings.llmconfig.LLMConfigStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.editor.Editor;
@@ -169,7 +170,7 @@ public class ActionButtonsPanel extends JPanel {
      */
     private void disableSubmitBtn() {
         invokeLater(() -> {
-            if (SettingsStateService.getInstance().getStreamMode()) {
+            if (LLMStateService.getInstance().getStreamMode()) {
                 submitBtn.setEnabled(false);
             }
             submitBtn.setIcon(StopIcon);
@@ -224,7 +225,7 @@ public class ActionButtonsPanel extends JPanel {
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
         chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
 
-        if (SettingsStateService.getInstance().getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
+        if (LLMStateService.getInstance().getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
             chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
         } else {
             chatMessageContext.setChatLanguageModel(chatModelProvider.getChatLanguageModel(chatMessageContext));
@@ -281,7 +282,7 @@ public class ActionButtonsPanel extends JPanel {
      * @param chatMessageContext the chat message context
      */
     private void setChatTimeout(ChatMessageContext chatMessageContext) {
-        Integer timeout = SettingsStateService.getInstance().getTimeout();
+        Integer timeout = LLMConfigStateService.getInstance().getTimeout();
         if (timeout == 0) {
             chatMessageContext.setTimeout(60);
         } else {
@@ -294,8 +295,8 @@ public class ActionButtonsPanel extends JPanel {
      * @return true if web search is enabled
      */
     private boolean isWebSearchEnabled() {
-        return !SettingsStateService.getInstance().getTavilySearchKey().isEmpty() ||
-            !SettingsStateService.getInstance().getGoogleSearchKey().isEmpty();
+        return !LLMStateService.getInstance().getTavilySearchKey().isEmpty() ||
+               !LLMStateService.getInstance().getGoogleSearchKey().isEmpty();
     }
 
     /**
@@ -327,13 +328,13 @@ public class ActionButtonsPanel extends JPanel {
      * Set the search buttons visibility based on settings.
      */
     public void configureSearchButtonsVisibility() {
-        if (SettingsStateService.getInstance().getHideSearchButtonsFlag()) {
+        if (LLMStateService.getInstance().getHideSearchButtonsFlag()) {
             tavilySearchBtn.setVisible(false);
             googleSearchBtn.setVisible(false);
         } else {
-            tavilySearchBtn.setVisible(!SettingsStateService.getInstance().getTavilySearchKey().isEmpty());
-            googleSearchBtn.setVisible(!SettingsStateService.getInstance().getGoogleSearchKey().isEmpty() &&
-                !SettingsStateService.getInstance().getGoogleCSIKey().isEmpty());
+            tavilySearchBtn.setVisible(!LLMStateService.getInstance().getTavilySearchKey().isEmpty());
+            googleSearchBtn.setVisible(!LLMStateService.getInstance().getGoogleSearchKey().isEmpty() &&
+                                       !LLMStateService.getInstance().getGoogleCSIKey().isEmpty());
         }
     }
 }
