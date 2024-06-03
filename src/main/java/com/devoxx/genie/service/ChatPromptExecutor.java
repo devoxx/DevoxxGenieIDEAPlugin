@@ -1,8 +1,9 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.settings.SettingsStateService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.settings.llm.LLMStateService;
+import com.devoxx.genie.ui.settings.prompt.PromptSettingsStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -18,7 +19,6 @@ import java.util.concurrent.TimeoutException;
 public class ChatPromptExecutor {
 
     private final PromptExecutionService promptExecutionService = PromptExecutionService.getInstance();
-    private final SettingsStateService settingsState = SettingsStateService.getInstance();
 
     public ChatPromptExecutor() {
     }
@@ -39,7 +39,7 @@ public class ChatPromptExecutor {
                 if (chatMessageContext.getContext() != null && chatMessageContext.getContext().toLowerCase().contains("search")) {
                     webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
-                    if (SettingsStateService.getInstance().getStreamMode()) {
+                    if (LLMStateService.getInstance().getStreamMode()) {
                         setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
                     } else {
                         runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
@@ -99,7 +99,7 @@ public class ChatPromptExecutor {
         MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
         if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(new SystemMessage(SettingsStateService.getInstance().getSystemPrompt()));
+            chatMemoryService.add(new SystemMessage(PromptSettingsStateService.getInstance().getSystemPrompt()));
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
@@ -124,13 +124,13 @@ public class ChatPromptExecutor {
         if (prompt.startsWith("/")) {
 
             if (prompt.equalsIgnoreCase("/test")) {
-                prompt = settingsState.getTestPrompt();
+                prompt = PromptSettingsStateService.getInstance().getTestPrompt();
             } else if (prompt.equalsIgnoreCase("/review")) {
-                prompt = settingsState.getReviewPrompt();
+                prompt = PromptSettingsStateService.getInstance().getReviewPrompt();
             } else if (prompt.equalsIgnoreCase("/explain")) {
-                prompt = settingsState.getExplainPrompt();
+                prompt = PromptSettingsStateService.getInstance().getExplainPrompt();
             } else if (prompt.equalsIgnoreCase("/custom")) {
-                prompt = settingsState.getCustomPrompt();
+                prompt = PromptSettingsStateService.getInstance().getCustomPrompt();
             } else {
                 promptOutputPanel.showHelpText();
                 return Optional.empty();

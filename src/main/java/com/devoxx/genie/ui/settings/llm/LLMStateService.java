@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.settings.llm;
+package com.devoxx.genie.ui.settings.llm;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -44,6 +44,9 @@ public final class LLMStateService implements PersistentStateComponent<LLMStateS
     private String googleSearchKey = "";
     private String googleCSIKey = "";
     private String tavilySearchKey = "";
+
+    private String lastSelectedProvider = "";
+    private String lastSelectedModel = "";
 
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;

@@ -1,19 +1,14 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
-import com.devoxx.genie.service.settings.SettingsStateService;
-import com.devoxx.genie.service.settings.prompts.PromptSettingsStateService;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.function.Consumer;
 
 public class LLMConfigSettingsConfigurable implements Configurable {
 
-    private final LLMConfigSettingsComponent promptSettingsComponent = new LLMConfigSettingsComponent();
+    private final LLMConfigSettingsComponent llmConfigSettingsComponent = new LLMConfigSettingsComponent();
 
     /**
      * Get the display name
@@ -22,7 +17,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     @Nls
     @Override
     public String getDisplayName() {
-        return "Prompts";
+        return "LLM Settings";
     }
 
     /**
@@ -32,7 +27,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return promptSettingsComponent.getPanel();
+        return llmConfigSettingsComponent.getPanel();
     }
 
     /**
@@ -41,30 +36,37 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        PromptSettingsStateService settings = PromptSettingsStateService.getInstance();
+        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
 
         boolean isModified = false;
 
-        isModified |= !StringUtil.equals(promptSettingsComponent.getSystemPromptField().getText(), settings.getSystemPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getTestPromptField().getText(), settings.getTestPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getExplainPromptField().getText(), settings.getExplainPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getReviewPromptField().getText(), settings.getReviewPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getCustomPromptField().getText(), settings.getCustomPrompt());
+        isModified |= ((Double)llmConfigSettingsComponent.getTemperatureField().getValue()) != settingsState.getTemperature();
+        isModified |= ((Double)llmConfigSettingsComponent.getTopPField().getValue()) != settingsState.getTopP();
+        isModified |= llmConfigSettingsComponent.getMaxOutputTokensField().getNumber() != settingsState.getMaxOutputTokens();
+        isModified |= llmConfigSettingsComponent.getChatMemorySizeField().getNumber() != settingsState.getChatMemorySize();
+        isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != settingsState.getTimeout();
+        isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != settingsState.getMaxRetries();
 
+        isModified |= !settingsState.getAstMode().equals(llmConfigSettingsComponent.getAstMode().isSelected());
+        isModified |= !settingsState.getAstParentClass().equals(llmConfigSettingsComponent.getAstParentClassCheckBox().isSelected());
+        isModified |= !settingsState.getAstClassReference().equals(llmConfigSettingsComponent.getAstReferenceClassesCheckBox().isSelected());
+        isModified |= !settingsState.getAstFieldReference().equals(llmConfigSettingsComponent.getAstReferenceFieldCheckBox().isSelected());
         return isModified;
     }
-
     /**
      * Apply the changes to the settings
      */
     @Override
     public void apply() {
-        SettingsStateService settings = SettingsStateService.getInstance();
-        updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getTestPromptField(), settings.getTestPrompt(), settings::setTestPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getExplainPromptField(), settings.getExplainPrompt(), settings::setExplainPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getReviewPromptField(), settings.getReviewPrompt(), settings::setReviewPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getCustomPromptField(), settings.getCustomPrompt(), settings::setCustomPrompt);
+        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
+
+        settingsState.setTemperature(((Double)llmConfigSettingsComponent.getTemperatureField().getValue()));
+        settingsState.setTopP(((Double)llmConfigSettingsComponent.getTopPField().getValue()));
+
+        settingsState.setChatMemorySize(llmConfigSettingsComponent.getChatMemorySizeField().getNumber());
+        settingsState.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());
+        settingsState.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
+        settingsState.setMaxRetries(llmConfigSettingsComponent.getRetryField().getNumber());
     }
 
     /**
@@ -72,27 +74,14 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        SettingsStateService settingsState = SettingsStateService.getInstance();
-        promptSettingsComponent.getSystemPromptField().setText(settingsState.getSystemPrompt());
-        promptSettingsComponent.getTestPromptField().setText(settingsState.getTestPrompt());
-        promptSettingsComponent.getExplainPromptField().setText(settingsState.getExplainPrompt());
-        promptSettingsComponent.getReviewPromptField().setText(settingsState.getReviewPrompt());
-        promptSettingsComponent.getCustomPromptField().setText(settingsState.getCustomPrompt());
-    }
+        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
 
+        llmConfigSettingsComponent.getTemperatureField().setValue(settingsState.getTemperature());
+        llmConfigSettingsComponent.getTopPField().setValue(settingsState.getTopP());
 
-    /**
-     * Update the text area if the value has changed
-     * @param textArea     the text area
-     * @param currentValue the current value
-     * @param updateAction the update action
-     */
-    public void updateTextAreaIfModified(@NotNull JTextArea textArea,
-                                         Object currentValue,
-                                         Consumer<String> updateAction) {
-        String newValue = textArea.getText();
-        if (newValue != null && !newValue.equals(currentValue)) {
-            updateAction.accept(newValue);
-        }
+        llmConfigSettingsComponent.getMaxOutputTokensField().setNumber(settingsState.getMaxOutputTokens());
+        llmConfigSettingsComponent.getChatMemorySizeField().setNumber(settingsState.getChatMemorySize());
+        llmConfigSettingsComponent.getTimeoutField().setNumber(settingsState.getTimeout());
+        llmConfigSettingsComponent.getRetryField().setNumber(settingsState.getMaxRetries());
     }
 }

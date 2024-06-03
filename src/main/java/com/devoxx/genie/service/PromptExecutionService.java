@@ -2,7 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.prompt.PromptSettingsStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
@@ -52,7 +52,7 @@ public class PromptExecutionService {
 
             if (ChatMemoryService.getInstance().isEmpty()) {
                 ChatMemoryService.getInstance().add(
-                    new SystemMessage(SettingsStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                    new SystemMessage(PromptSettingsStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                 );
             }
 

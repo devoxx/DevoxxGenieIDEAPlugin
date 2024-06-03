@@ -13,7 +13,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.llmconfig.LLMConfigStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
@@ -83,7 +83,7 @@ public class ChatModelProvider {
      */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = new ChatModel();
-        SettingsStateService settingsState = SettingsStateService.getInstance();
+        LLMConfigStateService settingsState = LLMConfigStateService.getInstance();
         setMaxOutputTokens(settingsState, chatModel);
 
         chatModel.setTemperature(settingsState.getTemperature());
@@ -101,15 +101,13 @@ public class ChatModelProvider {
      * @param settingsState the settings state
      * @param chatModel     the chat model
      */
-    private static void setMaxOutputTokens(@NotNull SettingsStateService settingsState, ChatModel chatModel) {
-        String maxOutputTokens = settingsState.getMaxOutputTokens();
-        if (maxOutputTokens.isBlank()) {
+    private static void setMaxOutputTokens(@NotNull LLMConfigStateService settingsState, ChatModel chatModel) {
+        Integer maxOutputTokens = settingsState.getMaxOutputTokens();
+        if (maxOutputTokens == null) {
             chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
         } else {
-            int value;
             try {
-                value = Integer.parseInt(maxOutputTokens);
-                chatModel.setMaxTokens(value);
+                chatModel.setMaxTokens(maxOutputTokens);
             } catch (NumberFormatException e) {
                 chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
             }

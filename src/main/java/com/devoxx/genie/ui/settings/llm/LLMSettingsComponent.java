@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.llm;
 
-import com.devoxx.genie.service.settings.llm.LLMStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
@@ -16,10 +15,10 @@ import java.awt.event.ItemEvent;
 
 public class LLMSettingsComponent {
 
+    public LLMStateService llmStateService = LLMStateService.getInstance();
+
     public static final String LINK_EMOJI = "\uD83D\uDD17";
     public static final String PASSWORD_EMOJI = "\uD83D\uDD11";
-
-    public LLMStateService llmStateService = LLMStateService.getInstance();
 
     @Getter
     private final JTextField ollamaModelUrlField = new JTextField(llmStateService.getOllamaModelUrl());
@@ -49,12 +48,19 @@ public class LLMSettingsComponent {
     private final JPasswordField googleSearchApiKeyField = new JPasswordField(llmStateService.getGoogleSearchKey());
     @Getter
     private final JPasswordField googleCSIApiKeyField = new JPasswordField(llmStateService.getGoogleCSIKey());
+    @Getter
+    private final JCheckBox streamModeCheckBox = new JCheckBox("", llmStateService.getStreamMode());
 
     @Getter
     private final JPanel panel;
 
     public LLMSettingsComponent() {
         panel = FormBuilder.createFormBuilder()
+            .addComponent(new JXTitledSeparator("Local Large Language Response"))
+            .addVerticalGap(5)
+            .addComponent(new JLabel("Enable Stream Mode (Beta)"))
+            .addComponent(streamModeCheckBox)
+            .addVerticalGap(20)
             .addComponent(new JXTitledSeparator("Local Large Language Models"))
             .addVerticalGap(5)
             .addComponent(new JLabel("Ollama URL"))
@@ -83,14 +89,14 @@ public class LLMSettingsComponent {
             .addVerticalGap(20)
             .addComponent(new JXTitledSeparator("Search Providers"))
             .addVerticalGap(5)
-            .addComponent(new JLabel("Hide Search Providers"))
-            .addComponent(hideSearchButtonsField)
             .addComponent(new JLabel("Tavily Web Search API Key"))
             .addComponent(createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"))
             .addComponent(new JLabel("Google Web Search API Key"))
             .addComponent(createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"))
             .addComponent(new JLabel("Google Custom Search Engine ID"))
             .addComponent(createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"))
+            .addComponent(new JLabel("Hide Search Providers"))
+            .addComponent(hideSearchButtonsField)
             .getPanel();
 
         hideSearchButtonsField.addItemListener(e -> {

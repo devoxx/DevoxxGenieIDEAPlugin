@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.prompt;
 
-import com.devoxx.genie.service.settings.prompts.PromptSettingsStateService;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
