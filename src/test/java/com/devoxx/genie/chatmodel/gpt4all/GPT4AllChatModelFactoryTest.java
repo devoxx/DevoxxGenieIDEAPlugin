@@ -1,7 +1,7 @@
 package com.devoxx.genie.chatmodel.gpt4all;
 
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.settings.SettingsStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -15,10 +15,10 @@ class GPT4AllChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
-        try (MockedStatic<SettingsStateService> mockedSettings = Mockito.mockStatic(SettingsStateService.class)) {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Setup the mock for SettingsState
-            SettingsStateService mockSettingsState = mock(SettingsStateService.class);
-            when(SettingsStateService.getInstance()).thenReturn(mockSettingsState);
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
             when(mockSettingsState.getGpt4allModelUrl()).thenReturn("http://localhost:8080");
 
             // Instance of the class containing the method to be tested
