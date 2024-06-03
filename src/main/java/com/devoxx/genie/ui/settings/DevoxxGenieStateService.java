@@ -1,13 +1,11 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.ui.settings;
 
-import com.devoxx.genie.ui.util.DoubleConverter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
-import com.intellij.util.xmlb.annotations.OptionTag;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +19,10 @@ import static com.devoxx.genie.model.Constant.*;
     name = "com.devoxx.genie.ui.SettingsState",
     storages = @Storage("DevoxxGenieSettingsPlugin.xml")
 )
-public final class SettingsStateService implements PersistentStateComponent<SettingsStateService> {
+public final class DevoxxGenieStateService implements PersistentStateComponent<DevoxxGenieStateService> {
 
-    public static SettingsStateService getInstance() {
-        return ApplicationManager.getApplication().getService(SettingsStateService.class);
+    public static DevoxxGenieStateService getInstance() {
+        return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
 
     // Local LLM URL fields
@@ -38,7 +36,6 @@ public final class SettingsStateService implements PersistentStateComponent<Sett
     private String mistralKey = "";
     private String anthropicKey = "";
     private String groqKey = "";
-    private String fireworksKey = "";
     private String deepInfraKey = "";
     private String geminiKey = "";
 
@@ -48,33 +45,21 @@ public final class SettingsStateService implements PersistentStateComponent<Sett
     private String googleCSIKey = "";
     private String tavilySearchKey = "";
 
-    // Prompt fields
-    private String systemPrompt = SYSTEM_PROMPT;
-    private String testPrompt = TEST_PROMPT;
-    private String reviewPrompt = REVIEW_PROMPT;
-    private String explainPrompt = EXPLAIN_PROMPT;
-    private String customPrompt = CUSTOM_PROMPT;
+    // Last selected LLM provider and model name
+    private String lastSelectedProvider = "";
+    private String lastSelectedModel = "";
+
+    // Enable stream mode
+    private Boolean streamMode = STREAM_MODE;
 
     // LLM settings
-    @OptionTag(converter = DoubleConverter.class)
     private Double temperature = TEMPERATURE;
-
-    @OptionTag(converter = DoubleConverter.class)
     private Double topP = TOP_P;
 
     private Integer timeout = TIMEOUT;
     private Integer maxRetries = MAX_RETRIES;
     private Integer chatMemorySize = MAX_MEMORY;
-
-    // Was unable to make it work with Integer for some unknown reason
-    private String maxOutputTokens = MAX_OUTPUT_TOKENS.toString();
-
-    // Last selected LLM provider and model name
-    private String lastSelectedProvider;
-    private String lastSelectedModel;
-
-    // Enable stream mode
-    private Boolean streamMode = STREAM_MODE;
+    private Integer maxOutputTokens = MAX_OUTPUT_TOKENS;
 
     // Enable AST mode
     private Boolean astMode = AST_MODE;
@@ -82,13 +67,19 @@ public final class SettingsStateService implements PersistentStateComponent<Sett
     private Boolean astClassReference = AST_CLASS_REFERENCE;
     private Boolean astFieldReference = AST_FIELD_REFERENCE;
 
+    private String systemPrompt = SYSTEM_PROMPT;
+    private String testPrompt = TEST_PROMPT;
+    private String reviewPrompt = REVIEW_PROMPT;
+    private String explainPrompt = EXPLAIN_PROMPT;
+    private String customPrompt = CUSTOM_PROMPT;
+
     @Override
-    public SettingsStateService getState() {
+    public DevoxxGenieStateService getState() {
         return this;
     }
 
     @Override
-    public void loadState(@NotNull SettingsStateService state) {
+    public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
     }
 }

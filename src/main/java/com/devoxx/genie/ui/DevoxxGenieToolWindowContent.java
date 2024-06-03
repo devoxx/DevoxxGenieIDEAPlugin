@@ -6,13 +6,13 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.SettingsStateService;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Splitter;
@@ -71,8 +71,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Set the last selected LLM provider or show default.
      */
     private void setLastSelectedProvider() {
-        String lastSelectedProvider = SettingsStateService.getInstance().getLastSelectedProvider();
-        if (lastSelectedProvider != null) {
+        String lastSelectedProvider = DevoxxGenieStateService.getInstance().getLastSelectedProvider();
+         if (lastSelectedProvider != null && !lastSelectedProvider.isEmpty()) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
             updateModelNamesComboBox(ModelProvider.valueOf(lastSelectedProvider));
         } else {
@@ -229,7 +229,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             String selectedModel = (String) comboBox.getSelectedItem();
             if (selectedModel != null) {
-                SettingsStateService.getInstance().setLastSelectedModel(selectedModel);
+                DevoxxGenieStateService.getInstance().setLastSelectedModel(selectedModel);
             }
         }
     }
@@ -246,7 +246,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         String selectedLLMProvider = (String) comboBox.getSelectedItem();
         if (selectedLLMProvider == null) return;
 
-        SettingsStateService.getInstance().setLastSelectedProvider(selectedLLMProvider);
+        DevoxxGenieStateService.getInstance().setLastSelectedProvider(selectedLLMProvider);
         ModelProvider provider = ModelProvider.fromString(selectedLLMProvider);
 
         updateModelNamesComboBox(provider);
@@ -269,7 +269,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
             .getFactoryByProvider(provider)
             .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
 
-        String lastSelectedModel = SettingsStateService.getInstance().getLastSelectedModel();
+        String lastSelectedModel = DevoxxGenieStateService.getInstance().getLastSelectedModel();
         if (lastSelectedModel != null) {
             modelNameComboBox.setSelectedItem(lastSelectedModel);
         }

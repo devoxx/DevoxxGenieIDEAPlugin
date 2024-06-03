@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel.mistral;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
@@ -42,7 +42,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return SettingsStateService.getInstance().getMistralKey().trim();
+        return DevoxxGenieStateService.getInstance().getMistralKey().trim();
     }
 
     @Override

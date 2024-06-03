@@ -1,8 +1,8 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -11,7 +11,6 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.event.ActionEvent;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
@@ -19,7 +18,6 @@ import java.util.concurrent.TimeoutException;
 public class ChatPromptExecutor {
 
     private final PromptExecutionService promptExecutionService = PromptExecutionService.getInstance();
-    private final SettingsStateService settingsState = SettingsStateService.getInstance();
 
     public ChatPromptExecutor() {
     }
@@ -40,7 +38,7 @@ public class ChatPromptExecutor {
                 if (chatMessageContext.getContext() != null && chatMessageContext.getContext().toLowerCase().contains("search")) {
                     webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
-                    if (SettingsStateService.getInstance().getStreamMode()) {
+                    if (DevoxxGenieStateService.getInstance().getStreamMode()) {
                         setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
                     } else {
                         runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
@@ -100,7 +98,7 @@ public class ChatPromptExecutor {
         MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
         if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(new SystemMessage(SettingsStateService.getInstance().getSystemPrompt()));
+            chatMemoryService.add(new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt()));
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
@@ -125,13 +123,13 @@ public class ChatPromptExecutor {
         if (prompt.startsWith("/")) {
 
             if (prompt.equalsIgnoreCase("/test")) {
-                prompt = settingsState.getTestPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getTestPrompt();
             } else if (prompt.equalsIgnoreCase("/review")) {
-                prompt = settingsState.getReviewPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getReviewPrompt();
             } else if (prompt.equalsIgnoreCase("/explain")) {
-                prompt = settingsState.getExplainPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getExplainPrompt();
             } else if (prompt.equalsIgnoreCase("/custom")) {
-                prompt = settingsState.getCustomPrompt();
+                prompt = DevoxxGenieStateService.getInstance().getCustomPrompt();
             } else {
                 promptOutputPanel.showHelpText();
                 return Optional.empty();
