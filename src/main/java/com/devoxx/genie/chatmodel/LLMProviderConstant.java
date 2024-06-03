@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.service.SettingsStateService;
+import com.devoxx.genie.service.settings.SettingsStateService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

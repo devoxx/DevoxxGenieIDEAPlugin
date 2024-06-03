@@ -198,7 +198,7 @@
 
         <projectConfigurable id="PromptSettings"
                              parentId="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.PromptSettingsManager"
+                             instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
         <toolWindow id="DevoxxGenie"
@@ -211,7 +211,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMessageRemovalService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.SettingsStateService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.settings.SettingsStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
     </extensions>

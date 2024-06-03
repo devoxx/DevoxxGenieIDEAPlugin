@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.settings;
 
 import com.devoxx.genie.ui.util.DoubleConverter;
 import com.intellij.openapi.application.ApplicationManager;
