@@ -32,6 +32,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.17</h2>
+            <LI>Fix #102: /help also runs the actual prompt</LI>
+        </h2>
         <h2>v0.1.16</h2>
         <UL>
             <LI>Feat #90: Include System Prompt in Settings page</LI>

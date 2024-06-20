@@ -15,6 +15,7 @@ public class HelpPanel extends BackgroundPanel {
         super("helpPanel");
         setLayout(new BorderLayout());
         withPreferredHeight(80);
+        withPreferredHeight(175);
         add(new JBLabel(helpMsg), BorderLayout.CENTER);
     }
 }
