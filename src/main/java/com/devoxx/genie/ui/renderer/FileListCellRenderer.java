@@ -24,7 +24,7 @@ public class FileListCellRenderer extends DefaultListCellRenderer {
         JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
         if (value instanceof VirtualFile file) {
-            label.setIcon(FileTypeIconUtil.getFileTypeIcon(project, file));
+            // label.setIcon(FileTypeIconUtil.getFileTypeIcon(project, file));
             label.setText(file.getName());
         }
 

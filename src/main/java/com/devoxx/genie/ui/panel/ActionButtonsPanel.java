@@ -29,6 +29,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.Optional;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.model.Constant.ADD_FILE_S_TO_PROMPT_CONTEXT;
@@ -150,18 +151,21 @@ public class ActionButtonsPanel extends JPanel {
 
         disableButtons();
 
-        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel);
-        chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons);
+        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel)
+                          .ifPresentOrElse(command -> chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons),
+                                           this::enableButtons);
     }
 
     /**
      * Enable the prompt input component and reset the Submit button icon.
      */
     public void enableButtons() {
-        submitBtn.setIcon(SubmitIcon);
-        submitBtn.setEnabled(true);
-        submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
-        promptInputComponent.setEnabled(true);
+        SwingUtilities.invokeLater(() -> {
+            submitBtn.setIcon(SubmitIcon);
+            submitBtn.setEnabled(true);
+            submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
+            promptInputComponent.setEnabled(true);
+        });
     }
 
     /**
