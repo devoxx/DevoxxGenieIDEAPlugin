@@ -71,10 +71,11 @@ public class ChatPromptExecutor {
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      */
-    public void updatePromptWithCommandIfPresent(@NotNull ChatMessageContext chatMessageContext,
-                                                 PromptOutputPanel promptOutputPanel) {
+    public Optional<String> updatePromptWithCommandIfPresent(@NotNull ChatMessageContext chatMessageContext,
+                                                             PromptOutputPanel promptOutputPanel) {
         Optional<String> commandFromPrompt = getCommandFromPrompt(chatMessageContext.getUserPrompt(), promptOutputPanel);
         chatMessageContext.setUserPrompt(commandFromPrompt.orElse(chatMessageContext.getUserPrompt()));
+        return commandFromPrompt;
     }
 
     /**

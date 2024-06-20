@@ -33,29 +33,29 @@ public class PromptSettingsComponent implements SettingsComponent {
             .addComponent(new JXTitledSeparator("Prompts"))
             .addVerticalGap(5)
             .addLabeledComponentFillVertically(
-                "System Prompt",
+                "System prompt",
                 systemPromptField
             )
             .addLabeledComponent(
-                new JBLabel("Test Prompt"),
+                new JBLabel("Test prompt"),
                 testPromptField,
                 10,
                 true
             )
             .addLabeledComponent(
-                new JBLabel("Explain Prompt"),
+                new JBLabel("Explain prompt"),
                 explainPromptField,
                 10,
                 true
             )
             .addLabeledComponent(
-                new JBLabel("Review Prompt"),
+                new JBLabel("Review prompt"),
                 reviewPromptField,
                 10,
                 true
             )
             .addLabeledComponent(
-                new JBLabel("Custom Prompt"),
+                new JBLabel("Custom prompt"),
                 customPromptField,
                 10,
                 true
