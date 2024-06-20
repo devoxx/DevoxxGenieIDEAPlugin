@@ -9,3 +9,5 @@ plugins {
 }
 
 rootProject.name = "DevoxxGenie"
+
+includeBuild("core")
