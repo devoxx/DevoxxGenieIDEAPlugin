@@ -46,6 +46,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     @Override
     public List<String> getModelNames() {
         return List.of(
+            "claude-3-5-sonnet-20240620",
             CLAUDE_3_OPUS_20240229.toString(),
             CLAUDE_3_SONNET_20240229.toString(),
             CLAUDE_3_HAIKU_20240307.toString(),
