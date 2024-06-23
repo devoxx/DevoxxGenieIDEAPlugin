@@ -35,8 +35,9 @@
         <h2>v0.1.18</h2>
         <UL>
             <LI>Claude 3.5 Sonnet support (Anthropic)</LI>
-            <LI>Fix 99: Improved timeout msg</LI>
-            <LI>Fix 99: Show timout msg without clicking on the chat window</LI>
+            <LI>Fix #99: Improved timeout msg</LI>
+            <LI>Fix #99: Show timout msg without clicking on the chat window</LI>
+            <LI>Fix #99: Chat memory is correctly cleaned up when you remove a chat msg</LI>
         </UL>
         <h2>v0.1.17</h2>
         <UL>
