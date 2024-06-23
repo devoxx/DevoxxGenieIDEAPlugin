@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -11,6 +12,8 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+import java.net.ConnectException;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
@@ -163,10 +166,16 @@ public class ChatPromptExecutor {
                     return null;
                 }
                 if (e.getCause() instanceof TimeoutException) {
-                    promptOutputPanel.addWarningText(chatMessageContext, "Timeout occurred. Please try again.");
+                    NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                        "Timeout occurred. Please increase the timeout setting.");
+                    return null;
+                } else if (e.getCause() instanceof ProviderUnavailableException) {
+                    NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                        "LLM provider not available. Please select another provider or make sure it's running.");
                     return null;
                 }
-                promptOutputPanel.addWarningText(chatMessageContext, e.getMessage());
+                String message = e.getMessage() + ". Maybe create an issue on GitHub?";
+                NotificationUtil.sendNotification(chatMessageContext.getProject(), "Error occurred: " + message);
                 return null;
             });
 
