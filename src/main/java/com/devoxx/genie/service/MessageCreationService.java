@@ -42,7 +42,7 @@ public class MessageCreationService {
         if ((selectedText != null && !selectedText.isEmpty()) || (context != null && !context.isEmpty())) {
             userMessage = constructUserMessage(chatMessageContext, context);
         } else {
-            userMessage = new UserMessage(QUESTION + " " + chatMessageContext.getUserPrompt());
+            userMessage = new UserMessage(chatMessageContext.getUserPrompt());
         }
         return userMessage;
     }
