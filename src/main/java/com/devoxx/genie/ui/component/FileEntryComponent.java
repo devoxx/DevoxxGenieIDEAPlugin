@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.FileRemoveListener;
-import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
