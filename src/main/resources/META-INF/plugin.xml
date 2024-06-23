@@ -32,6 +32,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.18</h2>
+        <UL>
+            <LI>Claude 3.5 Sonnet support (Anthropic)</LI>
+            <LI>Fix 99: Improved timeout msg</LI>
+            <LI>Fix 99: Show timout msg without clicking on the chat window</LI>
+        </UL>
         <h2>v0.1.17</h2>
         <UL>
             <LI>Feat: Split settings into different panels underneath Tools menu</LI>
@@ -214,7 +220,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.ChatMessageRemovalService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>

@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -96,7 +97,8 @@ public class PromptExecutionService {
             ChatMemoryService.getInstance().add(response.content());
             return Optional.of(response.content());
         } catch (Exception e) {
-            throw new CompletionException(e);
+            ChatMemoryService.getInstance().removeLast();
+            throw new ProviderUnavailableException(e.getMessage());
         }
     }
 }
