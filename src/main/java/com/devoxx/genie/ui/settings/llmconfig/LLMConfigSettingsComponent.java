@@ -60,7 +60,7 @@ public class LLMConfigSettingsComponent implements SettingsComponent {
             .addComponent(new JLabel("Timeout (in secs)"))
             .addComponent(timeoutField)
             .addVerticalGap(5)
-            .addComponent(new JLabel("Maximum Retries"))
+            .addComponent(new JLabel("Maximum Attempts"))
             .addComponent(retryField)
             .addVerticalGap(5)
             .addComponent(new JXTitledSeparator("Abstract Syntax Tree Config"))
