@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.component;
 
-import com.devoxx.genie.service.PromptExecutionService;
 import com.intellij.openapi.diagnostic.Logger;
 
 import javax.swing.*;
@@ -44,13 +43,20 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea {
 
     private void autoComplete() {
         String text = getText();
-        if (text.startsWith("/")) {
-            String prefix = text.substring(1);
+        String[] lines = text.split("\n");
+        if (lines.length > 0 && lines[lines.length - 1].startsWith("/")) {
+            String currentLine = lines[lines.length - 1];
             for (String command : commands) {
-                if (command.startsWith(prefix)) {
+                if (command.startsWith(currentLine)) {
                     isAutoCompleting = true;
-                    setText(command);
-                    setCaretPosition(command.length());
+                    int start = text.lastIndexOf("\n") + 1;
+                    try {
+                        getDocument().remove(start, currentLine.length());
+                        getDocument().insertString(start, command, null);
+                    } catch (BadLocationException ex) {
+                        ex.printStackTrace();
+                    }
+                    setCaretPosition(text.length() - currentLine.length() + command.length());
                     isAutoCompleting = false;
                     break;
                 }
@@ -66,30 +72,31 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea {
                 return;
             }
 
-            if (offs == 0 && !str.startsWith("/")) {
-                str = "/" + str;
-            }
             super.insertString(offs, str, a);
 
             SwingUtilities.invokeLater(() -> {
                 try {
                     String text = getText(0, getLength());
-                    if (text.startsWith("/") && text.length() > 1) {
-                        for (String command : commands) {
-                            if (command.startsWith(text) && !command.equals(text)) {
-                                int currentLength = text.length();
-                                String completion = command.substring(currentLength);
-                                isAutoCompleting = true;
-                                insertString(currentLength, completion, null);
-                                setCaretPosition(getLength());
-                                moveCaretPosition(currentLength);
-                                isAutoCompleting = false;
-                                break;
+                    String[] lines = text.split("\n");
+                    if (lines.length > 0) {
+                        String currentLine = lines[lines.length - 1];
+                        if (currentLine.startsWith("/") && currentLine.length() > 1) {
+                            for (String command : commands) {
+                                if (command.startsWith(currentLine) && !command.equals(currentLine)) {
+                                    int start = text.lastIndexOf("\n") + 1;
+                                    String completion = command.substring(currentLine.length());
+                                    isAutoCompleting = true;
+                                    insertString(getLength(), completion, null);
+                                    setCaretPosition(getLength());
+                                    moveCaretPosition(getLength() - completion.length());
+                                    isAutoCompleting = false;
+                                    break;
+                                }
                             }
                         }
                     }
                 } catch (BadLocationException e) {
-                    LOG.debug("Error while auto-completing command", e);
+                    e.printStackTrace();
                 }
             });
         }
