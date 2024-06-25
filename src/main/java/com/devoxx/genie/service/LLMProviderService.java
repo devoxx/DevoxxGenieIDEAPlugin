@@ -34,7 +34,6 @@ public class LLMProviderService {
         return ApplicationManager.getApplication().getService(LLMProviderService.class);
     }
 
-
     public List<String> getAvailableLLMProviders() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         Map<String, Supplier<String>> providerKeyMap = new HashMap<>();

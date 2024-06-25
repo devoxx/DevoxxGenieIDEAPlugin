@@ -1,3 +1,5 @@
+import java.util.*
+
 plugins {
     java
     id("org.jetbrains.intellij") version "1.17.2"
@@ -9,6 +11,29 @@ version = "0.1.19"
 
 repositories {
     mavenCentral()
+}
+
+tasks.register("updateProperties") {
+    doLast {
+        val projectVersion = version
+        val propertiesFile = file("src/main/resources/application.properties")
+
+        if (propertiesFile.exists()) {
+            val properties = Properties().apply {
+                load(propertiesFile.inputStream())
+            }
+
+            properties.setProperty("version", projectVersion.toString())
+
+            properties.store(propertiesFile.outputStream(), null)
+        } else {
+            println("application.properties file not found!")
+        }
+    }
+}
+
+tasks.named("buildPlugin") {
+    dependsOn("updateProperties")
 }
 
 dependencies {
