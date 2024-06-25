@@ -231,6 +231,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -22,6 +23,8 @@ public class LLMSettingsComponent implements SettingsComponent {
     public static final String LINK_EMOJI = "\uD83D\uDD17";
     public static final String PASSWORD_EMOJI = "\uD83D\uDD11";
 
+    @Getter
+    private final JTextField projectVersion = new JTextField(PropertiesService.getInstance().getVersion());
     @Getter
     private final JTextField ollamaModelUrlField = new JTextField(stateService.getOllamaModelUrl());
     @Getter
@@ -101,6 +104,10 @@ public class LLMSettingsComponent implements SettingsComponent {
             .addComponent(createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"))
             .addComponent(new JLabel("Hide Search Providers"))
             .addComponent(hideSearchButtonsField)
+            .addVerticalGap(20)
+            .addComponent(new JXTitledSeparator("Plugin version"))
+            .addComponent(new JLabel("v" + projectVersion.getText()))
+            .addComponent(createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"))
             .getPanel();
     }
 
