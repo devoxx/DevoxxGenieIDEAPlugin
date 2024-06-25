@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.ui.renderer.FileListCellRenderer;
+import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.intellij.ide.util.gotoByName.GotoFileModel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
@@ -99,7 +99,10 @@ public class FileSelectionPanelFactory implements DumbAware {
         debounceTimer.get().start();
     }
 
-    private static void searchFiles(Project project, String searchText, DefaultListModel<VirtualFile> listModel, JBList<VirtualFile> resultList) {
+    private static void searchFiles(Project project,
+                                    String searchText,
+                                    DefaultListModel<VirtualFile> listModel,
+                                    JBList<VirtualFile> resultList) {
         new Task.Backgroundable(project, "Searching Files", true) {
             private final List<VirtualFile> foundFiles = new ArrayList<>();
 
@@ -153,6 +156,28 @@ public class FileSelectionPanelFactory implements DumbAware {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
             FileListManager.getInstance().addFile(selectedFile);
+        }
+    }
+
+    private static class FileListCellRenderer extends DefaultListCellRenderer {
+        private final Project project;
+
+        public FileListCellRenderer(Project project) {
+            this.project = project;
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList<?> list,
+                                                      Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            if (value instanceof VirtualFile file) {
+                label.setIcon(FileTypeIconUtil.getFileTypeIcon(project, file));
+                label.setText(file.getName());
+            }
+
+            return label;
         }
     }
 }
