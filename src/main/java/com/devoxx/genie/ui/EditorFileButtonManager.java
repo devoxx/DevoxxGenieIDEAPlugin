@@ -22,25 +22,12 @@ public class EditorFileButtonManager {
     }
 
     private void handleFileOpenClose() {
-        if (fileEditorManager.getSelectedFiles().length == 0) {
-            addFileBtn.setEnabled(false);
-            addFileBtn.setToolTipText("No files open in the editor");
-        }
-
         ApplicationManager.getApplication().getMessageBus().connect().subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
                     addFileBtn.setEnabled(true);
                     addFileBtn.setToolTipText("Select file(s) for prompt context");
-                }
-
-                @Override
-                public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                    if (fileEditorManager.getSelectedFiles().length == 0) {
-                        addFileBtn.setEnabled(false);
-                        addFileBtn.setToolTipText("No files open in the editor");
-                    }
                 }
             });
     }
