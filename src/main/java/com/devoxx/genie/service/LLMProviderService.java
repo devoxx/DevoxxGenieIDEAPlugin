@@ -1,6 +1,7 @@
-package com.devoxx.genie.chatmodel;
+package com.devoxx.genie.service;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -10,12 +11,9 @@ import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 
-public class LLMProviderConstant {
+public class LLMProviderService {
 
-    private LLMProviderConstant() {
-    }
-
-    protected static final String[] llmProvidersWithKey = {
+    private static final String[] llmProvidersWithKey = {
         Anthropic.getName(),
         DeepInfra.getName(),
         Gemini.getName(),
@@ -24,14 +22,20 @@ public class LLMProviderConstant {
         OpenAI.getName()
     };
 
-    protected static final String[] llmProviders = {
+    private static final String[] llmProviders = {
         GPT4All.getName(),
         LMStudio.getName(),
         Ollama.getName(),
         Jan.getName()
     };
 
-    public static @NotNull List<String> getLLMProviders() {
+    @NotNull
+    public static LLMProviderService getInstance() {
+        return ApplicationManager.getApplication().getService(LLMProviderService.class);
+    }
+
+
+    public List<String> getAvailableLLMProviders() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         Map<String, Supplier<String>> providerKeyMap = new HashMap<>();
         providerKeyMap.put(OpenAI.getName(), settings::getOpenAIKey);

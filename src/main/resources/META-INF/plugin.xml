@@ -230,6 +230,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

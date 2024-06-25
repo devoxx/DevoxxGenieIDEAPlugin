@@ -6,6 +6,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -28,7 +29,6 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import static com.devoxx.genie.chatmodel.LLMProviderConstant.getLLMProviders;
 import static com.devoxx.genie.model.Constant.MESSAGES;
 
 /**
@@ -50,6 +50,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     private PromptContextFileListPanel promptContextFileListPanel;
     private ActionButtonsPanel actionButtonsPanel;
 
+    private final LLMProviderService llmProviderService;
+
     private boolean isInitializationComplete = false;
 
     /**
@@ -58,7 +60,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
-
+        this.llmProviderService = LLMProviderService.getInstance();
         project = toolWindow.getProject();
 
         setupUI();
@@ -152,7 +154,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Only show the cloud-based LLM providers for which we have an API Key.
      */
     private void addLLMProvidersToComboBox() {
-        getLLMProviders().stream()
+        llmProviderService.getAvailableLLMProviders()
+            .stream()
             .sorted()
             .forEach(llmProvidersComboBox::addItem);
     }
