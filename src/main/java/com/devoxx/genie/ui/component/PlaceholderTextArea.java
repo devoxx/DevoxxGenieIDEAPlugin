@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.component;
 
+import com.intellij.ui.components.JBTextArea;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,7 +11,7 @@ import java.awt.event.FocusListener;
 
 @Setter
 @Getter
-public class PlaceholderTextArea extends JTextArea {
+public class PlaceholderTextArea extends JBTextArea {
 
     private String placeholder;
 
@@ -23,7 +24,7 @@ public class PlaceholderTextArea extends JTextArea {
     protected void paintComponent(final Graphics g) {
         super.paintComponent(g);
 
-        if (placeholder.isEmpty() || !getText().isEmpty()) {
+        if (placeholder == null || placeholder.isEmpty() || !getText().isEmpty()) {
             return;
         }
 
