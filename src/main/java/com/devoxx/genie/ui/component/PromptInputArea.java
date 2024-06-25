@@ -6,33 +6,52 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
-public class PromptInputArea extends PlaceholderTextArea {
+public class PromptInputArea extends JPanel {
 
-    /**
-     * The prompt input component
-     *
-     * @param resourceBundle the resource bundle
-     */
+    private final CommandAutoCompleteTextField inputField;
+
     public PromptInputArea(ResourceBundle resourceBundle) {
-        super();
+        super(new BorderLayout());
 
-        setLayout(new BorderLayout());
-        setMaximumSize(new Dimension(0, getPreferredSize().height));
+        inputField = new CommandAutoCompleteTextField();
+        inputField.setRows(3);
+        inputField.setLineWrap(true);
+        inputField.setWrapStyleWord(true);
+        inputField.setAutoscrolls(false);
+        inputField.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        inputField.setMinimumSize(new Dimension(0, 75));
+        inputField.addFocusListener(new PromptInputFocusListener(inputField));
+        inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        setLineWrap(true);
-        setWrapStyleWord(true);
-        setRows(3);
-        setAutoscrolls(false);
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        setMinimumSize(new Dimension(0, 75));
-        addFocusListener(new PromptInputFocusListener(this));
-        setPlaceholder(resourceBundle.getString("prompt.placeholder"));
+        JScrollPane scrollPane = new JScrollPane(inputField);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(null);
+
+        add(scrollPane, BorderLayout.CENTER);
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, getPreferredSize().height));
     }
 
-    /**
-     * Clear the text
-     */
+    public String getText() {
+        return inputField.getText();
+    }
+
+    public void setText(String text) {
+        inputField.setText(text);
+    }
+
     public void clear() {
-        setText("");
+        inputField.setText("");
+    }
+
+    public void setEnabled(boolean enabled) {
+        inputField.setEnabled(enabled);
+    }
+
+    public boolean requestFocusInWindow() {
+        return inputField.requestFocusInWindow();
+    }
+
+    public void setPlaceholder(String placeholder) {
+        inputField.setPlaceholder(placeholder);
     }
 }
