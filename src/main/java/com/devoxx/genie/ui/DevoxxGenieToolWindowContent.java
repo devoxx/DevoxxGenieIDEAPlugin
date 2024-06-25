@@ -72,10 +72,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      */
     private void setLastSelectedProvider() {
         String lastSelectedProvider = DevoxxGenieStateService.getInstance().getLastSelectedProvider();
-         if (lastSelectedProvider != null && !lastSelectedProvider.isEmpty()) {
+        if (lastSelectedProvider != null && !lastSelectedProvider.isEmpty()) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
             updateModelNamesComboBox(ModelProvider.valueOf(lastSelectedProvider));
         } else {
+            // If no last selected provider, select the first item in the combobox
             Object selectedItem = llmProvidersComboBox.getSelectedItem();
             if (selectedItem != null) {
                 updateModelNamesComboBox(ModelProvider.valueOf((String) selectedItem));
@@ -90,6 +91,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(createTopPanel(), BorderLayout.NORTH);
         contentPanel.add(createSplitter(), BorderLayout.CENTER);
+
+        setLastSelectedProvider();
     }
 
     /**
@@ -125,8 +128,22 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Refresh the UI elements because the settings have changed.
      */
     public void settingsChanged() {
+        String currentProvider = (String) llmProvidersComboBox.getSelectedItem();
+        String currentModel = (String) modelNameComboBox.getSelectedItem();
+
         llmProvidersComboBox.removeAllItems();
         addLLMProvidersToComboBox();
+
+        if (currentProvider != null && !currentProvider.isEmpty()) {
+            llmProvidersComboBox.setSelectedItem(currentProvider);
+            updateModelNamesComboBox(ModelProvider.valueOf(currentProvider));
+            if (currentModel != null && !currentModel.isEmpty()) {
+                modelNameComboBox.setSelectedItem(currentModel);
+            }
+        } else {
+            setLastSelectedProvider();
+        }
+
         actionButtonsPanel.configureSearchButtonsVisibility();
     }
 
@@ -242,7 +259,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete) return;
 
         JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-
         String selectedLLMProvider = (String) comboBox.getSelectedItem();
         if (selectedLLMProvider == null) return;
 

@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.settings;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
@@ -14,7 +13,6 @@ import static com.devoxx.genie.model.Constant.*;
 
 @Getter
 @Setter
-@Service
 @State(
     name = "com.devoxx.genie.ui.SettingsState",
     storages = @Storage("DevoxxGenieSettingsPlugin.xml")
