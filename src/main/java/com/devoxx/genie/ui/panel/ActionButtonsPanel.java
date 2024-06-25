@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
@@ -123,10 +124,11 @@ public class ActionButtonsPanel extends JPanel {
     private void selectFilesForPromptContext(ActionEvent e) {
         JBPopup popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project), null)
-            .setTitle("Double-Click To Add To Prompt Context")
+            .setTitle("Filter and Double-Click To Add To Prompt Context")
             .setRequestFocus(true)
             .setResizable(true)
             .setMovable(false)
+            .setMinSize(new Dimension(300, 350))
             .createPopup();
 
         if (addFileBtn.isShowing()) {
@@ -361,13 +363,15 @@ public class ActionButtonsPanel extends JPanel {
     private void addSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
                                   String userPrompt,
                                   List<VirtualFile> files) {
+
         chatMessageContext.setEditorInfo(new EditorInfo(files));
 
-        String userPromptWithContext = MessageCreationService
-            .getInstance()
-            .createUserPromptWithContext(chatMessageContext.getProject(), userPrompt, files);
-
-        chatMessageContext.setContext(userPromptWithContext);
+        MessageCreationService.getInstance().createUserPromptWithContextAsync(project, userPrompt, files)
+            .thenAccept(chatMessageContext::setContext)
+            .exceptionally(ex -> {
+                ErrorHandler.handleError(project, ex);
+                return null;
+            });
     }
 
     /**
