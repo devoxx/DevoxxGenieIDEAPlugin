@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
@@ -61,9 +62,13 @@ public class PromptExecutionService {
 
             ChatMemoryService.getInstance().add(userMessage);
 
-            queryFuture = CompletableFuture.supplyAsync(() ->
-                    processChatMessage(chatMessageContext), queryExecutor)
-                        .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS);
+            queryFuture = CompletableFuture
+                .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
+                .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS)
+                .exceptionally(throwable -> {
+                    ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                    return Optional.empty();
+                });
         } finally {
             queryLock.unlock();
         }

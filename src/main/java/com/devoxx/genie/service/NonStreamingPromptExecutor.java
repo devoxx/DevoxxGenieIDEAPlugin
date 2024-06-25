@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -42,7 +43,7 @@ public class NonStreamingPromptExecutor {
                         }
                     }).get(); // This blocks until the CompletableFuture is done
             } catch (InterruptedException | ExecutionException e) {
-                handleException(e, chatMessageContext);
+                ErrorHandler.handleError(chatMessageContext.getProject(), e.getCause());
             } finally {
                 enableButtons.run();
             }
@@ -56,28 +57,6 @@ public class NonStreamingPromptExecutor {
         if (currentTask != null && !currentTask.isDone()) {
             isCancelled = true;
             currentTask.cancel(true);
-        }
-    }
-
-    /**
-     * Handle exception.
-     * @param e the exception
-     * @param chatMessageContext the chat message context
-     */
-    private void handleException(@NotNull Exception e, ChatMessageContext chatMessageContext) {
-        Throwable cause = e.getCause();
-        if (cause instanceof CancellationException) {
-            return; // User cancelled, no warning required
-        }
-        if (cause instanceof TimeoutException) {
-            NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                "Timeout occurred. Please increase the timeout setting.");
-        } else if (cause instanceof ProviderUnavailableException) {
-            NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                "LLM provider not available. Please select another provider or make sure it's running.");
-        } else {
-            String message = e.getMessage() + ". Maybe create an issue on GitHub?";
-            NotificationUtil.sendNotification(chatMessageContext.getProject(), "Error occurred: " + message);
         }
     }
 }

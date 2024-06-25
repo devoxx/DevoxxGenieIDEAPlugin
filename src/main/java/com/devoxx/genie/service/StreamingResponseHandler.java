@@ -1,17 +1,15 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.util.NotificationUtil;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.net.ConnectException;
-import java.util.concurrent.TimeoutException;
 
 public class StreamingResponseHandler implements dev.langchain4j.model.StreamingResponseHandler<AiMessage> {
     private final ChatMessageContext chatMessageContext;
@@ -71,28 +69,6 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
     @Override
     public void onError(Throwable error) {
         enableButtons.run();
-        handleError(error);
-    }
-
-    /**
-     * Handle the LLM error and notify user with a message.
-     * @param error the error
-     */
-    private void handleError(@NotNull Throwable error) {
-        if (error.getCause() instanceof TimeoutException) {
-            notifyUser("Timeout occurred. Please increase the timeout setting.");
-        } else if (error.getCause() instanceof ConnectException) {
-            notifyUser("LLM provider not available. Please select another provider or make sure it's running.");
-        } else {
-            notifyUser("An error occurred. Please try again.");
-        }
-    }
-
-    /**
-     * Notify the user with a message.
-     * @param message the message
-     */
-    private void notifyUser(String message) {
-        NotificationUtil.sendNotification(chatMessageContext.getProject(), message);
+        ErrorHandler.handleError(chatMessageContext.getProject(), error);
     }
 }
