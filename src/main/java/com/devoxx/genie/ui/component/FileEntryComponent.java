@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.FileRemoveListener;
+import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
@@ -38,8 +39,8 @@ public class FileEntryComponent extends JPanel {
 
         setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        // Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(project, virtualFile);
-        JButton fileNameButton = new JButton(virtualFile.getName());
+        Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(project, virtualFile);
+        JButton fileNameButton = new JButton(virtualFile.getName(), fileTypeIcon);
 
         JButton fileNameBtn = createButton(fileNameButton);
         fileNameBtn.addActionListener(e -> openFileWithSelectedCode(project, virtualFile));
