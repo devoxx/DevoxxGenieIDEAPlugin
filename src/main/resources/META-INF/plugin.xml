@@ -36,6 +36,11 @@
         <UL>
             <LI>Feat #98: Allow a streaming response to be stopped</LI>
             <LI>Feat #112: Keep selected LLM provider after settings page</LI>
+            <LI>Feat #87: Auto complete commands</LI>
+            <LI>Feat #33: Add files based on filtered text</LI>
+            <LI>Feat #115: Show file icons in list</LI>
+            <LI>Feat: Show plugin version number in settings page with GitHub link</LI>
+            <LI>Fix: Support for higher timeout values</LI>
         </UL>
         <h2>v0.1.18</h2>
         <UL>
