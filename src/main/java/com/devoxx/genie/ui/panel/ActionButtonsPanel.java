@@ -29,7 +29,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
-import java.util.Optional;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.model.Constant.ADD_FILE_S_TO_PROMPT_CONTEXT;
@@ -54,6 +53,9 @@ public class ActionButtonsPanel extends JPanel {
     private final ComboBox<String> modelNameComboBox;
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
+
+    private boolean isStreaming = false;
+    private ChatMessageContext currentChatMessageContext;
 
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputComponent,
@@ -139,21 +141,103 @@ public class ActionButtonsPanel extends JPanel {
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        String userPromptText = isUserPromptProvided();
-        if (userPromptText == null) return;
+        if (isStreaming) {
+            stopStreaming();
+            return;
+        }
 
-        if (isWebSearchTriggeredAndConfigured(actionEvent)) return;
+        if (!validateAndPreparePrompt(actionEvent)) {
+            return;
+        }
 
+        executePrompt();
+    }
+
+    /**
+     * Execute the prompt.
+     */
+    private void executePrompt() {
+        disableUIForPromptExecution();
+
+        chatPromptExecutor.updatePromptWithCommandIfPresent(currentChatMessageContext, promptOutputPanel)
+            .ifPresentOrElse(
+                command -> startPromptExecution(),
+                this::enableButtons
+            );
+    }
+
+    /**
+     * Start the prompt execution.
+     */
+    private void startPromptExecution() {
+        if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+            isStreaming = true;
+        }
+        chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, this::enableButtons);
+    }
+
+    /**
+     * Stop the streaming.
+     */
+    private void stopStreaming() {
+        chatPromptExecutor.stopStreaming();
+        isStreaming = false;
+        enableButtons();
+    }
+
+    /**
+     * get the user prompt text.
+     */
+    private @Nullable String getUserPromptText() {
+        String userPromptText = promptInputComponent.getText();
+        if (userPromptText.isEmpty()) {
+            NotificationUtil.sendNotification(project, "Please enter a prompt.");
+            return null;
+        }
+        return userPromptText;
+    }
+
+    /**
+     * Check if web search is triggered and not configured, if not show Settings page.
+     * @param actionEvent the action event
+     * @return true if the web search is triggered and not configured
+     */
+    private boolean isWebSearchTriggeredAndNotConfigured(@NotNull ActionEvent actionEvent) {
+        if (actionEvent.getActionCommand().toLowerCase().contains("search") && !isWebSearchEnabled()) {
+            SwingUtilities.invokeLater(() ->
+                NotificationUtil.sendNotification(project, "No Search API keys found, please add one in the settings.")
+            );
+            showSettingsDialog(project);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Disable the UI for prompt execution.
+     */
+    private void disableUIForPromptExecution() {
         disableSubmitBtn();
-
-        ChatMessageContext chatMessageContext =
-            createChatMessageContext(actionEvent, userPromptText, editorFileButtonManager.getSelectedTextEditor());
-
         disableButtons();
+    }
 
-        chatPromptExecutor.updatePromptWithCommandIfPresent(chatMessageContext, promptOutputPanel)
-                          .ifPresentOrElse(command -> chatPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, this::enableButtons),
-                                           this::enableButtons);
+    /**
+     * Validate and prepare the prompt.
+     * @param actionEvent the action event
+     * @return true if the prompt is valid
+     */
+    private boolean validateAndPreparePrompt(ActionEvent actionEvent) {
+        String userPromptText = getUserPromptText();
+        if (userPromptText == null) {
+            return false;
+        }
+
+        if (isWebSearchTriggeredAndNotConfigured(actionEvent)) {
+            return false;
+        }
+
+        currentChatMessageContext = createChatMessageContext(actionEvent, userPromptText, editorFileButtonManager.getSelectedTextEditor());
+        return true;
     }
 
     /**
@@ -165,6 +249,7 @@ public class ActionButtonsPanel extends JPanel {
             submitBtn.setEnabled(true);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
             promptInputComponent.setEnabled(true);
+            isStreaming = false;
         });
     }
 
@@ -174,10 +259,14 @@ public class ActionButtonsPanel extends JPanel {
     private void disableSubmitBtn() {
         invokeLater(() -> {
             if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+                submitBtn.setEnabled(true);
+                submitBtn.setIcon(StopIcon);
+                submitBtn.setToolTipText(STOP_STREAMING);
+            } else {
                 submitBtn.setEnabled(false);
+                submitBtn.setIcon(StopIcon);
+                submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
             }
-            submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
     }
 
