@@ -54,7 +54,7 @@ public class ActionButtonsPanel extends JPanel {
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
-    private boolean isStreaming = false;
+    private boolean isPromptRunning = false;
     private ChatMessageContext currentChatMessageContext;
 
     public ActionButtonsPanel(Project project,
@@ -141,8 +141,8 @@ public class ActionButtonsPanel extends JPanel {
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        if (isStreaming) {
-            stopStreaming();
+        if (isPromptRunning) {
+            stopPromptExecution();
             return;
         }
 
@@ -170,18 +170,16 @@ public class ActionButtonsPanel extends JPanel {
      * Start the prompt execution.
      */
     private void startPromptExecution() {
-        if (DevoxxGenieStateService.getInstance().getStreamMode()) {
-            isStreaming = true;
-        }
+        isPromptRunning = true;
         chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, this::enableButtons);
     }
 
     /**
-     * Stop the streaming.
+     * Stop the prompt execution.
      */
-    private void stopStreaming() {
-        chatPromptExecutor.stopStreaming();
-        isStreaming = false;
+    private void stopPromptExecution() {
+        chatPromptExecutor.stopPromptExecution();
+        isPromptRunning = false;
         enableButtons();
     }
 
@@ -246,10 +244,9 @@ public class ActionButtonsPanel extends JPanel {
     public void enableButtons() {
         SwingUtilities.invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
-            submitBtn.setEnabled(true);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
             promptInputComponent.setEnabled(true);
-            isStreaming = false;
+            isPromptRunning = false;
         });
     }
 
@@ -258,45 +255,9 @@ public class ActionButtonsPanel extends JPanel {
      */
     private void disableSubmitBtn() {
         invokeLater(() -> {
-            if (DevoxxGenieStateService.getInstance().getStreamMode()) {
-                submitBtn.setEnabled(true);
-                submitBtn.setIcon(StopIcon);
-                submitBtn.setToolTipText(STOP_STREAMING);
-            } else {
-                submitBtn.setEnabled(false);
-                submitBtn.setIcon(StopIcon);
-                submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
-            }
+            submitBtn.setIcon(StopIcon);
+            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
-    }
-
-    /**
-     * Check if web search is triggered and configured, if not show Settings page.
-     * @param actionEvent the action event
-     * @return true if the web search is triggered and configured
-     */
-    private boolean isWebSearchTriggeredAndConfigured(@NotNull ActionEvent actionEvent) {
-        if (actionEvent.getActionCommand().toLowerCase().contains("search") && !isWebSearchEnabled()) {
-            SwingUtilities.invokeLater(() ->
-                NotificationUtil.sendNotification(project, "No Search API keys found, please add one in the settings.")
-            );
-            showSettingsDialog(project);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if the user prompt is provided.
-     * @return the user prompt text
-     */
-    private @Nullable String isUserPromptProvided() {
-        String userPromptText = promptInputComponent.getText();
-        if (userPromptText.isEmpty()) {
-            NotificationUtil.sendNotification(project, "Please enter a prompt.");
-            return null;
-        }
-        return userPromptText;
     }
 
     /**
