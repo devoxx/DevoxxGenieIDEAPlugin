@@ -68,5 +68,6 @@ public class Constant {
     public static final String SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER = "Search the web with Tavily for an answer";
     public static final String SEARCH_GOOGLE_FOR_AN_ANSWER = "Search Google for an answer";
     public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
+    public static final String STOP_STREAMING = "Stop streaming response";
 
 }

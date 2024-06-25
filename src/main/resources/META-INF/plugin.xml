@@ -32,6 +32,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.19</h2>
+        <UL>
+            <LI>Feat #98: Allow a streaming response to be stopped</LI>
+        </UL>
         <h2>v0.1.18</h2>
         <UL>
             <LI>Claude 3.5 Sonnet support (Anthropic)</LI>
