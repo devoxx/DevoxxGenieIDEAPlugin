@@ -122,15 +122,18 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     /**
-     * Add a warning text to the panel.
-     *
+     * Remove the last user prompt from the panel.
      * @param chatMessageContext the prompt context
-     * @param text               the warning text
      */
-    public void addWarningText(ChatMessageContext chatMessageContext, String text) {
-        welcomePanel.setVisible(false);
-        addFiller("warning");
-        container.add(new WarningPanel(text, chatMessageContext));
+    public void removeLastUserPrompt(ChatMessageContext chatMessageContext) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof UserPromptPanel && component.getName().equals(chatMessageContext.getName())) {
+                container.remove(component);
+                break;
+            }
+        }
+        revalidate();
+        repaint();
     }
 
     /**
