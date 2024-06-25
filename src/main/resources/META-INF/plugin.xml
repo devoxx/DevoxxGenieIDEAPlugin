@@ -222,6 +222,7 @@
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
 
+        <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
