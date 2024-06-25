@@ -12,8 +12,6 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
-import java.net.ConnectException;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
@@ -21,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 public class ChatPromptExecutor {
 
     private final PromptExecutionService promptExecutionService = PromptExecutionService.getInstance();
+    private StreamingResponseHandler currentStreamingHandler;
 
     public ChatPromptExecutor() {
     }
@@ -38,17 +37,25 @@ public class ChatPromptExecutor {
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                if (chatMessageContext.getContext() != null && chatMessageContext.getContext().toLowerCase().contains("search")) {
-                    webSearchPrompt(chatMessageContext, promptOutputPanel, enableButtons);
+                if (isWebSearch(chatMessageContext)) {
+                    executeWebSearch(chatMessageContext, promptOutputPanel, enableButtons);
+                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+                    executeStreamingPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 } else {
-                    if (DevoxxGenieStateService.getInstance().getStreamMode()) {
-                        setupStreaming(chatMessageContext, promptOutputPanel, enableButtons);
-                    } else {
-                        runPrompt(chatMessageContext, promptOutputPanel, enableButtons);
-                    }
+                    executeNonStreamingPrompt(chatMessageContext, promptOutputPanel, enableButtons);
                 }
             }
         }.queue();
+    }
+
+    /**
+     * Is web search.
+     * @param chatMessageContext the chat message context
+     * @return the boolean
+     */
+    private boolean isWebSearch(@NotNull ChatMessageContext chatMessageContext) {
+        return chatMessageContext.getContext() != null &&
+            chatMessageContext.getContext().toLowerCase().contains("search");
     }
 
     /**
@@ -57,7 +64,7 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel the prompt output panel
      * @param enableButtons the Enable buttons
      */
-    private void webSearchPrompt(@NotNull ChatMessageContext chatMessageContext,
+    private void executeWebSearch(@NotNull ChatMessageContext chatMessageContext,
                                  @NotNull PromptOutputPanel promptOutputPanel,
                                  Runnable enableButtons) {
         promptOutputPanel.addUserPrompt(chatMessageContext);
@@ -81,16 +88,16 @@ public class ChatPromptExecutor {
         return commandFromPrompt;
     }
 
+
     /**
-     * Setup streaming.
+     * Execute streaming response.
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
      */
-    private void setupStreaming(@NotNull ChatMessageContext chatMessageContext,
-                                @NotNull PromptOutputPanel promptOutputPanel,
-                                Runnable enableButtons) {
-
+    private void executeStreamingPrompt(@NotNull ChatMessageContext chatMessageContext,
+                                        @NotNull PromptOutputPanel promptOutputPanel,
+                                        Runnable enableButtons) {
         StreamingChatLanguageModel streamingChatLanguageModel = chatMessageContext.getStreamingChatLanguageModel();
         if (streamingChatLanguageModel == null) {
             NotificationUtil.sendNotification(chatMessageContext.getProject(), "Streaming model not available, please select another provider.");
@@ -110,9 +117,18 @@ public class ChatPromptExecutor {
 
         promptOutputPanel.addUserPrompt(chatMessageContext);
 
-        streamingChatLanguageModel.generate(
-            chatMemoryService.messages(),
-            new StreamingResponseHandler(chatMessageContext, promptOutputPanel, enableButtons));
+        currentStreamingHandler = new StreamingResponseHandler(chatMessageContext, promptOutputPanel, enableButtons);
+        streamingChatLanguageModel.generate(chatMemoryService.messages(), currentStreamingHandler);
+    }
+
+    /**
+     * Stop streaming.
+     */
+    public void stopStreaming() {
+        if (currentStreamingHandler != null) {
+            currentStreamingHandler.stop();
+            currentStreamingHandler = null;
+        }
     }
 
     /**
@@ -148,9 +164,9 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
      */
-    private void runPrompt(@NotNull ChatMessageContext chatMessageContext,
-                           PromptOutputPanel promptOutputPanel,
-                           Runnable enableButtons) {
+    private void executeNonStreamingPrompt(@NotNull ChatMessageContext chatMessageContext,
+                                           PromptOutputPanel promptOutputPanel,
+                                           Runnable enableButtons) {
 
         promptExecutionService.executeQuery(chatMessageContext)
             .thenAccept(aiMessageOptional -> {
