@@ -5,8 +5,10 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.FormBuilder;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
@@ -53,6 +55,8 @@ public class LLMSettingsComponent implements SettingsComponent {
     private final JPasswordField googleSearchApiKeyField = new JPasswordField(stateService.getGoogleSearchKey());
     @Getter
     private final JPasswordField googleCSIApiKeyField = new JPasswordField(stateService.getGoogleCSIKey());
+    @Getter
+    private final JBIntSpinner maxSearchResults = new JBIntSpinner(new UINumericRange(stateService.getMaxSearchResults(), 1, 10));
     @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
@@ -102,6 +106,8 @@ public class LLMSettingsComponent implements SettingsComponent {
             .addComponent(createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"))
             .addComponent(new JLabel("Google Custom Search Engine ID"))
             .addComponent(createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"))
+            .addComponent(new JLabel("Max search results"))
+            .addComponent(maxSearchResults)
             .addComponent(new JLabel("Hide Search Providers"))
             .addComponent(hideSearchButtonsField)
             .addVerticalGap(20)
