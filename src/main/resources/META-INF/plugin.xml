@@ -1,5 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
+
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>com.devoxx.genie</id>
 
@@ -9,6 +10,8 @@
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
+
+    <idea-version since-build="233"/>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -32,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.1.20</h2>
+        <UL>
+            <LI>Updated until-version to 242</LI>
+        </UL>
         <h2>v0.1.19</h2>
         <UL>
             <LI>Feat #98: Allow a streaming response to be stopped</LI>
