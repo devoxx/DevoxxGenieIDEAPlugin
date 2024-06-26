@@ -13,6 +13,7 @@ import dev.langchain4j.web.search.WebSearchEngine;
 import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
 import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -39,7 +40,8 @@ public class WebSearchService {
      * @return the AI message
      */
     public @NotNull Optional<AiMessage> searchWeb(@NotNull ChatMessageContext chatMessageContext) {
-        return getWebSearchEngine(chatMessageContext)
+        WebSearchEngine engine = createWebSearchEngine(chatMessageContext.getContext());
+        return Optional.ofNullable(engine)
             .flatMap(webSearchEngine -> executeSearchCommand(webSearchEngine, chatMessageContext));
     }
 
@@ -53,7 +55,7 @@ public class WebSearchService {
                                                               @NotNull ChatMessageContext chatMessageContext) {
         ContentRetriever contentRetriever = WebSearchContentRetriever.builder()
             .webSearchEngine(webSearchEngine)
-            .maxResults(3)      // TODO Move value to Settings page
+            .maxResults(DevoxxGenieStateService.getInstance().getMaxSearchResults())
             .build();
 
         SearchWebsite website = AiServices.builder(SearchWebsite.class)
@@ -66,23 +68,24 @@ public class WebSearchService {
 
     /**
      * Get the web search engine.
-     * @param chatMessageContext the chat message context
+     * @param searchType the search type
      * @return the web search engine
      */
-    private static Optional<WebSearchEngine> getWebSearchEngine(@NotNull ChatMessageContext chatMessageContext) {
-        if (chatMessageContext.getContext().equals(TAVILY_SEARCH_ACTION) &&
-            DevoxxGenieStateService.getInstance().getTavilySearchKey() != null) {
-            return Optional.of(TavilyWebSearchEngine.builder()
-                .apiKey(DevoxxGenieStateService.getInstance().getTavilySearchKey())
-                .build());
-        } else if (DevoxxGenieStateService.getInstance().getGoogleSearchKey() != null &&
-                   chatMessageContext.getContext().equals(GOOGLE_SEARCH_ACTION)) {
-            return Optional.of(GoogleCustomWebSearchEngine.builder()
-                .apiKey(DevoxxGenieStateService.getInstance().getGoogleSearchKey())
-                .csi(DevoxxGenieStateService.getInstance().getGoogleCSIKey())
-                .build());
-        } else {
-            return Optional.empty();
+    private @Nullable WebSearchEngine createWebSearchEngine(@NotNull String searchType) {
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        if (searchType.equals(TAVILY_SEARCH_ACTION) && settings.getTavilySearchKey() != null) {
+            return TavilyWebSearchEngine.builder()
+                .apiKey(settings.getTavilySearchKey())
+                .build();
+        } else if (searchType.equals(GOOGLE_SEARCH_ACTION) &&
+            settings.getGoogleSearchKey() != null &&
+            settings.getGoogleCSIKey() != null) {
+            return GoogleCustomWebSearchEngine.builder()
+                .apiKey(settings.getGoogleSearchKey())
+                .csi(settings.getGoogleCSIKey())
+                .build();
         }
+        return null;
     }
 }
