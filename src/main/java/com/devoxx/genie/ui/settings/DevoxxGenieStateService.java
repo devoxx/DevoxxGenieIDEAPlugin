@@ -42,6 +42,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String googleSearchKey = "";
     private String googleCSIKey = "";
     private String tavilySearchKey = "";
+    private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
     // Last selected LLM provider and model name
     private String lastSelectedProvider = "";
