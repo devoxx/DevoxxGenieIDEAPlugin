@@ -73,6 +73,7 @@ public class LLMSettingsConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getTavilySearchApiKeyField(), settings.getTavilySearchKey());
         isModified |= isFieldModified(llmSettingsComponent.getGoogleSearchApiKeyField(), settings.getGoogleSearchKey());
         isModified |= isFieldModified(llmSettingsComponent.getGoogleCSIApiKeyField(), settings.getGoogleCSIKey());
+        isModified |= llmSettingsComponent.getMaxSearchResults().getNumber() != settings.getMaxSearchResults();
 
         return isModified;
     }
@@ -109,6 +110,7 @@ public class LLMSettingsConfigurable implements Configurable {
         settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
         settings.setGoogleSearchKey(new String(llmSettingsComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
+        settings.setMaxSearchResults(llmSettingsComponent.getMaxSearchResults().getNumber());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
@@ -141,5 +143,6 @@ public class LLMSettingsConfigurable implements Configurable {
         llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
         llmSettingsComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
         llmSettingsComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
+        llmSettingsComponent.getMaxSearchResults().setValue(settings.getMaxSearchResults());
     }
 }

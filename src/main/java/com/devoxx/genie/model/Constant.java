@@ -52,6 +52,7 @@ public class Constant {
 
     // Hide Search Button
     public static final Boolean HIDE_SEARCH_BUTTONS = false;
+    public static final Integer MAX_SEARCH_RESULTS = 3;
 
     // Stream mode settings
     public static final Boolean STREAM_MODE = false;
