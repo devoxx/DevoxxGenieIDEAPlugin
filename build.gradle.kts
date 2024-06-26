@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.1.19"
+version = "0.1.20"
 
 repositories {
     mavenCentral()
@@ -77,7 +77,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("233")
-        untilBuild.set("241.*")
+        untilBuild.set("242.*")
     }
 
     shadowJar {
