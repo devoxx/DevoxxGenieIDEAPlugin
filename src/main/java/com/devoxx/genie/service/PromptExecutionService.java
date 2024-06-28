@@ -53,12 +53,14 @@ public class PromptExecutionService {
             MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
             if (ChatMemoryService.getInstance().isEmpty()) {
+                LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
                 ChatMemoryService.getInstance().add(
                     new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                 );
             }
 
             UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
+            LOG.info("Created UserMessage: " + userMessage);
 
             ChatMemoryService.getInstance().add(userMessage);
 
@@ -66,6 +68,7 @@ public class PromptExecutionService {
                 .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
                 .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
+                    LOG.error("Error occurred while processing chat message", throwable);
                     ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
                     return Optional.empty();
                 });

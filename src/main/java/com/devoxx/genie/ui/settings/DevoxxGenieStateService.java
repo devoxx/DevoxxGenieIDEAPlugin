@@ -9,6 +9,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static com.devoxx.genie.model.Constant.*;
 
 @Getter
@@ -71,6 +75,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String reviewPrompt = REVIEW_PROMPT;
     private String explainPrompt = EXPLAIN_PROMPT;
     private String customPrompt = CUSTOM_PROMPT;
+
+    private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
+        "build", ".git", "bin", "out", "target", "node_modules", ".idea"
+    ));
+
+    private List<String> includedFileExtensions = new ArrayList<>(Arrays.asList(
+        "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md"
+    ));
 
     @Override
     public DevoxxGenieStateService getState() {

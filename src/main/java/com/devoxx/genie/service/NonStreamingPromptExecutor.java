@@ -3,13 +3,14 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.service.exception.ProviderUnavailableException;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.*;
 
 public class NonStreamingPromptExecutor {
+
+    private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutor.class);
 
     private final PromptExecutionService promptExecutionService;
     private volatile Future<?> currentTask;
@@ -31,23 +32,22 @@ public class NonStreamingPromptExecutor {
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 
-        currentTask = CompletableFuture.runAsync(() -> {
-            try {
-                promptExecutionService.executeQuery(chatMessageContext)
-                    .thenAccept(aiMessageOptional -> {
-                        if (!isCancelled && aiMessageOptional.isPresent()) {
-                            chatMessageContext.setAiMessage(aiMessageOptional.get());
-                            promptOutputPanel.addChatResponse(chatMessageContext);
-                        } else if (isCancelled) {
-                            promptOutputPanel.removeLastUserPrompt(chatMessageContext);
-                        }
-                    }).get(); // This blocks until the CompletableFuture is done
-            } catch (InterruptedException | ExecutionException e) {
-                ErrorHandler.handleError(chatMessageContext.getProject(), e.getCause());
-            } finally {
-                enableButtons.run();
-            }
-        });
+        currentTask = promptExecutionService.executeQuery(chatMessageContext)
+            .thenAccept(aiMessageOptional -> {
+                if (!isCancelled && aiMessageOptional.isPresent()) {
+                    LOG.debug(">>>> Adding AI message to prompt output panel");
+                    chatMessageContext.setAiMessage(aiMessageOptional.get());
+                    promptOutputPanel.addChatResponse(chatMessageContext);
+                } else if (isCancelled) {
+                    LOG.debug(">>>> Prompt execution cancelled");
+                    promptOutputPanel.removeLastUserPrompt(chatMessageContext);
+                }
+            })
+            .exceptionally(throwable -> {
+                ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                return null;
+            })
+            .whenComplete((result, throwable) -> enableButtons.run());
     }
 
     /**

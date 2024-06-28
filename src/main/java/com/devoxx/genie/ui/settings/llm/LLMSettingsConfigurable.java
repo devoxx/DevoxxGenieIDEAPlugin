@@ -78,11 +78,6 @@ public class LLMSettingsConfigurable implements Configurable {
         return isModified;
     }
 
-    private void notifySettingsChanged() {
-        MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
-        messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged();
-    }
-
     /**
      * Apply the changes to the settings
      */
@@ -91,6 +86,10 @@ public class LLMSettingsConfigurable implements Configurable {
         boolean isModified = isModified();
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        boolean isClaudeKeyChanged = isFieldModified(llmSettingsComponent.getAnthropicApiKeyField(), settings.getAnthropicKey());
+        boolean isOpenAIChanged = isFieldModified(llmSettingsComponent.getOpenAIKeyField(), settings.getAnthropicKey());
+        boolean isGeminiChanged = isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
 
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
@@ -114,7 +113,12 @@ public class LLMSettingsConfigurable implements Configurable {
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
-            notifySettingsChanged();
+            boolean hasKey = !settings.getAnthropicKey().isBlank() ||
+                    !settings.getOpenAIKey().isBlank() ||
+                    !settings.getGeminiKey().isBlank();
+            ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
+                .settingsChanged(hasKey);
         }
     }
 

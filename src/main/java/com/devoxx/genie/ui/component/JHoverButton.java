@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.component;
 
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,7 +17,7 @@ public class JHoverButton extends JButton {
         this("", icon, tight);
     }
 
-    public JHoverButton(String text, Icon icon, boolean tight) {
+    public JHoverButton(@NotNull String text, Icon icon, boolean tight) {
         super(icon);
 
         if (!text.isBlank()) {

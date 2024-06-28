@@ -1,43 +1,58 @@
 package com.devoxx.genie.ui.panel;
 
+import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.service.ChatPromptExecutor;
-import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.*;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.text.NumberFormat;
 import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.model.Constant.ADD_FILE_S_TO_PROMPT_CONTEXT;
 import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
-import static com.devoxx.genie.ui.util.SettingsDialogUtil.showSettingsDialog;
 import static javax.swing.SwingUtilities.invokeLater;
 
-public class ActionButtonsPanel extends JPanel {
+public class ActionButtonsPanel extends JPanel implements SettingsChangeListener {
+
+    private static final Logger LOG = Logger.getInstance(ActionButtonsPanel.class);
+
     private final Project project;
 
     private final ChatPromptExecutor chatPromptExecutor;
@@ -47,22 +62,26 @@ public class ActionButtonsPanel extends JPanel {
     private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
     private final JButton tavilySearchBtn = new JHoverButton(WebSearchIcon, true);
     private final JButton googleSearchBtn = new JHoverButton(GoogleIcon, true);
+    private final JButton addProjectBtn = new JHoverButton("Add full project to prompt", AddFileIcon,  true);
+    private final JProgressBar progressBar = new JProgressBar();
 
     private final PromptInputArea promptInputComponent;
     private final PromptOutputPanel promptOutputPanel;
     private final ComboBox<String> llmProvidersComboBox;
-    private final ComboBox<String> modelNameComboBox;
+    private final ComboBox<LanguageModel> modelNameComboBox;
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
     private boolean isPromptRunning = false;
+    private boolean isProjectContextAdded = false;
     private ChatMessageContext currentChatMessageContext;
+    private String projectContext;
 
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputComponent,
                               PromptOutputPanel promptOutputPanel,
                               ComboBox<String> llmProvidersComboBox,
-                              ComboBox<String> modelNameComboBox,
+                              ComboBox<LanguageModel> modelNameComboBox,
                               DevoxxGenieToolWindowContent devoxxGenieToolWindowContent) {
         setLayout(new BorderLayout());
 
@@ -74,11 +93,21 @@ public class ActionButtonsPanel extends JPanel {
         this.llmProvidersComboBox = llmProvidersComboBox;
         this.modelNameComboBox = modelNameComboBox;
         this.devoxxGenieToolWindowContent = devoxxGenieToolWindowContent;
+        this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
+
+        ApplicationManager.getApplication().getMessageBus()
+            .connect()
+            .subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
 
         setupUI();
-
+        setupAddProjectButton();
         configureSearchButtonsVisibility();
     }
+
+    private void updateAddProjectButtonVisibility() {
+        addProjectBtn.setVisible(isProjectContextSupportedProvider());
+    }
+
     /**
      * Create the Action button panel with Submit, the Web Search and Add file buttons.
      */
@@ -98,6 +127,8 @@ public class ActionButtonsPanel extends JPanel {
         addFileBtn.addActionListener(this::selectFilesForPromptContext);
 
         add(addFileBtn, BorderLayout.EAST);
+
+        add(addProjectBtn, BorderLayout.SOUTH);
     }
 
     /**
@@ -185,6 +216,36 @@ public class ActionButtonsPanel extends JPanel {
         enableButtons();
     }
 
+    public void resetProjectContext() {
+        projectContext = null;
+        isProjectContextAdded = false;
+        if (currentChatMessageContext != null) {
+            currentChatMessageContext.setContext(null);
+        }
+        updateAddProjectButton();
+    }
+
+    private void updateAddProjectButton() {
+        if (isProjectContextAdded) {
+            addProjectBtn.setIcon(DeleteIcon);
+            addProjectBtn.setText("Remove full project from prompt");
+            addProjectBtn.setToolTipText("Remove entire project from prompt context");
+        } else {
+            addProjectBtn.setIcon(AddFileIcon);
+            addProjectBtn.setText("Add full project to prompt");
+            addProjectBtn.setToolTipText("Add entire project to prompt context");
+        }
+    }
+
+    private boolean isProjectContextSupportedProvider() {
+        String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
+        return selectedProvider != null && (
+            selectedProvider.equals(ModelProvider.OpenAI.getName()) ||
+                selectedProvider.equals(ModelProvider.Anthropic.getName()) ||
+                selectedProvider.equals(ModelProvider.Gemini.getName())
+        );
+    }
+
     /**
      * get the user prompt text.
      */
@@ -195,22 +256,6 @@ public class ActionButtonsPanel extends JPanel {
             return null;
         }
         return userPromptText;
-    }
-
-    /**
-     * Check if web search is triggered and not configured, if not show Settings page.
-     * @param actionEvent the action event
-     * @return true if the web search is triggered and not configured
-     */
-    private boolean isWebSearchTriggeredAndNotConfigured(@NotNull ActionEvent actionEvent) {
-        if (actionEvent.getActionCommand().toLowerCase().contains("search") && !isWebSearchEnabled()) {
-            SwingUtilities.invokeLater(() ->
-                NotificationUtil.sendNotification(project, "No Search API keys found, please add one in the settings.")
-            );
-            showSettingsDialog(project);
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -232,11 +277,15 @@ public class ActionButtonsPanel extends JPanel {
             return false;
         }
 
-        if (isWebSearchTriggeredAndNotConfigured(actionEvent)) {
-            return false;
-        }
+        currentChatMessageContext =
+            createChatMessageContext(actionEvent, userPromptText);
 
-        currentChatMessageContext = createChatMessageContext(actionEvent, userPromptText, editorFileButtonManager.getSelectedTextEditor());
+        // Set the webSearchRequested flag based on the action command
+        currentChatMessageContext.setWebSearchRequested(
+            actionEvent.getActionCommand().equals(Constant.TAVILY_SEARCH_ACTION) ||
+            actionEvent.getActionCommand().equals(Constant.GOOGLE_SEARCH_ACTION)
+        );
+
         return true;
     }
 
@@ -266,12 +315,10 @@ public class ActionButtonsPanel extends JPanel {
      * Get the chat message context.
      * @param actionEvent the action event
      * @param userPrompt the user prompt
-     * @param editor     the editor
      * @return the prompt context with language and text
      */
     private @NotNull ChatMessageContext createChatMessageContext(ActionEvent actionEvent,
-                                                                 String userPrompt,
-                                                                 Editor editor) {
+                                                                 String userPrompt) {
         ChatMessageContext chatMessageContext = new ChatMessageContext();
         chatMessageContext.setProject(project);
         chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
@@ -288,13 +335,35 @@ public class ActionButtonsPanel extends JPanel {
 
         setChatTimeout(chatMessageContext);
 
-        if (actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
-            addSelectedCodeSnippet(userPrompt, editor, chatMessageContext);
-        } else {
-            chatMessageContext.setContext(actionEvent.getActionCommand());
-        }
+        setWindowContext(userPrompt, chatMessageContext);
 
         return chatMessageContext;
+    }
+
+    /**
+     * Set the chat context based on
+     * 1. The selected files & open file or selected code snippet
+     * 2. Or full project context
+     * @param userPrompt the user prompt
+     * @param chatMessageContext the chat message context
+     */
+    private void setWindowContext(String userPrompt, ChatMessageContext chatMessageContext) {
+        if (projectContext != null && isProjectContextAdded) {
+            chatMessageContext.setContext(projectContext);
+        } else {
+            Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
+
+            // Add files to the context
+            List<VirtualFile> files = FileListManager.getInstance().getFiles();
+            if (!files.isEmpty()) {
+                addSelectedFiles(chatMessageContext, userPrompt, files);
+            }
+
+            // Set the context based on the selected code snippet or the complete file
+            if (selectedTextEditor != null) {
+                addEditorInfo(userPrompt, selectedTextEditor, chatMessageContext);
+            }
+        }
     }
 
     /**
@@ -303,29 +372,27 @@ public class ActionButtonsPanel extends JPanel {
      * @param editor             the editor
      * @param chatMessageContext the chat message context
      */
-    private void addSelectedCodeSnippet(String userPrompt,
-                                        Editor editor,
-                                        ChatMessageContext chatMessageContext) {
-        List<VirtualFile> files = FileListManager.getInstance().getFiles();
-        if (!files.isEmpty()) {
-            addSelectedFiles(chatMessageContext, userPrompt, files);
-        } else if (editor != null) {
-            EditorInfo editorInfo = createEditorInfo(editor);
-            chatMessageContext.setEditorInfo(editorInfo);
-        }
+    private void addEditorInfo(String userPrompt,
+                               Editor editor,
+                               @NotNull ChatMessageContext chatMessageContext) {
+        EditorInfo editorInfo = generateEditorInformation(editor);
+        chatMessageContext.setEditorInfo(editorInfo);
     }
 
     /**
-     * Create the editor info.
+     * Create the editor info based on the selected code snippet or the complete file.
      * @param editor the editor
      * @return the editor info
      */
-    private @NotNull EditorInfo createEditorInfo(Editor editor) {
+    private @NotNull EditorInfo generateEditorInformation(Editor editor) {
         EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
         String selectedText = editor.getSelectionModel().getSelectedText();
+
+        // Add selected text
         if (selectedText != null) {
             editorInfo.setSelectedText(selectedText);
         } else {
+            // Or add the complete file
             editorInfo.setSelectedText(editor.getDocument().getText());
             editorInfo.setSelectedFiles(List.of(editor.getVirtualFile()));
         }
@@ -346,16 +413,7 @@ public class ActionButtonsPanel extends JPanel {
     }
 
     /**
-     * Check if web search is enabled.
-     * @return true if web search is enabled
-     */
-    private boolean isWebSearchEnabled() {
-        return !DevoxxGenieStateService.getInstance().getTavilySearchKey().isEmpty() ||
-               !DevoxxGenieStateService.getInstance().getGoogleSearchKey().isEmpty();
-    }
-
-    /**
-     * Get the prompt context from the selected files.
+     * Add selected files to the chat message context.
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
@@ -393,5 +451,146 @@ public class ActionButtonsPanel extends JPanel {
             googleSearchBtn.setVisible(!DevoxxGenieStateService.getInstance().getGoogleSearchKey().isEmpty() &&
                                        !DevoxxGenieStateService.getInstance().getGoogleCSIKey().isEmpty());
         }
+    }
+
+    /**
+     * Setup the Add Project button.
+     */
+    private void setupAddProjectButton() {
+        addProjectBtn.setToolTipText("Add entire project to prompt context");
+        addProjectBtn.addActionListener(e -> toggleProjectContext());
+
+        progressBar.setIndeterminate(true);
+        progressBar.setVisible(false);
+
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(addProjectBtn, BorderLayout.CENTER);
+        buttonPanel.add(progressBar, BorderLayout.SOUTH);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        updateAddProjectButtonVisibility();  // Set initial visibility
+    }
+
+    /**
+     * Add the project source code to the prompt context.
+     */
+    private void toggleProjectContext() {
+        if (isProjectContextAdded) {
+            removeProjectContext();
+        } else {
+            addProjectToContext();
+        }
+    }
+
+    private void removeProjectContext() {
+        projectContext = null;
+        isProjectContextAdded = false;
+
+        addProjectBtn.setIcon(AddFileIcon);
+        addProjectBtn.setText("Add full project to prompt");
+        addProjectBtn.setToolTipText("Add entire project to prompt context");
+
+        NotificationUtil.sendNotification(project, "Project context removed successfully");
+    }
+
+    private void addProjectToContext() {
+
+        Object selectedItem = llmProvidersComboBox.getSelectedItem();
+        if (selectedItem != null && ((String)selectedItem).isEmpty()) {
+            NotificationUtil.sendNotification(project, "Please select a provider first");
+            return;
+        }
+
+        if (!selectedItem.equals(ModelProvider.Gemini.getName()) &&
+            !selectedItem.equals(ModelProvider.Anthropic.getName()) &&
+            !selectedItem.equals(ModelProvider.OpenAI.getName())) {
+            NotificationUtil.sendNotification(project,
+                "This feature only works for OpenAI, Anthropic and Gemini providers because of the large token window context.");
+            return;
+        }
+
+        new Task.Backgroundable(project, "Scanning Project", true) {
+            String projectContent;
+
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                projectContent = startScanning(indicator);
+            }
+
+            @Override
+            public void onSuccess() {
+                processScanningResult(projectContent);
+            }
+
+            @Override
+            public void onFinished() {
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(new StringSelection(projectContent), null);
+
+                isProjectContextAdded = true;
+                addProjectBtn.setEnabled(true);
+                progressBar.setVisible(false);
+            }
+        }.queue();
+
+        addProjectBtn.setEnabled(false);
+    }
+
+    /**
+     * Start scanning the project.
+     * @param indicator the progress indicator
+     * @return the scanning result
+     */
+    private String startScanning(@NotNull ProgressIndicator indicator) {
+        indicator.setIndeterminate(true);
+        indicator.setText("Scanning project files...");
+        String scanningResult = "";
+        try {
+            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit()).get();
+        } catch (Exception e) {
+            LOG.error("Failed to scan project", e);
+        }
+        return scanningResult;
+    }
+
+    /**
+     * Get the token limit for the selected provider and model.
+     * @return the token limit
+     */
+    private int getTokenLimit() {
+        ModelProvider selectedProvider = ModelProvider.fromString((String) llmProvidersComboBox.getSelectedItem());
+        Object selectedItem = modelNameComboBox.getSelectedItem();
+        int tokenLimit = 4096;
+        if (selectedItem != null) {
+            tokenLimit = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider)
+                .map(factory -> factory.getMaxTokens((String) selectedItem))
+                .orElse(4096);
+        }
+        return tokenLimit;
+    }
+
+    /**
+     * Process the scanning result.
+     * @param projectContent the project content
+     */
+    private void processScanningResult(String projectContent) {
+        if (projectContent != null && !projectContent.isEmpty()) {
+            projectContext = "Project Context:\n" + projectContent;
+            Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
+            int totalTokens = ENCODING.countTokens(projectContent);
+
+            addProjectBtn.setIcon(DeleteIcon);
+            addProjectBtn.setText("Full Project (" + NumberFormat.getInstance().format(totalTokens) + " tokens)");
+            addProjectBtn.setToolTipText("Remove entire project from prompt context");
+        } else {
+            NotificationUtil.sendNotification(project, "Failed to add project context");
+        }
+    }
+
+    @Override
+    public void settingsChanged(boolean hasKey) {
+        addProjectBtn.setVisible(hasKey && isProjectContextSupportedProvider());
+        updateAddProjectButtonVisibility();
     }
 }

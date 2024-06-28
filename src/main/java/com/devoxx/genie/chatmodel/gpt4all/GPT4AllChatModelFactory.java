@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.gpt4all;
 
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 
-public class GPT4AllChatModelFactory implements ChatModelFactory {
+public class GPT4AllChatModelFactory extends AbstractChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {

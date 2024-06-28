@@ -1,16 +1,24 @@
 package com.devoxx.genie.chatmodel.groq;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.List;
 
-public class GroqChatModelFactory implements ChatModelFactory {
+public class GroqChatModelFactory extends AbstractChatModelFactory {
+
+    public GroqChatModelFactory() {
+        LANGUAGE_MODELS.add(new LanguageModel("gemma-7b-it", "Gemma 7B it", 8_192));
+        LANGUAGE_MODELS.add(new LanguageModel("llama3-8b-8192", "Llama 3 8B", 8_192));
+        LANGUAGE_MODELS.add(new LanguageModel("llama3-70b-8192", "Llama 3 70B", 8_192));
+        LANGUAGE_MODELS.add(new LanguageModel("llama2-70b-4096", "Llama 2 70B", 4_096));
+        LANGUAGE_MODELS.add(new LanguageModel("mixtral-8x7b-32768", "Mixtral 8x7B", 32_768));
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -41,16 +49,5 @@ public class GroqChatModelFactory implements ChatModelFactory {
     @Override
     public String getApiKey() {
         return DevoxxGenieStateService.getInstance().getGroqKey().trim();
-    }
-
-    @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "gemma-7b-it",
-            "llama3-8b-8192",
-            "llama3-70b-8192",
-            "llama2-70b-4096",
-            "mixtral-8x7b-32768"
-        );
     }
 }

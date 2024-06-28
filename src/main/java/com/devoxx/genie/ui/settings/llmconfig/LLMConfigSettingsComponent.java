@@ -4,11 +4,11 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
-import com.intellij.util.ui.FormBuilder;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 
 public class LLMConfigSettingsComponent implements SettingsComponent {
@@ -42,43 +42,86 @@ public class LLMConfigSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createSettingsPanel() {
-        return FormBuilder.createFormBuilder()
-            .addComponent(new JXTitledSeparator("Local Large Language Models"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Chat Memory Size"))
-            .addComponent(chatMemorySizeField)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Temperature"))
-            .addComponent(temperatureField)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Top-P"))
-            .addComponent(topPField)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Maximum Output Tokens"))
-            .addComponent(maxOutputTokensField)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Timeout (in secs)"))
-            .addComponent(timeoutField)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Maximum Attempts"))
-            .addComponent(retryField)
-            .addVerticalGap(5)
-            .addComponent(new JXTitledSeparator("Abstract Syntax Tree Config"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Automatically incorporate code into the prompt window context based on the selected AST options."))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Enable AST Mode (Beta)"))
-            .addComponent(astMode)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Include Project Parent Class(es)"))
-            .addComponent(astParentClassCheckBox)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Include Class References"))
-            .addComponent(astReferenceClassesCheckBox)
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Include Field References"))
-            .addComponent(astReferenceFieldCheckBox)
-            .getPanel();
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        panel.add(new JXTitledSeparator("Local Large Language Models"), gbc);
+
+        gbc.gridy++;
+        gbc.gridwidth = 1;
+        panel.add(new JLabel("Chat Memory Size"), gbc);
+        gbc.gridx = 1;
+        panel.add(chatMemorySizeField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Temperature"), gbc);
+        gbc.gridx = 1;
+        panel.add(temperatureField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Top-P"), gbc);
+        gbc.gridx = 1;
+        panel.add(topPField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Maximum Output Tokens"), gbc);
+        gbc.gridx = 1;
+        panel.add(maxOutputTokensField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Timeout (in secs)"), gbc);
+        gbc.gridx = 1;
+        panel.add(timeoutField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Maximum Attempts"), gbc);
+        gbc.gridx = 1;
+        panel.add(retryField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        panel.add(new JXTitledSeparator("Abstract Syntax Tree Config"), gbc);
+
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        panel.add(new JLabel("Automatically incorporate code into the prompt window context based on the selected AST options."), gbc);
+
+        gbc.gridy++;
+        gbc.gridwidth = 1;
+        panel.add(new JLabel("Enable AST Mode (Beta)"), gbc);
+        gbc.gridx = 1;
+        panel.add(astMode, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Include Project Parent Class(es)"), gbc);
+        gbc.gridx = 1;
+        panel.add(astParentClassCheckBox, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Include Class References"), gbc);
+        gbc.gridx = 1;
+        panel.add(astReferenceClassesCheckBox, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Include Field References"), gbc);
+        gbc.gridx = 1;
+        panel.add(astReferenceFieldCheckBox, gbc);
+
+        return panel;
     }
 
     @Override

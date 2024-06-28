@@ -28,6 +28,7 @@ public class ChatMessageContext {
     private EditorInfo editorInfo;
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;
+    private boolean webSearchRequested;
 
     public boolean hasFiles() {
         return editorInfo != null && editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty();

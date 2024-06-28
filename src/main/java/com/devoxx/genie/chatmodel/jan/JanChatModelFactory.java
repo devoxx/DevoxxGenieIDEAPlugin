@@ -1,9 +1,10 @@
 package com.devoxx.genie.chatmodel.jan;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.model.jan.Data;
-import com.devoxx.genie.service.JanService;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
@@ -11,7 +12,6 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
-import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,10 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JanChatModelFactory implements ChatModelFactory {
-
-    // Moved client instance here for the sake of better performance
-    private final OkHttpClient client = new OkHttpClient();
+public class JanChatModelFactory extends AbstractChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -37,7 +34,6 @@ public class JanChatModelFactory implements ChatModelFactory {
             .build();
     }
 
-
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
@@ -51,20 +47,19 @@ public class JanChatModelFactory implements ChatModelFactory {
 
     /**
      * Get the model names from the Jan service.
-     *
      * @return List of model names
      */
     @Override
-    public List<String> getModelNames() {
-        List<String> modelNames = new ArrayList<>();
+    public List<LanguageModel> getModelNames() {
+        List<LanguageModel> modelNames = new ArrayList<>();
         try {
-            List<Data> models = new JanService(client).getModels();
-            for (Data model : models) {
-                modelNames.add(model.getId());
+            OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
+            for (OllamaModelEntryDTO model : ollamaModels) {
+                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000));
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "Jan is not running, please start it.");
+                "Ollama is not running, please start it.");
             return List.of();
         }
         return modelNames;
