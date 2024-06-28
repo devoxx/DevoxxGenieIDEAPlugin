@@ -13,11 +13,10 @@ import java.time.Duration;
 public class GroqChatModelFactory extends AbstractChatModelFactory {
 
     public GroqChatModelFactory() {
-        LANGUAGE_MODELS.add(new LanguageModel("gemma-7b-it", "Gemma 7B it", 8_192));
-        LANGUAGE_MODELS.add(new LanguageModel("llama3-8b-8192", "Llama 3 8B", 8_192));
-        LANGUAGE_MODELS.add(new LanguageModel("llama3-70b-8192", "Llama 3 70B", 8_192));
-        LANGUAGE_MODELS.add(new LanguageModel("llama2-70b-4096", "Llama 2 70B", 4_096));
-        LANGUAGE_MODELS.add(new LanguageModel("mixtral-8x7b-32768", "Mixtral 8x7B", 32_768));
+        LANGUAGE_MODELS.add(new LanguageModel("gemma-7b-it", "Gemma 7B it", 8_000, 0.07d, 0.07d));
+        LANGUAGE_MODELS.add(new LanguageModel("llama3-8b-8192", "Llama 3 8B", 8_000, 0.05d, 0.08d));
+        LANGUAGE_MODELS.add(new LanguageModel("llama3-70b-8192", "Llama 3 70B", 8_000, 0.59d, 0.79d));
+        LANGUAGE_MODELS.add(new LanguageModel("mixtral-8x7b-32768", "Mixtral 8x7B", 32_000, 0.24d, 0.24d));
     }
 
     @Override

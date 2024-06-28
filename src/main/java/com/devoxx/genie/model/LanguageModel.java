@@ -14,6 +14,8 @@ public class LanguageModel implements Comparable<LanguageModel> {
     String name;
     String displayName;
     Integer maxTokens;
+    Double costPer1MTokensInput;
+    Double costPer1MTokensOutput;
 
     @Override
     public int compareTo(@NotNull LanguageModel other) {

@@ -19,11 +19,11 @@ import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 public class MistralChatModelFactory extends AbstractChatModelFactory {
 
     public MistralChatModelFactory() {
-        LANGUAGE_MODELS.add(new LanguageModel(OPEN_MISTRAL_7B.toString(), "Mistral 7B", 32_000));
-        LANGUAGE_MODELS.add(new LanguageModel(OPEN_MIXTRAL_8x7B.toString(), "Mixtral 8x7B", 32_000));
-        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_SMALL_LATEST.toString(), "Mistral Small", 32_000));
-        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_MEDIUM_LATEST.toString(), "Mistral Medium", 32_000));
-        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_LARGE_LATEST.toString(), "Mistral Large", 32_000));
+        LANGUAGE_MODELS.add(new LanguageModel(OPEN_MISTRAL_7B.toString(), "Mistral 7B", 32_000, 0.25, 0.25));
+        LANGUAGE_MODELS.add(new LanguageModel(OPEN_MIXTRAL_8x7B.toString(), "Mixtral 8x7B", 32_000, 0.7, 0.7));
+        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_SMALL_LATEST.toString(), "Mistral Small", 32_000, 1.0, 3.0));
+        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_MEDIUM_LATEST.toString(), "Mistral Medium", 32_000, 2.7, 8.1));
+        LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_LARGE_LATEST.toString(), "Mistral Large", 32_000, 4.0, 12.0));
     }
 
     @Override

@@ -41,5 +41,5 @@ public interface ChatModelFactory {
         return "";
     }
 
-    Integer getMaxTokens(String modelName);
+    Double getCostPer1MTokens(String modelName);
 }

@@ -57,7 +57,7 @@ public class OllamaChatModelFactory extends AbstractChatModelFactory {
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
-                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000));
+                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000, 0d, 0d));
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
