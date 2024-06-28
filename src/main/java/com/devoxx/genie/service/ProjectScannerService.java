@@ -26,33 +26,6 @@ public class ProjectScannerService {
 
     private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
 
-//    // TODO Externalize these to a settings page
-//    private static final Set<String> EXCLUDED_DIRECTORIES = new HashSet<>() {{
-//        add("build");
-//        add(".git");
-//        add("bin");
-//        add("out");
-//        add("target");
-//        add("node_modules");
-//        add(".idea");
-//    }};
-//
-//    // TODO Externalize these to a settings page
-//    private static final Set<String> INCLUDED_FILE_EXTENSIONS = new HashSet<>() {{
-//        add("java");
-//        add("kt");
-//        add("groovy");
-//        add("scala");
-//        add("xml");
-//        add("json");
-//        add("yaml");
-//        add("yml");
-//        add("properties");
-//        add("txt");
-//        add("md");
-//        // Add more relevant extensions as needed
-//    }};
-
     public static ProjectScannerService getInstance() {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
     }
@@ -61,9 +34,10 @@ public class ProjectScannerService {
      * Scan the project and return the project source tree and file contents.
      * @param project the project
      * @param maxTokens the maximum number of tokens
+     * @param isTokenCalculation whether the scan is for token calculation
      * @return the project context
      */
-    public CompletableFuture<String> scanProject(Project project, int maxTokens) {
+    public CompletableFuture<String> scanProject(Project project, int maxTokens, boolean isTokenCalculation) {
         CompletableFuture<String> future = new CompletableFuture<>();
 
         ReadAction.nonBlocking(() -> {
@@ -99,7 +73,7 @@ public class ProjectScannerService {
                     }
                 });
 
-                return truncateToTokens(project, fullContent.toString(), maxTokens);
+                return truncateToTokens(project, fullContent.toString(), maxTokens, isTokenCalculation);
             }).inSmartMode(project)
             .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)
             .submit(AppExecutorUtil.getAppExecutorService());
@@ -113,23 +87,33 @@ public class ProjectScannerService {
      * @param project the project
      * @param text the project context
      * @param maxTokens the maximum number of tokens
+     * @param isTokenCalculation whether the scan is for token calculation
      */
-    private String truncateToTokens(Project project, String text, int maxTokens) {
+    private String truncateToTokens(Project project,
+                                    String text,
+                                    int maxTokens,
+                                    boolean isTokenCalculation) {
         NumberFormat formatter = NumberFormat.getInstance();
         IntArrayList tokens = ENCODING.encode(text);
         if (tokens.size() <= maxTokens) {
-            NotificationUtil.sendNotification(project, "Added. Project context " + formatter.format(tokens.size()) + " tokens is within window context limit of " +
-                formatter.format(maxTokens) + " tokens");
+            if (!isTokenCalculation) {
+                NotificationUtil.sendNotification(project, "Added. Project context " + formatter.format(tokens.size()) + " tokens is within window context limit of " +
+                    formatter.format(maxTokens) + " tokens");
+            }
             return text;
         }
         IntArrayList truncatedTokens = new IntArrayList(maxTokens);
         for (int i = 0; i < maxTokens; i++) {
             truncatedTokens.add(tokens.get(i));
         }
-        NotificationUtil.sendNotification(project, "Project context truncated due to token limit, was " +
-            formatter.format(tokens.size()) + " tokens but limit is " + formatter.format(maxTokens) + " tokens");
+
+        if (!isTokenCalculation) {
+            NotificationUtil.sendNotification(project, "Project context truncated due to token limit, was " +
+                formatter.format(tokens.size()) + " tokens but limit is " + formatter.format(maxTokens) + " tokens. " +
+                "You can exclude directories or files in the settings page.");
+        }
         String truncatedContent = ENCODING.decode(truncatedTokens);
-        return truncatedContent + "\n--- Project context truncated due to token limit ---\n";
+        return isTokenCalculation ? truncatedContent : truncatedContent + "\n--- Project context truncated due to token limit ---\n";
     }
 
     /**

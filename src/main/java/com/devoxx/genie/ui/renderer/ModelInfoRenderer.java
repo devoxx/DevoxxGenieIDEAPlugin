@@ -8,6 +8,7 @@ import com.intellij.util.ui.JBUI;
 import javax.swing.*;
 import java.awt.*;
 
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +30,7 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         tokenValues.put(1_000_000, "1M");
         tokenValues.put(200_000, "200K");
         tokenValues.put(100_000, "100K");
+        tokenValues.put(64_000, "64K");
         tokenValues.put(32_000, "32K");
         tokenValues.put(8_000, "8K");
         tokenValues.put(4_096, "4K");
@@ -36,17 +38,22 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
 
     @Override
     public Component getListCellRendererComponent(JList<? extends LanguageModel> list,
-                                                  LanguageModel value,
+                                                  LanguageModel languageModel,
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
-        if (value == null) {
+        if (languageModel == null) {
             nameLabel.setText("");
             tokenLabel.setText("");
         } else {
-            nameLabel.setText(value.getDisplayName());
-            String tokenString = tokenValues.getOrDefault(value.getMaxTokens(), "" + value.getMaxTokens());
-            tokenLabel.setText(tokenString + " tokens");
+            nameLabel.setText(languageModel.getDisplayName());
+            String tokenString = tokenValues.getOrDefault(languageModel.getMaxTokens(), "" + languageModel.getMaxTokens());
+            var cost = (languageModel.getCostPer1MTokensInput() / 1_000_000) * languageModel.getMaxTokens();
+            if (cost <= 0.0) {
+                tokenLabel.setText(tokenString + " tokens");
+            } else {
+                tokenLabel.setText(tokenString + " tokens @ " + NumberFormat.getInstance().format(cost) + " USD");
+            }
         }
 
         tokenLabel.setForeground(JBColor.GRAY);

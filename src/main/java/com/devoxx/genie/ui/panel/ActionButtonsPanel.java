@@ -57,13 +57,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     private final ChatPromptExecutor chatPromptExecutor;
     private final EditorFileButtonManager editorFileButtonManager;
+    private final JPanel calcProjectPanel = new JPanel(new GridLayout(1, 2));
 
     private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
     private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
     private final JButton tavilySearchBtn = new JHoverButton(WebSearchIcon, true);
     private final JButton googleSearchBtn = new JHoverButton(GoogleIcon, true);
-    private final JButton addProjectBtn = new JHoverButton("Add full project to prompt", AddFileIcon,  true);
-    private final JProgressBar progressBar = new JProgressBar();
+    private final JButton addProjectBtn = new JHoverButton("Add full project to prompt", AddFileIcon, true);
+    private final JButton calcTokenCostBtn = new JHoverButton("Calc tokens/cost", CalculateIcon, true);
 
     private final PromptInputArea promptInputComponent;
     private final PromptOutputPanel promptOutputPanel;
@@ -105,7 +106,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     private void updateAddProjectButtonVisibility() {
-        addProjectBtn.setVisible(isProjectContextSupportedProvider());
+        calcProjectPanel.setVisible(isProjectContextSupportedProvider());
     }
 
     /**
@@ -133,10 +134,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Create the search button.
-     * @param panel the panel
-     * @param searchBtn the search button
+     *
+     * @param panel        the panel
+     * @param searchBtn    the search button
      * @param searchAction the search action
-     * @param tooltipText the tooltip text
+     * @param tooltipText  the tooltip text
      */
     private void createSearchButton(@NotNull JPanel panel,
                                     @NotNull JButton searchBtn,
@@ -268,6 +270,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Validate and prepare the prompt.
+     *
      * @param actionEvent the action event
      * @return true if the prompt is valid
      */
@@ -277,13 +280,12 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return false;
         }
 
-        currentChatMessageContext =
-            createChatMessageContext(actionEvent, userPromptText);
+        currentChatMessageContext = createChatMessageContext(actionEvent, userPromptText);
 
         // Set the webSearchRequested flag based on the action command
         currentChatMessageContext.setWebSearchRequested(
             actionEvent.getActionCommand().equals(Constant.TAVILY_SEARCH_ACTION) ||
-            actionEvent.getActionCommand().equals(Constant.GOOGLE_SEARCH_ACTION)
+                actionEvent.getActionCommand().equals(Constant.GOOGLE_SEARCH_ACTION)
         );
 
         return true;
@@ -313,8 +315,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Get the chat message context.
+     *
      * @param actionEvent the action event
-     * @param userPrompt the user prompt
+     * @param userPrompt  the user prompt
      * @return the prompt context with language and text
      */
     private @NotNull ChatMessageContext createChatMessageContext(ActionEvent actionEvent,
@@ -325,7 +328,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         chatMessageContext.setUserPrompt(userPrompt);
         chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
         chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
-        chatMessageContext.setModelName((String) modelNameComboBox.getSelectedItem());
+
+        LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
+        if (selectedLanguageModel != null) {
+            chatMessageContext.setModelName(selectedLanguageModel.getName());
+        }
 
         if (DevoxxGenieStateService.getInstance().getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
             chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
@@ -344,7 +351,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Set the chat context based on
      * 1. The selected files & open file or selected code snippet
      * 2. Or full project context
-     * @param userPrompt the user prompt
+     *
+     * @param userPrompt         the user prompt
      * @param chatMessageContext the chat message context
      */
     private void setWindowContext(String userPrompt, ChatMessageContext chatMessageContext) {
@@ -368,6 +376,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Add the selected code snippet to the chat message context.
+     *
      * @param userPrompt         the user prompt
      * @param editor             the editor
      * @param chatMessageContext the chat message context
@@ -381,6 +390,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Create the editor info based on the selected code snippet or the complete file.
+     *
      * @param editor the editor
      * @return the editor info
      */
@@ -401,6 +411,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Set the timeout for the chat message context.
+     *
      * @param chatMessageContext the chat message context
      */
     private void setChatTimeout(ChatMessageContext chatMessageContext) {
@@ -414,6 +425,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Add selected files to the chat message context.
+     *
      * @param chatMessageContext the chat message context
      * @param userPrompt         the user prompt
      * @param files              the files
@@ -449,7 +461,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         } else {
             tavilySearchBtn.setVisible(!DevoxxGenieStateService.getInstance().getTavilySearchKey().isEmpty());
             googleSearchBtn.setVisible(!DevoxxGenieStateService.getInstance().getGoogleSearchKey().isEmpty() &&
-                                       !DevoxxGenieStateService.getInstance().getGoogleCSIKey().isEmpty());
+                !DevoxxGenieStateService.getInstance().getGoogleCSIKey().isEmpty());
         }
     }
 
@@ -460,16 +472,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         addProjectBtn.setToolTipText("Add entire project to prompt context");
         addProjectBtn.addActionListener(e -> toggleProjectContext());
 
-        progressBar.setIndeterminate(true);
-        progressBar.setVisible(false);
+        calcTokenCostBtn.setToolTipText("Calculate tokens and cost for the entire project");
+        calcTokenCostBtn.addActionListener(e -> calculateTokensAndCost());
 
-        JPanel buttonPanel = new JPanel(new BorderLayout());
-        buttonPanel.add(addProjectBtn, BorderLayout.CENTER);
-        buttonPanel.add(progressBar, BorderLayout.SOUTH);
+        calcProjectPanel.add(calcTokenCostBtn);
+        calcProjectPanel.add(addProjectBtn);
+        add(calcProjectPanel, BorderLayout.SOUTH);
 
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        updateAddProjectButtonVisibility();  // Set initial visibility
+        updateAddProjectButtonVisibility();
     }
 
     /**
@@ -497,7 +507,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void addProjectToContext() {
 
         Object selectedItem = llmProvidersComboBox.getSelectedItem();
-        if (selectedItem != null && ((String)selectedItem).isEmpty()) {
+        if (selectedItem != null && ((String) selectedItem).isEmpty()) {
             NotificationUtil.sendNotification(project, "Please select a provider first");
             return;
         }
@@ -530,7 +540,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
                 isProjectContextAdded = true;
                 addProjectBtn.setEnabled(true);
-                progressBar.setVisible(false);
             }
         }.queue();
 
@@ -539,6 +548,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Start scanning the project.
+     *
      * @param indicator the progress indicator
      * @return the scanning result
      */
@@ -547,7 +557,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         indicator.setText("Scanning project files...");
         String scanningResult = "";
         try {
-            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit()).get();
+            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit(), false).get();
         } catch (Exception e) {
             LOG.error("Failed to scan project", e);
         }
@@ -556,15 +566,16 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Get the token limit for the selected provider and model.
+     *
      * @return the token limit
      */
     private int getTokenLimit() {
         ModelProvider selectedProvider = ModelProvider.fromString((String) llmProvidersComboBox.getSelectedItem());
-        Object selectedItem = modelNameComboBox.getSelectedItem();
+        LanguageModel selectedItem = (LanguageModel) modelNameComboBox.getSelectedItem();
         int tokenLimit = 4096;
         if (selectedItem != null) {
             tokenLimit = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider)
-                .map(factory -> factory.getMaxTokens((String) selectedItem))
+                .map(factory -> selectedItem.getMaxTokens())
                 .orElse(4096);
         }
         return tokenLimit;
@@ -572,6 +583,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Process the scanning result.
+     *
      * @param projectContent the project content
      */
     private void processScanningResult(String projectContent) {
@@ -590,7 +602,60 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     @Override
     public void settingsChanged(boolean hasKey) {
-        addProjectBtn.setVisible(hasKey && isProjectContextSupportedProvider());
+        calcProjectPanel.setVisible(hasKey && isProjectContextSupportedProvider());
         updateAddProjectButtonVisibility();
+    }
+
+    /**
+     * Calculate the tokens and cost for the entire project.
+     */
+    private void calculateTokensAndCost() {
+        Object selectedItem = llmProvidersComboBox.getSelectedItem();
+        if (selectedItem == null || ((String) selectedItem).isEmpty()) {
+            NotificationUtil.sendNotification(project, "Please select a provider first");
+            return;
+        }
+
+        LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
+
+        if (selectedModel == null) {
+            NotificationUtil.sendNotification(project, "Please select a model first");
+            return;
+        }
+
+        new Task.Backgroundable(project, "Calculating Tokens and Cost", true) {
+            private int tokenCount;
+            private double cost;
+
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                String projectContent = startScanning(indicator, true);
+                tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
+                cost = calculateCost(tokenCount, selectedModel.getCostPer1MTokensInput());
+            }
+
+            @Override
+            public void onSuccess() {
+                String message = String.format("Project contains %s tokens. Estimated minimum cost: $%.3f",
+                    NumberFormat.getInstance().format(tokenCount), cost);
+                NotificationUtil.sendNotification(project, message);
+            }
+        }.queue();
+    }
+
+    private String startScanning(@NotNull ProgressIndicator indicator, boolean isTokenCalculation) {
+        indicator.setIndeterminate(true);
+        indicator.setText("Scanning project files...");
+        String scanningResult = "";
+        try {
+            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit(), isTokenCalculation).get();
+        } catch (Exception e) {
+            LOG.error("Failed to scan project", e);
+        }
+        return scanningResult;
+    }
+
+    private double calculateCost(int tokenCount, double costPer1000Tokens) {
+        return (tokenCount / 1_000_000.0) * costPer1000Tokens;
     }
 }

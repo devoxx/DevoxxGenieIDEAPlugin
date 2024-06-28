@@ -10,16 +10,16 @@ public abstract class AbstractChatModelFactory implements ChatModelFactory {
     protected final List<LanguageModel> LANGUAGE_MODELS = new ArrayList<>();
 
     @Override
-    public Integer getMaxTokens(String modelName) {
-        return LANGUAGE_MODELS.stream()
-            .filter(model -> model.getName().equals(modelName))
-            .findFirst()
-            .map(LanguageModel::getMaxTokens)
-            .orElse(4_096);
+    public List<LanguageModel> getModelNames() {
+        return LANGUAGE_MODELS;
     }
 
     @Override
-    public List<LanguageModel> getModelNames() {
-        return LANGUAGE_MODELS;
+    public Double getCostPer1MTokens(String modelName) {
+        return LANGUAGE_MODELS.stream()
+            .filter(model -> model.getName().equals(modelName))
+            .findFirst()
+            .map(LanguageModel::getCostPer1MTokensInput)
+            .orElse(0.0);
     }
 }
