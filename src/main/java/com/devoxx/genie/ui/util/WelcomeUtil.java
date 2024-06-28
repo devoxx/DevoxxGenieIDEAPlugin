@@ -28,6 +28,7 @@ public class WelcomeUtil {
                 <h2>New features 🚀</h2>
                 Enable these new features in the settings page.<br>
                 <ul>
+                     <li><strong>🧠Project Scanner</strong>: Include the full project source code in prompt (with cost * token calculation) using Anthropic, OpenAI and Gemini.</li>
                      <li><strong>🔍Web Search</strong>: Search the web for a given query using Google or Tavily</li>
                      <li><strong>🌊Streaming responses (beta)</strong>: See each token as it's received from the LLM in real-time</li>
                      <li><strong>🧐Abstract Syntax Tree (AST) context</strong>: Automatically include parent class and class/field references in the prompt for better code analysis. Ensure the LLM has a large enough context window</li>
