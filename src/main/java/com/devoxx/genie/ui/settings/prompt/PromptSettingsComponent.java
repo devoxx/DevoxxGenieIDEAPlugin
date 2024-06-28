@@ -2,11 +2,12 @@ package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
-import com.intellij.util.ui.FormBuilder;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
-import com.intellij.ui.components.JBLabel;
+import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
+import java.awt.*;
 
 public class PromptSettingsComponent implements SettingsComponent {
 
@@ -29,42 +30,52 @@ public class PromptSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createSettingsPanel() {
-        return FormBuilder.createFormBuilder()
-            .addComponent(new JXTitledSeparator("Prompts"))
-            .addVerticalGap(5)
-            .addLabeledComponentFillVertically(
-                "System prompt",
-                systemPromptField
-            )
-            .addLabeledComponent(
-                new JBLabel("Test prompt"),
-                testPromptField,
-                10,
-                true
-            )
-            .addLabeledComponent(
-                new JBLabel("Explain prompt"),
-                explainPromptField,
-                10,
-                true
-            )
-            .addLabeledComponent(
-                new JBLabel("Review prompt"),
-                reviewPromptField,
-                10,
-                true
-            )
-            .addLabeledComponent(
-                new JBLabel("Custom prompt"),
-                customPromptField,
-                10,
-                true
-            )
-            .getPanel();
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        addSection(panel, gbc, "Prompts");
+
+        addPromptArea(panel, gbc, "System prompt", systemPromptField);
+        addPromptArea(panel, gbc, "/Test prompt", testPromptField);
+        addPromptArea(panel, gbc, "/Explain prompt", explainPromptField);
+        addPromptArea(panel, gbc, "/Review prompt", reviewPromptField);
+        addPromptArea(panel, gbc, "/Custom prompt", customPromptField);
+
+        // Add vertical glue to push everything to the top
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(Box.createVerticalGlue(), gbc);
+
+        return panel;
+    }
+
+    private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
+        gbc.gridy++;
+        panel.add(new JXTitledSeparator(title), gbc);
+        gbc.gridy++;
+    }
+
+    private void addPromptArea(JPanel panel, GridBagConstraints gbc, String label, JTextArea textArea) {
+        gbc.gridy++;
+        panel.add(new JLabel(label), gbc);
+
+        gbc.gridy++;
+        textArea.setRows(5);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        panel.add(scrollPane, gbc);
     }
 
     @Override
     public void addListeners() {
-
+        // Add any listeners if needed in the future
     }
 }

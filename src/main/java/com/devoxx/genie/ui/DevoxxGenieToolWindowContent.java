@@ -3,6 +3,7 @@ package com.devoxx.genie.ui;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.Constant;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
@@ -13,6 +14,7 @@ import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -42,7 +44,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     @Getter
     private final JPanel contentPanel = new JPanel();
     private final ComboBox<String> llmProvidersComboBox = new ComboBox<>();
-    private final ComboBox<String> modelNameComboBox = new ComboBox<>();
+    private final ComboBox<LanguageModel> modelNameComboBox = new ComboBox<>();
 
     private ConversationPanel conversationPanel;
     private PromptInputArea promptInputArea;
@@ -60,8 +62,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
-        this.llmProviderService = LLMProviderService.getInstance();
         project = toolWindow.getProject();
+
+        this.llmProviderService = LLMProviderService.getInstance();
 
         setupUI();
 
@@ -90,6 +93,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * Set up the UI Components: top panel and splitter.
      */
     private void setupUI() {
+        modelNameComboBox.setRenderer(new ModelInfoRenderer());
+
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(createTopPanel(), BorderLayout.NORTH);
         contentPanel.add(createSplitter(), BorderLayout.CENTER);
@@ -129,9 +134,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
     /**
      * Refresh the UI elements because the settings have changed.
      */
-    public void settingsChanged() {
+    @Override
+    public void settingsChanged(boolean hasKey) {
         String currentProvider = (String) llmProvidersComboBox.getSelectedItem();
-        String currentModel = (String) modelNameComboBox.getSelectedItem();
+        LanguageModel currentModel = (LanguageModel)modelNameComboBox.getSelectedItem();
 
         llmProvidersComboBox.removeAllItems();
         addLLMProvidersToComboBox();
@@ -139,7 +145,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         if (currentProvider != null && !currentProvider.isEmpty()) {
             llmProvidersComboBox.setSelectedItem(currentProvider);
             updateModelNamesComboBox(ModelProvider.valueOf(currentProvider));
-            if (currentModel != null && !currentModel.isEmpty()) {
+            if (currentModel != null) {
                 modelNameComboBox.setSelectedItem(currentModel);
             }
         } else {
@@ -246,10 +252,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      */
     private void processModelNameSelection(@NotNull ActionEvent e) {
         if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED)) {
-            JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            String selectedModel = (String) comboBox.getSelectedItem();
+            // Reset the project context if the provider has been changed
+            actionButtonsPanel.resetProjectContext();
+
+            LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
             if (selectedModel != null) {
-                DevoxxGenieStateService.getInstance().setLastSelectedModel(selectedModel);
+                DevoxxGenieStateService.getInstance().setLastSelectedModel(selectedModel.getName());
             }
         }
     }
@@ -262,13 +270,16 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete) return;
 
         JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-        String selectedLLMProvider = (String) comboBox.getSelectedItem();
-        if (selectedLLMProvider == null) return;
+        Object selectedItem = comboBox.getSelectedItem();
 
-        DevoxxGenieStateService.getInstance().setLastSelectedProvider(selectedLLMProvider);
-        ModelProvider provider = ModelProvider.fromString(selectedLLMProvider);
+        if (selectedItem instanceof String selectedLLMProvider) {
+            DevoxxGenieStateService.getInstance().setLastSelectedProvider(selectedLLMProvider);
+            ModelProvider provider = ModelProvider.fromString(selectedLLMProvider);
 
-        updateModelNamesComboBox(provider);
+            updateModelNamesComboBox(provider);
+        } else if (selectedItem instanceof LanguageModel selectedModel) {
+            DevoxxGenieStateService.getInstance().setLastSelectedModel(selectedModel.getName());
+        }
     }
 
     /**
@@ -290,7 +301,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
         String lastSelectedModel = DevoxxGenieStateService.getInstance().getLastSelectedModel();
         if (lastSelectedModel != null) {
-            modelNameComboBox.setSelectedItem(lastSelectedModel);
+            for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                if (modelNameComboBox.getItemAt(i).getName().equals(lastSelectedModel)) {
+                    modelNameComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -299,7 +315,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
      * @param chatModelFactory the chat model factory
      */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
-        List<String> modelNames = chatModelFactory.getModelNames();
+        List<LanguageModel> modelNames = chatModelFactory.getModelNames();
         if (modelNames.isEmpty()) {
             hideModelNameComboBox();
         } else {

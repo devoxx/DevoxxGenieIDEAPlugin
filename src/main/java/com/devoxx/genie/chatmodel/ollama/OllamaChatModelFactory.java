@@ -1,7 +1,9 @@
 package com.devoxx.genie.chatmodel.ollama;
 
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -18,7 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OllamaChatModelFactory implements ChatModelFactory {
+public class OllamaChatModelFactory extends AbstractChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -45,16 +47,17 @@ public class OllamaChatModelFactory implements ChatModelFactory {
 
     /**
      * Get the model names from the Ollama service.
-     *
+     * We're currently adding a fixed number of tokens to the model size.
+     * TODO - Get the model size from the Ollama service or have the user define them in Options panel?
      * @return List of model names
      */
     @Override
-    public List<String> getModelNames() {
-        List<String> modelNames = new ArrayList<>();
+    public List<LanguageModel> getModelNames() {
+        List<LanguageModel> modelNames = new ArrayList<>();
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
-                modelNames.add(model.getName());
+                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000));
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),

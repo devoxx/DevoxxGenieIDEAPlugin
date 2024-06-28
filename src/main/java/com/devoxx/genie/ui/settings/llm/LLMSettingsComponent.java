@@ -9,7 +9,7 @@ import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.JBIntSpinner;
-import com.intellij.util.ui.FormBuilder;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
@@ -66,55 +66,59 @@ public class LLMSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createSettingsPanel() {
-        return FormBuilder.createFormBuilder()
-            .addComponent(new JXTitledSeparator("Local Large Language Response"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Enable Stream Mode (Beta)"))
-            .addComponent(streamModeCheckBox)
-            .addVerticalGap(20)
-            .addComponent(new JXTitledSeparator("Local Large Language Models"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Ollama URL"))
-            .addComponent(createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"))
-            .addComponent(new JLabel("LMStudio URL"))
-            .addComponent(createTextWithLinkButton(lmStudioModelUrlField,"https://lmstudio.ai/"))
-            .addComponent(new JLabel("GPT4All URL"))
-            .addComponent(createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"))
-            .addComponent(new JLabel("Jan URL"))
-            .addComponent(createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"))
-            .addVerticalGap(20)
-            .addComponent(new JXTitledSeparator("Cloud Large Language Models"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("OpenAI API Key"))
-            .addComponent(createTextWithPasswordButton(openAIKeyField, "https://platform.openai.com/api-keys"))
-            .addComponent(new JLabel("Mistral API Key"))
-            .addComponent(createTextWithPasswordButton(mistralApiKeyField, "https://console.mistral.ai/api-keys"))
-            .addComponent(new JLabel("Anthropic API Key"))
-            .addComponent(createTextWithPasswordButton(anthropicApiKeyField, "https://console.anthropic.com/settings/keys"))
-            .addComponent(new JLabel("Groq API Key"))
-            .addComponent(createTextWithPasswordButton(groqApiKeyField, "https://console.groq.com/keys"))
-            .addComponent(new JLabel("DeepInfra API Key"))
-            .addComponent(createTextWithPasswordButton(deepInfraApiKeyField, "https://deepinfra.com/dash/api_keys"))
-            .addComponent(new JLabel("Gemini API Key"))
-            .addComponent(createTextWithPasswordButton(geminiApiKeyField, "https://aistudio.google.com/app/apikey"))
-            .addVerticalGap(20)
-            .addComponent(new JXTitledSeparator("Search Providers"))
-            .addVerticalGap(5)
-            .addComponent(new JLabel("Tavily Web Search API Key"))
-            .addComponent(createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"))
-            .addComponent(new JLabel("Google Web Search API Key"))
-            .addComponent(createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"))
-            .addComponent(new JLabel("Google Custom Search Engine ID"))
-            .addComponent(createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"))
-            .addComponent(new JLabel("Max search results"))
-            .addComponent(maxSearchResults)
-            .addComponent(new JLabel("Hide Search Providers"))
-            .addComponent(hideSearchButtonsField)
-            .addVerticalGap(20)
-            .addComponent(new JXTitledSeparator("Plugin version"))
-            .addComponent(new JLabel("v" + projectVersion.getText()))
-            .addComponent(createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"))
-            .getPanel();
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = JBUI.insets(5);
+
+        addSection(panel, gbc, "Local Large Language Response");
+        addSettingRow(panel, gbc, "Enable Stream Mode (Beta)", streamModeCheckBox);
+
+        addSection(panel, gbc, "Local Large Language Models");
+        addSettingRow(panel, gbc, "Ollama URL", createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"));
+        addSettingRow(panel, gbc, "LMStudio URL", createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
+        addSettingRow(panel, gbc, "GPT4All URL", createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
+        addSettingRow(panel, gbc, "Jan URL", createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
+
+        addSection(panel, gbc, "Cloud Large Language Models");
+        addSettingRow(panel, gbc, "OpenAI API Key", createTextWithPasswordButton(openAIKeyField, "https://platform.openai.com/api-keys"));
+        addSettingRow(panel, gbc, "Mistral API Key", createTextWithPasswordButton(mistralApiKeyField, "https://console.mistral.ai/api-keys"));
+        addSettingRow(panel, gbc, "Anthropic API Key", createTextWithPasswordButton(anthropicApiKeyField, "https://console.anthropic.com/settings/keys"));
+        addSettingRow(panel, gbc, "Groq API Key", createTextWithPasswordButton(groqApiKeyField, "https://console.groq.com/keys"));
+        addSettingRow(panel, gbc, "DeepInfra API Key", createTextWithPasswordButton(deepInfraApiKeyField, "https://deepinfra.com/dash/api_keys"));
+        addSettingRow(panel, gbc, "Gemini API Key", createTextWithPasswordButton(geminiApiKeyField, "https://aistudio.google.com/app/apikey"));
+
+        addSection(panel, gbc, "Search Providers");
+        addSettingRow(panel, gbc, "Tavily Web Search API Key", createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
+        addSettingRow(panel, gbc, "Google Web Search API Key", createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"));
+        addSettingRow(panel, gbc, "Google Custom Search Engine ID", createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"));
+        addSettingRow(panel, gbc, "Max search results", maxSearchResults);
+        addSettingRow(panel, gbc, "Hide Search Providers", hideSearchButtonsField);
+
+        addSection(panel, gbc, "Plugin version");
+        addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
+
+        return panel;
+    }
+
+    private void addSection(JPanel panel, GridBagConstraints gbc, String title) {
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        panel.add(new JXTitledSeparator(title), gbc);
+        gbc.gridy++;
+    }
+
+    private void addSettingRow(JPanel panel, GridBagConstraints gbc, String label, JComponent component) {
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx = 1;
+        panel.add(component, gbc);
+        gbc.gridy++;
     }
 
     @Override
@@ -135,13 +139,6 @@ public class LLMSettingsComponent implements SettingsComponent {
         return createTextWithLinkButton(jComponent, LINK_EMOJI, "Download from ", url);
     }
 
-    /**
-     * Create a button with emoji and tooltip message and open the URL in the browser
-     * @param jComponent the component to add the button to
-     * @param toolTipMsg the tooltip message
-     * @param url        the url to open when clicked
-     * @return the created button
-     */
     private @NotNull JComponent createTextWithLinkButton(JComponent jComponent,
                                                          String emoji,
                                                          String toolTipMsg,

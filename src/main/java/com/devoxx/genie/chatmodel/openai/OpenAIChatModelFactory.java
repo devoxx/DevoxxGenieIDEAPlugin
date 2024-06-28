@@ -1,7 +1,8 @@
 package com.devoxx.genie.chatmodel.openai;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -11,9 +12,15 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.List;
 
-public class OpenAIChatModelFactory implements ChatModelFactory {
+public class OpenAIChatModelFactory extends AbstractChatModelFactory {
+
+    public OpenAIChatModelFactory() {
+        LANGUAGE_MODELS.add(new LanguageModel(OpenAiChatModelName.GPT_4_O.toString(), "GPT 4.0", 128_000));
+        LANGUAGE_MODELS.add(new LanguageModel(OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString(), "GPT 4 Turbo", 128_000));
+        LANGUAGE_MODELS.add(new LanguageModel(OpenAiChatModelName.GPT_4.toString(), "GPT 4", 8_000));
+        LANGUAGE_MODELS.add(new LanguageModel(OpenAiChatModelName.GPT_3_5_TURBO.toString(), "GPT 3.5", 16_000));
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -42,16 +49,5 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
     @Override
     public String getApiKey() {
         return DevoxxGenieStateService.getInstance().getOpenAIKey().trim();
-    }
-
-    @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "gpt-4o",
-            OpenAiChatModelName.GPT_4.toString(),
-            OpenAiChatModelName.GPT_4_32K.toString(),
-            OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString(),
-            OpenAiChatModelName.GPT_3_5_TURBO.toString(),
-            OpenAiChatModelName.GPT_3_5_TURBO_16K.toString());
     }
 }

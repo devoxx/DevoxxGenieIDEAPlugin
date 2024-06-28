@@ -34,7 +34,7 @@ public class ChatPromptExecutor {
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                if (isWebSearch(chatMessageContext)) {
+                if (chatMessageContext.isWebSearchRequested()) {
                     new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunning = false;
                         enableButtons.run();
@@ -55,16 +55,6 @@ public class ChatPromptExecutor {
     }
 
     /**
-     * Is web search.
-     * @param chatMessageContext the chat message context
-     * @return the boolean
-     */
-    private boolean isWebSearch(@NotNull ChatMessageContext chatMessageContext) {
-        return chatMessageContext.getContext() != null &&
-            chatMessageContext.getContext().toLowerCase().contains("search");
-    }
-
-    /**
      * Process possible command prompt.
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
@@ -75,7 +65,6 @@ public class ChatPromptExecutor {
         chatMessageContext.setUserPrompt(commandFromPrompt.orElse(chatMessageContext.getUserPrompt()));
         return commandFromPrompt;
     }
-
 
     /**
      * Stop streaming or the non-streaming prompt execution

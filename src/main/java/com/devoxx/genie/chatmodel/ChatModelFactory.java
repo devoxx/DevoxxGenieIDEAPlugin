@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 
@@ -10,7 +11,6 @@ public interface ChatModelFactory {
 
     /**
      * Create a chat model with the given parameters.
-     *
      * @param chatModel the chat model
      * @return the chat model
      */
@@ -18,7 +18,6 @@ public interface ChatModelFactory {
 
     /**
      * Create a streaming chat model with the given parameters.
-     *
      * @param chatModel the chat model
      * @return the streaming chat model
      */
@@ -28,19 +27,19 @@ public interface ChatModelFactory {
 
     /**
      * List the available model names.
-     *
      * @return the list of model names
      */
-    default List<String> getModelNames() {
+    default List<LanguageModel> getModelNames() {
         return List.of();
     }
 
     /**
      * Get the model provider API key.
-     *
      * @return the API key
      */
     default String getApiKey() {
         return "";
     }
+
+    Integer getMaxTokens(String modelName);
 }

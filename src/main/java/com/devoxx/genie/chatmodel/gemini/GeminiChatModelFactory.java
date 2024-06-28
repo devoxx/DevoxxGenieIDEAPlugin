@@ -1,16 +1,22 @@
 package com.devoxx.genie.chatmodel.gemini;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.List;
 
-public class GeminiChatModelFactory implements ChatModelFactory {
+public class GeminiChatModelFactory extends AbstractChatModelFactory {
+
+    public GeminiChatModelFactory() {
+        LANGUAGE_MODELS.add(new LanguageModel("gemini-pro", "Gemini Pro", 1_000_000));
+        LANGUAGE_MODELS.add(new LanguageModel("gemini-1.5-pro-latest", "Gemini 1.5 Pro", 1_000_000));
+        LANGUAGE_MODELS.add(new LanguageModel("gemini-1.5-flash-latest", "Gemini 1.5 Flash", 1_000_000));
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -27,14 +33,5 @@ public class GeminiChatModelFactory implements ChatModelFactory {
     @Override
     public String getApiKey() {
         return DevoxxGenieStateService.getInstance().getGeminiKey().trim();
-    }
-
-    @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "gemini-pro",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-flash-latest"
-        );
     }
 }
