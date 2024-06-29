@@ -19,6 +19,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -555,6 +556,24 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        ProjectContentService.getInstance().calculateTokensAndCost(project, getTokenLimit(), selectedModel.getCostPer1MTokensInput());
+        String selectedProviderName = (String) llmProvidersComboBox.getSelectedItem();
+        if (selectedProviderName == null) {
+            NotificationUtil.sendNotification(project, "Please select a provider first");
+            return;
+        }
+
+        ModelProvider selectedProvider = ModelProvider.fromString(selectedProviderName);
+
+        if (!DefaultLLMSettings.isApiBasedProvider(selectedProvider)) {
+            NotificationUtil.sendNotification(project, "Cost calculation is not applicable for local providers");
+            return;
+        }
+
+        ProjectContentService.getInstance().calculateTokensAndCost(
+            project,
+            getTokenLimit(),
+            selectedProvider,
+            selectedModel.getName()
+        );
     }
 }

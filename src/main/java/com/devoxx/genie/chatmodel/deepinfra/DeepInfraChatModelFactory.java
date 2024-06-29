@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -17,7 +18,7 @@ import java.util.List;
 public class DeepInfraChatModelFactory extends AbstractChatModelFactory {
 
     public DeepInfraChatModelFactory() {
-        // TODO Double check max tokens
+        super(ModelProvider.DeepInfra);
         LANGUAGE_MODELS.add(new LanguageModel("meta-llama/Meta-Llama-3-70B-Instruct", "Meta Llama 3 70B", 8_000, 0.56d, 0.77d));
         LANGUAGE_MODELS.add(new LanguageModel("meta-llama/Meta-Llama-3-8B-Instruct", "Meta Llama 3 8B Instruct",8_000, 0.064d, 0.064d));
         LANGUAGE_MODELS.add(new LanguageModel("mistralai/Mixtral-8x7B-Instruct-v0.1", "Mixtral 8x7B Instruct v0.1",32_000, 0.24d, 0.24d));
@@ -29,6 +30,7 @@ public class DeepInfraChatModelFactory extends AbstractChatModelFactory {
         LANGUAGE_MODELS.add(new LanguageModel("google/gemma-1.1-7b-it", "Gemma 1.1 7B it", 8_000, 0.07d, 0.07d));
         LANGUAGE_MODELS.add(new LanguageModel("Phind/Phind-CodeLlama-34B-v2", "Phind CodeLlama 34B v2", 4_000, 0.6d, 06d));
         LANGUAGE_MODELS.add(new LanguageModel("cognitivecomputations/dolphin-2.6-mixtral-8x7b", "Dolphin 2.6 Mixtral 8x7B",32_000, 0.24d, 0.24d));
+        updateModelCosts();
     }
 
     @Override
