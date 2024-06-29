@@ -4,6 +4,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,7 +37,11 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
             nameLabel.setText(model.getDisplayName());
             String tokenString = formatTokenCount(model.getMaxTokens());
             double cost = (model.getCostPer1MTokensInput() / 1_000_000) * model.getMaxTokens();
-            infoLabel.setText(String.format("%s @ %s USD", tokenString, new DecimalFormat("#.##").format(cost)));
+            if (cost <= 0.01d) {
+                infoLabel.setText(String.format("%s", tokenString));
+            } else {
+                infoLabel.setText(String.format("%s @ %s USD", tokenString, new DecimalFormat("#.##").format(cost)));
+            }
         }
 
         setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
@@ -48,7 +53,7 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         return this;
     }
 
-    private String formatTokenCount(int tokens) {
+    private @NotNull String formatTokenCount(int tokens) {
         if (tokens >= 1_000_000) {
             return String.format("%dM tokens", tokens / 1_000_000);
         } else if (tokens >= 1_000) {

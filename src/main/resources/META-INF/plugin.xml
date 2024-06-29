@@ -37,7 +37,10 @@
     <change-notes><![CDATA[
         <h2>v0.2.0</h2>
         <UL>
-            <LI>Inject full project into prompt when using Claude</LI>
+            <LI>Add full project into prompt</LI>
+            <LI>Calc cost of prompt</LI>
+            <LI>Setup LLM input/output cost and window context in settings</LI>
+            <LI>Show tokens and cost in drop down</LI>
         </UL>
         <h2>v0.1.20</h2>
         <UL>
@@ -239,10 +242,10 @@
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
                              displayName="Copy Project"/>
 
-        <projectConfigurable id="com.devoxx.genie.llmsettings"
+        <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.llmsettings.LLMCostSettingsConfigurable"
-                             displayName="LLM Settings"/>
+                             instance="com.devoxx.genie.ui.settings.llmfeatures.LLMFeaturesConfigurable"
+                             displayName="Cloud Cost / Context Window"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"

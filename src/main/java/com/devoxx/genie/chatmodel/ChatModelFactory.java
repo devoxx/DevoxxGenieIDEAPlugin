@@ -40,6 +40,4 @@ public interface ChatModelFactory {
     default String getApiKey() {
         return "";
     }
-
-    Double getCostPer1MTokens(String modelName);
 }
