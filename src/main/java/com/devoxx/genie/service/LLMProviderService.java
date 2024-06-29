@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -55,5 +56,22 @@ public class LLMProviderService {
 
         Collections.addAll(providers, llmProviders);
         return providers;
+    }
+
+    public int getCurrentModelTokenLimit() {
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        String provider = settings.getLastSelectedProvider();
+        String modelName = settings.getLastSelectedModel();
+
+        if (provider == null || modelName == null) {
+            return 8000; // Default to 8000 if no model is selected
+        }
+
+        return ChatModelFactoryProvider.getFactoryByProvider(ModelProvider.fromString(provider))
+            .flatMap(factory -> factory.getModelNames().stream()
+                .filter(model -> model.getName().equals(modelName))
+                .findFirst())
+            .map(com.devoxx.genie.model.LanguageModel::getMaxTokens)
+            .orElse(8000); // Default to 8000 if the model is not found
     }
 }

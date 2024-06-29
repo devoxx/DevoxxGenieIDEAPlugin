@@ -20,17 +20,13 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.knuddels.jtokkit.Encodings;
-import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +34,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.text.NumberFormat;
 import java.util.List;
@@ -50,8 +44,6 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
 import static javax.swing.SwingUtilities.invokeLater;
 
 public class ActionButtonsPanel extends JPanel implements SettingsChangeListener {
-
-    private static final Logger LOG = Logger.getInstance(ActionButtonsPanel.class);
 
     private final Project project;
 
@@ -370,20 +362,17 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
             // Set the context based on the selected code snippet or the complete file
             if (selectedTextEditor != null) {
-                addEditorInfo(userPrompt, selectedTextEditor, chatMessageContext);
+                addEditorInfo(selectedTextEditor, chatMessageContext);
             }
         }
     }
 
     /**
      * Add the selected code snippet to the chat message context.
-     *
-     * @param userPrompt         the user prompt
      * @param editor             the editor
      * @param chatMessageContext the chat message context
      */
-    private void addEditorInfo(String userPrompt,
-                               Editor editor,
+    private void addEditorInfo(Editor editor,
                                @NotNull ChatMessageContext chatMessageContext) {
         EditorInfo editorInfo = generateEditorInformation(editor);
         chatMessageContext.setEditorInfo(editorInfo);
@@ -506,9 +495,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     private void addProjectToContext() {
-
         Object selectedItem = llmProvidersComboBox.getSelectedItem();
-        if (selectedItem != null && ((String) selectedItem).isEmpty()) {
+        if (selectedItem == null || ((String) selectedItem).isEmpty()) {
             NotificationUtil.sendNotification(project, "Please select a provider first");
             return;
         }
@@ -521,48 +509,20 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        new Task.Backgroundable(project, "Scanning Project", true) {
-            String projectContent;
-
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                projectContent = startScanning(indicator);
-            }
-
-            @Override
-            public void onSuccess() {
-                processScanningResult(projectContent);
-            }
-
-            @Override
-            public void onFinished() {
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                clipboard.setContents(new StringSelection(projectContent), null);
-
-                isProjectContextAdded = true;
-                addProjectBtn.setEnabled(true);
-            }
-        }.queue();
-
         addProjectBtn.setEnabled(false);
-    }
 
-    /**
-     * Start scanning the project.
-     *
-     * @param indicator the progress indicator
-     * @return the scanning result
-     */
-    private String startScanning(@NotNull ProgressIndicator indicator) {
-        indicator.setIndeterminate(true);
-        indicator.setText("Scanning project files...");
-        String scanningResult = "";
-        try {
-            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit(), false).get();
-        } catch (Exception e) {
-            LOG.error("Failed to scan project", e);
-        }
-        return scanningResult;
+        ProjectContentService.getInstance().getProjectContent(project, getTokenLimit(), false)
+            .thenAccept(projectContent -> {
+                projectContext = "Project Context:\n" + projectContent;
+                isProjectContextAdded = true;
+                SwingUtilities.invokeLater(() -> {
+                    addProjectBtn.setIcon(DeleteIcon);
+                    var tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
+                    addProjectBtn.setText("Full Project (" + NumberFormat.getInstance().format(tokenCount) + " tokens)");
+                    addProjectBtn.setToolTipText("Remove entire project from prompt context");
+                    addProjectBtn.setEnabled(true);
+                });
+            });
     }
 
     /**
@@ -582,81 +542,19 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         return tokenLimit;
     }
 
-    /**
-     * Process the scanning result.
-     *
-     * @param projectContent the project content
-     */
-    private void processScanningResult(String projectContent) {
-        if (projectContent != null && !projectContent.isEmpty()) {
-            projectContext = "Project Context:\n" + projectContent;
-            Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
-            int totalTokens = ENCODING.countTokens(projectContent);
-
-            addProjectBtn.setIcon(DeleteIcon);
-            addProjectBtn.setText("Full Project (" + NumberFormat.getInstance().format(totalTokens) + " tokens)");
-            addProjectBtn.setToolTipText("Remove entire project from prompt context");
-        } else {
-            NotificationUtil.sendNotification(project, "Failed to add project context");
-        }
-    }
-
     @Override
     public void settingsChanged(boolean hasKey) {
         calcProjectPanel.setVisible(hasKey && isProjectContextSupportedProvider());
         updateAddProjectButtonVisibility();
     }
 
-    /**
-     * Calculate the tokens and cost for the entire project.
-     */
     private void calculateTokensAndCost() {
-        Object selectedItem = llmProvidersComboBox.getSelectedItem();
-        if (selectedItem == null || ((String) selectedItem).isEmpty()) {
-            NotificationUtil.sendNotification(project, "Please select a provider first");
-            return;
-        }
-
         LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
-
         if (selectedModel == null) {
             NotificationUtil.sendNotification(project, "Please select a model first");
             return;
         }
 
-        new Task.Backgroundable(project, "Calculating Tokens and Cost", true) {
-            private int tokenCount;
-            private double cost;
-
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                String projectContent = startScanning(indicator, true);
-                tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
-                cost = calculateCost(tokenCount, selectedModel.getCostPer1MTokensInput());
-            }
-
-            @Override
-            public void onSuccess() {
-                String message = String.format("Project contains %s tokens. Estimated minimum cost: $%.3f",
-                    NumberFormat.getInstance().format(tokenCount), cost);
-                NotificationUtil.sendNotification(project, message);
-            }
-        }.queue();
-    }
-
-    private String startScanning(@NotNull ProgressIndicator indicator, boolean isTokenCalculation) {
-        indicator.setIndeterminate(true);
-        indicator.setText("Scanning project files...");
-        String scanningResult = "";
-        try {
-            scanningResult = ProjectScannerService.getInstance().scanProject(project, getTokenLimit(), isTokenCalculation).get();
-        } catch (Exception e) {
-            LOG.error("Failed to scan project", e);
-        }
-        return scanningResult;
-    }
-
-    private double calculateCost(int tokenCount, double costPer1000Tokens) {
-        return (tokenCount / 1_000_000.0) * costPer1000Tokens;
+        ProjectContentService.getInstance().calculateTokensAndCost(project, getTokenLimit(), selectedModel.getCostPer1MTokensInput());
     }
 }

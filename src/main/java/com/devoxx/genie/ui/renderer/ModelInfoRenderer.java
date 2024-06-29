@@ -4,10 +4,12 @@ import com.devoxx.genie.model.LanguageModel;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 public class ModelInfoRenderer extends JPanel implements ListCellRenderer<LanguageModel> {
@@ -40,7 +42,7 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
             if (cost <= 0.0) {
                 tokenLabel.setText(tokenString);
             } else {
-                tokenLabel.setText(String.format("%s @ %s USD", tokenString, NumberFormat.getInstance().format(cost)));
+                tokenLabel.setText(String.format("%s @ %s USD", tokenString, new DecimalFormat("#.##").format(cost)));
             }
         }
 
@@ -61,9 +63,9 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         return this;
     }
 
-    private String formatTokenCount(int tokens) {
+    private @NotNull String formatTokenCount(int tokens) {
         if (tokens >= 1_000_000) {
-            return String.format("%.1fM tokens", tokens / 1_000_000.0);
+            return String.format("%dM tokens", tokens / 1_000_000);
         } else if (tokens >= 1_000) {
             return String.format("%dK tokens", tokens / 1_000);
         } else {

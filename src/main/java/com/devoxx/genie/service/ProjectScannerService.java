@@ -31,27 +31,35 @@ public class ProjectScannerService {
     }
 
     /**
-     * Scan the project and return the project source tree and file contents.
+     * Scan the project from start directory and return the project source tree and file contents.
      * @param project the project
+     * @param startDirectory the start directory
      * @param maxTokens the maximum number of tokens
      * @param isTokenCalculation whether the scan is for token calculation
      * @return the project context
      */
-    public CompletableFuture<String> scanProject(Project project, int maxTokens, boolean isTokenCalculation) {
+    public CompletableFuture<String> scanProject(Project project,
+                                                 VirtualFile startDirectory,
+                                                 int maxTokens,
+                                                 boolean isTokenCalculation) {
         CompletableFuture<String> future = new CompletableFuture<>();
 
+        if (startDirectory == null) {
+            startDirectory = project.getBaseDir();
+        }
+
+        VirtualFile finalStartDirectory = startDirectory;
         ReadAction.nonBlocking(() -> {
                 StringBuilder result = new StringBuilder();
-                result.append("Project Structure:\n");
-                result.append(generateSourceTree(project));
+                result.append("Directory Structure:\n");
+                result.append(generateSourceTreeRecursive(finalStartDirectory, 0));
                 result.append("\n\nFile Contents:\n");
 
                 ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
-                VirtualFile projectDir = project.getBaseDir();
 
                 StringBuilder fullContent = new StringBuilder(result);
 
-                walkThroughProjectDirectory(projectDir, fileIndex, fullContent);
+                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent);
 
                 return truncateToTokens(project, fullContent.toString(), maxTokens, isTokenCalculation);
             }).inSmartMode(project)
@@ -63,14 +71,12 @@ public class ProjectScannerService {
 
     /**
      * Walk through the project directory and append the file contents to the full content.
-     * @param projectDir the project directory
+     * @param directory the selected directory
      * @param fileIndex the project file index
      * @param fullContent the full content
      */
-    private void walkThroughProjectDirectory(VirtualFile projectDir,
-                                             ProjectFileIndex fileIndex,
-                                             StringBuilder fullContent) {
-        VfsUtilCore.visitChildrenRecursively(projectDir, new VirtualFileVisitor<Void>() {
+    private void walkThroughDirectory(VirtualFile directory, ProjectFileIndex fileIndex, StringBuilder fullContent) {
+        VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
                 if (shouldExcludeDirectory(file)) {
@@ -130,22 +136,13 @@ public class ProjectScannerService {
     }
 
     /**
-     * Generate a tree structure of the project source files.
-     * @param project the project
-     * @return the tree structure
-     */
-    private @NotNull String generateSourceTree(@NotNull Project project) {
-        VirtualFile projectDir = project.getBaseDir();
-        return generateSourceTreeRecursive(projectDir, 0);
-    }
-
-    /**
      * Generate a tree structure of the project source files recursively.
      * @param dir   the directory
      * @param depth the depth
      * @return the tree structure
      */
     private @NotNull String generateSourceTreeRecursive(VirtualFile dir, int depth) {
+
         StringBuilder result = new StringBuilder();
         String indent = "  ".repeat(depth);
 

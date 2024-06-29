@@ -254,6 +254,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectScannerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -263,7 +264,7 @@
 
     <actions>
 
-        <action id="com.devoxx.genie.AddSnippetAction"
+        <action id="DevoxxGenie.AddSnippetAction"
                 class="com.devoxx.genie.action.AddSnippetAction"
                 text="Add To Context Window"
                 icon="/icons/pluginIcon.svg"
@@ -271,7 +272,7 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last" />
         </action>
 
-        <action id="com.devoxx.genie.AddFileAction"
+        <action id="DevoxxGenie.AddFileAction"
                 class="com.devoxx.genie.action.AddFileAction"
                 text="Add File To Context Window"
                 icon="/icons/pluginIcon.svg"
@@ -281,12 +282,22 @@
 
         <action id="DevoxxGenie.AddDirectory"
                 class="com.devoxx.genie.action.AddDirectoryAction"
-                text="Add Directory To Context"
+                text="Add Directory To Context Window"
                 icon="/icons/pluginIcon.svg"
                 description="Recursively add directory to DevoxxGenie context">
             <add-to-group group-id="ProjectViewPopupMenu"
                           anchor="after"
-                          relative-to-action="com.devoxx.genie.AddFileAction"/>
+                          relative-to-action="DevoxxGenie.AddFileAction"/>
+        </action>
+
+        <action id="DevoxxGenie.AddDirectoryToClipBoard"
+                class="com.devoxx.genie.action.AddDirectoryToClipBoardAction"
+                text="Add Directory To Clipboard"
+                icon="/icons/pluginIcon.svg"
+                description="Recursively add directory to clipboard">
+            <add-to-group group-id="ProjectViewPopupMenu"
+                          anchor="after"
+                          relative-to-action="DevoxxGenie.AddDirectory"/>
         </action>
     </actions>
 </idea-plugin>
