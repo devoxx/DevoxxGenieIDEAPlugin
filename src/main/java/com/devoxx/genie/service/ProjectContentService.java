@@ -1,6 +1,9 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -45,14 +48,33 @@ public class ProjectContentService {
             });
     }
 
+    public void calculateTokensAndCost(Project project, int tokenLimit, ModelProvider provider, String modelName) {
+        if (!DefaultLLMSettings.isApiBasedProvider(provider)) {
+            getProjectContent(project, tokenLimit, true)
+                .thenAccept(projectContent -> {
+                    int tokenCount = ENCODING.countTokens(projectContent);
+                    String message = String.format("Project contains %s tokens. Cost calculation is not applicable for local providers.",
+                        NumberFormat.getInstance().format(tokenCount));
+                    NotificationUtil.sendNotification(project, message);
+                });
+            return;
+        }
 
-    public void calculateTokensAndCost(Project project, int tokenLimit, double costPer1000Tokens) {
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        double inputCost = settings.getModelInputCost(provider, modelName);
+        double outputCost = settings.getModelOutputCost(provider, modelName);
+
         getProjectContent(project, tokenLimit, true)
             .thenAccept(projectContent -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
-                double cost = calculateCost(tokenCount, costPer1000Tokens);
-                String message = String.format("Project contains %s tokens. Estimated minimum cost: $%.3f",
-                    NumberFormat.getInstance().format(tokenCount), cost);
+                double estimatedInputCost = calculateCost(tokenCount, inputCost);
+                double estimatedOutputCost = calculateCost(tokenCount, outputCost);
+                String message = String.format("Project contains %s tokens. Estimated costs for %s - %s:\nInput: $%.4f\nOutput: $%.4f",
+                    NumberFormat.getInstance().format(tokenCount),
+                    provider.getName(),
+                    modelName,
+                    estimatedInputCost,
+                    estimatedOutputCost);
                 NotificationUtil.sendNotification(project, message);
             });
     }

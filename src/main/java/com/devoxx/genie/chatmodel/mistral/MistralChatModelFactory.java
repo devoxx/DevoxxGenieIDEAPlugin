@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -19,6 +20,7 @@ import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 public class MistralChatModelFactory extends AbstractChatModelFactory {
 
     public MistralChatModelFactory() {
+        super(ModelProvider.Mistral);
         LANGUAGE_MODELS.add(new LanguageModel(OPEN_MISTRAL_7B.toString(), "Mistral 7B", 32_000, 0.25, 0.25));
         LANGUAGE_MODELS.add(new LanguageModel(OPEN_MIXTRAL_8x7B.toString(), "Mixtral 8x7B", 32_000, 0.7, 0.7));
         LANGUAGE_MODELS.add(new LanguageModel(MISTRAL_SMALL_LATEST.toString(), "Mistral Small", 32_000, 1.0, 3.0));

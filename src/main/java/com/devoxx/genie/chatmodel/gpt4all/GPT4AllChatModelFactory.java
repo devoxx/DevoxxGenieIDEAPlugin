@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel.gpt4all;
 import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -13,6 +14,11 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 
 public class GPT4AllChatModelFactory extends AbstractChatModelFactory {
+
+    public GPT4AllChatModelFactory() {
+        super(ModelProvider.GPT4All);
+        updateModelCosts();
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {

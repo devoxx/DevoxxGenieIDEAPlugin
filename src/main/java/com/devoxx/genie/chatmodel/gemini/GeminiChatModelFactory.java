@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel.gemini;
 import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -13,9 +14,11 @@ import java.time.Duration;
 public class GeminiChatModelFactory extends AbstractChatModelFactory {
 
     public GeminiChatModelFactory() {
+        super(ModelProvider.Gemini);
         LANGUAGE_MODELS.add(new LanguageModel("gemini-pro", "Gemini Pro", 1_000_000, 0.5d, 1.5d));
         LANGUAGE_MODELS.add(new LanguageModel("gemini-1.5-pro-latest", "Gemini 1.5 Pro", 1_000_000, 7.0d, 21.0d));
         LANGUAGE_MODELS.add(new LanguageModel("gemini-1.5-flash-latest", "Gemini 1.5 Flash", 1_000_000, 0.7d, 2.1d));
+        updateModelCosts();
     }
 
     @Override

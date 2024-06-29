@@ -220,24 +220,29 @@
     <extensions defaultExtensionNs="com.intellij">
 
         <projectConfigurable parentId="tools"
-                             id="DevoxxGenie"
+                             id="com.devoxx.genie.DevoxxGenie"
                              displayName="DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.llm.LLMSettingsConfigurable"/>
 
-        <projectConfigurable id="LLMSettings"
-                             parentId="DevoxxGenie"
+        <projectConfigurable id="com.devoxx.genie.LLMSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.llmconfig.LLMConfigSettingsConfigurable"
                              displayName="LLM Settings"/>
 
-        <projectConfigurable id="PromptSettings"
-                             parentId="DevoxxGenie"
+        <projectConfigurable id="com.devoxx.genie.PromptSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
-        <projectConfigurable id="CopyProjectSettings"
-                             parentId="DevoxxGenie"
+        <projectConfigurable id="com.devoxx.genie.CopyProjectSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
                              displayName="Copy Project"/>
+
+        <projectConfigurable id="com.devoxx.genie.llmsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.llmsettings.LLMCostSettingsConfigurable"
+                             displayName="LLM Settings"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
