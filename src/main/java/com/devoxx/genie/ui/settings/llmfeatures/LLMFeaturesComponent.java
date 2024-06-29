@@ -1,12 +1,15 @@
-package com.devoxx.genie.ui.settings.llmsettings;
+package com.devoxx.genie.ui.settings.llmfeatures;
 
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
+import com.devoxx.genie.ui.renderer.ModelProviderCellEditor;
 import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DefaultLLMSettings;
+import com.devoxx.genie.util.LLMProviderUtil;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 
@@ -18,8 +21,9 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Vector;
 
-public class LLMCostSettingsComponent implements SettingsComponent {
+public class LLMFeaturesComponent implements SettingsComponent {
 
     private final JPanel panel;
     private final DefaultTableModel tableModel;
@@ -27,11 +31,10 @@ public class LLMCostSettingsComponent implements SettingsComponent {
     private boolean isModified = false;
     private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
     private final JTable costTable;
-    private final JScrollPane scrollPane;
 
-    public LLMCostSettingsComponent() {
+    public LLMFeaturesComponent() {
         panel = new JPanel(new BorderLayout());
-        tableModel = new DefaultTableModel(new Object[]{"Provider", "Model", "Input Cost", "Output Cost", "Window Context"}, 0);
+        tableModel = new DefaultTableModel(new Object[]{"Provider", "Model", "Input Cost", "Output Cost", "Context Window"}, 0);
         tableModel.addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE) {
                 isModified = true;
@@ -41,11 +44,27 @@ public class LLMCostSettingsComponent implements SettingsComponent {
         costTable = new JBTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 2 || column == 3 || column == 4; // Allow editing of cost and window context columns
+                return column == 1 || column == 2 || column == 3 || column == 4;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int column) {
+                return switch (column) {
+                    case 0 -> ModelProvider.class;
+                    case 1 -> String.class;
+                    case 2, 3 -> Double.class;
+                    case 4 -> Integer.class;
+                    default -> Object.class;
+                };
             }
         };
 
-        scrollPane = new JBScrollPane(costTable);
+        costTable.getColumnModel().getColumn(0).setCellEditor(new ModelProviderCellEditor());
+
+        ComboBox<ModelProvider> providerComboBox = new ComboBox<>(LLMProviderUtil.getApiKeyEnabledProviders().toArray(new ModelProvider[0]));
+        costTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(providerComboBox));
+
+        JScrollPane scrollPane = new JBScrollPane(costTable);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         panel.add(scrollPane, BorderLayout.CENTER);
 
@@ -75,7 +94,13 @@ public class LLMCostSettingsComponent implements SettingsComponent {
     }
 
     private void addNewRow() {
-        tableModel.addRow(new Object[]{"", "", 0.0, 0.0, 0.0});
+        Vector<Object> newRow = new Vector<>();
+        newRow.add(LLMProviderUtil.getApiKeyEnabledProviders().get(0)); // Default to first provider
+        newRow.add("");
+        newRow.add(0.0);
+        newRow.add(0.0);
+        newRow.add(8000);
+        tableModel.addRow(newRow);
         SwingUtilities.invokeLater(this::scrollToBottom);
     }
 
@@ -109,10 +134,10 @@ public class LLMCostSettingsComponent implements SettingsComponent {
                         double outputCost = settings.getModelOutputCost(provider, model.getName());
                         int windowContext = model.getMaxTokens();
                         tableModel.addRow(new Object[]{
-                            provider.getName(),
+                            provider,
                             model.getName(),
-                            String.format("%.6f", inputCost),
-                            String.format("%.6f", outputCost),
+                            inputCost,
+                            outputCost,
                             windowContext
                         });
                     }
@@ -136,13 +161,12 @@ public class LLMCostSettingsComponent implements SettingsComponent {
         settings.setDefaultWindowContext((Integer) windowContextSpinner.getValue());
 
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            String providerName = (String) tableModel.getValueAt(i, 0);
+            ModelProvider provider = (ModelProvider) tableModel.getValueAt(i, 0);
             String modelName = (String) tableModel.getValueAt(i, 1);
             String inputCostString = (String) tableModel.getValueAt(i, 2);
             String outputCostString = (String) tableModel.getValueAt(i, 3);
             Object windowContextObj = tableModel.getValueAt(i, 4);
 
-            ModelProvider provider = ModelProvider.fromString(providerName);
             NumberFormat format = NumberFormat.getInstance(Locale.FRANCE);
             try {
                 double inputCost = format.parse(inputCostString).doubleValue();

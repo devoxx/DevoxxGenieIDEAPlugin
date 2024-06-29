@@ -1,21 +1,22 @@
-package com.devoxx.genie.ui.settings.llmsettings;
+package com.devoxx.genie.ui.settings.llmfeatures;
 
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-public class LLMCostSettingsConfigurable implements Configurable {
+public class LLMFeaturesConfigurable implements Configurable {
 
-    private LLMCostSettingsComponent llmCostSettingsComponent;
+    private LLMFeaturesComponent llmCostSettingsComponent = new LLMFeaturesComponent();
 
     private final MessageBus messageBus;
 
-    public LLMCostSettingsConfigurable(Project project) {
+    public LLMFeaturesConfigurable(@NotNull Project project) {
         this.messageBus = project.getMessageBus();
     }
 
@@ -28,7 +29,7 @@ public class LLMCostSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        llmCostSettingsComponent = new LLMCostSettingsComponent();
+        llmCostSettingsComponent = new LLMFeaturesComponent();
         llmCostSettingsComponent.addSettingsChangeListener(this::notifySettingsChanged);
         llmCostSettingsComponent.reset(); // This will load the current (including default) values
         return llmCostSettingsComponent.createSettingsPanel();

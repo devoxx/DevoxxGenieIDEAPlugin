@@ -21,18 +21,11 @@ public abstract class AbstractChatModelFactory implements ChatModelFactory {
         return LANGUAGE_MODELS;
     }
 
-    @Override
-    public Double getCostPer1MTokens(String modelName) {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        return settings.getModelInputCost(provider, modelName);
-    }
-
     public void updateModelCosts() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         for (LanguageModel model : LANGUAGE_MODELS) {
             model.setCostPer1MTokensInput(settings.getModelInputCost(provider, model.getName()));
             model.setCostPer1MTokensOutput(settings.getModelOutputCost(provider, model.getName()));
-            // Update the max tokens (window context) here
             model.setMaxTokens(settings.getModelWindowContext(provider, model.getName()));
         }
     }
