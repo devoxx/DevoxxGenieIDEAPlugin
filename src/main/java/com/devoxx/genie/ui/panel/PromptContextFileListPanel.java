@@ -57,6 +57,16 @@ public class PromptContextFileListPanel extends JPanel
     }
 
     @Override
+    public void filesAdded(java.util.List<VirtualFile> files) {
+        for (VirtualFile file : files) {
+            FileEntryComponent fileLabel = new FileEntryComponent(project, file, this);
+            filesPanel.add(fileLabel);
+        }
+        updateFilesPanelVisibility();
+        updateUIState();
+    }
+
+    @Override
     public void allFilesRemoved() {
         filesPanel.removeAll();
         updateFilesPanelVisibility();

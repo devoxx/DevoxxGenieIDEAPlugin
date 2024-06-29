@@ -28,6 +28,25 @@ public class FileListManager {
         notifyObservers(file);
     }
 
+    public void addFiles(List<VirtualFile> newFiles) {
+        List<VirtualFile> actuallyAddedFiles = new ArrayList<>();
+        for (VirtualFile file : newFiles) {
+            if (!files.contains(file)) {
+                files.add(file);
+                actuallyAddedFiles.add(file);
+            }
+        }
+        if (!actuallyAddedFiles.isEmpty()) {
+            notifyObserversOfBatchAdd(actuallyAddedFiles);
+        }
+    }
+
+    private void notifyObserversOfBatchAdd(List<VirtualFile> addedFiles) {
+        for (FileListObserver observer : observers) {
+            observer.filesAdded(addedFiles);
+        }
+    }
+
     public void removeFile(VirtualFile file) {
         files.remove(file);
     }
