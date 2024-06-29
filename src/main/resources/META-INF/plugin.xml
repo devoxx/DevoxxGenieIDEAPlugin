@@ -262,6 +262,7 @@
     </extensions>
 
     <actions>
+
         <action id="com.devoxx.genie.AddSnippetAction"
                 class="com.devoxx.genie.action.AddSnippetAction"
                 text="Add To Context Window"
@@ -274,8 +275,18 @@
                 class="com.devoxx.genie.action.AddFileAction"
                 text="Add File To Context Window"
                 icon="/icons/pluginIcon.svg"
-                description="Add file to context window">
+                description="Add file to Context">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last" />
+        </action>
+
+        <action id="DevoxxGenie.AddDirectory"
+                class="com.devoxx.genie.action.AddDirectoryAction"
+                text="Add Directory To Context"
+                icon="/icons/pluginIcon.svg"
+                description="Recursively add directory to DevoxxGenie context">
+            <add-to-group group-id="ProjectViewPopupMenu"
+                          anchor="after"
+                          relative-to-action="com.devoxx.genie.AddFileAction"/>
         </action>
     </actions>
 </idea-plugin>
