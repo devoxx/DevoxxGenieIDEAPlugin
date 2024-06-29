@@ -237,6 +237,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
 
     /**
      * Start a new conversation.
+     * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
      */
     @Override
     public void startNewConversation() {
@@ -245,6 +246,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Con
         promptOutputPanel.clear();
         FileListManager.getInstance().clear();
         ChatMemoryService.getInstance().clear();
+        actionButtonsPanel.resetProjectContext();
         actionButtonsPanel.enableButtons();
     }
 

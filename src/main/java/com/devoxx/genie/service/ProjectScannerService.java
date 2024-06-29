@@ -51,27 +51,7 @@ public class ProjectScannerService {
 
                 StringBuilder fullContent = new StringBuilder(result);
 
-                VfsUtilCore.visitChildrenRecursively(projectDir, new VirtualFileVisitor<Void>() {
-                    @Override
-                    public boolean visitFile(@NotNull VirtualFile file) {
-                        if (shouldExcludeDirectory(file)) {
-                            return false;
-                        }
-                        if (fileIndex.isInContent(file) && shouldIncludeFile(file)) {
-                            String header = "\n--- " + file.getPath() + " ---\n";
-                            fullContent.append(header);
-
-                            try {
-                                String content = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
-                                fullContent.append(content).append("\n");
-                            } catch (Exception e) {
-                                String errorMsg = "Error reading file: " + e.getMessage() + "\n";
-                                fullContent.append(errorMsg);
-                            }
-                        }
-                        return true;
-                    }
-                });
+                walkThroughProjectDirectory(projectDir, fileIndex, fullContent);
 
                 return truncateToTokens(project, fullContent.toString(), maxTokens, isTokenCalculation);
             }).inSmartMode(project)
@@ -79,6 +59,39 @@ public class ProjectScannerService {
             .submit(AppExecutorUtil.getAppExecutorService());
 
         return future;
+    }
+
+    /**
+     * Walk through the project directory and append the file contents to the full content.
+     * @param projectDir the project directory
+     * @param fileIndex the project file index
+     * @param fullContent the full content
+     */
+    private void walkThroughProjectDirectory(VirtualFile projectDir,
+                                             ProjectFileIndex fileIndex,
+                                             StringBuilder fullContent) {
+        VfsUtilCore.visitChildrenRecursively(projectDir, new VirtualFileVisitor<Void>() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (shouldExcludeDirectory(file)) {
+                    return false;
+                }
+                if (fileIndex.isInContent(file) && shouldIncludeFile(file)) {
+                    String header = "\n--- " + file.getPath() + " ---\n";
+                    fullContent.append(header);
+
+                    try {
+                        String content = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+                        content = processFileContent(content);
+                        fullContent.append(content).append("\n");
+                    } catch (Exception e) {
+                        String errorMsg = "Error reading file: " + e.getMessage() + "\n";
+                        fullContent.append(errorMsg);
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     /**
@@ -162,5 +175,25 @@ public class ProjectScannerService {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         String extension = file.getExtension();
         return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
+    }
+
+    /**
+     * Process the file content.
+     * @param content the file content
+     * @return the processed content
+     */
+    private String processFileContent(String content) {
+        if (DevoxxGenieStateService.getInstance().getExcludeJavaDoc()) {
+            return removeJavadoc(content);
+        }
+        return content;
+    }
+
+    private @NotNull String removeJavadoc(String content) {
+        // Remove block comments (which include Javadoc)
+        content = content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/", "");
+        // Remove single-line comments that start with '///'
+        content = content.replaceAll("^\\s*///.*$", "");
+        return content;
     }
 }

@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.0</h2>
+        <UL>
+            <LI>Inject full project into prompt when using Claude</LI>
+        </UL>
         <h2>v0.1.20</h2>
         <UL>
             <LI>Updated until-version to 242</LI>
@@ -230,6 +234,11 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
+        <projectConfigurable id="CopyProjectSettings"
+                             parentId="DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
+                             displayName="Copy Project"/>
+
         <toolWindow id="DevoxxGenie"
                     anchor="right"
                     icon="/icons/pluginIcon.svg"
@@ -244,6 +253,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ProjectScannerService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

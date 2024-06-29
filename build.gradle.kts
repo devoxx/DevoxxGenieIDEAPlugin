@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.1.20"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -49,6 +49,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:0.31.0")
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:0.31.0")
 
+    implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
 
     compileOnly("org.projectlombok:lombok:1.18.32")
