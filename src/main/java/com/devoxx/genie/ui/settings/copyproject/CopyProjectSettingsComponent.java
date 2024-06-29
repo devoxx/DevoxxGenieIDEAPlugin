@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,11 +17,13 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
 
     private final ExcludedDirectoriesPanel excludedDirectoriesPanel;
     private final IncludedFileExtensionsPanel includedFileExtensionsPanel;
+    private final JCheckBox excludeJavadocCheckBox;
 
     public CopyProjectSettingsComponent() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         excludedDirectoriesPanel = new ExcludedDirectoriesPanel(settings.getExcludedDirectories());
         includedFileExtensionsPanel = new IncludedFileExtensionsPanel(settings.getIncludedFileExtensions());
+        excludeJavadocCheckBox = new JCheckBox("Exclude Javadoc", settings.getExcludeJavaDoc());
     }
 
     @Override
@@ -34,17 +37,27 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             "will be processed. This helps to focus the LLM on relevant code and reduce noise from build artifacts " +
             "or other non-essential files.</body></html>");
         descriptionLabel.setForeground(UIUtil.getContextHelpForeground());
-        descriptionLabel.setBorder(JBUI.Borders.empty(0, 0, 10, 0));
+        descriptionLabel.setBorder(JBUI.Borders.emptyBottom(10));
         panel.add(descriptionLabel, BorderLayout.NORTH);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-            excludedDirectoriesPanel,
-            includedFileExtensionsPanel);
-        splitPane.setResizeWeight(0.5);
-        splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(0.5);
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.add(excludedDirectoriesPanel);
+        contentPanel.add(includedFileExtensionsPanel);
 
-        panel.add(splitPane, BorderLayout.CENTER);
+        JPanel javaDocPanel = new JPanel(new BorderLayout());
+        JBLabel javaDocInfo = new JBLabel("<html><body style='width: 100%;'>" +
+            "This will exclude Javadoc comments from the generated context." +
+            "This can be useful if you want to focus on the code itself and not the comments." +
+            "It will also use less tokens and cheaper to prompt." +
+            "</body></html>");
+        javaDocInfo.setForeground(UIUtil.getContextHelpForeground());
+        javaDocInfo.setBorder(JBUI.Borders.empty(10));
+        javaDocPanel.add(javaDocInfo);
+        contentPanel.add(javaDocPanel);
+        contentPanel.add(createExcludeJavadocPanel());
+
+        panel.add(contentPanel, BorderLayout.CENTER);
 
         panel.setPreferredSize(new Dimension(400, 500));
 
@@ -62,6 +75,12 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
 
     public List<String> getIncludedFileExtensions() {
         return includedFileExtensionsPanel.getData();
+    }
+
+    private JPanel createExcludeJavadocPanel() {
+        JPanel excludeJavadocPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        excludeJavadocPanel.add(excludeJavadocCheckBox);
+        return excludeJavadocPanel;
     }
 
     private static class ExcludedDirectoriesPanel extends AddEditRemovePanel<String> {
@@ -121,7 +140,7 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             return showEditDialog(item);
         }
 
-        private String showEditDialog(String initialValue) {
+        private @Nullable String showEditDialog(String initialValue) {
             JBTextField field = new JBTextField(initialValue);
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(new JLabel("File Extension:"), BorderLayout.NORTH);
@@ -134,6 +153,10 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             }
             return null;
         }
+    }
+
+    public boolean getExcludeJavadoc() {
+        return excludeJavadocCheckBox.isSelected();
     }
 
     private static class ExcludedDirectoriesModel extends AddEditRemovePanel.TableModel<String> {

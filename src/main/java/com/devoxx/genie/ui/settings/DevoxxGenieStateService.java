@@ -76,6 +76,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String explainPrompt = EXPLAIN_PROMPT;
     private String customPrompt = CUSTOM_PROMPT;
 
+    @Setter
+    @Getter
+    private Boolean excludeJavaDoc = false;
+
     private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
         "build", ".git", "bin", "out", "target", "node_modules", ".idea"
     ));
@@ -93,4 +97,5 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
     }
+
 }

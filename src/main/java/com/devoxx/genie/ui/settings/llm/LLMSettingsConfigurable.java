@@ -4,7 +4,6 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 

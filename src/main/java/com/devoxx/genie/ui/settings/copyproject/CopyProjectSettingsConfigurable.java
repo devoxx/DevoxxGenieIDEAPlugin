@@ -28,7 +28,8 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     public boolean isModified() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         return !copyProjectSettingsComponent.getExcludedDirectories().equals(settings.getExcludedDirectories()) ||
-            !copyProjectSettingsComponent.getIncludedFileExtensions().equals(settings.getIncludedFileExtensions());
+               !copyProjectSettingsComponent.getIncludedFileExtensions().equals(settings.getIncludedFileExtensions()) ||
+                copyProjectSettingsComponent.getExcludeJavadoc() != settings.getExcludeJavaDoc();
     }
 
     @Override
@@ -36,11 +37,11 @@ public class CopyProjectSettingsConfigurable implements Configurable {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         settings.setExcludedDirectories(copyProjectSettingsComponent.getExcludedDirectories());
         settings.setIncludedFileExtensions(copyProjectSettingsComponent.getIncludedFileExtensions());
+        settings.setExcludeJavaDoc(copyProjectSettingsComponent.getExcludeJavadoc());
     }
 
     @Override
     public void reset() {
-
     }
 
     @Override

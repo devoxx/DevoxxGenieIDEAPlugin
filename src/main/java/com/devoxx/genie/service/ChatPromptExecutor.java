@@ -16,8 +16,8 @@ public class ChatPromptExecutor {
     private volatile boolean isRunning = false;
 
     public ChatPromptExecutor() {
-        streamingPromptExecutor = new StreamingPromptExecutor();
-        nonStreamingPromptExecutor = new NonStreamingPromptExecutor();
+        this.streamingPromptExecutor = new StreamingPromptExecutor();
+        this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor();
     }
 
     /**

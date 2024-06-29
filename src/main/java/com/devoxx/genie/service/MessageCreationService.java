@@ -36,9 +36,10 @@ public class MessageCreationService {
         UserMessage userMessage;
         String context = chatMessageContext.getContext();
 
-        if (context != null && !context.isEmpty()) {
+        if (context != null && !context.isEmpty() && !chatMessageContext.isFullProjectContextAdded()) {
             // This is likely the full project context scenario
             userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
+            chatMessageContext.setFullProjectContextAdded(true);
         } else if (chatMessageContext.getEditorInfo() != null && chatMessageContext.getEditorInfo().getSelectedText() != null) {
             // This is the scenario with selected text
             userMessage = constructUserMessageWithSelectedText(chatMessageContext);
@@ -50,23 +51,36 @@ public class MessageCreationService {
         return userMessage;
     }
 
-    private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext, String context) {
-        StringBuilder sb = new StringBuilder(QUESTION);
+    /**
+     * Construct user message with full context.
+     * @param chatMessageContext the chat message context
+     * @param context the context
+     * @return the user message
+     */
+    private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
+                                                                     String context) {
+        StringBuilder sb = new StringBuilder();
 
-        // The user prompt is always added
-        appendIfNotEmpty(sb, chatMessageContext.getUserPrompt());
+        // Check if this is the first message in the conversation
+        if (ChatMemoryService.getInstance().isEmpty()) {
+            sb.append("Full Project Context:\n");
+            sb.append(context);
+            sb.append("\n\n");
+        }
 
-        // Add the context prompt
-        sb.append("\n").append(CONTEXT_PROMPT);
-
-        // Add the full project context
-        sb.append(context);
+        sb.append("User Question: ");
+        sb.append(chatMessageContext.getUserPrompt());
 
         UserMessage userMessage = new UserMessage(sb.toString());
         chatMessageContext.setUserMessage(userMessage);
         return userMessage;
     }
 
+    /**
+     * Construct user message with selected text.
+     * @param chatMessageContext the chat message context
+     * @return the user message
+     */
     private @NotNull UserMessage constructUserMessageWithSelectedText(@NotNull ChatMessageContext chatMessageContext) {
         StringBuilder sb = new StringBuilder(QUESTION);
 
