@@ -26,6 +26,8 @@ public class LLMCostSettingsComponent implements SettingsComponent {
     private final JSpinner windowContextSpinner;
     private boolean isModified = false;
     private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
+    private final JTable costTable;
+    private final JScrollPane scrollPane;
 
     public LLMCostSettingsComponent() {
         panel = new JPanel(new BorderLayout());
@@ -36,14 +38,15 @@ public class LLMCostSettingsComponent implements SettingsComponent {
             }
         });
 
-        JBTable costTable = new JBTable(tableModel) {
+        costTable = new JBTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 2 || column == 3 || column == 4; // Allow editing of cost and window context columns
             }
         };
 
-        JBScrollPane scrollPane = new JBScrollPane(costTable);
+        scrollPane = new JBScrollPane(costTable);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JButton addButton = new JButton("Add Model");
@@ -73,6 +76,15 @@ public class LLMCostSettingsComponent implements SettingsComponent {
 
     private void addNewRow() {
         tableModel.addRow(new Object[]{"", "", 0.0, 0.0, 0.0});
+        SwingUtilities.invokeLater(this::scrollToBottom);
+    }
+
+    private void scrollToBottom() {
+        int lastRowIndex = costTable.getRowCount() - 1;
+        if (lastRowIndex >= 0) {
+            Rectangle cellRect = costTable.getCellRect(lastRowIndex, 0, true);
+            costTable.scrollRectToVisible(cellRect);
+        }
     }
 
     @Override
