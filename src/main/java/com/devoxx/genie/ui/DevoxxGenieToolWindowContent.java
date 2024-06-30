@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
@@ -54,8 +55,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     private PromptContextFileListPanel promptContextFileListPanel;
     private ActionButtonsPanel actionButtonsPanel;
 
-    private final LLMProviderService llmProviderService;
-
     private boolean isInitializationComplete = false;
     private boolean isUpdatingModelNames = false;
 
@@ -69,12 +68,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
         project = toolWindow.getProject();
 
-        this.llmProviderService = LLMProviderService.getInstance();
-
         setupUI();
 
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
-        modelNameComboBox.addActionListener(e -> updateTokenUsageBar(e));
+        modelNameComboBox.addActionListener(this::updateTokenUsageBar);
 
         messageBusConnection = toolWindow.getProject().getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
@@ -90,18 +87,18 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         String lastSelectedProvider = DevoxxGenieStateService.getInstance().getLastSelectedProvider();
         if (lastSelectedProvider != null && !lastSelectedProvider.isEmpty()) {
             llmProvidersComboBox.setSelectedItem(lastSelectedProvider);
-            updateModelNamesComboBox();
+            updateModelNamesComboBox(ModelProvider.valueOf(lastSelectedProvider));
         } else {
             // If no last selected provider, select the first item in the combobox
             Object selectedItem = llmProvidersComboBox.getSelectedItem();
             if (selectedItem != null) {
-                updateModelNamesComboBox();
+                updateModelNamesComboBox(ModelProvider.valueOf((String) selectedItem));
             }
         }
     }
 
     private void updateTokenUsageBar(@NotNull ActionEvent e) {
-        LanguageModel languageModel = (LanguageModel)((ComboBox)e.getSource()).getSelectedItem();
+        LanguageModel languageModel = (LanguageModel)((ComboBox<?>)e.getSource()).getSelectedItem();
         if (languageModel != null) {
             actionButtonsPanel.updateTokenUsage(languageModel.getMaxTokens());
         }
@@ -158,11 +155,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         LanguageModel currentModel = (LanguageModel)modelNameComboBox.getSelectedItem();
 
         llmProvidersComboBox.removeAllItems();
+        modelNameComboBox.removeAllItems();
         addLLMProvidersToComboBox();
 
         if (currentProvider != null && !currentProvider.isEmpty()) {
             llmProvidersComboBox.setSelectedItem(currentProvider);
-            updateModelNamesComboBox();
+            updateModelNamesComboBox(ModelProvider.valueOf(currentProvider));
             if (currentModel != null) {
                 modelNameComboBox.setSelectedItem(currentModel);
             }
@@ -178,7 +176,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
      * Only show the cloud-based LLM providers for which we have an API Key.
      */
     private void addLLMProvidersToComboBox() {
-        llmProviderService.getAvailableLLMProviders()
+        LLMProviderService.getInstance().getAvailableLLMProviders()
             .stream()
             .sorted()
             .forEach(llmProvidersComboBox::addItem);
@@ -297,7 +295,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
 
             if (selectedItem instanceof String selectedLLMProvider) {
                 DevoxxGenieStateService.getInstance().setLastSelectedProvider(selectedLLMProvider);
-                updateModelNamesComboBox();
+                ModelProvider provider = ModelProvider.fromString(selectedLLMProvider);
+
+                updateModelNamesComboBox(provider);
             } else if (selectedItem instanceof LanguageModel selectedModel) {
                 DevoxxGenieStateService.getInstance().setLastSelectedModel(selectedModel.getName());
             }
@@ -309,36 +309,46 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     /**
      * Update the model names combobox.
      */
-    private void updateModelNamesComboBox() {
+    private void updateModelNamesComboBox(ModelProvider provider) {
+        if (provider == null) {
+            return;
+        }
+
         SwingUtilities.invokeLater(() -> {
-            String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
-            if (selectedProvider != null) {
-                ModelProvider provider = ModelProvider.valueOf(selectedProvider);
-                ChatModelFactoryProvider.getFactoryByProvider(provider).ifPresent(factory -> {
-                    modelNameComboBox.removeAllItems();
-                    List<LanguageModel> models = factory.getModelNames();
-                    for (LanguageModel model : models) {
-                        modelNameComboBox.addItem(model);
-                    }
-                });
-            }
+            modelNameComboBox.setVisible(true);
+            modelNameComboBox.removeAllItems();
+
+            ChatModelFactoryProvider
+                .getFactoryByProvider(provider)
+                .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+
+//            String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
+//            if (selectedProvider != null) {
+//                ChatModelFactoryProvider.getFactoryByProvider(provider).ifPresent(factory -> {
+//                    List<LanguageModel> models = factory.getModelNames();
+//                    for (LanguageModel model : models) {
+//                        modelNameComboBox.addItem(model);
+//                    }
+//                });
+//            }
         });
     }
-//
-//    /**
-//     * Populate the model names.
-//     * @param chatModelFactory the chat model factory
-//     */
-//    private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
-//        List<LanguageModel> modelNames = chatModelFactory.getModelNames();
-//        if (modelNames.isEmpty()) {
-//            hideModelNameComboBox();
-//        } else {
-//            modelNames.stream()
-//                .sorted()
-//                .forEach(modelNameComboBox::addItem);
-//        }
-//    }
+
+    /**
+     * Populate the model names.
+     * @param chatModelFactory the chat model factory
+     */
+    private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
+        modelNameComboBox.removeAllItems();
+        List<LanguageModel> modelNames = chatModelFactory.getModelNames();
+        if (modelNames.isEmpty()) {
+            hideModelNameComboBox();
+        } else {
+            modelNames.stream()
+                .sorted()
+                .forEach(modelNameComboBox::addItem);
+        }
+    }
 
     /**
      * Hide the model name combobox.
@@ -349,10 +359,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
 
     @Override
     public void settingsChanged() {
-        updateModelNamesComboBox();
-    }
-
-    public void dispose() {
-        messageBusConnection.disconnect();
+        updateModelNamesComboBox(ModelProvider.valueOf(DevoxxGenieStateService.getInstance().getLastSelectedProvider()));
     }
 }

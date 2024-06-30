@@ -27,8 +27,9 @@ public class ChatModelFactoryProvider {
         ModelProvider.Mistral, MistralChatModelFactory::new,
         ModelProvider.Groq, GroqChatModelFactory::new,
         ModelProvider.DeepInfra, DeepInfraChatModelFactory::new,
-        ModelProvider.Gemini, GeminiChatModelFactory::new,
-        ModelProvider.Jan, JanChatModelFactory::new
+        ModelProvider.Gemini, GeminiChatModelFactory::new
+        // TODO Removed because currently is broken by latest Jan! version
+        // ModelProvider.Jan, JanChatModelFactory::new
     );
 
     /**

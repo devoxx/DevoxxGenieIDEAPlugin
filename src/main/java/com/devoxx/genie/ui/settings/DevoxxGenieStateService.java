@@ -103,7 +103,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         initializeDefaultCostsIfEmpty();
     }
 
-    public void setModelCost(ModelProvider provider, String modelName, double inputCost, double outputCost) {
+    public void setModelCost(ModelProvider provider,
+                             String modelName,
+                             double inputCost,
+                             double outputCost) {
         if (DefaultLLMSettings.isApiBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             modelInputCosts.put(key, inputCost);

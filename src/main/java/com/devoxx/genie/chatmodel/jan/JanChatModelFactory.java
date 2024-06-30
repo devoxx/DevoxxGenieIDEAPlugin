@@ -4,7 +4,9 @@ import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.JanService;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -40,6 +42,7 @@ public class JanChatModelFactory extends AbstractChatModelFactory {
             .build();
     }
 
+
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
@@ -53,19 +56,21 @@ public class JanChatModelFactory extends AbstractChatModelFactory {
 
     /**
      * Get the model names from the Jan service.
+     *
      * @return List of model names
      */
     @Override
     public List<LanguageModel> getModelNames() {
         List<LanguageModel> modelNames = new ArrayList<>();
         try {
-            OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
-            for (OllamaModelEntryDTO model : ollamaModels) {
-                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000, 0.0d, 0.0d));
+            List<Data> models = new JanService().getModels();
+            for (Data model : models) {
+                int ctxLen = model.getSettings().getCtxLen();
+                modelNames.add(new LanguageModel(model.getId(), model.getName(), ctxLen, 0d, 0d));
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "Ollama is not running, please start it.");
+                "Jan is not running, please start it.");
             return List.of();
         }
         return modelNames;
