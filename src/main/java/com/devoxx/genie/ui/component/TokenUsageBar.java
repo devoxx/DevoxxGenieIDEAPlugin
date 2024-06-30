@@ -29,22 +29,16 @@ public class TokenUsageBar extends JComponent {
         int width = getWidth();
         int height = getHeight();
 
-        // Draw background
-        g.setColor(JBColor.LIGHT_GRAY);
-        g.fillRect(0, 0, width, height);
-
-        // Draw usage bar
-        g.setColor(getColor());
         int usageWidth = (int) ((double) usedTokens / maxTokens * width);
+        g.setColor(getColor(usageWidth));
         g.fillRect(0, 0, usageWidth, height);
     }
 
-    private Color getColor() {
-        var percentage = usedTokens / maxTokens * getWidth();
+    private Color getColor(int usageWidth) {
 
-        if (percentage < 50) {
+        if (usageWidth < 50) {
             return JBColor.GREEN;
-        } else if (percentage < 80) {
+        } else if (usageWidth < 80) {
             return JBColor.YELLOW;
         } else {
             return JBColor.BLUE;

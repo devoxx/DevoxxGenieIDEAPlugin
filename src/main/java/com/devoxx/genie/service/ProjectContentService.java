@@ -1,7 +1,6 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.DefaultLLMSettings;
@@ -65,25 +64,21 @@ public class ProjectContentService {
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         double inputCost = settings.getModelInputCost(provider, modelName);
-        double outputCost = settings.getModelOutputCost(provider, modelName);
 
         getProjectContent(project, tokenLimit, true)
             .thenAccept(projectContent -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
                 double estimatedInputCost = calculateCost(tokenCount, inputCost);
-                double estimatedOutputCost = calculateCost(tokenCount, outputCost);
-                String message = String.format("Project contains %s tokens. Estimated costs for %s - %s:\nInput: $%.4f\nOutput: $%.4f",
+                String message = String.format("Project contains %s tokens. Estimated min. cost using %s: $%.4f",
                     NumberFormat.getInstance().format(tokenCount),
-                    provider.getName(),
                     modelName,
-                    estimatedInputCost,
-                    estimatedOutputCost);
+                    estimatedInputCost);
                 NotificationUtil.sendNotification(project, message);
             });
     }
 
     private double calculateCost(int tokenCount, double costPer1000Tokens) {
-        return (tokenCount / 1000.0) * costPer1000Tokens;
+        return (tokenCount / 1_000_000.0) * costPer1000Tokens;
     }
 
     private void copyToClipboard(String content) {
