@@ -14,6 +14,7 @@ import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -27,6 +28,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.JBColor;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.message.UserMessage;
@@ -63,6 +65,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final PromptOutputPanel promptOutputPanel;
     private final ComboBox<String> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
+    private final TokenUsageBar tokenUsageBar = new TokenUsageBar();
+    private int tokenCount;
+
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
@@ -121,8 +126,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         addFileBtn.addActionListener(this::selectFilesForPromptContext);
 
         add(addFileBtn, BorderLayout.EAST);
-
         add(addProjectBtn, BorderLayout.SOUTH);
+
+        tokenUsageBar.setVisible(false);
+        tokenUsageBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
+
+        JPanel progressPanel = new JPanel(new BorderLayout());
+        progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
+        add(progressPanel, BorderLayout.NORTH);
     }
 
     /**
@@ -511,18 +522,32 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         }
 
         addProjectBtn.setEnabled(false);
+        tokenUsageBar.setVisible(true);
+        tokenUsageBar.setUsedTokens(0);
 
-        ProjectContentService.getInstance().getProjectContent(project, getTokenLimit(), false)
+        int tokenLimit = getTokenLimit();
+
+        ProjectContentService.getInstance().getProjectContent(project, tokenLimit, false)
             .thenAccept(projectContent -> {
                 projectContext = "Project Context:\n" + projectContent;
                 isProjectContextAdded = true;
                 SwingUtilities.invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);
-                    var tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
+                    tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
                     addProjectBtn.setText("Full Project (" + NumberFormat.getInstance().format(tokenCount) + " tokens)");
                     addProjectBtn.setToolTipText("Remove entire project from prompt context");
                     addProjectBtn.setEnabled(true);
+
+                    tokenUsageBar.setUsedTokens(tokenCount);
                 });
+            })
+            .exceptionally(ex -> {
+                SwingUtilities.invokeLater(() -> {
+                    addProjectBtn.setEnabled(true);
+                    tokenUsageBar.setVisible(false);
+                    NotificationUtil.sendNotification(project, "Error adding project content: " + ex.getMessage());
+                });
+                return null;
             });
     }
 
@@ -575,5 +600,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             selectedProvider,
             selectedModel.getName()
         );
+    }
+
+    public void updateTokenUsage(int maxTokens) {
+        SwingUtilities.invokeLater(() -> tokenUsageBar.setMaxTokens(maxTokens));
     }
 }

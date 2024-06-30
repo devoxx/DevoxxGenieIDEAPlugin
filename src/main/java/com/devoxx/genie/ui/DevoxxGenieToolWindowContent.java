@@ -74,6 +74,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         setupUI();
 
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
+        modelNameComboBox.addActionListener(e -> updateTokenUsageBar(e));
 
         messageBusConnection = toolWindow.getProject().getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
@@ -96,6 +97,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
             if (selectedItem != null) {
                 updateModelNamesComboBox();
             }
+        }
+    }
+
+    private void updateTokenUsageBar(@NotNull ActionEvent e) {
+        LanguageModel languageModel = (LanguageModel)((ComboBox)e.getSource()).getSelectedItem();
+        if (languageModel != null) {
+            actionButtonsPanel.updateTokenUsage(languageModel.getMaxTokens());
         }
     }
 
