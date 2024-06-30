@@ -5,12 +5,12 @@ import javax.swing.*;
 public interface SettingsComponent {
 
     /**
-     * Create the settings panel
+     * Create the panel
      */
-    JPanel createSettingsPanel();
+    JPanel createPanel();
 
     /**
-     * Adds listeners to the settings panel components
+     * Adds listeners to the panel components
      */
     void addListeners();
 }

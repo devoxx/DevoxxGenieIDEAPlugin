@@ -32,7 +32,7 @@ public class LLMFeaturesConfigurable implements Configurable {
         llmCostSettingsComponent = new LLMFeaturesComponent();
         llmCostSettingsComponent.addSettingsChangeListener(this::notifySettingsChanged);
         llmCostSettingsComponent.reset(); // This will load the current (including default) values
-        return llmCostSettingsComponent.createSettingsPanel();
+        return llmCostSettingsComponent.createPanel();
     }
 
     private void notifySettingsChanged() {

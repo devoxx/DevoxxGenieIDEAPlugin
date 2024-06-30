@@ -27,7 +27,7 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
     }
 
     @Override
-    public JPanel createSettingsPanel() {
+    public JPanel createPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Add description

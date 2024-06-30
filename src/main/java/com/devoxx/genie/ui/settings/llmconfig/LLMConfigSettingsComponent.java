@@ -41,7 +41,7 @@ public class LLMConfigSettingsComponent implements SettingsComponent {
     }
 
     @Override
-    public JPanel createSettingsPanel() {
+    public JPanel createPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
