@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.DefaultLLMSettings;
@@ -26,7 +27,8 @@ public class ProjectContentService {
     }
 
     public CompletableFuture<String> getProjectContent(Project project, int tokenLimit, boolean isTokenCalculation) {
-        return ProjectScannerService.getInstance().scanProject(project, null, tokenLimit, isTokenCalculation)
+        return ProjectScannerService.getInstance()
+            .scanProject(project, null, tokenLimit, isTokenCalculation)
             .thenApply(content -> {
                 if (!isTokenCalculation) {
                     copyToClipboard(content);
@@ -39,7 +41,8 @@ public class ProjectContentService {
                                                          VirtualFile directory,
                                                          int tokenLimit,
                                                          boolean isTokenCalculation) {
-        return ProjectScannerService.getInstance().scanProject(project, directory, tokenLimit, isTokenCalculation)
+        return ProjectScannerService.getInstance()
+            .scanProject(project, directory, tokenLimit, isTokenCalculation)
             .thenApply(content -> {
                 if (!isTokenCalculation) {
                     copyToClipboard(content);

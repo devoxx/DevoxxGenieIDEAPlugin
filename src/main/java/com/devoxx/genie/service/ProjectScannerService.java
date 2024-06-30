@@ -19,6 +19,7 @@ import com.intellij.openapi.application.ReadAction;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.knuddels.jtokkit.Encodings;
 
@@ -58,8 +59,9 @@ public class ProjectScannerService {
                 ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
 
                 StringBuilder fullContent = new StringBuilder(result);
+                AtomicInteger currentTokens = new AtomicInteger(0);
 
-                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent);
+                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent, currentTokens, maxTokens);
 
                 return truncateToTokens(project, fullContent.toString(), maxTokens, isTokenCalculation);
             }).inSmartMode(project)
@@ -75,7 +77,11 @@ public class ProjectScannerService {
      * @param fileIndex the project file index
      * @param fullContent the full content
      */
-    private void walkThroughDirectory(VirtualFile directory, ProjectFileIndex fileIndex, StringBuilder fullContent) {
+    private void walkThroughDirectory(VirtualFile directory,
+                                      ProjectFileIndex fileIndex,
+                                      StringBuilder fullContent,
+                                      AtomicInteger currentTokens,
+                                      int maxTokens) {
         VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
@@ -90,6 +96,14 @@ public class ProjectScannerService {
                         String content = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
                         content = processFileContent(content);
                         fullContent.append(content).append("\n");
+
+                        int tokens = ENCODING.countTokens(content);
+                        currentTokens.addAndGet(tokens);
+//                        progressCallback.accept(currentTokens.get(), maxTokens);
+
+                        if (currentTokens.get() >= maxTokens) {
+                            return false; // Stop visiting files if we've reached the token limit
+                        }
                     } catch (Exception e) {
                         String errorMsg = "Error reading file: " + e.getMessage() + "\n";
                         fullContent.append(errorMsg);
