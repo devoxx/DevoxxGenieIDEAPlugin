@@ -36,7 +36,8 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
         factories.put(ModelProvider.Gemini, new GeminiChatModelFactory());
-        factories.put(ModelProvider.Jan, new JanChatModelFactory());
+        // TODO Currently broken by latest Jan! version
+        // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
 
     /**

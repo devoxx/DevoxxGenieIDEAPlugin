@@ -69,6 +69,8 @@ public class LLMFeaturesComponent implements SettingsComponent {
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JButton addButton = new JButton("Add Model");
+        addButton.setEnabled(false);
+        addButton.setToolTipText("Add a new model not fully implemented yet, we accept PR's :)");
         addButton.addActionListener(e -> addNewRow());
         panel.add(addButton, BorderLayout.SOUTH);
 
@@ -163,20 +165,17 @@ public class LLMFeaturesComponent implements SettingsComponent {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             ModelProvider provider = (ModelProvider) tableModel.getValueAt(i, 0);
             String modelName = (String) tableModel.getValueAt(i, 1);
-            String inputCostString = (String) tableModel.getValueAt(i, 2);
-            String outputCostString = (String) tableModel.getValueAt(i, 3);
+            double inputCost = (double) tableModel.getValueAt(i, 2);
+            double outputCost = (double) tableModel.getValueAt(i, 3);
             Object windowContextObj = tableModel.getValueAt(i, 4);
 
-            NumberFormat format = NumberFormat.getInstance(Locale.FRANCE);
             try {
-                double inputCost = format.parse(inputCostString).doubleValue();
-                double outputCost = format.parse(outputCostString).doubleValue();
                 int windowContext = windowContextObj instanceof Integer ? (Integer) windowContextObj :
                     Integer.parseInt(windowContextObj.toString());
 
                 settings.setModelCost(provider, modelName, inputCost, outputCost);
                 settings.setModelWindowContext(provider, modelName, windowContext);
-            } catch (ParseException | NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 // Log the error or handle it as appropriate for your application
                 System.err.println("Error applying cost for model " + modelName + ": " + e.getMessage());
             }

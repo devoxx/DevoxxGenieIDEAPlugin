@@ -1,7 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
-import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +28,7 @@ public class LLMProviderService {
         GPT4All.getName(),
         LMStudio.getName(),
         Ollama.getName(),
-        Jan.getName()
+        // Jan.getName()
     };
 
     @NotNull
@@ -67,11 +67,11 @@ public class LLMProviderService {
             return 8000; // Default to 8000 if no model is selected
         }
 
-        return ChatModelFactoryProvider.getFactoryByProvider(ModelProvider.fromString(provider))
+        return ChatModelFactoryProvider.getFactoryByProvider(fromString(provider))
             .flatMap(factory -> factory.getModelNames().stream()
                 .filter(model -> model.getName().equals(modelName))
                 .findFirst())
-            .map(com.devoxx.genie.model.LanguageModel::getMaxTokens)
-            .orElse(8000); // Default to 8000 if the model is not found
+            .map(LanguageModel::getMaxTokens)
+            .orElse(8000);// Default to 8000 if the model is not found
     }
 }

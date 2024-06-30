@@ -14,10 +14,9 @@ import java.io.IOException;
 import java.util.List;
 
 public class JanService {
-    private final OkHttpClient client;
+    private final OkHttpClient client = new OkHttpClient();
 
-    public JanService(OkHttpClient client) {
-        this.client = client;
+    public JanService() {
     }
 
     public List<Data> getModels() throws IOException {
