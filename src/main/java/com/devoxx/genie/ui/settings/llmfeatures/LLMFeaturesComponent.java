@@ -17,10 +17,7 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Vector;
 
 public class LLMFeaturesComponent implements SettingsComponent {
@@ -115,7 +112,7 @@ public class LLMFeaturesComponent implements SettingsComponent {
     }
 
     @Override
-    public JPanel createSettingsPanel() {
+    public JPanel createPanel() {
         return panel;
     }
 

@@ -32,7 +32,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmConfigSettingsComponent.createSettingsPanel();
+        return llmConfigSettingsComponent.createPanel();
     }
 
     /**

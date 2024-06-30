@@ -321,16 +321,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
             ChatModelFactoryProvider
                 .getFactoryByProvider(provider)
                 .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
-
-//            String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
-//            if (selectedProvider != null) {
-//                ChatModelFactoryProvider.getFactoryByProvider(provider).ifPresent(factory -> {
-//                    List<LanguageModel> models = factory.getModelNames();
-//                    for (LanguageModel model : models) {
-//                        modelNameComboBox.addItem(model);
-//                    }
-//                });
-//            }
         });
     }
 

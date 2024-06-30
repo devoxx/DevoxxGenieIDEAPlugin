@@ -28,7 +28,6 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.JBColor;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.message.UserMessage;
@@ -66,6 +65,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final ComboBox<String> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final TokenUsageBar tokenUsageBar = new TokenUsageBar();
+    private final JProgressBar progressBar = new JProgressBar();
     private int tokenCount;
 
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
@@ -128,11 +128,15 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         add(addFileBtn, BorderLayout.EAST);
         add(addProjectBtn, BorderLayout.SOUTH);
 
+        progressBar.setVisible(false);
+        progressBar.setIndeterminate(true);
+
         tokenUsageBar.setVisible(false);
         tokenUsageBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
 
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
+        progressPanel.add(progressBar, BorderLayout.SOUTH);
         add(progressPanel, BorderLayout.NORTH);
     }
 
@@ -180,6 +184,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
+        progressBar.setVisible(true);
+
         if (isPromptRunning) {
             stopPromptExecution();
             return;
@@ -303,6 +309,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         SwingUtilities.invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
+            progressBar.setVisible(false);
             promptInputComponent.setEnabled(true);
             isPromptRunning = false;
         });

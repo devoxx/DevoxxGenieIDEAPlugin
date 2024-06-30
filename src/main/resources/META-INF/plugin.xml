@@ -245,7 +245,7 @@
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.llmfeatures.LLMFeaturesConfigurable"
-                             displayName="Cloud Cost / Context Window"/>
+                             displayName="Token Cost &amp; Context Window"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
