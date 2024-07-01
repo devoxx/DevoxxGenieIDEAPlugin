@@ -503,12 +503,13 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void removeProjectContext() {
         projectContext = null;
         isProjectContextAdded = false;
-        
+
         addProjectBtn.setIcon(AddFileIcon);
         addProjectBtn.setText("Add full project to prompt");
         addProjectBtn.setToolTipText("Add entire project to prompt context");
 
         resetTokenUsageBar();
+        tokenCount = 0;
 
         NotificationUtil.sendNotification(project, "Project context removed successfully");
     }
@@ -530,7 +531,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         addProjectBtn.setEnabled(false);
         tokenUsageBar.setVisible(true);
-        tokenUsageBar.setUsedTokens(0);
+        tokenUsageBar.reset();
 
         int tokenLimit = getWindowContext();
 
@@ -545,7 +546,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                     addProjectBtn.setToolTipText("Remove entire project from prompt context");
                     addProjectBtn.setEnabled(true);
 
-                    tokenUsageBar.setUsedTokens(tokenCount);
+                    tokenUsageBar.setTokens(tokenCount, tokenLimit);
                 });
             })
             .exceptionally(ex -> {
@@ -608,6 +609,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     public void resetTokenUsageBar() {
-        SwingUtilities.invokeLater(tokenUsageBar::reset);
+        SwingUtilities.invokeLater(() -> {
+            tokenUsageBar.reset();
+            tokenCount = 0;
+        });
     }
 }
