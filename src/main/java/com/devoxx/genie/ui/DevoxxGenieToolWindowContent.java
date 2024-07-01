@@ -274,7 +274,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     private void processModelNameSelection(@NotNull ActionEvent e) {
         if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED)) {
             // Reset the project context if the provider has been changed
-            actionButtonsPanel.resetProjectContext();
+            // actionButtonsPanel.resetProjectContext();
 
             LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
             if (selectedModel != null) {
