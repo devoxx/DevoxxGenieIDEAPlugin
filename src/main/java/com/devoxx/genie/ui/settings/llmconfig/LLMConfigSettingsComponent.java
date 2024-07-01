@@ -1,9 +1,10 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
 
@@ -11,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 
-public class LLMConfigSettingsComponent implements SettingsComponent {
+public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
@@ -42,13 +43,13 @@ public class LLMConfigSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
 
         panel.add(new JXTitledSeparator("Local Large Language Models"), gbc);
 

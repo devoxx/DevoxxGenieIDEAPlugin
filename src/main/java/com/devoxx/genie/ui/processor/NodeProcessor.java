@@ -16,10 +16,9 @@ public interface NodeProcessor {
 
     /**
      * Process the node.
-     *
      * @return the panel
      */
-    JPanel process();
+    JPanel processNode();
 
     /**
      * Create an editor pane.

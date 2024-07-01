@@ -26,7 +26,7 @@ public class IndentedCodeBlockProcessor implements NodeProcessor {
      * @return the panel
      */
     @Override
-    public JPanel process() {
+    public JPanel processNode() {
         HtmlRenderer htmlRenderer = createHtmlRenderer(chatMessageContext.getProject());
         String htmlOutput = htmlRenderer.render(indentedCodeBlock);
 

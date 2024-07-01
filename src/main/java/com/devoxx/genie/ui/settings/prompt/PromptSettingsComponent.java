@@ -1,7 +1,9 @@
 package com.devoxx.genie.ui.settings.prompt;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-public class PromptSettingsComponent implements SettingsComponent {
+public class PromptSettingsComponent extends AbstractSettingsComponent {
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
@@ -30,14 +32,14 @@ public class PromptSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
 
         addSection(panel, gbc, "Prompts");
 
@@ -55,13 +57,18 @@ public class PromptSettingsComponent implements SettingsComponent {
         return panel;
     }
 
-    private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
+    private void addSection(@NotNull JPanel panel,
+                            @NotNull GridBagConstraints gbc,
+                            String title) {
         gbc.gridy++;
         panel.add(new JXTitledSeparator(title), gbc);
         gbc.gridy++;
     }
 
-    private void addPromptArea(JPanel panel, GridBagConstraints gbc, String label, JTextArea textArea) {
+    private void addPromptArea(@NotNull JPanel panel,
+                               @NotNull GridBagConstraints gbc,
+                               String label,
+                               @NotNull JTextArea textArea) {
         gbc.gridy++;
         panel.add(new JLabel(label), gbc);
 
@@ -72,10 +79,5 @@ public class PromptSettingsComponent implements SettingsComponent {
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         panel.add(scrollPane, gbc);
-    }
-
-    @Override
-    public void addListeners() {
-        // Add any listeners if needed in the future
     }
 }

@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.PropertiesService;
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.UINumericRange;
@@ -18,7 +18,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 
-public class LLMSettingsComponent implements SettingsComponent {
+public class LLMProvidersComponent extends AbstractSettingsComponent {
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
@@ -60,13 +60,13 @@ public class LLMSettingsComponent implements SettingsComponent {
     @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
-    public LLMSettingsComponent() {
+    public LLMProvidersComponent() {
         addListeners();
     }
 
     @Override
     public JPanel createPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -104,7 +104,7 @@ public class LLMSettingsComponent implements SettingsComponent {
         return panel;
     }
 
-    private void addSection(JPanel panel, GridBagConstraints gbc, String title) {
+    private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 2;
@@ -112,7 +112,7 @@ public class LLMSettingsComponent implements SettingsComponent {
         gbc.gridy++;
     }
 
-    private void addSettingRow(JPanel panel, GridBagConstraints gbc, String label, JComponent component) {
+    private void addSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
         gbc.gridwidth = 1;
         gbc.gridx = 0;
         panel.add(new JLabel(label), gbc);

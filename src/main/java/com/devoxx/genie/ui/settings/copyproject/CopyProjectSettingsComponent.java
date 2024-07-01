@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.SettingsComponent;
 import com.intellij.ui.AddEditRemovePanel;
@@ -7,13 +8,15 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-public class CopyProjectSettingsComponent implements SettingsComponent {
+public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     private final ExcludedDirectoriesPanel excludedDirectoriesPanel;
     private final IncludedFileExtensionsPanel includedFileExtensionsPanel;
@@ -28,7 +31,6 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
 
     @Override
     public JPanel createPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
 
         // Add description
         JBLabel descriptionLabel = new JBLabel("<html><body style='width: 100%;'>" +
@@ -64,11 +66,6 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
         return panel;
     }
 
-    @Override
-    public void addListeners() {
-        // Not needed as listeners are handled in the panel classes
-    }
-
     public List<String> getExcludedDirectories() {
         return excludedDirectoriesPanel.getData();
     }
@@ -77,7 +74,7 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
         return includedFileExtensionsPanel.getData();
     }
 
-    private JPanel createExcludeJavadocPanel() {
+    private @NotNull JPanel createExcludeJavadocPanel() {
         JPanel excludeJavadocPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         excludeJavadocPanel.add(excludeJavadocCheckBox);
         return excludeJavadocPanel;
@@ -104,7 +101,7 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             return showEditDialog(item);
         }
 
-        private String showEditDialog(String initialValue) {
+        private @Nullable String showEditDialog(String initialValue) {
             JBTextField field = new JBTextField(initialValue);
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(new JLabel("Directory:"), BorderLayout.NORTH);
@@ -165,8 +162,9 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             return 1;
         }
 
+        @Contract(pure = true)
         @Override
-        public String getColumnName(int columnIndex) {
+        public @NotNull String getColumnName(int columnIndex) {
             return "Directory";
         }
 
@@ -182,8 +180,9 @@ public class CopyProjectSettingsComponent implements SettingsComponent {
             return 1;
         }
 
+        @Contract(pure = true)
         @Override
-        public String getColumnName(int columnIndex) {
+        public @NotNull String getColumnName(int columnIndex) {
             return "Extension";
         }
 
