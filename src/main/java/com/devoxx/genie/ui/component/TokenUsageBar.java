@@ -23,6 +23,12 @@ public class TokenUsageBar extends JComponent {
         this.repaint();
     }
 
+    public void reset() {
+        this.usedTokens = 0;
+        this.maxTokens = 100;
+        this.repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
