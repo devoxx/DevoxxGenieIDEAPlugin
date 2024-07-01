@@ -6,7 +6,6 @@ import lombok.Setter;
 import javax.swing.*;
 import java.awt.*;
 
-@Setter
 public class TokenUsageBar extends JComponent {
     private int maxTokens = 100;
     private int usedTokens;
@@ -15,14 +14,20 @@ public class TokenUsageBar extends JComponent {
         setPreferredSize(new Dimension(200, 20));
     }
 
-    public void reset() {
-        this.usedTokens = 0;
-        this.maxTokens = 100;
+    public void setMaxTokens(int maxTokens) {
+        this.maxTokens = maxTokens;
+        repaint();
     }
 
     public void setTokens(int usedTokens, int maxTokens) {
         this.usedTokens = usedTokens;
         this.maxTokens = maxTokens;
+        repaint();
+    }
+
+    public void reset() {
+        this.usedTokens = 0;
+        this.maxTokens = 100;
         repaint();
     }
 
