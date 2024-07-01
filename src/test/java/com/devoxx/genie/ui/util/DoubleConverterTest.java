@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DoubleConverterTest {
 
-    private final DoubleConverter converter = new DoubleConverter();
+    private final DoubleConverterUtil converter = new DoubleConverterUtil();
 
     @Test
     void testFromString_validDoubleWithDot_returnsDouble() {

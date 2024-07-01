@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
@@ -48,9 +49,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String tavilySearchKey = "";
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
-    // Last selected LLM provider and model name
-    private String lastSelectedProvider = "";
-    private String lastSelectedModel = "";
+    // Last selected language model
+    private String selectedProvider;
+    private String selectedLanguageModel;
 
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;

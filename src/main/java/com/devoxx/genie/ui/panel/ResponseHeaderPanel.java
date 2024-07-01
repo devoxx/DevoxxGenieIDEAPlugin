@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -13,7 +14,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
@@ -40,8 +41,9 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      * @return the created on label
      */
     private static @NotNull JBLabel getCreatedOnLabel(@NotNull ChatMessageContext chatMessageContext) {
-        String modelInfo = (chatMessageContext.getLlmProvider() != null ? chatMessageContext.getLlmProvider() : "") +
-            (chatMessageContext.getModelName() != null ? " (" + chatMessageContext.getModelName() + ")" : "");
+        LanguageModel languageModel = chatMessageContext.getLanguageModel();
+        String modelInfo = languageModel.getProvider().getName() +
+            (languageModel.getModelName() != null ? " (" + languageModel.getModelName() + ")" : "");
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
         JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);

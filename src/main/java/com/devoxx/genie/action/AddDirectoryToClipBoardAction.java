@@ -29,7 +29,7 @@ public class AddDirectoryToClipBoardAction extends DumbAwareAction {
     }
 
     private void addDirectoryContentToClipboard(Project project, VirtualFile directory) {
-        int tokenLimit = LLMProviderService.getInstance().getCurrentModelTokenLimit();
+        int tokenLimit = LLMProviderService.getInstance().getCurrentModelWindowContext();
         ProjectContentService.getInstance().getDirectoryContent(project, directory, tokenLimit, false)
             .thenAccept(content ->
                 NotificationUtil.sendNotification(project, "Directory content added to clipboard: " + directory.getName()));

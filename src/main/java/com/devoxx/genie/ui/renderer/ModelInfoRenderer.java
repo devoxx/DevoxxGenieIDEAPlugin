@@ -1,15 +1,17 @@
 package com.devoxx.genie.ui.renderer;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 
 import java.text.DecimalFormat;
+
 public class ModelInfoRenderer extends JPanel implements ListCellRenderer<LanguageModel> {
     private final JLabel nameLabel = new JBLabel();
     private final JLabel infoLabel = new JBLabel();
@@ -30,17 +32,17 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
-        if (model == null) {
-            nameLabel.setText("");
-            infoLabel.setText("");
-        } else {
+        nameLabel.setText(model.getDisplayName());
+
+        if (!model.getProvider().equals(ModelProvider.Ollama) &&
+            !model.getProvider().equals(ModelProvider.LMStudio) &&
+            !model.getProvider().equals(ModelProvider.Jan) &&
+            !model.getProvider().equals(ModelProvider.GPT4All)) {
             nameLabel.setText(model.getDisplayName());
-            String tokenString = formatTokenCount(model.getMaxTokens());
-            double cost = (model.getCostPer1MTokensInput() / 1_000_000) * model.getMaxTokens();
-            if (cost <= 0.01d) {
-                infoLabel.setText(String.format("%s", tokenString));
-            } else {
-                infoLabel.setText(String.format("%s @ %s USD", tokenString, new DecimalFormat("#.##").format(cost)));
+            String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
+            double cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
+            if (cost > 0.0) {
+                infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
             }
         }
 
@@ -51,15 +53,5 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         setOpaque(true);
 
         return this;
-    }
-
-    private @NotNull String formatTokenCount(int tokens) {
-        if (tokens >= 1_000_000) {
-            return String.format("%dM tokens", tokens / 1_000_000);
-        } else if (tokens >= 1_000) {
-            return String.format("%dK tokens", tokens / 1_000);
-        } else {
-            return String.format("%d tokens", tokens);
-        }
     }
 }

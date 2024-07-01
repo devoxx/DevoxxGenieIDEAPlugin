@@ -1,7 +1,6 @@
 package com.devoxx.genie.chatmodel.deepinfra;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -51,9 +50,9 @@ public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase
     @Test
     public void testModelNames() {
         DeepInfraChatModelFactory factory = new DeepInfraChatModelFactory();
-        Assertions.assertThat(factory.getModelNames()).isNotEmpty();
+        Assertions.assertThat(factory.getModels()).isNotEmpty();
 
-        List<LanguageModel> modelNames = factory.getModelNames();
+        List<LanguageModel> modelNames = factory.getModels();
         Assertions.assertThat(modelNames).size().isEqualTo(14);
     }
 }

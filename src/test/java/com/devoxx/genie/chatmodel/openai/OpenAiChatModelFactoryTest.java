@@ -43,11 +43,11 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void getModelNames() {
+    public void getModels() {
         OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
-        assertThat(factory.getModelNames()).isNotEmpty();
+        assertThat(factory.getModels()).isNotEmpty();
 
-        List<LanguageModel> modelNames = factory.getModelNames();
-        assertThat(modelNames).size().isEqualTo(4);
+        List<LanguageModel> models = factory.getModels();
+        assertThat(models).size().isEqualTo(4);
     }
 }

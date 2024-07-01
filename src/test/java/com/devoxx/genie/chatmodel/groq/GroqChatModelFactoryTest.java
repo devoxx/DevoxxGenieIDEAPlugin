@@ -1,7 +1,6 @@
 package com.devoxx.genie.chatmodel.groq;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -48,9 +47,9 @@ class GroqChatModelFactoryTest extends AbstractLightPlatformTestCase {
     @Test
     public void testModelNames() {
         GroqChatModelFactory factory = new GroqChatModelFactory();
-        Assertions.assertThat(factory.getModelNames()).isNotEmpty();
+        Assertions.assertThat(factory.getModels()).isNotEmpty();
 
-        List<LanguageModel> modelNames = factory.getModelNames();
+        List<LanguageModel> modelNames = factory.getModels();
         Assertions.assertThat(modelNames).size().isEqualTo(5);
     }
 }

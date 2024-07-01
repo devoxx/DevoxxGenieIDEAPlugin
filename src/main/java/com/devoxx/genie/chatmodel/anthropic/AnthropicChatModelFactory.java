@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel.anthropic;
 
-import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -11,21 +11,9 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
-import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
+import java.util.List;
 
-public class AnthropicChatModelFactory extends AbstractChatModelFactory {
-
-    public AnthropicChatModelFactory() {
-        super(ModelProvider.Anthropic);
-        LANGUAGE_MODELS.add(new LanguageModel("claude-3-5-sonnet-20240620", "Claude 3.5 Sonnet", 200_000,  3.0d, 15.0d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_3_OPUS_20240229.toString(), "Claude 3 Opus", 200_000,  15.0d, 75.0d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_3_SONNET_20240229.toString(), "Claude 3 Sonnet",200_000,  3.0d, 15.0d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_3_HAIKU_20240307.toString(), "Claude 3 Haiku",200_000,  0.25d, 1.25d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_2_1.toString(), "Claude 2.1",100_000,  8.0d, 24.0d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_2.toString(), "Claude 2.0",100_000,  8.0d, 24.0d));
-        LANGUAGE_MODELS.add(new LanguageModel(CLAUDE_INSTANT_1_2.toString(), "Claude 1.2",100_000,  0.8d, 2.4d));
-        updateModelCosts();
-    }
+public class AnthropicChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -53,5 +41,10 @@ public class AnthropicChatModelFactory extends AbstractChatModelFactory {
     @Override
     public String getApiKey() {
         return DevoxxGenieStateService.getInstance().getAnthropicKey().trim();
+    }
+
+    @Override
+    public List<LanguageModel> getModels() {
+        return getModels(ModelProvider.Anthropic);
     }
 }

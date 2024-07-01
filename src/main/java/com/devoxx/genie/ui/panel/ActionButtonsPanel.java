@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
@@ -20,6 +19,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
@@ -37,12 +37,11 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.text.NumberFormat;
 import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.model.Constant.ADD_FILE_S_TO_PROMPT_CONTEXT;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static javax.swing.SwingUtilities.invokeLater;
 
 public class ActionButtonsPanel extends JPanel implements SettingsChangeListener {
@@ -62,7 +61,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     private final PromptInputArea promptInputComponent;
     private final PromptOutputPanel promptOutputPanel;
-    private final ComboBox<String> llmProvidersComboBox;
+    private final ComboBox<ModelProvider> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final TokenUsageBar tokenUsageBar = new TokenUsageBar();
     private final JProgressBar progressBar = new JProgressBar();
@@ -79,7 +78,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputComponent,
                               PromptOutputPanel promptOutputPanel,
-                              ComboBox<String> llmProvidersComboBox,
+                              ComboBox<ModelProvider> llmProvidersComboBox,
                               ComboBox<LanguageModel> modelNameComboBox,
                               DevoxxGenieToolWindowContent devoxxGenieToolWindowContent) {
         setLayout(new BorderLayout());
@@ -251,11 +250,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     private boolean isProjectContextSupportedProvider() {
-        String selectedProvider = (String) llmProvidersComboBox.getSelectedItem();
+        ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         return selectedProvider != null && (
-            selectedProvider.equals(ModelProvider.OpenAI.getName()) ||
-                selectedProvider.equals(ModelProvider.Anthropic.getName()) ||
-                selectedProvider.equals(ModelProvider.Gemini.getName())
+            selectedProvider.equals(ModelProvider.OpenAI) ||
+            selectedProvider.equals(ModelProvider.Anthropic) ||
+            selectedProvider.equals(ModelProvider.Gemini)
         );
     }
 
@@ -339,11 +338,10 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
         chatMessageContext.setUserPrompt(userPrompt);
         chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
-        chatMessageContext.setLlmProvider((String) llmProvidersComboBox.getSelectedItem());
 
         LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
         if (selectedLanguageModel != null) {
-            chatMessageContext.setModelName(selectedLanguageModel.getName());
+            chatMessageContext.setLanguageModel(selectedLanguageModel);
         }
 
         if (DevoxxGenieStateService.getInstance().getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
@@ -514,15 +512,15 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     private void addProjectToContext() {
-        Object selectedItem = llmProvidersComboBox.getSelectedItem();
-        if (selectedItem == null || ((String) selectedItem).isEmpty()) {
+        ModelProvider modelProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
+        if (modelProvider == null) {
             NotificationUtil.sendNotification(project, "Please select a provider first");
             return;
         }
 
-        if (!selectedItem.equals(ModelProvider.Gemini.getName()) &&
-            !selectedItem.equals(ModelProvider.Anthropic.getName()) &&
-            !selectedItem.equals(ModelProvider.OpenAI.getName())) {
+        if (!modelProvider.equals(ModelProvider.Gemini) &&
+            !modelProvider.equals(ModelProvider.Anthropic) &&
+            !modelProvider.equals(ModelProvider.OpenAI)) {
             NotificationUtil.sendNotification(project,
                 "This feature only works for OpenAI, Anthropic and Gemini providers because of the large token window context.");
             return;
@@ -532,7 +530,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         tokenUsageBar.setVisible(true);
         tokenUsageBar.setUsedTokens(0);
 
-        int tokenLimit = getTokenLimit();
+        int tokenLimit = getWindowContext();
 
         ProjectContentService.getInstance().getProjectContent(project, tokenLimit, false)
             .thenAccept(projectContent -> {
@@ -541,7 +539,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 SwingUtilities.invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);
                     tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
-                    addProjectBtn.setText("Full Project (" + NumberFormat.getInstance().format(tokenCount) + " tokens)");
+                    addProjectBtn.setText("Full Project (" + WindowContextFormatterUtil.format(tokenCount, "tokens") + ")");
                     addProjectBtn.setToolTipText("Remove entire project from prompt context");
                     addProjectBtn.setEnabled(true);
 
@@ -559,18 +557,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     /**
-     * Get the token limit for the selected provider and model.
-     *
+     * Get the window context for the selected provider and model.
      * @return the token limit
      */
-    private int getTokenLimit() {
-        ModelProvider selectedProvider = ModelProvider.fromString((String) llmProvidersComboBox.getSelectedItem());
-        LanguageModel selectedItem = (LanguageModel) modelNameComboBox.getSelectedItem();
+    private int getWindowContext() {
+        LanguageModel languageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
         int tokenLimit = 4096;
-        if (selectedItem != null) {
-            tokenLimit = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider)
-                .map(factory -> selectedItem.getMaxTokens())
-                .orElse(4096);
+        if (languageModel != null) {
+            tokenLimit = languageModel.getContextWindow();
         }
         return tokenLimit;
     }
@@ -588,13 +582,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        String selectedProviderName = (String) llmProvidersComboBox.getSelectedItem();
-        if (selectedProviderName == null) {
+        ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
+        if (selectedProvider == null) {
             NotificationUtil.sendNotification(project, "Please select a provider first");
             return;
         }
-
-        ModelProvider selectedProvider = ModelProvider.fromString(selectedProviderName);
 
         if (!DefaultLLMSettings.isApiBasedProvider(selectedProvider)) {
             NotificationUtil.sendNotification(project, "Cost calculation is not applicable for local providers");
@@ -603,9 +595,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         ProjectContentService.getInstance().calculateTokensAndCost(
             project,
-            getTokenLimit(),
+            getWindowContext(),
             selectedProvider,
-            selectedModel.getName()
+            selectedModel.getModelName()
         );
     }
 
