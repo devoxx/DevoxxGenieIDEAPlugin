@@ -5,6 +5,9 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -46,23 +49,16 @@ public class ProjectScannerService {
                                                  boolean isTokenCalculation) {
         CompletableFuture<String> future = new CompletableFuture<>();
 
-        if (startDirectory == null) {
-            startDirectory = project.getBaseDir();
-        }
-
-        VirtualFile finalStartDirectory = startDirectory;
         ReadAction.nonBlocking(() -> {
                 StringBuilder result = new StringBuilder();
                 result.append("Directory Structure:\n");
-                result.append(generateSourceTreeRecursive(finalStartDirectory, 0));
-                result.append("\n\nFile Contents:\n");
+                StringBuilder fullContent;
 
-                ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
-
-                StringBuilder fullContent = new StringBuilder(result);
-                AtomicInteger currentTokens = new AtomicInteger(0);
-
-                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent, currentTokens, windowContext);
+                if (startDirectory == null) {
+                    fullContent = processAllModules(project, windowContext, result);
+                } else {
+                    fullContent = processDirectory(project, startDirectory, windowContext, result);
+                }
 
                 return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
             }).inSmartMode(project)
@@ -70,6 +66,68 @@ public class ProjectScannerService {
             .submit(AppExecutorUtil.getAppExecutorService());
 
         return future;
+    }
+
+    /**
+     * Scan the project and return the project source tree and file contents from the start directory.
+     * @param project the project
+     * @param startDirectory the start directory
+     * @param windowContext the window context for the language model
+     * @param result the result
+     * @return the full content
+     */
+    private @NotNull StringBuilder processDirectory(Project project,
+                                                    VirtualFile startDirectory,
+                                                    int windowContext,
+                                                    @NotNull StringBuilder result) {
+        result.append(generateSourceTreeRecursive(startDirectory, 0));
+
+        result.append("\n\nFile Contents:\n");
+
+        ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
+
+        StringBuilder fullContent = new StringBuilder(result);
+        AtomicInteger currentTokens = new AtomicInteger(0);
+
+        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, windowContext);
+        return fullContent;
+    }
+
+    /**
+     * Process all modules in the project.
+     * @param project the project
+     * @param windowContext the window context for the language model
+     * @param result the result
+     * @return the full content
+     */
+    private @NotNull StringBuilder processAllModules(Project project,
+                                                     int windowContext,
+                                                     StringBuilder result) {
+
+        Module[] modules = ModuleManager.getInstance(project).getModules();
+        if (modules.length == 0) {
+            throw new IllegalStateException("No modules found in the project");
+        }
+
+        VirtualFile[] sourceRoots = ModuleRootManager.getInstance(modules[0]).getSourceRoots();
+        if (sourceRoots.length == 0) {
+            throw new IllegalStateException("No source roots found in the project");
+        }
+
+        for (VirtualFile sourceRoot : sourceRoots) {
+            result.append(generateSourceTreeRecursive(sourceRoot, 0));
+        }
+        result.append("\n\nFile Contents:\n");
+
+        ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
+
+        StringBuilder fullContent = new StringBuilder(result);
+        AtomicInteger currentTokens = new AtomicInteger(0);
+
+        for (VirtualFile sourceRoot : sourceRoots) {
+            walkThroughDirectory(sourceRoot, fileIndex, fullContent, currentTokens, windowContext);
+        }
+        return fullContent;
     }
 
     /**
@@ -100,10 +158,9 @@ public class ProjectScannerService {
 
                         int tokens = ENCODING.countTokens(content);
                         currentTokens.addAndGet(tokens);
-//                        progressCallback.accept(currentTokens.get(), maxTokens);
 
                         if (currentTokens.get() >= maxTokens) {
-                            return false; // Stop visiting files if we've reached the token limit
+                            return false; // Stop scanning if token limit is reached
                         }
                     } catch (Exception e) {
                         String errorMsg = "Error reading file: " + e.getMessage() + "\n";
@@ -180,11 +237,21 @@ public class ProjectScannerService {
         return result.toString();
     }
 
+    /**
+     * Check if the directory should be excluded from the project context.
+     * @param file the directory
+     * @return true if the directory should be excluded, false otherwise
+     */
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         return file.isDirectory() && settings.getExcludedDirectories().contains(file.getName());
     }
 
+    /**
+     * Check if the file should be included in the project context.
+     * @param file the file
+     * @return true if the file should be included, false otherwise
+     */
     private boolean shouldIncludeFile(@NotNull VirtualFile file) {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         String extension = file.getExtension();
@@ -203,6 +270,11 @@ public class ProjectScannerService {
         return content;
     }
 
+    /**
+     * Remove Javadoc comments from the content.
+     * @param content the content
+     * @return the content without Javadoc
+     */
     private @NotNull String removeJavadoc(String content) {
         // Remove block comments (which include Javadoc)
         content = content.replaceAll("/\\*{1,2}[\\s\\S]*?\\*/", "");
