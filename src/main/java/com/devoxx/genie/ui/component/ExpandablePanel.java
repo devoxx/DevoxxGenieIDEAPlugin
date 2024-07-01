@@ -8,9 +8,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.ArrowExpand;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.ArrowExpanded;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpand;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpanded;
 
 public class ExpandablePanel extends JBPanel<ExpandablePanel> {
 

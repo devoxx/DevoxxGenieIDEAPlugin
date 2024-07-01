@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.util;
 
 import java.awt.*;
 
-public class DevoxxGenieFonts {
-    private DevoxxGenieFonts() {
+public class DevoxxGenieFontsUtil {
+    private DevoxxGenieFontsUtil() {
     }
 
     public static final String SOURCE_CODE_PRO_FONT = "Source Code Pro";

@@ -2,6 +2,7 @@ package com.devoxx.genie.chatmodel.gemini;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
@@ -9,6 +10,8 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,5 +50,14 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
         // Call the method
         ChatLanguageModel result = factory.createChatModel(chatModel);
         Assertions.assertThat(result).isNotNull();
+    }
+
+    @Test
+    public void testModelNames() {
+        GeminiChatModelFactory factory = new GeminiChatModelFactory();
+        Assertions.assertThat(factory.getModels()).isNotEmpty();
+
+        List<LanguageModel> modelNames = factory.getModels();
+        Assertions.assertThat(modelNames).size().isEqualTo(3);
     }
 }

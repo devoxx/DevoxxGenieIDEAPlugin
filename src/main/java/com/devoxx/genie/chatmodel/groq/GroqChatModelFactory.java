@@ -2,6 +2,8 @@ package com.devoxx.genie.chatmodel.groq;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -44,13 +46,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "gemma-7b-it",
-            "llama3-8b-8192",
-            "llama3-70b-8192",
-            "llama2-70b-4096",
-            "mixtral-8x7b-32768"
-        );
+    public List<LanguageModel> getModels() {
+        return getModels(ModelProvider.Groq);
     }
 }

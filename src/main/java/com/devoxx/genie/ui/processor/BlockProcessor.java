@@ -20,11 +20,10 @@ public class BlockProcessor implements NodeProcessor {
 
     /**
      * Process the paragraph
-     *
      * @return the panel
      */
     @Override
-    public JPanel process() {
+    public JPanel processNode() {
         HtmlRenderer htmlRenderer = createHtmlRenderer(chatMessageContext.getProject());
         String htmlOutput = htmlRenderer.render(block);
 

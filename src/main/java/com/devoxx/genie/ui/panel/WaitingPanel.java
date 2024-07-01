@@ -1,13 +1,13 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.ui.util.WorkingMessage;
+import com.devoxx.genie.ui.util.WorkingMessageUtil;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.GRAY_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.PROMPT_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.GRAY_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 
 public class WaitingPanel extends JBPanel<WaitingPanel> {
 
@@ -21,7 +21,7 @@ public class WaitingPanel extends JBPanel<WaitingPanel> {
         withMaximumSize(500, 30);
         getInsets().set(5, 5, 5, 5);
 
-        JBLabel workingLabel = new JBLabel(WorkingMessage.getWorkingMessage());
+        JBLabel workingLabel = new JBLabel(WorkingMessageUtil.getWorkingMessage());
         workingLabel.setFont(workingLabel.getFont().deriveFont(12f));
         workingLabel.setForeground(GRAY_COLOR);
         workingLabel.setMaximumSize(new Dimension(500, 30));
