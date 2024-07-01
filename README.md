@@ -16,14 +16,19 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a4a4b095-63ab-41cd
 
 ### Key Features:
 
-- **100% Java**: An IDEA plugin using local and cloud based LLM models. Fully developed in Java using [Langchain4J](https://github.com/langchain4j/langchain4j)
-- **Explain**: Explain code using local and cloud-based LLM's.
-- **Review**: Review and improve your code using local and cloud-based LLM's.
-- **Test**: Generate unit tests for your code using local and cloud-based LLM's.
-- **Code Highlighting**: Supports highlighting of code blocks.
-- **Chat conversations**: Supports chat conversations with configurable memory size.
-- **Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
-- **LLM enabled Web Search**: With support for Google and Tavily 
+- **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
+- **💰 Token Cost Calculator**: Calculate the cost when using Cloud LLM providers.
+- **🔍 Web Search** : Search the web for a given query using Google or Tavily.
+- **🏎️ Streaming responses**: See each token as it's received from the LLM in real-time.
+- **🧐 Abstract Syntax Tree (AST) context**: Automatically include parent class and class/field references in the prompt for better code analysis.
+- **💬 Chat Memory Size**: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs).
+- **☕️ 100% Java**: An IDEA plugin using local and cloud based LLM models. Fully developed in Java using [Langchain4J](https://github.com/langchain4j/langchain4j)
+- **🤯 Explain**: Explain code using local and cloud-based LLM's.
+- **🫵🏼 Review**: Review and improve your code using local and cloud-based LLM's.
+- **🧪 Test**: Generate unit tests for your code using local and cloud-based LLM's.
+- **👀 Code Highlighting**: Supports highlighting of code blocks.
+- **💬 Chat conversations**: Supports chat conversations with configurable memory size.
+- **📁 Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
 
 See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](https://www.youtube.com/watch?v=E9PcKBSMv8U)
 
@@ -32,12 +37,6 @@ See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](http
 We now support also streaming responses which you can enable in the Settings page 🤩 🚀
 
 https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283-af1d-19061b7ae7bf
-
-### Installation:
-
-- **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
-- **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-X.Y.Z.zip'
-
  
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
@@ -45,6 +44,29 @@ In the IDEA settings you can modify the REST endpoints and the LLM parameters.  
 We now also support Cloud based LLMs, you can paste the API keys on the Settings page. 
 
 <img width="1196" alt="DevoxxGenieSettings" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/266780ce-e640-4815-b6fc-7b2a3f86292a">
+
+## Add Project to prompt & clipboard
+
+You can now add the full project to your prompt IF your selected cloud LLM has a big enough window context.
+
+![AddFull](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/be014cf1-ee01-428a-bd75-55acc82627fb)
+
+Or use right-click to copy full or part of your project to your prompt context or clipboard!
+
+![RightClick](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a86c311a-4589-41f9-bb4a-c8c4f0b884ee)
+
+## Calc Cost
+
+![AddCalcProject](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/0c971331-40fe-47a4-8ede-f349fa40c00c)
+
+See the input/output costs and window context per Cloud LLM.  Eventually we'll also allow you to edit these values.
+
+![Cost](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/422fc829-fc9f-42f4-a8e5-c33ec5a239fc)
+
+### Installation:
+
+- **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
+- **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-X.Y.Z.zip'
 
 ### Requirements:
 
