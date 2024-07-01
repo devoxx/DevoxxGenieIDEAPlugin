@@ -5,11 +5,9 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
@@ -22,6 +20,7 @@ import com.intellij.openapi.application.ReadAction;
 
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,6 +29,7 @@ import com.knuddels.jtokkit.Encodings;
 public class ProjectScannerService {
 
     private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
+    private final UniqueDirectoryScannerService uniqueDirectoryScanner = new UniqueDirectoryScannerService();
 
     public static ProjectScannerService getInstance() {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
@@ -55,7 +55,7 @@ public class ProjectScannerService {
                 StringBuilder fullContent;
 
                 if (startDirectory == null) {
-                    fullContent = processAllModules(project, windowContext, result);
+                    fullContent = getContentFromModules(project, windowContext, result);
                 } else {
                     fullContent = processDirectory(project, startDirectory, windowContext, result);
                 }
@@ -66,6 +66,32 @@ public class ProjectScannerService {
             .submit(AppExecutorUtil.getAppExecutorService());
 
         return future;
+    }
+
+    /**
+     * Get the project content from all modules.
+     * @param project the project
+     * @param windowContext the window context for the language model
+     * @param result the result
+     * @return the full content
+     */
+    private @NotNull StringBuilder getContentFromModules(Project project,
+                                                         int windowContext,
+                                                         StringBuilder result) {
+        // Collect all content roots from modules
+        VirtualFile[] contentRootsFromAllModules =
+            ProjectRootManager.getInstance(project).getContentRootsFromAllModules();
+
+        // Add all content roots to the unique directory scanner
+        Arrays.stream(contentRootsFromAllModules)
+            .distinct()
+            .forEach(uniqueDirectoryScanner::addDirectory);
+
+        // Get the highest root directory and process the content
+        return uniqueDirectoryScanner
+            .getHighestCommonRoot()
+            .map(highestCommonRoot -> processDirectory(project, highestCommonRoot, windowContext, result))
+            .orElseThrow();
     }
 
     /**
@@ -90,43 +116,6 @@ public class ProjectScannerService {
         AtomicInteger currentTokens = new AtomicInteger(0);
 
         walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, windowContext);
-        return fullContent;
-    }
-
-    /**
-     * Process all modules in the project.
-     * @param project the project
-     * @param windowContext the window context for the language model
-     * @param result the result
-     * @return the full content
-     */
-    private @NotNull StringBuilder processAllModules(Project project,
-                                                     int windowContext,
-                                                     StringBuilder result) {
-
-        Module[] modules = ModuleManager.getInstance(project).getModules();
-        if (modules.length == 0) {
-            throw new IllegalStateException("No modules found in the project");
-        }
-
-        VirtualFile[] sourceRoots = ModuleRootManager.getInstance(modules[0]).getSourceRoots();
-        if (sourceRoots.length == 0) {
-            throw new IllegalStateException("No source roots found in the project");
-        }
-
-        for (VirtualFile sourceRoot : sourceRoots) {
-            result.append(generateSourceTreeRecursive(sourceRoot, 0));
-        }
-        result.append("\n\nFile Contents:\n");
-
-        ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
-
-        StringBuilder fullContent = new StringBuilder(result);
-        AtomicInteger currentTokens = new AtomicInteger(0);
-
-        for (VirtualFile sourceRoot : sourceRoots) {
-            walkThroughDirectory(sourceRoot, fileIndex, fullContent, currentTokens, windowContext);
-        }
         return fullContent;
     }
 

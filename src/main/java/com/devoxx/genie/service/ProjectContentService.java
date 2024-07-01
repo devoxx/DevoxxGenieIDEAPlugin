@@ -25,7 +25,9 @@ public class ProjectContentService {
         return ApplicationManager.getApplication().getService(ProjectContentService.class);
     }
 
-    public CompletableFuture<String> getProjectContent(Project project, int windowContext, boolean isTokenCalculation) {
+    public CompletableFuture<String> getProjectContent(Project project,
+                                                       int windowContext,
+                                                       boolean isTokenCalculation) {
         return ProjectScannerService.getInstance()
             .scanProject(project, null, windowContext, isTokenCalculation)
             .thenApply(content -> {
