@@ -2,9 +2,10 @@ package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,7 @@ import java.util.List;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
-public class AddDirectoryAction extends AnAction {
+public class AddDirectoryAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -56,5 +57,15 @@ public class AddDirectoryAction extends AnAction {
     public void update(@NotNull AnActionEvent e) {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
         e.getPresentation().setEnabledAndVisible(file != null && file.isDirectory());
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+
+    @Override
+    public boolean isDumbAware() {
+        return true;
     }
 }

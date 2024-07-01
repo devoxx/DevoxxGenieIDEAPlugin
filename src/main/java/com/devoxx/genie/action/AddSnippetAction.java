@@ -1,13 +1,14 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
-import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.LightVirtualFile;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
-public class AddSnippetAction extends AnAction {
+public class AddSnippetAction extends DumbAwareAction {
 
     public static final String CODE_SNIPPET = "codeSnippet";
     public static final Key<VirtualFile> ORIGINAL_FILE_KEY = Key.create("ORIGINAL_FILE");
@@ -72,8 +73,8 @@ public class AddSnippetAction extends AnAction {
      * @param selectionModel the selection model
      * @param selectedText   the selected text
      */
-    private void createAndAddVirtualFile(VirtualFile originalFile,
-                                         SelectionModel selectionModel,
+    private void createAndAddVirtualFile(@NotNull VirtualFile originalFile,
+                                         @NotNull SelectionModel selectionModel,
                                          String selectedText) {
         LightVirtualFile virtualFile = new LightVirtualFile(originalFile.getName(), selectedText);
         virtualFile.setFileType(fileType);
@@ -82,5 +83,16 @@ public class AddSnippetAction extends AnAction {
         virtualFile.putUserData(SELECTION_START_KEY, selectionModel.getSelectionStart());
         virtualFile.putUserData(SELECTION_END_KEY, selectionModel.getSelectionEnd());
         FileListManager.getInstance().addFile(virtualFile);
+    }
+
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+
+    @Override
+    public boolean isDumbAware() {
+        return true;
     }
 }
