@@ -11,7 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
+import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
 public class ChatStreamingResponsePanel extends BackgroundPanel {
 

@@ -4,7 +4,7 @@ import com.intellij.util.xmlb.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DoubleConverter extends Converter<Double> {
+public class DoubleConverterUtil extends Converter<Double> {
 
     @Override
     public @Nullable Double fromString(@NotNull String value) {

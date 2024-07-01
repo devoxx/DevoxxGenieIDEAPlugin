@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SourceCodeProFontPlan14;
+import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
 public class ChatResponsePanel extends BackgroundPanel {
 

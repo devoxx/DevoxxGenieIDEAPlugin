@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -14,7 +15,6 @@ import com.knuddels.jtokkit.api.EncodingType;
 import java.awt.datatransfer.StringSelection;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
-import java.text.NumberFormat;
 import java.util.concurrent.CompletableFuture;
 
 public class ProjectContentService {
@@ -25,9 +25,9 @@ public class ProjectContentService {
         return ApplicationManager.getApplication().getService(ProjectContentService.class);
     }
 
-    public CompletableFuture<String> getProjectContent(Project project, int tokenLimit, boolean isTokenCalculation) {
+    public CompletableFuture<String> getProjectContent(Project project, int windowContext, boolean isTokenCalculation) {
         return ProjectScannerService.getInstance()
-            .scanProject(project, null, tokenLimit, isTokenCalculation)
+            .scanProject(project, null, windowContext, isTokenCalculation)
             .thenApply(content -> {
                 if (!isTokenCalculation) {
                     copyToClipboard(content);
@@ -50,13 +50,16 @@ public class ProjectContentService {
             });
     }
 
-    public void calculateTokensAndCost(Project project, int tokenLimit, ModelProvider provider, String modelName) {
+    public void calculateTokensAndCost(Project project,
+                                       int windowContext,
+                                       ModelProvider provider,
+                                       String modelName) {
         if (!DefaultLLMSettings.isApiBasedProvider(provider)) {
-            getProjectContent(project, tokenLimit, true)
+            getProjectContent(project, windowContext, true)
                 .thenAccept(projectContent -> {
                     int tokenCount = ENCODING.countTokens(projectContent);
-                    String message = String.format("Project contains %s tokens. Cost calculation is not applicable for local providers.",
-                        NumberFormat.getInstance().format(tokenCount));
+                    String message = String.format("Project contains %s. Cost calculation is not applicable for local providers.",
+                        WindowContextFormatterUtil.format(tokenCount, "tokens"));
                     NotificationUtil.sendNotification(project, message);
                 });
             return;
@@ -65,20 +68,20 @@ public class ProjectContentService {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         double inputCost = settings.getModelInputCost(provider, modelName);
 
-        getProjectContent(project, tokenLimit, true)
+        getProjectContent(project, windowContext, true)
             .thenAccept(projectContent -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
                 double estimatedInputCost = calculateCost(tokenCount, inputCost);
-                String message = String.format("Project contains %s tokens. Estimated min. cost using %s: $%.4f",
-                    NumberFormat.getInstance().format(tokenCount),
+                String message = String.format("Project contains %s. Estimated min. cost using %s is $%.6f",
+                    WindowContextFormatterUtil.format(tokenCount, "tokens"),
                     modelName,
                     estimatedInputCost);
                 NotificationUtil.sendNotification(project, message);
             });
     }
 
-    private double calculateCost(int tokenCount, double costPer1000Tokens) {
-        return (tokenCount / 1_000_000.0) * costPer1000Tokens;
+    private double calculateCost(int tokenCount, double tokenCost) {
+        return (tokenCount / 1_000_000.0) * tokenCost;
     }
 
     private void copyToClipboard(String content) {

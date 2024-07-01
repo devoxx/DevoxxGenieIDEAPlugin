@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import javax.swing.text.html.StyleSheet;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieFonts.SOURCE_CODE_PRO_FONT;
+import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT;
 
 public class StyleSheetsFactory {
 

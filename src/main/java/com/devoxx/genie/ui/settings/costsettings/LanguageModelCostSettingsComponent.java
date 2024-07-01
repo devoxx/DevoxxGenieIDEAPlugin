@@ -1,13 +1,11 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
-import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
-import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelProviderCellEditor;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.util.DefaultLLMSettings;
 import com.devoxx.genie.util.LLMProviderUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBScrollPane;
@@ -111,27 +109,17 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     }
 
     private void loadCurrentCosts() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        windowContextSpinner.setValue(settings.getDefaultWindowContext());
-
-        for (ModelProvider provider : ModelProvider.values()) {
-            if (DefaultLLMSettings.isApiBasedProvider(provider)) {
-                ChatModelFactoryProvider.getFactoryByProvider(provider).ifPresent(factory -> {
-                    for (LanguageModel model : factory.getModelNames()) {
-                        double inputCost = settings.getModelInputCost(provider, model.getName());
-                        double outputCost = settings.getModelOutputCost(provider, model.getName());
-                        int windowContext = model.getMaxTokens();
-                        tableModel.addRow(new Object[]{
-                            provider,
-                            model.getName(),
-                            inputCost,
-                            outputCost,
-                            windowContext
-                        });
-                    }
+        LLMModelRegistryService.getInstance()
+            .getModels()
+            .forEach(model -> {
+                tableModel.addRow(new Object[]{
+                    model.getProvider().getName(),
+                    model.getModelName(),
+                    model.getInputCost(),
+                    model.getOutputCost(),
+                    model.getContextWindow()
                 });
-            }
-        }
+        });
     }
 
     public boolean isModified() {

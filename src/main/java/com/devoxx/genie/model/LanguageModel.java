@@ -1,24 +1,26 @@
 package com.devoxx.genie.model;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import lombok.Builder;
+import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
-@AllArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
+@Builder
 public class LanguageModel implements Comparable<LanguageModel> {
-    String name;
-    String displayName;
-    Integer maxTokens;
-    Double costPer1MTokensInput;
-    Double costPer1MTokensOutput;
+    private ModelProvider provider;
+    private String modelName;
+    private String displayName;
+    private boolean apiKeyUsed;
+    private double inputCost;
+    private double outputCost;
+    private int contextWindow;
 
-    @Override
-    public int compareTo(@NotNull LanguageModel other) {
-        return this.name.compareTo(other.name);
+    public int compareTo(@NotNull LanguageModel languageModel) {
+        return this.displayName.compareTo(languageModel.displayName);
+    }
+
+    public String toString() {
+        return provider.getName();
     }
 }

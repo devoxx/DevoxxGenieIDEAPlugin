@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
@@ -35,13 +36,13 @@ public class ProjectScannerService {
      * Scan the project from start directory and return the project source tree and file contents.
      * @param project the project
      * @param startDirectory the start directory
-     * @param maxTokens the maximum number of tokens
+     * @param windowContext the window context for the language model
      * @param isTokenCalculation whether the scan is for token calculation
      * @return the project context
      */
     public CompletableFuture<String> scanProject(Project project,
                                                  VirtualFile startDirectory,
-                                                 int maxTokens,
+                                                 int windowContext,
                                                  boolean isTokenCalculation) {
         CompletableFuture<String> future = new CompletableFuture<>();
 
@@ -61,9 +62,9 @@ public class ProjectScannerService {
                 StringBuilder fullContent = new StringBuilder(result);
                 AtomicInteger currentTokens = new AtomicInteger(0);
 
-                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent, currentTokens, maxTokens);
+                walkThroughDirectory(finalStartDirectory, fileIndex, fullContent, currentTokens, windowContext);
 
-                return truncateToTokens(project, fullContent.toString(), maxTokens, isTokenCalculation);
+                return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
             }).inSmartMode(project)
             .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)
             .submit(AppExecutorUtil.getAppExecutorService());
@@ -119,30 +120,32 @@ public class ProjectScannerService {
      * If the project context exceeds the limit, truncate it and append a message.
      * @param project the project
      * @param text the project context
-     * @param maxTokens the maximum number of tokens
+     * @param windowContext the model window context
      * @param isTokenCalculation whether the scan is for token calculation
      */
     private String truncateToTokens(Project project,
                                     String text,
-                                    int maxTokens,
+                                    int windowContext,
                                     boolean isTokenCalculation) {
         NumberFormat formatter = NumberFormat.getInstance();
         IntArrayList tokens = ENCODING.encode(text);
-        if (tokens.size() <= maxTokens) {
+        if (tokens.size() <= windowContext) {
             if (!isTokenCalculation) {
-                NotificationUtil.sendNotification(project, "Added. Project context " + formatter.format(tokens.size()) + " tokens is within window context limit of " +
-                    formatter.format(maxTokens) + " tokens");
+                NotificationUtil.sendNotification(project, "Added. Project context " +
+                    WindowContextFormatterUtil.format(tokens.size(), "tokens") + " " +
+                    "is within window context limit of " +
+                    WindowContextFormatterUtil.format(windowContext));
             }
             return text;
         }
-        IntArrayList truncatedTokens = new IntArrayList(maxTokens);
-        for (int i = 0; i < maxTokens; i++) {
+        IntArrayList truncatedTokens = new IntArrayList(windowContext);
+        for (int i = 0; i < windowContext; i++) {
             truncatedTokens.add(tokens.get(i));
         }
 
         if (!isTokenCalculation) {
             NotificationUtil.sendNotification(project, "Project context truncated due to token limit, was " +
-                formatter.format(tokens.size()) + " tokens but limit is " + formatter.format(maxTokens) + " tokens. " +
+                formatter.format(tokens.size()) + " tokens but limit is " + formatter.format(windowContext) + " tokens. " +
                 "You can exclude directories or files in the settings page.");
         }
         String truncatedContent = ENCODING.decode(truncatedTokens);

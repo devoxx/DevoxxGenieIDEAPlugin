@@ -9,8 +9,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BG_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BORDER_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.CODE_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.CODE_BORDER_BG_COLOR;
 
 public class FencedCodeBlockProcessor implements NodeProcessor {
 

@@ -16,8 +16,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CopyIcon;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.InsertCodeIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.InsertCodeIcon;
 
 public class CodeSnippetAction {
 

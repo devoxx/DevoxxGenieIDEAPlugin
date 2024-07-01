@@ -8,6 +8,7 @@ import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,25 +21,24 @@ public class ChatModelFactoryProvider {
     /**
      * The chat language model factory suppliers.
      */
-    private static final Map<ModelProvider, Supplier<ChatModelFactory>> FACTORY_SUPPLIERS = Map.of(
-        ModelProvider.Ollama, OllamaChatModelFactory::new,
-        ModelProvider.OpenAI, OpenAIChatModelFactory::new,
-        ModelProvider.Anthropic, AnthropicChatModelFactory::new,
-        ModelProvider.Mistral, MistralChatModelFactory::new,
-        ModelProvider.Groq, GroqChatModelFactory::new,
-        ModelProvider.DeepInfra, DeepInfraChatModelFactory::new,
-        ModelProvider.Gemini, GeminiChatModelFactory::new
+    private static final Map<String, Supplier<ChatModelFactory>> FACTORY_SUPPLIERS = Map.of(
+        ModelProvider.Ollama.getName(), OllamaChatModelFactory::new,
+        ModelProvider.OpenAI.getName(), OpenAIChatModelFactory::new,
+        ModelProvider.Anthropic.getName(), AnthropicChatModelFactory::new,
+        ModelProvider.Mistral.getName(), MistralChatModelFactory::new,
+        ModelProvider.Groq.getName(), GroqChatModelFactory::new,
+        ModelProvider.DeepInfra.getName(), DeepInfraChatModelFactory::new,
+        ModelProvider.Gemini.getName(), GeminiChatModelFactory::new
         // TODO Removed because currently is broken by latest Jan! version
         // ModelProvider.Jan, JanChatModelFactory::new
     );
 
     /**
      * Get the factory by provider.
-     *
-     * @param provider the provider
+     * @param modelProvider the model provider
      * @return the factory
      */
-    public static @NotNull Optional<ChatModelFactory> getFactoryByProvider(@NotNull ModelProvider provider) {
-        return Optional.ofNullable(FACTORY_SUPPLIERS.get(provider)).map(Supplier::get);
+    public static @NotNull Optional<ChatModelFactory> getFactoryByProvider(@NotNull String modelProvider) {
+        return Optional.ofNullable(FACTORY_SUPPLIERS.get(modelProvider)).map(Supplier::get);
     }
 }

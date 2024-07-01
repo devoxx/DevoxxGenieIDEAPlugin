@@ -1,6 +1,5 @@
 package com.devoxx.genie.chatmodel.ollama;
 
-import com.devoxx.genie.chatmodel.AbstractChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
@@ -21,12 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OllamaChatModelFactory extends AbstractChatModelFactory {
-
-    public OllamaChatModelFactory() {
-        super(ModelProvider.Ollama);
-        updateModelCosts();
-    }
+public class OllamaChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -58,12 +52,22 @@ public class OllamaChatModelFactory extends AbstractChatModelFactory {
      * @return List of model names
      */
     @Override
-    public List<LanguageModel> getModelNames() {
+    public List<LanguageModel> getModels() {
         List<LanguageModel> modelNames = new ArrayList<>();
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
-                modelNames.add(new LanguageModel(model.getName(), model.getName(),8_000, 0d, 0d));
+                modelNames.add(
+                    LanguageModel.builder()
+                        .provider(ModelProvider.Ollama)
+                        .modelName(model.getName())
+                        .displayName(model.getName())
+                        .inputCost(0)
+                        .outputCost(0)
+                        .contextWindow(8_000)
+                        .apiKeyUsed(false)
+                        .build()
+                );
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
