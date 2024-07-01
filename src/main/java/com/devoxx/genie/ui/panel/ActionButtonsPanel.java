@@ -503,10 +503,12 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void removeProjectContext() {
         projectContext = null;
         isProjectContextAdded = false;
-
+        
         addProjectBtn.setIcon(AddFileIcon);
         addProjectBtn.setText("Add full project to prompt");
         addProjectBtn.setToolTipText("Add entire project to prompt context");
+
+        resetTokenUsageBar();
 
         NotificationUtil.sendNotification(project, "Project context removed successfully");
     }
@@ -603,5 +605,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     public void updateTokenUsage(int maxTokens) {
         SwingUtilities.invokeLater(() -> tokenUsageBar.setMaxTokens(maxTokens));
+    }
+
+    public void resetTokenUsageBar() {
+        SwingUtilities.invokeLater(tokenUsageBar::reset);
     }
 }
