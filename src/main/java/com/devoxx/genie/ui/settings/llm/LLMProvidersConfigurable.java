@@ -11,12 +11,12 @@ import javax.swing.*;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
-public class LLMSettingsConfigurable implements Configurable {
+public class LLMProvidersConfigurable implements Configurable {
 
-    private final LLMSettingsComponent llmSettingsComponent;
+    private final LLMProvidersComponent llmSettingsComponent;
 
-    public LLMSettingsConfigurable() {
-        llmSettingsComponent = new LLMSettingsComponent();
+    public LLMProvidersConfigurable() {
+        llmSettingsComponent = new LLMProvidersComponent();
     }
 
     /**

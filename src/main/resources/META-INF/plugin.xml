@@ -225,7 +225,7 @@
         <projectConfigurable parentId="tools"
                              id="com.devoxx.genie.DevoxxGenie"
                              displayName="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.llm.LLMSettingsConfigurable"/>
+                             instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"/>
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -244,7 +244,7 @@
 
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.llmfeatures.LLMFeaturesConfigurable"
+                             instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
                              displayName="Token Cost &amp; Context Window"/>
 
         <toolWindow id="DevoxxGenie"

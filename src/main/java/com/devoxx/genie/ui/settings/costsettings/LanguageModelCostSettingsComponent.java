@@ -1,11 +1,11 @@
-package com.devoxx.genie.ui.settings.llmfeatures;
+package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelProviderCellEditor;
-import com.devoxx.genie.ui.settings.SettingsComponent;
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DefaultLLMSettings;
 import com.devoxx.genie.util.LLMProviderUtil;
@@ -20,17 +20,16 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Vector;
 
-public class LLMFeaturesComponent implements SettingsComponent {
+public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
 
-    private final JPanel panel;
     private final DefaultTableModel tableModel;
     private final JSpinner windowContextSpinner;
     private boolean isModified = false;
     private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
     private final JTable costTable;
 
-    public LLMFeaturesComponent() {
-        panel = new JPanel(new BorderLayout());
+    public LanguageModelCostSettingsComponent() {
+
         tableModel = new DefaultTableModel(new Object[]{"Provider", "Model", "Input Cost", "Output Cost", "Context Window"}, 0);
         tableModel.addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE) {
@@ -109,16 +108,6 @@ public class LLMFeaturesComponent implements SettingsComponent {
             Rectangle cellRect = costTable.getCellRect(lastRowIndex, 0, true);
             costTable.scrollRectToVisible(cellRect);
         }
-    }
-
-    @Override
-    public JPanel createPanel() {
-        return panel;
-    }
-
-    @Override
-    public void addListeners() {
-        // No additional listeners needed for this component
     }
 
     private void loadCurrentCosts() {

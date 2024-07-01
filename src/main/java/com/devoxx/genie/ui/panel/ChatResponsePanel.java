@@ -103,6 +103,6 @@ public class ChatResponsePanel extends BackgroundPanel {
      * @return the panel
      */
     private JPanel processBlock(Block theBlock) {
-        return NodeProcessorFactory.createProcessor(chatMessageContext, theBlock).process();
+        return NodeProcessorFactory.createProcessor(chatMessageContext, theBlock).processNode();
     }
 }
