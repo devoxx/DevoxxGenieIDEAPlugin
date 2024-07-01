@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.util;
 
-public class WorkingMessage {
+public class WorkingMessageUtil {
 
-    private WorkingMessage() {
+    private WorkingMessageUtil() {
     }
 
     protected static final String[] WORKING_MESSAGES = {

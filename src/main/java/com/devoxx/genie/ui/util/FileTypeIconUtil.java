@@ -17,7 +17,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.*;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class FileTypeIconUtil {
 

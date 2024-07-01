@@ -2,6 +2,8 @@ package com.devoxx.genie.chatmodel.anthropic;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
@@ -10,8 +12,6 @@ import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 
 public class AnthropicChatModelFactory implements ChatModelFactory {
 
@@ -44,15 +44,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "claude-3-5-sonnet-20240620",
-            CLAUDE_3_OPUS_20240229.toString(),
-            CLAUDE_3_SONNET_20240229.toString(),
-            CLAUDE_3_HAIKU_20240307.toString(),
-            CLAUDE_2_1.toString(),
-            CLAUDE_2.toString(),
-            CLAUDE_INSTANT_1_2.toString()
-        );
+    public List<LanguageModel> getModels() {
+        return getModels(ModelProvider.Anthropic);
     }
 }

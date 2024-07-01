@@ -15,7 +15,7 @@ import javax.swing.*;
 import java.awt.*;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CloseSmalllIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CloseSmalllIcon;
 
 /**
  * Class uses to display a file entry in the list of files with label and remove button.

@@ -2,6 +2,8 @@ package com.devoxx.genie.chatmodel.gemini;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -30,11 +32,7 @@ public class GeminiChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public List<String> getModelNames() {
-        return List.of(
-            "gemini-pro",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-flash-latest"
-        );
+    public List<LanguageModel> getModels() {
+        return getModels(ModelProvider.Gemini);
     }
 }

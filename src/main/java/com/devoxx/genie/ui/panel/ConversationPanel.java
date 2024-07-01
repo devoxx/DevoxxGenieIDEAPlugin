@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import lombok.Getter;
@@ -12,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.CogIcon;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.PlusIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CogIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.PlusIcon;
 import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 
 @Getter

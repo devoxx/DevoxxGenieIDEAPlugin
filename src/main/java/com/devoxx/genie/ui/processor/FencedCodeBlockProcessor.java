@@ -9,8 +9,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BG_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieColors.CODE_BORDER_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.CODE_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.CODE_BORDER_BG_COLOR;
 
 public class FencedCodeBlockProcessor implements NodeProcessor {
 
@@ -31,7 +31,7 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
      * @return the panel
      */
     @Override
-    public JPanel process() {
+    public JPanel processNode() {
         HtmlRenderer htmlRenderer = createHtmlRenderer(chatMessageContext.getProject());
         String htmlOutput = htmlRenderer.render(fencedCodeBlock);
         JEditorPane editorPane = createEditorPane(htmlOutput, StyleSheetsFactory.createCodeStyleSheet());

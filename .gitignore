@@ -4,3 +4,4 @@ build/**
 *.iml
 core/build/**
 core/.gradle
+/output-examples/**

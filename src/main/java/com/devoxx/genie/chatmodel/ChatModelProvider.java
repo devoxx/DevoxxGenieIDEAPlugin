@@ -4,7 +4,6 @@ import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
-import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
@@ -36,7 +35,8 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
         factories.put(ModelProvider.Gemini, new GeminiChatModelFactory());
-        factories.put(ModelProvider.Jan, new JanChatModelFactory());
+        // TODO Currently broken by latest Jan! version
+        // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
 
     /**
@@ -68,7 +68,7 @@ public class ChatModelProvider {
      * @return the chat model factory
      */
     private @NotNull ChatModelFactory getFactory(@NotNull ChatMessageContext chatMessageContext) {
-        ModelProvider provider = ModelProvider.fromString(chatMessageContext.getLlmProvider());
+        ModelProvider provider = chatMessageContext.getLanguageModel().getProvider();
         ChatModelFactory factory = factories.get(provider);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for provider: " + provider);
@@ -90,7 +90,7 @@ public class ChatModelProvider {
         chatModel.setMaxRetries(stateService.getMaxRetries());
         chatModel.setTopP(stateService.getTopP());
         chatModel.setTimeout(stateService.getTimeout());
-        chatModel.setModelName(chatMessageContext.getModelName());
+        chatModel.setModelName(chatMessageContext.getLanguageModel().getModelName());
         return chatModel;
     }
 

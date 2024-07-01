@@ -1,6 +1,9 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.LLMModelRegistryService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 
@@ -10,7 +13,6 @@ public interface ChatModelFactory {
 
     /**
      * Create a chat model with the given parameters.
-     *
      * @param chatModel the chat model
      * @return the chat model
      */
@@ -18,7 +20,6 @@ public interface ChatModelFactory {
 
     /**
      * Create a streaming chat model with the given parameters.
-     *
      * @param chatModel the chat model
      * @return the streaming chat model
      */
@@ -27,17 +28,24 @@ public interface ChatModelFactory {
     }
 
     /**
-     * List the available model names.
-     *
-     * @return the list of model names
+     * Get available models for selected provider
+     * @return the list of models
      */
-    default List<String> getModelNames() {
-        return List.of();
+    default List<LanguageModel> getModels(ModelProvider provider) {
+        return LLMModelRegistryService.getInstance().getModels()
+            .stream()
+            .filter(model -> model.getProvider().equals(provider))
+            .toList();
     }
 
     /**
+     * Get available models for selected provider
+     * @return the list of models
+     */
+    List<LanguageModel> getModels();
+
+    /**
      * Get the model provider API key.
-     *
      * @return the API key
      */
     default String getApiKey() {

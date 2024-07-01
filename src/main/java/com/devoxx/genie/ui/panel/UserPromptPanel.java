@@ -11,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.DevoxxIcon;
-import static com.devoxx.genie.ui.util.DevoxxGenieIcons.TrashIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 import static java.util.Arrays.*;
 
 public class UserPromptPanel extends BackgroundPanel {

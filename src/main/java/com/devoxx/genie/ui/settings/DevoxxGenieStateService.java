@@ -1,5 +1,8 @@
 package com.devoxx.genie.ui.settings;
 
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.util.DefaultLLMSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
@@ -8,6 +11,8 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
 
 import static com.devoxx.genie.model.Constant.*;
 
@@ -44,9 +49,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String tavilySearchKey = "";
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
-    // Last selected LLM provider and model name
-    private String lastSelectedProvider = "";
-    private String lastSelectedModel = "";
+    // Last selected language model
+    private String selectedProvider;
+    private String selectedLanguageModel;
 
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;
@@ -72,6 +77,22 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String explainPrompt = EXPLAIN_PROMPT;
     private String customPrompt = CUSTOM_PROMPT;
 
+    private Boolean excludeJavaDoc = false;
+
+    private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
+        "build", ".git", "bin", "out", "target", "node_modules", ".idea"
+    ));
+
+    private List<String> includedFileExtensions = new ArrayList<>(Arrays.asList(
+        "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md"
+    ));
+
+    private Map<String, Double> modelInputCosts = new HashMap<>();
+    private Map<String, Double> modelOutputCosts = new HashMap<>();
+
+    private Map<String, Integer> modelWindowContexts = new HashMap<>();
+    private Integer defaultWindowContext = 8000;
+
     @Override
     public DevoxxGenieStateService getState() {
         return this;
@@ -80,5 +101,65 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Override
     public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
+        initializeDefaultCostsIfEmpty();
+    }
+
+    public void setModelCost(ModelProvider provider,
+                             String modelName,
+                             double inputCost,
+                             double outputCost) {
+        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+            String key = provider.getName() + ":" + modelName;
+            modelInputCosts.put(key, inputCost);
+            modelOutputCosts.put(key, outputCost);
+        }
+    }
+
+    public double getModelInputCost(ModelProvider provider, String modelName) {
+        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+            String key = provider.getName() + ":" + modelName;
+            return modelInputCosts.getOrDefault(key,
+                DefaultLLMSettings.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettings.CostKey(provider, modelName), 0.0));
+        }
+        return 0.0;
+    }
+
+    public double getModelOutputCost(ModelProvider provider, String modelName) {
+        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+            String key = provider.getName() + ":" + modelName;
+            return modelOutputCosts.getOrDefault(key,
+                DefaultLLMSettings.DEFAULT_OUTPUT_COSTS.getOrDefault(new DefaultLLMSettings.CostKey(provider, modelName), 0.0));
+        }
+        return 0.0;
+    }
+
+    private void initializeDefaultCostsIfEmpty() {
+        if (modelInputCosts.isEmpty()) {
+            for (Map.Entry<DefaultLLMSettings.CostKey, Double> entry : DefaultLLMSettings.DEFAULT_INPUT_COSTS.entrySet()) {
+                String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
+                modelInputCosts.put(key, entry.getValue());
+            }
+        }
+        if (modelOutputCosts.isEmpty()) {
+            for (Map.Entry<DefaultLLMSettings.CostKey, Double> entry : DefaultLLMSettings.DEFAULT_OUTPUT_COSTS.entrySet()) {
+                String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
+                modelOutputCosts.put(key, entry.getValue());
+            }
+        }
+    }
+
+    public void setModelWindowContext(ModelProvider provider, String modelName, int windowContext) {
+        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+            String key = provider.getName() + ":" + modelName;
+            modelWindowContexts.put(key, windowContext);
+        }
+    }
+
+    public int getModelWindowContext(ModelProvider provider, String modelName) {
+        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+            String key = provider.getName() + ":" + modelName;
+            return modelWindowContexts.getOrDefault(key, defaultWindowContext);
+        }
+        return defaultWindowContext;
     }
 }

@@ -2,6 +2,8 @@ package com.devoxx.genie.chatmodel.jan;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.service.JanService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -11,7 +13,6 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
-import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -20,9 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JanChatModelFactory implements ChatModelFactory {
-
-    // Moved client instance here for the sake of better performance
-    private final OkHttpClient client = new OkHttpClient();
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -55,12 +53,23 @@ public class JanChatModelFactory implements ChatModelFactory {
      * @return List of model names
      */
     @Override
-    public List<String> getModelNames() {
-        List<String> modelNames = new ArrayList<>();
+    public List<LanguageModel> getModels() {
+        List<LanguageModel> modelNames = new ArrayList<>();
         try {
-            List<Data> models = new JanService(client).getModels();
+            List<Data> models = new JanService().getModels();
             for (Data model : models) {
-                modelNames.add(model.getId());
+                int ctxLen = model.getSettings().getCtxLen();
+                modelNames.add(
+                    LanguageModel.builder()
+                        .provider(ModelProvider.Jan)
+                        .modelName(model.getName())
+                        .displayName(model.getName())
+                        .contextWindow(ctxLen)
+                        .apiKeyUsed(false)
+                        .inputCost(0)
+                        .outputCost(0)
+                        .build()
+                );
             }
         } catch (IOException e) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),

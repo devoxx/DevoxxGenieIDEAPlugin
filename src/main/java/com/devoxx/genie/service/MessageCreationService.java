@@ -32,19 +32,73 @@ public class MessageCreationService {
         return ApplicationManager.getApplication().getService(MessageCreationService.class);
     }
 
-    /**
-     * Create a user message with context.
-     * @param chatMessageContext the chat message context
-     */
     public @NotNull UserMessage createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
         UserMessage userMessage;
         String context = chatMessageContext.getContext();
-        String selectedText = chatMessageContext.getEditorInfo() != null ? chatMessageContext.getEditorInfo().getSelectedText() : "";
-        if ((selectedText != null && !selectedText.isEmpty()) || (context != null && !context.isEmpty())) {
-            userMessage = constructUserMessage(chatMessageContext, context);
+
+        if (context != null && !context.isEmpty() && !chatMessageContext.isFullProjectContextAdded()) {
+            // This is likely the full project context scenario
+            userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
+            chatMessageContext.setFullProjectContextAdded(true);
+        } else if (chatMessageContext.getEditorInfo() != null && chatMessageContext.getEditorInfo().getSelectedText() != null) {
+            // This is the scenario with selected text
+            userMessage = constructUserMessageWithSelectedText(chatMessageContext);
         } else {
+            // Fallback for simple prompts without context
             userMessage = new UserMessage(chatMessageContext.getUserPrompt());
         }
+
+        return userMessage;
+    }
+
+    /**
+     * Construct user message with full context.
+     * @param chatMessageContext the chat message context
+     * @param context the context
+     * @return the user message
+     */
+    private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
+                                                                     String context) {
+        StringBuilder sb = new StringBuilder();
+
+        // Check if this is the first message in the conversation
+        if (ChatMemoryService.getInstance().messages().size() == 1) {
+            sb.append(context);
+            sb.append("\n\n");
+            sb.append("=========================================\n\n");
+        }
+
+        sb.append("User Question: ");
+        sb.append(chatMessageContext.getUserPrompt());
+
+        UserMessage userMessage = new UserMessage("User question", sb.toString());
+        chatMessageContext.setUserMessage(userMessage);
+        return userMessage;
+    }
+
+    /**
+     * Construct user message with selected text.
+     * @param chatMessageContext the chat message context
+     * @return the user message
+     */
+    private @NotNull UserMessage constructUserMessageWithSelectedText(@NotNull ChatMessageContext chatMessageContext) {
+        StringBuilder sb = new StringBuilder(QUESTION);
+
+        // The user prompt is always added
+        appendIfNotEmpty(sb, chatMessageContext.getUserPrompt());
+
+        // Add the context prompt if it is not empty
+        appendIfNotEmpty(sb, CONTEXT_PROMPT);
+
+        // Add the selected text
+        appendIfNotEmpty(sb, chatMessageContext.getEditorInfo().getSelectedText());
+
+        if (DevoxxGenieStateService.getInstance().getAstMode()) {
+            addASTContext(chatMessageContext, sb);
+        }
+
+        UserMessage userMessage = new UserMessage(sb.toString());
+        chatMessageContext.setUserMessage(userMessage);
         return userMessage;
     }
 
@@ -83,36 +137,6 @@ public class MessageCreationService {
             userPromptContext.append(userPrompt);
             return userPromptContext.toString();
         });
-    }
-
-    /**
-     * Construct a user message with context.
-     * @param chatMessageContext the chat message context
-     * @param context the context
-     * @return the user message
-     */
-    private @NotNull UserMessage constructUserMessage(@NotNull ChatMessageContext chatMessageContext,
-                                                             String context) {
-        StringBuilder sb = new StringBuilder(QUESTION);
-
-        // The user prompt is always added
-        appendIfNotEmpty(sb, chatMessageContext.getUserPrompt());
-
-        // Add the context prompt if it is not empty
-        appendIfNotEmpty(sb, CONTEXT_PROMPT);
-
-        // Add the context if it is not empty
-        appendIfNotEmpty(sb, context);
-
-        appendIfNotEmpty(sb, chatMessageContext.getEditorInfo().getSelectedText());
-
-        if (DevoxxGenieStateService.getInstance().getAstMode()) {
-            addASTContext(chatMessageContext, sb);
-        }
-
-        UserMessage userMessage = new UserMessage(sb.toString());
-        chatMessageContext.setUserMessage(userMessage);
-        return userMessage;
     }
 
     /**
