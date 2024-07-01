@@ -32,6 +32,10 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
+        if (model == null) {
+            return this;
+        }
+
         nameLabel.setText(model.getDisplayName());
 
         if (!model.getProvider().equals(ModelProvider.Ollama) &&

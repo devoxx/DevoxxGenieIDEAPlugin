@@ -10,14 +10,18 @@ import com.devoxx.genie.util.LLMProviderUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
+import lombok.Getter;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
 
+import static com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsComponent.ColumnName.*;
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
 
     private final DefaultTableModel tableModel;
@@ -26,34 +30,57 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
     private final JTable costTable;
 
-    public LanguageModelCostSettingsComponent() {
+    @Getter
+    public enum ColumnName {
+        PROVIDER("Provider"),
+        MODEL("Model"),
+        INPUT_COST("Input Cost"),
+        OUTPUT_COST("Output Cost"),
+        CONTEXT_WINDOW("Context Window");
 
-        tableModel = new DefaultTableModel(new Object[]{"Provider", "Model", "Input Cost", "Output Cost", "Context Window"}, 0);
-        tableModel.addTableModelListener(e -> {
-            if (e.getType() == TableModelEvent.UPDATE) {
-                isModified = true;
-            }
-        });
+        private final String displayName;
+
+        ColumnName(String displayName) {
+            this.displayName = displayName;
+        }
+    }
+
+    public LanguageModelCostSettingsComponent() {
+        String[] columnNames = Arrays.stream(ColumnName.values())
+            .map(ColumnName::getDisplayName)
+            .toArray(String[]::new);
+
+        tableModel = new DefaultTableModel(columnNames, 0);
+
+//        tableModel.addTableModelListener(e -> {
+//            if (e.getType() == TableModelEvent.UPDATE) {
+//                isModified = true;
+//            }
+//        });
 
         costTable = new JBTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 1 || column == 2 || column == 3 || column == 4;
+                ColumnName columnName = ColumnName.values()[column];
+//                return columnName != PROVIDER;
+                return false;
             }
 
             @Override
             public Class<?> getColumnClass(int column) {
-                return switch (column) {
-                    case 0 -> ModelProvider.class;
-                    case 1 -> String.class;
-                    case 2, 3 -> Double.class;
-                    case 4 -> Integer.class;
-                    default -> Object.class;
+                ColumnName columnName = ColumnName.values()[column];
+                return switch (columnName) {
+                    case PROVIDER -> ModelProvider.class;
+                    case MODEL -> String.class;
+                    case INPUT_COST, OUTPUT_COST -> Double.class;
+                    case CONTEXT_WINDOW -> Integer.class;
                 };
             }
         };
 
         costTable.getColumnModel().getColumn(0).setCellEditor(new ModelProviderCellEditor());
+
+        setColumnWidths();
 
         ComboBox<ModelProvider> providerComboBox = new ComboBox<>(LLMProviderUtil.getApiKeyEnabledProviders().toArray(new ModelProvider[0]));
         costTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(providerComboBox));
@@ -77,6 +104,18 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         panel.add(contextPanel, BorderLayout.NORTH);
 
         loadCurrentCosts();
+    }
+
+    private void setColumnWidths() {
+        for (ColumnName columnName : ColumnName.values()) {
+            TableColumn column = costTable.getColumnModel().getColumn(columnName.ordinal());
+            switch (columnName) {
+                case PROVIDER -> column.setPreferredWidth(60);
+                case MODEL -> column.setPreferredWidth(220);
+                case INPUT_COST, OUTPUT_COST -> column.setPreferredWidth(60);
+                case CONTEXT_WINDOW -> column.setPreferredWidth(100);
+            }
+        }
     }
 
     public void addSettingsChangeListener(LLMSettingsChangeListener listener) {
@@ -137,19 +176,21 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         settings.setDefaultWindowContext((Integer) windowContextSpinner.getValue());
 
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            ModelProvider provider = (ModelProvider) tableModel.getValueAt(i, 0);
-            String modelName = (String) tableModel.getValueAt(i, 1);
-            double inputCost = (double) tableModel.getValueAt(i, 2);
-            double outputCost = (double) tableModel.getValueAt(i, 3);
-            Object windowContextObj = tableModel.getValueAt(i, 4);
+            Object providerObj = tableModel.getValueAt(i, ColumnName.PROVIDER.ordinal());
+            String modelName = (String) tableModel.getValueAt(i, ColumnName.MODEL.ordinal());
+            Object inputCostObj = tableModel.getValueAt(i, ColumnName.INPUT_COST.ordinal());
+            Object outputCostObj = tableModel.getValueAt(i, ColumnName.OUTPUT_COST.ordinal());
+            Object windowContextObj = tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
 
             try {
-                int windowContext = windowContextObj instanceof Integer ? (Integer) windowContextObj :
-                    Integer.parseInt(windowContextObj.toString());
+                ModelProvider provider = (ModelProvider) providerObj;
+                double inputCost = Double.parseDouble(inputCostObj.toString());
+                double outputCost = Double.parseDouble(outputCostObj.toString());
+                int windowContext = Integer.parseInt(windowContextObj.toString());
 
                 settings.setModelCost(provider, modelName, inputCost, outputCost);
                 settings.setModelWindowContext(provider, modelName, windowContext);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException | ClassCastException e) {
                 // Log the error or handle it as appropriate for your application
                 System.err.println("Error applying cost for model " + modelName + ": " + e.getMessage());
             }
