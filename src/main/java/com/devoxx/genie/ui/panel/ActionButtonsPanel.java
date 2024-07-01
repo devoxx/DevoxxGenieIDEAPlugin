@@ -600,7 +600,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             project,
             getWindowContext(),
             selectedProvider,
-            selectedModel.getModelName()
+            selectedModel
         );
     }
 
