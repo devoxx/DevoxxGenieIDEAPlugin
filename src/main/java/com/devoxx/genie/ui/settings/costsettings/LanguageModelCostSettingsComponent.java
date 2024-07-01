@@ -14,9 +14,11 @@ import lombok.Getter;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -73,7 +75,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
                     case PROVIDER -> ModelProvider.class;
                     case MODEL -> String.class;
                     case INPUT_COST, OUTPUT_COST -> Double.class;
-                    case CONTEXT_WINDOW -> Integer.class;
+                    case CONTEXT_WINDOW -> String.class;
                 };
             }
         };
@@ -81,6 +83,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         costTable.getColumnModel().getColumn(0).setCellEditor(new ModelProviderCellEditor());
 
         setColumnWidths();
+        setCustomRenderers();
 
         ComboBox<ModelProvider> providerComboBox = new ComboBox<>(LLMProviderUtil.getApiKeyEnabledProviders().toArray(new ModelProvider[0]));
         costTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(providerComboBox));
@@ -104,6 +107,12 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         panel.add(contextPanel, BorderLayout.NORTH);
 
         loadCurrentCosts();
+    }
+
+    private void setCustomRenderers() {
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        costTable.getColumnModel().getColumn(CONTEXT_WINDOW.ordinal()).setCellRenderer(rightRenderer);
     }
 
     private void setColumnWidths() {
@@ -156,7 +165,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
                     model.getModelName(),
                     model.getInputCost(),
                     model.getOutputCost(),
-                    model.getContextWindow()
+                    NumberFormat.getInstance().format(model.getContextWindow())
                 });
         });
     }
