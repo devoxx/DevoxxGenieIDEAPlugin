@@ -255,13 +255,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
      */
     @Override
     public void startNewConversation() {
-        conversationPanel.updateNewConversationLabel();
-        promptInputArea.clear();
-        promptOutputPanel.clear();
         FileListManager.getInstance().clear();
         ChatMemoryService.getInstance().clear();
-        actionButtonsPanel.resetProjectContext();
-        actionButtonsPanel.enableButtons();
+
+        SwingUtilities.invokeLater(() -> {
+            conversationPanel.updateNewConversationLabel();
+            promptInputArea.clear();
+            promptOutputPanel.clear();
+            actionButtonsPanel.resetProjectContext();
+            actionButtonsPanel.enableButtons();
+            actionButtonsPanel.resetTokenUsageBar();
+        });
     }
 
     /**
