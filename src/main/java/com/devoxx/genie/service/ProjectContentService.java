@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -55,7 +56,7 @@ public class ProjectContentService {
     public void calculateTokensAndCost(Project project,
                                        int windowContext,
                                        ModelProvider provider,
-                                       String modelName) {
+                                       LanguageModel languageModel) {
         if (!DefaultLLMSettings.isApiBasedProvider(provider)) {
             getProjectContent(project, windowContext, true)
                 .thenAccept(projectContent -> {
@@ -68,7 +69,7 @@ public class ProjectContentService {
         }
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        double inputCost = settings.getModelInputCost(provider, modelName);
+        double inputCost = settings.getModelInputCost(provider, languageModel.getModelName());
 
         getProjectContent(project, windowContext, true)
             .thenAccept(projectContent -> {
@@ -76,7 +77,7 @@ public class ProjectContentService {
                 double estimatedInputCost = calculateCost(tokenCount, inputCost);
                 String message = String.format("Project contains %s. Estimated min. cost using %s is $%.6f",
                     WindowContextFormatterUtil.format(tokenCount, "tokens"),
-                    modelName,
+                    languageModel.getDisplayName(),
                     estimatedInputCost);
                 NotificationUtil.sendNotification(project, message);
             });
