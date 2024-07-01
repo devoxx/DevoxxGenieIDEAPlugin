@@ -29,7 +29,7 @@ public class WelcomeUtil {
                 Configure features in the settings page.<br>
                 <ul>
                      <li><strong>🧠Project Scanner</strong>: Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>
-                     <li><strong>💰Token Cost Calculator</strong>: Calculate the cost when using Cloud LLM providers.  Input/Output token price can be updated in Settings page.</li>
+                     <li><strong>💰Token Cost Calculator</strong>: Calculate the cost when using Cloud LLM providers.  Input/Output token prices can be viewed in the Settings page.</li>
                      <li><strong>🔍Web Search</strong>: Search the web for a given query using Google or Tavily</li>
                      <li><strong>🏎️Streaming responses (beta)</strong>: See each token as it's received from the LLM in real-time</li>
                      <li><strong>🧐Abstract Syntax Tree (AST) context</strong>: Automatically include parent class and class/field references in the prompt for better code analysis. Ensure the LLM has a large enough context window</li>
