@@ -1,6 +1,5 @@
 package com.devoxx.genie.action;
 
-import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
