@@ -33,20 +33,21 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
         if (model == null) {
-            return this;
-        }
-
-        nameLabel.setText(model.getDisplayName());
-
-        if (!model.getProvider().equals(ModelProvider.Ollama) &&
-            !model.getProvider().equals(ModelProvider.LMStudio) &&
-            !model.getProvider().equals(ModelProvider.Jan) &&
-            !model.getProvider().equals(ModelProvider.GPT4All)) {
+            nameLabel.setText("");
+            infoLabel.setText("");
+        } else {
             nameLabel.setText(model.getDisplayName());
-            String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
-            double cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
-            if (cost > 0.0) {
-                infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
+
+            if (!isLocalProvider(model.getProvider())) {
+                String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
+                double cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
+                if (cost > 0.0) {
+                    infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
+                } else {
+                    infoLabel.setText(windowContext);
+                }
+            } else {
+                infoLabel.setText(""); // Clear the info for local providers
             }
         }
 
@@ -57,5 +58,12 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         setOpaque(true);
 
         return this;
+    }
+
+    private boolean isLocalProvider(ModelProvider provider) {
+        return provider == ModelProvider.Ollama ||
+            provider == ModelProvider.LMStudio ||
+            provider == ModelProvider.Jan ||
+            provider == ModelProvider.GPT4All;
     }
 }
