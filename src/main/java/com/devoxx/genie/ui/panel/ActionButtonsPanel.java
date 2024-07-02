@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +54,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final JButton addProjectBtn = new JHoverButton("Add full project to prompt", AddFileIcon, true);
     private final JButton calcTokenCostBtn = new JHoverButton("Calc tokens/cost", CalculateIcon, true);
 
-    private final PromptInputArea promptInputComponent;
+    private final PromptInputArea promptInputArea;
     private final PromptOutputPanel promptOutputPanel;
     private final ComboBox<ModelProvider> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
@@ -70,7 +71,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private String projectContext;
 
     public ActionButtonsPanel(Project project,
-                              PromptInputArea promptInputComponent,
+                              PromptInputArea promptInputArea,
                               PromptOutputPanel promptOutputPanel,
                               ComboBox<ModelProvider> llmProvidersComboBox,
                               ComboBox<LanguageModel> modelNameComboBox,
@@ -78,7 +79,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         setLayout(new BorderLayout());
 
         this.project = project;
-        this.promptInputComponent = promptInputComponent;
+        this.promptInputArea = promptInputArea;
         this.promptOutputPanel = promptOutputPanel;
         this.chatPromptExecutor = new ChatPromptExecutor();
         this.editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
@@ -92,6 +93,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             .subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
 
         setupUI();
+
         setupAddProjectButton();
         configureSearchButtonsVisibility();
     }
@@ -156,8 +158,10 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Add files to the prompt context.
      */
     private void selectFilesForPromptContext(ActionEvent e) {
+        java.util.List<VirtualFile> openFiles = editorFileButtonManager.getOpenFiles();
+
         JBPopup popup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project), null)
+            .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project, openFiles), null)
             .setTitle("Filter and Double-Click To Add To Prompt Context")
             .setRequestFocus(true)
             .setResizable(true)
@@ -169,7 +173,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             new ContextPopupMenu().show(submitBtn,
                 popup,
                 devoxxGenieToolWindowContent.getContentPanel().getSize().width,
-                promptInputComponent.getLocationOnScreen().y);
+                promptInputArea.getLocationOnScreen().y);
         }
     }
 
@@ -256,7 +260,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * get the user prompt text.
      */
     private @Nullable String getUserPromptText() {
-        String userPromptText = promptInputComponent.getText();
+        String userPromptText = promptInputArea.getText();
         if (userPromptText.isEmpty()) {
             NotificationUtil.sendNotification(project, "Please enter a prompt.");
             return null;
@@ -310,7 +314,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             submitBtn.setIcon(SubmitIcon);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
             progressBar.setVisible(false);
-            promptInputComponent.setEnabled(true);
+            promptInputArea.setEnabled(true);
             isPromptRunning = false;
         });
     }
@@ -329,7 +333,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Disable the prompt input component.
      */
     private void disableButtons() {
-        promptInputComponent.setEnabled(false);
+        promptInputArea.setEnabled(false);
     }
 
     /**

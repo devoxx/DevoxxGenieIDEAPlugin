@@ -9,6 +9,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class EditorFileButtonManager {
 
@@ -34,5 +36,9 @@ public class EditorFileButtonManager {
 
     public Editor getSelectedTextEditor() {
         return fileEditorManager.getSelectedTextEditor();
+    }
+
+    public List<VirtualFile> getOpenFiles() {
+        return Arrays.asList(fileEditorManager.getOpenFiles());
     }
 }
