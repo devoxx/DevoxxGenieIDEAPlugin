@@ -34,23 +34,28 @@ public class FileSelectionPanelFactory implements DumbAware {
     private FileSelectionPanelFactory() {
     }
 
-    /**
-     * Create a panel for selecting files
-     * @param project the project
-     * @return the panel
-     */
-    public static @NotNull JPanel createPanel(Project project) {
+    public static @NotNull JPanel createPanel(Project project, List<VirtualFile> openFiles) {
         DefaultListModel<VirtualFile> listModel = new DefaultListModel<>();
         JBList<VirtualFile> resultList = createResultList(project, listModel);
-        JBTextField filterField = createFilterField(project, listModel, resultList);
+        JBTextField filterField = createFilterField(project, listModel, resultList, openFiles);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setMaximumSize(new Dimension(400, 400));
+        mainPanel.setPreferredSize(new Dimension(400, 300)); // Increased height
 
         mainPanel.add(filterField, BorderLayout.NORTH);
-        JBScrollPane jScrollPane = new JBScrollPane(resultList);
-        jScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        mainPanel.add(jScrollPane, BorderLayout.CENTER);
+        JBScrollPane scrollPane = new JBScrollPane(resultList);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // Set a preferred size for the scroll pane
+        scrollPane.setPreferredSize(new Dimension(380, 250));
+
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // Populate the list model with open files
+        for (VirtualFile file : openFiles) {
+            listModel.addElement(file);
+        }
 
         return mainPanel;
     }
@@ -65,6 +70,7 @@ public class FileSelectionPanelFactory implements DumbAware {
                                                                  DefaultListModel<VirtualFile> listModel) {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
         resultList.setCellRenderer(new FileListCellRenderer(project));
+        resultList.setVisibleRowCount(10); // Show 10 rows by default
 
         addMouseListenerToResultList(resultList);
         return resultList;
@@ -79,7 +85,8 @@ public class FileSelectionPanelFactory implements DumbAware {
      */
     private static @NotNull JBTextField createFilterField(Project project,
                                                           DefaultListModel<VirtualFile> listModel,
-                                                          JBList<VirtualFile> resultList) {
+                                                          JBList<VirtualFile> resultList,
+                                                          List<VirtualFile> openFiles) {
         JBTextField filterField = new JBTextField();
         filterField.getEmptyText().setText("Type to search for files...");
 
@@ -89,17 +96,17 @@ public class FileSelectionPanelFactory implements DumbAware {
         filterField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                debounceSearch(project, filterField, listModel, resultList, debounceTimer);
+                debounceSearch(project, filterField, listModel, resultList, debounceTimer, openFiles);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                debounceSearch(project, filterField, listModel, resultList, debounceTimer);
+                debounceSearch(project, filterField, listModel, resultList, debounceTimer, openFiles);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                debounceSearch(project, filterField, listModel, resultList, debounceTimer);
+                debounceSearch(project, filterField, listModel, resultList, debounceTimer, openFiles);
             }
         });
 
@@ -118,9 +125,11 @@ public class FileSelectionPanelFactory implements DumbAware {
                                        JBTextField filterField,
                                        DefaultListModel<VirtualFile> listModel,
                                        JBList<VirtualFile> resultList,
-                                       @NotNull AtomicReference<Timer> debounceTimer) {
+                                       @NotNull AtomicReference<Timer> debounceTimer,
+                                       List<VirtualFile> openFiles) {
         debounceTimer.get().stop();
-        debounceTimer.set(new Timer(DEBOUNCE_DELAY, e -> searchFiles(project, filterField.getText(), listModel, resultList)));
+        debounceTimer.set(new Timer(DEBOUNCE_DELAY, e ->
+            searchFiles(project, filterField.getText(), listModel, resultList, openFiles)));
         debounceTimer.get().setRepeats(false);
         debounceTimer.get().start();
     }
@@ -135,13 +144,23 @@ public class FileSelectionPanelFactory implements DumbAware {
     private static void searchFiles(Project project,
                                     String searchText,
                                     DefaultListModel<VirtualFile> listModel,
-                                    JBList<VirtualFile> resultList) {
+                                    JBList<VirtualFile> resultList,
+                                    List<VirtualFile> openFiles) {
         new Task.Backgroundable(project, "Searching Files", true) {
             private final List<VirtualFile> foundFiles = new ArrayList<>();
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 ReadAction.run(() -> {
+                    // Search through open files
+                    for (VirtualFile file : openFiles) {
+                        if (indicator.isCanceled()) return;
+                        if (file.getName().toLowerCase().contains(searchText.toLowerCase())) {
+                            foundFiles.add(file);
+                        }
+                    }
+
+                    // Search through project files
                     GotoFileModel model = new GotoFileModel(project);
                     String[] names = model.getNames(false);
                     for (String name : names) {
@@ -151,7 +170,7 @@ public class FileSelectionPanelFactory implements DumbAware {
                             for (Object obj : objects) {
                                 if (obj instanceof PsiFile) {
                                     VirtualFile virtualFile = ((PsiFile) obj).getVirtualFile();
-                                    if (virtualFile != null) {
+                                    if (virtualFile != null && !foundFiles.contains(virtualFile)) {
                                         foundFiles.add(virtualFile);
                                     }
                                 }
@@ -208,9 +227,7 @@ public class FileSelectionPanelFactory implements DumbAware {
         }
 
         @Override
-        public Component getListCellRendererComponent(JList<?> list,
-                                                      Object value,
-                                                      int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             if (value instanceof VirtualFile file) {
