@@ -1,34 +1,70 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 public class PromptInputArea extends JPanel {
 
     private final CommandAutoCompleteTextField inputField;
+    private final GlowingBorder glowingBorder;
+    private final Timer glowTimer;
+    private boolean isGlowing = false;
 
-    public PromptInputArea(ResourceBundle resourceBundle) {
+    public PromptInputArea(@NotNull ResourceBundle resourceBundle) {
         super(new BorderLayout());
 
         inputField = new CommandAutoCompleteTextField();
-        inputField.setRows(3);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);
-        inputField.setAutoscrolls(false);
         inputField.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        inputField.setMinimumSize(new Dimension(0, 75));
         inputField.addFocusListener(new PromptInputFocusListener(inputField));
         inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        JScrollPane scrollPane = new JScrollPane(inputField);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setBorder(null);
+        glowingBorder = new GlowingBorder(new Color(0, 120, 215)); // You can change this color
+        setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4)); // To accommodate the glowing border
 
-        add(scrollPane, BorderLayout.CENTER);
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, getPreferredSize().height));
+        add(inputField, BorderLayout.CENTER);
+
+        glowTimer = new Timer(50, new ActionListener() {
+            private float direction = 0.05f;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                float alpha = glowingBorder.getAlpha();
+                alpha += direction;
+                if (alpha > 1.0f) {
+                    alpha = 1.0f;
+                    direction = -0.05f;
+                } else if (alpha < 0.3f) {
+                    alpha = 0.3f;
+                    direction = 0.05f;
+                }
+                glowingBorder.setAlpha(alpha);
+                repaint();
+            }
+        });
+    }
+
+    public void startGlowing() {
+        if (!isGlowing) {
+            isGlowing = true;
+            setBorder(glowingBorder);
+            glowTimer.start();
+        }
+    }
+
+    public void stopGlowing() {
+        if (isGlowing) {
+            isGlowing = false;
+            glowTimer.stop();
+            setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            repaint();
+        }
     }
 
     public String getText() {
@@ -49,9 +85,5 @@ public class PromptInputArea extends JPanel {
 
     public boolean requestFocusInWindow() {
         return inputField.requestFocusInWindow();
-    }
-
-    public void setPlaceholder(String placeholder) {
-        inputField.setPlaceholder(placeholder);
     }
 }
