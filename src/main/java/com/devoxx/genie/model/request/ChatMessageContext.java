@@ -6,15 +6,13 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
 
-@ToString
-@Setter
-@Getter
+@Data
+@Builder
 public class ChatMessageContext {
     private final LocalDateTime createdOn = LocalDateTime.now();
     private String name;
@@ -28,9 +26,14 @@ public class ChatMessageContext {
     private LanguageModel languageModel;
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;
-    private boolean webSearchRequested;
+
+    @Builder.Default
+    private boolean webSearchRequested = false;
+
+    @Builder.Default
     private boolean fullProjectContextAdded = false;
 
+    // Custom method
     public boolean hasFiles() {
         return editorInfo != null && editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty();
     }

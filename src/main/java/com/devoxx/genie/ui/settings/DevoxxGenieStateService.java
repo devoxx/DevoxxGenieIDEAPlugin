@@ -2,7 +2,7 @@ package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.util.DefaultLLMSettings;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
@@ -10,6 +10,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -27,6 +28,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public static DevoxxGenieStateService getInstance() {
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
+
+    private List<LanguageModel> languageModels = new ArrayList<>();
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
@@ -108,7 +111,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                              String modelName,
                              double inputCost,
                              double outputCost) {
-        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             modelInputCosts.put(key, inputCost);
             modelOutputCosts.put(key, outputCost);
@@ -116,32 +119,23 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     public double getModelInputCost(ModelProvider provider, String modelName) {
-        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             return modelInputCosts.getOrDefault(key,
-                DefaultLLMSettings.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettings.CostKey(provider, modelName), 0.0));
-        }
-        return 0.0;
-    }
-
-    public double getModelOutputCost(ModelProvider provider, String modelName) {
-        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
-            String key = provider.getName() + ":" + modelName;
-            return modelOutputCosts.getOrDefault(key,
-                DefaultLLMSettings.DEFAULT_OUTPUT_COSTS.getOrDefault(new DefaultLLMSettings.CostKey(provider, modelName), 0.0));
+                DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
         }
         return 0.0;
     }
 
     private void initializeDefaultCostsIfEmpty() {
         if (modelInputCosts.isEmpty()) {
-            for (Map.Entry<DefaultLLMSettings.CostKey, Double> entry : DefaultLLMSettings.DEFAULT_INPUT_COSTS.entrySet()) {
+            for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelInputCosts.put(key, entry.getValue());
             }
         }
         if (modelOutputCosts.isEmpty()) {
-            for (Map.Entry<DefaultLLMSettings.CostKey, Double> entry : DefaultLLMSettings.DEFAULT_OUTPUT_COSTS.entrySet()) {
+            for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelOutputCosts.put(key, entry.getValue());
             }
@@ -149,17 +143,18 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     public void setModelWindowContext(ModelProvider provider, String modelName, int windowContext) {
-        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
+        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             modelWindowContexts.put(key, windowContext);
         }
     }
 
-    public int getModelWindowContext(ModelProvider provider, String modelName) {
-        if (DefaultLLMSettings.isApiBasedProvider(provider)) {
-            String key = provider.getName() + ":" + modelName;
-            return modelWindowContexts.getOrDefault(key, defaultWindowContext);
-        }
-        return defaultWindowContext;
+    @Contract(value = " -> new", pure = true)
+    public @NotNull List<LanguageModel> getLanguageModels() {
+        return new ArrayList<>(languageModels);
+    }
+
+    public void setLanguageModels(List<LanguageModel> models) {
+        this.languageModels = new ArrayList<>(models);
     }
 }
