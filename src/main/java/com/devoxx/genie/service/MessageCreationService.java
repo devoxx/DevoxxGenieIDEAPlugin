@@ -59,19 +59,19 @@ public class MessageCreationService {
      */
     private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
                                                                      String context) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
 
         // Check if this is the first message in the conversation
         if (ChatMemoryService.getInstance().messages().size() == 1) {
-            sb.append(context);
-            sb.append("\n\n");
-            sb.append("=========================================\n\n");
+            stringBuilder.append(context);
+            stringBuilder.append("\n\n");
+            stringBuilder.append("=========================================\n\n");
         }
 
-        sb.append("User Question: ");
-        sb.append(chatMessageContext.getUserPrompt());
+        stringBuilder.append("User Question: ");
+        stringBuilder.append(chatMessageContext.getUserPrompt());
 
-        UserMessage userMessage = new UserMessage("User question", sb.toString());
+        UserMessage userMessage = new UserMessage("User question", stringBuilder.toString());
         chatMessageContext.setUserMessage(userMessage);
         return userMessage;
     }
