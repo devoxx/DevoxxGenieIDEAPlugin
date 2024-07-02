@@ -10,7 +10,7 @@ import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.CLAUDE_INSTANT_1_2;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 
-public class DefaultLLMSettings {
+public class DefaultLLMSettingsUtil {
     public static final Map<CostKey, Double> DEFAULT_INPUT_COSTS = new HashMap<>();
     public static final Map<CostKey, Double> DEFAULT_OUTPUT_COSTS = new HashMap<>();
 

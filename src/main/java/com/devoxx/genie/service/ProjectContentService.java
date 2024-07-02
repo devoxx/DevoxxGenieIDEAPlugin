@@ -5,7 +5,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
-import com.devoxx.genie.util.DefaultLLMSettings;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -57,7 +57,7 @@ public class ProjectContentService {
                                        int windowContext,
                                        ModelProvider provider,
                                        LanguageModel languageModel) {
-        if (!DefaultLLMSettings.isApiBasedProvider(provider)) {
+        if (!DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             getProjectContent(project, windowContext, true)
                 .thenAccept(projectContent -> {
                     int tokenCount = ENCODING.countTokens(projectContent);

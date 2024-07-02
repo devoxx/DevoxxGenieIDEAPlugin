@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
@@ -25,11 +26,12 @@ import java.util.Vector;
 import static com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsComponent.ColumnName.*;
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
 
+    private final JTable costTable;
     private final DefaultTableModel tableModel;
+
     private final JSpinner windowContextSpinner;
     private boolean isModified = false;
     private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
-    private final JTable costTable;
 
     @Getter
     public enum ColumnName {
@@ -51,35 +53,52 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
             .map(ColumnName::getDisplayName)
             .toArray(String[]::new);
 
-        tableModel = new DefaultTableModel(columnNames, 0);
-
-//        tableModel.addTableModelListener(e -> {
-//            if (e.getType() == TableModelEvent.UPDATE) {
-//                isModified = true;
-//            }
-//        });
-
-        costTable = new JBTable(tableModel) {
+        tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                ColumnName columnName = ColumnName.values()[column];
-//                return columnName != PROVIDER;
-                return false;
+                return column == ColumnName.INPUT_COST.ordinal() ||
+                    column == ColumnName.OUTPUT_COST.ordinal() ||
+                    column == ColumnName.CONTEXT_WINDOW.ordinal();
             }
 
             @Override
-            public Class<?> getColumnClass(int column) {
-                ColumnName columnName = ColumnName.values()[column];
-                return switch (columnName) {
-                    case PROVIDER -> ModelProvider.class;
-                    case MODEL -> String.class;
-                    case INPUT_COST, OUTPUT_COST -> Double.class;
-                    case CONTEXT_WINDOW -> String.class;
-                };
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == ColumnName.PROVIDER.ordinal()) {
+                    return ModelProvider.class;
+                } else if (columnIndex == ColumnName.INPUT_COST.ordinal() || columnIndex == ColumnName.OUTPUT_COST.ordinal()) {
+                    return Double.class;
+                } else if (columnIndex == ColumnName.CONTEXT_WINDOW.ordinal()) {
+                    return Integer.class;
+                }
+                return String.class;
             }
         };
 
-        costTable.getColumnModel().getColumn(0).setCellEditor(new ModelProviderCellEditor());
+        costTable = new JBTable(tableModel);
+        costTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Set custom editors for editable columns
+        costTable.setDefaultEditor(Double.class, new DefaultCellEditor(new JTextField()) {
+            @Override
+            public Object getCellEditorValue() {
+                try {
+                    return Double.parseDouble((String) super.getCellEditorValue());
+                } catch (NumberFormatException e) {
+                    return 0.0;
+                }
+            }
+        });
+
+        costTable.setDefaultEditor(Integer.class, new DefaultCellEditor(new JTextField()) {
+            @Override
+            public Object getCellEditorValue() {
+                try {
+                    return Integer.parseInt((String) super.getCellEditorValue());
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        });
 
         setColumnWidths();
         setCustomRenderers();
@@ -106,6 +125,28 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         panel.add(contextPanel, BorderLayout.NORTH);
 
         loadCurrentCosts();
+    }
+
+    public java.util.List<LanguageModel> getModifiedModels() {
+        java.util.List<LanguageModel> modifiedModels = new ArrayList<>();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            ModelProvider provider = (ModelProvider) tableModel.getValueAt(i, ColumnName.PROVIDER.ordinal());
+            String modelName = (String) tableModel.getValueAt(i, ColumnName.MODEL.ordinal());
+            double inputCost = (Double) tableModel.getValueAt(i, ColumnName.INPUT_COST.ordinal());
+            double outputCost = (Double) tableModel.getValueAt(i, ColumnName.OUTPUT_COST.ordinal());
+            int contextWindow = (Integer) tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
+
+            LanguageModel model = LanguageModel.builder()
+                .provider(provider)
+                .modelName(modelName)
+                .inputCost(inputCost)
+                .outputCost(outputCost)
+                .contextWindow(contextWindow)
+                .apiKeyUsed(true)
+                .build();
+            modifiedModels.add(model);
+        }
+        return modifiedModels;
     }
 
     private void setCustomRenderers() {

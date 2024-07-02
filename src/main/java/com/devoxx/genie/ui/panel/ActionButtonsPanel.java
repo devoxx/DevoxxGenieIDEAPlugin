@@ -1,13 +1,12 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
-import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.service.*;
+import com.devoxx.genie.service.ChatPromptExecutor;
+import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -17,30 +16,25 @@ import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.util.EditorUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
-import com.devoxx.genie.util.DefaultLLMSettings;
+import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
-import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
-import static com.devoxx.genie.model.Constant.ADD_FILE_S_TO_PROMPT_CONTEXT;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static javax.swing.SwingUtilities.invokeLater;
 
@@ -290,12 +284,19 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return false;
         }
 
-        currentChatMessageContext = createChatMessageContext(actionEvent, userPromptText);
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
 
-        // Set the webSearchRequested flag based on the action command
-        currentChatMessageContext.setWebSearchRequested(
-            actionEvent.getActionCommand().equals(Constant.TAVILY_SEARCH_ACTION) ||
-                actionEvent.getActionCommand().equals(Constant.GOOGLE_SEARCH_ACTION)
+        currentChatMessageContext = ChatMessageContextUtil.createContext(
+            project,
+            userPromptText,
+            selectedLanguageModel,
+            chatModelProvider,
+            stateService,
+            actionEvent.getActionCommand(),
+            editorFileButtonManager,
+            projectContext,
+            isProjectContextAdded
         );
 
         return true;
@@ -322,133 +323,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             submitBtn.setIcon(StopIcon);
             submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
-    }
-
-    /**
-     * Get the chat message context.
-     *
-     * @param actionEvent the action event
-     * @param userPrompt  the user prompt
-     * @return the prompt context with language and text
-     */
-    private @NotNull ChatMessageContext createChatMessageContext(ActionEvent actionEvent,
-                                                                 String userPrompt) {
-        ChatMessageContext chatMessageContext = new ChatMessageContext();
-        chatMessageContext.setProject(project);
-        chatMessageContext.setName(String.valueOf(System.currentTimeMillis()));
-        chatMessageContext.setUserPrompt(userPrompt);
-        chatMessageContext.setUserMessage(UserMessage.userMessage(userPrompt));
-
-        LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
-        if (selectedLanguageModel != null) {
-            chatMessageContext.setLanguageModel(selectedLanguageModel);
-        }
-
-        if (DevoxxGenieStateService.getInstance().getStreamMode() && actionEvent.getActionCommand().equals(Constant.SUBMIT_ACTION)) {
-            chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
-        } else {
-            chatMessageContext.setChatLanguageModel(chatModelProvider.getChatLanguageModel(chatMessageContext));
-        }
-
-        setChatTimeout(chatMessageContext);
-
-        setWindowContext(userPrompt, chatMessageContext);
-
-        return chatMessageContext;
-    }
-
-    /**
-     * Set the chat context based on
-     * 1. The selected files & open file or selected code snippet
-     * 2. Or full project context
-     *
-     * @param userPrompt         the user prompt
-     * @param chatMessageContext the chat message context
-     */
-    private void setWindowContext(String userPrompt, ChatMessageContext chatMessageContext) {
-        if (projectContext != null && isProjectContextAdded) {
-            chatMessageContext.setContext(projectContext);
-        } else {
-            Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-
-            // Add files to the context
-            List<VirtualFile> files = FileListManager.getInstance().getFiles();
-            if (!files.isEmpty()) {
-                addSelectedFiles(chatMessageContext, userPrompt, files);
-            }
-
-            // Set the context based on the selected code snippet or the complete file
-            if (selectedTextEditor != null) {
-                addEditorInfo(selectedTextEditor, chatMessageContext);
-            }
-        }
-    }
-
-    /**
-     * Add the selected code snippet to the chat message context.
-     * @param editor             the editor
-     * @param chatMessageContext the chat message context
-     */
-    private void addEditorInfo(Editor editor,
-                               @NotNull ChatMessageContext chatMessageContext) {
-        EditorInfo editorInfo = generateEditorInformation(editor);
-        chatMessageContext.setEditorInfo(editorInfo);
-    }
-
-    /**
-     * Create the editor info based on the selected code snippet or the complete file.
-     *
-     * @param editor the editor
-     * @return the editor info
-     */
-    private @NotNull EditorInfo generateEditorInformation(Editor editor) {
-        EditorInfo editorInfo = EditorUtil.getEditorInfo(project, editor);
-        String selectedText = editor.getSelectionModel().getSelectedText();
-
-        // Add selected text
-        if (selectedText != null) {
-            editorInfo.setSelectedText(selectedText);
-        } else {
-            // Or add the complete file
-            editorInfo.setSelectedText(editor.getDocument().getText());
-            editorInfo.setSelectedFiles(List.of(editor.getVirtualFile()));
-        }
-        return editorInfo;
-    }
-
-    /**
-     * Set the timeout for the chat message context.
-     *
-     * @param chatMessageContext the chat message context
-     */
-    private void setChatTimeout(ChatMessageContext chatMessageContext) {
-        Integer timeout = DevoxxGenieStateService.getInstance().getTimeout();
-        if (timeout == 0) {
-            chatMessageContext.setTimeout(60);
-        } else {
-            chatMessageContext.setTimeout(timeout);
-        }
-    }
-
-    /**
-     * Add selected files to the chat message context.
-     *
-     * @param chatMessageContext the chat message context
-     * @param userPrompt         the user prompt
-     * @param files              the files
-     */
-    private void addSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
-                                  String userPrompt,
-                                  List<VirtualFile> files) {
-
-        chatMessageContext.setEditorInfo(new EditorInfo(files));
-
-        MessageCreationService.getInstance().createUserPromptWithContextAsync(project, userPrompt, files)
-            .thenAccept(chatMessageContext::setContext)
-            .exceptionally(ex -> {
-                ErrorHandler.handleError(project, ex);
-                return null;
-            });
     }
 
     /**
@@ -591,7 +465,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        if (!DefaultLLMSettings.isApiBasedProvider(selectedProvider)) {
+        if (!DefaultLLMSettingsUtil.isApiBasedProvider(selectedProvider)) {
             NotificationUtil.sendNotification(project, "Cost calculation is not applicable for local providers");
             return;
         }
