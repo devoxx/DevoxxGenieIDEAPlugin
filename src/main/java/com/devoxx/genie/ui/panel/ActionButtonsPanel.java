@@ -59,7 +59,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final ComboBox<ModelProvider> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final TokenUsageBar tokenUsageBar = new TokenUsageBar();
-    private final JProgressBar progressBar = new JProgressBar();
     private int tokenCount;
 
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
@@ -123,15 +122,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         add(addFileBtn, BorderLayout.EAST);
         add(addProjectBtn, BorderLayout.SOUTH);
 
-        progressBar.setVisible(false);
-        progressBar.setIndeterminate(true);
-
         tokenUsageBar.setVisible(false);
         tokenUsageBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
 
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
-        progressPanel.add(progressBar, BorderLayout.SOUTH);
         add(progressPanel, BorderLayout.NORTH);
     }
 
@@ -181,8 +176,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        progressBar.setVisible(true);
-
         if (isPromptRunning) {
             stopPromptExecution();
             return;
@@ -213,6 +206,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      */
     private void startPromptExecution() {
         isPromptRunning = true;
+        promptInputArea.startGlowing();
         chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, this::enableButtons);
     }
 
@@ -274,6 +268,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void disableUIForPromptExecution() {
         disableSubmitBtn();
         disableButtons();
+        promptInputArea.startGlowing();
     }
 
     /**
@@ -313,9 +308,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         SwingUtilities.invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
-            progressBar.setVisible(false);
             promptInputArea.setEnabled(true);
             isPromptRunning = false;
+            promptInputArea.stopGlowing();
         });
     }
 
