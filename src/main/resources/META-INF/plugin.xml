@@ -35,6 +35,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.1</h2>
+        <UL>
+            <LI>Code refactorings</LI>
+            <LI>Fix #138 : Show editor files in file list panel</LI>
+        </UL>
         <h2>v0.2.0</h2>
         <UL>
             <LI>Add full project into prompt</LI>
