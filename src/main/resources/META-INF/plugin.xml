@@ -40,6 +40,7 @@
             <LI>Code refactorings</LI>
             <LI>Feat #140: Show glowing border around chat window when activate</LI>
             <LI>Fix #138 : Show editor files in file list panel</LI>
+            <LI>Feat #142: Show Twitter and Preview link</LI>
         </UL>
         <h2>v0.2.0</h2>
         <UL>
