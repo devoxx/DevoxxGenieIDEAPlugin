@@ -35,6 +35,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
@@ -325,6 +326,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
                 updateModelNamesComboBox(modelProvider.getName());
+                modelNameComboBox.setRenderer(new ModelInfoRenderer()); // Re-apply the renderer
+                modelNameComboBox.revalidate();
+                modelNameComboBox.repaint();
             }
         } finally {
             isUpdatingModelNames = false;
@@ -335,22 +339,20 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
      * Update the model names combobox.
      */
     private void updateModelNamesComboBox(String modelProvider) {
-        if (modelProvider == null) {
-            return;
-        }
+        Optional.ofNullable(modelProvider).ifPresent(provider -> {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    modelNameComboBox.removeAllItems(); // Ensure we clear existing items
+                    modelNameComboBox.setVisible(true);
 
-        SwingUtilities.invokeLater(() -> {
-            try {
-                modelNameComboBox.setVisible(true);
-                modelNameComboBox.removeAllItems();
-
-                ChatModelFactoryProvider
-                    .getFactoryByProvider(modelProvider)
-                    .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
-            } catch (Exception e) {
-                Logger.getInstance(getClass()).error("Error updating model names", e);
-                Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
-            }
+                    ChatModelFactoryProvider
+                        .getFactoryByProvider(provider)
+                        .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+                } catch (Exception e) {
+                    Logger.getInstance(getClass()).error("Error updating model names", e);
+                    Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
+                }
+            });
         });
     }
 
