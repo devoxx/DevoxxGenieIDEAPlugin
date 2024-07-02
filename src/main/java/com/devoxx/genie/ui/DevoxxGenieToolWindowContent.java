@@ -18,9 +18,12 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBusConnection;
@@ -31,9 +34,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 
@@ -41,6 +44,8 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
  * The Devoxx Genie Tool Window Content.
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLMSettingsChangeListener, ConversationStarter {
+
+    private static final float SPLITTER_PROPORTION = 0.8f;
 
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
@@ -69,14 +74,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
 
         setupUI();
 
-        modelNameComboBox.setRenderer(new ModelInfoRenderer());
-        modelNameComboBox.addActionListener(this::updateTokenUsageBar);
-
-        MessageBusConnection messageBusConnection = toolWindow.getProject().getMessageBus().connect();
-        messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
+        setupMessageBusConnection(toolWindow);
 
         setLastSelectedProvider();
+
         isInitializationComplete = true;
+    }
+
+    /**
+     * Set up the message bus connection.
+     * @param toolWindow the tool window
+     */
+    private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
+        MessageBusConnection messageBusConnection = project.getMessageBus().connect();
+        messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
+        Disposer.register(toolWindow.getDisposable(), messageBusConnection);
     }
 
     /**
@@ -90,37 +102,42 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         }
     }
 
-    private void updateTokenUsageBar(@NotNull ActionEvent e) {
-        LanguageModel languageModel = (LanguageModel)((ComboBox<?>)e.getSource()).getSelectedItem();
-        if (languageModel != null) {
-            actionButtonsPanel.updateTokenUsage(languageModel.getContextWindow());
-        }
-    }
-
     /**
      * Set up the UI Components: top panel and splitter.
      */
     private void setupUI() {
-        modelNameComboBox.setRenderer(new ModelInfoRenderer());
-
-        contentPanel.setLayout(new BorderLayout());
-        contentPanel.add(createTopPanel(), BorderLayout.NORTH);
-        contentPanel.add(createSplitter(), BorderLayout.CENTER);
-
+        initializeComponents();
+        setupLayout();
+        setupListeners();
         setLastSelectedProvider();
     }
 
-    /**
-     * Create the top panel.
-     *
-     * @return the top panel
-     */
-    private @NotNull JPanel createTopPanel() {
+    private void initializeComponents() {
+        modelNameComboBox.setRenderer(new ModelInfoRenderer());
+
         promptInputArea = new PromptInputArea(resourceBundle);
         promptOutputPanel = new PromptOutputPanel(resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);
         conversationPanel = new ConversationPanel(project, this);
+    }
 
+    private void setupLayout() {
+        contentPanel.setLayout(new BorderLayout());
+        contentPanel.add(createTopPanel(), BorderLayout.NORTH);
+        contentPanel.add(createSplitter(), BorderLayout.CENTER);
+    }
+
+    private void setupListeners() {
+        modelNameComboBox.addActionListener(this::updateTokenUsageBar);
+        modelNameComboBox.addActionListener(this::processModelNameSelection);
+        modelProviderComboBox.addActionListener(this::handleModelProviderSelectionChange);
+    }
+
+    /**
+     * Create the top panel.
+     * @return the top panel
+     */
+    private @NotNull JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(createSelectionPanel(), BorderLayout.NORTH);
         topPanel.add(conversationPanel, BorderLayout.CENTER);
@@ -132,11 +149,22 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
-        Splitter splitter = new Splitter(true, 0.8f);
+        Splitter splitter = new Splitter(true, SPLITTER_PROPORTION);
         splitter.setFirstComponent(promptOutputPanel);
         splitter.setSecondComponent(createInputPanel());
         splitter.setHonorComponentsMinimumSize(true);
         return splitter;
+    }
+
+    /**
+     * Update the token usage bar.
+     * @param e the action event
+     */
+    private void updateTokenUsageBar(@NotNull ActionEvent e) {
+        LanguageModel languageModel = (LanguageModel)((ComboBox<?>)e.getSource()).getSelectedItem();
+        if (languageModel != null) {
+            actionButtonsPanel.updateTokenUsage(languageModel.getContextWindow());
+        }
     }
 
     /**
@@ -172,13 +200,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     private void addModelProvidersToComboBox() {
         LLMProviderService providerService = LLMProviderService.getInstance();
 
-        List<ModelProvider> modelProviders = new ArrayList<>();
-        modelProviders.addAll(providerService.getModelProvidersWithApiKeyConfigured());
-        modelProviders.addAll(providerService.getLocalModelProviders());
-
-        modelProviders.stream()
-            .sorted()
-            .forEach(modelProviderComboBox::addItem);
+        Stream.concat(
+            providerService.getModelProvidersWithApiKeyConfigured().stream(),
+            providerService.getLocalModelProviders().stream()
+        )
+        .distinct()
+        .sorted()
+        .forEach(modelProviderComboBox::addItem);
     }
 
     /**
@@ -191,7 +219,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         addModelProvidersToComboBox();
 
         modelNameComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelNameComboBox.getPreferredSize().height));
-        modelNameComboBox.addActionListener(this::processModelNameSelection);
 
         return toolPanel;
     }
@@ -217,7 +244,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         JPanel providerPanel = new JPanel(new BorderLayout(), true);
         providerPanel.add(modelProviderComboBox, BorderLayout.CENTER);
         modelProviderComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, modelProviderComboBox.getPreferredSize().height));
-        modelProviderComboBox.addActionListener(this::handleModelProviderSelectionChange);
+
         return providerPanel;
     }
 
@@ -313,12 +340,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
         }
 
         SwingUtilities.invokeLater(() -> {
-            modelNameComboBox.setVisible(true);
-            modelNameComboBox.removeAllItems();
+            try {
+                modelNameComboBox.setVisible(true);
+                modelNameComboBox.removeAllItems();
 
-            ChatModelFactoryProvider
-                .getFactoryByProvider(modelProvider)
-                .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+                ChatModelFactoryProvider
+                    .getFactoryByProvider(modelProvider)
+                    .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+            } catch (Exception e) {
+                Logger.getInstance(getClass()).error("Error updating model names", e);
+                Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
+            }
         });
     }
 
