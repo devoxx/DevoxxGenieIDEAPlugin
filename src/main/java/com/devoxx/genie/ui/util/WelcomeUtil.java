@@ -23,6 +23,7 @@ public class WelcomeUtil {
             </head>
             <body>
                 <h2>%s</h2>
+                <p><small>Follow us on 𝕏 : <a href="https://twitter.com/DevoxxGenie">@DevoxxGenie</a></small></p>
                 <p>%s</p>
                 <p>%s</p>
                 <h2>New features 🚀</h2>
@@ -45,6 +46,7 @@ public class WelcomeUtil {
                 </ul>
                 <p>%s</p>
                 <p>%s</p>
+                <p><small>BTW If you like this plugin please give us a <a href="https://plugins.jetbrains.com/plugin/24169-devoxxgenie/reviews?noRedirect=true">review</a> ❤️</small></p>
             </body>
             </html>
             """.formatted(
