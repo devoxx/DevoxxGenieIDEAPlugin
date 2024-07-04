@@ -71,7 +71,7 @@ public class MessageCreationService {
         stringBuilder.append("User Question: ");
         stringBuilder.append(chatMessageContext.getUserPrompt());
 
-        UserMessage userMessage = new UserMessage("User question", stringBuilder.toString());
+        UserMessage userMessage = new UserMessage("user_message", stringBuilder.toString());
         chatMessageContext.setUserMessage(userMessage);
         return userMessage;
     }

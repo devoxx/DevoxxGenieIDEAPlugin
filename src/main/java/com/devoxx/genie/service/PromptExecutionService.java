@@ -66,7 +66,9 @@ public class PromptExecutionService {
 
             queryFuture = CompletableFuture
                 .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
-                .orTimeout(chatMessageContext.getTimeout(), TimeUnit.SECONDS)
+                .orTimeout(
+                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout() ,
+                    TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
                     LOG.error("Error occurred while processing chat message", throwable);
                     ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
