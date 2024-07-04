@@ -3,6 +3,6 @@ build/**
 .gradle
 .idea
 *.iml
-core/build/**
-core/.gradle
+/core/build/**
+/core/.gradle
 /output-examples/**
