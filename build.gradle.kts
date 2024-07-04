@@ -40,14 +40,14 @@ dependencies {
     // Add the dependencies for the core module
     implementation("com.devoxx.genie:core:0.1.16")
 
-    implementation("dev.langchain4j:langchain4j:0.31.0")
-    implementation("dev.langchain4j:langchain4j-ollama:0.31.0")
-    implementation("dev.langchain4j:langchain4j-local-ai:0.31.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
-    implementation("dev.langchain4j:langchain4j-anthropic:0.31.0")
-    implementation("dev.langchain4j:langchain4j-mistral-ai:0.31.0")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:0.31.0")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:0.31.0")
+    implementation("dev.langchain4j:langchain4j:0.32.0")
+    implementation("dev.langchain4j:langchain4j-ollama:0.32.0")
+    implementation("dev.langchain4j:langchain4j-local-ai:0.32.0")
+    implementation("dev.langchain4j:langchain4j-open-ai:0.32.0")
+    implementation("dev.langchain4j:langchain4j-anthropic:0.32.0")
+    implementation("dev.langchain4j:langchain4j-mistral-ai:0.32.0")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:0.32.0")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:0.32.0")
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
