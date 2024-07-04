@@ -18,7 +18,6 @@ public class GeminiChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return GeminiChatModel.builder()
             .modelName(chatModel.getModelName())
-            .baseUrl("https://generativelanguage.googleapis.com")
             .apiKey(getApiKey())
             .temperature(chatModel.getTemperature())
             .maxTokens(chatModel.getMaxTokens())
