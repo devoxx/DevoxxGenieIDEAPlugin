@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -87,16 +88,22 @@ public class ChatPromptExecutor {
     private Optional<String> getCommandFromPrompt(@NotNull String prompt,
                                                   PromptOutputPanel promptOutputPanel) {
         if (prompt.startsWith("/")) {
+            DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
             if (prompt.equalsIgnoreCase("/test")) {
-                prompt = DevoxxGenieStateService.getInstance().getTestPrompt();
+                prompt = settings.getTestPrompt();
             } else if (prompt.equalsIgnoreCase("/review")) {
-                prompt = DevoxxGenieStateService.getInstance().getReviewPrompt();
+                prompt = settings.getReviewPrompt();
             } else if (prompt.equalsIgnoreCase("/explain")) {
-                prompt = DevoxxGenieStateService.getInstance().getExplainPrompt();
-            } else if (prompt.equalsIgnoreCase("/custom")) {
-                prompt = DevoxxGenieStateService.getInstance().getCustomPrompt();
+                prompt = settings.getExplainPrompt();
             } else {
+                // Check for custom prompts
+                for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
+                    if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {
+                        prompt = customPrompt.getPrompt();
+                        return Optional.of(prompt);
+                    }
+                }
                 promptOutputPanel.showHelpText();
                 return Optional.empty();
             }

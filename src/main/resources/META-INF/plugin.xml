@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.3</h2>
+        <UL>
+            <LI>Feat #148: Create custom commands</LI>
+        </UL>
         <h2>v0.2.2</h2>
         <UL>
             <LI>Fix #144: Restored Gemini Pro 1.0 model</LI>
