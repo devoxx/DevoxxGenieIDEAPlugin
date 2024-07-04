@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
+import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
@@ -28,6 +29,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public static DevoxxGenieStateService getInstance() {
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
+
+    private List<CustomPrompt> customPrompts = new ArrayList<>();
 
     private List<LanguageModel> languageModels = new ArrayList<>();
 

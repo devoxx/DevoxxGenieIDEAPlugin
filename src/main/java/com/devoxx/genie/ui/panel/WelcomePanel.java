@@ -1,6 +1,10 @@
 package com.devoxx.genie.ui.panel;
 
+import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.WelcomeUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 
@@ -11,12 +15,23 @@ import java.awt.Desktop;
 import java.net.URI;
 import java.util.ResourceBundle;
 
-public class WelcomePanel extends JBPanel<WelcomePanel> {
+public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptChangeListener {
+
+    private static final Logger LOG = Logger.getInstance(WelcomePanel.class);
+
     private final JEditorPane jEditorPane;
     private final JBScrollPane scrollPane;
+    private final ResourceBundle resourceBundle;
 
     public WelcomePanel(ResourceBundle resourceBundle) {
         super(new BorderLayout());
+
+        this.resourceBundle = resourceBundle;
+
+        ApplicationManager.getApplication()
+            .getMessageBus()
+            .connect()
+            .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
 
         jEditorPane = new JEditorPane("text/html", WelcomeUtil.getWelcomeText(resourceBundle));
         jEditorPane.setEditable(false);
@@ -28,7 +43,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> {
                     try {
                         Desktop.getDesktop().browse(new URI(e.getURL().toString()));
                     } catch (Exception ex) {
-                        ex.printStackTrace();
+                        LOG.info("Error opening browser link: " + e.getURL().toString(), ex);
                     }
                 }
             }
@@ -57,5 +72,10 @@ public class WelcomePanel extends JBPanel<WelcomePanel> {
             JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
             verticalScrollBar.setValue(verticalScrollBar.getMinimum());
         });
+    }
+
+    @Override
+    public void onCustomPromptsChanged() {
+        jEditorPane.setText(WelcomeUtil.getWelcomeText(resourceBundle));
     }
 }

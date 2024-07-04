@@ -1,10 +1,12 @@
 package com.devoxx.genie.ui.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ResourceBundle;
 
 public class WelcomeUtil {
 
-    public static String getWelcomeText(ResourceBundle resourceBundle) {
+    public static @NotNull String getWelcomeText(@NotNull ResourceBundle resourceBundle) {
         return """
             <html>
             <head>
@@ -37,12 +39,12 @@ public class WelcomeUtil {
                      <li><strong>💬Chat Memory Size</strong>: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs)</li>
                 </ul>
                 <h2>Utility Commands:</h2>
-                You can update the prompts for the utility commands in the settings page.<br>
+                You can update the prompts for each utility commands or add custom ones in the settings page.<br>
                 <ul>
                     <li>%s</li>
                     <li>%s</li>
                     <li>%s</li>
-                    <li>%s</li>
+                    %s
                 </ul>
                 <p>%s</p>
                 <p>%s</p>
@@ -56,7 +58,7 @@ public class WelcomeUtil {
             resourceBundle.getString("command.test"),
             resourceBundle.getString("command.review"),
             resourceBundle.getString("command.explain"),
-            resourceBundle.getString("command.custom"),
+            HelpUtil.getCustomPromptCommands(),
             resourceBundle.getString("welcome.tip"),
             resourceBundle.getString("welcome.enjoy")
         );

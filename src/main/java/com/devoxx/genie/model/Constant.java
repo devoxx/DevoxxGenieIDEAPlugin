@@ -13,7 +13,6 @@ public class Constant {
         /test: write unit tests on selected code
         /explain: explain the selected code
         /review: review selected code
-        /custom: set custom prompt in settings
 
         The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
         Do not include any more info which might be incorrect, like discord, twitter, documentation or website info.
