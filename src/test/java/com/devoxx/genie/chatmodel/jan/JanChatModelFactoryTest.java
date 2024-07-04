@@ -11,7 +11,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class JanChatModelFactoryTest {
+public class JanChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
