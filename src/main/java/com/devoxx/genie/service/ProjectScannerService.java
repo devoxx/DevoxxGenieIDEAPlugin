@@ -60,7 +60,12 @@ public class ProjectScannerService {
                     fullContent = processDirectory(project, startDirectory, windowContext, result);
                 }
 
-                return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
+                // Only truncate if it's not a token calculation
+                if (!isTokenCalculation) {
+                    return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
+                } else {
+                    return fullContent.toString();
+                }
             }).inSmartMode(project)
             .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)
             .submit(AppExecutorUtil.getAppExecutorService());
@@ -178,9 +183,7 @@ public class ProjectScannerService {
         if (tokens.size() <= windowContext) {
             if (!isTokenCalculation) {
                 NotificationUtil.sendNotification(project, "Added. Project context " +
-                    WindowContextFormatterUtil.format(tokens.size(), "tokens") + " " +
-                    "is within window context limit of " +
-                    WindowContextFormatterUtil.format(windowContext));
+                    WindowContextFormatterUtil.format(tokens.size(), "tokens"));
             }
             return text;
         }
