@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -14,8 +17,14 @@ public class PromptSettingsConfigurable implements Configurable {
 
     private final PromptSettingsComponent promptSettingsComponent;
 
-    public PromptSettingsConfigurable() {
-        promptSettingsComponent = new PromptSettingsComponent();
+    public PromptSettingsConfigurable(Project project) {
+        promptSettingsComponent = new PromptSettingsComponent(project);
+    }
+
+    @Nullable
+    @Override
+    public JComponent createComponent() {
+        return promptSettingsComponent.createPanel();
     }
 
     /**
@@ -26,16 +35,6 @@ public class PromptSettingsConfigurable implements Configurable {
     @Override
     public String getDisplayName() {
         return "Prompts";
-    }
-
-    /**
-     * Get the Prompt Settings component
-     * @return the component
-     */
-    @Nullable
-    @Override
-    public JComponent createComponent() {
-        return promptSettingsComponent.createPanel();
     }
 
     /**
@@ -52,7 +51,8 @@ public class PromptSettingsConfigurable implements Configurable {
         isModified |= !StringUtil.equals(promptSettingsComponent.getTestPromptField().getText(), settings.getTestPrompt());
         isModified |= !StringUtil.equals(promptSettingsComponent.getExplainPromptField().getText(), settings.getExplainPrompt());
         isModified |= !StringUtil.equals(promptSettingsComponent.getReviewPromptField().getText(), settings.getReviewPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getCustomPromptField().getText(), settings.getCustomPrompt());
+
+        isModified |= !settings.getCustomPrompts().equals(promptSettingsComponent.getCustomPrompts());
 
         return isModified;
     }
@@ -67,7 +67,14 @@ public class PromptSettingsConfigurable implements Configurable {
         updateTextAreaIfModified(promptSettingsComponent.getTestPromptField(), settings.getTestPrompt(), settings::setTestPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getExplainPromptField(), settings.getExplainPrompt(), settings::setExplainPrompt);
         updateTextAreaIfModified(promptSettingsComponent.getReviewPromptField(), settings.getReviewPrompt(), settings::setReviewPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getCustomPromptField(), settings.getCustomPrompt(), settings::setCustomPrompt);
+
+        settings.setCustomPrompts(promptSettingsComponent.getCustomPrompts());
+
+        ApplicationManager
+            .getApplication()
+            .getMessageBus()
+            .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
+            .onCustomPromptsChanged();
     }
 
     /**
@@ -80,7 +87,8 @@ public class PromptSettingsConfigurable implements Configurable {
         promptSettingsComponent.getTestPromptField().setText(settings.getTestPrompt());
         promptSettingsComponent.getExplainPromptField().setText(settings.getExplainPrompt());
         promptSettingsComponent.getReviewPromptField().setText(settings.getReviewPrompt());
-        promptSettingsComponent.getCustomPromptField().setText(settings.getCustomPrompt());
+
+        promptSettingsComponent.setCustomPrompts(settings.getCustomPrompts());
     }
 
     /**

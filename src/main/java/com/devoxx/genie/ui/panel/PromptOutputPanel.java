@@ -22,7 +22,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     private final HelpPanel helpPanel;
     private final WaitingPanel waitingPanel = new WaitingPanel();
     private final JBScrollPane scrollPane;
-
+    private final ResourceBundle resourceBundle;
     /**
      * The prompt output panel.
      *
@@ -31,6 +31,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     public PromptOutputPanel(ResourceBundle resourceBundle) {
         super();
 
+        this.resourceBundle = resourceBundle;
         welcomePanel = new WelcomePanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage(resourceBundle));
 
@@ -67,7 +68,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
      * Show the help text.
      */
     public void showHelpText() {
-        addFiller("help");
+        container.remove(welcomePanel);
         container.add(helpPanel);
         moveToBottom();
     }
@@ -151,5 +152,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
             JScrollBar vertical = scrollPane.getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
+    }
+
+    public void updateHelpText() {
+        helpPanel.updateHelpText(HelpUtil.getHelpMessage(resourceBundle));
     }
 }
