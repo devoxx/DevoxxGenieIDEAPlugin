@@ -1,6 +1,13 @@
 package com.devoxx.genie.ui.component;
 
+import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.ui.JBColor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.*;
@@ -9,31 +16,44 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommandAutoCompleteTextField extends PlaceholderTextArea {
+public class CommandAutoCompleteTextField extends PlaceholderTextArea implements CustomPromptChangeListener {
 
     private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
 
     private final List<String> commands = new ArrayList<>();
     private boolean isAutoCompleting = false;
 
+    private String placeholder = "";
+
     public CommandAutoCompleteTextField() {
         super();
-        initializeCommands();
+
         setDocument(new CommandDocument());
         addKeyListener(new CommandKeyListener());
+
+        ApplicationManager.getApplication()
+            .getMessageBus()
+            .connect()
+            .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
+
+        initializeCommands();
     }
 
     private void initializeCommands() {
+        commands.clear();
         commands.add("/test");
         commands.add("/explain");
         commands.add("/review");
-        commands.add("/custom");
-        // Add more commands as needed
+
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {
+            commands.add("/" + customPrompt.getName());
+        }
     }
 
     private class CommandKeyListener extends KeyAdapter {
         @Override
-        public void keyPressed(KeyEvent e) {
+        public void keyPressed(@NotNull KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
                 autoComplete();
                 e.consume();
@@ -54,7 +74,7 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea {
                         getDocument().remove(start, currentLine.length());
                         getDocument().insertString(start, command, null);
                     } catch (BadLocationException ex) {
-                        ex.printStackTrace();
+                        LOG.error("Error while auto-completing command", ex);
                     }
                     setCaretPosition(text.length() - currentLine.length() + command.length());
                     isAutoCompleting = false;
@@ -83,7 +103,6 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea {
                         if (currentLine.startsWith("/") && currentLine.length() > 1) {
                             for (String command : commands) {
                                 if (command.startsWith(currentLine) && !command.equals(currentLine)) {
-                                    int start = text.lastIndexOf("\n") + 1;
                                     String completion = command.substring(currentLine.length());
                                     isAutoCompleting = true;
                                     insertString(getLength(), completion, null);
@@ -96,25 +115,26 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea {
                         }
                     }
                 } catch (BadLocationException e) {
-                    e.printStackTrace();
+                    LOG.error("Error while auto-completing command", e);
                 }
             });
         }
     }
-
-    // Placeholder functionality
-    private String placeholder = "";
 
     public void setPlaceholder(String placeholder) {
         this.placeholder = placeholder;
         repaint();
     }
 
+    public void onCustomPromptsChanged() {
+        initializeCommands();
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
         if (getText().isEmpty() && !placeholder.isEmpty()) {
-            g.setColor(java.awt.Color.GRAY);
+            g.setColor(JBColor.GRAY);
             g.drawString(placeholder, getInsets().left, g.getFontMetrics().getMaxAscent() + getInsets().top);
         }
     }

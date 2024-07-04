@@ -9,6 +9,7 @@ import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -44,7 +45,10 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 /**
  * The Devoxx Genie Tool Window Content.
  */
-public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLMSettingsChangeListener, ConversationStarter {
+public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
+                                                     LLMSettingsChangeListener,
+                                                     ConversationStarter,
+                                                     CustomPromptChangeListener {
 
     private static final float SPLITTER_PROPORTION = 0.8f;
 
@@ -89,6 +93,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
         MessageBusConnection messageBusConnection = project.getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
         Disposer.register(toolWindow.getDisposable(), messageBusConnection);
     }
 
@@ -382,5 +387,15 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, LLM
     @Override
     public void settingsChanged() {
         updateModelNamesComboBox(DevoxxGenieStateService.getInstance().getSelectedProvider());
+    }
+
+    @Override
+    public void onCustomPromptsChanged() {
+        SwingUtilities.invokeLater(() -> {
+            // Update the help panel or any other UI components that display custom prompts
+            if (promptOutputPanel != null) {
+                promptOutputPanel.updateHelpText();
+            }
+        });
     }
 }
