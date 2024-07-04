@@ -304,24 +304,20 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last" />
         </action>
 
-        <action id="DevoxxGenie.AddDirectory"
+        <action id="AddDirectoryToContextWindow"
                 class="com.devoxx.genie.action.AddDirectoryAction"
-                text="Add Directory To Context Window"
+                text="Add Directory to Context Window"
                 icon="/icons/pluginIcon.svg"
-                description="Recursively add directory to DevoxxGenie context">
-            <add-to-group group-id="ProjectViewPopupMenu"
-                          anchor="after"
-                          relative-to-action="DevoxxGenie.AddFileAction"/>
+                description="Add the selected directory to the context window">
+            <add-to-group group-id="ProjectViewPopupMenu"/>
         </action>
 
-        <action id="DevoxxGenie.AddDirectoryToClipBoard"
-                class="com.devoxx.genie.action.AddDirectoryToClipBoardAction"
-                text="Add Directory To Clipboard"
+        <action id="CopyDirectoryToClipboard"
+                class="com.devoxx.genie.action.AddDirectoryAction"
+                text="Copy Directory to Clipboard"
                 icon="/icons/pluginIcon.svg"
-                description="Recursively add directory to clipboard">
-            <add-to-group group-id="ProjectViewPopupMenu"
-                          anchor="after"
-                          relative-to-action="DevoxxGenie.AddDirectory"/>
+                description="Copy the selected directory content to clipboard">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddDirectoryToContextWindow"/>
         </action>
     </actions>
 </idea-plugin>
