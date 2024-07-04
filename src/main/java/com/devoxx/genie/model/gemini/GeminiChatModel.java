@@ -29,8 +29,7 @@ public class GeminiChatModel implements ChatLanguageModel {
     private final GeminiMessageRequest messageRequest = GeminiMessageRequest.builder().build();
 
     @Builder
-    public GeminiChatModel(String baseUrl,
-                           String apiKey,
+    public GeminiChatModel(String apiKey,
                            String modelName,
                            Duration timeout,
                            Double temperature,  // unused for now
@@ -39,7 +38,7 @@ public class GeminiChatModel implements ChatLanguageModel {
         this.maxRetries = maxRetries;
 
         this.client = GeminiClient.builder()
-            .baseUrl(baseUrl)
+            .baseUrl("https://generativelanguage.googleapis.com")
             .apiKey(apiKey)
             .modelName(modelName)
             .timeout(getOrDefault(timeout, ofSeconds(60)))

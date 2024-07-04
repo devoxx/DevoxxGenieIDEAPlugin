@@ -38,6 +38,7 @@
         <h2>v0.2.2</h2>
         <UL>
             <LI>Fix #144: Restored Gemini Pro 1.0 model</LI>
+            <LI>Fix #147: CompletionException for OpenAI models</LI>
         </UL>
         <h2>v0.2.1</h2>
         <UL>
