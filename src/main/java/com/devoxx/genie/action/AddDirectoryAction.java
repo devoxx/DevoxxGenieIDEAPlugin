@@ -1,10 +1,11 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -12,45 +13,84 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
 public class AddDirectoryAction extends DumbAwareAction {
 
+    private static final String ADD_TO_CONTEXT = "AddDirectoryToContextWindow";
+    private static final String COPY_TO_CLIPBOARD = "CopyDirectoryToClipboard";
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
-        if (project == null) {
-            return;
-        }
+        if (project == null) return;
 
         ensureToolWindowVisible(project);
 
         VirtualFile selectedDir = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        if (selectedDir != null && selectedDir.isDirectory()) {
-            addDirectoryRecursively(project, selectedDir);
-        } else {
+        if (selectedDir == null || !selectedDir.isDirectory()) {
             NotificationUtil.sendNotification(project, "Please select a directory");
+            return;
+        }
+
+        String actionId = e.getActionManager().getId(this);
+        if (ADD_TO_CONTEXT.equals(actionId)) {
+            addDirectoryToContext(project, selectedDir);
+        } else if (COPY_TO_CLIPBOARD.equals(actionId)) {
+            copyDirectoryToClipboard(project, selectedDir);
         }
     }
 
-    private void addDirectoryRecursively(Project project, @NotNull VirtualFile directory) {
+    private void addDirectoryToContext(Project project, @NotNull VirtualFile directory) {
         FileListManager fileListManager = FileListManager.getInstance();
         List<VirtualFile> filesToAdd = new ArrayList<>();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-        VirtualFile[] children = directory.getChildren();
-        for (VirtualFile child : children) {
-            if (child.isDirectory()) {
-                addDirectoryRecursively(project, child);
-            } else if (!fileListManager.contains(child)) {
-                filesToAdd.add(child);
-            }
-        }
+        addFilesRecursively(directory, fileListManager, filesToAdd, settings);
 
         if (!filesToAdd.isEmpty()) {
             fileListManager.addFiles(filesToAdd);
-            NotificationUtil.sendNotification(project, "Added " + filesToAdd.size() + " files from directory: " + directory.getName());
+
+            // Get the content and token count
+            ProjectContentService.getInstance().getDirectoryContentAndTokens(project, directory, Integer.MAX_VALUE, false)
+                .thenAccept(result -> {
+                    int fileCount = filesToAdd.size();
+                    int tokenCount = result.getTokenCount();
+                    NotificationUtil.sendNotification(project,
+                        String.format("Added %d files from directory: %s (Approximately %s tokens)",
+                            fileCount, directory.getName(), WindowContextFormatterUtil.format(tokenCount)));
+                });
         }
+    }
+
+    private void addFilesRecursively(@NotNull VirtualFile directory, FileListManager fileListManager,
+                                     List<VirtualFile> filesToAdd, DevoxxGenieStateService settings) {
+        VirtualFile[] children = directory.getChildren();
+        for (VirtualFile child : children) {
+            if (child.isDirectory()) {
+                if (!settings.getExcludedDirectories().contains(child.getName())) {
+                    addFilesRecursively(child, fileListManager, filesToAdd, settings);
+                }
+            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(child)) {
+                filesToAdd.add(child);
+            }
+        }
+    }
+
+    private void copyDirectoryToClipboard(Project project, VirtualFile directory) {
+        // Because we copy the content to the clipboard, we can set the limit to a high number
+        CompletableFuture<String> contentFuture = ProjectContentService.getInstance()
+            .getDirectoryContent(project, directory, 1_000_000, false);
+
+        contentFuture.thenAccept(content ->
+            NotificationUtil.sendNotification(project, "Directory content added to clipboard: " + directory.getName()));
+    }
+
+    private boolean shouldIncludeFile(@NotNull VirtualFile file, @NotNull DevoxxGenieStateService settings) {
+        String extension = file.getExtension();
+        return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }
 
     @Override
