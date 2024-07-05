@@ -1,8 +1,10 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.processor.NodeProcessorFactory;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.commonmark.node.Block;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.IndentedCodeBlock;
@@ -31,11 +33,6 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         add(new ResponseHeaderPanel(chatMessageContext));
         addResponsePane(chatMessageContext);
-
-        if (chatMessageContext.hasFiles()) {
-            ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext);
-            add(fileListPanel);
-        }
     }
 
     /**
@@ -47,6 +44,12 @@ public class ChatResponsePanel extends BackgroundPanel {
         String markDownResponse = chatMessageContext.getAiMessage().text();
         Node document = Parser.builder().build().parse(markDownResponse);
         addDocumentNodesToPanel(document);
+
+        if (chatMessageContext.hasFiles()) {
+            java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
+            ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
+            add(fileListPanel);
+        }
     }
 
     /**
