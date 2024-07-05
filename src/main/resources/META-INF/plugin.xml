@@ -38,6 +38,8 @@
         <h2>v0.2.3</h2>
         <UL>
             <LI>Feat #148: Create custom commands</LI>
+            <LI>Feat #157: Calc tokens for directory</LI>
+            <LI>Fix #153: Use the "Copy Project" settings when using "Add Directory to Context Window"</LI>
         </UL>
         <h2>v0.2.2</h2>
         <UL>
