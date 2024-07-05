@@ -26,6 +26,7 @@ public class ChatMessageContext {
     private LanguageModel languageModel;
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;
+    private int totalFileCount;
 
     @Builder.Default
     private boolean webSearchRequested = false;
@@ -35,6 +36,6 @@ public class ChatMessageContext {
 
     // Custom method
     public boolean hasFiles() {
-        return editorInfo != null && editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty();
+        return totalFileCount > 0;
     }
 }

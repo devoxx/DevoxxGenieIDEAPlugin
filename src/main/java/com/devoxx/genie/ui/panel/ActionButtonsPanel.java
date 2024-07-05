@@ -6,6 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatPromptExecutor;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
@@ -286,6 +287,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
 
+        FileListManager fileListManager = FileListManager.getInstance();
+        int totalFileCount = fileListManager.getTotalFileCount();
+
         currentChatMessageContext = ChatMessageContextUtil.createContext(
             project,
             userPromptText,
@@ -295,7 +299,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             actionEvent.getActionCommand(),
             editorFileButtonManager,
             projectContext,
-            isProjectContextAdded
+            isProjectContextAdded,
+            totalFileCount
         );
 
         return true;
