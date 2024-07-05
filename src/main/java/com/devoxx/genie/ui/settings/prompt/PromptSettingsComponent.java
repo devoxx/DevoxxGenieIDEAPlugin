@@ -73,9 +73,6 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Prompts");
 
         addPromptArea(panel, gbc, "System prompt", systemPromptField);
-        addPromptArea(panel, gbc, "/Test prompt", testPromptField);
-        addPromptArea(panel, gbc, "/Explain prompt", explainPromptField);
-        addPromptArea(panel, gbc, "/Review prompt", reviewPromptField);
 
         addSection(panel, gbc, "Custom Prompts");
 
