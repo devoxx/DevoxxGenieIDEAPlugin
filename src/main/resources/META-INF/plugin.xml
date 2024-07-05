@@ -319,5 +319,13 @@
                 description="Copy the selected directory content to clipboard">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddDirectoryToContextWindow"/>
         </action>
+
+        <action id="CalcTokenDirectory"
+                class="com.devoxx.genie.action.CalcTokensForDirectoryAction"
+                text="Calc Tokens for Directory"
+                icon="/icons/pluginIcon.svg"
+                description="Calculate the tokens for selected directory">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="CopyDirectoryToClipboard"/>
+        </action>
     </actions>
 </idea-plugin>

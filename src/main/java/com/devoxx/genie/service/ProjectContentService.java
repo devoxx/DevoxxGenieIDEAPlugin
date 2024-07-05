@@ -13,11 +13,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingType;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The ProjectContentService class provides methods to retrieve and
@@ -87,14 +89,23 @@ public class ProjectContentService {
                                                                          VirtualFile directory,
                                                                          int tokenLimit,
                                                                          boolean isTokenCalculation) {
-        return ProjectScannerService.getInstance()
-            .scanProject(project, directory, tokenLimit, isTokenCalculation)
-            .thenApply(content -> {
-                int tokenCount = ENCODING.countTokens(content);
-                return new ContentResult(content, tokenCount);
-            });
+        return CompletableFuture.supplyAsync(() -> {
+            AtomicLong totalTokens = new AtomicLong(0);
+            StringBuilder content = new StringBuilder();
+
+            processDirectoryRecursively(project, directory, content, totalTokens, isTokenCalculation);
+
+            return new ContentResult(content.toString(), totalTokens.intValue());
+        });
     }
 
+    /**
+     * Calculates the number of tokens and estimated cost for a specified Project.
+     * @param project The Project to scan for content
+     * @param windowContext Integer representing the desired Window Context (ignored in this implementation)
+     * @param provider ModelProvider enum value representing the provider to use for cost calculation
+     * @param languageModel LanguageModel object representing the model to use for cost calculation
+     */
     public void calculateTokensAndCost(Project project,
                                        int windowContext,
                                        ModelProvider provider,
@@ -123,6 +134,50 @@ public class ProjectContentService {
                     estimatedInputCost);
                 NotificationUtil.sendNotification(project, message);
             });
+    }
+
+    /**
+     * Processes a directory recursively, calculating the number of tokens and building a content string.
+     * @param project The Project containing the directory to scan
+     * @param directory VirtualFile representing the directory to scan
+     * @param content StringBuilder object to hold the content of the scanned files
+     * @param totalTokens AtomicLong object to hold the total token count
+     * @param isTokenCalculation Boolean flag indicating whether to calculate tokens or not
+     */
+    private void processDirectoryRecursively(Project project,
+                                             VirtualFile directory,
+                                             StringBuilder content,
+                                             AtomicLong totalTokens,
+                                             boolean isTokenCalculation) {
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        for (VirtualFile child : directory.getChildren()) {
+            if (child.isDirectory()) {
+                if (!settings.getExcludedDirectories().contains(child.getName())) {
+                    processDirectoryRecursively(project, child, content, totalTokens, isTokenCalculation);
+                }
+            } else if (shouldIncludeFile(child, settings)) {
+                String fileContent = readFileContent(child);
+                if (!isTokenCalculation) {
+                    content.append("File: ").append(child.getPath()).append("\n");
+                    content.append(fileContent).append("\n\n");
+                }
+                totalTokens.addAndGet(ENCODING.countTokens(fileContent));
+            }
+        }
+    }
+
+    private boolean shouldIncludeFile(@NotNull VirtualFile file, DevoxxGenieStateService settings) {
+        String extension = file.getExtension();
+        return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
+    }
+
+    private @NotNull String readFileContent(VirtualFile file) {
+        try {
+            return new String(file.contentsToByteArray());
+        } catch (Exception e) {
+            return "Error reading file: " + e.getMessage();
+        }
     }
 
     private double calculateCost(int tokenCount, double tokenCost) {
