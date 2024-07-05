@@ -321,8 +321,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      * Set the model provider and update the model names.
      */
     private void handleModelProviderSelectionChange(@NotNull ActionEvent e) {
-        if (!e.getActionCommand()
-            .equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames) return;
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames) return;
 
         isUpdatingModelNames = true;
 
@@ -330,6 +329,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
+                // Update the selectedProvider in DevoxxGenieStateService
+                DevoxxGenieStateService.getInstance().setSelectedProvider(modelProvider.getName());
+
                 updateModelNamesComboBox(modelProvider.getName());
                 modelNameComboBox.setRenderer(new ModelInfoRenderer()); // Re-apply the renderer
                 modelNameComboBox.revalidate();
