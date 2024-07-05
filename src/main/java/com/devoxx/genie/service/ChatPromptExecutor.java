@@ -2,12 +2,20 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class ChatPromptExecutor {
@@ -62,9 +70,40 @@ public class ChatPromptExecutor {
      */
     public Optional<String> updatePromptWithCommandIfPresent(@NotNull ChatMessageContext chatMessageContext,
                                                              PromptOutputPanel promptOutputPanel) {
-        Optional<String> commandFromPrompt = getCommandFromPrompt(chatMessageContext.getUserPrompt(), promptOutputPanel);
+        Optional<String> commandFromPrompt = getCommandFromPrompt(chatMessageContext.getUserPrompt().trim(), promptOutputPanel);
         chatMessageContext.setUserPrompt(commandFromPrompt.orElse(chatMessageContext.getUserPrompt()));
+
+        // Ensure that EditorInfo is set in the ChatMessageContext
+        if (chatMessageContext.getEditorInfo() == null) {
+            chatMessageContext.setEditorInfo(getEditorInfo(chatMessageContext.getProject()));
+        }
+
         return commandFromPrompt;
+    }
+
+    private @NotNull EditorInfo getEditorInfo(Project project) {
+        EditorInfo editorInfo = new EditorInfo();
+        FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+        Editor editor = fileEditorManager.getSelectedTextEditor();
+
+        if (editor != null) {
+            String selectedText = editor.getSelectionModel().getSelectedText();
+            if (selectedText != null && !selectedText.isEmpty()) {
+                editorInfo.setSelectedText(selectedText);
+            } else {
+                VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
+                if (openFiles.length > 0) {
+                    editorInfo.setSelectedFiles(Arrays.asList(openFiles));
+                }
+            }
+
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(fileEditorManager.getSelectedFiles()[0]);
+            if (psiFile != null) {
+                editorInfo.setLanguage(psiFile.getLanguage().getDisplayName());
+            }
+        }
+
+        return editorInfo;
     }
 
     /**
