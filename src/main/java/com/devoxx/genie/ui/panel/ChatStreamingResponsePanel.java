@@ -1,8 +1,11 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +37,12 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         add(editorPane);
 
         setMaxWidth();
+
+        if (chatMessageContext.hasFiles()) {
+            java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
+            ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
+            add(fileListPanel);
+        }
 
         parser = Parser.builder().build();
         renderer = createHTMLRenderer(chatMessageContext);

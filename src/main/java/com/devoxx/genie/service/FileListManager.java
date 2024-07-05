@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +11,7 @@ public class FileListManager {
 
     private final List<VirtualFile> files = new ArrayList<>();
     private final List<FileListObserver> observers = new ArrayList<>();
+    private int totalFileCount = 0;
 
     private static FileListManager instance = null;
 
@@ -28,17 +30,22 @@ public class FileListManager {
         notifyObservers(file);
     }
 
-    public void addFiles(List<VirtualFile> newFiles) {
+    public void addFiles(@NotNull List<VirtualFile> newFiles) {
         List<VirtualFile> actuallyAddedFiles = new ArrayList<>();
         for (VirtualFile file : newFiles) {
             if (!files.contains(file)) {
                 files.add(file);
                 actuallyAddedFiles.add(file);
+                totalFileCount++;
             }
         }
         if (!actuallyAddedFiles.isEmpty()) {
             notifyObserversOfBatchAdd(actuallyAddedFiles);
         }
+    }
+
+    public int getTotalFileCount() {
+        return totalFileCount;
     }
 
     private void notifyObserversOfBatchAdd(List<VirtualFile> addedFiles) {
@@ -73,6 +80,7 @@ public class FileListManager {
 
     public void clear() {
         files.clear();
+        totalFileCount = 0;
         notifyAllObservers();
     }
 
