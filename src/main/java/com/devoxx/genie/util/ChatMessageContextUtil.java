@@ -60,6 +60,14 @@ public class ChatMessageContextUtil {
         return context;
     }
 
+    /**
+     * Set the window context.
+     * @param chatMessageContext the chat message context
+     * @param userPrompt the user prompt
+     * @param editorFileButtonManager the editor file button manager
+     * @param projectContext the project context
+     * @param isProjectContextAdded the is project context added
+     */
     private static void setWindowContext(ChatMessageContext chatMessageContext,
                                          String userPrompt,
                                          EditorFileButtonManager editorFileButtonManager,

@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -11,6 +12,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +35,8 @@ public class MessageCreationService {
         return ApplicationManager.getApplication().getService(MessageCreationService.class);
     }
 
-    public @NotNull UserMessage createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
+    @NotNull
+    public UserMessage createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
         UserMessage userMessage;
         String context = chatMessageContext.getContext();
 
@@ -40,15 +44,71 @@ public class MessageCreationService {
             // This is likely the full project context scenario
             userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
             chatMessageContext.setFullProjectContextAdded(true);
-        } else if (chatMessageContext.getEditorInfo() != null && chatMessageContext.getEditorInfo().getSelectedText() != null) {
-            // This is the scenario with selected text
-            userMessage = constructUserMessageWithSelectedText(chatMessageContext);
         } else {
-            // Fallback for simple prompts without context
-            userMessage = new UserMessage(chatMessageContext.getUserPrompt());
+            // Here we include the editor content instead
+            userMessage = constructUserMessageWithEditorContent(chatMessageContext);
         }
 
         return userMessage;
+    }
+
+    private @NotNull UserMessage constructUserMessageWithEditorContent(@NotNull ChatMessageContext chatMessageContext) {
+        StringBuilder stringBuilder = new StringBuilder(QUESTION);
+
+        // The user prompt is always added
+        appendIfNotEmpty(stringBuilder, chatMessageContext.getUserPrompt());
+
+        // Add the context prompt if it is not empty
+        appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
+
+        // Add the editor content or selected text
+        String editorContent = getEditorContentOrSelectedText(chatMessageContext);
+        appendIfNotEmpty(stringBuilder, editorContent);
+
+        if (DevoxxGenieStateService.getInstance().getAstMode()) {
+            addASTContext(chatMessageContext, stringBuilder);
+        }
+
+        UserMessage userMessage = new UserMessage(stringBuilder.toString());
+        chatMessageContext.setUserMessage(userMessage);
+        return userMessage;
+    }
+
+    private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext) {
+        EditorInfo editorInfo = chatMessageContext.getEditorInfo();
+        if (editorInfo == null) {
+            return "";
+        }
+
+        StringBuilder contentBuilder = new StringBuilder();
+
+        // Add selected text if present
+        if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
+            contentBuilder.append("Selected Text:\n")
+                .append(editorInfo.getSelectedText())
+                .append("\n\n");
+        }
+
+        // Add content of selected files
+        List<VirtualFile> selectedFiles = editorInfo.getSelectedFiles();
+        if (selectedFiles != null && !selectedFiles.isEmpty()) {
+            contentBuilder.append("File Contents:\n");
+            for (VirtualFile file : selectedFiles) {
+                contentBuilder.append("File: ").append(file.getName()).append("\n")
+                    .append(readFileContent(file))
+                    .append("\n\n");
+            }
+        }
+
+        return contentBuilder.toString().trim();
+    }
+
+    private @NotNull String readFileContent(@NotNull VirtualFile file) {
+        try {
+            return new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return "Error reading file: " + e.getMessage();
+        }
     }
 
     /**
@@ -72,32 +132,6 @@ public class MessageCreationService {
         stringBuilder.append(chatMessageContext.getUserPrompt());
 
         UserMessage userMessage = new UserMessage("user_message", stringBuilder.toString());
-        chatMessageContext.setUserMessage(userMessage);
-        return userMessage;
-    }
-
-    /**
-     * Construct user message with selected text.
-     * @param chatMessageContext the chat message context
-     * @return the user message
-     */
-    private @NotNull UserMessage constructUserMessageWithSelectedText(@NotNull ChatMessageContext chatMessageContext) {
-        StringBuilder sb = new StringBuilder(QUESTION);
-
-        // The user prompt is always added
-        appendIfNotEmpty(sb, chatMessageContext.getUserPrompt());
-
-        // Add the context prompt if it is not empty
-        appendIfNotEmpty(sb, CONTEXT_PROMPT);
-
-        // Add the selected text
-        appendIfNotEmpty(sb, chatMessageContext.getEditorInfo().getSelectedText());
-
-        if (DevoxxGenieStateService.getInstance().getAstMode()) {
-            addASTContext(chatMessageContext, sb);
-        }
-
-        UserMessage userMessage = new UserMessage(sb.toString());
         chatMessageContext.setUserMessage(userMessage);
         return userMessage;
     }
