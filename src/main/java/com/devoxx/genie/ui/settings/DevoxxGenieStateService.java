@@ -101,6 +101,18 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
 
+    public DevoxxGenieStateService() {
+        initializeDefaultPrompts();
+    }
+
+    private void initializeDefaultPrompts() {
+        if (customPrompts.isEmpty()) {
+            customPrompts.add(new CustomPrompt("test", TEST_PROMPT));
+            customPrompts.add(new CustomPrompt("explain", EXPLAIN_PROMPT));
+            customPrompts.add(new CustomPrompt("review", REVIEW_PROMPT));
+        }
+    }
+
     @Override
     public DevoxxGenieStateService getState() {
         return this;

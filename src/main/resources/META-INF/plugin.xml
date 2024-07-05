@@ -41,6 +41,7 @@
             <LI>Feat #157: Calc tokens for directory</LI>
             <LI>Fix #153: Use the "Copy Project" settings when using "Add Directory to Context Window"</LI>
             <LI>Feat #159: Introduce variable TokenCalculator based on selected LLM Provider</LI>
+            <LI>Feat #161: Move predefined command to custom commands</LI>
         </UL>
         <h2>v0.2.2</h2>
         <UL>
