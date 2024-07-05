@@ -48,9 +48,6 @@ public class PromptSettingsConfigurable implements Configurable {
         boolean isModified = false;
 
         isModified |= !StringUtil.equals(promptSettingsComponent.getSystemPromptField().getText(), settings.getSystemPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getTestPromptField().getText(), settings.getTestPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getExplainPromptField().getText(), settings.getExplainPrompt());
-        isModified |= !StringUtil.equals(promptSettingsComponent.getReviewPromptField().getText(), settings.getReviewPrompt());
 
         isModified |= !settings.getCustomPrompts().equals(promptSettingsComponent.getCustomPrompts());
 
@@ -64,9 +61,6 @@ public class PromptSettingsConfigurable implements Configurable {
     public void apply() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getTestPromptField(), settings.getTestPrompt(), settings::setTestPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getExplainPromptField(), settings.getExplainPrompt(), settings::setExplainPrompt);
-        updateTextAreaIfModified(promptSettingsComponent.getReviewPromptField(), settings.getReviewPrompt(), settings::setReviewPrompt);
 
         settings.setCustomPrompts(promptSettingsComponent.getCustomPrompts());
 
@@ -84,9 +78,6 @@ public class PromptSettingsConfigurable implements Configurable {
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         promptSettingsComponent.getSystemPromptField().setText(settings.getSystemPrompt());
-        promptSettingsComponent.getTestPromptField().setText(settings.getTestPrompt());
-        promptSettingsComponent.getExplainPromptField().setText(settings.getExplainPrompt());
-        promptSettingsComponent.getReviewPromptField().setText(settings.getReviewPrompt());
 
         promptSettingsComponent.setCustomPrompts(settings.getCustomPrompts());
     }

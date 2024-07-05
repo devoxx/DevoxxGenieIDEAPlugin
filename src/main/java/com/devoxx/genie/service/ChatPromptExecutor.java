@@ -90,23 +90,15 @@ public class ChatPromptExecutor {
         if (prompt.startsWith("/")) {
             DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-            if (prompt.equalsIgnoreCase("/test")) {
-                prompt = settings.getTestPrompt();
-            } else if (prompt.equalsIgnoreCase("/review")) {
-                prompt = settings.getReviewPrompt();
-            } else if (prompt.equalsIgnoreCase("/explain")) {
-                prompt = settings.getExplainPrompt();
-            } else {
-                // Check for custom prompts
-                for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
-                    if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {
-                        prompt = customPrompt.getPrompt();
-                        return Optional.of(prompt);
-                    }
+            // Check for custom prompts
+            for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
+                if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {
+                    prompt = customPrompt.getPrompt();
+                    return Optional.of(prompt);
                 }
-                promptOutputPanel.showHelpText();
-                return Optional.empty();
             }
+            promptOutputPanel.showHelpText();
+            return Optional.empty();
         }
         return Optional.of(prompt);
     }
