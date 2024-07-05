@@ -1,6 +1,8 @@
 package com.devoxx.genie.action;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -24,15 +26,19 @@ public class CalcTokensForDirectoryAction extends AnAction {
             return;
         }
 
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        ModelProvider selectedProvider = ModelProvider.valueOf(stateService.getSelectedProvider());
+
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Calculating Tokens", false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 ProjectContentService.getInstance()
-                    .getDirectoryContentAndTokens(project, selectedDir, Integer.MAX_VALUE, true)
+                    .getDirectoryContentAndTokens(project, selectedDir, true, selectedProvider)
                     .thenAccept(result -> {
-                        String message = String.format("Directory '%s' contains approximately %s tokens",
+                        String message = String.format("Directory '%s' contains approximately %s tokens (using %s tokenizer)",
                             selectedDir.getName(),
-                            WindowContextFormatterUtil.format(result.getTokenCount()));
+                            WindowContextFormatterUtil.format(result.getTokenCount()),
+                            selectedProvider.getName());
                         NotificationUtil.sendNotification(project, message);
                     });
             }
