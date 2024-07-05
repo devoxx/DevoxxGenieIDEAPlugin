@@ -56,6 +56,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
     // Last selected language model
+    @Getter
+    @Setter
     private String selectedProvider;
     private String selectedLanguageModel;
 
@@ -160,4 +162,5 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void setLanguageModels(List<LanguageModel> models) {
         this.languageModels = new ArrayList<>(models);
     }
+
 }
