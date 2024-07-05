@@ -15,7 +15,8 @@ public class Constant {
         /review: review selected code
 
         The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
-        Do not include any more info which might be incorrect, like discord, twitter, documentation or website info.
+        You can follow us on Twitter @DevoxxGenie.
+        Do not include any more info which might be incorrect, like discord, documentation or other websites.
         Only provide info that is correct and relevant to the code or plugin.
         """;
 
@@ -24,7 +25,6 @@ public class Constant {
     public static final String TEST_PROMPT = "Write a unit test for this code using JUnit.";
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
-    public static final String CUSTOM_PROMPT = "Write a custom prompt here.";
 
     // The Local LLM Model URLs, these can be overridden in the settings page
     public static final String OLLAMA_MODEL_URL = "http://localhost:11434/";

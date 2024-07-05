@@ -83,7 +83,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String testPrompt = TEST_PROMPT;
     private String reviewPrompt = REVIEW_PROMPT;
     private String explainPrompt = EXPLAIN_PROMPT;
-    private String customPrompt = CUSTOM_PROMPT;
 
     private Boolean excludeJavaDoc = false;
 
@@ -122,6 +121,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
         initializeDefaultCostsIfEmpty();
+        initializeDefaultPrompts();
     }
 
     public void setModelCost(ModelProvider provider,
