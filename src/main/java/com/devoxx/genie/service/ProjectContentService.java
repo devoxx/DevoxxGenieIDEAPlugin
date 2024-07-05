@@ -78,22 +78,16 @@ public class ProjectContentService {
             });
     }
 
-    /**
-     * Retrieves and processes the content of a specified directory within a Project.
-     * Also calculates number of tokens in this content if required by user settings or provider configurations.
-     * @param project The Project containing the directory to be scanned
-     * @param directory VirtualFile representing the directory to scan for content
-     * @return ContentResult object holding both content and token count, optionally copied to clipboard based on flag
-     */
     public CompletableFuture<ContentResult> getDirectoryContentAndTokens(Project project,
                                                                          VirtualFile directory,
-                                                                         int tokenLimit,
-                                                                         boolean isTokenCalculation) {
+                                                                         boolean isTokenCalculation,
+                                                                         ModelProvider modelProvider) {
         return CompletableFuture.supplyAsync(() -> {
             AtomicLong totalTokens = new AtomicLong(0);
             StringBuilder content = new StringBuilder();
 
-            processDirectoryRecursively(project, directory, content, totalTokens, isTokenCalculation);
+            Encoding encoding = getEncodingForProvider(modelProvider);
+            processDirectoryRecursively(project, directory, content, totalTokens, isTokenCalculation, encoding);
 
             return new ContentResult(content.toString(), totalTokens.intValue());
         });
@@ -136,6 +130,19 @@ public class ProjectContentService {
             });
     }
 
+    private Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
+        return switch (provider) {
+            case OpenAI, Anthropic, Gemini ->
+                Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
+            case Mistral, DeepInfra, Groq ->
+                // These often use the Llama tokenizer or similar
+                Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.R50K_BASE);
+            default ->
+                // Default to cl100k_base for unknown providers
+                Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
+        };
+    }
+
     /**
      * Processes a directory recursively, calculating the number of tokens and building a content string.
      * @param project The Project containing the directory to scan
@@ -145,16 +152,17 @@ public class ProjectContentService {
      * @param isTokenCalculation Boolean flag indicating whether to calculate tokens or not
      */
     private void processDirectoryRecursively(Project project,
-                                             VirtualFile directory,
+                                             @NotNull VirtualFile directory,
                                              StringBuilder content,
                                              AtomicLong totalTokens,
-                                             boolean isTokenCalculation) {
+                                             boolean isTokenCalculation,
+                                             Encoding encoding) {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         for (VirtualFile child : directory.getChildren()) {
             if (child.isDirectory()) {
                 if (!settings.getExcludedDirectories().contains(child.getName())) {
-                    processDirectoryRecursively(project, child, content, totalTokens, isTokenCalculation);
+                    processDirectoryRecursively(project, child, content, totalTokens, isTokenCalculation, encoding);
                 }
             } else if (shouldIncludeFile(child, settings)) {
                 String fileContent = readFileContent(child);
@@ -162,7 +170,7 @@ public class ProjectContentService {
                     content.append("File: ").append(child.getPath()).append("\n");
                     content.append(fileContent).append("\n\n");
                 }
-                totalTokens.addAndGet(ENCODING.countTokens(fileContent));
+                totalTokens.addAndGet(encoding.countTokens(fileContent));
             }
         }
     }

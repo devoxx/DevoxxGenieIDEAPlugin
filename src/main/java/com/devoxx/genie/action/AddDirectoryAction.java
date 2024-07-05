@@ -1,5 +1,6 @@
 package com.devoxx.genie.action;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -53,14 +54,16 @@ public class AddDirectoryAction extends DumbAwareAction {
         if (!filesToAdd.isEmpty()) {
             fileListManager.addFiles(filesToAdd);
 
-            // Get the content and token count
-            ProjectContentService.getInstance().getDirectoryContentAndTokens(project, directory, Integer.MAX_VALUE, false)
+            ModelProvider selectedProvider = ModelProvider.valueOf(settings.getSelectedProvider());
+
+            ProjectContentService.getInstance()
+                .getDirectoryContentAndTokens(project, directory,  false, selectedProvider)
                 .thenAccept(result -> {
                     int fileCount = filesToAdd.size();
                     int tokenCount = result.getTokenCount();
                     NotificationUtil.sendNotification(project,
-                        String.format("Added %d files from directory: %s (Approximately %s tokens)",
-                            fileCount, directory.getName(), WindowContextFormatterUtil.format(tokenCount)));
+                        String.format("Added %d files from directory: %s (Approximately %s tokens using %s tokenizer)",
+                            fileCount, directory.getName(), WindowContextFormatterUtil.format(tokenCount), selectedProvider.getName()));
                 });
         }
     }
