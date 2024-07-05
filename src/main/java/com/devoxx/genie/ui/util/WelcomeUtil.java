@@ -41,9 +41,6 @@ public class WelcomeUtil {
                 <h2>Utility Commands:</h2>
                 You can update the prompts for each utility commands or add custom ones in the settings page.<br>
                 <ul>
-                    <li>%s</li>
-                    <li>%s</li>
-                    <li>%s</li>
                     %s
                 </ul>
                 <p>%s</p>
@@ -55,9 +52,6 @@ public class WelcomeUtil {
             resourceBundle.getString("welcome.title"),
             resourceBundle.getString("welcome.description"),
             resourceBundle.getString("welcome.instructions"),
-            resourceBundle.getString("command.test"),
-            resourceBundle.getString("command.review"),
-            resourceBundle.getString("command.explain"),
             HelpUtil.getCustomPromptCommands(),
             resourceBundle.getString("welcome.tip"),
             resourceBundle.getString("welcome.enjoy")
