@@ -12,16 +12,17 @@ import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 public class LMStudioChatModelFactory implements ChatModelFactory {
+
+    private static final String DEFAULT_MODEL_NAME = "LMStudio";
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
-            .modelName("LMStudio")
+            .modelName(DEFAULT_MODEL_NAME)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .maxTokens(chatModel.getMaxTokens())
@@ -45,14 +46,14 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
     public List<LanguageModel> getModels() {
         LanguageModel lmStudio = LanguageModel.builder()
             .provider(ModelProvider.LMStudio)
-            .modelName("LMStudio")
+            .modelName(DEFAULT_MODEL_NAME)
+            .displayName(DEFAULT_MODEL_NAME)
             .inputCost(0)
             .outputCost(0)
             .contextWindow(8000)
+            .apiKeyUsed(false)
             .build();
 
-        List<LanguageModel> modelNames = new ArrayList<>();
-        modelNames.add(lmStudio);
-        return modelNames;
+        return List.of(lmStudio);
     }
 }

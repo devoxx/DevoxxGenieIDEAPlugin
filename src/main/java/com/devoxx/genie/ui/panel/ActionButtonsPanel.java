@@ -287,6 +287,16 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
 
+        // If selectedLanguageModel is null, create a default one
+        if (selectedLanguageModel == null) {
+            ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
+            String modelName = stateService.getSelectedLanguageModel();
+            selectedLanguageModel = LanguageModel.builder()
+                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
+                .modelName(modelName != null ? modelName : "DefaultModel")
+                .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
+        }
+
         FileListManager fileListManager = FileListManager.getInstance();
         int totalFileCount = fileListManager.getTotalFileCount();
 
