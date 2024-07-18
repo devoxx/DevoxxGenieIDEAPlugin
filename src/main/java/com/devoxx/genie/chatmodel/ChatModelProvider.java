@@ -9,6 +9,7 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
@@ -17,14 +18,17 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Setter
 public class ChatModelProvider {
 
     private final Map<ModelProvider, ChatModelFactory> factories = new HashMap<>();
+    private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI; // Choose an appropriate default
 
     public ChatModelProvider() {
         factories.put(ModelProvider.Ollama, new OllamaChatModelFactory());
@@ -39,36 +43,21 @@ public class ChatModelProvider {
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
 
-    /**
-     * Get the chat language model for selected model provider.
-     *
-     * @param chatMessageContext the chat message context
-     * @return the chat language model
-     */
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
         return getFactory(chatMessageContext).createChatModel(chatModel);
     }
 
-    /**
-     * Get the streaming chat language model for selected model provider.
-     *
-     * @param chatMessageContext the chat message context
-     * @return the streaming chat language model
-     */
     public StreamingChatLanguageModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
         return getFactory(chatMessageContext).createStreamingChatModel(chatModel);
     }
 
-    /**
-     * Get the chat model factory for the selected model provider.
-     *
-     * @param chatMessageContext the chat message context
-     * @return the chat model factory
-     */
     private @NotNull ChatModelFactory getFactory(@NotNull ChatMessageContext chatMessageContext) {
-        ModelProvider provider = chatMessageContext.getLanguageModel().getProvider();
+        ModelProvider provider = Optional.ofNullable(chatMessageContext.getLanguageModel())
+            .map(LanguageModel::getProvider)
+            .orElse(DEFAULT_PROVIDER);
+
         ChatModelFactory factory = factories.get(provider);
         if (factory == null) {
             throw new IllegalArgumentException("No factory for provider: " + provider);
@@ -76,11 +65,6 @@ public class ChatModelProvider {
         return factory;
     }
 
-    /**
-     * Initialize chat model settings by default or by user settings.
-     *
-     * @return the chat model
-     */
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = new ChatModel();
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
@@ -90,27 +74,52 @@ public class ChatModelProvider {
         chatModel.setMaxRetries(stateService.getMaxRetries());
         chatModel.setTopP(stateService.getTopP());
         chatModel.setTimeout(stateService.getTimeout());
-        chatModel.setModelName(chatMessageContext.getLanguageModel().getModelName());
+
+        LanguageModel languageModel = chatMessageContext.getLanguageModel();
+        String modelName = getModelName(languageModel);
+        chatModel.setModelName(modelName);
+
+        // Set base URL for local providers
+        if (languageModel != null) {
+            switch (languageModel.getProvider()) {
+                case LMStudio:
+                    chatModel.setBaseUrl(stateService.getLmstudioModelUrl());
+                    break;
+                case Ollama:
+                    chatModel.setBaseUrl(stateService.getOllamaModelUrl());
+                    break;
+                case GPT4All:
+                    chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
+                    break;
+                // Add other local providers as needed
+            }
+        }
+
         return chatModel;
     }
 
-    /**
-     * Set max output tokens.
-     * Some extra work because of the settings state that didn't like the integer input field.
-     *
-     * @param settingsState the settings state
-     * @param chatModel     the chat model
-     */
+    private String getModelName(@Nullable LanguageModel languageModel) {
+        if (languageModel == null) {
+            return getDefaultModelName(null);
+        }
+
+        return Optional.ofNullable(languageModel.getModelName())
+            .orElseGet(() -> getDefaultModelName(languageModel.getProvider()));
+    }
+
+    private String getDefaultModelName(@Nullable ModelProvider provider) {
+        if (provider == null) {
+            return "DefaultModel";
+        }
+        return switch (provider) {
+            case LMStudio -> "LMStudio";
+            case GPT4All -> "GPT4All";
+            default -> "DefaultModel";
+        };
+    }
+
     private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState, ChatModel chatModel) {
         Integer maxOutputTokens = settingsState.getMaxOutputTokens();
-        if (maxOutputTokens == null) {
-            chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
-        } else {
-            try {
-                chatModel.setMaxTokens(maxOutputTokens);
-            } catch (NumberFormatException e) {
-                chatModel.setMaxTokens(Constant.MAX_OUTPUT_TOKENS);
-            }
-        }
+        chatModel.setMaxTokens(maxOutputTokens != null ? maxOutputTokens : Constant.MAX_OUTPUT_TOKENS);
     }
 }

@@ -38,6 +38,7 @@
         <h2>v0.2.5</h2>
         <UL>
             <LI>Feat #171: Support OpenAI GPT 4o mini</LI>
+            <LI>Fix #170: Fixed LMStudio</LI>
         </UL>
         <h2>v0.2.4</h2>
         <UL>
