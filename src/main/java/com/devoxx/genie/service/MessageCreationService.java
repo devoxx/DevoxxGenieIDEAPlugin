@@ -27,8 +27,7 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 public class MessageCreationService {
 
 
-    public static final String QUESTION = "Answer the user question: ";
-    public static final String CONTEXT_PROMPT = "Question context: \n";
+    public static final String CONTEXT_PROMPT = "Context: \n";
 
     @NotNull
     public static MessageCreationService getInstance() {
@@ -53,17 +52,20 @@ public class MessageCreationService {
     }
 
     private @NotNull UserMessage constructUserMessageWithEditorContent(@NotNull ChatMessageContext chatMessageContext) {
-        StringBuilder stringBuilder = new StringBuilder(QUESTION);
+        StringBuilder stringBuilder = new StringBuilder();
 
         // The user prompt is always added
         appendIfNotEmpty(stringBuilder, chatMessageContext.getUserPrompt());
 
-        // Add the context prompt if it is not empty
-        appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
 
         // Add the editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
-        appendIfNotEmpty(stringBuilder, editorContent);
+
+        if (!editorContent.isEmpty()) {
+            // Add the context prompt if it is not empty
+            appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
+            appendIfNotEmpty(stringBuilder, editorContent);
+        }
 
         if (DevoxxGenieStateService.getInstance().getAstMode()) {
             addASTContext(chatMessageContext, stringBuilder);
