@@ -155,6 +155,16 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .contextWindow(128_000)
             .apiKeyUsed(true)
             .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.OpenAI)
+            .modelName("gpt-4o-mini")
+            .displayName("GPT 4o mini")
+            .inputCost(0.15)
+            .outputCost(0.6)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
     }
 
     private void addDeepInfraModels() {
