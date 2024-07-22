@@ -122,17 +122,25 @@ public class ProjectContentService {
             .thenAccept(projectContent -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
                 double estimatedInputCost = calculateCost(tokenCount, inputCost);
-                String message = String.format("Project contains %s. Estimated min. cost using %s is $%.6f",
+                String message = String.format("Project contains %s. Estimated min. cost using %s %s is $%.6f",
                     WindowContextFormatterUtil.format(tokenCount, "tokens"),
+                    provider.getName(),
                     languageModel.getDisplayName(),
                     estimatedInputCost);
+
+                // Add check for token count exceeding max context size
+                if (tokenCount > languageModel.getContextWindow()) {
+                    message += String.format(". Total project size exceeds model's max context of %s tokens.",
+                        WindowContextFormatterUtil.format(languageModel.getContextWindow()));
+                }
+
                 NotificationUtil.sendNotification(project, message);
             });
     }
 
     private Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
         return switch (provider) {
-            case OpenAI, Anthropic, Gemini ->
+            case OpenAI, Anthropic, Google ->
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
             case Mistral, DeepInfra, Groq ->
                 // These often use the Llama tokenizer or similar

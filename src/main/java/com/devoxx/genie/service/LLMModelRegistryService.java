@@ -273,7 +273,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     private void addGeminiModels() {
 
         models.add(LanguageModel.builder()
-            .provider(ModelProvider.Gemini)
+            .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash-latest")
             .displayName("Gemini 1.5 Flash")
             .inputCost(0.7)
@@ -283,17 +283,17 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .build());
 
         models.add(LanguageModel.builder()
-            .provider(ModelProvider.Gemini)
+            .provider(ModelProvider.Google)
             .modelName("gemini-1.5-pro-latest")
             .displayName("Gemini 1.5 Pro")
             .inputCost(7)
             .outputCost(21)
-            .contextWindow(1_000_000)
+            .contextWindow(2_000_000)
             .apiKeyUsed(true)
             .build());
 
         models.add(LanguageModel.builder()
-            .provider(ModelProvider.Gemini)
+            .provider(ModelProvider.Google)
             .modelName("gemini-1.0-pro")
             .displayName("Gemini 1.0 Pro")
             .inputCost(0.5)

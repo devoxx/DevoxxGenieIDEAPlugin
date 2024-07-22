@@ -35,9 +35,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
@@ -211,7 +210,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             providerService.getLocalModelProviders().stream()
         )
         .distinct()
-        .sorted()
+        .sorted(Comparator.comparing(ModelProvider::getName))
         .forEach(modelProviderComboBox::addItem);
     }
 
@@ -369,13 +368,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
         modelNameComboBox.removeAllItems();
-        List<LanguageModel> modelNames = chatModelFactory.getModels();
+        List<LanguageModel> modelNames = new ArrayList<>(chatModelFactory.getModels());
         if (modelNames.isEmpty()) {
             hideModelNameComboBox();
         } else {
-            modelNames.stream()
-                .sorted()
-                .forEach(modelNameComboBox::addItem);
+            modelNames.sort(Comparator.naturalOrder());
+            modelNames.forEach(modelNameComboBox::addItem);
         }
     }
 

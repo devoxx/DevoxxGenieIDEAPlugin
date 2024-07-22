@@ -17,6 +17,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +39,7 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Mistral, new MistralChatModelFactory());
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
-        factories.put(ModelProvider.Gemini, new GeminiChatModelFactory());
+        factories.put(ModelProvider.Google, new GeminiChatModelFactory());
         // TODO Currently broken by latest Jan! version
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
@@ -107,7 +108,8 @@ public class ChatModelProvider {
             .orElseGet(() -> getDefaultModelName(languageModel.getProvider()));
     }
 
-    private String getDefaultModelName(@Nullable ModelProvider provider) {
+    @Contract(pure = true)
+    private @NotNull String getDefaultModelName(@Nullable ModelProvider provider) {
         if (provider == null) {
             return "DefaultModel";
         }
@@ -118,7 +120,8 @@ public class ChatModelProvider {
         };
     }
 
-    private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState, ChatModel chatModel) {
+    private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState,
+                                           @NotNull ChatModel chatModel) {
         Integer maxOutputTokens = settingsState.getMaxOutputTokens();
         chatModel.setMaxTokens(maxOutputTokens != null ? maxOutputTokens : Constant.MAX_OUTPUT_TOKENS);
     }

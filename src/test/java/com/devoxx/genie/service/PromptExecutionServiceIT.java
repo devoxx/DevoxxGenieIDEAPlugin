@@ -83,7 +83,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryGemini() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.Gemini)
+            .provider(ModelProvider.Google)
             .modelName("gemini-pro")
             .displayName("Gemini Pro")
             .apiKeyUsed(true)
@@ -132,7 +132,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
                 .apiKey(dotenv.get("ANTHROPIC_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case Gemini -> GeminiChatModel.builder()
+            case Google -> GeminiChatModel.builder()
                 .apiKey(dotenv.get("GEMINI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();

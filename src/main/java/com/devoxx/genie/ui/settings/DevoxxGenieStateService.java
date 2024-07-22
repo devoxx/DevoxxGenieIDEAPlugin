@@ -135,11 +135,39 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         }
     }
 
-    public double getModelInputCost(ModelProvider provider, String modelName) {
+//    public double getModelInputCost(ModelProvider provider, String modelName) {
+//        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
+//            String key = provider.getName() + ":" + modelName;
+//            return modelInputCosts.getOrDefault(key,
+//                DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
+//        }
+//        return 0.0;
+//    }
+
+    public double getModelInputCost(@NotNull ModelProvider provider, String modelName) {
+        String key = provider.getName() + ":" + modelName;
+        double cost = modelInputCosts.getOrDefault(key, 0.0);
+        if (cost == 0.0) {
+            DefaultLLMSettingsUtil.CostKey costKey = new DefaultLLMSettingsUtil.CostKey(provider, modelName);
+            cost = DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(costKey, 0.0);
+            if (cost == 0.0) {
+                // Fallback to similar model names
+                for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
+                    if (entry.getKey().provider == provider && entry.getKey().modelName.startsWith(modelName.split("-")[0])) {
+                        cost = entry.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+        return cost;
+    }
+
+    public double getModelOutputCost(ModelProvider provider, String modelName) {
         if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
-            return modelInputCosts.getOrDefault(key,
-                DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
+            return modelOutputCosts.getOrDefault(key,
+                DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
         }
         return 0.0;
     }

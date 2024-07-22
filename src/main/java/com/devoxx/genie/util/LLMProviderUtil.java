@@ -17,7 +17,7 @@ public class LLMProviderUtil {
                 case Mistral -> !settings.getMistralKey().isEmpty();
                 case Groq -> !settings.getGroqKey().isEmpty();
                 case DeepInfra -> !settings.getDeepInfraKey().isEmpty();
-                case Gemini -> !settings.getGeminiKey().isEmpty();
+                case Google -> !settings.getGeminiKey().isEmpty();
                 default -> false;
             })
             .collect(Collectors.toList());
