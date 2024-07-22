@@ -22,6 +22,9 @@ import java.util.List;
 
 public class OllamaChatModelFactory implements ChatModelFactory {
 
+    private static boolean warningShown = false;
+    private List<LanguageModel> cachedModels = null;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OllamaChatModel.builder()
@@ -53,6 +56,10 @@ public class OllamaChatModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
+        if (cachedModels != null) {
+            return cachedModels;
+        }
+
         List<LanguageModel> modelNames = new ArrayList<>();
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
@@ -69,11 +76,20 @@ public class OllamaChatModelFactory implements ChatModelFactory {
                         .build()
                 );
             }
+            cachedModels = modelNames;
         } catch (IOException e) {
-            NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "Ollama is not running, please start it.");
-            return List.of();
+            if (!warningShown) {
+                NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                    "Ollama is not running, please start it.");
+                warningShown = true;
+            }
+            cachedModels = List.of();
         }
-        return modelNames;
+        return cachedModels;
+    }
+
+    public void resetCache() {
+        cachedModels = null;
+        warningShown = false;
     }
 }
