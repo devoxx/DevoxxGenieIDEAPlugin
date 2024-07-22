@@ -6,11 +6,11 @@ public class WindowContextFormatterUtil {
 
     public static @NotNull String format(int tokens, String suffix) {
         if (tokens >= 1_000_000_000) {
-            return String.format("%.2fB %s", tokens / 1_000_000_000.0, suffix);
+            return String.format("%dB %s", (tokens / 1_000_000_000), suffix);
         } else if (tokens >= 1_000_000) {
-            return String.format("%.2fM %s", tokens / 1_000_000.0, suffix);
+            return String.format("%dM %s", (tokens / 1_000_000), suffix);
         } else if (tokens >= 1_000) {
-            return String.format("%.2fK %s", tokens / 1_000.0, suffix);
+            return String.format("%dK %s", (tokens / 1_000), suffix);
         } else {
             return String.format("%d %s", tokens, suffix);
         }

@@ -247,7 +247,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         return selectedProvider != null && (
             selectedProvider.equals(ModelProvider.OpenAI) ||
             selectedProvider.equals(ModelProvider.Anthropic) ||
-            selectedProvider.equals(ModelProvider.Gemini)
+            selectedProvider.equals(ModelProvider.Google)
         );
     }
 
@@ -409,7 +409,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        if (!modelProvider.equals(ModelProvider.Gemini) &&
+        if (!modelProvider.equals(ModelProvider.Google) &&
             !modelProvider.equals(ModelProvider.Anthropic) &&
             !modelProvider.equals(ModelProvider.OpenAI)) {
             NotificationUtil.sendNotification(project,

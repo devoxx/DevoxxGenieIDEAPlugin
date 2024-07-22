@@ -9,10 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
-import static com.devoxx.genie.model.enumarations.ModelProvider.Gemini;
+import static com.devoxx.genie.model.enumarations.ModelProvider.Google;
 
 public class LLMProviderService {
 
@@ -37,7 +36,7 @@ public class LLMProviderService {
         providerKeyMap.put(Mistral, settings::getMistralKey);
         providerKeyMap.put(Groq, settings::getGroqKey);
         providerKeyMap.put(DeepInfra, settings::getDeepInfraKey);
-        providerKeyMap.put(Gemini, settings::getGeminiKey);
+        providerKeyMap.put(Google, settings::getGeminiKey);
 
         // Filter out cloud LLM providers that do not have a key
         List<ModelProvider> providersWithRequiredKey = LLMModelRegistryService.getInstance().getModels()

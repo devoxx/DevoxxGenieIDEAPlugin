@@ -32,6 +32,6 @@ public class GeminiChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.Gemini);
+        return getModels(ModelProvider.Google);
     }
 }

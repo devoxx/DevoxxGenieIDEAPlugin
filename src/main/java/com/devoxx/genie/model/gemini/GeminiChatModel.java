@@ -43,15 +43,6 @@ public class GeminiChatModel implements ChatLanguageModel {
             .modelName(modelName)
             .timeout(getOrDefault(timeout, ofSeconds(60)))
             .build();
-
-//        messageRequest.setGenerationConfig(GenerationConfig.builder()
-//                        .maxOutputTokens(maxTokens)
-//                        .temperature(temperature)
-//                        .build());
-
-//        messageRequest.setSystemInstruction(SystemInstruction.builder()
-//                .parts(List.of(Part.builder().text("Always return response in markdown").build()))
-//                .build());
     }
 
     @Override

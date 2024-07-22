@@ -4,11 +4,9 @@ import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
-import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +26,7 @@ public class ChatModelFactoryProvider {
         ModelProvider.Mistral.getName(), MistralChatModelFactory::new,
         ModelProvider.Groq.getName(), GroqChatModelFactory::new,
         ModelProvider.DeepInfra.getName(), DeepInfraChatModelFactory::new,
-        ModelProvider.Gemini.getName(), GeminiChatModelFactory::new
+        ModelProvider.Google.getName(), GeminiChatModelFactory::new
         // TODO Removed because currently is broken by latest Jan! version
         // ModelProvider.Jan, JanChatModelFactory::new
     );
