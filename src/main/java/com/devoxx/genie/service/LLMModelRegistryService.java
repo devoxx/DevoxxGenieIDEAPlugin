@@ -360,9 +360,19 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .provider(ModelProvider.Mistral)
             .modelName(OPEN_MIXTRAL_8x7B.toString())
             .displayName("Mistral 8x7B")
-            .inputCost(7)
+            .inputCost(0.7)
             .outputCost(0.7)
             .contextWindow(32_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Mistral)
+            .modelName(OPEN_MIXTRAL_8X22B.toString())
+            .displayName("Mistral 8x22b")
+            .inputCost(2)
+            .outputCost(6)
+            .contextWindow(64_000)
             .apiKeyUsed(true)
             .build());
 
@@ -392,6 +402,16 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .displayName("Mistral Large")
             .inputCost(4)
             .outputCost(12)
+            .contextWindow(32_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Mistral)
+            .modelName("codestral-2405")
+            .displayName("Codestral")
+            .inputCost(1)
+            .outputCost(3)
             .contextWindow(32_000)
             .apiKeyUsed(true)
             .build());

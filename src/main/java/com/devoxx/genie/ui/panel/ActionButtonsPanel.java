@@ -20,7 +20,6 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
-import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -93,9 +92,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             .subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
 
         setupUI();
-
-        setupAddProjectButton();
-        configureSearchButtonsVisibility();
     }
 
     private void updateAddProjectButtonVisibility() {
@@ -129,6 +125,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
         add(progressPanel, BorderLayout.NORTH);
+
+        setupAddProjectButton();
+        configureSearchButtonsVisibility();
     }
 
     /**
@@ -242,13 +241,15 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         }
     }
 
+    /**
+     * Check if the selected provider supports project context.
+     * Included also Ollama because of the Llama 3.1 release with a window context of 128K.
+     * @return true if the provider supports project context
+     */
     private boolean isProjectContextSupportedProvider() {
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
-        return selectedProvider != null && (
-            selectedProvider.equals(ModelProvider.OpenAI) ||
-            selectedProvider.equals(ModelProvider.Anthropic) ||
-            selectedProvider.equals(ModelProvider.Google)
-        );
+        return selectedProvider != null &&
+               isSupportedProvider(selectedProvider);
     }
 
     /**
@@ -289,16 +290,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         // If selectedLanguageModel is null, create a default one
         if (selectedLanguageModel == null) {
-            ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
-            String modelName = stateService.getSelectedLanguageModel();
-            selectedLanguageModel = LanguageModel.builder()
-                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
-                .modelName(modelName != null ? modelName : "DefaultModel")
-                .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
+            selectedLanguageModel = createDefaultLanguageModel(stateService);
         }
-
-        FileListManager fileListManager = FileListManager.getInstance();
-        int totalFileCount = fileListManager.getTotalFileCount();
 
         currentChatMessageContext = ChatMessageContextUtil.createContext(
             project,
@@ -310,10 +303,25 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             editorFileButtonManager,
             projectContext,
             isProjectContextAdded,
-            totalFileCount
+            FileListManager.getInstance().getTotalFileCount()
         );
 
         return true;
+    }
+
+    /**
+     * Create a default language model.
+     *
+     * @param stateService the state service
+     * @return the default language model
+     */
+    private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieStateService stateService) {
+        ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
+        String modelName = stateService.getSelectedLanguageModel();
+        return LanguageModel.builder()
+            .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
+            .modelName(modelName != null ? modelName : "DefaultModel")
+            .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
     }
 
     /**
@@ -402,6 +410,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         NotificationUtil.sendNotification(project, "Project context removed successfully");
     }
 
+    private boolean isSupportedProvider(@NotNull ModelProvider modelProvider) {
+        return modelProvider.equals(ModelProvider.Google) ||
+            modelProvider.equals(ModelProvider.Anthropic) ||
+            modelProvider.equals(ModelProvider.OpenAI) ||
+            modelProvider.equals(ModelProvider.Mistral) ||
+            modelProvider.equals(ModelProvider.Ollama);
+    }
+
     private void addProjectToContext() {
         ModelProvider modelProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         if (modelProvider == null) {
@@ -409,11 +425,9 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        if (!modelProvider.equals(ModelProvider.Google) &&
-            !modelProvider.equals(ModelProvider.Anthropic) &&
-            !modelProvider.equals(ModelProvider.OpenAI)) {
+        if (!isSupportedProvider(modelProvider)) {
             NotificationUtil.sendNotification(project,
-                "This feature only works for OpenAI, Anthropic and Gemini providers because of the large token window context.");
+                "This feature only works for OpenAI, Anthropic, Gemini and Ollama providers because of the large token window context.");
             return;
         }
 
@@ -476,11 +490,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         if (selectedProvider == null) {
             NotificationUtil.sendNotification(project, "Please select a provider first");
-            return;
-        }
-
-        if (!DefaultLLMSettingsUtil.isApiBasedProvider(selectedProvider)) {
-            NotificationUtil.sendNotification(project, "Cost calculation is not applicable for local providers");
             return;
         }
 

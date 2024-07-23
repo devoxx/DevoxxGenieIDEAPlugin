@@ -4,7 +4,6 @@ import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.FileListManager;
@@ -36,16 +35,6 @@ public class ChatMessageContextUtil {
                                                             boolean isProjectContextAdded,
                                                             int totalFileCount) {
 
-        // If languageModel is null, create a default one based on the selected provider
-        if (languageModel == null) {
-            ModelProvider selectedProvider = ModelProvider.valueOf(stateService.getSelectedProvider());
-            String modelName = stateService.getSelectedLanguageModel();
-            languageModel = LanguageModel.builder()
-                .provider(selectedProvider)
-                .modelName(modelName != null ? modelName : "DefaultModel")
-                .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
-        }
-
         ChatMessageContext context = ChatMessageContext.builder()
             .project(project)
             .name(String.valueOf(System.currentTimeMillis()))
@@ -53,7 +42,7 @@ public class ChatMessageContextUtil {
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
             .webSearchRequested(actionCommand.equals(Constant.TAVILY_SEARCH_ACTION) ||
-                actionCommand.equals(Constant.GOOGLE_SEARCH_ACTION))
+                                actionCommand.equals(Constant.GOOGLE_SEARCH_ACTION))
             .totalFileCount(totalFileCount)
             .build();
 

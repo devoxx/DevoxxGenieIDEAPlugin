@@ -37,6 +37,10 @@
     <change-notes><![CDATA[
         <h2>v0.2.6</h2>
         <UL>
+            <LI>Feat #177: Show Ollama models window context size</LI>
+        </UL>
+        <h2>v0.2.6</h2>
+        <UL>
             <LI>Renamed Gemini LLM provider to Google</LI>
             <LI>Increased Gemini Pro 1.5 window context to 2M</LI>
             <LI>Sorting LLM providers and model names alphabetically in combobox</LI>
