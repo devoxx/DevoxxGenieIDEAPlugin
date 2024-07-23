@@ -5,6 +5,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.OllamaApiService;
 import com.devoxx.genie.service.OllamaService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -19,9 +20,12 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class OllamaChatModelFactory implements ChatModelFactory {
-
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private static boolean warningShown = false;
     private List<LanguageModel> cachedModels = null;
 
@@ -61,21 +65,35 @@ public class OllamaChatModelFactory implements ChatModelFactory {
         }
 
         List<LanguageModel> modelNames = new ArrayList<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
             for (OllamaModelEntryDTO model : ollamaModels) {
-                modelNames.add(
-                    LanguageModel.builder()
-                        .provider(ModelProvider.Ollama)
-                        .modelName(model.getName())
-                        .displayName(model.getName())
-                        .inputCost(0)
-                        .outputCost(0)
-                        .contextWindow(8_000)
-                        .apiKeyUsed(false)
-                        .build()
-                );
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        int contextWindow = OllamaApiService.getModelContext(model.getName());
+                        LanguageModel languageModel = LanguageModel.builder()
+                            .provider(ModelProvider.Ollama)
+                            .modelName(model.getName())
+                            .displayName(model.getName())
+                            .inputCost(0)
+                            .outputCost(0)
+                            .contextWindow(contextWindow)
+                            .apiKeyUsed(false)
+                            .build();
+                        synchronized (modelNames) {
+                            modelNames.add(languageModel);
+                        }
+                    } catch (IOException e) {
+                        NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                            "Error fetching context window for model: " + model.getName());
+                    }
+                }, executorService);
+                futures.add(future);
             }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             cachedModels = modelNames;
         } catch (IOException e) {
             if (!warningShown) {
@@ -86,10 +104,5 @@ public class OllamaChatModelFactory implements ChatModelFactory {
             cachedModels = List.of();
         }
         return cachedModels;
-    }
-
-    public void resetCache() {
-        cachedModels = null;
-        warningShown = false;
     }
 }
