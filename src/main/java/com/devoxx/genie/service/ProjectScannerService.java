@@ -61,10 +61,10 @@ public class ProjectScannerService {
                 }
 
                 // Only truncate if it's not a token calculation
-                if (!isTokenCalculation) {
-                    return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
-                } else {
+                if (isTokenCalculation) {
                     return fullContent.toString();
+                } else {
+                    return truncateToTokens(project, fullContent.toString(), windowContext, isTokenCalculation);
                 }
             }).inSmartMode(project)
             .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)

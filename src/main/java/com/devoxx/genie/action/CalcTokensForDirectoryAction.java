@@ -5,17 +5,19 @@ import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
-public class CalcTokensForDirectoryAction extends AnAction {
+public class CalcTokensForDirectoryAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -33,7 +35,7 @@ public class CalcTokensForDirectoryAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 ProjectContentService.getInstance()
-                    .getDirectoryContentAndTokens(project, selectedDir, true, selectedProvider)
+                    .getDirectoryContentAndTokens(selectedDir, true, selectedProvider)
                     .thenAccept(result -> {
                         String message = String.format("Directory '%s' contains approximately %s tokens (using %s tokenizer)",
                             selectedDir.getName(),
@@ -49,5 +51,15 @@ public class CalcTokensForDirectoryAction extends AnAction {
     public void update(@NotNull AnActionEvent e) {
         VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
         e.getPresentation().setEnabledAndVisible(file != null && file.isDirectory());
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+
+    @Override
+    public boolean isDumbAware() {
+        return true;
     }
 }

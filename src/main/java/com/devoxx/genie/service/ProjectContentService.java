@@ -78,8 +78,7 @@ public class ProjectContentService {
             });
     }
 
-    public CompletableFuture<ContentResult> getDirectoryContentAndTokens(Project project,
-                                                                         VirtualFile directory,
+    public CompletableFuture<ContentResult> getDirectoryContentAndTokens(VirtualFile directory,
                                                                          boolean isTokenCalculation,
                                                                          ModelProvider modelProvider) {
         return CompletableFuture.supplyAsync(() -> {
@@ -87,7 +86,7 @@ public class ProjectContentService {
             StringBuilder content = new StringBuilder();
 
             Encoding encoding = getEncodingForProvider(modelProvider);
-            processDirectoryRecursively(project, directory, content, totalTokens, isTokenCalculation, encoding);
+            processDirectoryRecursively(directory, content, totalTokens, isTokenCalculation, encoding);
 
             return new ContentResult(content.toString(), totalTokens.intValue());
         });
@@ -108,7 +107,9 @@ public class ProjectContentService {
             getProjectContent(project, windowContext, true)
                 .thenAccept(projectContent -> {
                     int tokenCount = ENCODING.countTokens(projectContent);
-                    String message = String.format("Project contains %s. Cost calculation is not applicable for local providers.",
+                    String message = String.format("Project contains %s. " +
+                            "Cost calculation is not applicable for local providers. " +
+                            "Make sure you select a model with a big enough window context.",
                         WindowContextFormatterUtil.format(tokenCount, "tokens"));
                     NotificationUtil.sendNotification(project, message);
                 });
@@ -153,14 +154,12 @@ public class ProjectContentService {
 
     /**
      * Processes a directory recursively, calculating the number of tokens and building a content string.
-     * @param project The Project containing the directory to scan
      * @param directory VirtualFile representing the directory to scan
      * @param content StringBuilder object to hold the content of the scanned files
      * @param totalTokens AtomicLong object to hold the total token count
      * @param isTokenCalculation Boolean flag indicating whether to calculate tokens or not
      */
-    private void processDirectoryRecursively(Project project,
-                                             @NotNull VirtualFile directory,
+    private void processDirectoryRecursively(@NotNull VirtualFile directory,
                                              StringBuilder content,
                                              AtomicLong totalTokens,
                                              boolean isTokenCalculation,
@@ -170,7 +169,7 @@ public class ProjectContentService {
         for (VirtualFile child : directory.getChildren()) {
             if (child.isDirectory()) {
                 if (!settings.getExcludedDirectories().contains(child.getName())) {
-                    processDirectoryRecursively(project, child, content, totalTokens, isTokenCalculation, encoding);
+                    processDirectoryRecursively(child, content, totalTokens, isTokenCalculation, encoding);
                 }
             } else if (shouldIncludeFile(child, settings)) {
                 String fileContent = readFileContent(child);
