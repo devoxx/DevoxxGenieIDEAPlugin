@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.renderer;
 
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
@@ -37,17 +36,12 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
             infoLabel.setText("");
         } else {
             nameLabel.setText(model.getDisplayName());
-
-            if (!isLocalProvider(model.getProvider())) {
-                String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
+            String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
+            if (model.getInputCost() > 0.0) {
                 double cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
-                if (cost > 0.0) {
-                    infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
-                } else {
-                    infoLabel.setText(windowContext);
-                }
+                infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
             } else {
-                infoLabel.setText(""); // Clear the info for local providers
+                infoLabel.setText(windowContext);
             }
         }
 
@@ -58,12 +52,5 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         setOpaque(true);
 
         return this;
-    }
-
-    private boolean isLocalProvider(ModelProvider provider) {
-        return provider == ModelProvider.Ollama ||
-            provider == ModelProvider.LMStudio ||
-            provider == ModelProvider.Jan ||
-            provider == ModelProvider.GPT4All;
     }
 }

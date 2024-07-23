@@ -57,7 +57,7 @@ public class AddDirectoryAction extends DumbAwareAction {
             ModelProvider selectedProvider = ModelProvider.valueOf(settings.getSelectedProvider());
 
             ProjectContentService.getInstance()
-                .getDirectoryContentAndTokens(project, directory,  false, selectedProvider)
+                .getDirectoryContentAndTokens(directory,  false, selectedProvider)
                 .thenAccept(result -> {
                     int fileCount = filesToAdd.size();
                     int tokenCount = result.getTokenCount();
