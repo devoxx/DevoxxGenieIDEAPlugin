@@ -35,7 +35,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v0.2.6</h2>
+        <h2>v0.2.8</h2>
+        <UL>
+            <LI>Support Exo Local LLM cluster: more info @ https://github.com/exo-explore/exo</LI>
+        </UL>
+        <h2>v0.2.7</h2>
         <UL>
             <LI>Feat #177: Show Ollama models window context size</LI>
             <LI>Show 'Calc Tokens' & 'Add full project' for local models</LI>

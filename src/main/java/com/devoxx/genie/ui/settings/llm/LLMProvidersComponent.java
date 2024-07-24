@@ -36,6 +36,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
+    private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
+    @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
     private final JPasswordField mistralApiKeyField = new JPasswordField(stateService.getMistralKey());
@@ -82,6 +84,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "LMStudio URL", createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         addSettingRow(panel, gbc, "GPT4All URL", createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addSettingRow(panel, gbc, "Jan URL", createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
+        addSettingRow(panel, gbc, "Exo URL", createTextWithLinkButton(exoModelUrlField, "https://github.com/exo-explore/exo"));
 
         addSection(panel, gbc, "Cloud Large Language Models");
         addSettingRow(panel, gbc, "OpenAI API Key", createTextWithPasswordButton(openAIKeyField, "https://platform.openai.com/api-keys"));
