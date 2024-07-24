@@ -304,6 +304,26 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     }
 
     private void addGroqModels() {
+        // 131,072 tokens
+        // llama-3.1-405b-reasoning
+        // llama-3.1-70b-versatile
+        // llama-3.1-8b-instant
+
+        // llama3-groq-70b-8192-tool-use-preview
+        // llama3-groq-8b-8192-tool-use-preview
+
+        // gemma2-9b-it
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Groq)
+            .modelName("llama-3.1-405b-reasoning")
+            .displayName("Llama 3.1 405B Reasoning")
+            .inputCost(0.07)
+            .outputCost(0.07)
+            .contextWindow(131_072)
+            .apiKeyUsed(true)
+            .build());
+
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("gemma-7b-it")

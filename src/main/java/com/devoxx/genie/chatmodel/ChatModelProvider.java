@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
@@ -40,6 +41,7 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
         factories.put(ModelProvider.Google, new GeminiChatModelFactory());
+        factories.put(ModelProvider.Exo, new ExoChatModelFactory());
         // TODO Currently broken by latest Jan! version
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
@@ -91,6 +93,9 @@ public class ChatModelProvider {
                     break;
                 case GPT4All:
                     chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
+                    break;
+                case Exo:
+                    chatModel.setBaseUrl(stateService.getExoModelUrl());
                     break;
                 // Add other local providers as needed
             }
