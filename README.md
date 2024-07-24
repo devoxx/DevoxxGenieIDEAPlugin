@@ -4,7 +4,7 @@
 
 [![X](https://img.shields.io/twitter/follow/DevoxxGenie)](https://x.com/devoxxgenie)
 
-Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html) and [Jan](https://jan.ai) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey) and [DeepInfra](https://deepinfra.com/dash/deployments).
+Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html) and [Exo]([https://](https://github.com/exo-explore/exo)) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey) and [DeepInfra](https://deepinfra.com/dash/deployments).
 
 We now also support LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
@@ -98,6 +98,13 @@ Right-click to add only the most relevant parts of your project to the context.
 ## The Power of Full Context: A Real-World Example
 The DevoxxGenie project itself, at about 70K tokens, fits comfortably within most high-end LLM context windows. 
 This allows for incredibly nuanced interactions – we're talking advanced queries and feature requests that leave tools like GitHub Copilot scratching their virtual heads!
+
+## Local LLM Cluster with Exo
+
+V0.2.7 also supports Exo, a local LLM cluster for Apple Silicon which allows you to run Llama 3.1 8b, 70b and 405b on your own Apple computers 🤩
+
+![image](https://github.com/user-attachments/assets/a79033ff-d9dd-442d-aa92-0fc70cc37747)
+
 
 ### Installation:
 
