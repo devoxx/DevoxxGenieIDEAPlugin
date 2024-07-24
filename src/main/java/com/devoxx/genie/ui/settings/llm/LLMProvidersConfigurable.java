@@ -62,6 +62,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), settings.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), settings.getJanModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), settings.getExoModelUrl());
 
         isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         llmSettingsComponent.getHideSearchButtonsField().addItemListener(event -> {
@@ -86,16 +87,13 @@ public class LLMProvidersConfigurable implements Configurable {
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-        boolean isClaudeKeyChanged = isFieldModified(llmSettingsComponent.getAnthropicApiKeyField(), settings.getAnthropicKey());
-        boolean isOpenAIChanged = isFieldModified(llmSettingsComponent.getOpenAIKeyField(), settings.getAnthropicKey());
-        boolean isGeminiChanged = isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
-
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
         settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
         settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
+        settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -134,6 +132,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
+        llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());

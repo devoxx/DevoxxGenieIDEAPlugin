@@ -13,7 +13,8 @@ public enum ModelProvider {
     Mistral("Mistral"),
     Groq("Groq"),
     DeepInfra("DeepInfra"),
-    Google("Google");
+    Google("Google"),
+    Exo("Exo");
 
     private final String name;
 

@@ -32,7 +32,7 @@ public class StreamingPromptExecutor {
         StreamingChatLanguageModel streamingChatLanguageModel = chatMessageContext.getStreamingChatLanguageModel();
         if (streamingChatLanguageModel == null) {
             NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                "Streaming model not available, please select another provider.");
+                "Streaming model not available, please select another provider or turn off streaming mode.");
             enableButtons.run();
             return;
         }
