@@ -39,6 +39,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
+    private String exoModelUrl = EXO_MODEL_URL;
 
     // LLM API Keys
     private String openAIKey = "";
