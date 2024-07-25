@@ -1,7 +1,6 @@
 package com.devoxx.genie.service;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 

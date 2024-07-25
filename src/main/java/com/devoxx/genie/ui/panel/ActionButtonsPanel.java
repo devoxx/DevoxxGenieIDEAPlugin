@@ -493,12 +493,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        ProjectContentService.getInstance().calculateTokensAndCost(
-            project,
-            getWindowContext(),
-            selectedProvider,
-            selectedModel
-        );
+        synchronized (this) {
+            ProjectContentService.getInstance().calculateTokensAndCost(
+                project,
+                getWindowContext(),
+                selectedProvider,
+                selectedModel
+            );
+        }
     }
 
     public void updateTokenUsage(int maxTokens) {
