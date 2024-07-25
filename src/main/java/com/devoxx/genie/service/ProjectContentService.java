@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
+import com.google.common.util.concurrent.AtomicDouble;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -19,6 +20,7 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -105,38 +107,37 @@ public class ProjectContentService {
                                        LanguageModel languageModel) {
         if (!DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
             getProjectContent(project, windowContext, true)
-                .thenAccept(projectContent -> {
-                    int tokenCount = ENCODING.countTokens(projectContent);
+                .thenCompose(projectContent -> CompletableFuture.runAsync(() -> {
+                    AtomicInteger tokenCount = new AtomicInteger(ENCODING.countTokens(projectContent));
                     String message = String.format("Project contains %s. " +
                             "Cost calculation is not applicable for local providers. " +
                             "Make sure you select a model with a big enough window context.",
-                        WindowContextFormatterUtil.format(tokenCount, "tokens"));
+                        WindowContextFormatterUtil.format(tokenCount.get(), "tokens"));
                     NotificationUtil.sendNotification(project, message);
-                });
+                }));
             return;
         }
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        double inputCost = settings.getModelInputCost(provider, languageModel.getModelName());
+        AtomicDouble inputCost = new AtomicDouble(settings.getModelInputCost(provider, languageModel.getModelName()));
 
         getProjectContent(project, windowContext, true)
-            .thenAccept(projectContent -> {
+            .thenCompose(projectContent -> CompletableFuture.runAsync(() -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
-                double estimatedInputCost = calculateCost(tokenCount, inputCost);
+                double estimatedInputCost = calculateCost(tokenCount, inputCost.get());
                 String message = String.format("Project contains %s. Estimated min. cost using %s %s is $%.6f",
                     WindowContextFormatterUtil.format(tokenCount, "tokens"),
                     provider.getName(),
                     languageModel.getDisplayName(),
                     estimatedInputCost);
 
-                // Add check for token count exceeding max context size
                 if (tokenCount > languageModel.getContextWindow()) {
                     message += String.format(". Total project size exceeds model's max context of %s tokens.",
                         WindowContextFormatterUtil.format(languageModel.getContextWindow()));
                 }
 
                 NotificationUtil.sendNotification(project, message);
-            });
+            }));
     }
 
     private Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
