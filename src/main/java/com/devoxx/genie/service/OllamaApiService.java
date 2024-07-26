@@ -1,26 +1,36 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import okhttp3.*;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
 public class OllamaApiService {
-    private static final String OLLAMA_API_URL = "http://localhost:11434/api/show";
     private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
+    public static final int DEFAULT_CONTEXT_LENGTH = 4096;
 
+    /**
+     * Get the context length of the model.
+     * @param modelName the model name
+     * @return the context length
+     * @throws IOException if there is an error
+     */
     public static int getModelContext(@NotNull String modelName) throws IOException {
         RequestBody body = RequestBody.create(
             MediaType.parse("application/json"),
             "{\"name\":\"" + modelName + "\"}"
         );
 
+        String baseUrl = ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl());
+
         Request request = new Request.Builder()
-            .url(OLLAMA_API_URL)
+            .url(DevoxxGenieStateService.getInstance().getOllamaModelUrl()+ "api/show")
             .post(body)
             .build();
 
@@ -49,6 +59,17 @@ public class OllamaApiService {
             return contextLength.getAsInt();
         }
 
-        return -1; // Return -1 if not found
+        return DEFAULT_CONTEXT_LENGTH;
+    }
+
+    /**
+     * Ensure the URL ends with a slash.
+     *
+     * @param url the URL
+     * @return the URL with a slash at the end
+     */
+    @Contract(pure = true)
+    public static String ensureEndsWithSlash(@NotNull String url) {
+        return url.endsWith("/") ? url : url + "/";
     }
 }
