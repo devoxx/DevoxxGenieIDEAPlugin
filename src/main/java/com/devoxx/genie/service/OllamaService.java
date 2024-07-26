@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+import static com.devoxx.genie.service.OllamaApiService.ensureEndsWithSlash;
+
 public class OllamaService {
 
     private final OkHttpClient client = new OkHttpClient();
@@ -25,7 +27,7 @@ public class OllamaService {
     /**
      * Get the models from the Ollama service.
      *
-     * @return List of model names
+     * @return array of model names
      * @throws IOException if there is an error
      */
     public OllamaModelEntryDTO[] getModels() throws IOException {
@@ -45,17 +47,6 @@ public class OllamaService {
             OllamaModelDTO ollamaModelDTO = new Gson().fromJson(response.body().string(), OllamaModelDTO.class);
             return ollamaModelDTO != null && ollamaModelDTO.getModels() != null ? ollamaModelDTO.getModels() : new OllamaModelEntryDTO[0];
         }
-    }
-
-    /**
-     * Ensure the URL ends with a slash.
-     *
-     * @param url the URL
-     * @return the URL with a slash at the end
-     */
-    @Contract(pure = true)
-    private String ensureEndsWithSlash(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
     }
 
     /**
