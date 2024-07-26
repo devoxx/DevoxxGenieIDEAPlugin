@@ -27,10 +27,8 @@ public class OllamaApiService {
             "{\"name\":\"" + modelName + "\"}"
         );
 
-        String baseUrl = ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl());
-
         Request request = new Request.Builder()
-            .url(DevoxxGenieStateService.getInstance().getOllamaModelUrl()+ "api/show")
+            .url(ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl()) + "api/show")
             .post(body)
             .build();
 
