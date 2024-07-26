@@ -14,7 +14,7 @@ public enum ModelProvider {
     Groq("Groq"),
     DeepInfra("DeepInfra"),
     Google("Google"),
-    Exo("Exo");
+    Exo("Exo (Experimental)");
 
     private final String name;
 
