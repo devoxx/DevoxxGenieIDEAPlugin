@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.10</h2>
+        <UL>
+            <LI>Fix #184 - Input panel has bigger min/preferred height size</LI>
+        </UL>
         <h2>v0.2.9</h2>
         <UL>
             <LI>Fix #183 - Allow usage of remote Ollama instances</LI>
