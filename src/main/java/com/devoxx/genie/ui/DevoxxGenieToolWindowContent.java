@@ -50,6 +50,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                                                      CustomPromptChangeListener {
 
     private static final float SPLITTER_PROPORTION = 0.8f;
+    public static final int MIN_INPUT_HEIGHT = 250;
 
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
@@ -259,7 +260,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      */
     private @NotNull JPanel createInputPanel() {
         JPanel submitPanel = new JPanel(new BorderLayout());
-        submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, 100));
+        submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
+        submitPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
         submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(createActionButtonsPanel(), BorderLayout.SOUTH);
