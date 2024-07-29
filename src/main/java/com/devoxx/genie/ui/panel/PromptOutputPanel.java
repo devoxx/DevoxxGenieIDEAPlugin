@@ -44,6 +44,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
 
+        setMinimumSize(new Dimension(200, 200)); // Adjust these values as needed
         showWelcomeText();
     }
 

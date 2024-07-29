@@ -29,7 +29,7 @@ public class CalcTokensForDirectoryAction extends DumbAwareAction {
         }
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        ModelProvider selectedProvider = ModelProvider.valueOf(stateService.getSelectedProvider());
+        ModelProvider selectedProvider = ModelProvider.fromString(stateService.getSelectedProvider());
 
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Calculating Tokens", false) {
             @Override

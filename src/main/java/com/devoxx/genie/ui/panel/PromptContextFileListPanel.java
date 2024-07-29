@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,6 +26,7 @@ public class PromptContextFileListPanel extends JPanel
     private final JBScrollPane filesScrollPane;
     private final JPanel filesPanel; // new panel for files
     private final transient Project project;
+    private final int MAX_VISIBLE_FILES = 3;
 
     public PromptContextFileListPanel(Project project) {
         this.project = project;
@@ -57,7 +59,7 @@ public class PromptContextFileListPanel extends JPanel
     }
 
     @Override
-    public void filesAdded(java.util.List<VirtualFile> files) {
+    public void filesAdded(java.util.@NotNull List<VirtualFile> files) {
         for (VirtualFile file : files) {
             FileEntryComponent fileLabel = new FileEntryComponent(project, file, this);
             filesPanel.add(fileLabel);
@@ -79,10 +81,9 @@ public class PromptContextFileListPanel extends JPanel
             filesScrollPane.setPreferredSize(new Dimension(0, 0));
         } else {
             filesScrollPane.setVisible(true);
+            int fileCount = Math.min(fileListManager.size(), MAX_VISIBLE_FILES);
             int heightPerFile = 30;
-            int totalHeight = heightPerFile * fileListManager.size();
-            int maxHeight = heightPerFile * 3;
-            int prefHeight = Math.min(totalHeight, maxHeight);
+            int prefHeight = fileCount * heightPerFile;
             filesScrollPane.setPreferredSize(new Dimension(getPreferredSize().width, prefHeight));
         }
         filesScrollPane.revalidate();

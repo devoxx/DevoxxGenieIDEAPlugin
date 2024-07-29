@@ -1,6 +1,7 @@
 package com.devoxx.genie.model.enumarations;
 
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 public enum ModelProvider {
@@ -20,5 +21,18 @@ public enum ModelProvider {
 
     ModelProvider(String name) {
         this.name = name;
+    }
+
+    public String toString() {
+        return name;
+    }
+
+    public static @NotNull ModelProvider fromString(String text) {
+        for (ModelProvider provider : ModelProvider.values()) {
+            if (provider.name.equalsIgnoreCase(text)) {
+                return provider;
+            }
+        }
+        throw new IllegalArgumentException("No constant with text " + text + " found");
     }
 }
