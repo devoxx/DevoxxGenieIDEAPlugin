@@ -5,6 +5,7 @@ import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.llama.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
@@ -26,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
+
 @Setter
 public class ChatModelProvider {
 
@@ -42,6 +45,7 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
         factories.put(ModelProvider.Google, new GeminiChatModelFactory());
         factories.put(ModelProvider.Exo, new ExoChatModelFactory());
+        factories.put(ModelProvider.LLaMA, new LlamaChatModelFactory());
         // TODO Currently broken by latest Jan! version
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
@@ -79,51 +83,59 @@ public class ChatModelProvider {
         chatModel.setTimeout(stateService.getTimeout());
 
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
-        String modelName = getModelName(languageModel);
-        chatModel.setModelName(modelName);
+        chatModel.setModelName(languageModel.getModelName() == null ? TEST_MODEL : languageModel.getModelName());
 
-        // Set base URL for local providers
-        if (languageModel != null) {
-            switch (languageModel.getProvider()) {
-                case LMStudio:
-                    chatModel.setBaseUrl(stateService.getLmstudioModelUrl());
-                    break;
-                case Ollama:
-                    chatModel.setBaseUrl(stateService.getOllamaModelUrl());
-                    break;
-                case GPT4All:
-                    chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
-                    break;
-                case Exo:
-                    chatModel.setBaseUrl(stateService.getExoModelUrl());
-                    break;
-                // Add other local providers as needed
-            }
-        }
+        setLocalBaseUrl(languageModel, chatModel, stateService);
 
         return chatModel;
     }
 
-    private String getModelName(@Nullable LanguageModel languageModel) {
-        if (languageModel == null) {
-            return getDefaultModelName(null);
+    private void setLocalBaseUrl(@NotNull LanguageModel languageModel,
+                                 ChatModel chatModel,
+                                 DevoxxGenieStateService stateService) {
+        // Set base URL for local providers
+        switch (languageModel.getProvider()) {
+            case LMStudio:
+                chatModel.setBaseUrl(stateService.getLmstudioModelUrl());
+                break;
+            case Ollama:
+                chatModel.setBaseUrl(stateService.getOllamaModelUrl());
+                break;
+            case GPT4All:
+                chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
+                break;
+            case Exo:
+                chatModel.setBaseUrl(stateService.getExoModelUrl());
+                break;
+            case LLaMA:
+                chatModel.setBaseUrl(stateService.getLlamaCPPUrl());
+                break;
+            // Add other local providers as needed
         }
-
-        return Optional.ofNullable(languageModel.getModelName())
-            .orElseGet(() -> getDefaultModelName(languageModel.getProvider()));
     }
 
-    @Contract(pure = true)
-    private @NotNull String getDefaultModelName(@Nullable ModelProvider provider) {
-        if (provider == null) {
-            return "DefaultModel";
-        }
-        return switch (provider) {
-            case LMStudio -> "LMStudio";
-            case GPT4All -> "GPT4All";
-            default -> "DefaultModel";
-        };
-    }
+//    // TODO: This method is duplicated in multiple places. Consider moving it to a common utility class.
+//    private String getModelName(@Nullable LanguageModel languageModel) {
+//        if (languageModel == null) {
+//            return getDefaultModelName(null);
+//        }
+//
+//        return Optional.ofNullable(languageModel.getModelName())
+//            .orElseGet(() -> getDefaultModelName(languageModel.getProvider()));
+//    }
+//
+//    @Contract(pure = true)
+//    private @NotNull String getDefaultModelName(@Nullable ModelProvider provider) {
+//        if (provider == null) {
+//            return TEST_MODEL;
+//        }
+//        return switch (provider) {
+//            case LMStudio -> "LMStudio";
+//            case GPT4All -> "GPT4All";
+//            case LLaMA -> "LLaMA";
+//            default -> "DefaultModel";
+//        };
+//    }
 
     private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState,
                                            @NotNull ChatModel chatModel) {

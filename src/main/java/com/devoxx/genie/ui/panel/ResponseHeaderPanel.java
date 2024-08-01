@@ -14,6 +14,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
+import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
@@ -43,7 +44,8 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
     private static @NotNull JBLabel getCreatedOnLabel(@NotNull ChatMessageContext chatMessageContext) {
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
         String modelInfo = languageModel.getProvider().getName() +
-            (languageModel.getModelName() != null ? " (" + languageModel.getModelName() + ")" : "");
+            (languageModel.getModelName() != null && !languageModel.getModelName().equalsIgnoreCase(TEST_MODEL) ?
+                " (" + languageModel.getModelName() + ")" : "");
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
         JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);

@@ -38,6 +38,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
+    private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
+    @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
     private final JPasswordField mistralApiKeyField = new JPasswordField(stateService.getMistralKey());
@@ -79,14 +81,15 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Local Large Language Response");
         addSettingRow(panel, gbc, "Enable Stream Mode (Beta)", streamModeCheckBox);
 
-        addSection(panel, gbc, "Local Large Language Models");
+        addSection(panel, gbc, "Local LLM Providers");
         addSettingRow(panel, gbc, "Ollama URL", createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"));
         addSettingRow(panel, gbc, "LMStudio URL", createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         addSettingRow(panel, gbc, "GPT4All URL", createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addSettingRow(panel, gbc, "Jan URL", createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
         addSettingRow(panel, gbc, "Exo URL", createTextWithLinkButton(exoModelUrlField, "https://github.com/exo-explore/exo"));
+        addSettingRow(panel, gbc, "LLaMA.c++ URL", createTextWithLinkButton(llamaCPPModelUrlField, "https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md"));
 
-        addSection(panel, gbc, "Cloud Large Language Models");
+        addSection(panel, gbc, "Cloud LLM Providers");
         addSettingRow(panel, gbc, "OpenAI API Key", createTextWithPasswordButton(openAIKeyField, "https://platform.openai.com/api-keys"));
         addSettingRow(panel, gbc, "Mistral API Key", createTextWithPasswordButton(mistralApiKeyField, "https://console.mistral.ai/api-keys"));
         addSettingRow(panel, gbc, "Anthropic API Key", createTextWithPasswordButton(anthropicApiKeyField, "https://console.anthropic.com/settings/keys"));

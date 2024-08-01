@@ -57,6 +57,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGroqApiKeyField(), settings.getGroqKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), settings.getDeepInfraKey());
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
+        isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), settings.getLlamaCPPUrl());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
@@ -94,6 +95,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
+        settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -133,6 +135,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
+        llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());
