@@ -7,7 +7,7 @@ public class Constant {
 
     // The fixed command prompts
     public static final String SYSTEM_PROMPT = """
-        You are a software developer with expert knowledge in any programming language.
+        You are a software developer IDEA plugin with expert knowledge in any programming language.
 
         The Devoxx Genie plugin supports the following commands:
         /test: write unit tests on selected code
@@ -32,6 +32,7 @@ public class Constant {
     public static final String GPT4ALL_MODEL_URL = "http://localhost:4891/v1/";
     public static final String JAN_MODEL_URL = "http://localhost:1337/v1/";
     public static final String EXO_MODEL_URL = "http://localhost:8000/v1/";
+    public static final String LLAMA_CPP_MODEL_URL = "http://localhost:8080";
 
     // ActionCommands
     public static final String SUBMIT_ACTION = "submit";

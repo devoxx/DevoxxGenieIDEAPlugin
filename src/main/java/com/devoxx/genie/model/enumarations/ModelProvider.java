@@ -15,7 +15,8 @@ public enum ModelProvider {
     Groq("Groq"),
     DeepInfra("DeepInfra"),
     Google("Google"),
-    Exo("Exo (Experimental)");
+    Exo("Exo (Experimental)"),
+    LLaMA("LLaMA.c++"),;
 
     private final String name;
 

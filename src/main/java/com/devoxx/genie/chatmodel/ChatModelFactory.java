@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface ChatModelFactory {
 
+    String TEST_MODEL = "test-model";
+
     /**
      * Create a chat model with the given parameters.
      * @param chatModel the chat model
