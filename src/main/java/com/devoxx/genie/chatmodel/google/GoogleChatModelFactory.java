@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.gemini;
+package com.devoxx.genie.chatmodel.google;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.List;
 
-public class GeminiChatModelFactory implements ChatModelFactory {
+public class GoogleChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {

@@ -21,7 +21,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
-            .modelName("test-model")
+            .modelName(TEST_MODEL)
             .maxRetries(chatModel.getMaxRetries())
             .maxTokens(chatModel.getMaxTokens())
             .temperature(chatModel.getTemperature())
@@ -33,7 +33,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
-            .modelName("test-model")
+            .modelName(TEST_MODEL)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
@@ -48,6 +48,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
             .inputCost(0)
             .outputCost(0)
             .contextWindow(8000)
+            .apiKeyUsed(false)
             .build();
 
         List<LanguageModel> modelNames = new ArrayList<>();

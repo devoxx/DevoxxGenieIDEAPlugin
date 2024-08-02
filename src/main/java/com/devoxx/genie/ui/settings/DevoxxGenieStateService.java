@@ -40,6 +40,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String exoModelUrl = EXO_MODEL_URL;
+    private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
 
     // LLM API Keys
     private String openAIKey = "";
@@ -136,15 +137,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         }
     }
 
-//    public double getModelInputCost(ModelProvider provider, String modelName) {
-//        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
-//            String key = provider.getName() + ":" + modelName;
-//            return modelInputCosts.getOrDefault(key,
-//                DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
-//        }
-//        return 0.0;
-//    }
-
     public double getModelInputCost(@NotNull ModelProvider provider, String modelName) {
         String key = provider.getName() + ":" + modelName;
         double cost = modelInputCosts.getOrDefault(key, 0.0);
@@ -162,15 +154,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             }
         }
         return cost;
-    }
-
-    public double getModelOutputCost(ModelProvider provider, String modelName) {
-        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
-            String key = provider.getName() + ":" + modelName;
-            return modelOutputCosts.getOrDefault(key,
-                DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.getOrDefault(new DefaultLLMSettingsUtil.CostKey(provider, modelName), 0.0));
-        }
-        return 0.0;
     }
 
     private void initializeDefaultCostsIfEmpty() {
