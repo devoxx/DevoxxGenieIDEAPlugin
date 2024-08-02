@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -71,7 +71,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
         UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
 
-        if (!DevoxxGenieStateService.getInstance().getStreamMode()) {
+        if (!DevoxxGenieSettingsServiceProvider.getInstance().getStreamMode()) {
             waitingPanel.showMsg();
             userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         }

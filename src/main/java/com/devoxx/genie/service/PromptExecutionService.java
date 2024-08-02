@@ -4,7 +4,6 @@ import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
@@ -55,7 +54,7 @@ public class PromptExecutionService {
             if (ChatMemoryService.getInstance().isEmpty()) {
                 LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
                 ChatMemoryService.getInstance().add(
-                    new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                    new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                 );
             }
 

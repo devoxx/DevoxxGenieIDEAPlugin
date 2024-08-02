@@ -2,7 +2,6 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -67,7 +66,7 @@ public class MessageCreationService {
             appendIfNotEmpty(stringBuilder, editorContent);
         }
 
-        if (DevoxxGenieStateService.getInstance().getAstMode()) {
+        if (DevoxxGenieSettingsServiceProvider.getInstance().getAstMode()) {
             addASTContext(chatMessageContext, stringBuilder);
         }
 

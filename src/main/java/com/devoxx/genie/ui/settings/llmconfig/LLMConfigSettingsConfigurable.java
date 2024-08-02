@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
 
         boolean isModified = false;
 
@@ -63,7 +64,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
 
         stateService.setTemperature(((Double)llmConfigSettingsComponent.getTemperatureField().getValue()));
         stateService.setTopP(((Double)llmConfigSettingsComponent.getTopPField().getValue()));
@@ -79,7 +80,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
 
         llmConfigSettingsComponent.getTemperatureField().setValue(stateService.getTemperature());
         llmConfigSettingsComponent.getTopPField().setValue(stateService.getTopP());
