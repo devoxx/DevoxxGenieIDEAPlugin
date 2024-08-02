@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -27,7 +28,7 @@ import static com.devoxx.genie.model.Constant.*;
     name = "com.devoxx.genie.ui.SettingsState",
     storages = @Storage("DevoxxGenieSettingsPlugin.xml")
 )
-public final class DevoxxGenieStateService implements PersistentStateComponent<DevoxxGenieStateService> {
+public final class DevoxxGenieStateService implements PersistentStateComponent<DevoxxGenieStateService>, DevoxxGenieSettingsService {
 
     public static DevoxxGenieStateService getInstance() {
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
@@ -201,31 +202,31 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         this.languageModels = new ArrayList<>(models);
     }
 
-    public void setSelectedLanguageModel(@NotNull Project project, String selectedLanguageModel) {
+    public void setSelectedLanguageModel(@NotNull String projectLocation, String selectedLanguageModel) {
         if (lastSelectedLanguageModel == null) {
             lastSelectedLanguageModel = new HashMap<>();
         }
-        lastSelectedLanguageModel.put(project.getLocationHash(), selectedLanguageModel);
+        lastSelectedLanguageModel.put(projectLocation, selectedLanguageModel);
     }
 
-    public String getSelectedLanguageModel(@NotNull Project project) {
+    public String getSelectedLanguageModel(@NotNull String projectLocation) {
         if (lastSelectedLanguageModel != null) {
-            return lastSelectedLanguageModel.getOrDefault(project.getLocationHash(), "");
+            return lastSelectedLanguageModel.getOrDefault(projectLocation, "");
         } else {
             return "";
         }
     }
 
-    public void setSelectedProvider(@NotNull Project project, String selectedProvider) {
+    public void setSelectedProvider(@NotNull String projectLocation, String selectedProvider) {
         if (lastSelectedProvider == null) {
             lastSelectedProvider = new HashMap<>();
         }
-        lastSelectedProvider.put(project.getLocationHash(), selectedProvider);
+        lastSelectedProvider.put(projectLocation, selectedProvider);
     }
 
-    public String getSelectedProvider(@NotNull Project project) {
+    public String getSelectedProvider(@NotNull String projectLocation) {
         if (lastSelectedProvider != null) {
-            return lastSelectedProvider.getOrDefault(project.getLocationHash(), ModelProvider.Ollama.getName());
+            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.Ollama.getName());
         } else {
             return ModelProvider.Ollama.getName();
         }

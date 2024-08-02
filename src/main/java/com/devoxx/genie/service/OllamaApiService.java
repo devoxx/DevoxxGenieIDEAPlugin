@@ -1,6 +1,5 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -28,7 +27,7 @@ public class OllamaApiService {
         );
 
         Request request = new Request.Builder()
-            .url(ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl()) + "api/show")
+            .url(ensureEndsWithSlash(DevoxxGenieSettingsServiceProvider.getInstance().getOllamaModelUrl()) + "api/show")
             .post(body)
             .build();
 

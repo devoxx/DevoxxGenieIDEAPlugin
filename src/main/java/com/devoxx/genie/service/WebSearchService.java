@@ -2,7 +2,6 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -55,7 +54,7 @@ public class WebSearchService {
                                                               @NotNull ChatMessageContext chatMessageContext) {
         ContentRetriever contentRetriever = WebSearchContentRetriever.builder()
             .webSearchEngine(webSearchEngine)
-            .maxResults(DevoxxGenieStateService.getInstance().getMaxSearchResults())
+            .maxResults(DevoxxGenieSettingsServiceProvider.getInstance().getMaxSearchResults())
             .build();
 
         SearchWebsite website = AiServices.builder(SearchWebsite.class)
@@ -72,7 +71,7 @@ public class WebSearchService {
      * @return the web search engine
      */
     private @Nullable WebSearchEngine createWebSearchEngine(@NotNull String searchType) {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
 
         if (searchType.equals(TAVILY_SEARCH_ACTION) && settings.getTavilySearchKey() != null) {
             return TavilyWebSearchEngine.builder()
