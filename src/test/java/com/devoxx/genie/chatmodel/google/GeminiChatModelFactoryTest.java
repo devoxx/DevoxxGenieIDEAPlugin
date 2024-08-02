@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.gemini;
+package com.devoxx.genie.chatmodel.google;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.ChatModel;
@@ -37,7 +37,7 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     @Test
     public void createChatModel() {
         // Instance of the class containing the method to be tested
-        var factory = new GeminiChatModelFactory();
+        var factory = new GoogleChatModelFactory();
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();
@@ -54,7 +54,7 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @Test
     public void testModelNames() {
-        GeminiChatModelFactory factory = new GeminiChatModelFactory();
+        GoogleChatModelFactory factory = new GoogleChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();

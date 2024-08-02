@@ -16,7 +16,7 @@ public enum ModelProvider {
     DeepInfra("DeepInfra"),
     Google("Google"),
     Exo("Exo (Experimental)"),
-    LLaMA("LLaMA.c++"),;
+    LLaMA("LLaMA.c++");
 
     private final String name;
 

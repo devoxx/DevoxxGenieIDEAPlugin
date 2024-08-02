@@ -3,7 +3,7 @@ package com.devoxx.genie.chatmodel;
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
-import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
+import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
@@ -28,7 +28,7 @@ public class ChatModelFactoryProvider {
         ModelProvider.Mistral.getName(), MistralChatModelFactory::new,
         ModelProvider.Groq.getName(), GroqChatModelFactory::new,
         ModelProvider.DeepInfra.getName(), DeepInfraChatModelFactory::new,
-        ModelProvider.Google.getName(), GeminiChatModelFactory::new
+        ModelProvider.Google.getName(), GoogleChatModelFactory::new
     );
 
     /**

@@ -38,6 +38,7 @@
         <h2>v0.2.10</h2>
         <UL>
             <LI>Fix #184 - Input panel has bigger min/preferred height size</LI>
+            <LI>Feat #186 - Support for local LLaMA.c++ http server</LI>
         </UL>
         <h2>v0.2.9</h2>
         <UL>
