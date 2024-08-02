@@ -35,6 +35,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
+import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static javax.swing.SwingUtilities.invokeLater;
@@ -317,11 +318,24 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      */
     private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieStateService stateService) {
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
-        String modelName = stateService.getSelectedLanguageModel();
-        return LanguageModel.builder()
-            .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
-            .modelName(modelName != null ? modelName : "DefaultModel")
-            .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
+        if (selectedProvider != null &&
+            (selectedProvider.equals(ModelProvider.LMStudio) ||
+             selectedProvider.equals(ModelProvider.GPT4All) ||
+             selectedProvider.equals(ModelProvider.LLaMA))) {
+            return LanguageModel.builder()
+                .provider(selectedProvider)
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .contextWindow(4096)
+                .build();
+        } else {
+            String modelName = stateService.getSelectedLanguageModel();
+            return LanguageModel.builder()
+                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
+                .modelName(modelName)
+                .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
+        }
     }
 
     /**

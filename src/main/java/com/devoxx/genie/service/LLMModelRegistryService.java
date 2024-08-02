@@ -446,15 +446,6 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
         this.models = new ArrayList<>(models);
     }
 
-    public void addModel(LanguageModel model) {
-        models.add(model);
-    }
-
-    public void updateModel(LanguageModel updateModel) {
-        models.removeIf(model -> model.getModelName().equals(updateModel.getModelName()));
-        models.add(updateModel);
-    }
-
     @Override
     public LLMModelRegistryService getState() {
         return this;
