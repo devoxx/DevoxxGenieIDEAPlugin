@@ -2,7 +2,7 @@ package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
-import com.devoxx.genie.chatmodel.gemini.GeminiChatModelFactory;
+import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.llama.LlamaChatModelFactory;
@@ -19,9 +19,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,9 +41,10 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Mistral, new MistralChatModelFactory());
         factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
         factories.put(ModelProvider.Groq, new GroqChatModelFactory());
-        factories.put(ModelProvider.Google, new GeminiChatModelFactory());
+        factories.put(ModelProvider.Google, new GoogleChatModelFactory());
         factories.put(ModelProvider.Exo, new ExoChatModelFactory());
         factories.put(ModelProvider.LLaMA, new LlamaChatModelFactory());
+
         // TODO Currently broken by latest Jan! version
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());
     }
@@ -113,29 +112,6 @@ public class ChatModelProvider {
             // Add other local providers as needed
         }
     }
-
-//    // TODO: This method is duplicated in multiple places. Consider moving it to a common utility class.
-//    private String getModelName(@Nullable LanguageModel languageModel) {
-//        if (languageModel == null) {
-//            return getDefaultModelName(null);
-//        }
-//
-//        return Optional.ofNullable(languageModel.getModelName())
-//            .orElseGet(() -> getDefaultModelName(languageModel.getProvider()));
-//    }
-//
-//    @Contract(pure = true)
-//    private @NotNull String getDefaultModelName(@Nullable ModelProvider provider) {
-//        if (provider == null) {
-//            return TEST_MODEL;
-//        }
-//        return switch (provider) {
-//            case LMStudio -> "LMStudio";
-//            case GPT4All -> "GPT4All";
-//            case LLaMA -> "LLaMA";
-//            default -> "DefaultModel";
-//        };
-//    }
 
     private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState,
                                            @NotNull ChatModel chatModel) {
