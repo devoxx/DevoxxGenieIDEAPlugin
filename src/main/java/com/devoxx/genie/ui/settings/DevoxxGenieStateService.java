@@ -9,6 +9,8 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Contract;
@@ -58,8 +60,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
     // Last selected language model
-    @Getter
-    @Setter
     private String selectedProvider;
     private String selectedLanguageModel;
 
@@ -102,6 +102,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private List<Runnable> loadListeners = new ArrayList<>();
+
     public DevoxxGenieStateService() {
         initializeDefaultPrompts();
     }
@@ -124,6 +128,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         XmlSerializerUtil.copyBean(state, this);
         initializeDefaultCostsIfEmpty();
         initializeDefaultPrompts();
+
+        // Notify all listeners that the state has been loaded
+        for (Runnable listener : loadListeners) {
+            listener.run();
+        }
+    }
+
+    public void addLoadListener(Runnable listener) {
+        loadListeners.add(listener);
     }
 
     public void setModelCost(ModelProvider provider,
