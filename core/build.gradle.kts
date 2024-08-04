@@ -2,9 +2,6 @@ plugins {
     java
 }
 
-group = "com.devoxx.genie"
-version = "0.2.3"
-
 repositories {
     mavenCentral()
 }
