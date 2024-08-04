@@ -71,6 +71,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private boolean isUpdatingModelNames = false;
 
     private String lastSelectedProvider = null;
+    private String lastSelectedLanguageModel = null;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -88,9 +89,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private void onStateLoaded() {
         lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider();
+        lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel();
         ApplicationManager.getApplication().invokeLater(() -> {
             setupUI();
             restoreLastSelectedProvider();
+            restoreLastSelectedLanguageModel();
             isInitializationComplete = true;
         });
     }
@@ -105,6 +108,23 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                 if (provider.getName().equals(lastSelectedProvider)) {
                     modelProviderComboBox.setSelectedIndex(i);
                     updateModelNamesComboBox(lastSelectedProvider);
+                    break;
+                }
+            }
+        } else {
+           setLastSelectedProvider();
+       }
+    }
+
+    /**
+     * Restore the last selected language model from persistent storage
+     */
+    private void restoreLastSelectedLanguageModel() {
+        if (lastSelectedLanguageModel != null) {
+            for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                LanguageModel model = modelNameComboBox.getItemAt(i);
+                if (model.getModelName().equals(lastSelectedLanguageModel)) {
+                    modelNameComboBox.setSelectedIndex(i);
                     break;
                 }
             }
@@ -372,19 +392,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      */
     private void updateModelNamesComboBox(String modelProvider) {
         Optional.ofNullable(modelProvider).ifPresent(provider -> {
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    modelNameComboBox.removeAllItems(); // Ensure we clear existing items
-                    modelNameComboBox.setVisible(true);
+            try {
+                modelNameComboBox.removeAllItems(); // Ensure we clear existing items
+                modelNameComboBox.setVisible(true);
 
-                    ChatModelFactoryProvider
-                        .getFactoryByProvider(provider)
-                        .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
-                } catch (Exception e) {
-                    Logger.getInstance(getClass()).error("Error updating model names", e);
-                    Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
-                }
-            });
+                ChatModelFactoryProvider
+                    .getFactoryByProvider(provider)
+                    .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+            } catch (Exception e) {
+                Logger.getInstance(getClass()).error("Error updating model names", e);
+                Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
+            }
         });
     }
 
