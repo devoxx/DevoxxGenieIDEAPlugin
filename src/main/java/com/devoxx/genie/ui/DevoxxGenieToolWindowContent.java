@@ -19,6 +19,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -69,6 +70,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private boolean isInitializationComplete = false;
     private boolean isUpdatingModelNames = false;
 
+    private String lastSelectedProvider = null;
+
     /**
      * The Devoxx Genie Tool Window Content constructor.
      *
@@ -77,13 +80,35 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
         project = toolWindow.getProject();
 
-        setupUI();
+        DevoxxGenieStateService.getInstance().addLoadListener(this::onStateLoaded);
+        DevoxxGenieStateService.getInstance().loadState(DevoxxGenieStateService.getInstance());
 
         setupMessageBusConnection(toolWindow);
+    }
 
-        setLastSelectedProvider();
+    private void onStateLoaded() {
+        lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider();
+        ApplicationManager.getApplication().invokeLater(() -> {
+            setupUI();
+            restoreLastSelectedProvider();
+            isInitializationComplete = true;
+        });
+    }
 
-        isInitializationComplete = true;
+    /**
+     * Restore the last selected provider from persistent storage
+     */
+    private void restoreLastSelectedProvider() {
+       if (lastSelectedProvider != null) {
+            for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
+                ModelProvider provider = modelProviderComboBox.getItemAt(i);
+                if (provider.getName().equals(lastSelectedProvider)) {
+                    modelProviderComboBox.setSelectedIndex(i);
+                    updateModelNamesComboBox(lastSelectedProvider);
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -115,7 +140,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         initializeComponents();
         setupLayout();
         setupListeners();
-        setLastSelectedProvider();
     }
 
     private void initializeComponents() {
