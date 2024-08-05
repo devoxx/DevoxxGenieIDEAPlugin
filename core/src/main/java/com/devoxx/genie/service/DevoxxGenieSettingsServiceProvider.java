@@ -5,7 +5,7 @@ import java.util.ServiceLoader;
 
 public interface DevoxxGenieSettingsServiceProvider {
 
-    public static DevoxxGenieSettingsService getInstance() {
+    static DevoxxGenieSettingsService getInstance() {
 
         try {
             // Workaround to load the SPI implementation in the IntelliJ plugin
