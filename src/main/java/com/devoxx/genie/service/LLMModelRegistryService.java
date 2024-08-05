@@ -294,6 +294,16 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Google)
+            .modelName("gemini-1.5-pro-exp-0801")
+            .displayName("Gemini 1.5 Pro 0801")
+            .inputCost(7)
+            .outputCost(21)
+            .contextWindow(2_000_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Google)
             .modelName("gemini-1.0-pro")
             .displayName("Gemini 1.0 Pro")
             .inputCost(0.5)
