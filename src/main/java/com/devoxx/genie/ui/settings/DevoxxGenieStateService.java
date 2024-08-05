@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 
 import lombok.AccessLevel;
@@ -60,8 +61,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
     // Last selected language model
-    private String selectedProvider;
-    private String selectedLanguageModel;
+    private Map<String, String> lastSelectedProvider;
+    private Map<String, String> lastSelectedLanguageModel;
 
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;
@@ -200,4 +201,33 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         this.languageModels = new ArrayList<>(models);
     }
 
+    public void setSelectedLanguageModel(@NotNull Project project, String selectedLanguageModel) {
+        if (lastSelectedLanguageModel == null) {
+            lastSelectedLanguageModel = new HashMap<>();
+        }
+        lastSelectedLanguageModel.put(project.getLocationHash(), selectedLanguageModel);
+    }
+
+    public String getSelectedLanguageModel(@NotNull Project project) {
+        if (lastSelectedLanguageModel != null) {
+            return lastSelectedLanguageModel.getOrDefault(project.getLocationHash(), "");
+        } else {
+            return "";
+        }
+    }
+
+    public void setSelectedProvider(@NotNull Project project, String selectedProvider) {
+        if (lastSelectedProvider == null) {
+            lastSelectedProvider = new HashMap<>();
+        }
+        lastSelectedProvider.put(project.getLocationHash(), selectedProvider);
+    }
+
+    public String getSelectedProvider(@NotNull Project project) {
+        if (lastSelectedProvider != null) {
+            return lastSelectedProvider.getOrDefault(project.getLocationHash(), ModelProvider.Ollama.getName());
+        } else {
+            return ModelProvider.Ollama.getName();
+        }
+    }
 }
