@@ -42,6 +42,7 @@
             <LI>Feat #191 - Add Google model : gemini-1.5-pro-exp-0801</LI>
             <LI>Fix #181 - Last selected LLM provider is not persisted anymore</LI>
             <LI>Feat #181 - Support for multiple projects with different LLM providers & language models</LI>
+            <LI>Fix #190 - Scroll output panel to the bottom when new output is added</LI>
         </UL>
         <h2>v0.2.9</h2>
         <UL>
