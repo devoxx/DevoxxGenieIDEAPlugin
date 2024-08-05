@@ -25,7 +25,7 @@ public class PromptContextFileListPanel extends JPanel
     private final FileListManager fileListManager;
     private final JBScrollPane filesScrollPane;
     private final JPanel filesPanel; // new panel for files
-    private final transient Project project;
+    private final Project project;
     private final int MAX_VISIBLE_FILES = 3;
 
     public PromptContextFileListPanel(Project project) {

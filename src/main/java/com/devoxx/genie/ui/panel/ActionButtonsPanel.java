@@ -330,7 +330,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 .contextWindow(4096)
                 .build();
         } else {
-            String modelName = stateService.getSelectedLanguageModel();
+            String modelName = stateService.getSelectedLanguageModel(project);
             return LanguageModel.builder()
                 .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
                 .modelName(modelName)

@@ -55,21 +55,4 @@ public class LLMProviderService {
             .distinct()
             .collect(Collectors.toList());
     }
-
-    public int getCurrentModelWindowContext() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        String lastSelectedProvider = settings.getSelectedProvider();
-        String lastSelectedLanguageModel = settings.getSelectedLanguageModel();
-
-        if (lastSelectedLanguageModel == null) {
-            return 8000; // Default to 8000 if no model is selected
-        }
-
-        return LLMModelRegistryService.getInstance()
-            .getModels()
-            .stream()
-            .filter(model -> model.getProvider().getName().equals(lastSelectedProvider) && model.getModelName().equals(lastSelectedLanguageModel))
-            .findFirst()
-            .map(LanguageModel::getContextWindow).orElse(8000);
-    }
 }
