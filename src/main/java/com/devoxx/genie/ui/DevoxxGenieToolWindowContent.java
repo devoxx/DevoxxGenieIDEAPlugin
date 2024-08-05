@@ -6,6 +6,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.ui.component.PromptInputArea;
@@ -89,8 +90,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private void onStateLoaded() {
 
         if (!isInitializationComplete) {
-            lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(project);
-            lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(project);
+            lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash());
+            lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(project.getLocationHash());
 
             setupUI();
             restoreLastSelectedProvider();
@@ -149,7 +150,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private void setLastSelectedProvider() {
         ModelProvider modelProvider = modelProviderComboBox.getItemAt(0);
         if (modelProvider != null) {
-            DevoxxGenieStateService.getInstance().setSelectedProvider(project, modelProvider.getName());
+            DevoxxGenieStateService.getInstance().setSelectedProvider(project.getLocationHash(), modelProvider.getName());
             updateModelNamesComboBox(modelProvider.getName());
         }
     }
@@ -341,7 +342,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) && isInitializationComplete) {
             LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
             if (selectedModel != null) {
-                DevoxxGenieStateService.getInstance().setSelectedLanguageModel(project, selectedModel.getModelName());
+                DevoxxGenieStateService.getInstance().setSelectedLanguageModel(project.getLocationHash(), selectedModel.getModelName());
                 actionButtonsPanel.updateTokenUsage(selectedModel.getContextWindow());
             }
         }
@@ -361,7 +362,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
                 // Update the selectedProvider in DevoxxGenieStateService
-                DevoxxGenieStateService.getInstance().setSelectedProvider(project, modelProvider.getName());
+                DevoxxGenieStateService.getInstance().setSelectedProvider(project.getLocationHash(), modelProvider.getName());
 
                 updateModelNamesComboBox(modelProvider.getName());
                 modelNameComboBox.setRenderer(new ModelInfoRenderer()); // Re-apply the renderer
@@ -416,7 +417,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     @Override
     public void settingsChanged() {
-        updateModelNamesComboBox(DevoxxGenieStateService.getInstance().getSelectedProvider(project));
+        updateModelNamesComboBox(DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash()));
     }
 
     @Override

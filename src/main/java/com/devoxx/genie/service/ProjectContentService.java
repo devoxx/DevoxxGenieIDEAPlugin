@@ -3,7 +3,6 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.ContentResult;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
@@ -118,7 +117,7 @@ public class ProjectContentService {
             return;
         }
 
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         AtomicDouble inputCost = new AtomicDouble(settings.getModelInputCost(provider, languageModel.getModelName()));
 
         getProjectContent(project, windowContext, true)
@@ -165,7 +164,7 @@ public class ProjectContentService {
                                              AtomicLong totalTokens,
                                              boolean isTokenCalculation,
                                              Encoding encoding) {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
 
         for (VirtualFile child : directory.getChildren()) {
             if (child.isDirectory()) {
@@ -183,7 +182,7 @@ public class ProjectContentService {
         }
     }
 
-    private boolean shouldIncludeFile(@NotNull VirtualFile file, DevoxxGenieStateService settings) {
+    private boolean shouldIncludeFile(@NotNull VirtualFile file, DevoxxGenieSettingsService settings) {
         String extension = file.getExtension();
         return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }

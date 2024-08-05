@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
@@ -19,7 +19,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
+            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl())
             .modelName(TEST_MODEL)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -32,7 +32,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
+            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl())
             .modelName(TEST_MODEL)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())

@@ -6,10 +6,10 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -28,7 +28,7 @@ public class ChatMessageContextUtil {
                                                             String userPromptText,
                                                             LanguageModel languageModel,
                                                             ChatModelProvider chatModelProvider,
-                                                            @NotNull DevoxxGenieStateService stateService,
+                                                            @NotNull DevoxxGenieSettingsService stateService,
                                                             @NotNull String actionCommand,
                                                             EditorFileButtonManager editorFileButtonManager,
                                                             String projectContext,
