@@ -39,6 +39,9 @@
         <UL>
             <LI>Fix #184 - Input panel has bigger min/preferred height size</LI>
             <LI>Feat #186 - Support for local LLaMA.c++ http server</LI>
+            <LI>Feat #191 - Add Google model : gemini-1.5-pro-exp-0801</LI>
+            <LI>Fix #181 - Last selected LLM provider is not persisted anymore</LI>
+            <LI>Feat #181 - Support for multiple projects with different LLM providers & language models</LI>
         </UL>
         <h2>v0.2.9</h2>
         <UL>
