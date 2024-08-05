@@ -4,7 +4,6 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -48,7 +47,7 @@ public class ChatPromptExecutor {
                         isRunning = false;
                         enableButtons.run();
                     });
-                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+                } else if (DevoxxGenieSettingsServiceProvider.getInstance().getStreamMode()) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunning = false;
                         enableButtons.run();
@@ -127,7 +126,7 @@ public class ChatPromptExecutor {
     private Optional<String> getCommandFromPrompt(@NotNull String prompt,
                                                   PromptOutputPanel promptOutputPanel) {
         if (prompt.startsWith("/")) {
-            DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+            DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
 
             // Check for custom prompts
             for (CustomPrompt customPrompt : settings.getCustomPrompts()) {

@@ -5,7 +5,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.gemini.GeminiChatModel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +27,7 @@ public class GoogleChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getGeminiKey().trim();
+        return DevoxxGenieSettingsServiceProvider.getInstance().getGeminiKey().trim();
     }
 
     @Override
