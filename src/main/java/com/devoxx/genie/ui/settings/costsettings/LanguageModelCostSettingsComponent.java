@@ -2,11 +2,11 @@ package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
-import com.devoxx.genie.ui.renderer.ModelProviderCellEditor;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.LLMProviderUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBScrollPane;
@@ -221,7 +221,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     }
 
     public void apply() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         settings.setDefaultWindowContext((Integer) windowContextSpinner.getValue());
 
         for (int i = 0; i < tableModel.getRowCount(); i++) {

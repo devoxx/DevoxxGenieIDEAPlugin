@@ -15,7 +15,8 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import lombok.Setter;
@@ -73,7 +74,7 @@ public class ChatModelProvider {
 
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = new ChatModel();
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
         setMaxOutputTokens(stateService, chatModel);
 
         chatModel.setTemperature(stateService.getTemperature());
@@ -91,7 +92,7 @@ public class ChatModelProvider {
 
     private void setLocalBaseUrl(@NotNull LanguageModel languageModel,
                                  ChatModel chatModel,
-                                 DevoxxGenieStateService stateService) {
+                                 DevoxxGenieSettingsService stateService) {
         // Set base URL for local providers
         switch (languageModel.getProvider()) {
             case LMStudio:
@@ -113,7 +114,7 @@ public class ChatModelProvider {
         }
     }
 
-    private static void setMaxOutputTokens(@NotNull DevoxxGenieStateService settingsState,
+    private static void setMaxOutputTokens(@NotNull DevoxxGenieSettingsService settingsState,
                                            @NotNull ChatModel chatModel) {
         Integer maxOutputTokens = settingsState.getMaxOutputTokens();
         chatModel.setMaxTokens(maxOutputTokens != null ? maxOutputTokens : Constant.MAX_OUTPUT_TOKENS);

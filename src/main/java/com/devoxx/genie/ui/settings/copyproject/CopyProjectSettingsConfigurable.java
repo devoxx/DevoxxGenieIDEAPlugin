@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ public class CopyProjectSettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         return !copyProjectSettingsComponent.getExcludedDirectories().equals(settings.getExcludedDirectories()) ||
                !copyProjectSettingsComponent.getIncludedFileExtensions().equals(settings.getIncludedFileExtensions()) ||
                 copyProjectSettingsComponent.getExcludeJavadoc() != settings.getExcludeJavaDoc();
@@ -34,7 +35,7 @@ public class CopyProjectSettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         settings.setExcludedDirectories(copyProjectSettingsComponent.getExcludedDirectories());
         settings.setIncludedFileExtensions(copyProjectSettingsComponent.getIncludedFileExtensions());
         settings.setExcludeJavaDoc(copyProjectSettingsComponent.getExcludeJavadoc());

@@ -2,7 +2,6 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -50,7 +49,7 @@ public class StreamingPromptExecutor {
      */
     private void prepareMemory(ChatMessageContext chatMessageContext) {
         if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt()));
+            chatMemoryService.add(new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt()));
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);

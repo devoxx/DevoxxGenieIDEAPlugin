@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.2.10"
+version = "0.2.11"
 
 repositories {
     mavenCentral()
@@ -38,7 +38,7 @@ tasks.named("buildPlugin") {
 
 dependencies {
     // Add the dependencies for the core module
-    implementation("com.devoxx.genie:core:0.1.16")
+    implementation(project(":core"))
 
     implementation("dev.langchain4j:langchain4j:0.32.0")
     implementation("dev.langchain4j:langchain4j-ollama:0.32.0")

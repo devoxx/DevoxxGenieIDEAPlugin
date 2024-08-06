@@ -2,7 +2,6 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.ChatMessage;
@@ -23,7 +22,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
      * @link PostStartupActivity
      */
     public void init() {
-        createChatMemory(DevoxxGenieStateService.getInstance().getChatMemorySize());
+        createChatMemory(DevoxxGenieSettingsServiceProvider.getInstance().getChatMemorySize());
         createChangeListener();
     }
 

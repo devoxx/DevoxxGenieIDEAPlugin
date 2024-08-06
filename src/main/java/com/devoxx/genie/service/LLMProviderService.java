@@ -2,7 +2,6 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +10,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
-import static com.devoxx.genie.model.enumarations.ModelProvider.Google;
 
 public class LLMProviderService {
 
@@ -29,7 +27,7 @@ public class LLMProviderService {
      * @return List of LLM providers
      */
     public List<ModelProvider> getModelProvidersWithApiKeyConfigured() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         Map<ModelProvider, Supplier<String>> providerKeyMap = new HashMap<>();
         providerKeyMap.put(OpenAI, settings::getOpenAIKey);
         providerKeyMap.put(Anthropic, settings::getAnthropicKey);

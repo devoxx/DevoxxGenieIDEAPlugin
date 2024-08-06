@@ -1,6 +1,5 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -235,7 +234,7 @@ public class ProjectScannerService {
      * @return true if the directory should be excluded, false otherwise
      */
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         return file.isDirectory() && settings.getExcludedDirectories().contains(file.getName());
     }
 
@@ -245,7 +244,7 @@ public class ProjectScannerService {
      * @return true if the file should be included, false otherwise
      */
     private boolean shouldIncludeFile(@NotNull VirtualFile file) {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         String extension = file.getExtension();
         return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }
@@ -256,7 +255,7 @@ public class ProjectScannerService {
      * @return the processed content
      */
     private String processFileContent(String content) {
-        if (DevoxxGenieStateService.getInstance().getExcludeJavaDoc()) {
+        if (DevoxxGenieSettingsServiceProvider.getInstance().getExcludeJavaDoc()) {
             return removeJavadoc(content);
         }
         return content;

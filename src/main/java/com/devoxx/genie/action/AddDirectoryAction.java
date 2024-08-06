@@ -1,9 +1,10 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.actionSystem.*;
@@ -47,14 +48,14 @@ public class AddDirectoryAction extends DumbAwareAction {
     private void addDirectoryToContext(Project project, @NotNull VirtualFile directory) {
         FileListManager fileListManager = FileListManager.getInstance();
         List<VirtualFile> filesToAdd = new ArrayList<>();
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
 
         addFilesRecursively(directory, fileListManager, filesToAdd, settings);
 
         if (!filesToAdd.isEmpty()) {
             fileListManager.addFiles(filesToAdd);
 
-            ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project));
+            ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash()));
 
             ProjectContentService.getInstance()
                 .getDirectoryContentAndTokens(directory,  false, selectedProvider)
@@ -69,7 +70,7 @@ public class AddDirectoryAction extends DumbAwareAction {
     }
 
     private void addFilesRecursively(@NotNull VirtualFile directory, FileListManager fileListManager,
-                                     List<VirtualFile> filesToAdd, DevoxxGenieStateService settings) {
+                                     List<VirtualFile> filesToAdd, DevoxxGenieSettingsService settings) {
         VirtualFile[] children = directory.getChildren();
         for (VirtualFile child : children) {
             if (child.isDirectory()) {
@@ -91,7 +92,7 @@ public class AddDirectoryAction extends DumbAwareAction {
             NotificationUtil.sendNotification(project, "Directory content added to clipboard: " + directory.getName()));
     }
 
-    private boolean shouldIncludeFile(@NotNull VirtualFile file, @NotNull DevoxxGenieStateService settings) {
+    private boolean shouldIncludeFile(@NotNull VirtualFile file, @NotNull DevoxxGenieSettingsService settings) {
         String extension = file.getExtension();
         return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }

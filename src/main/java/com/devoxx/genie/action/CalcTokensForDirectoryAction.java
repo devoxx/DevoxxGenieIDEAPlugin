@@ -1,12 +1,13 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -29,7 +30,7 @@ public class CalcTokensForDirectoryAction extends DumbAwareAction {
         }
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        ModelProvider selectedProvider = ModelProvider.fromString(stateService.getSelectedProvider(project));
+        ModelProvider selectedProvider = ModelProvider.fromString(stateService.getSelectedProvider(project.getLocationHash()));
 
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Calculating Tokens", false) {
             @Override
