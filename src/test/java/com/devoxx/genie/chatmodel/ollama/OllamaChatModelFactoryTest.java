@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.ollama;
 
 import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,10 @@ public class OllamaChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
-        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+        try (MockedStatic<DevoxxGenieSettingsServiceProvider> mockedSettings = Mockito.mockStatic(DevoxxGenieSettingsServiceProvider.class)) {
             // Setup the mock for SettingsState
             DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
-            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(DevoxxGenieSettingsServiceProvider.getInstance()).thenReturn(mockSettingsState);
             when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
 
             // Instance of the class containing the method to be tested
