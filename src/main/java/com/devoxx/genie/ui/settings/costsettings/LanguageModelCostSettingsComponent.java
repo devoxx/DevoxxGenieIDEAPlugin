@@ -130,18 +130,18 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     public java.util.List<LanguageModel> getModifiedModels() {
         java.util.List<LanguageModel> modifiedModels = new ArrayList<>();
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            ModelProvider provider = (ModelProvider) tableModel.getValueAt(i, ColumnName.PROVIDER.ordinal());
+            String provider = (String) tableModel.getValueAt(i, ColumnName.PROVIDER.ordinal());
             String modelName = (String) tableModel.getValueAt(i, ColumnName.MODEL.ordinal());
             double inputCost = (Double) tableModel.getValueAt(i, ColumnName.INPUT_COST.ordinal());
             double outputCost = (Double) tableModel.getValueAt(i, ColumnName.OUTPUT_COST.ordinal());
-            int contextWindow = (Integer) tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
+            String contextWindow = (String) tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
 
             LanguageModel model = LanguageModel.builder()
-                .provider(provider)
+                .provider(ModelProvider.fromString(provider))
                 .modelName(modelName)
                 .inputCost(inputCost)
                 .outputCost(outputCost)
-                .contextWindow(contextWindow)
+                .contextWindow(Integer.parseInt(contextWindow.replace(",", "")))
                 .apiKeyUsed(true)
                 .build();
             modifiedModels.add(model);
