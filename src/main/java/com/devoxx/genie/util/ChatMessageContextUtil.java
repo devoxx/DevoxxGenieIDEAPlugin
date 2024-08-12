@@ -1,5 +1,8 @@
 package com.devoxx.genie.util;
 
+import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
+import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
+
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
@@ -41,8 +44,8 @@ public class ChatMessageContextUtil {
             .userPrompt(userPromptText)
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
-            .webSearchRequested(actionCommand.equals(Constant.TAVILY_SEARCH_ACTION) ||
-                                actionCommand.equals(Constant.GOOGLE_SEARCH_ACTION))
+            .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) ||
+                                actionCommand.equals(GOOGLE_SEARCH_ACTION))
             .totalFileCount(totalFileCount)
             .build();
 
@@ -55,7 +58,7 @@ public class ChatMessageContextUtil {
 
         context.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());
 
-        setWindowContext(context, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded);
+        setWindowContext(context, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded, actionCommand);
 
         return context;
     }
@@ -67,13 +70,22 @@ public class ChatMessageContextUtil {
      * @param editorFileButtonManager the editor file button manager
      * @param projectContext the project context
      * @param isProjectContextAdded the is project context added
+     * @param actionCommand the action command for setting the context for web requests
      */
     private static void setWindowContext(ChatMessageContext chatMessageContext,
                                          String userPrompt,
                                          EditorFileButtonManager editorFileButtonManager,
                                          String projectContext,
-                                         boolean isProjectContextAdded) {
-        if (projectContext != null && isProjectContextAdded) {
+                                         boolean isProjectContextAdded,
+                                         String actionCommand) {
+
+        if (chatMessageContext.isWebSearchRequested()) {
+            if (actionCommand.equals(GOOGLE_SEARCH_ACTION)) {
+                chatMessageContext.setContext(GOOGLE_SEARCH_ACTION);
+            } else if (actionCommand.equals(TAVILY_SEARCH_ACTION)) {
+                chatMessageContext.setContext(TAVILY_SEARCH_ACTION);
+            }
+        } else if (projectContext != null && isProjectContextAdded) {
             chatMessageContext.setContext(projectContext);
         } else {
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
