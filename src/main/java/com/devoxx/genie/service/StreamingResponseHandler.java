@@ -17,7 +17,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
     private final ChatStreamingResponsePanel streamingChatResponsePanel;
     private final PromptOutputPanel promptOutputPanel;
     private volatile boolean isStopped = false;
-
+    private long startTime;
     public StreamingResponseHandler(ChatMessageContext chatMessageContext,
                                     @NotNull PromptOutputPanel promptOutputPanel,
                                     Runnable enableButtons) {
@@ -26,6 +26,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
         this.promptOutputPanel = promptOutputPanel;
         this.streamingChatResponsePanel = new ChatStreamingResponsePanel(chatMessageContext);
         promptOutputPanel.addStreamResponse(streamingChatResponsePanel);
+        startTime = System.currentTimeMillis();
     }
 
     @Override
@@ -40,7 +41,8 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
         if (isStopped) {
             return;
         }
-
+        long endTime = System.currentTimeMillis();
+        chatMessageContext.setExecutionTimeMs(endTime - startTime);
         finalizeResponse(response);
         addExpandablePanelIfNeeded();
     }

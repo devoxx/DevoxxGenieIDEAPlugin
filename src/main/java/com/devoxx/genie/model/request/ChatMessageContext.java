@@ -27,6 +27,7 @@ public class ChatMessageContext {
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;
     private int totalFileCount;
+    private long executionTimeMs;
 
     @Builder.Default
     private boolean webSearchRequested = false;
