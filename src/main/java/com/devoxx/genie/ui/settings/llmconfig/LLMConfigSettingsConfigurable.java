@@ -52,6 +52,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         isModified |= llmConfigSettingsComponent.getChatMemorySizeField().getNumber() != stateService.getChatMemorySize();
         isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != stateService.getTimeout();
         isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != stateService.getMaxRetries();
+        isModified |= llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected() != stateService.getShowExecutionTime();
 
         isModified |= !stateService.getAstMode().equals(llmConfigSettingsComponent.getAstMode().isSelected());
         isModified |= !stateService.getAstParentClass().equals(llmConfigSettingsComponent.getAstParentClassCheckBox().isSelected());
@@ -73,6 +74,8 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         stateService.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());
         stateService.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
         stateService.setMaxRetries(llmConfigSettingsComponent.getRetryField().getNumber());
+
+        stateService.setShowExecutionTime(llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected());
     }
 
     /**
@@ -89,5 +92,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         llmConfigSettingsComponent.getChatMemorySizeField().setNumber(stateService.getChatMemorySize());
         llmConfigSettingsComponent.getTimeoutField().setNumber(stateService.getTimeout());
         llmConfigSettingsComponent.getRetryField().setNumber(stateService.getMaxRetries());
+
+        llmConfigSettingsComponent.getShowExecutionTimeCheckBox().setSelected(stateService.getShowExecutionTime());
     }
 }

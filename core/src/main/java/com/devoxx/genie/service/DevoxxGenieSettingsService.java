@@ -174,4 +174,7 @@ public interface DevoxxGenieSettingsService {
 
     void setLlamaCPPUrl(String text);
 
+    Boolean getShowExecutionTime();
+
+    void setShowExecutionTime(Boolean showExecutionTime);
 }

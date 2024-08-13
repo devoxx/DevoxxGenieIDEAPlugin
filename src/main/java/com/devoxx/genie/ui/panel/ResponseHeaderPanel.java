@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.JHoverButton;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
@@ -48,6 +49,12 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
                 " (" + languageModel.getModelName() + ")" : "");
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
+
+        if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
+            String executionTime = String.format("%.2f", chatMessageContext.getExecutionTimeMs() / 1000.0);
+            label += " - Execution time: " + executionTime + "s";
+        }
+
         JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);
         createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
