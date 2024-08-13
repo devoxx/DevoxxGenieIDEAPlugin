@@ -276,8 +276,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash-latest")
             .displayName("Gemini 1.5 Flash")
-            .inputCost(0.7)
-            .outputCost(2.1)
+            .inputCost(0.0375)
+            .outputCost(0.6)
             .contextWindow(1_000_000)
             .apiKeyUsed(true)
             .build());
