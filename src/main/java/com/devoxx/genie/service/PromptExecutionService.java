@@ -63,11 +63,18 @@ public class PromptExecutionService {
 
             ChatMemoryService.getInstance().add(userMessage);
 
+            long startTime = System.currentTimeMillis();
+
             queryFuture = CompletableFuture
                 .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
                 .orTimeout(
                     chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout() ,
                     TimeUnit.SECONDS)
+                .thenApply(result -> {
+                    long endTime = System.currentTimeMillis();
+                    chatMessageContext.setExecutionTimeMs(endTime - startTime);
+                    return result;
+                })
                 .exceptionally(throwable -> {
                     LOG.error("Error occurred while processing chat message", throwable);
                     ErrorHandler.handleError(chatMessageContext.getProject(), throwable);

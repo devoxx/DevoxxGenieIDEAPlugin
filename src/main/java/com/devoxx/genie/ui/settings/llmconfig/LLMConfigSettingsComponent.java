@@ -37,6 +37,8 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox astReferenceClassesCheckBox = new JCheckBox("", stateService.getAstClassReference());
     @Getter
     private final JCheckBox astReferenceFieldCheckBox = new JCheckBox("", stateService.getAstFieldReference());
+    @Getter
+    private final JCheckBox showExecutionTimeCheckBox = new JCheckBox("", stateService.getShowExecutionTime());
 
     public LLMConfigSettingsComponent() {
         addListeners();
@@ -89,6 +91,12 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
         panel.add(new JLabel("Maximum Attempts"), gbc);
         gbc.gridx = 1;
         panel.add(retryField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("Show Execution Time"), gbc);
+        gbc.gridx = 1;
+        panel.add(showExecutionTimeCheckBox, gbc);
 
         gbc.gridy++;
         gbc.gridx = 0;
