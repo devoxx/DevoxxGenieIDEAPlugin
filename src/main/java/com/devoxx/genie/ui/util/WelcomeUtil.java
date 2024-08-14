@@ -34,8 +34,7 @@ public class WelcomeUtil {
                      <li><strong>🧠Project Scanner</strong>: Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>
                      <li><strong>💰Token Cost Calculator</strong>: Calculate the cost when using Cloud LLM providers.  Input/Output token prices can be viewed in the Settings page.</li>
                      <li><strong>🔍Web Search</strong>: Search the web for a given query using Google or Tavily</li>
-                     <li><strong>🏎️Streaming responses (beta)</strong>: See each token as it's received from the LLM in real-time</li>
-                     <li><strong>🧐Abstract Syntax Tree (AST) context</strong>: Automatically include parent class and class/field references in the prompt for better code analysis. Ensure the LLM has a large enough context window</li>
+                     <li><strong>🏎️Streaming responses</strong>: See each token as it's received from the LLM in real-time</li>
                      <li><strong>💬Chat Memory Size</strong>: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs)</li>
                 </ul>
                 <h2>Utility Commands:</h2>
