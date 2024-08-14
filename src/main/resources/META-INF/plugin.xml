@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.13</h2>
+        <UL>
+            <LI>Feat #209 : Upgraded to LangChain4j 0.33.0</LI>
+        </UL>
         <h2>v0.2.12</h2>
         <UL>
             <LI>Fix #203 : Google WebSeach is broken</LI>
