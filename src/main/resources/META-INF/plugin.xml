@@ -38,6 +38,8 @@
         <h2>v0.2.12</h2>
         <UL>
             <LI>Fix #203 : Google WebSeach is broken</LI>
+            <LI>Feat #199 : Show execution time of prompt enhancement</LI>
+        </UL>
         <UL>
         <h2>v0.2.11</h2>
         <UL>
