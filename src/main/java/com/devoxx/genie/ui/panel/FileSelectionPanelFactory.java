@@ -36,7 +36,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     public static @NotNull JPanel createPanel(Project project, List<VirtualFile> openFiles) {
         DefaultListModel<VirtualFile> listModel = new DefaultListModel<>();
-        JBList<VirtualFile> resultList = createResultList(project, listModel);
+        JBList<VirtualFile> resultList = createResultList(listModel);
         JBTextField filterField = createFilterField(project, listModel, resultList, openFiles);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -62,14 +62,12 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Create the result list
-     * @param project the project
      * @param listModel the list model
      * @return the list
      */
-    private static @NotNull JBList<VirtualFile> createResultList(Project project,
-                                                                 DefaultListModel<VirtualFile> listModel) {
+    private static @NotNull JBList<VirtualFile> createResultList(DefaultListModel<VirtualFile> listModel) {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
-        resultList.setCellRenderer(new FileListCellRenderer(project));
+        resultList.setCellRenderer(new FileListCellRenderer());
         resultList.setVisibleRowCount(10); // Show 10 rows by default
 
         addMouseListenerToResultList(resultList);
@@ -220,18 +218,13 @@ public class FileSelectionPanelFactory implements DumbAware {
     }
 
     private static class FileListCellRenderer extends DefaultListCellRenderer {
-        private final Project project;
-
-        public FileListCellRenderer(Project project) {
-            this.project = project;
-        }
 
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             if (value instanceof VirtualFile file) {
-                label.setIcon(FileTypeIconUtil.getFileTypeIcon(project, file));
+                label.setIcon(FileTypeIconUtil.getFileTypeIcon(file));
                 label.setText(file.getName());
             }
 
