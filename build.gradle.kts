@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.2.12"
+version = "0.2.13"
 
 repositories {
     mavenCentral()
@@ -37,17 +37,19 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
+    val lg4j_version = "0.33.0"
+
     // Add the dependencies for the core module
     implementation(project(":core"))
 
-    implementation("dev.langchain4j:langchain4j:0.32.0")
-    implementation("dev.langchain4j:langchain4j-ollama:0.32.0")
-    implementation("dev.langchain4j:langchain4j-local-ai:0.32.0")
-    implementation("dev.langchain4j:langchain4j-open-ai:0.32.0")
-    implementation("dev.langchain4j:langchain4j-anthropic:0.32.0")
-    implementation("dev.langchain4j:langchain4j-mistral-ai:0.32.0")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:0.32.0")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:0.32.0")
+    implementation("dev.langchain4j:langchain4j:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-local-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-mistral-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
