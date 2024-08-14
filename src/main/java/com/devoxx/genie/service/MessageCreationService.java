@@ -13,8 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -64,10 +63,6 @@ public class MessageCreationService {
             // Add the context prompt if it is not empty
             appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
             appendIfNotEmpty(stringBuilder, editorContent);
-        }
-
-        if (DevoxxGenieSettingsServiceProvider.getInstance().getAstMode()) {
-            addASTContext(chatMessageContext, stringBuilder);
         }
 
         UserMessage userMessage = new UserMessage(stringBuilder.toString());
@@ -172,27 +167,6 @@ public class MessageCreationService {
             userPromptContext.append(userPrompt);
             return userPromptContext.toString();
         });
-    }
-
-    /**
-     * Add AST prompt context (selected code snippet) to the chat message.
-     * @param chatMessageContext the chat message context
-     * @param sb                 the string builder
-     */
-    private void addASTContext(@NotNull ChatMessageContext chatMessageContext,
-                                      @NotNull StringBuilder sb) {
-        sb.append("\n\nRelated classes:\n\n");
-        List<VirtualFile> tempFiles = new ArrayList<>();
-
-        chatMessageContext.getEditorInfo().getSelectedFiles().forEach(file ->
-            PSIAnalyzerService.getInstance().analyze(chatMessageContext.getProject(), file)
-                .ifPresent(psiClasses ->
-                    psiClasses.forEach(psiClass -> {
-                        tempFiles.add(psiClass.getContainingFile().getVirtualFile());
-                        sb.append(psiClass.getText()).append("\n");
-                    })));
-
-        chatMessageContext.getEditorInfo().getSelectedFiles().addAll(tempFiles);
     }
 
     /**

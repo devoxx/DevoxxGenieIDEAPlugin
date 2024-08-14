@@ -118,7 +118,7 @@ public class ChatMessageContextUtil {
 
     private static void addEditorInfoToMessageContext(Editor editor,
                                                       @NotNull ChatMessageContext chatMessageContext) {
-        EditorInfo editorInfo = EditorUtil.getEditorInfo(chatMessageContext.getProject(), editor);
+        EditorInfo editorInfo = EditorUtil.getEditorInfo(editor);
         chatMessageContext.setEditorInfo(editorInfo);
     }
 }

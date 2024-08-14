@@ -79,12 +79,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer chatMemorySize = MAX_MEMORY;
     private Integer maxOutputTokens = MAX_OUTPUT_TOKENS;
 
-    // Enable AST mode
-    private Boolean astMode = AST_MODE;
-    private Boolean astParentClass = AST_PARENT_CLASS;
-    private Boolean astClassReference = AST_CLASS_REFERENCE;
-    private Boolean astFieldReference = AST_FIELD_REFERENCE;
-
     private String systemPrompt = SYSTEM_PROMPT;
     private String testPrompt = TEST_PROMPT;
     private String reviewPrompt = REVIEW_PROMPT;

@@ -53,11 +53,6 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != stateService.getTimeout();
         isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != stateService.getMaxRetries();
         isModified |= llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected() != stateService.getShowExecutionTime();
-
-        isModified |= !stateService.getAstMode().equals(llmConfigSettingsComponent.getAstMode().isSelected());
-        isModified |= !stateService.getAstParentClass().equals(llmConfigSettingsComponent.getAstParentClassCheckBox().isSelected());
-        isModified |= !stateService.getAstClassReference().equals(llmConfigSettingsComponent.getAstReferenceClassesCheckBox().isSelected());
-        isModified |= !stateService.getAstFieldReference().equals(llmConfigSettingsComponent.getAstReferenceFieldCheckBox().isSelected());
         return isModified;
     }
     /**
