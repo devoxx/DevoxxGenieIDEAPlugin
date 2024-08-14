@@ -9,7 +9,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 
 import lombok.AccessLevel;
@@ -169,12 +168,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private void initializeDefaultCostsIfEmpty() {
         if (modelInputCosts.isEmpty()) {
+            DefaultLLMSettingsUtil.initializeDefaultCosts();
             for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelInputCosts.put(key, entry.getValue());
             }
         }
         if (modelOutputCosts.isEmpty()) {
+            DefaultLLMSettingsUtil.initializeDefaultCosts();
             for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelOutputCosts.put(key, entry.getValue());
