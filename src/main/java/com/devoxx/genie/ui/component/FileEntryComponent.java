@@ -39,7 +39,7 @@ public class FileEntryComponent extends JPanel {
 
         setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(project, virtualFile);
+        Icon fileTypeIcon = FileTypeIconUtil.getFileTypeIcon(virtualFile);
         JButton fileNameButton = new JButton(virtualFile.getName(), fileTypeIcon);
 
         JButton fileNameBtn = createButton(fileNameButton);

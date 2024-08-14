@@ -62,14 +62,6 @@ public interface DevoxxGenieSettingsService {
 
     Integer getMaxOutputTokens();
 
-    Boolean getAstMode();
-
-    Boolean getAstParentClass();
-
-    Boolean getAstClassReference();
-
-    Boolean getAstFieldReference();
-
     String getSystemPrompt();
 
     String getTestPrompt();
@@ -139,14 +131,6 @@ public interface DevoxxGenieSettingsService {
     void setChatMemorySize(Integer size);
 
     void setMaxOutputTokens(Integer tokens);
-
-    void setAstMode(Boolean mode);
-
-    void setAstParentClass(Boolean parentClass);
-
-    void setAstClassReference(Boolean classReference);
-
-    void setAstFieldReference(Boolean fieldReference);
 
     void setSystemPrompt(String prompt);
 
