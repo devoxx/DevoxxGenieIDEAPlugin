@@ -71,7 +71,6 @@ dependencies {
 intellij {
     version.set("2023.3.4")
     type.set("IC")
-    plugins.set(listOf("java", "markdown"))
 }
 
 tasks {
@@ -80,7 +79,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("233")
+        sinceBuild.set("231")
         untilBuild.set("242.*")
     }
 

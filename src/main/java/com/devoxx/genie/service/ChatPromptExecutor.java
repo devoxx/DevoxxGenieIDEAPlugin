@@ -4,14 +4,13 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -95,11 +94,7 @@ public class ChatPromptExecutor {
                     editorInfo.setSelectedFiles(Arrays.asList(openFiles));
                 }
             }
-
-            PsiFile psiFile = PsiManager.getInstance(project).findFile(fileEditorManager.getSelectedFiles()[0]);
-            if (psiFile != null) {
-                editorInfo.setLanguage(psiFile.getLanguage().getDisplayName());
-            }
+            editorInfo.setLanguage(FileTypeUtil.getFileType(fileEditorManager.getSelectedFiles()[0]));
         }
 
         return editorInfo;

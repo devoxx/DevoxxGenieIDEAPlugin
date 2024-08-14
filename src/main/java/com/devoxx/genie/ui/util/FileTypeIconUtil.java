@@ -1,17 +1,14 @@
 package com.devoxx.genie.ui.util;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.util.concurrency.AppExecutorUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -24,10 +21,10 @@ public class FileTypeIconUtil {
     private FileTypeIconUtil() {
     }
 
-    public static Icon getFileTypeIcon(Project project, VirtualFile virtualFile) {
+    public static Icon getFileTypeIcon(VirtualFile virtualFile) {
         Future<Icon> iconFuture = AppExecutorUtil.getAppExecutorService().submit(() ->
             ApplicationManager.getApplication().runReadAction((Computable<Icon>) () -> {
-                Icon interfaceIcon = getIcon(project, virtualFile);
+                Icon interfaceIcon = getIcon(virtualFile);
                 if (interfaceIcon != null) return interfaceIcon;
                 return virtualFile.getFileType().getName().equals("UNKNOWN") ? CodeSnippetIcon : ClassIcon;
         }));
@@ -40,19 +37,21 @@ public class FileTypeIconUtil {
         }
     }
 
-    private static @Nullable Icon getIcon(Project project, VirtualFile virtualFile) {
-        PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
-        if (psiFile instanceof PsiJavaFile javaFile) {
-            PsiClass[] psiClasses = javaFile.getClasses();
-            if (psiClasses.length > 0) {
-                PsiClass psiClass = psiClasses[0];
-                if (psiClass.isInterface()) {
-                    return InterfaceIcon;
-                } else if (psiClass.isEnum()) {
-                    return EnumIcon;
-                } else {
-                    return ClassIcon;
+    private static @Nullable Icon getIcon(VirtualFile virtualFile) {
+        if (virtualFile != null && virtualFile.getExtension() != null) {
+            try {
+                if (virtualFile.getExtension().equalsIgnoreCase("java")) {
+                    String content = new String(virtualFile.contentsToByteArray());
+                    if (content.contains(" interface ")) {
+                        return InterfaceIcon;
+                    } else if (content.contains(" enum ")) {
+                        return EnumIcon;
+                    } else if (content.contains(" class ")) {
+                        return ClassIcon;
+                    }
                 }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
         return null;
