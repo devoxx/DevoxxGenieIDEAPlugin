@@ -134,19 +134,35 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
             String modelName = (String) tableModel.getValueAt(i, ColumnName.MODEL.ordinal());
             double inputCost = (Double) tableModel.getValueAt(i, ColumnName.INPUT_COST.ordinal());
             double outputCost = (Double) tableModel.getValueAt(i, ColumnName.OUTPUT_COST.ordinal());
-            String contextWindow = (String) tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
+            Object contextWindowObj = tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
+
+            int contextWindow = getContextWindow(contextWindowObj);
 
             LanguageModel model = LanguageModel.builder()
                 .provider(ModelProvider.fromString(provider))
                 .modelName(modelName)
                 .inputCost(inputCost)
                 .outputCost(outputCost)
-                .contextWindow(Integer.parseInt(contextWindow.replace(",", "")))
+                .contextWindow(contextWindow)
                 .apiKeyUsed(true)
                 .build();
             modifiedModels.add(model);
         }
         return modifiedModels;
+    }
+
+    private static int getContextWindow(Object contextWindowObj) {
+        int contextWindow;
+        if (contextWindowObj instanceof Integer) {
+            contextWindow = (Integer) contextWindowObj;
+        } else if (contextWindowObj instanceof String) {
+            String contextWindowStr = ((String) contextWindowObj).replace(",", "").split("\\.")[0];
+            contextWindow = Integer.parseInt(contextWindowStr);
+        } else {
+            // Handle unexpected type or throw an exception
+            throw new IllegalArgumentException("Unexpected type for context window: " + contextWindowObj.getClass());
+        }
+        return contextWindow;
     }
 
     private void setCustomRenderers() {
