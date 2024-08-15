@@ -86,7 +86,7 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
         gbc.gridy++;
         gbc.gridx = 0;
-        panel.add(new JLabel("Show Execution Time"), gbc);
+        panel.add(new JLabel("Show details metrics (execution time, tokens, price)"), gbc);
         gbc.gridx = 1;
         panel.add(showExecutionTimeCheckBox, gbc);
 

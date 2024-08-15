@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.error.ErrorHandler;
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.diagnostic.Logger;
@@ -33,10 +34,19 @@ public class NonStreamingPromptExecutor {
         isCancelled = false;
 
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
-            .thenAccept(aiMessageOptional -> {
-                if (!isCancelled && aiMessageOptional.isPresent()) {
+            .thenAccept(response -> {
+                if (!isCancelled && response != null) {
                     LOG.debug(">>>> Adding AI message to prompt output panel");
-                    chatMessageContext.setAiMessage(aiMessageOptional.get());
+                    chatMessageContext.setAiMessage(response.content());
+
+                    // Set token usage and cost
+                    LanguageModel languageModel = chatMessageContext.getLanguageModel();
+                    chatMessageContext.setTokenUsageAndCost(
+                        response.tokenUsage(),
+                        languageModel.getInputCost(),
+                        languageModel.getOutputCost()
+                    );
+
                     promptOutputPanel.addChatResponse(chatMessageContext);
                 } else if (isCancelled) {
                     LOG.debug(">>>> Prompt execution cancelled");
