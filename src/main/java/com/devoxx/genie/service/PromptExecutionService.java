@@ -29,7 +29,7 @@ public class PromptExecutionService {
     }
 
     private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
-    private CompletableFuture<Optional<AiMessage>> queryFuture = null;
+    private CompletableFuture<Response<AiMessage>> queryFuture = null;
 
     @Getter
     private boolean running = false;
@@ -42,12 +42,12 @@ public class PromptExecutionService {
      * @param chatMessageContext the chat message context
      * @return the response
      */
-    public @NotNull CompletableFuture<Optional<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
+    public @NotNull CompletableFuture<Response<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
         LOG.info("Execute query : " + chatMessageContext);
 
         queryLock.lock();
         try {
-            if (isCanceled()) return queryFuture;
+            if (isCanceled()) return CompletableFuture.completedFuture(null);
 
             MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
@@ -68,17 +68,15 @@ public class PromptExecutionService {
             queryFuture = CompletableFuture
                 .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
                 .orTimeout(
-                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout() ,
-                    TimeUnit.SECONDS)
+                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), TimeUnit.SECONDS)
                 .thenApply(result -> {
-                    long endTime = System.currentTimeMillis();
-                    chatMessageContext.setExecutionTimeMs(endTime - startTime);
+                    chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
                     return result;
                 })
                 .exceptionally(throwable -> {
                     LOG.error("Error occurred while processing chat message", throwable);
                     ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
-                    return Optional.empty();
+                    return null;
                 });
         } finally {
             queryLock.unlock();
@@ -104,14 +102,14 @@ public class PromptExecutionService {
     /**
      * Process the chat message.
      * @param chatMessageContext the chat message context
-     * @return the AI message
+     * @return the AI response
      */
-    private @NotNull Optional<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
+    private @NotNull Response<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             Response<AiMessage> response = chatLanguageModel.generate(ChatMemoryService.getInstance().messages());
             ChatMemoryService.getInstance().add(response.content());
-            return Optional.of(response.content());
+            return response;
         } catch (Exception e) {
             ChatMemoryService.getInstance().removeLast();
             throw new ProviderUnavailableException(e.getMessage());

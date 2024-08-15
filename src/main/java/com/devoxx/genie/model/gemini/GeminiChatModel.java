@@ -2,18 +2,23 @@ package com.devoxx.genie.model.gemini;
 
 import com.devoxx.genie.model.gemini.model.Content;
 import com.devoxx.genie.model.gemini.model.Part;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.output.TokenUsage;
 import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static dev.langchain4j.internal.RetryUtils.withRetry;
 import static dev.langchain4j.internal.Utils.getOrDefault;
@@ -27,6 +32,7 @@ public class GeminiChatModel implements ChatLanguageModel {
     private final Integer maxRetries;
 
     private final GeminiMessageRequest messageRequest = GeminiMessageRequest.builder().build();
+    private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
 
     @Builder
     public GeminiChatModel(String apiKey,
@@ -65,7 +71,16 @@ public class GeminiChatModel implements ChatLanguageModel {
 
         String response = completionResponse.getCandidates().get(0).getContent().getParts().get(0).getText();
 
-        return new Response<>(new AiMessage(response));
+        if (completionResponse.usageMetadata == null) {
+            // Calculate the number of tokens in the input and output
+            int inputTokens = ENCODING.countTokens(messages.toString());
+            int outputTokens = ENCODING.countTokens(response);
+            return Response.from(new AiMessage(response), new TokenUsage(inputTokens, outputTokens));
+        } else {
+            TokenUsage tokenUsage = new TokenUsage(completionResponse.usageMetadata.getPromptTokenCount(),
+                completionResponse.usageMetadata.getCandidatesTokenCount());
+            return Response.from(new AiMessage(response), tokenUsage);
+        }
     }
 
     /**

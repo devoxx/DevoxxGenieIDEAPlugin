@@ -8,6 +8,8 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 
 import java.time.LocalDateTime;
+
+import dev.langchain4j.model.output.TokenUsage;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,6 +30,8 @@ public class ChatMessageContext {
     private StreamingChatLanguageModel streamingChatLanguageModel;
     private int totalFileCount;
     private long executionTimeMs;
+    private TokenUsage tokenUsage;
+    private double cost;
 
     @Builder.Default
     private boolean webSearchRequested = false;
@@ -38,5 +42,10 @@ public class ChatMessageContext {
     // Custom method
     public boolean hasFiles() {
         return totalFileCount > 0;
+    }
+
+    public void setTokenUsageAndCost(TokenUsage tokenUsage, double inputCost, double outputCost) {
+        this.tokenUsage = tokenUsage;
+        this.cost = (tokenUsage.inputTokenCount() * inputCost + tokenUsage.outputTokenCount() * outputCost) / 1_000_000.0;
     }
 }
