@@ -45,8 +45,9 @@ public class ChatMessageContextUtil {
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
             .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) ||
-                                actionCommand.equals(GOOGLE_SEARCH_ACTION))
+                actionCommand.equals(GOOGLE_SEARCH_ACTION))
             .totalFileCount(totalFileCount)
+            .executionTimeMs(0)
             .build();
 
         boolean isStreamMode = stateService.getStreamMode() && actionCommand.equals(Constant.SUBMIT_ACTION);

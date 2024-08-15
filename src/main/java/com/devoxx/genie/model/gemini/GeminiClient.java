@@ -52,7 +52,7 @@ public class GeminiClient {
     }
 
     public GeminiCompletionResponse completion(GeminiMessageRequest request) {
-        String url = String.format("%s/v1beta/models/%s:generateContent?key=%s", baseUrl, modelName, apiKey);
+        String url = String.format("%s/v1/models/%s:generateContent?key=%s", baseUrl, modelName, apiKey);
 
         try {
             retrofit2.Response<GeminiCompletionResponse> retrofitResponse = geminiApi.completion(url, request).execute();
