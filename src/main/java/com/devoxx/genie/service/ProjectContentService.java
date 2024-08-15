@@ -124,7 +124,7 @@ public class ProjectContentService {
             .thenCompose(projectContent -> CompletableFuture.runAsync(() -> {
                 int tokenCount = ENCODING.countTokens(projectContent);
                 double estimatedInputCost = calculateCost(tokenCount, inputCost.get());
-                String message = String.format("Project contains %s. Estimated min. cost using %s %s is $%.6f",
+                String message = String.format("Project contains %s. Estimated min. cost using %s %s is $%.5f",
                     WindowContextFormatterUtil.format(tokenCount, "tokens"),
                     provider.getName(),
                     languageModel.getDisplayName(),

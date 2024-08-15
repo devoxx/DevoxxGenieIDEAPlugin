@@ -37,7 +37,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private List<LanguageModel> languageModels = new ArrayList<>();
 
-    private Boolean showExecutionTime = false;
+    private Boolean showExecutionTime = true;
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;

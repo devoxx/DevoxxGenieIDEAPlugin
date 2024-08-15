@@ -4,7 +4,9 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.processor.NodeProcessorFactory;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.JBColor;
 import org.commonmark.node.Block;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.IndentedCodeBlock;
@@ -49,6 +51,31 @@ public class ChatResponsePanel extends BackgroundPanel {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);
+        }
+
+        if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
+            // Add execution time, token usage and cost information
+            addTokenUsageAndCostInfo(chatMessageContext);
+        }
+    }
+
+    private void addTokenUsageAndCostInfo(@NotNull ChatMessageContext chatMessageContext) {
+        dev.langchain4j.model.output.TokenUsage tokenUsage = chatMessageContext.getTokenUsage();
+        if (tokenUsage != null) {
+            JPanel tokenInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            tokenInfoPanel.setOpaque(false);
+
+            String extraInfoString = String.format("ϟ %.2fs - Tokens: ↑ %d ↓️ %d - %.5f $",
+                chatMessageContext.getExecutionTimeMs() / 1000.0,
+                tokenUsage.inputTokenCount(), tokenUsage.outputTokenCount(), chatMessageContext.getCost());
+
+            JLabel tokenLabel = new JLabel(extraInfoString);
+
+            tokenLabel.setForeground(JBColor.GRAY);
+            tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
+
+            tokenInfoPanel.add(tokenLabel);
+            add(tokenInfoPanel);
         }
     }
 

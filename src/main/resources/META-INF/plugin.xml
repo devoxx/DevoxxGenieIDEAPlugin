@@ -39,6 +39,7 @@
         <UL>
             <LI>Feat #209 : Upgraded to LangChain4j 0.33.0</LI>
             <LI>Fix #211 : Class initialization must not depend on services</LI>
+            <LI>Feat #213 : Show input/output tokens and cost per request in footer of response</LI>
         </UL>
         <h2>v0.2.12</h2>
         <UL>
@@ -291,7 +292,7 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    
+
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
