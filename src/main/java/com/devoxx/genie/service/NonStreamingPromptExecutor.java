@@ -1,7 +1,6 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.error.ErrorHandler;
-import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.diagnostic.Logger;
@@ -40,12 +39,7 @@ public class NonStreamingPromptExecutor {
                     chatMessageContext.setAiMessage(response.content());
 
                     // Set token usage and cost
-                    LanguageModel languageModel = chatMessageContext.getLanguageModel();
-                    chatMessageContext.setTokenUsageAndCost(
-                        response.tokenUsage(),
-                        languageModel.getInputCost(),
-                        languageModel.getOutputCost()
-                    );
+                    chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
 
                     promptOutputPanel.addChatResponse(chatMessageContext);
                 } else if (isCancelled) {
