@@ -44,8 +44,11 @@ public class ChatMessageContext {
         return totalFileCount > 0;
     }
 
-    public void setTokenUsageAndCost(TokenUsage tokenUsage, double inputCost, double outputCost) {
+    public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;
-        this.cost = (tokenUsage.inputTokenCount() * inputCost + tokenUsage.outputTokenCount() * outputCost) / 1_000_000.0;
+        if (this.tokenUsage != null) {
+            this.cost = (tokenUsage.inputTokenCount() * languageModel.getInputCost() +
+                    tokenUsage.outputTokenCount() * languageModel.getOutputCost()) / 1_000_000.0;
+        }
     }
 }
