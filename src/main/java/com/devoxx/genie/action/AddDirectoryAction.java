@@ -1,5 +1,6 @@
 package com.devoxx.genie.action;
 
+import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
@@ -63,8 +64,12 @@ public class AddDirectoryAction extends DumbAwareAction {
                     int fileCount = filesToAdd.size();
                     int tokenCount = result.getTokenCount();
                     NotificationUtil.sendNotification(project,
-                        String.format("Added %d files from directory: %s (Approximately %s tokens using %s tokenizer)",
-                            fileCount, directory.getName(), WindowContextFormatterUtil.format(tokenCount), selectedProvider.getName()));
+                        String.format("Added %d files from directory: %s (approx. %s tokens in total using %s tokenizer)%s",
+                            fileCount,
+                            directory.getName(),
+                            WindowContextFormatterUtil.format(tokenCount),
+                            selectedProvider.getName(),
+                            result.getSkippedFileCount() > 0 ? " Skipped " + result.getSkippedFileCount() + " files" : ""));
                 });
         }
     }
@@ -85,7 +90,7 @@ public class AddDirectoryAction extends DumbAwareAction {
 
     private void copyDirectoryToClipboard(Project project, VirtualFile directory) {
         // Because we copy the content to the clipboard, we can set the limit to a high number
-        CompletableFuture<String> contentFuture = ProjectContentService.getInstance()
+        CompletableFuture<ScanContentResult> contentFuture = ProjectContentService.getInstance()
             .getDirectoryContent(project, directory, 1_000_000, false);
 
         contentFuture.thenAccept(content ->
