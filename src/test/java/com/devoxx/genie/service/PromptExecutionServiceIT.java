@@ -13,6 +13,7 @@ import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.output.Response;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -156,14 +157,13 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .languageModel(languageModel)
             .project(getProject())
             .totalFileCount(1)
-            .build();
+            .executionTimeMs(0)
+            .cost(0).build();
 
-        CompletableFuture<Optional<AiMessage>> response = promptExecutionService.executeQuery(context);
+        CompletableFuture<Response<AiMessage>> response = promptExecutionService.executeQuery(context);
         assertNotNull(response);
 
-        Optional<AiMessage> aiMessageOptional = response.join();
-        assertTrue(aiMessageOptional.isPresent());
-        AiMessage aiMessage = aiMessageOptional.get();
+        var aiMessage = response.join().content();
         assertNotNull(aiMessage);
         assertNotNull(aiMessage.text());
         assertFalse(aiMessage.text().isEmpty());
