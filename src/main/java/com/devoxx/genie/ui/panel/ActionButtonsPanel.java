@@ -303,8 +303,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             actionEvent.getActionCommand(),
             editorFileButtonManager,
             projectContext,
-            isProjectContextAdded,
-            FileListManager.getInstance().getTotalFileCount()
+            isProjectContextAdded
         );
 
         return true;
