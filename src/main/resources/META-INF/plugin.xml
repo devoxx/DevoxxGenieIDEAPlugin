@@ -38,6 +38,7 @@
         <h2>v0.2.15</h2>
         <UL>
             <LI>Feat #219 : Mention how many files when calculating total tokens</LI>
+            <LI>Feat #221 : Add multiple selected files using right-click </LI>
         </UL>
         <h2>v0.2.14</h2>
         <UL>
@@ -357,23 +358,23 @@
 
         <action id="DevoxxGenie.AddSnippetAction"
                 class="com.devoxx.genie.action.AddSnippetAction"
-                text="Add To Context Window"
+                text="Add To Prompt Context"
                 icon="/icons/pluginIcon.svg"
                 description="Add code snippet to context window">
             <add-to-group group-id="EditorPopupMenu" anchor="last" />
         </action>
 
-        <action id="DevoxxGenie.AddFileAction"
+        <action id="DevoxxGenie.AddFilesAction"
                 class="com.devoxx.genie.action.AddFileAction"
-                text="Add File To Context Window"
+                text="Add File(s) To Prompt Context"
                 icon="/icons/pluginIcon.svg"
-                description="Add file to Context">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last" />
+                description="Add file(s) to the prompt context">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
 
         <action id="AddDirectoryToContextWindow"
                 class="com.devoxx.genie.action.AddDirectoryAction"
-                text="Add Directory to Context Window"
+                text="Add Directory to Prompt Context"
                 icon="/icons/pluginIcon.svg"
                 description="Add the selected directory to the context window">
             <add-to-group group-id="ProjectViewPopupMenu"/>

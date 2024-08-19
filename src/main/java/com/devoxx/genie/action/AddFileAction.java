@@ -10,6 +10,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
 public class AddFileAction extends DumbAwareAction {
@@ -24,20 +27,31 @@ public class AddFileAction extends DumbAwareAction {
         ensureToolWindowVisible(project);
 
         FileListManager fileListManager = FileListManager.getInstance();
-        VirtualFile selectedFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        if (selectedFile != null && !selectedFile.isDirectory() && !fileListManager.contains(selectedFile)) {
-            fileListManager.addFile(selectedFile);
-        } else if (selectedFile != null && selectedFile.isDirectory()) {
-            NotificationUtil.sendNotification(project, "Cannot add directories. Please select a file.");
+        VirtualFile[] selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+
+        if (selectedFiles != null && selectedFiles.length > 0) {
+            List<VirtualFile> filesToAdd = new ArrayList<>();
+            for (VirtualFile file : selectedFiles) {
+                if (!file.isDirectory() && !fileListManager.contains(file)) {
+                    filesToAdd.add(file);
+                }
+            }
+
+            if (!filesToAdd.isEmpty()) {
+                fileListManager.addFiles(filesToAdd);
+                NotificationUtil.sendNotification(project, "Added " + filesToAdd.size() + " file(s) to prompt context");
+            } else {
+                NotificationUtil.sendNotification(project, "No new files to add or only directories selected");
+            }
         } else {
-            NotificationUtil.sendNotification(project, "File already added or no file selected");
+            NotificationUtil.sendNotification(project, "No files selected");
         }
     }
 
     @Override
     public void update(@NotNull AnActionEvent e) {
-        VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        e.getPresentation().setEnabledAndVisible(file != null && !file.isDirectory());
+        VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+        e.getPresentation().setEnabledAndVisible(files != null && files.length > 0);
     }
 
     @Override
