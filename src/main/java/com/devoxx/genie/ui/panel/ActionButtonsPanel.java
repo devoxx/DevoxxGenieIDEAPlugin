@@ -17,6 +17,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -508,7 +509,13 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         int maxTokens = selectedModel.getContextWindow();
 
-        tokenCalculationService.calculateTokensAndCost(project, null, maxTokens, selectedProvider, selectedModel, true);
+        tokenCalculationService.calculateTokensAndCost(
+            project,
+            null,
+            maxTokens,
+            selectedProvider,
+            selectedModel,
+            DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider));
     }
 
     public void updateTokenUsage(int maxTokens) {
