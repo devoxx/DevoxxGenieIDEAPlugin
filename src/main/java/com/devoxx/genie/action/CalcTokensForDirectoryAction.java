@@ -1,18 +1,11 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
-import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.service.TokenCalculationService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,21 +25,12 @@ public class CalcTokensForDirectoryAction extends DumbAwareAction {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         ModelProvider selectedProvider = ModelProvider.fromString(stateService.getSelectedProvider(project.getLocationHash()));
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Calculating Tokens", false) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                ProjectContentService.getInstance()
-                    .getDirectoryContentAndTokens(selectedDir, true, selectedProvider)
-                    .thenAccept(result -> {
-                        String message = String.format("Directory '%s' contains approximately %s tokens (using %s tokenizer)",
-                            selectedDir.getName(),
-                            WindowContextFormatterUtil.format(result.getTokenCount()),
-                            selectedProvider.getName());
-                        NotificationUtil.sendNotification(project, message);
-                    });
-            }
-        });
+        int maxTokens = stateService.getDefaultWindowContext();
+
+        new TokenCalculationService()
+            .calculateTokensAndCost(project, selectedDir, maxTokens, selectedProvider, null, false);
     }
+
 
     @Override
     public void update(@NotNull AnActionEvent e) {

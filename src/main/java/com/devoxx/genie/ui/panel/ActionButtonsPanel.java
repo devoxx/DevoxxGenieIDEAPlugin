@@ -5,11 +5,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatPromptExecutor;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
-import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.service.*;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -17,12 +13,11 @@ import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateServiceProvider;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -38,7 +33,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
-import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static javax.swing.SwingUtilities.invokeLater;
@@ -73,6 +67,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private ChatMessageContext currentChatMessageContext;
     private String projectContext;
 
+    private final TokenCalculationService tokenCalculationService;
+
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputArea,
                               PromptOutputPanel promptOutputPanel,
@@ -90,6 +86,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.modelNameComboBox = modelNameComboBox;
         this.devoxxGenieToolWindowContent = devoxxGenieToolWindowContent;
         this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
+        this.tokenCalculationService = new TokenCalculationService();
 
         ApplicationManager.getApplication().getMessageBus()
             .connect()
@@ -460,7 +457,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 isProjectContextAdded = true;
                 SwingUtilities.invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);
-                    tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent);
+                    tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent.getContent());
                     addProjectBtn.setText("Full Project (" + WindowContextFormatterUtil.format(tokenCount, "tokens") + ")");
                     addProjectBtn.setToolTipText("Remove entire project from prompt context");
                     addProjectBtn.setEnabled(true);
@@ -510,14 +507,15 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return;
         }
 
-        synchronized (this) {
-            ProjectContentService.getInstance().calculateTokensAndCost(
-                project,
-                getWindowContext(),
-                selectedProvider,
-                selectedModel
-            );
-        }
+        int maxTokens = selectedModel.getContextWindow();
+
+        tokenCalculationService.calculateTokensAndCost(
+            project,
+            null,
+            maxTokens,
+            selectedProvider,
+            selectedModel,
+            DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider));
     }
 
     public void updateTokenUsage(int maxTokens) {
