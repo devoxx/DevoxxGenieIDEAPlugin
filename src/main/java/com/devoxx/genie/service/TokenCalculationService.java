@@ -48,11 +48,11 @@ public class TokenCalculationService {
                                          @NotNull CompletableFuture<ScanContentResult> contentFuture) {
         contentFuture.thenAccept(result -> {
             String message = String.format(
-                "Directory contains %s tokens using the %s tokenizer.  " +
-                "The %s includes %d files (skipped %d files and %d directories), ",
+                "%s contains %s tokens using the %s tokenizer.  " +
+                "It includes %d files (skipped %d files and %d directories).",
+                directory != null ? "'" + directory.getName() + "' directory" : "Project",
                 WindowContextFormatterUtil.format(result.getTokenCount()),
                 selectedProvider.getName(),
-                directory != null ? "'" + directory.getName() + "' directory" : "project",
                 result.getFileCount(),
                 result.getSkippedFileCount(),
                 result.getSkippedDirectoryCount());
@@ -85,7 +85,7 @@ public class TokenCalculationService {
             double estimatedInputCost = calculateCost(scanResult.getTokenCount(), inputCost.get());
             String message;
             if (scanResult.getSkippedFileCount() > 0 || scanResult.getSkippedDirectoryCount() > 0) {
-                message = String.format("%sEstimated min. cost using %s %s is $%.5f",
+                message = String.format("%s Estimated cost using %s %s is $%.5f",
                     getDefaultMessage(scanResult),
                     selectedProvider.getName(),
                     languageModel.getDisplayName(),
@@ -93,9 +93,10 @@ public class TokenCalculationService {
                 );
             } else {
                 message = String.format(
-                    "Project contains %s tokens in %d files.  Estimated min. cost using %s %s is $%.5f",
+                    "Project contains %s in %d file%s.  Estimated cost using %s %s is $%.5f",
                     WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
                     scanResult.getFileCount(),
+                    scanResult.getFileCount() > 1 ? "s" : "",
                     selectedProvider.getName(),
                     languageModel.getDisplayName(),
                     estimatedInputCost
@@ -113,9 +114,9 @@ public class TokenCalculationService {
 
     private @NotNull String getDefaultMessage(@NotNull ScanContentResult scanResult) {
         return String.format(
-            "%s tokens from %d files, skipped" +
+            "%s from %d files, skipped " +
                 (scanResult.getSkippedFileCount() > 0 ? scanResult.getSkippedFileCount() + " files " : "") +
-                (scanResult.getSkippedFileCount() > 0 && scanResult.getSkippedDirectoryCount() > 0 ? " and" : "") +
+                (scanResult.getSkippedFileCount() > 0 && scanResult.getSkippedDirectoryCount() > 0 ? " and " : "") +
                 (scanResult.getSkippedDirectoryCount() > 0 ? scanResult.getSkippedDirectoryCount() + " directories" : "")
                 + ".  ",
             WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
