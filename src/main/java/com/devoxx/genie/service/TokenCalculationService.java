@@ -48,14 +48,14 @@ public class TokenCalculationService {
                                          @NotNull CompletableFuture<ScanContentResult> contentFuture) {
         contentFuture.thenAccept(result -> {
             String message = String.format(
-                "The %s scan includes %d files (skipped %d files and %d directories), " +
-                "resulting in approximately %s tokens (processed using the %s tokenizer).",
+                "Directory contains %s tokens using the %s tokenizer.  " +
+                "The %s includes %d files (skipped %d files and %d directories), ",
+                WindowContextFormatterUtil.format(result.getTokenCount()),
+                selectedProvider.getName(),
                 directory != null ? "'" + directory.getName() + "' directory" : "project",
                 result.getFileCount(),
                 result.getSkippedFileCount(),
-                result.getSkippedDirectoryCount(),
-                WindowContextFormatterUtil.format(result.getTokenCount()),
-                selectedProvider.getName());
+                result.getSkippedDirectoryCount());
             NotificationUtil.sendNotification(project, message);
         });
     }
@@ -64,8 +64,11 @@ public class TokenCalculationService {
                                      @NotNull ModelProvider selectedProvider,
                                      @NotNull LanguageModel languageModel,
                                      CompletableFuture<ScanContentResult> contentFuture) {
-        if (!DefaultLLMSettingsUtil.isApiBasedProvider(selectedProvider)) {
-            showInfoForLocalProvider(project, contentFuture);
+        if (!DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider)) {
+            contentFuture.thenAccept(scanResult -> {
+                    String defaultMessage = getDefaultMessage(scanResult);
+                    NotificationUtil.sendNotification(project, defaultMessage);
+                });
         } else {
             showInfoForCloudProvider(project, selectedProvider, languageModel, contentFuture);
         }
@@ -80,16 +83,24 @@ public class TokenCalculationService {
 
         contentFuture.thenAccept(scanResult -> {
             double estimatedInputCost = calculateCost(scanResult.getTokenCount(), inputCost.get());
-            String message = String.format(
-                "Project contains %s tokens in %d files (skipped %d files and %d directories)." +
-                "Estimated min. cost using %s %s is $%.5f",
-                WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
-                scanResult.getFileCount(),
-                scanResult.getSkippedFileCount(),
-                scanResult.getSkippedDirectoryCount(),
-                selectedProvider.getName(),
-                languageModel.getDisplayName(),
-                estimatedInputCost);
+            String message;
+            if (scanResult.getSkippedFileCount() > 0 || scanResult.getSkippedDirectoryCount() > 0) {
+                message = String.format("%sEstimated min. cost using %s %s is $%.5f",
+                    getDefaultMessage(scanResult),
+                    selectedProvider.getName(),
+                    languageModel.getDisplayName(),
+                    estimatedInputCost
+                );
+            } else {
+                message = String.format(
+                    "Project contains %s tokens in %d files.  Estimated min. cost using %s %s is $%.5f",
+                    WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
+                    scanResult.getFileCount(),
+                    selectedProvider.getName(),
+                    languageModel.getDisplayName(),
+                    estimatedInputCost
+                );
+            }
 
             if (scanResult.getTokenCount() > languageModel.getContextWindow()) {
                 message += String.format(". Total project size exceeds model's max context of %s tokens.",
@@ -100,23 +111,18 @@ public class TokenCalculationService {
         });
     }
 
-    private static void showInfoForLocalProvider(@NotNull Project project,
-                                                 @NotNull CompletableFuture<ScanContentResult> contentFuture) {
-        contentFuture.thenAccept(scanResult -> {
-                    String message = String.format("Project contains %s in %d files " +
-                            "(skipped %d files and %d directories).  " +
-                            "Cost calculation is not applicable for local providers. " +
-                            "Make sure you select a model with a big enough window context.",
-                        WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
-                        scanResult.getFileCount(),
-                        scanResult.getSkippedFileCount(),
-                        scanResult.getSkippedDirectoryCount());
-                    NotificationUtil.sendNotification(project, message);
-                });
+    private @NotNull String getDefaultMessage(@NotNull ScanContentResult scanResult) {
+        return String.format(
+            "%s tokens from %d files, skipped" +
+                (scanResult.getSkippedFileCount() > 0 ? scanResult.getSkippedFileCount() + " files " : "") +
+                (scanResult.getSkippedFileCount() > 0 && scanResult.getSkippedDirectoryCount() > 0 ? " and" : "") +
+                (scanResult.getSkippedDirectoryCount() > 0 ? scanResult.getSkippedDirectoryCount() + " directories" : "")
+                + ".  ",
+            WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
+            scanResult.getFileCount());
     }
 
     private double calculateCost(int tokenCount, double tokenCost) {
         return (tokenCount / 1_000_000.0) * tokenCost;
     }
-
 }

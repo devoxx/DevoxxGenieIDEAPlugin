@@ -16,14 +16,19 @@ public class DefaultLLMSettingsUtil {
     public static void initializeDefaultCosts() {
         LLMModelRegistryService modelRegistry = LLMModelRegistryService.getInstance();
         for (LanguageModel model : modelRegistry.getModels()) {
-            if (isApiBasedProvider(model.getProvider())) {
+            if (isApiKeyBasedProvider(model.getProvider())) {
                 DEFAULT_INPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getInputCost());
                 DEFAULT_OUTPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getOutputCost());
             }
         }
     }
 
-    public static boolean isApiBasedProvider(ModelProvider provider) {
+    /**
+     * Does the ModelProvider use an API KEY?
+     * @param provider the LLM provider
+     * @return true when API Key is required, meaning a cost is involved
+     */
+    public static boolean isApiKeyBasedProvider(ModelProvider provider) {
         return provider == ModelProvider.OpenAI ||
             provider == ModelProvider.Anthropic ||
             provider == ModelProvider.Mistral ||

@@ -140,7 +140,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                              String modelName,
                              double inputCost,
                              double outputCost) {
-        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
+        if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             modelInputCosts.put(key, inputCost);
             modelOutputCosts.put(key, outputCost);
@@ -184,7 +184,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     public void setModelWindowContext(ModelProvider provider, String modelName, int windowContext) {
-        if (DefaultLLMSettingsUtil.isApiBasedProvider(provider)) {
+        if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(provider)) {
             String key = provider.getName() + ":" + modelName;
             modelWindowContexts.put(key, windowContext);
         }

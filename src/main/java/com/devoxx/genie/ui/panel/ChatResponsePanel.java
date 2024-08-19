@@ -5,6 +5,7 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.processor.NodeProcessorFactory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import org.commonmark.node.Block;
@@ -65,9 +66,16 @@ public class ChatResponsePanel extends BackgroundPanel {
             JPanel tokenInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             tokenInfoPanel.setOpaque(false);
 
-            String extraInfoString = String.format("ϟ %.2fs - Tokens: ↑ %d ↓️ %d - %.5f $",
-                chatMessageContext.getExecutionTimeMs() / 1000.0,
-                tokenUsage.inputTokenCount(), tokenUsage.outputTokenCount(), chatMessageContext.getCost());
+            String cost = "";
+            if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(chatMessageContext.getLanguageModel().getProvider())) {
+                cost = String.format("- %.5f $", chatMessageContext.getCost());
+            }
+
+            String extraInfoString = String.format("ϟ %.2fs - Tokens ↑ %d ↓️ %d %s",
+                                            chatMessageContext.getExecutionTimeMs() / 1000.0,
+                                            tokenUsage.inputTokenCount(),
+                                            tokenUsage.outputTokenCount(),
+                                            cost);
 
             JLabel tokenLabel = new JLabel(extraInfoString);
 
