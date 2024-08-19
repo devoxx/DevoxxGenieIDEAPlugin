@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.15</h2>
+        <UL>
+            <LI>Feat #219 : Mention how many files when calculating total tokens</LI>
+        </UL>
         <h2>v0.2.14</h2>
         <UL>
             <LI>Fix #217 : Prompting local LLMs throws exception</LI>
@@ -319,7 +323,7 @@
         <projectConfigurable id="com.devoxx.genie.CopyProjectSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
-                             displayName="Copy Project"/>
+                             displayName="Scan &amp; Copy Project"/>
 
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -336,12 +340,12 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.PSIAnalyzerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectScannerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
