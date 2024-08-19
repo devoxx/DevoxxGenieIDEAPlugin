@@ -35,20 +35,17 @@ public class ChatMessageContextUtil {
                                                             @NotNull String actionCommand,
                                                             EditorFileButtonManager editorFileButtonManager,
                                                             String projectContext,
-                                                            boolean isProjectContextAdded,
-                                                            int totalFileCount) {
-
+                                                            boolean isProjectContextAdded) {
         ChatMessageContext context = ChatMessageContext.builder()
             .project(project)
             .name(String.valueOf(System.currentTimeMillis()))
             .userPrompt(userPromptText)
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
-            .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) ||
-                actionCommand.equals(GOOGLE_SEARCH_ACTION))
-            .totalFileCount(totalFileCount)
+            .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) || actionCommand.equals(GOOGLE_SEARCH_ACTION))
+            .totalFileCount(FileListManager.getInstance().size())
             .executionTimeMs(0)
-            .build();
+            .cost(0).build();
 
         boolean isStreamMode = stateService.getStreamMode() && actionCommand.equals(Constant.SUBMIT_ACTION);
         if (isStreamMode) {

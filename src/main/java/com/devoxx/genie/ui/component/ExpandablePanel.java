@@ -9,14 +9,16 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import java.util.Objects;
 
+import static com.devoxx.genie.action.AddSnippetAction.ORIGINAL_FILE_KEY;
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpand;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpanded;
 
 public class ExpandablePanel extends JBPanel<ExpandablePanel> {
 
-    private boolean isExpanded = true;
+    private boolean isExpanded = false;
     private final JButton toggleButton;
     private final JPanel contentPanel;
 
@@ -44,12 +46,10 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(PROMPT_BG_COLOR);
 
-        isExpanded = files.size() <= 3;
-
         for (VirtualFile file : files) {
             contentPanel.add(new FileEntryComponent(chatMessageContext.getProject(), file, null));
         }
-        contentPanel.setVisible(true);
+        contentPanel.setVisible(isExpanded);
 
         JScrollPane scrollPane = new JBScrollPane(contentPanel);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
