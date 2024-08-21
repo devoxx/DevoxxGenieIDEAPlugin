@@ -39,6 +39,7 @@
         <UL>
             <LI>Feat #219 : Mention how many files when calculating total tokens</LI>
             <LI>Feat #221 : Add multiple selected files using right-click </LI>
+            <LI>Feat #228 : Show execution time even when no token usage is provided</LI>
         </UL>
         <h2>v0.2.14</h2>
         <UL>
