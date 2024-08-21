@@ -85,7 +85,7 @@ public class ProjectContentService {
         });
     }
 
-    private Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
+    public static Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
         return switch (provider) {
             case OpenAI, Anthropic, Google ->
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);

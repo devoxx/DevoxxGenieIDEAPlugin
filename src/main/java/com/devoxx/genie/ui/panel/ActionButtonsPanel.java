@@ -333,7 +333,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return LanguageModel.builder()
                 .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
                 .modelName(modelName)
-                .apiKeyUsed(false).inputCost(0).outputCost(0).contextWindow(128_000).build();
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .contextWindow(128_000)
+                .build();
         }
     }
 
@@ -452,7 +456,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         ProjectContentService.getInstance().getProjectContent(project, tokenLimit, false)
             .thenAccept(projectContent -> {
-                projectContext = "Project Context:\n" + projectContent;
+                projectContext = "Project Context:\n" + projectContent.getContent();
                 isProjectContextAdded = true;
                 SwingUtilities.invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);

@@ -1,13 +1,20 @@
 package com.devoxx.genie.ui.panel;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.processor.NodeProcessorFactory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingType;
+import com.knuddels.jtokkit.api.IntArrayList;
+import dev.langchain4j.model.output.TokenUsage;
 import org.commonmark.node.Block;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.IndentedCodeBlock;
@@ -17,12 +24,16 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
 public class ChatResponsePanel extends BackgroundPanel {
 
     private final ChatMessageContext chatMessageContext;
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.#####");
 
     /**
      * Create a new chat response panel.
@@ -76,12 +87,43 @@ public class ChatResponsePanel extends BackgroundPanel {
             }
         }
 
-        JLabel tokenLabel = new JLabel(extraInfoString.toString());
+        tokenUsage = calcOllamaInputTokenCount(chatMessageContext, tokenUsage);
+
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
+        String formattedInputTokens = numberFormat.format(tokenUsage.inputTokenCount());
+        String formattedOutputTokens = numberFormat.format(tokenUsage.outputTokenCount());
+
+        String extraInfoString = String.format("ϟ %.2fs - Tokens ↑ %s ↓️ %s %s",
+                                               chatMessageContext.getExecutionTimeMs() / 1000.0,
+                                               formattedInputTokens,
+                                               formattedOutputTokens,
+                                               cost);
+
+        JLabel tokenLabel = new JLabel(extraInfoString);
+
         tokenLabel.setForeground(JBColor.GRAY);
         tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
 
         tokenInfoPanel.add(tokenLabel);
         add(tokenInfoPanel);
+    }
+
+    /**
+     * Ollama does not count the input context tokens in the token usage, this method fixes this.
+     * @param chatMessageContext the chat message context
+     * @param tokenUsage the token usage
+     * @return the updated token usage
+     */
+    private static TokenUsage calcOllamaInputTokenCount(@NotNull ChatMessageContext chatMessageContext, TokenUsage tokenUsage) {
+        if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Ollama)) {
+            int inputContextTokens = 0;
+            if (chatMessageContext.getContext() != null) {
+                Encoding encodingForProvider = ProjectContentService.getEncodingForProvider(chatMessageContext.getLanguageModel().getProvider());
+                inputContextTokens = encodingForProvider.encode(chatMessageContext.getContext()).size();
+            }
+            tokenUsage = new TokenUsage(tokenUsage.inputTokenCount() + inputContextTokens, tokenUsage.outputTokenCount());
+        }
+        return tokenUsage;
     }
 
     /**
