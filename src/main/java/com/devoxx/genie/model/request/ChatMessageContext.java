@@ -48,7 +48,7 @@ public class ChatMessageContext {
         this.tokenUsage = tokenUsage;
         if (this.tokenUsage != null) {
             this.cost = (tokenUsage.inputTokenCount() * languageModel.getInputCost() +
-                    tokenUsage.outputTokenCount() * languageModel.getOutputCost()) / 1_000_000.0;
+                         tokenUsage.outputTokenCount() * languageModel.getOutputCost()) / 1_000_000.0;
         }
     }
 }
