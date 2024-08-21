@@ -12,8 +12,10 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.NonStreamingPromptExecutor;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.util.EditorUtil;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -23,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ChatMessageContextUtil {
+
+    private static final Logger LOG = Logger.getInstance(ChatMessageContextUtil.class);
 
     public static final int ZERO_SECONDS = 0;
     public static final int SIXTY_SECONDS = 60;
@@ -70,7 +74,7 @@ public class ChatMessageContextUtil {
      * @param isProjectContextAdded the is project context added
      * @param actionCommand the action command for setting the context for web requests
      */
-    private static void setWindowContext(ChatMessageContext chatMessageContext,
+    private static void setWindowContext(@NotNull ChatMessageContext chatMessageContext,
                                          String userPrompt,
                                          EditorFileButtonManager editorFileButtonManager,
                                          String projectContext,
