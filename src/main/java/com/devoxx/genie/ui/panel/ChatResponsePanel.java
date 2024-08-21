@@ -61,30 +61,27 @@ public class ChatResponsePanel extends BackgroundPanel {
     }
 
     private void addTokenUsageAndCostInfo(@NotNull ChatMessageContext chatMessageContext) {
+        JPanel tokenInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        tokenInfoPanel.setOpaque(false);
+
+        StringBuilder extraInfoString = new StringBuilder();
+        extraInfoString.append(String.format("ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0));
+
         dev.langchain4j.model.output.TokenUsage tokenUsage = chatMessageContext.getTokenUsage();
         if (tokenUsage != null) {
-            JPanel tokenInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            tokenInfoPanel.setOpaque(false);
+            extraInfoString.append(String.format(" - Tokens ↑ %d ↓️ %d", tokenUsage.inputTokenCount(), tokenUsage.outputTokenCount()));
 
-            String cost = "";
             if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(chatMessageContext.getLanguageModel().getProvider())) {
-                cost = String.format("- %.5f $", chatMessageContext.getCost());
+                extraInfoString.append(String.format(" - %.5f $", chatMessageContext.getCost()));
             }
-
-            String extraInfoString = String.format("ϟ %.2fs - Tokens ↑ %d ↓️ %d %s",
-                                            chatMessageContext.getExecutionTimeMs() / 1000.0,
-                                            tokenUsage.inputTokenCount(),
-                                            tokenUsage.outputTokenCount(),
-                                            cost);
-
-            JLabel tokenLabel = new JLabel(extraInfoString);
-
-            tokenLabel.setForeground(JBColor.GRAY);
-            tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
-
-            tokenInfoPanel.add(tokenLabel);
-            add(tokenInfoPanel);
         }
+
+        JLabel tokenLabel = new JLabel(extraInfoString.toString());
+        tokenLabel.setForeground(JBColor.GRAY);
+        tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
+
+        tokenInfoPanel.add(tokenLabel);
+        add(tokenInfoPanel);
     }
 
     /**
