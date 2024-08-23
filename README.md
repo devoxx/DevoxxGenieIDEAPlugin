@@ -27,8 +27,6 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - **💬 Chat conversations**: Supports chat conversations with configurable memory size.
 - **📁 Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
 
-See new features in action @ [https://www.youtube.com/watch?v=7IJrKIS1eN8 ](https://www.youtube.com/watch?v=E9PcKBSMv8U)
-
 ![GenieExample](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/5064cef3-e7f8-4ab8-9485-2dbd0a7788df)
 
 We now support also streaming responses which you can enable in the Settings page 🤩 🚀
