@@ -12,7 +12,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 
-[![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/watch?v=kgtctcbA6WE)
+[![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
 
 ### Key Features:
 
