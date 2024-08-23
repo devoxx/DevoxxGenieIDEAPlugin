@@ -8,7 +8,6 @@ import com.intellij.util.ui.JBUI;
 
 import javax.swing.*;
 import java.awt.*;
-
 import java.text.DecimalFormat;
 
 public class ModelInfoRenderer extends JPanel implements ListCellRenderer<LanguageModel> {

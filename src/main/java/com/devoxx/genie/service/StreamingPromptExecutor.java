@@ -2,10 +2,10 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
-import com.devoxx.genie.ui.util.NotificationUtil;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
 public class StreamingPromptExecutor {

@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.component;
 
 import com.intellij.ui.JBColor;
-import lombok.Setter;
 
 import javax.swing.*;
 import java.awt.*;

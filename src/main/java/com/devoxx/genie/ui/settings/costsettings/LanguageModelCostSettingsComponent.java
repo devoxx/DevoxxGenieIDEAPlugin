@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
-import static com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsComponent.ColumnName.*;
+import static com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsComponent.ColumnName.CONTEXT_WINDOW;
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
 
     private final JTable costTable;
