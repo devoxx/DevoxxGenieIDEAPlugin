@@ -1,9 +1,9 @@
 package com.devoxx.genie.ui.panel;
 
-import java.awt.*;
-
 import com.intellij.ui.components.JBScrollPane;
+
 import javax.swing.*;
+import java.awt.*;
 
 public class HelpPanel extends BackgroundPanel {
     private final JEditorPane helpPane;

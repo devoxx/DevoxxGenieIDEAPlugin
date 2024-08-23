@@ -1,4 +1,5 @@
 package com.devoxx.genie.service;
+
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
-import static dev.langchain4j.model.anthropic.AnthropicChatModelName.CLAUDE_INSTANT_1_2;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 
 @Service(Service.Level.APP)

@@ -6,7 +6,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
 
 public class NonStreamingPromptExecutor {
 

@@ -1,8 +1,5 @@
 package com.devoxx.genie.util;
 
-import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
-import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
-
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
@@ -12,7 +9,6 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
-import com.devoxx.genie.service.NonStreamingPromptExecutor;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.intellij.openapi.diagnostic.Logger;
@@ -23,6 +19,9 @@ import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+
+import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
+import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
 
 public class ChatMessageContextUtil {
 
