@@ -3,6 +3,7 @@ package com.devoxx.genie.util;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 

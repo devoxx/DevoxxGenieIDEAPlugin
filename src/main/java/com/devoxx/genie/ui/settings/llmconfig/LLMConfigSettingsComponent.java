@@ -11,7 +11,6 @@ import org.jdesktop.swingx.JXTitledSeparator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
 
 public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 

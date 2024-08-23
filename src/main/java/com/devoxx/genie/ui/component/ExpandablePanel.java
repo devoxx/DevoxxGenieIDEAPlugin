@@ -9,9 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
-import java.util.Objects;
 
-import static com.devoxx.genie.action.AddSnippetAction.ORIGINAL_FILE_KEY;
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpand;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpanded;

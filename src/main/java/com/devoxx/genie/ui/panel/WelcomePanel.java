@@ -11,7 +11,6 @@ import com.intellij.ui.components.JBScrollPane;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
-import java.awt.Desktop;
 import java.net.URI;
 import java.util.ResourceBundle;
 
