@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;

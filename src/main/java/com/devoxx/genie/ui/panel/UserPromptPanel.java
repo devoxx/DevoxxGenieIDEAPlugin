@@ -13,7 +13,7 @@ import java.awt.*;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
-import static java.util.Arrays.*;
+import static java.util.Arrays.stream;
 
 public class UserPromptPanel extends BackgroundPanel {
 

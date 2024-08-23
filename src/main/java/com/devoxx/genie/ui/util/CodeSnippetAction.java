@@ -12,9 +12,8 @@ import org.commonmark.node.FencedCodeBlock;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
-import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.InsertCodeIcon;
