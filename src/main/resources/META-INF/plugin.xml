@@ -349,6 +349,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectScannerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.LMStudioService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
