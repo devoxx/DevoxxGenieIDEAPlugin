@@ -5,6 +5,7 @@ import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
@@ -28,7 +29,8 @@ public class ChatModelFactoryProvider {
         ModelProvider.Mistral.getName(), MistralChatModelFactory::new,
         ModelProvider.Groq.getName(), GroqChatModelFactory::new,
         ModelProvider.DeepInfra.getName(), DeepInfraChatModelFactory::new,
-        ModelProvider.Google.getName(), GoogleChatModelFactory::new
+        ModelProvider.Google.getName(), GoogleChatModelFactory::new,
+        ModelProvider.LMStudio.getName(), LMStudioChatModelFactory::new
     );
 
     /**
