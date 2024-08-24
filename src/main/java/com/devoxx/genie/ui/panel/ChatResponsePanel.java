@@ -64,15 +64,18 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
             // Add execution time, token usage and cost information
-            addTokenUsageAndCostInfo(chatMessageContext);
+            addMetricExecutionInfo(chatMessageContext);
         }
     }
 
-    private void addTokenUsageAndCostInfo(@NotNull ChatMessageContext chatMessageContext) {
+    private void addMetricExecutionInfo(@NotNull ChatMessageContext chatMessageContext) {
+        JPanel metricExecutionInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        metricExecutionInfoPanel.setOpaque(false);
+
+        String metricInfoLabel = String.format("ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0);
+
         dev.langchain4j.model.output.TokenUsage tokenUsage = chatMessageContext.getTokenUsage();
         if (tokenUsage != null) {
-            JPanel tokenInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            tokenInfoPanel.setOpaque(false);
 
             String cost = "";
             if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(chatMessageContext.getLanguageModel().getProvider())) {
@@ -85,20 +88,16 @@ public class ChatResponsePanel extends BackgroundPanel {
             String formattedInputTokens = numberFormat.format(tokenUsage.inputTokenCount());
             String formattedOutputTokens = numberFormat.format(tokenUsage.outputTokenCount());
 
-            String extraInfoString = String.format("ϟ %.2fs - Tokens ↑ %s ↓️ %s %s",
-                    chatMessageContext.getExecutionTimeMs() / 1000.0,
-                    formattedInputTokens,
-                    formattedOutputTokens,
-                    cost);
-
-            JLabel tokenLabel = new JLabel(extraInfoString);
-
-            tokenLabel.setForeground(JBColor.GRAY);
-            tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
-
-            tokenInfoPanel.add(tokenLabel);
-            add(tokenInfoPanel);
+            metricInfoLabel += String.format(" - Tokens ↑ %s ↓️ %s %s", formattedInputTokens, formattedOutputTokens, cost);
         }
+
+        JLabel tokenLabel = new JLabel(metricInfoLabel);
+
+        tokenLabel.setForeground(JBColor.GRAY);
+        tokenLabel.setFont(tokenLabel.getFont().deriveFont(12f));
+
+        metricExecutionInfoPanel.add(tokenLabel);
+        add(metricExecutionInfoPanel);
     }
 
     /**
