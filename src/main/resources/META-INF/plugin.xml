@@ -35,6 +35,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.2.16</h2>
+        <UL>
+            <LI>Feat #245 : Always show execution time</LI>
+            <LI>Feat #242 : Add LMStudio Model Selection (pending PR)</LI>
+            <LI>Feat #234 : Reuse the LLMStudio token usage in response (pending PR)</LI>
+        </UL>
         <h2>v0.2.15</h2>
         <UL>
             <LI>Feat #219 : Mention how many files when calculating total tokens</LI>
