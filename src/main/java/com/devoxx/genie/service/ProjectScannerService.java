@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProjectScannerService {
 
     private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
-    private final UniqueDirectoryScannerService uniqueDirectoryScanner = new UniqueDirectoryScannerService();
 
     public static ProjectScannerService getInstance() {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
@@ -86,6 +85,9 @@ public class ProjectScannerService {
                                                 int windowContextMaxTokens,
                                                 StringBuilder result,
                                                 ScanContentResult scanContentResult) {
+
+        UniqueDirectoryScannerService uniqueDirectoryScanner = new UniqueDirectoryScannerService();
+
         // Collect all content roots from modules
         VirtualFile[] contentRootsFromAllModules =
             ProjectRootManager.getInstance(project).getContentRootsFromAllModules();
