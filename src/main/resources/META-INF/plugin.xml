@@ -40,6 +40,7 @@
             <LI>Feat #245 : Always show execution time</LI>
             <LI>Feat #242 : Add LMStudio Model Selection (pending PR)</LI>
             <LI>Feat #234 : Reuse the LLMStudio token usage in response (pending PR)</LI>
+            <LI>Fix #249 : Calculate token cost shows consistent results after switching projects</LI>
         </UL>
         <h2>v0.2.15</h2>
         <UL>
