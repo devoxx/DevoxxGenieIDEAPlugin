@@ -8,6 +8,7 @@ import com.devoxx.genie.model.lmstudio.LMStudioModelEntryDTO;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.LMStudioService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -16,6 +17,8 @@ import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +27,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LMStudioChatModelFactory implements ChatModelFactory {
+    private static final Logger LOG = Logger.getInstance(LMStudioChatModelFactory.class);
+
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private static boolean warningShown = false;
     private List<LanguageModel> cachedModels = null;
     public static final int DEFAULT_CONTEXT_LENGTH = 8000;
+    private static final int CONNECTION_TIMEOUT = 5000; // 5 seconds
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -61,6 +67,12 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
+        if (!isLMStudioRunning()) {
+            NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                "LMStudio is not running. Please start it and try again.");
+            return List.of();
+        }
+
         if (cachedModels != null) {
             return cachedModels;
         }
@@ -99,5 +111,20 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
             cachedModels = List.of();
         }
         return cachedModels;
+    }
+
+    private boolean isLMStudioRunning() {
+        String baseUrl = DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl();
+        try {
+            URL url = new URL(baseUrl + "models");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(CONNECTION_TIMEOUT);
+            connection.setRequestMethod("GET");
+            int responseCode = connection.getResponseCode();
+            return responseCode == 200;
+        } catch (Exception e) {
+            LOG.warn("Failed to connect to LMStudio: " + e.getMessage());
+            return false;
+        }
     }
 }
