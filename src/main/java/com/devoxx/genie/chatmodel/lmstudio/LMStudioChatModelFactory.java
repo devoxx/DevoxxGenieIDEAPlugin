@@ -85,14 +85,14 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
             for (LMStudioModelEntryDTO model : lmStudioModels) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     LanguageModel languageModel = LanguageModel.builder()
-                            .provider(ModelProvider.LMStudio)
-                            .modelName(model.getId())
-                            .displayName(model.getId())
-                            .inputCost(0)
-                            .outputCost(0)
-                            .contextWindow(DEFAULT_CONTEXT_LENGTH)
-                            .apiKeyUsed(false)
-                            .build();
+                        .provider(ModelProvider.LMStudio)
+                        .modelName(model.getId())
+                        .displayName(model.getId())
+                        .inputCost(0)
+                        .outputCost(0)
+                        .contextWindow(DEFAULT_CONTEXT_LENGTH)
+                        .apiKeyUsed(false)
+                        .build();
                     synchronized (modelNames) {
                         modelNames.add(languageModel);
                     }
@@ -105,7 +105,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
         } catch (IOException e) {
             if (!warningShown) {
                 NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                        "LMStudio is not running, please start it.");
+                    "LMStudio is not running, please start it.");
                 warningShown = true;
             }
             cachedModels = List.of();
