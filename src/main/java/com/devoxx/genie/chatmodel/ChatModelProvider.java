@@ -52,7 +52,15 @@ public class ChatModelProvider {
 
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
-        return getFactory(chatMessageContext).createChatModel(chatModel);
+        ChatModelFactory factory = getFactory(chatMessageContext);
+
+        if (factory instanceof LMStudioChatModelFactory) {
+            if (factory.getModels().isEmpty()) {
+                throw new IllegalStateException("LMStudio is not running. Please start it and try again.");
+            }
+        }
+
+        return factory.createChatModel(chatModel);
     }
 
     public StreamingChatLanguageModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {

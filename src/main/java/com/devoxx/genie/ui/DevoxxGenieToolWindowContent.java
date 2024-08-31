@@ -49,6 +49,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                                                      ConversationStarter,
                                                      CustomPromptChangeListener {
 
+    private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
+
     private static final float SPLITTER_PROPORTION = 0.8f;
     public static final int MIN_INPUT_HEIGHT = 250;
 
@@ -360,11 +362,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
-                // Update the selectedProvider in DevoxxGenieStateService
                 DevoxxGenieStateService.getInstance().setSelectedProvider(project.getLocationHash(), modelProvider.getName());
 
                 updateModelNamesComboBox(modelProvider.getName());
-                modelNameComboBox.setRenderer(new ModelInfoRenderer()); // Re-apply the renderer
+                modelNameComboBox.setRenderer(new ModelInfoRenderer());
                 modelNameComboBox.revalidate();
                 modelNameComboBox.repaint();
             }
@@ -379,14 +380,24 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private void updateModelNamesComboBox(String modelProvider) {
         Optional.ofNullable(modelProvider).ifPresent(provider -> {
             try {
-                modelNameComboBox.removeAllItems(); // Ensure we clear existing items
+                modelNameComboBox.removeAllItems();
                 modelNameComboBox.setVisible(true);
 
                 ChatModelFactoryProvider
                     .getFactoryByProvider(provider)
-                    .ifPresentOrElse(this::populateModelNames, this::hideModelNameComboBox);
+                    .ifPresentOrElse(
+                        factory -> {
+                            List<LanguageModel> models = factory.getModels();
+                            if (models.isEmpty()) {
+                                hideModelNameComboBox();
+                            } else {
+                                populateModelNames(factory);
+                            }
+                        },
+                        this::hideModelNameComboBox
+                    );
             } catch (Exception e) {
-                Logger.getInstance(getClass()).error("Error updating model names", e);
+                LOG.error("Error updating model names", e);
                 Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
             }
         });
