@@ -12,7 +12,6 @@ import com.devoxx.genie.util.LMStudioUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,7 +32,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiChatModel.builder()
+        return LMStudioChatModel.builder()
             .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
