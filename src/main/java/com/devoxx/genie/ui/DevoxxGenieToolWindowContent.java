@@ -52,7 +52,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
     private static final float SPLITTER_PROPORTION = 0.8f;
-    public static final int MIN_INPUT_HEIGHT = 250;
+    public static final int MIN_INPUT_HEIGHT = 100;
 
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
