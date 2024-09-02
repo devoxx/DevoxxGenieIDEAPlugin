@@ -331,6 +331,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             actionButtonsPanel.resetProjectContext();
             actionButtonsPanel.enableButtons();
             actionButtonsPanel.resetTokenUsageBar();
+            promptInputArea.requestFocusInWindow();
         });
     }
 
