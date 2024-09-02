@@ -34,6 +34,8 @@ public interface DevoxxGenieSettingsService {
 
     String getGeminiKey();
 
+    String getDeepSeekKey();
+
     Boolean getHideSearchButtonsFlag();
 
     String getGoogleSearchKey();
@@ -103,6 +105,8 @@ public interface DevoxxGenieSettingsService {
     void setDeepInfraKey(String key);
 
     void setGeminiKey(String key);
+
+    void setDeepSeekKey(String key);
 
     void setHideSearchButtonsFlag(Boolean flag);
 

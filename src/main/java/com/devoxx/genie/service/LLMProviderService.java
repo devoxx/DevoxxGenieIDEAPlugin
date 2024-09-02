@@ -38,6 +38,7 @@ public class LLMProviderService {
         providerKeyMap.put(Groq, settings::getGroqKey);
         providerKeyMap.put(DeepInfra, settings::getDeepInfraKey);
         providerKeyMap.put(Google, settings::getGeminiKey);
+        providerKeyMap.put(DeepSeek, settings::getDeepSeekKey);
 
         // Filter out cloud LLM providers that do not have a key
         List<ModelProvider> providersWithRequiredKey = LLMModelRegistryService.getInstance().getModels()

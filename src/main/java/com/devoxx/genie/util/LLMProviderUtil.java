@@ -5,11 +5,12 @@ import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class LLMProviderUtil {
 
-    public static java.util.List<ModelProvider> getApiKeyEnabledProviders() {
+    public static List<ModelProvider> getApiKeyEnabledProviders() {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         return Arrays.stream(ModelProvider.values())
             .filter(provider -> switch (provider) {
@@ -18,6 +19,7 @@ public class LLMProviderUtil {
                 case Mistral -> !settings.getMistralKey().isEmpty();
                 case Groq -> !settings.getGroqKey().isEmpty();
                 case DeepInfra -> !settings.getDeepInfraKey().isEmpty();
+                case DeepSeek -> !settings.getDeepSeekKey().isEmpty();
                 case Google -> !settings.getGeminiKey().isEmpty();
                 default -> false;
             })

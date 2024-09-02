@@ -2,6 +2,7 @@ package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
+import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
@@ -30,7 +31,8 @@ public class ChatModelFactoryProvider {
         ModelProvider.Groq.getName(), GroqChatModelFactory::new,
         ModelProvider.DeepInfra.getName(), DeepInfraChatModelFactory::new,
         ModelProvider.Google.getName(), GoogleChatModelFactory::new,
-        ModelProvider.LMStudio.getName(), LMStudioChatModelFactory::new
+        ModelProvider.LMStudio.getName(), LMStudioChatModelFactory::new,
+        ModelProvider.DeepSeek.getName(), DeepSeekChatModelFactory::new
     );
 
     /**

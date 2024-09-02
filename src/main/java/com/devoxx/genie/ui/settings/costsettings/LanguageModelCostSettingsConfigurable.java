@@ -17,7 +17,7 @@ import java.util.List;
 public class LanguageModelCostSettingsConfigurable implements Configurable {
 
     private LanguageModelCostSettingsComponent llmCostSettingsComponent = new LanguageModelCostSettingsComponent();
-    private LanguageModelCostSettingsComponent component = new LanguageModelCostSettingsComponent();
+    private final LanguageModelCostSettingsComponent component = new LanguageModelCostSettingsComponent();
     private final DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
 
     private final MessageBus messageBus;
@@ -36,13 +36,8 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         llmCostSettingsComponent = new LanguageModelCostSettingsComponent();
-        llmCostSettingsComponent.addSettingsChangeListener(this::notifySettingsChanged);
         llmCostSettingsComponent.reset(); // This will load the current (including default) values
         return llmCostSettingsComponent.createPanel();
-    }
-
-    private void notifySettingsChanged() {
-        messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).settingsChanged();
     }
 
     @Override
@@ -72,7 +67,6 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-//         llmCostSettingsComponent.apply();
         List<LanguageModel> modifiedModels = component.getModifiedModels();
         stateService.setLanguageModels(modifiedModels);
 

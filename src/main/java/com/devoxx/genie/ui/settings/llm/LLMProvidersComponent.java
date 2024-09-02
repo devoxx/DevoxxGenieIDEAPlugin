@@ -53,6 +53,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField geminiApiKeyField = new JPasswordField(stateService.getGeminiKey());
     @Getter
+    private final JPasswordField deepSeekApiKeyField = new JPasswordField(stateService.getDeepSeekKey());
+    @Getter
     private final JCheckBox hideSearchButtonsField = new JCheckBox("", stateService.getHideSearchButtonsFlag());
     @Getter
     private final JPasswordField tavilySearchApiKeyField = new JPasswordField(stateService.getTavilySearchKey());
@@ -97,6 +99,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Groq API Key", createTextWithPasswordButton(groqApiKeyField, "https://console.groq.com/keys"));
         addSettingRow(panel, gbc, "DeepInfra API Key", createTextWithPasswordButton(deepInfraApiKeyField, "https://deepinfra.com/dash/api_keys"));
         addSettingRow(panel, gbc, "Google Gemini API Key", createTextWithPasswordButton(geminiApiKeyField, "https://aistudio.google.com/app/apikey"));
+        addSettingRow(panel, gbc, "Deep Seek API Key", createTextWithPasswordButton(deepSeekApiKeyField, "https://platform.deepseek.com/api_keys"));
 
         addSection(panel, gbc, "Search Providers");
         addSettingRow(panel, gbc, "Tavily Web Search API Key", createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));

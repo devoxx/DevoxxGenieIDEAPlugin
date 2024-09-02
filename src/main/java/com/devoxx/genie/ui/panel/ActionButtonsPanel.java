@@ -437,6 +437,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             modelProvider.equals(ModelProvider.Anthropic) ||
             modelProvider.equals(ModelProvider.OpenAI) ||
             modelProvider.equals(ModelProvider.Mistral) ||
+            modelProvider.equals(ModelProvider.DeepSeek) ||
+            modelProvider.equals(ModelProvider.DeepInfra) ||
             modelProvider.equals(ModelProvider.Ollama);
     }
 
