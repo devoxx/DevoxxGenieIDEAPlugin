@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBTextArea;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommandAutoCompleteTextField extends PlaceholderTextArea implements CustomPromptChangeListener {
+public class CommandAutoCompleteTextField extends JBTextArea implements CustomPromptChangeListener {
 
     private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
 
@@ -59,11 +60,11 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea implements
         @Override
         public void keyPressed(@NotNull KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isShiftDown()) {
-                e.consume();
                 sendPrompt();
-            } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
                 e.consume();
+            } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
                 autoComplete();
+                e.consume();
             }
         }
     }
