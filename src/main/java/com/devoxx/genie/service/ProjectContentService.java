@@ -89,7 +89,7 @@ public class ProjectContentService {
         return switch (provider) {
             case OpenAI, Anthropic, Google ->
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
-            case Mistral, DeepInfra, Groq ->
+            case Mistral, DeepInfra, Groq, DeepSeek ->
                 // These often use the Llama tokenizer or similar
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.R50K_BASE);
             default ->

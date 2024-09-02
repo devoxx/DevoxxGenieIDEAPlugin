@@ -1,6 +1,8 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
+import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
@@ -45,6 +47,8 @@ public class ChatModelProvider {
         factories.put(ModelProvider.Google, new GoogleChatModelFactory());
         factories.put(ModelProvider.Exo, new ExoChatModelFactory());
         factories.put(ModelProvider.LLaMA, new LlamaChatModelFactory());
+        factories.put(ModelProvider.DeepInfra, new DeepInfraChatModelFactory());
+        factories.put(ModelProvider.DeepSeek, new DeepSeekChatModelFactory());
 
         // TODO Currently broken by latest Jan! version
         // factories.put(ModelProvider.Jan, new JanChatModelFactory());

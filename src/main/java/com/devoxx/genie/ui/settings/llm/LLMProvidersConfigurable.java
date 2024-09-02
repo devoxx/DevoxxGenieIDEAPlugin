@@ -58,6 +58,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGroqApiKeyField(), settings.getGroqKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), settings.getDeepInfraKey());
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
+        isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), settings.getDeepSeekKey());
         isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), settings.getLlamaCPPUrl());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
@@ -104,6 +105,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGroqKey(new String(llmSettingsComponent.getGroqApiKeyField().getPassword()));
         settings.setDeepInfraKey(new String(llmSettingsComponent.getDeepInfraApiKeyField().getPassword()));
         settings.setGeminiKey(new String(llmSettingsComponent.getGeminiApiKeyField().getPassword()));
+        settings.setDeepSeekKey(new String(llmSettingsComponent.getDeepSeekApiKeyField().getPassword()));
 
         settings.setHideSearchButtonsFlag(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
@@ -144,6 +146,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGroqApiKeyField().setText(settings.getGroqKey());
         llmSettingsComponent.getDeepInfraApiKeyField().setText(settings.getDeepInfraKey());
         llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
+        llmSettingsComponent.getDeepSeekApiKeyField().setText(settings.getDeepSeekKey());
 
         llmSettingsComponent.getHideSearchButtonsField().setSelected(settings.getHideSearchButtonsFlag());
         llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());

@@ -13,6 +13,7 @@ public class Constant {
         /test: write unit tests on selected code
         /explain: explain the selected code
         /review: review selected code
+        /help: show commands
 
         The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
         You can follow us on Twitter @DevoxxGenie.
@@ -58,18 +59,10 @@ public class Constant {
     // Stream mode settings
     public static final Boolean STREAM_MODE = false;
 
-    // AST settings
-    public static final Boolean AST_MODE = false;
-    public static final Boolean AST_PARENT_CLASS = true;
-    public static final Boolean AST_CLASS_REFERENCE = true;
-    public static final Boolean AST_FIELD_REFERENCE = true;
-
     // Button tooltip texts
     public static final String ADD_FILE_S_TO_PROMPT_CONTEXT = "Add file(s) to prompt context";
     public static final String SUBMIT_THE_PROMPT = "Submit the prompt";
     public static final String SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER = "Search the web with Tavily for an answer";
     public static final String SEARCH_GOOGLE_FOR_AN_ANSWER = "Search Google for an answer";
     public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
-    public static final String STOP_STREAMING = "Stop streaming response";
-
 }
