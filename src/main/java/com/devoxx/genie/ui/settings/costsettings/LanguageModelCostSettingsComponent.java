@@ -2,10 +2,7 @@ package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
-import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.util.LLMProviderUtil;
 import com.intellij.openapi.ui.ComboBox;
@@ -24,14 +21,11 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import static com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsComponent.ColumnName.CONTEXT_WINDOW;
+
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
 
     private final JTable costTable;
     private final DefaultTableModel tableModel;
-
-    private final JSpinner windowContextSpinner;
-    private boolean isModified = false;
-    private final java.util.List<LLMSettingsChangeListener> listeners = new ArrayList<>();
 
     @Getter
     public enum ColumnName {
@@ -117,8 +111,8 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         panel.add(addButton, BorderLayout.SOUTH);
 
         // Add window context spinner
-        windowContextSpinner = new JSpinner(new SpinnerNumberModel(8000, 1000, 1000000, 1000));
-        windowContextSpinner.addChangeListener(e -> isModified = true);
+        JSpinner windowContextSpinner = new JSpinner(new SpinnerNumberModel(8000, 1000, 1000000, 1000));
+
         JPanel contextPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         contextPanel.add(new JLabel("Default Window Context:"));
         contextPanel.add(windowContextSpinner);
@@ -183,16 +177,6 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         }
     }
 
-    public void addSettingsChangeListener(LLMSettingsChangeListener listener) {
-        listeners.add(listener);
-    }
-
-    private void notifyListeners() {
-        for (LLMSettingsChangeListener listener : listeners) {
-            listener.settingsChanged();
-        }
-    }
-
     private void addNewRow() {
         Vector<Object> newRow = new Vector<>();
         newRow.add(LLMProviderUtil.getApiKeyEnabledProviders().get(0)); // Default to first provider
@@ -226,41 +210,8 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         });
     }
 
-    public boolean isModified() {
-        return isModified;
-    }
-
     public void reset() {
         tableModel.setRowCount(0);
         loadCurrentCosts();
-        isModified = false;
-    }
-
-    public void apply() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
-        settings.setDefaultWindowContext((Integer) windowContextSpinner.getValue());
-
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            Object providerObj = tableModel.getValueAt(i, ColumnName.PROVIDER.ordinal());
-            String modelName = (String) tableModel.getValueAt(i, ColumnName.MODEL.ordinal());
-            Object inputCostObj = tableModel.getValueAt(i, ColumnName.INPUT_COST.ordinal());
-            Object outputCostObj = tableModel.getValueAt(i, ColumnName.OUTPUT_COST.ordinal());
-            Object windowContextObj = tableModel.getValueAt(i, ColumnName.CONTEXT_WINDOW.ordinal());
-
-            try {
-                ModelProvider provider = (ModelProvider) providerObj;
-                double inputCost = Double.parseDouble(inputCostObj.toString());
-                double outputCost = Double.parseDouble(outputCostObj.toString());
-                int windowContext = Integer.parseInt(windowContextObj.toString());
-
-                settings.setModelCost(provider, modelName, inputCost, outputCost);
-                settings.setModelWindowContext(provider, modelName, windowContext);
-            } catch (NumberFormatException | ClassCastException e) {
-                // Log the error or handle it as appropriate for your application
-                System.err.println("Error applying cost for model " + modelName + ": " + e.getMessage());
-            }
-        }
-        isModified = false;
-        notifyListeners();
     }
 }

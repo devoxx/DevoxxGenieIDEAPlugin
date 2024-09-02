@@ -9,7 +9,7 @@ public class AppTopics {
         Topic.create("SettingsChanged", SettingsChangeListener.class);
 
     public static final Topic<ChatMemorySizeListener> CHAT_MEMORY_SIZE_TOPIC =
-        new Topic<>("CHAT_MEMORY_SIZE_TOPIC", ChatMemorySizeListener.class);
+        new Topic<>("chatMemorySizeChanged", ChatMemorySizeListener.class);
 
     public static final Topic<LLMSettingsChangeListener> LLM_SETTINGS_CHANGED_TOPIC =
         Topic.create("LLMSettingsChanged", LLMSettingsChangeListener.class);

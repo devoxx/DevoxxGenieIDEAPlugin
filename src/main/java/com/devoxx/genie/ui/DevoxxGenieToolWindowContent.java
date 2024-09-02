@@ -426,7 +426,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     @Override
     public void settingsChanged() {
-        updateModelNamesComboBox(DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash()));
+        updateModelNamesComboBox(
+            DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash())
+        );
     }
 
     @Override
