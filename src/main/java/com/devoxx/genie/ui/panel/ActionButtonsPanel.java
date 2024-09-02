@@ -12,6 +12,7 @@ import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
+import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -24,6 +25,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.messages.MessageBusConnection;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +39,7 @@ import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static javax.swing.SwingUtilities.invokeLater;
 
-public class ActionButtonsPanel extends JPanel implements SettingsChangeListener {
+public class ActionButtonsPanel extends JPanel implements SettingsChangeListener, PromptSubmissionListener {
 
     private final Project project;
 
@@ -68,6 +70,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private String projectContext;
 
     private final TokenCalculationService tokenCalculationService;
+    private final MessageBusConnection messageBusConnection;
 
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputArea,
@@ -88,9 +91,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
         this.tokenCalculationService = new TokenCalculationService();
 
-        ApplicationManager.getApplication().getMessageBus()
-            .connect()
-            .subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
+
+        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+
+        messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
 
         setupUI();
     }
@@ -530,5 +535,17 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             tokenUsageBar.reset();
             tokenCount = 0;
         });
+    }
+
+    @Override
+    public void onPromptSubmitted(String prompt) {
+        SwingUtilities.invokeLater(() -> {
+            promptInputArea.setText(prompt);
+            onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
+        });
+    }
+
+    public void dispose() {
+        messageBusConnection.dispose();
     }
 }

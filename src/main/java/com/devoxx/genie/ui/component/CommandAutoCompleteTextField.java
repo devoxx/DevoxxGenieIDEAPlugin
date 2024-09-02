@@ -4,6 +4,7 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -57,10 +58,22 @@ public class CommandAutoCompleteTextField extends PlaceholderTextArea implements
     private class CommandKeyListener extends KeyAdapter {
         @Override
         public void keyPressed(@NotNull KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
-                autoComplete();
+            if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isShiftDown()) {
                 e.consume();
+                sendPrompt();
+            } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
+                e.consume();
+                autoComplete();
             }
+        }
+    }
+
+    private void sendPrompt() {
+        String text = getText().trim();
+        if (!text.isEmpty()) {
+            ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC)
+                .onPromptSubmitted(text);
         }
     }
 
