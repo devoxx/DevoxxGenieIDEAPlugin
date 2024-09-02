@@ -26,6 +26,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBusConnection;
 import lombok.Getter;
@@ -200,7 +201,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
-        Splitter splitter = new Splitter(true, SPLITTER_PROPORTION);
+        OnePixelSplitter splitter = new OnePixelSplitter(true, SPLITTER_PROPORTION);
         splitter.setFirstComponent(promptOutputPanel);
         splitter.setSecondComponent(createInputPanel());
         splitter.setHonorComponentsMinimumSize(true);
