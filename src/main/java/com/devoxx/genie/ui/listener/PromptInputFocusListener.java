@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.listener;
 
-import com.devoxx.genie.ui.component.PlaceholderTextArea;
 import com.devoxx.genie.ui.component.RoundBorder;
+import com.intellij.ui.components.JBTextArea;
 
 import javax.swing.*;
 import java.awt.event.FocusAdapter;
@@ -11,9 +11,9 @@ import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_INPUT_BORDER
 
 public class PromptInputFocusListener extends FocusAdapter {
 
-    private final PlaceholderTextArea promptInputArea;
+    private final JBTextArea promptInputArea;
 
-    public PromptInputFocusListener(PlaceholderTextArea promptInputArea) {
+    public PromptInputFocusListener(JBTextArea promptInputArea) {
         this.promptInputArea = promptInputArea;
     }
 
