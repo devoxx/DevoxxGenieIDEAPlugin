@@ -167,7 +167,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private void initializeComponents() {
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
-
         promptInputArea = new PromptInputArea(resourceBundle);
         promptOutputPanel = new PromptOutputPanel(resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);

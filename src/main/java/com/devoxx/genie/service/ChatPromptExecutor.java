@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.editor.Editor;
@@ -13,6 +14,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -20,9 +22,11 @@ public class ChatPromptExecutor {
 
     private final StreamingPromptExecutor streamingPromptExecutor;
     private final NonStreamingPromptExecutor nonStreamingPromptExecutor;
+    private final PromptInputArea promptInputArea;
     private volatile boolean isRunning = false;
 
-    public ChatPromptExecutor() {
+    public ChatPromptExecutor(PromptInputArea promptInputArea) {
+        this.promptInputArea = promptInputArea;
         this.streamingPromptExecutor = new StreamingPromptExecutor();
         this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor();
     }
@@ -45,16 +49,28 @@ public class ChatPromptExecutor {
                     new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunning = false;
                         enableButtons.run();
+                        SwingUtilities.invokeLater(() -> {
+                            promptInputArea.clear();
+                            promptInputArea.requestInputFocus();
+                        });
                     });
                 } else if (DevoxxGenieSettingsServiceProvider.getInstance().getStreamMode()) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunning = false;
                         enableButtons.run();
+                        SwingUtilities.invokeLater(() -> {
+                            promptInputArea.clear();
+                            promptInputArea.requestInputFocus();
+                        });
                     });
                 } else {
                     nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunning = false;
                         enableButtons.run();
+                        SwingUtilities.invokeLater(() -> {
+                            promptInputArea.clear();
+                            promptInputArea.requestInputFocus();
+                        });
                     });
                 }
             }
