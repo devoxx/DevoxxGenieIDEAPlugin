@@ -83,7 +83,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.project = project;
         this.promptInputArea = promptInputArea;
         this.promptOutputPanel = promptOutputPanel;
-        this.chatPromptExecutor = new ChatPromptExecutor();
+        this.chatPromptExecutor = new ChatPromptExecutor(promptInputArea);
         this.editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
         this.llmProvidersComboBox = llmProvidersComboBox;
         this.modelNameComboBox = modelNameComboBox;

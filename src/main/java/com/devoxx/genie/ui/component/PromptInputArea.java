@@ -87,4 +87,11 @@ public class PromptInputArea extends JPanel {
     public boolean requestFocusInWindow() {
         return inputField.requestFocusInWindow();
     }
+
+    public void requestInputFocus() {
+        SwingUtilities.invokeLater(() -> {
+            inputField.requestFocusInWindow();
+            inputField.setCaretPosition(inputField.getText().length());
+        });
+    }
 }
