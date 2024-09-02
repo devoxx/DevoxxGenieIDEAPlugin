@@ -43,6 +43,7 @@
             <LI>Feat #234 : Reuse the LLMStudio token usage in response (pending PR)</LI>
             <LI>Fix #249 : Calculate token cost shows consistent results after switching projects</LI>
             <LI>Feat #256 : "Shift+Enter" submits prompt</LI>
+            <LI>Feat #263 : Clear prompt when response is returned</LI>
         </UL>
         <h2>v0.2.15</h2>
         <UL>
