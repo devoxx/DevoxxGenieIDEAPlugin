@@ -42,6 +42,7 @@
             <LI>Fix #251 : LMStudio check should happen every time LLM provider was changed</LI>
             <LI>Feat #234 : Reuse the LLMStudio token usage in response (pending PR)</LI>
             <LI>Fix #249 : Calculate token cost shows consistent results after switching projects</LI>
+            <LI>Feat #256 : "Shift+Enter" submits prompt</LI>
         </UL>
         <h2>v0.2.15</h2>
         <UL>

@@ -1,9 +1,6 @@
 package com.devoxx.genie.ui.topic;
 
-import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
-import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
-import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
-import com.devoxx.genie.ui.listener.SettingsChangeListener;
+import com.devoxx.genie.ui.listener.*;
 import com.intellij.util.messages.Topic;
 
 public class AppTopics {
@@ -19,4 +16,7 @@ public class AppTopics {
 
     public static final Topic<CustomPromptChangeListener> CUSTOM_PROMPT_CHANGED_TOPIC =
         Topic.create("CustomPromptChanged", CustomPromptChangeListener.class);
+
+    public static final Topic<PromptSubmissionListener> PROMPT_SUBMISSION_TOPIC_TOPIC =
+        Topic.create("PromptSubmission", PromptSubmissionListener.class);
 }
