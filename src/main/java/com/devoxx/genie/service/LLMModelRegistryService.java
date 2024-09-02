@@ -39,6 +39,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
         addGroqModels();
         addGeminiModels();
         addMistralModels();
+        addDeepSeekModels();
     }
 
     private void addAnthropicModels() {
@@ -170,11 +171,41 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     private void addDeepInfraModels() {
         models.add(LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("meta-llama/Meta-Llama-3-70B-Instruct")
-            .displayName("Meta Llama 3 70B")
-            .inputCost(0.56)
-            .outputCost(0.77)
-            .contextWindow(8_000)
+            .modelName("meta-llama/Meta-Llama-3.1-405B-Instruct")
+            .displayName("Meta Llama 3.1 405B")
+            .inputCost(2.7)
+            .outputCost(2.7)
+            .contextWindow(32_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.DeepInfra)
+            .modelName("meta-llama/Meta-Llama-3.1-70B-Instruct")
+            .displayName("Meta Llama 3.1 70B")
+            .inputCost(0.35)
+            .outputCost(0.4)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.DeepInfra)
+            .modelName("meta-llama/Meta-Llama-3.1-8B-Instruct")
+            .displayName("Meta Llama 3.1 8B")
+            .inputCost(0.055)
+            .outputCost(0.055)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.DeepInfra)
+            .modelName("mistralai/Mistral-Nemo-Instruct-2407")
+            .displayName("Mistral Nemo 12B")
+            .inputCost(0.13)
+            .outputCost(0.13)
+            .contextWindow(128_000)
             .apiKeyUsed(true)
             .build());
 
@@ -212,8 +243,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .provider(ModelProvider.DeepInfra)
             .modelName("microsoft/WizardLM-2-8x22B")
             .displayName("Wizard LM 2 8x22B")
-            .inputCost(0.65)
-            .outputCost(0.65)
+            .inputCost(0.5)
+            .outputCost(0.5)
             .contextWindow(64_000)
             .apiKeyUsed(true)
             .build());
@@ -222,50 +253,29 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .provider(ModelProvider.DeepInfra)
             .modelName("microsoft/WizardLM-2-7B")
             .displayName("Wizard LM 2 7B")
-            .inputCost(0.07)
-            .outputCost(0.07)
+            .inputCost(0.055)
+            .outputCost(0.055)
             .contextWindow(32_000)
             .apiKeyUsed(true)
             .build());
-
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("openchat/openchat_3.5")
             .displayName("OpenChat 3.5")
-            .inputCost(0.07)
-            .outputCost(0.07)
+            .inputCost(0.055)
+            .outputCost(0.055)
             .contextWindow(8_000)
             .apiKeyUsed(true)
             .build());
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("google/gemma-1.1-7b-it")
-            .displayName("Gemma 1.1 7B it")
-            .inputCost(0.07)
-            .outputCost(0.07)
-            .contextWindow(8_000)
-            .apiKeyUsed(true)
-            .build());
-
-        models.add(LanguageModel.builder()
-            .provider(ModelProvider.DeepInfra)
-            .modelName("Phind/Phind-CodeLlama-34B-v2")
-            .displayName("Phind CodeLlama 34B v2")
-            .inputCost(0.6)
-            .outputCost(0.6)
+            .modelName("google/gemma-2-9b-it")
+            .displayName("Gemma 2 9B it")
+            .inputCost(0.06)
+            .outputCost(0.06)
             .contextWindow(4_000)
-            .apiKeyUsed(true)
-            .build());
-
-        models.add(LanguageModel.builder()
-            .provider(ModelProvider.DeepInfra)
-            .modelName("cognitivecomputations/dolphin-2.6-mixtral-8x7b")
-            .displayName("Dolphin 2.6 Mixtral 8x7B")
-            .inputCost(0.24)
-            .outputCost(0.24)
-            .contextWindow(32_000)
             .apiKeyUsed(true)
             .build());
     }
@@ -447,6 +457,28 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .inputCost(1)
             .outputCost(3)
             .contextWindow(32_000)
+            .apiKeyUsed(true)
+            .build());
+    }
+
+    private void addDeepSeekModels() {
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.DeepSeek)
+            .modelName("deepseek-coder")
+            .displayName("DeepSeek Coder")
+            .inputCost(0.14)
+            .outputCost(0.28)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.DeepSeek)
+            .modelName("deepseek-chat")
+            .displayName("DeepSeek Chat")
+            .inputCost(0.14)
+            .outputCost(0.28)
+            .contextWindow(128_000)
             .apiKeyUsed(true)
             .build());
     }
