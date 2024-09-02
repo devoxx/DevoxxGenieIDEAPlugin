@@ -44,6 +44,7 @@
             <LI>Fix #249 : Calculate token cost shows consistent results after switching projects</LI>
             <LI>Feat #256 : "Shift+Enter" submits prompt</LI>
             <LI>Feat #263 : Clear prompt when response is returned</LI>
+            <LI>Feat #261 : Support deepseek.com as LLM provider</LI>
         </UL>
         <h2>v0.2.15</h2>
         <UL>
