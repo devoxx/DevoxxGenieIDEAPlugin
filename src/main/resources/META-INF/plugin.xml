@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.2.17</h2>
+        <UL>
+            <LI>Feat #266 : Use OnePixelSplitter for chat window</LI>
+        </UL>
         <h2>V0.2.16</h2>
         <UL>
             <LI>Feat #245 : Always show execution time</LI>
