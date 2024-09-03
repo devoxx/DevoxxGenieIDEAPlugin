@@ -38,6 +38,7 @@
         <h2>V0.2.17</h2>
         <UL>
             <LI>Feat #266 : Use OnePixelSplitter for chat window</LI>
+            <LI>Feat #35 : Conversation history panel</LI>
         </UL>
         <h2>V0.2.16</h2>
         <UL>
@@ -354,6 +355,7 @@
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
