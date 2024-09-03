@@ -42,7 +42,9 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      * @return the created on label
      */
     private static @NotNull JBLabel getCreatedOnLabel(@NotNull ChatMessageContext chatMessageContext) {
+
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
+
         String modelInfo = languageModel.getProvider().getName() +
             (languageModel.getModelName() != null && !languageModel.getModelName().equalsIgnoreCase(TEST_MODEL) ?
                 " (" + languageModel.getModelName() + ")" : "");

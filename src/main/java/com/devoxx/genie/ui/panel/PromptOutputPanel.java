@@ -1,11 +1,17 @@
 package com.devoxx.genie.ui.panel;
 
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.conversation.ChatMessage;
+import com.devoxx.genie.model.conversation.Conversation;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.util.HelpUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
+import dev.langchain4j.data.message.AiMessage;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -123,5 +129,40 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     public void updateHelpText() {
         helpPanel.updateHelpText(HelpUtil.getHelpMessage(resourceBundle));
+    }
+
+    public void displayConversation(Project project, Conversation conversation) {
+        SwingUtilities.invokeLater(() -> {
+            container.removeAll();
+            for (ChatMessage message : conversation.getMessages()) {
+                if (message.isUser()) {
+                    addUserPrompt(createChatMessageContext(project, message, conversation));
+                } else {
+                    addChatResponse(createChatMessageContext(project, message, conversation));
+                }
+            }
+            scrollToBottom();
+        });
+    }
+
+    private ChatMessageContext createChatMessageContext(Project project,
+                                                        @NotNull ChatMessage message,
+                                                        @NotNull Conversation conversation) {
+        return ChatMessageContext.builder()
+            .name(String.valueOf(System.currentTimeMillis()))
+            .project(project)
+            .userPrompt(message.isUser() ? message.getContent() : "")
+            .aiMessage(message.isUser() ? null : AiMessage.aiMessage(message.getContent()))
+            .totalFileCount(0)
+            .executionTimeMs(conversation.getExecutionTimeMs())
+            .languageModel(LanguageModel.builder()
+                .provider(ModelProvider.valueOf(conversation.getLlmProvider()))
+                .modelName(conversation.getModelName())
+                .apiKeyUsed(conversation.getApiKeyUsed())
+                .inputCost(conversation.getInputCost() == null ? 0 : conversation.getInputCost())
+                .outputCost(conversation.getOutputCost() == null ? 0 : conversation.getOutputCost())
+                .contextWindow(conversation.getContextWindow() == null ? 0 : conversation.getContextWindow())
+            .build())
+            .cost(0).build();
     }
 }

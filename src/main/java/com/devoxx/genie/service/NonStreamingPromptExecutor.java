@@ -3,6 +3,8 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,6 +42,11 @@ public class NonStreamingPromptExecutor {
 
                     // Set token usage and cost
                     chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
+
+                    // Add the conversation to the chat service
+                    ApplicationManager.getApplication().getMessageBus()
+                        .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                        .onNewConversation(chatMessageContext);
 
                     promptOutputPanel.addChatResponse(chatMessageContext);
                 } else if (isCancelled) {
