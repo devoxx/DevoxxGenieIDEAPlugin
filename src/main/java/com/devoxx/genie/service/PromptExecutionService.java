@@ -23,12 +23,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class PromptExecutionService {
 
     private static final Logger LOG = Logger.getInstance(PromptExecutionService.class);
-
-    @NotNull
-    static PromptExecutionService getInstance() {
-        return ApplicationManager.getApplication().getService(PromptExecutionService.class);
-    }
-
     private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
     private CompletableFuture<Response<AiMessage>> queryFuture = null;
 
@@ -36,6 +30,11 @@ public class PromptExecutionService {
     private boolean running = false;
 
     private final ReentrantLock queryLock = new ReentrantLock();
+
+    @NotNull
+    static PromptExecutionService getInstance() {
+        return ApplicationManager.getApplication().getService(PromptExecutionService.class);
+    }
 
     /**
      * Execute the query with the given language text pair and chat language model.

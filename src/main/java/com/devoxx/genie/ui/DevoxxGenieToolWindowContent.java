@@ -5,17 +5,14 @@ import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.ChatMemoryService;
-import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.*;
 import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.panel.ActionButtonsPanel;
-import com.devoxx.genie.ui.panel.ConversationPanel;
-import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
-import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.panel.*;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -48,7 +45,8 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                                                      LLMSettingsChangeListener,
                                                      ConversationStarter,
-                                                     CustomPromptChangeListener {
+                                                     CustomPromptChangeListener,
+                                                     ConversationEventListener {
 
     private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
@@ -74,6 +72,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private String lastSelectedProvider = null;
     private String lastSelectedLanguageModel = null;
+    private final ChatService chatService;
+    private final ConversationStorageService storageService = ConversationStorageService.getInstance();
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -83,8 +83,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
         project = toolWindow.getProject();
 
-        DevoxxGenieStateService.getInstance().addLoadListener(this::onStateLoaded);
-        DevoxxGenieStateService.getInstance().loadState(DevoxxGenieStateService.getInstance());
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        stateService.addLoadListener(this::onStateLoaded);
+        stateService.loadState(DevoxxGenieStateService.getInstance());
+
+        chatService = new ChatService(storageService);
 
         setupMessageBusConnection(toolWindow);
     }
@@ -143,6 +146,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         MessageBusConnection messageBusConnection = project.getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.CONVERSATION_TOPIC, this);
         Disposer.register(toolWindow.getDisposable(), messageBusConnection);
     }
 
@@ -171,7 +175,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         promptInputArea = new PromptInputArea(resourceBundle);
         promptOutputPanel = new PromptOutputPanel(resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);
-        conversationPanel = new ConversationPanel(project, this);
+        conversationPanel = new ConversationPanel(project, this, storageService, promptOutputPanel);
     }
 
     private void setupLayout() {
@@ -325,6 +329,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         FileListManager.getInstance().clear();
         ChatMemoryService.getInstance().clear();
 
+        // TODO Set title based on first question
+        chatService.startNewConversation("");
+
         SwingUtilities.invokeLater(() -> {
             conversationPanel.updateNewConversationLabel();
             promptInputArea.clear();
@@ -441,5 +448,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                 promptOutputPanel.updateHelpText();
             }
         });
+    }
+
+    @Override
+    public void onNewConversation(ChatMessageContext chatMessageContext) {
+        conversationPanel.loadConversationHistory();
     }
 }

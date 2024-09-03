@@ -42,6 +42,7 @@ public class ChatPromptExecutor {
                               Runnable enableButtons) {
 
         isRunning = true;
+
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
