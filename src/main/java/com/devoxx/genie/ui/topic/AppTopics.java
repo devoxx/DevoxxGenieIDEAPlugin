@@ -19,4 +19,8 @@ public class AppTopics {
 
     public static final Topic<PromptSubmissionListener> PROMPT_SUBMISSION_TOPIC_TOPIC =
         Topic.create("PromptSubmission", PromptSubmissionListener.class);
+
+    public static final Topic<ConversationEventListener> CONVERSATION_TOPIC =
+        Topic.create("NewConversation", ConversationEventListener.class);
+
 }

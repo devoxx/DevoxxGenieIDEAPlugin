@@ -91,9 +91,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
         this.tokenCalculationService = new TokenCalculationService();
 
-
         messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-
         messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
 

@@ -5,6 +5,8 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +19,9 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
     private final ChatStreamingResponsePanel streamingChatResponsePanel;
     private final PromptOutputPanel promptOutputPanel;
     private volatile boolean isStopped = false;
-    private long startTime;
+    private final long startTime;
+    private final StringBuilder responseBuilder = new StringBuilder();
+
     public StreamingResponseHandler(ChatMessageContext chatMessageContext,
                                     @NotNull PromptOutputPanel promptOutputPanel,
                                     Runnable enableButtons) {
@@ -48,7 +52,13 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
     }
 
     private void finalizeResponse(@NotNull Response<AiMessage> response) {
+
         chatMessageContext.setAiMessage(response.content());
+
+        ApplicationManager.getApplication().getMessageBus()
+            .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+            .onNewConversation(chatMessageContext);
+
         ChatMemoryService.getInstance().add(response.content());
         enableButtons.run();
     }
