@@ -33,12 +33,14 @@ public class ChatService implements ConversationEventListener {
     }
 
     private void saveConversation(@NotNull ChatMessageContext chatMessageContext) {
-        if (!chatMessageContext.getProject().getName().equalsIgnoreCase(project.getName())) {
+        String userPrompt = chatMessageContext.getUserPrompt();
+        if (!chatMessageContext.getProject().getName().equalsIgnoreCase(project.getName()) ||
+            userPrompt == null || userPrompt.trim().isEmpty()) {
             return;
         }
         Conversation conversation = new Conversation();
         conversation.setId(UUID.randomUUID().toString());
-        conversation.setTitle(generateTitle(chatMessageContext.getUserPrompt()));
+        conversation.setTitle(generateTitle(userPrompt));
         conversation.setTimestamp(LocalDateTime.now().toString());
         conversation.setModelName(chatMessageContext.getLanguageModel().getModelName());
         conversation.setExecutionTimeMs(chatMessageContext.getExecutionTimeMs());
