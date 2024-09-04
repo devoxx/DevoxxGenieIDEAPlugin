@@ -59,7 +59,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
             .syncPublisher(AppTopics.CONVERSATION_TOPIC)
             .onNewConversation(chatMessageContext);
 
-        ChatMemoryService.getInstance().add(response.content());
+        ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
         enableButtons.run();
     }
 

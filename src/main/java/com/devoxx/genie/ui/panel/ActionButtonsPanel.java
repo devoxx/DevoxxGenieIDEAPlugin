@@ -70,7 +70,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private String projectContext;
 
     private final TokenCalculationService tokenCalculationService;
-    private final MessageBusConnection messageBusConnection;
 
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputArea,
@@ -91,7 +90,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
         this.tokenCalculationService = new TokenCalculationService();
 
-        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
 
@@ -218,7 +217,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Stop the prompt execution.
      */
     private void stopPromptExecution() {
-        chatPromptExecutor.stopPromptExecution();
+        chatPromptExecutor.stopPromptExecution(project);
         isPromptRunning = false;
         enableButtons();
     }
@@ -546,9 +545,5 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             promptInputArea.setText(prompt);
             onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
         });
-    }
-
-    public void dispose() {
-        messageBusConnection.dispose();
     }
 }
