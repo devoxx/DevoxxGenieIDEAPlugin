@@ -77,6 +77,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      * Set up the conversation buttons.
      */
     private void setupConversationButtons() {
+        historyButton.setPreferredSize(new Dimension(25, 30));
         historyButton.setToolTipText("View conversation history");
         historyButton.addActionListener(e -> showConversationHistory());
 
