@@ -327,7 +327,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     @Override
     public void startNewConversation() {
         FileListManager.getInstance().clear();
-        ChatMemoryService.getInstance().clear();
+        ChatMemoryService.getInstance().clear(project);
 
         // TODO Set title based on first question
         chatService.startNewConversation("");
