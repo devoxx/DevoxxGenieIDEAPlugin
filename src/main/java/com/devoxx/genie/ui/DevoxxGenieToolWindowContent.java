@@ -87,7 +87,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         stateService.addLoadListener(this::onStateLoaded);
         stateService.loadState(DevoxxGenieStateService.getInstance());
 
-        chatService = new ChatService(storageService);
+        chatService = new ChatService(storageService, project);
 
         setupMessageBusConnection(toolWindow);
     }
@@ -172,7 +172,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private void initializeComponents() {
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
-        promptInputArea = new PromptInputArea(resourceBundle);
+        promptInputArea = new PromptInputArea(resourceBundle, project);
         promptOutputPanel = new PromptOutputPanel(resourceBundle);
         promptContextFileListPanel = new PromptContextFileListPanel(project);
         conversationPanel = new ConversationPanel(project, this, storageService, promptOutputPanel);

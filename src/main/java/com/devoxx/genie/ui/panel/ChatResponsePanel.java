@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -30,7 +29,6 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPla
 public class ChatResponsePanel extends BackgroundPanel {
 
     private final ChatMessageContext chatMessageContext;
-    private final DecimalFormat decimalFormat = new DecimalFormat("#.#####");
 
     /**
      * Create a new chat response panel.

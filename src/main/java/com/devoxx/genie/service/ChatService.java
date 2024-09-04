@@ -6,19 +6,21 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class ChatService implements ConversationEventListener {
 
     private final ConversationStorageService storageService;
+    private final Project project;
 
-    public ChatService(ConversationStorageService storageService) {
+    public ChatService(ConversationStorageService storageService, Project project) {
         this.storageService = storageService;
+        this.project = project;
 
         ApplicationManager.getApplication().getMessageBus()
             .connect()
@@ -31,6 +33,9 @@ public class ChatService implements ConversationEventListener {
     }
 
     private void saveConversation(@NotNull ChatMessageContext chatMessageContext) {
+        if (!chatMessageContext.getProject().getName().equalsIgnoreCase(project.getName())) {
+            return;
+        }
         Conversation conversation = new Conversation();
         conversation.setId(UUID.randomUUID().toString());
         conversation.setTitle(generateTitle(chatMessageContext.getUserPrompt()));
@@ -43,7 +48,7 @@ public class ChatService implements ConversationEventListener {
         conversation.getMessages().add(new ChatMessage(true, chatMessageContext.getUserPrompt(), LocalDateTime.now().toString()));
         conversation.getMessages().add(new ChatMessage(false, chatMessageContext.getAiMessage().text(), LocalDateTime.now().toString()));
 
-        storageService.addConversation(conversation);
+        storageService.addConversation(project, conversation);
     }
 
     private String generateTitle(@NotNull String userPrompt) {
@@ -55,11 +60,6 @@ public class ChatService implements ConversationEventListener {
         conversation.setTitle(title);
         conversation.setTimestamp(LocalDateTime.now().toString());
         conversation.setMessages(new ArrayList<>());
-        storageService.addConversation(conversation);
-    }
-
-    // TODO: Implement the loadConversations method
-    public List<Conversation> loadConversations() {
-        return storageService.getConversations();
+        storageService.addConversation(project, conversation);
     }
 }

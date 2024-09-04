@@ -8,6 +8,7 @@ import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import org.jetbrains.annotations.NotNull;
@@ -26,13 +27,14 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
 
     private final List<String> commands = new ArrayList<>();
-    private boolean isAutoCompleting = false;
+    private final Project project;
 
+    private boolean isAutoCompleting = false;
     private String placeholder = "";
 
-    public CommandAutoCompleteTextField() {
+    public CommandAutoCompleteTextField(Project project) {
         super();
-
+        this.project = project;
         setDocument(new CommandDocument());
         addKeyListener(new CommandKeyListener());
 
@@ -75,7 +77,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         if (!text.isEmpty()) {
             ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC)
-                .onPromptSubmitted(text);
+                .onPromptSubmitted(project, text);
         }
     }
 
