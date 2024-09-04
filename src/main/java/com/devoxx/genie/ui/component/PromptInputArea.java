@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -17,10 +18,10 @@ public class PromptInputArea extends JPanel {
     private final Timer glowTimer;
     private boolean isGlowing = false;
 
-    public PromptInputArea(@NotNull ResourceBundle resourceBundle) {
+    public PromptInputArea(@NotNull ResourceBundle resourceBundle, Project project) {
         super(new BorderLayout());
 
-        inputField = new CommandAutoCompleteTextField();
+        inputField = new CommandAutoCompleteTextField(project);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);
         inputField.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));

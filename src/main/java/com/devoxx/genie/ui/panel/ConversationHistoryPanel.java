@@ -23,11 +23,14 @@ public class ConversationHistoryPanel extends JPanel {
     private final ConversationStorageService storageService;
     private final ConversationSelectionListener conversationSelectionListener;
     private final JPanel conversationsPanel;
+    private final Project project;
 
     public ConversationHistoryPanel(@NotNull ConversationStorageService storageService,
-                                    ConversationSelectionListener conversationSelectionListener) {
+                                    ConversationSelectionListener conversationSelectionListener,
+                                    Project project) {
         this.storageService = storageService;
         this.conversationSelectionListener = conversationSelectionListener;
+        this.project = project;
 
         setLayout(new BorderLayout());
 
@@ -47,7 +50,7 @@ public class ConversationHistoryPanel extends JPanel {
 
     public void loadConversations() {
         conversationsPanel.removeAll();
-        List<Conversation> conversations = storageService.getConversations();
+        List<Conversation> conversations = storageService.getConversations(project);
 
         for (Conversation conversation : conversations) {
             conversationsPanel.add(createConversationRow(conversation));
@@ -134,12 +137,12 @@ public class ConversationHistoryPanel extends JPanel {
     }
 
     private void removeConversation(Conversation conversation) {
-        storageService.removeConversation(conversation);
+        storageService.removeConversation(project, conversation);
         loadConversations();
     }
 
     private void removeAllConversations() {
-        storageService.clearAllConversations();
+        storageService.clearAllConversations(project);
         loadConversations();
     }
 }
