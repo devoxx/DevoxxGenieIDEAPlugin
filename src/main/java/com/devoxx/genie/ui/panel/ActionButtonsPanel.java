@@ -538,7 +538,10 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     @Override
-    public void onPromptSubmitted(String prompt) {
+    public void onPromptSubmitted(@NotNull Project projectPrompt, String prompt) {
+        if (!this.project.getName().equals(projectPrompt.getName())) {
+            return;
+        }
         SwingUtilities.invokeLater(() -> {
             promptInputArea.setText(prompt);
             onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
