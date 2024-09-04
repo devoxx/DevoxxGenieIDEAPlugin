@@ -88,11 +88,59 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .contextWindow(8_000)
             .build();
 
+        // mistral-nemo
+        LanguageModel model5 = LanguageModel.builder()
+            .modelName("mistral-nemo")
+            .displayName("Mistral Nemo")
+            .apiKeyUsed(false)
+            .provider(ModelProvider.Exo)
+            .outputCost(0)
+            .inputCost(0)
+            .contextWindow(8_000)
+            .build();
+
+        // mistral-large
+        LanguageModel model6 = LanguageModel.builder()
+            .modelName("mistral-large")
+            .displayName("Mistral Large")
+            .apiKeyUsed(false)
+            .provider(ModelProvider.Exo)
+            .outputCost(0)
+            .inputCost(0)
+            .contextWindow(8_000)
+            .build();
+
+        // deepseek-coder-v2-lite
+        LanguageModel model7 = LanguageModel.builder()
+            .modelName("deepseek-coder-v2-lite")
+            .displayName("Deepseek Coder V2 Lite")
+            .apiKeyUsed(false)
+            .provider(ModelProvider.Exo)
+            .outputCost(0)
+            .inputCost(0)
+            .contextWindow(8_000)
+            .build();
+
+        // llava-1.5-7b-hf
+        LanguageModel model8 = LanguageModel.builder()
+            .modelName("llava-1.5-7b-hf")
+            .displayName("Llava 1.5 7B HF")
+            .apiKeyUsed(false)
+            .provider(ModelProvider.Exo)
+            .outputCost(0)
+            .inputCost(0)
+            .contextWindow(8_000)
+            .build();
+
         List<LanguageModel> modelNames = new ArrayList<>();
         modelNames.add(model1);
         modelNames.add(model2);
         modelNames.add(model3);
         modelNames.add(model4);
+        modelNames.add(model5);
+        modelNames.add(model6);
+        modelNames.add(model7);
+        modelNames.add(model8);
 
         return modelNames;
     }
