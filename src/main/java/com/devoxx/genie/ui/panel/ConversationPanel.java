@@ -57,7 +57,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         newConversationLabel.setForeground(JBColor.GRAY);
         newConversationLabel.setPreferredSize(new Dimension(0, 30));
 
-        historyPanel = new ConversationHistoryPanel(storageService, this);
+        historyPanel = new ConversationHistoryPanel(storageService, this, project);
 
         setupConversationButtons();
 

@@ -31,6 +31,7 @@ public class WelcomeUtil {
                 <h2>New features 🚀</h2>
                 Configure features in the settings page.<br>
                 <ul>
+                     <li><strong>👀Chat History</strong>: All chats are saved and can be restored or removed</li>
                      <li><strong>🧠Project Scanner</strong>: Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>
                      <li><strong>💰Token Cost Calculator</strong>: Calculate the cost when using Cloud LLM providers.  Input/Output token prices can be viewed in the Settings page.</li>
                      <li><strong>🔍Web Search</strong>: Search the web for a given query using Google or Tavily</li>
