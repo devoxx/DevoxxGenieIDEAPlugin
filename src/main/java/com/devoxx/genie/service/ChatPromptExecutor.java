@@ -17,13 +17,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatPromptExecutor {
 
     private final StreamingPromptExecutor streamingPromptExecutor;
     private final NonStreamingPromptExecutor nonStreamingPromptExecutor;
     private final PromptInputArea promptInputArea;
-    private volatile boolean isRunning = false;
+    private final ConcurrentHashMap<Project, Boolean> isRunningMap = new ConcurrentHashMap<>();
 
     public ChatPromptExecutor(PromptInputArea promptInputArea) {
         this.promptInputArea = promptInputArea;
@@ -41,14 +42,20 @@ public class ChatPromptExecutor {
                               PromptOutputPanel promptOutputPanel,
                               Runnable enableButtons) {
 
-        isRunning = true;
+        Project project = chatMessageContext.getProject();
+        if (isRunningMap.getOrDefault(project, false)) {
+            stopPromptExecution(project);
+            return;
+        }
+
+        isRunningMap.put(project, true);
 
         new Task.Backgroundable(chatMessageContext.getProject(), "Working...", true) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 if (chatMessageContext.isWebSearchRequested()) {
                     new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunning = false;
+                        isRunningMap.put(project, false);
                         enableButtons.run();
                         SwingUtilities.invokeLater(() -> {
                             promptInputArea.clear();
@@ -57,7 +64,7 @@ public class ChatPromptExecutor {
                     });
                 } else if (DevoxxGenieSettingsServiceProvider.getInstance().getStreamMode()) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunning = false;
+                        isRunningMap.put(project, false);
                         enableButtons.run();
                         SwingUtilities.invokeLater(() -> {
                             promptInputArea.clear();
@@ -66,7 +73,7 @@ public class ChatPromptExecutor {
                     });
                 } else {
                     nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunning = false;
+                        isRunningMap.put(project, false);
                         enableButtons.run();
                         SwingUtilities.invokeLater(() -> {
                             promptInputArea.clear();
@@ -119,10 +126,11 @@ public class ChatPromptExecutor {
 
     /**
      * Stop streaming or the non-streaming prompt execution
+     * @param project the project
      */
-    public void stopPromptExecution() {
-        if (isRunning) {
-            isRunning = false;
+    public void stopPromptExecution(Project project) {
+        if (isRunningMap.getOrDefault(project, false)) {
+            isRunningMap.put(project, false);
             streamingPromptExecutor.stopStreaming();
             nonStreamingPromptExecutor.stopExecution();
         }

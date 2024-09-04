@@ -40,20 +40,23 @@ public class StreamingPromptExecutor {
         promptOutputPanel.addUserPrompt(chatMessageContext);
 
         currentStreamingHandler = new StreamingResponseHandler(chatMessageContext, promptOutputPanel, enableButtons);
-        streamingChatLanguageModel.generate(chatMemoryService.messages(), currentStreamingHandler);
+        streamingChatLanguageModel.generate(chatMemoryService.messages(chatMessageContext.getProject()), currentStreamingHandler);
     }
 
     /**
      * Prepare memory.
      * @param chatMessageContext the chat message context
      */
-    private void prepareMemory(ChatMessageContext chatMessageContext) {
-        if (chatMemoryService.isEmpty()) {
-            chatMemoryService.add(new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt()));
+    private void prepareMemory(@NotNull ChatMessageContext chatMessageContext) {
+        if (chatMemoryService.isEmpty(chatMessageContext.getProject())) {
+            chatMemoryService.add(
+                chatMessageContext.getProject(),
+                new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt())
+            );
         }
 
         UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
-        chatMemoryService.add(userMessage);
+        chatMemoryService.add(chatMessageContext.getProject(), userMessage);
     }
 
     /**
