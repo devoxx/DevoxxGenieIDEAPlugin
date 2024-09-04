@@ -51,17 +51,19 @@ public class PromptExecutionService {
 
             MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
-            if (ChatMemoryService.getInstance().isEmpty()) {
+            if (ChatMemoryService.getInstance().isEmpty(chatMessageContext.getProject())) {
                 LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
-                ChatMemoryService.getInstance().add(
-                    new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                ChatMemoryService
+                    .getInstance()
+                    .add(chatMessageContext.getProject(),
+                         new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                 );
             }
 
             UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
             LOG.info("Created UserMessage: " + userMessage);
 
-            ChatMemoryService.getInstance().add(userMessage);
+            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), userMessage);
 
             long startTime = System.currentTimeMillis();
 
@@ -107,11 +109,14 @@ public class PromptExecutionService {
     private @NotNull Response<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-            Response<AiMessage> response = chatLanguageModel.generate(ChatMemoryService.getInstance().messages());
-            ChatMemoryService.getInstance().add(response.content());
+            Response<AiMessage> response =
+                chatLanguageModel
+                    .generate(ChatMemoryService.getInstance()
+                    .messages(chatMessageContext.getProject()));
+            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
         } catch (Exception e) {
-            ChatMemoryService.getInstance().removeLast();
+            ChatMemoryService.getInstance().removeLast(chatMessageContext.getProject());
             throw new ProviderUnavailableException(e.getMessage());
         }
     }

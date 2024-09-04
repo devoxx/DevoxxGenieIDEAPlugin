@@ -118,7 +118,7 @@ public class MessageCreationService {
         StringBuilder stringBuilder = new StringBuilder();
 
         // Check if this is the first message in the conversation
-        if (ChatMemoryService.getInstance().messages().size() == 1) {
+        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1) {
             stringBuilder.append(context);
             stringBuilder.append("\n\n");
             stringBuilder.append("=========================================\n\n");
