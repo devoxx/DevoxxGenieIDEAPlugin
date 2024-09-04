@@ -58,10 +58,12 @@ public class ChatService implements ConversationEventListener {
     }
 
     public void startNewConversation(String title) {
-        Conversation conversation = new Conversation();
-        conversation.setTitle(title);
-        conversation.setTimestamp(LocalDateTime.now().toString());
-        conversation.setMessages(new ArrayList<>());
-        storageService.addConversation(project, conversation);
+        if (title != null && !title.trim().isEmpty()) {
+            Conversation conversation = new Conversation();
+            conversation.setTitle(title);
+            conversation.setTimestamp(LocalDateTime.now().toString());
+            conversation.setMessages(new ArrayList<>());
+            storageService.addConversation(project, conversation);
+        }
     }
 }
