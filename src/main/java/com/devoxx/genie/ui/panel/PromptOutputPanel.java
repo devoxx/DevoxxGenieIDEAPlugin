@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
@@ -133,12 +134,14 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     public void displayConversation(Project project, Conversation conversation) {
         SwingUtilities.invokeLater(() -> {
-            container.removeAll();
+            String conversationId = UUID.randomUUID().toString();
             for (ChatMessage message : conversation.getMessages()) {
+                conversation.setId(conversationId);
+                ChatMessageContext chatMessageContext = createChatMessageContext(project, conversation, message);
                 if (message.isUser()) {
-                    addUserPrompt(createChatMessageContext(project, message, conversation));
+                    addUserPrompt(chatMessageContext);
                 } else {
-                    addChatResponse(createChatMessageContext(project, message, conversation));
+                    addChatResponse(chatMessageContext);
                 }
             }
             scrollToBottom();
@@ -146,10 +149,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     private ChatMessageContext createChatMessageContext(Project project,
-                                                        @NotNull ChatMessage message,
-                                                        @NotNull Conversation conversation) {
+                                                        @NotNull Conversation conversation,
+                                                        @NotNull ChatMessage message) {
         return ChatMessageContext.builder()
-            .name(String.valueOf(System.currentTimeMillis()))
+            .name(conversation.getId())
             .project(project)
             .userPrompt(message.isUser() ? message.getContent() : "")
             .aiMessage(message.isUser() ? null : AiMessage.aiMessage(message.getContent()))

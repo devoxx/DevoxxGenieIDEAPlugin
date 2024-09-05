@@ -329,7 +329,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         FileListManager.getInstance().clear();
         ChatMemoryService.getInstance().clear(project);
 
-        // TODO Set title based on first question
         chatService.startNewConversation("");
 
         SwingUtilities.invokeLater(() -> {

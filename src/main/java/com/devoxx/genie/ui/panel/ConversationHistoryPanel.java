@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.conversation.Conversation;
+import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ConversationStorageService;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
@@ -72,6 +73,7 @@ public class ConversationHistoryPanel extends JPanel {
         titleLabel.addMouseListener( new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 conversationSelectionListener.onConversationSelected(conversation);
+                updateChatMemory(conversation);
             }
         });
         titleLabel.setBorder(JBUI.Borders.empty(5, 8));
@@ -96,6 +98,10 @@ public class ConversationHistoryPanel extends JPanel {
         rowPanel.add(deleteButton, BorderLayout.EAST);
 
         return rowPanel;
+    }
+
+    private void updateChatMemory(Conversation conversation) {
+        ChatMemoryService.getInstance().restoreConversation(project, conversation);
     }
 
     private @NotNull String formatTimeSince(String timestamp) {
