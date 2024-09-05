@@ -40,26 +40,22 @@ public final class ConversationStorageService implements PersistentStateComponen
     public void addConversation(@NotNull Project project, Conversation conversation) {
         if (conversation != null &&
             (!conversation.getMessages().isEmpty() || (conversation.getTitle() != null && !conversation.getTitle().trim().isEmpty()))) {
-            String projectId = project.getLocationHash();
-            myState.conversations.computeIfAbsent(projectId, k -> new ArrayList<>()).add(conversation);
+            myState.conversations.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).add(conversation);
             saveState();
         }
     }
 
     public @NotNull List<Conversation> getConversations(@NotNull Project project) {
-        String projectId = project.getLocationHash();
-        return new ArrayList<>(myState.conversations.getOrDefault(projectId, new ArrayList<>()));
+        return new ArrayList<>(myState.conversations.getOrDefault(project.getLocationHash(), new ArrayList<>()));
     }
 
     public void removeConversation(@NotNull Project project, Conversation conversation) {
-        String projectId = project.getLocationHash();
-        myState.conversations.getOrDefault(projectId, new ArrayList<>()).remove(conversation);
+        myState.conversations.getOrDefault(project.getLocationHash(), new ArrayList<>()).remove(conversation);
         saveState();
     }
 
     public void clearAllConversations(@NotNull Project project) {
-        String projectId = project.getLocationHash();
-        myState.conversations.remove(projectId);
+        myState.conversations.remove(project.getLocationHash());
         saveState();
     }
 
