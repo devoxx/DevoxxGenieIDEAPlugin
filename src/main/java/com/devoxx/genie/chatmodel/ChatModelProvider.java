@@ -33,26 +33,26 @@ import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 @Setter
 public class ChatModelProvider {
 
-    private final Map<ModelProvider, ChatModelFactory> factories = new HashMap<>();
+//    private final Map<ModelProvider, ChatModelFactory> factories = new HashMap<>();
     private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI; // Choose an appropriate default
 
-    public ChatModelProvider() {
-        factories.put(ModelProvider.Ollama, new OllamaChatModelFactory());
-        factories.put(ModelProvider.LMStudio, new LMStudioChatModelFactory());
-        factories.put(ModelProvider.GPT4All, new GPT4AllChatModelFactory());
-        factories.put(ModelProvider.OpenAI, new OpenAIChatModelFactory());
-        factories.put(ModelProvider.Mistral, new MistralChatModelFactory());
-        factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
-        factories.put(ModelProvider.Groq, new GroqChatModelFactory());
-        factories.put(ModelProvider.Google, new GoogleChatModelFactory());
-        factories.put(ModelProvider.Exo, new ExoChatModelFactory());
-        factories.put(ModelProvider.LLaMA, new LlamaChatModelFactory());
-        factories.put(ModelProvider.DeepInfra, new DeepInfraChatModelFactory());
-        factories.put(ModelProvider.DeepSeek, new DeepSeekChatModelFactory());
-
-        // TODO Currently broken by latest Jan! version
-        // factories.put(ModelProvider.Jan, new JanChatModelFactory());
-    }
+//    public ChatModelProvider() {
+//        factories.put(ModelProvider.Ollama, new OllamaChatModelFactory());
+//        factories.put(ModelProvider.LMStudio, new LMStudioChatModelFactory());
+//        factories.put(ModelProvider.GPT4All, new GPT4AllChatModelFactory());
+//        factories.put(ModelProvider.OpenAI, new OpenAIChatModelFactory());
+//        factories.put(ModelProvider.Mistral, new MistralChatModelFactory());
+//        factories.put(ModelProvider.Anthropic, new AnthropicChatModelFactory());
+//        factories.put(ModelProvider.Groq, new GroqChatModelFactory());
+//        factories.put(ModelProvider.Google, new GoogleChatModelFactory());
+//        factories.put(ModelProvider.Exo, new ExoChatModelFactory());
+//        factories.put(ModelProvider.LLaMA, new LlamaChatModelFactory());
+//        factories.put(ModelProvider.DeepInfra, new DeepInfraChatModelFactory());
+//        factories.put(ModelProvider.DeepSeek, new DeepSeekChatModelFactory());
+//
+//        // TODO Currently broken by latest Jan! version
+//        // factories.put(ModelProvider.Jan, new JanChatModelFactory());
+//    }
 
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
@@ -77,11 +77,8 @@ public class ChatModelProvider {
             .map(LanguageModel::getProvider)
             .orElse(DEFAULT_PROVIDER);
 
-        ChatModelFactory factory = factories.get(provider);
-        if (factory == null) {
-            throw new IllegalArgumentException("No factory for provider: " + provider);
-        }
-        return factory;
+        return ChatModelFactoryProvider.getFactoryByProvider(provider.name())
+            .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + provider));
     }
 
     public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
