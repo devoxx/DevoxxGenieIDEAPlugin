@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
@@ -38,7 +39,11 @@ public class UserPromptPanel extends BackgroundPanel {
 
         // User prompt setup
         JEditorPane htmlJEditorPane =
-            JEditorPaneUtils.createHtmlJEditorPane(chatMessageContext.getUserPrompt(), null, StyleSheetsFactory.createParagraphStyleSheet());
+            JEditorPaneUtils.createHtmlJEditorPane(
+                chatMessageContext.getUserPrompt(),
+                null,
+                StyleSheetsFactory.createParagraphStyleSheet()
+            );
 
         add(headerPanel, BorderLayout.NORTH);
         add(htmlJEditorPane, BorderLayout.CENTER);
@@ -72,12 +77,19 @@ public class UserPromptPanel extends BackgroundPanel {
      *
      * @param chatMessageContext the chat message context
      */
-    private void removeChat(ChatMessageContext chatMessageContext) {
+    private void removeChat(@NotNull ChatMessageContext chatMessageContext) {
+        String nameToRemove = chatMessageContext.getName();
+        java.util.List<Component> componentsToRemove = new ArrayList<>();
 
-        // Get all container components and delete by name
-        stream(container.getComponents())
-            .filter(c -> c.getName() != null && c.getName().equals(chatMessageContext.getName()))
-            .forEach(container::remove);
+        for (Component c : container.getComponents()) {
+            if (c.getName() != null && c.getName().equals(nameToRemove)) {
+                componentsToRemove.add(c);
+            }
+        }
+
+        for (Component c : componentsToRemove) {
+            container.remove(c);
+        }
 
         // Repaint the container
         container.revalidate();
