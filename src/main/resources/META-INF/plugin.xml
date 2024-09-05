@@ -369,6 +369,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LMStudioService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
