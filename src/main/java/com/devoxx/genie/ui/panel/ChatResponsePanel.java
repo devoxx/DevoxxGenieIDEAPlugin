@@ -32,6 +32,7 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Create a new chat response panel.
+     *
      * @param chatMessageContext the chat message context
      */
     public ChatResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
@@ -100,8 +101,9 @@ public class ChatResponsePanel extends BackgroundPanel {
 
     /**
      * Ollama does not count the input context tokens in the token usage, this method fixes this.
+     *
      * @param chatMessageContext the chat message context
-     * @param tokenUsage the token usage
+     * @param tokenUsage         the token usage
      * @return the updated token usage
      */
     private static TokenUsage calcOllamaInputTokenCount(@NotNull ChatMessageContext chatMessageContext, TokenUsage tokenUsage) {

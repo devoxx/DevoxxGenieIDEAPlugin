@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.18</h2>
+        <UL>
+            <LI>Feat #225 : Support for OpenRouter</LI>
+        </UL>
         <h2>V0.2.17</h2>
         <UL>
             <LI>Feat #266 : Use OnePixelSplitter for chat window</LI>
@@ -361,14 +365,15 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.OllamaService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.WebSearchService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ollama.OllamaService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.websearch.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.ProjectScannerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.projectscanner.ProjectScannerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.LMStudioService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.lmstudio.LMStudioService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

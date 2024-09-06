@@ -24,9 +24,10 @@ public class NonStreamingPromptExecutor {
 
     /**
      * Execute the prompt.
+     *
      * @param chatMessageContext the chat message context
-     * @param promptOutputPanel the prompt output panel
-     * @param enableButtons the enable buttons
+     * @param promptOutputPanel  the prompt output panel
+     * @param enableButtons      the enable buttons
      */
     public void execute(ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,

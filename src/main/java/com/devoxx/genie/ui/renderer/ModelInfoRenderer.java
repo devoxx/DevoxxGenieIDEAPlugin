@@ -13,6 +13,7 @@ import java.text.DecimalFormat;
 public class ModelInfoRenderer extends JPanel implements ListCellRenderer<LanguageModel> {
     private final JLabel nameLabel = new JBLabel();
     private final JLabel infoLabel = new JBLabel();
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.#####");
 
     public ModelInfoRenderer() {
         setLayout(new BorderLayout());
@@ -37,8 +38,13 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
             nameLabel.setText(model.getDisplayName());
             String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
             if (model.getInputCost() > 0.0) {
-                double cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
-                infoLabel.setText(String.format("%s @ %s USD", windowContext, new DecimalFormat("#.##").format(cost)));
+                double cost;
+                if (model.getProvider().getName().equalsIgnoreCase("openrouter")) {
+                    cost = model.getInputCost() * model.getContextWindow();
+                } else {
+                    cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
+                }
+                infoLabel.setText(String.format("%s @ %s USD", windowContext, decimalFormat.format(cost)));
             } else {
                 infoLabel.setText(windowContext);
             }

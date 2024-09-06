@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.component;
 
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +44,7 @@ public class GlowingBorder extends AbstractBorder {
 
     @Override
     public Insets getBorderInsets(Component c) {
-        return new Insets(glowWidth, glowWidth, glowWidth, glowWidth);
+        return JBUI.insets(glowWidth);
     }
 
 }

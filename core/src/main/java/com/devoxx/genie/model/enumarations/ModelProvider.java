@@ -17,6 +17,7 @@ public enum ModelProvider {
     Google("Google"),
     Exo("Exo (Experimental)"),
     LLaMA("LLaMA.c++"),
+    OpenRouter("OpenRouter"),
     DeepSeek("DeepSeek");
 
     private final String name;

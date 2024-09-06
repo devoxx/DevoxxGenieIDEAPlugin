@@ -247,12 +247,13 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     /**
      * Check if the selected provider supports project context.
      * Included also Ollama because of the Llama 3.1 release with a window context of 128K.
+     *
      * @return true if the provider supports project context
      */
     private boolean isProjectContextSupportedProvider() {
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         return selectedProvider != null &&
-               isSupportedProvider(selectedProvider);
+            isSupportedProvider(selectedProvider);
     }
 
     /**
@@ -321,8 +322,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         if (selectedProvider != null &&
             (selectedProvider.equals(ModelProvider.LMStudio) ||
-             selectedProvider.equals(ModelProvider.GPT4All) ||
-             selectedProvider.equals(ModelProvider.LLaMA))) {
+                selectedProvider.equals(ModelProvider.GPT4All) ||
+                selectedProvider.equals(ModelProvider.LLaMA))) {
             return LanguageModel.builder()
                 .provider(selectedProvider)
                 .apiKeyUsed(false)
@@ -435,6 +436,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             modelProvider.equals(ModelProvider.OpenAI) ||
             modelProvider.equals(ModelProvider.Mistral) ||
             modelProvider.equals(ModelProvider.DeepSeek) ||
+            modelProvider.equals(ModelProvider.OpenRouter) ||
             modelProvider.equals(ModelProvider.DeepInfra) ||
             modelProvider.equals(ModelProvider.Ollama);
     }
@@ -484,6 +486,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     /**
      * Get the window context for the selected provider and model.
+     *
      * @return the token limit
      */
     private int getWindowContext() {

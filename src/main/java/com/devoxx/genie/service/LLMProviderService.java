@@ -5,9 +5,8 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -15,6 +14,19 @@ import java.util.stream.Collectors;
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 
 public class LLMProviderService {
+
+    private static final EnumMap<ModelProvider, Supplier<String>> providerKeyMap = new EnumMap<>(ModelProvider.class);
+
+    static {
+        providerKeyMap.put(OpenAI, DevoxxGenieSettingsServiceProvider.getInstance()::getOpenAIKey);
+        providerKeyMap.put(Anthropic, DevoxxGenieSettingsServiceProvider.getInstance()::getAnthropicKey);
+        providerKeyMap.put(Mistral, DevoxxGenieSettingsServiceProvider.getInstance()::getMistralKey);
+        providerKeyMap.put(Groq, DevoxxGenieSettingsServiceProvider.getInstance()::getGroqKey);
+        providerKeyMap.put(DeepInfra, DevoxxGenieSettingsServiceProvider.getInstance()::getDeepInfraKey);
+        providerKeyMap.put(Google, DevoxxGenieSettingsServiceProvider.getInstance()::getGeminiKey);
+        providerKeyMap.put(DeepSeek, DevoxxGenieSettingsServiceProvider.getInstance()::getDeepSeekKey);
+        providerKeyMap.put(OpenRouter, DevoxxGenieSettingsServiceProvider.getInstance()::getOpenRouterKey);
+    }
 
     @NotNull
     public static LLMProviderService getInstance() {
@@ -27,34 +39,19 @@ public class LLMProviderService {
 
     /**
      * Get LLM providers for which an API Key is defined in the settings
+     *
      * @return List of LLM providers
      */
     public List<ModelProvider> getModelProvidersWithApiKeyConfigured() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
-        Map<ModelProvider, Supplier<String>> providerKeyMap = new HashMap<>();
-        providerKeyMap.put(OpenAI, settings::getOpenAIKey);
-        providerKeyMap.put(Anthropic, settings::getAnthropicKey);
-        providerKeyMap.put(Mistral, settings::getMistralKey);
-        providerKeyMap.put(Groq, settings::getGroqKey);
-        providerKeyMap.put(DeepInfra, settings::getDeepInfraKey);
-        providerKeyMap.put(Google, settings::getGeminiKey);
-        providerKeyMap.put(DeepSeek, settings::getDeepSeekKey);
-
-        // Filter out cloud LLM providers that do not have a key
-        List<ModelProvider> providersWithRequiredKey = LLMModelRegistryService.getInstance().getModels()
+        return LLMModelRegistryService.getInstance().getModels()
             .stream()
             .filter(LanguageModel::isApiKeyUsed)
             .map(LanguageModel::getProvider)
             .distinct()
-            .toList();
-
-        return providersWithRequiredKey
-            .stream()
             .filter(provider -> Optional.ofNullable(providerKeyMap.get(provider))
                 .map(Supplier::get)
                 .filter(key -> !key.isBlank())
                 .isPresent())
-            .distinct()
             .collect(Collectors.toList());
     }
 }

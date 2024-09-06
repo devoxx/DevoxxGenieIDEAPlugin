@@ -56,8 +56,8 @@ public class PromptExecutionService {
                 ChatMemoryService
                     .getInstance()
                     .add(chatMessageContext.getProject(),
-                         new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
-                );
+                        new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                    );
             }
 
             UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
@@ -103,6 +103,7 @@ public class PromptExecutionService {
 
     /**
      * Process the chat message.
+     *
      * @param chatMessageContext the chat message context
      * @return the AI response
      */
@@ -112,7 +113,7 @@ public class PromptExecutionService {
             Response<AiMessage> response =
                 chatLanguageModel
                     .generate(ChatMemoryService.getInstance()
-                    .messages(chatMessageContext.getProject()));
+                        .messages(chatMessageContext.getProject()));
             ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
         } catch (Exception e) {

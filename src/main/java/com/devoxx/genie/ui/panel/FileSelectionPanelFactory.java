@@ -62,6 +62,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Create the result list
+     *
      * @param listModel the list model
      * @return the list
      */
@@ -76,8 +77,9 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Create the filter file field
-     * @param project the project
-     * @param listModel the list model
+     *
+     * @param project    the project
+     * @param listModel  the list model
      * @param resultList the result list
      * @return the filter field
      */
@@ -113,10 +115,11 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Debounce the search, only search after a DEBOUNCE_DELAY
-     * @param project the project
-     * @param filterField the filter field
-     * @param listModel the list model
-     * @param resultList the result list
+     *
+     * @param project       the project
+     * @param filterField   the filter field
+     * @param listModel     the list model
+     * @param resultList    the result list
      * @param debounceTimer the debounce timer
      */
     private static void debounceSearch(Project project,
@@ -134,9 +137,10 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Search for files
-     * @param project the project
+     *
+     * @param project    the project
      * @param searchText the search text
-     * @param listModel the list model
+     * @param listModel  the list model
      * @param resultList the result list
      */
     private static void searchFiles(Project project,
@@ -193,6 +197,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Add a mouse listener to the result list
+     *
      * @param resultList the result list
      */
     private static void addMouseListenerToResultList(@NotNull JBList<VirtualFile> resultList) {
@@ -208,6 +213,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     /**
      * Add the selected file to the file list
+     *
      * @param resultList the result list
      */
     private static void addSelectedFile(@NotNull JBList<VirtualFile> resultList) {

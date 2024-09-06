@@ -20,6 +20,7 @@ public class BlockProcessor implements NodeProcessor {
 
     /**
      * Process the paragraph
+     *
      * @return the panel
      */
     @Override

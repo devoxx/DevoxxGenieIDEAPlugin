@@ -25,6 +25,7 @@ public class DefaultLLMSettingsUtil {
 
     /**
      * Does the ModelProvider use an API KEY?
+     *
      * @param provider the LLM provider
      * @return true when API Key is required, meaning a cost is involved
      */

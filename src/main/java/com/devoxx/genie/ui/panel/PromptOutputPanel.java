@@ -165,7 +165,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
                 .inputCost(conversation.getInputCost() == null ? 0 : conversation.getInputCost())
                 .outputCost(conversation.getOutputCost() == null ? 0 : conversation.getOutputCost())
                 .contextWindow(conversation.getContextWindow() == null ? 0 : conversation.getContextWindow())
-            .build())
+                .build())
             .cost(0).build();
     }
 }

@@ -12,7 +12,10 @@ import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.panel.*;
+import com.devoxx.genie.ui.panel.ActionButtonsPanel;
+import com.devoxx.genie.ui.panel.ConversationPanel;
+import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -35,6 +38,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
@@ -109,7 +113,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      * Restore the last selected provider from persistent storage
      */
     private void restoreLastSelectedProvider() {
-       if (lastSelectedProvider != null) {
+        if (lastSelectedProvider != null) {
             for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
                 ModelProvider provider = modelProviderComboBox.getItemAt(i);
                 if (provider.getName().equals(lastSelectedProvider)) {
@@ -119,8 +123,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                 }
             }
         } else {
-           setLastSelectedProvider();
-       }
+            setLastSelectedProvider();
+        }
     }
 
     /**
@@ -140,6 +144,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Set up the message bus connection.
+     *
      * @param toolWindow the tool window
      */
     private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
@@ -191,6 +196,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Create the top panel.
+     *
      * @return the top panel
      */
     private @NotNull JPanel createTopPanel() {
@@ -202,6 +208,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Create the splitter.
+     *
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
@@ -218,7 +225,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     @Override
     public void settingsChanged(boolean hasKey) {
         ModelProvider currentProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
-        LanguageModel currentModel = (LanguageModel)modelNameComboBox.getSelectedItem();
+        LanguageModel currentModel = (LanguageModel) modelNameComboBox.getSelectedItem();
 
         modelProviderComboBox.removeAllItems();
         modelNameComboBox.removeAllItems();
@@ -244,18 +251,18 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      */
     private void addModelProvidersToComboBox() {
         LLMProviderService providerService = LLMProviderService.getInstance();
-
         Stream.concat(
-            providerService.getModelProvidersWithApiKeyConfigured().stream(),
-            providerService.getLocalModelProviders().stream()
-        )
-        .distinct()
-        .sorted(Comparator.comparing(ModelProvider::getName))
-        .forEach(modelProviderComboBox::addItem);
+                providerService.getModelProvidersWithApiKeyConfigured().stream(),
+                providerService.getLocalModelProviders().stream()
+            )
+            .distinct()
+            .sorted(Comparator.comparing(ModelProvider::getName))
+            .forEach(modelProviderComboBox::addItem);
     }
 
     /**
      * Create the LLM and model name selection panel.
+     *
      * @return the selection panel
      */
     private @NotNull JPanel createSelectionPanel() {
@@ -283,6 +290,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Create the LLM provider panel.
+     *
      * @return the provider panel
      */
     private @NotNull JPanel createProviderPanel() {
@@ -293,6 +301,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Create the Submit panel.
+     *
      * @return the Submit panel
      */
     private @NotNull JPanel createInputPanel() {
@@ -307,6 +316,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * The bottom action buttons panel (Submit, Search buttons and Add Files)
+     *
      * @return the action buttons panel
      */
     @Contract(" -> new")
@@ -361,7 +371,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      * Set the model provider and update the model names.
      */
     private void handleModelProviderSelectionChange(@NotNull ActionEvent e) {
-        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames) return;
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames)
+            return;
 
         isUpdatingModelNames = true;
 
@@ -412,6 +423,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     /**
      * Populate the model names.
+     *
      * @param chatModelFactory the chat model factory
      */
     private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {

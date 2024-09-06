@@ -18,6 +18,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
 
     /**
      * Get the display name
+     *
      * @return the display name
      */
     @Nls
@@ -28,6 +29,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
 
     /**
      * Get the Prompt Settings component
+     *
      * @return the component
      */
     @Nullable
@@ -38,6 +40,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
 
     /**
      * Check if the settings have been modified
+     *
      * @return true if the settings have been modified
      */
     @Override
@@ -55,6 +58,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         isModified |= llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected() != stateService.getShowExecutionTime();
         return isModified;
     }
+
     /**
      * Apply the changes to the settings
      */
@@ -62,8 +66,8 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     public void apply() {
         DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
 
-        stateService.setTemperature(((Double)llmConfigSettingsComponent.getTemperatureField().getValue()));
-        stateService.setTopP(((Double)llmConfigSettingsComponent.getTopPField().getValue()));
+        stateService.setTemperature(((Double) llmConfigSettingsComponent.getTemperatureField().getValue()));
+        stateService.setTopP(((Double) llmConfigSettingsComponent.getTopPField().getValue()));
 
         stateService.setChatMemorySize(llmConfigSettingsComponent.getChatMemorySizeField().getNumber());
         stateService.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());

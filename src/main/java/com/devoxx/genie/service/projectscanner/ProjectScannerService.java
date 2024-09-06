@@ -1,6 +1,8 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.model.ScanContentResult;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -35,10 +37,11 @@ public class ProjectScannerService {
 
     /**
      * Scan the project from start directory and return the project source tree and file contents.
-     * @param project the project
-     * @param startDirectory the start directory
+     *
+     * @param project                the project
+     * @param startDirectory         the start directory
      * @param windowContextMaxTokens the window context for the language model
-     * @param isTokenCalculation whether the scan is for token calculation
+     * @param isTokenCalculation     whether the scan is for token calculation
      * @return the project context
      */
     public CompletableFuture<ScanContentResult> scanProject(Project project,
@@ -76,9 +79,10 @@ public class ProjectScannerService {
 
     /**
      * Get the project content from all modules.
-     * @param project the project
+     *
+     * @param project                the project
      * @param windowContextMaxTokens the window context for the language model
-     * @param result the result
+     * @param result                 the result
      * @return the full content
      */
     private StringBuilder getContentFromModules(Project project,
@@ -110,9 +114,10 @@ public class ProjectScannerService {
 
     /**
      * Scan the project and return the project source tree and file contents from the start directory.
-     * @param project the project
+     *
+     * @param project        the project
      * @param startDirectory the start directory
-     * @param result the result
+     * @param result         the result
      * @return the full content
      */
     private @NotNull StringBuilder processDirectory(Project project,
@@ -135,8 +140,9 @@ public class ProjectScannerService {
 
     /**
      * Walk through the project directory and append the file contents to the full content.
-     * @param directory the selected directory
-     * @param fileIndex the project file index
+     *
+     * @param directory   the selected directory
+     * @param fileIndex   the project file index
      * @param fullContent the full content
      */
     private void walkThroughDirectory(VirtualFile directory,
@@ -185,9 +191,10 @@ public class ProjectScannerService {
     /**
      * Truncate the project context to a maximum number of tokens.
      * If the project context exceeds the limit, truncate it and append a message.
-     * @param project the project
-     * @param text the project context
-     * @param windowContext the model window context
+     *
+     * @param project            the project
+     * @param text               the project context
+     * @param windowContext      the model window context
      * @param isTokenCalculation whether the scan is for token calculation
      */
     private String truncateToTokens(Project project,
@@ -219,6 +226,7 @@ public class ProjectScannerService {
 
     /**
      * Generate a tree structure of the project source files recursively.
+     *
      * @param dir   the directory
      * @param depth the depth
      * @return the tree structure
@@ -247,6 +255,7 @@ public class ProjectScannerService {
 
     /**
      * Check if the directory should be excluded from the project context.
+     *
      * @param file the directory
      * @return true if the directory should be excluded, false otherwise
      */
@@ -257,6 +266,7 @@ public class ProjectScannerService {
 
     /**
      * Check if the file should be included in the project context.
+     *
      * @param file the file
      * @return true if the file should be included, false otherwise
      */
@@ -268,6 +278,7 @@ public class ProjectScannerService {
 
     /**
      * Process the file content.
+     *
      * @param content the file content
      * @return the processed content
      */
@@ -280,6 +291,7 @@ public class ProjectScannerService {
 
     /**
      * Remove Javadoc comments from the content.
+     *
      * @param content the content
      * @return the content without Javadoc
      */
