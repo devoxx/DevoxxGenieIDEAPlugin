@@ -66,12 +66,13 @@ public class ChatMessageContextUtil {
 
     /**
      * Set the window context.
-     * @param chatMessageContext the chat message context
-     * @param userPrompt the user prompt
+     *
+     * @param chatMessageContext      the chat message context
+     * @param userPrompt              the user prompt
      * @param editorFileButtonManager the editor file button manager
-     * @param projectContext the project context
-     * @param isProjectContextAdded the is project context added
-     * @param actionCommand the action command for setting the context for web requests
+     * @param projectContext          the project context
+     * @param isProjectContextAdded   the is project context added
+     * @param actionCommand           the action command for setting the context for web requests
      */
     private static void setWindowContext(@NotNull ChatMessageContext chatMessageContext,
                                          String userPrompt,

@@ -1,6 +1,9 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import dev.langchain4j.data.message.SystemMessage;
@@ -21,9 +24,10 @@ public class StreamingPromptExecutor {
 
     /**
      * Execute the streaming prompt.
+     *
      * @param chatMessageContext the chat message context
-     * @param promptOutputPanel the prompt output panel
-     * @param enableButtons the enable buttons
+     * @param promptOutputPanel  the prompt output panel
+     * @param enableButtons      the enable buttons
      */
     public void execute(@NotNull ChatMessageContext chatMessageContext,
                         PromptOutputPanel promptOutputPanel,
@@ -45,6 +49,7 @@ public class StreamingPromptExecutor {
 
     /**
      * Prepare memory.
+     *
      * @param chatMessageContext the chat message context
      */
     private void prepareMemory(@NotNull ChatMessageContext chatMessageContext) {

@@ -109,8 +109,9 @@ public class MessageCreationService {
 
     /**
      * Construct user message with full context.
+     *
      * @param chatMessageContext the chat message context
-     * @param context the context
+     * @param context            the context
      * @return the user message
      */
     private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
@@ -134,6 +135,7 @@ public class MessageCreationService {
 
     /**
      * Create user prompt with context.
+     *
      * @param project    the project
      * @param userPrompt the user prompt
      * @param files      the files
@@ -171,6 +173,7 @@ public class MessageCreationService {
 
     /**
      * Append the text to the string builder if it is not empty.
+     *
      * @param sb   the string builder
      * @param text the text
      */

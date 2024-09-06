@@ -3,6 +3,8 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
+import com.devoxx.genie.service.websearch.WebSearchExecutor;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.util.FileTypeUtil;
@@ -34,6 +36,7 @@ public class ChatPromptExecutor {
 
     /**
      * Execute the prompt.
+     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -87,6 +90,7 @@ public class ChatPromptExecutor {
 
     /**
      * Process possible command prompt.
+     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      */
@@ -126,6 +130,7 @@ public class ChatPromptExecutor {
 
     /**
      * Stop streaming or the non-streaming prompt execution
+     *
      * @param project the project
      */
     public void stopPromptExecution(Project project) {

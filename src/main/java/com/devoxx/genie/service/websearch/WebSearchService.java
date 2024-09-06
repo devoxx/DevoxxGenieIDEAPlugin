@@ -1,6 +1,8 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.websearch;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -26,14 +28,15 @@ public class WebSearchService {
 
     interface SearchWebsite {
         @SystemMessage("""
-            Provide a paragraph-long answer, not a long step by step explanation.
-            Reply with "I don't know the answer" if the provided information isn't relevant.
-        """)
+                Provide a paragraph-long answer, not a long step by step explanation.
+                Reply with "I don't know the answer" if the provided information isn't relevant.
+            """)
         String search(String query);
     }
 
     /**
      * Search the web for the given query.
+     *
      * @param chatMessageContext the chat message context
      * @return the AI message
      */
@@ -45,7 +48,8 @@ public class WebSearchService {
 
     /**
      * Execute the search command.
-     * @param webSearchEngine the web search engine
+     *
+     * @param webSearchEngine    the web search engine
      * @param chatMessageContext the chat message context
      * @return the AI message
      */
@@ -66,6 +70,7 @@ public class WebSearchService {
 
     /**
      * Get the web search engine.
+     *
      * @param searchType the search type
      * @return the web search engine
      */

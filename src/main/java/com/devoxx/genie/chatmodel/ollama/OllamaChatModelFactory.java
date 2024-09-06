@@ -6,8 +6,8 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
-import com.devoxx.genie.service.OllamaApiService;
-import com.devoxx.genie.service.OllamaService;
+import com.devoxx.genie.service.ollama.OllamaApiService;
+import com.devoxx.genie.service.ollama.OllamaService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -56,6 +56,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
      * Get the model names from the Ollama service.
      * We're currently adding a fixed number of tokens to the model size.
      * TODO - Get the model size from the Ollama service or have the user define them in Options panel?
+     *
      * @return List of model names
      */
     @Override

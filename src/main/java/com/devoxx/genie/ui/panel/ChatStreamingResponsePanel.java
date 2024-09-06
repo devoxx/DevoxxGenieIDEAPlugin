@@ -70,6 +70,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
 
     /**
      * Insert token into document stream
+     *
      * @param token the LLM string token
      */
     public void insertToken(String token) {
@@ -82,6 +83,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
 
     /**
      * Create an editor pane.
+     *
      * @return the editor pane
      */
     private @NotNull JEditorPane createEditorPane() {

@@ -1,16 +1,17 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.jan;
 
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.model.jan.ResponseDTO;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
+
+import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class JanService {
     private final OkHttpClient client = new OkHttpClient();
@@ -35,11 +36,6 @@ public class JanService {
             ResponseDTO responseDTO = new Gson().fromJson(response.body().string(), ResponseDTO.class);
             return responseDTO != null && responseDTO.getData() != null ? responseDTO.getData() : List.of();
         }
-    }
-
-    @Contract(pure = true)
-    private String ensureEndsWithSlash(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
     }
 
     public static class UnsuccessfulRequestException extends IOException {

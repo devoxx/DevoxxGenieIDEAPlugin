@@ -10,6 +10,11 @@ import java.util.stream.Collectors;
 
 public class LLMProviderUtil {
 
+    /**
+     * Get LLM providers for which an API Key is defined in the settings
+     *
+     * @return List of LLM providers
+     */
     public static List<ModelProvider> getApiKeyEnabledProviders() {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         return Arrays.stream(ModelProvider.values())
@@ -20,6 +25,7 @@ public class LLMProviderUtil {
                 case Groq -> !settings.getGroqKey().isEmpty();
                 case DeepInfra -> !settings.getDeepInfraKey().isEmpty();
                 case DeepSeek -> !settings.getDeepSeekKey().isEmpty();
+                case OpenRouter -> !settings.getOpenRouterKey().isEmpty();
                 case Google -> !settings.getGeminiKey().isEmpty();
                 default -> false;
             })

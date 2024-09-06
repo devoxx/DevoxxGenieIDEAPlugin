@@ -28,6 +28,7 @@ public class ChatModelFactoryProvider {
 
     /**
      * Get the factory by provider.
+     *
      * @param modelProvider the model provider
      * @return the factory
      */

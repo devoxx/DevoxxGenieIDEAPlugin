@@ -30,7 +30,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .build();
     }
 
-// TODO: Currently gives an error in regards to content-type
+    // TODO: Currently gives an error in regards to content-type
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
@@ -44,6 +44,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
 
     /**
      * Get the models for Exo
+     *
      * @return List of model names
      */
     @Override

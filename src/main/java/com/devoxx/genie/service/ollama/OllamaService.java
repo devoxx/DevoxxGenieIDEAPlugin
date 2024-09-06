@@ -1,7 +1,8 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.ollama;
 
 import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.google.gson.Gson;
 import com.intellij.openapi.application.ApplicationManager;
 import okhttp3.OkHttpClient;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-import static com.devoxx.genie.service.OllamaApiService.ensureEndsWithSlash;
+import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class OllamaService {
 
