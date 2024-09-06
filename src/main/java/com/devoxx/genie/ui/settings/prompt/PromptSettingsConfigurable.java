@@ -30,6 +30,7 @@ public class PromptSettingsConfigurable implements Configurable {
 
     /**
      * Get the display name
+     *
      * @return the display name
      */
     @Nls
@@ -40,6 +41,7 @@ public class PromptSettingsConfigurable implements Configurable {
 
     /**
      * Check if the settings have been modified
+     *
      * @return true if the settings have been modified
      */
     @Override
@@ -85,6 +87,7 @@ public class PromptSettingsConfigurable implements Configurable {
 
     /**
      * Update the text area if the value has changed
+     *
      * @param textArea     the text area
      * @param currentValue the current value
      * @param updateAction the update action

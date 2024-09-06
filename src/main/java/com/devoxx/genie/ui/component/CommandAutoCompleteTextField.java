@@ -4,7 +4,6 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
-import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;

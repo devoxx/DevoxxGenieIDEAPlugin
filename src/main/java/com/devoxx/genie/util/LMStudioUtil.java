@@ -5,11 +5,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
+
+import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class LMStudioUtil {
     private static final Logger LOG = Logger.getInstance(LMStudioUtil.class);
@@ -27,11 +28,6 @@ public class LMStudioUtil {
             LOG.warn("Failed to connect to LMStudio: " + e.getMessage());
             return false;
         }
-    }
-
-    @Contract(pure = true)
-    public static String ensureEndsWithSlash(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
     }
 
     public static @NotNull Response executeRequest(String endpoint) throws IOException {

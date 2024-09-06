@@ -22,6 +22,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
     /**
      * Get the display name
+     *
      * @return the display name
      */
     @Nls
@@ -32,6 +33,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
     /**
      * Get the Prompt Settings component
+     *
      * @return the component
      */
     @Nullable
@@ -42,6 +44,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
     /**
      * Check if the settings have been modified
+     *
      * @return true if the settings have been modified
      */
     @Override
@@ -60,6 +63,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), settings.getDeepSeekKey());
         isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), settings.getLlamaCPPUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), settings.getOpenRouterKey());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
@@ -106,6 +110,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setDeepInfraKey(new String(llmSettingsComponent.getDeepInfraApiKeyField().getPassword()));
         settings.setGeminiKey(new String(llmSettingsComponent.getGeminiApiKeyField().getPassword()));
         settings.setDeepSeekKey(new String(llmSettingsComponent.getDeepSeekApiKeyField().getPassword()));
+        settings.setOpenRouterKey(new String(llmSettingsComponent.getOpenRouterApiKeyField().getPassword()));
 
         settings.setHideSearchButtonsFlag(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
@@ -116,8 +121,12 @@ public class LLMProvidersConfigurable implements Configurable {
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
             boolean hasKey = !settings.getAnthropicKey().isBlank() ||
-                    !settings.getOpenAIKey().isBlank() ||
-                    !settings.getGeminiKey().isBlank();
+                             !settings.getOpenAIKey().isBlank() ||
+                             !settings.getOpenRouterKey().isBlank() ||
+                             !settings.getDeepSeekKey().isBlank() ||
+                             !settings.getDeepInfraKey().isBlank() ||
+                             !settings.getGeminiKey().isBlank();
+
             ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
                 .settingsChanged(hasKey);
@@ -147,6 +156,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getDeepInfraApiKeyField().setText(settings.getDeepInfraKey());
         llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
         llmSettingsComponent.getDeepSeekApiKeyField().setText(settings.getDeepSeekKey());
+        llmSettingsComponent.getOpenRouterApiKeyField().setText(settings.getOpenRouterKey());
 
         llmSettingsComponent.getHideSearchButtonsField().setSelected(settings.getHideSearchButtonsFlag());
         llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());

@@ -1,7 +1,9 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.streaming;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;

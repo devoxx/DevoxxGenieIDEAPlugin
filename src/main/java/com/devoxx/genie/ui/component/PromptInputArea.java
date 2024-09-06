@@ -2,13 +2,13 @@ package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 public class PromptInputArea extends JPanel {
@@ -28,13 +28,14 @@ public class PromptInputArea extends JPanel {
         inputField.addFocusListener(new PromptInputFocusListener(inputField));
         inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        glowingBorder = new GlowingBorder(new Color(0, 120, 215)); // You can change this color
+        glowingBorder = new GlowingBorder(new JBColor(new Color(0, 120, 215), new Color(0, 120, 213))); // You can change this color
         setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4)); // To accommodate the glowing border
 
         add(inputField, BorderLayout.CENTER);
 
         glowTimer = new Timer(50, new ActionListener() {
             private float direction = 0.05f;
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 float alpha = glowingBorder.getAlpha();

@@ -1,4 +1,5 @@
 package com.devoxx.genie.service;
+
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
@@ -7,7 +8,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
@@ -93,7 +93,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
             if (message.isUser()) {
                 add(project, new UserMessage(message.getContent()));
             } else {
-                add(project,  new AiMessage(message.getContent()));
+                add(project, new AiMessage(message.getContent()));
             }
         }
     }

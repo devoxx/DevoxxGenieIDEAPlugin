@@ -1,13 +1,15 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.ollama;
 
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import okhttp3.*;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+
+import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class OllamaApiService {
     private static final OkHttpClient client = new OkHttpClient();
@@ -16,6 +18,7 @@ public class OllamaApiService {
 
     /**
      * Get the context length of the model.
+     *
      * @param modelName the model name
      * @return the context length
      * @throws IOException if there is an error
@@ -57,16 +60,5 @@ public class OllamaApiService {
         }
 
         return DEFAULT_CONTEXT_LENGTH;
-    }
-
-    /**
-     * Ensure the URL ends with a slash.
-     *
-     * @param url the URL
-     * @return the URL with a slash at the end
-     */
-    @Contract(pure = true)
-    public static String ensureEndsWithSlash(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
     }
 }

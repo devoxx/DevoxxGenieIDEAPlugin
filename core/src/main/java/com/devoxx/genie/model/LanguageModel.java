@@ -18,6 +18,26 @@ public class LanguageModel implements Comparable<LanguageModel> {
     private double outputCost;
     private int contextWindow;
 
+    public LanguageModel() {
+        this(ModelProvider.OpenAI, "", "", false, 0.0, 0.0, 0);
+    }
+
+    public LanguageModel(ModelProvider provider,
+                         String modelName,
+                         String displayName,
+                         boolean apiKeyUsed,
+                         double inputCost,
+                         double outputCost,
+                         int contextWindow) {
+        this.provider = provider;
+        this.modelName = modelName;
+        this.displayName = displayName;
+        this.apiKeyUsed = apiKeyUsed;
+        this.inputCost = inputCost;
+        this.outputCost = outputCost;
+        this.contextWindow = contextWindow;
+    }
+
     @Override
     public String toString() {
         return displayName;

@@ -207,7 +207,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
                     model.getOutputCost(),
                     NumberFormat.getInstance().format(model.getContextWindow())
                 });
-        });
+            });
     }
 
     public void reset() {

@@ -16,6 +16,7 @@ public interface NodeProcessor {
 
     /**
      * Process the node.
+     *
      * @return the panel
      */
     JPanel processNode();

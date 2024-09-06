@@ -1,4 +1,5 @@
 package com.devoxx.genie.ui.dialog;
+
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
