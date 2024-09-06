@@ -49,7 +49,7 @@ public class TokenCalculationService {
         contentFuture.thenAccept(result -> {
             String message = String.format(
                 "%s contains %s tokens using the %s tokenizer.  " +
-                "It includes %d files (skipped %d files and %d directories).",
+                    "It includes %d files (skipped %d files and %d directories).",
                 directory != null ? "'" + directory.getName() + "' directory" : "Project",
                 WindowContextFormatterUtil.format(result.getTokenCount()),
                 selectedProvider.getName(),
@@ -66,9 +66,9 @@ public class TokenCalculationService {
                                      CompletableFuture<ScanContentResult> contentFuture) {
         if (!DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider)) {
             contentFuture.thenAccept(scanResult -> {
-                    String defaultMessage = getDefaultMessage(scanResult);
-                    NotificationUtil.sendNotification(project, defaultMessage);
-                });
+                String defaultMessage = getDefaultMessage(scanResult);
+                NotificationUtil.sendNotification(project, defaultMessage);
+            });
         } else {
             showInfoForCloudProvider(project, selectedProvider, languageModel, contentFuture);
         }

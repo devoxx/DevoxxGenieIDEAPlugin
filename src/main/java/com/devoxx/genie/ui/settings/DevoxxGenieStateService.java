@@ -54,6 +54,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String deepInfraKey = "";
     private String geminiKey = "";
     private String deepSeekKey = "";
+    private String openRouterKey = "";
 
     // Search API Keys
     private Boolean hideSearchButtonsFlag = HIDE_SEARCH_BUTTONS;

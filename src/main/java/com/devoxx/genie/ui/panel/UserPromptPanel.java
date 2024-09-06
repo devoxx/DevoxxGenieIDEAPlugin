@@ -14,7 +14,6 @@ import java.util.ArrayList;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
-import static java.util.Arrays.stream;
 
 public class UserPromptPanel extends BackgroundPanel {
 

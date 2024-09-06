@@ -1,7 +1,10 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.openrouter.Data;
+import com.devoxx.genie.service.openrouter.OpenRouterService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
@@ -13,6 +16,7 @@ import dev.langchain4j.model.openai.OpenAiChatModelName;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -282,6 +286,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
     /**
      * The Gemini models.
+     *
      * @see <a href="https://ai.google.dev/gemini-api/docs/models/gemini">V1 Gemini models</a>
      */
     private void addGeminiModels() {
@@ -328,15 +333,6 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     }
 
     private void addGroqModels() {
-        // 131,072 tokens
-        // llama-3.1-405b-reasoning
-        // llama-3.1-70b-versatile
-        // llama-3.1-8b-instant
-
-        // llama3-groq-70b-8192-tool-use-preview
-        // llama3-groq-8b-8192-tool-use-preview
-
-        // gemma2-9b-it
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Groq)
@@ -485,7 +481,18 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
     @Contract(value = " -> new", pure = true)
     public @NotNull List<LanguageModel> getModels() {
-        return new ArrayList<>(models);
+        ArrayList<LanguageModel> languageModels = new ArrayList<>(models);
+        addOpenRouterModels(languageModels);
+        return languageModels;
+    }
+
+    private static void addOpenRouterModels(ArrayList<LanguageModel> languageModels) {
+        OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
+        String apiKey = openRouterChatModelFactory.getApiKey();
+        if (apiKey != null && !apiKey.isEmpty()) {
+            List<LanguageModel> openRouterModels = new OpenRouterChatModelFactory().getModels();
+            languageModels.addAll(openRouterModels);
+        }
     }
 
     public void setModels(List<LanguageModel> models) {

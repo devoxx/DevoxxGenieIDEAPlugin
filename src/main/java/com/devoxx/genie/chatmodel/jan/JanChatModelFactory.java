@@ -6,7 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
-import com.devoxx.genie.service.JanService;
+import com.devoxx.genie.service.jan.JanService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;

@@ -26,7 +26,7 @@ public class FileTypeIconUtil {
                 Icon interfaceIcon = getIcon(virtualFile);
                 if (interfaceIcon != null) return interfaceIcon;
                 return virtualFile.getFileType().getName().equals("UNKNOWN") ? CodeSnippetIcon : ClassIcon;
-        }));
+            }));
 
         try {
             return iconFuture.get(100, TimeUnit.MILLISECONDS); // Adjust timeout as needed

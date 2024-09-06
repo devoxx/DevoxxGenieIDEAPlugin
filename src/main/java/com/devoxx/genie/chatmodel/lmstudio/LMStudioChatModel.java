@@ -36,14 +36,14 @@ public class LMStudioChatModel implements ChatLanguageModel {
 
     @Builder
     public LMStudioChatModel(String baseUrl,
-                            String modelName,
-                            Double temperature,
-                            Double topP,
-                            Integer maxTokens,
-                            Duration timeout,
-                            Integer maxRetries,
-                            Boolean logRequests,
-                            Boolean logResponses) {
+                             String modelName,
+                             Double temperature,
+                             Double topP,
+                             Integer maxTokens,
+                             Duration timeout,
+                             Integer maxRetries,
+                             Boolean logRequests,
+                             Boolean logResponses) {
 
         temperature = temperature == null ? 0.7 : temperature;
         timeout = timeout == null ? ofSeconds(60) : timeout;

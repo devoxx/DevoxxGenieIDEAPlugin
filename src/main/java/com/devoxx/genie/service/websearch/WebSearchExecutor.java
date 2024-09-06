@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.websearch;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;

@@ -1,10 +1,13 @@
 package com.devoxx.genie.service.openrouter;
 
-import com.devoxx.genie.model.jan.Data;
-import com.devoxx.genie.model.jan.ResponseDTO;
+import com.devoxx.genie.model.openrouter.Data;
+import com.devoxx.genie.model.openrouter.ResponseDTO;
+import com.devoxx.genie.service.exception.UnsuccessfulRequestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.intellij.openapi.application.ApplicationManager;
-import net.schmizz.sshj.connection.channel.OpenFailException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,13 +31,18 @@ public class OpenRouterService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                // throw new OpenRouterService.UnsuccessfulRequestException("Unexpected code " + response);
+                 throw new UnsuccessfulRequestException("Unexpected code " + response);
             }
 
-            assert response.body() != null;
+            if (response.body() == null) {
+                throw new UnsuccessfulRequestException("Response is empty");
+            }
 
-            ResponseDTO responseDTO = new Gson().fromJson(response.body().string(), ResponseDTO.class);
-            return responseDTO != null && responseDTO.getData() != null ? responseDTO.getData() : List.of();
+            Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
+            ResponseDTO responseDTO = gson.fromJson(response.body().string(), ResponseDTO.class); return responseDTO != null && responseDTO.getData() != null ? responseDTO.getData() : List.of();
         }
     }
 }

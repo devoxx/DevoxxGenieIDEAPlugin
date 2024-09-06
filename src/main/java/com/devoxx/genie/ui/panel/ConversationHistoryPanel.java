@@ -70,7 +70,7 @@ public class ConversationHistoryPanel extends JPanel {
 
         JPanel infoPanel = new JPanel(new BorderLayout());
         JLabel titleLabel = new JLabel(conversation.getTitle());
-        titleLabel.addMouseListener( new java.awt.event.MouseAdapter() {
+        titleLabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 conversationSelectionListener.onConversationSelected(conversation);
                 updateChatMemory(conversation);

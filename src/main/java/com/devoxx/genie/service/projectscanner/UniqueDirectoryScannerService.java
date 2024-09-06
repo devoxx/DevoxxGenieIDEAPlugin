@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.projectscanner;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.Getter;

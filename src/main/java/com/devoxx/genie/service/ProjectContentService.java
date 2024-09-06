@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,7 +31,8 @@ public class ProjectContentService {
      * Retrieves and processes the content of a specified project, returning it as a string.
      * This method is typically used for token calculations,
      * if required by user settings or provider configurations.
-     * @param project The Project to scan for content
+     *
+     * @param project                The Project to scan for content
      * @param windowContextMaxTokens Integer representing the desired Window Context (ignored in this implementation)
      * @return String representation of the project's content, optionally copied to clipboard based on configuration flag
      */
@@ -51,8 +53,9 @@ public class ProjectContentService {
      * Retrieves and processes directory contents within a specified Project.
      * Returns string representation of found files content,
      * if required by user settings or provider configurations.
-     * @param project The Project containing the directory to scan for content
-     * @param directory VirtualFile representing the directory to be scanned
+     *
+     * @param project    The Project containing the directory to scan for content
+     * @param directory  VirtualFile representing the directory to be scanned
      * @param tokenLimit Integer determining maximum number of tokens per file (ignored in this implementation)
      * @return ProjectScanResult object containing the content of the directory and token count
      */
@@ -89,7 +92,7 @@ public class ProjectContentService {
         return switch (provider) {
             case OpenAI, Anthropic, Google ->
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
-            case Mistral, DeepInfra, Groq, DeepSeek ->
+            case Mistral, DeepInfra, Groq, DeepSeek, OpenRouter ->
                 // These often use the Llama tokenizer or similar
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.R50K_BASE);
             default ->
@@ -100,9 +103,10 @@ public class ProjectContentService {
 
     /**
      * Processes a directory recursively, calculating the number of tokens and building a content string.
-     * @param directory VirtualFile representing the directory to scan
-     * @param content StringBuilder object to hold the content of the scanned files
-     * @param scanContentResult ScanContentResult object to hold the scan results
+     *
+     * @param directory          VirtualFile representing the directory to scan
+     * @param content            StringBuilder object to hold the content of the scanned files
+     * @param scanContentResult  ScanContentResult object to hold the scan results
      * @param isTokenCalculation Boolean flag indicating whether to calculate tokens or not
      */
     private void processDirectoryRecursively(@NotNull VirtualFile directory,
