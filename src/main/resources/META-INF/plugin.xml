@@ -40,6 +40,7 @@
             <LI>Feat #225 : Support for OpenRouter</LI>
             <LI>Fix #220 : Sort conversation history by date</LI>
             <LI>Fix #226 : Migrate to Langchain4J 0.34.0 and use new Gemini (with API_KEY) code</LI>
+            <LI>Fix #276 : Sort the files in the attachment popup</LI>
         </UL>
         <h2>V0.2.17</h2>
         <UL>
