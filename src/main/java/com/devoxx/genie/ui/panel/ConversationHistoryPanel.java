@@ -52,6 +52,7 @@ public class ConversationHistoryPanel extends JPanel {
     public void loadConversations() {
         conversationsPanel.removeAll();
         List<Conversation> conversations = storageService.getConversations(project);
+        conversations.sort((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
 
         for (Conversation conversation : conversations) {
             conversationsPanel.add(createConversationRow(conversation));
