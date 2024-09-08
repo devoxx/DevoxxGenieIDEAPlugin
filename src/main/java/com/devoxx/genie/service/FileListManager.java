@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class FileListManager {
@@ -41,11 +42,12 @@ public class FileListManager {
             }
         }
         if (!actuallyAddedFiles.isEmpty()) {
+            actuallyAddedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
             notifyObserversOfBatchAdd(actuallyAddedFiles);
         }
     }
 
-    private void notifyObserversOfBatchAdd(List<VirtualFile> addedFiles) {
+    private void notifyObserversOfBatchAdd(@NotNull List<VirtualFile> addedFiles) {
         for (FileListObserver observer : observers) {
             observer.filesAdded(addedFiles);
         }
