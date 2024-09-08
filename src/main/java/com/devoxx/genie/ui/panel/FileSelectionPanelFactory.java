@@ -23,6 +23,7 @@ import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -179,6 +180,8 @@ public class FileSelectionPanelFactory implements DumbAware {
                             }
                         }
                     }
+
+                    foundFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
                 });
             }
 

@@ -34,6 +34,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
@@ -157,9 +160,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      */
     private void selectFilesForPromptContext(ActionEvent e) {
         java.util.List<VirtualFile> openFiles = editorFileButtonManager.getOpenFiles();
+        List<VirtualFile> sortedFiles = new ArrayList<>(openFiles);
+        sortedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
 
         JBPopup popup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project, openFiles), null)
+            .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project, sortedFiles), null)
             .setTitle("Filter and Double-Click To Add To Prompt Context")
             .setRequestFocus(true)
             .setResizable(true)

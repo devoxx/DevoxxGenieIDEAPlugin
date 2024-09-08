@@ -26,7 +26,6 @@ public class PromptContextFileListPanel extends JPanel
     private final JBScrollPane filesScrollPane;
     private final JPanel filesPanel; // new panel for files
     private final Project project;
-    private final int MAX_VISIBLE_FILES = 3;
 
     public PromptContextFileListPanel(Project project) {
         this.project = project;
@@ -81,6 +80,7 @@ public class PromptContextFileListPanel extends JPanel
             filesScrollPane.setPreferredSize(new Dimension(0, 0));
         } else {
             filesScrollPane.setVisible(true);
+            int MAX_VISIBLE_FILES = 3;
             int fileCount = Math.min(fileListManager.size(), MAX_VISIBLE_FILES);
             int heightPerFile = 30;
             int prefHeight = fileCount * heightPerFile;
