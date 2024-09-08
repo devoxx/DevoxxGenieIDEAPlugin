@@ -3,7 +3,6 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.gemini.GeminiChatModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -11,6 +10,7 @@ import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.output.Response;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+
 import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.mock;
@@ -85,8 +85,8 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     public void testExecuteQueryGemini() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Google)
-            .modelName("gemini-pro")
-            .displayName("Gemini Pro")
+            .modelName("gemini-1.5-flash")
+            .displayName("Gemini 1.5 Flash")
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
@@ -133,7 +133,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
                 .apiKey(dotenv.get("ANTHROPIC_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case Google -> GeminiChatModel.builder()
+            case Google -> GoogleAiGeminiChatModel.builder()
                 .apiKey(dotenv.get("GEMINI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
