@@ -37,7 +37,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "0.33.0"
+    val lg4j_version = "0.34.0"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
@@ -48,6 +48,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-mistral-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-google-ai-gemini:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
 
