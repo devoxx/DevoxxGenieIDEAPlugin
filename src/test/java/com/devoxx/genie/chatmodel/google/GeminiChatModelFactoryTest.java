@@ -41,7 +41,7 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();
-        chatModel.setModelName("gemini-pro");
+        chatModel.setModelName("gemini-1.5-flash");
         chatModel.setTemperature(0.7);
         chatModel.setTopP(0.9);
         chatModel.setMaxTokens(256);
@@ -58,6 +58,6 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isEqualTo(3);
+        Assertions.assertThat(modelNames).size().isEqualTo(4);
     }
 }
