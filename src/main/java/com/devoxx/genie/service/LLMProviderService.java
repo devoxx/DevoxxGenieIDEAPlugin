@@ -34,7 +34,7 @@ public class LLMProviderService {
     }
 
     public List<ModelProvider> getLocalModelProviders() {
-        return List.of(GPT4All, LMStudio, Ollama, Exo, LLaMA);
+        return List.of(GPT4All, LMStudio, Ollama, Exo, LLaMA, Jan);
     }
 
     /**
