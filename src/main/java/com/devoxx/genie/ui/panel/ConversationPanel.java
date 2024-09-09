@@ -6,11 +6,15 @@ import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
+import com.devoxx.genie.ui.util.WelcomeUtil;
+import com.intellij.ide.ui.LafManagerListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.awt.RelativePoint;
+import com.intellij.ui.scale.JBUIScale;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,6 +36,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     private final JLabel newConversationLabel;
     private final ConversationHistoryPanel historyPanel;
     private final PromptOutputPanel promptOutputPanel;
+    private final JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 
     /**
      * The conversation panel constructor.
@@ -51,7 +56,6 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         this.promptOutputPanel = promptOutputPanel;
 
         setPreferredSize(new Dimension(0, 30));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
         newConversationLabel = new JLabel("New conversation " + getCurrentTimestamp());
         newConversationLabel.setForeground(JBColor.GRAY);
@@ -63,6 +67,24 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
         add(newConversationLabel, BorderLayout.CENTER);
         add(createButtonPanel(), BorderLayout.EAST);
+
+        ApplicationManager.getApplication().getMessageBus().connect()
+            .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> updateFontSize());
+    }
+
+    private void updateFontSize() {
+        int fontSize = (int)JBUIScale.scale(14f) + 6;
+        settingsBtn.setPreferredSize(new Dimension(fontSize, 30));
+        historyButton.setPreferredSize(new Dimension(fontSize, 30));
+        newConversationBtn.setPreferredSize(new Dimension(fontSize, 30));
+
+        setMaximumSize(new Dimension(fontSize * 3, 30));
+
+        conversationButtonPanel.setPreferredSize(new Dimension(fontSize * 3, 30));
+        conversationButtonPanel.setMinimumSize(new Dimension(fontSize * 3, 30));
+
+        revalidate();
+        repaint();
     }
 
     public void onConversationSelected(Conversation conversation) {
@@ -77,17 +99,17 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      * Set up the conversation buttons.
      */
     private void setupConversationButtons() {
-        historyButton.setPreferredSize(new Dimension(25, 30));
+
         historyButton.setToolTipText("View conversation history");
         historyButton.addActionListener(e -> showConversationHistory());
 
-        settingsBtn.setPreferredSize(new Dimension(25, 30));
         settingsBtn.setToolTipText("Plugin settings");
         settingsBtn.addActionListener(e -> SettingsDialogUtil.showSettingsDialog(project));
 
-        newConversationBtn.setPreferredSize(new Dimension(25, 30));
         newConversationBtn.setToolTipText("Start a new conversation");
         newConversationBtn.addActionListener(e -> conversationStarter.startNewConversation());
+
+        updateFontSize();
     }
 
     /**
@@ -96,12 +118,9 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      * @return the button panel
      */
     private @NotNull JPanel createButtonPanel() {
-        JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         conversationButtonPanel.add(newConversationBtn);
         conversationButtonPanel.add(historyButton);
         conversationButtonPanel.add(settingsBtn);
-        conversationButtonPanel.setPreferredSize(new Dimension(90, 30));
-        conversationButtonPanel.setMinimumSize(new Dimension(90, 30));
         return conversationButtonPanel;
     }
 
