@@ -6,6 +6,7 @@ import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
@@ -35,6 +36,7 @@ public class ChatModelFactoryProvider {
     private static @Nullable ChatModelFactory createFactory(@NotNull String modelProvider) {
         return switch (modelProvider) {
             case "Ollama" -> new OllamaChatModelFactory();
+            case "Jan" -> new JanChatModelFactory();
             case "OpenRouter" -> new OpenRouterChatModelFactory();
             case "LMStudio" -> new LMStudioChatModelFactory();
             case "Exo" -> new ExoChatModelFactory();

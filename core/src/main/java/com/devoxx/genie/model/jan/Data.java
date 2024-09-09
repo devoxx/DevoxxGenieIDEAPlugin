@@ -1,6 +1,7 @@
 package com.devoxx.genie.model.jan;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +26,7 @@ public class Data {
     @JsonProperty("format")
     private String format;
 
+    @SerializedName("settings")
     @JsonProperty("settings")
     private Settings settings;
 

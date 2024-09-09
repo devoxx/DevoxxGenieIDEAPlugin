@@ -35,4 +35,23 @@ public class JanChatModelFactoryTest {
             assertThat(result).isNotNull();
         }
     }
+
+    @Test
+    void testHelloChat() {
+        try (MockedStatic<DevoxxGenieSettingsServiceProvider> mockedSettings = Mockito.mockStatic(DevoxxGenieSettingsServiceProvider.class)) {
+            // Setup the mock for SettingsState
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieSettingsServiceProvider.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
+
+            // Instance of the class containing the method to be tested
+            JanChatModelFactory factory = new JanChatModelFactory();
+
+            ChatModel chatModel = new ChatModel();
+            chatModel.setModelName("mistral-ins-7b-q4");
+            ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
+            String hello = chatLanguageModel.generate("Hello");
+            assertThat(hello).isNotNull();
+        }
+    }
 }
