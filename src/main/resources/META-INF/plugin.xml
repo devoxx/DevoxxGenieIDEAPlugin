@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.19</h2>
+        <UL>
+            <LI>Feat #244 : Fix for Jan 👋🏼</LI>
+        </UL>
         <h2>v0.2.18</h2>
         <UL>
             <LI>Feat #225 : Support for OpenRouter</LI>
@@ -378,6 +382,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.lmstudio.LMStudioService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
