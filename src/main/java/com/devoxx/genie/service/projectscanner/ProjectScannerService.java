@@ -5,9 +5,11 @@ import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
+import com.devoxx.genie.util.GitignoreParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -21,7 +23,10 @@ import com.knuddels.jtokkit.api.EncodingType;
 import com.knuddels.jtokkit.api.IntArrayList;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +34,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProjectScannerService {
 
+    private static final Logger LOG = Logger.getInstance(ProjectScannerService.class);
+
     private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
+    public static final String GITIGNORE = ".gitignore";
+
+    private GitignoreParser gitignoreParser;
 
     public static ProjectScannerService getInstance() {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
@@ -56,6 +66,8 @@ public class ProjectScannerService {
                 result.append("Directory Structure:\n");
                 StringBuilder fullContent;
 
+                initGitignoreParser(project, startDirectory);
+
                 if (startDirectory == null) {
                     fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
                 } else {
@@ -75,6 +87,28 @@ public class ProjectScannerService {
             .submit(AppExecutorUtil.getAppExecutorService());
 
         return future;
+    }
+
+    /**
+     * Initialize the GitignoreParser with the .gitignore file from the project.
+     * @param project the project
+     * @param startDirectory the start directory
+     */
+    public void initGitignoreParser(Project project, VirtualFile startDirectory) {
+        VirtualFile gitignoreFile;
+        if (startDirectory != null) {
+            gitignoreFile = startDirectory.findChild(GITIGNORE);
+        } else {
+            gitignoreFile = project.getBaseDir().findChild(GITIGNORE);
+        }
+
+        if (gitignoreFile != null && gitignoreFile.exists()) {
+            try {
+                gitignoreParser = new GitignoreParser(Paths.get(gitignoreFile.getPath()));
+            } catch (IOException e) {
+                LOG.error("Error initializing GitignoreParser: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -158,8 +192,8 @@ public class ProjectScannerService {
                     scanContentResult.incrementSkippedDirectoryCount();
                     return false;
                 }
-                if (fileIndex.isInContent(file) && shouldIncludeFile(file)) {
 
+                if (fileIndex.isInContent(file) && !shouldExcludeFile(file) && shouldIncludeFile(file)) {
                     scanContentResult.incrementFileCount();
 
                     String header = "\n--- " + file.getPath() + " ---\n";
@@ -227,22 +261,23 @@ public class ProjectScannerService {
     /**
      * Generate a tree structure of the project source files recursively.
      *
-     * @param dir   the directory
+     * @param virtualFile the virtual file/directory
      * @param depth the depth
      * @return the tree structure
      */
-    private @NotNull String generateSourceTreeRecursive(VirtualFile dir, int depth) {
-
+    public @NotNull String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
         StringBuilder result = new StringBuilder();
         String indent = "  ".repeat(depth);
 
-        if (shouldExcludeDirectory(dir)) {
-            return "";  // Skip excluded directories
+        boolean excludeFile = shouldExcludeFile(virtualFile);
+        boolean excludeDirectory = shouldExcludeDirectory(virtualFile);
+        if (excludeFile || excludeDirectory) {
+            return "";
         }
 
-        result.append(indent).append(dir.getName()).append("/\n");
+        result.append(indent).append(virtualFile.getName()).append("/\n");
 
-        for (VirtualFile child : dir.getChildren()) {
+        for (VirtualFile child : virtualFile.getChildren()) {
             if (child.isDirectory()) {
                 result.append(generateSourceTreeRecursive(child, depth + 1));
             } else if (shouldIncludeFile(child)) {
@@ -261,7 +296,23 @@ public class ProjectScannerService {
      */
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
-        return file.isDirectory() && settings.getExcludedDirectories().contains(file.getName());
+        return file.isDirectory() &&
+            (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
+    }
+
+    /**
+     * Check if the file should be excluded from the project context.
+     *
+     * @param file the file
+     * @return true if the file should be excluded, false otherwise
+     */
+    private boolean shouldExcludeFile(@NotNull VirtualFile file) {
+        if (gitignoreParser != null) {
+            Path path = Paths.get(file.getPath());
+            boolean matches = gitignoreParser.matches(path);
+            return matches;
+        }
+        return false;
     }
 
     /**
@@ -273,7 +324,8 @@ public class ProjectScannerService {
     private boolean shouldIncludeFile(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         String extension = file.getExtension();
-        return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
+        boolean includedByExtension = extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
+        return includedByExtension && !shouldExcludeFile(file);
     }
 
     /**
