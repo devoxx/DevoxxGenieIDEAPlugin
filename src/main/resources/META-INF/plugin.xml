@@ -38,6 +38,7 @@
         <h2>v0.2.19</h2>
         <UL>
             <LI>Feat #244 : Fix for Jan 👋🏼</LI>
+            <LI>Feat #231 : Use .gitignore in the "Copy Project to Prompt" feature</LI>
         </UL>
         <h2>v0.2.18</h2>
         <UL>

@@ -86,6 +86,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean excludeJavaDoc = false;
 
+    @Setter
+    private Boolean useGitIgnore = true;
+
     private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
         "build", ".git", "bin", "out", "target", "node_modules", ".idea"
     ));
