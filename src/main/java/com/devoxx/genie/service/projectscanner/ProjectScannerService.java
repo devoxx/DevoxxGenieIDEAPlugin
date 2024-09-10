@@ -307,10 +307,11 @@ public class ProjectScannerService {
      * @return true if the file should be excluded, false otherwise
      */
     private boolean shouldExcludeFile(@NotNull VirtualFile file) {
-        if (gitignoreParser != null) {
-            Path path = Paths.get(file.getPath());
-            boolean matches = gitignoreParser.matches(path);
-            return matches;
+        if (DevoxxGenieSettingsServiceProvider.getInstance().getUseGitIgnore()) {
+            if (gitignoreParser != null) {
+                Path path = Paths.get(file.getPath());
+                return gitignoreParser.matches(path);
+            }
         }
         return false;
     }
