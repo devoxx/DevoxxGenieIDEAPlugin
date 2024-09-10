@@ -21,9 +21,11 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
     private final ExcludedDirectoriesPanel excludedDirectoriesPanel;
     private final IncludedFileExtensionsPanel includedFileExtensionsPanel;
     private final JCheckBox excludeJavadocCheckBox;
+    private final JCheckBox useGitIgnoreCheckBox;
 
     public CopyProjectSettingsComponent() {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        useGitIgnoreCheckBox = new JCheckBox("Use .gitignore", settings.getUseGitIgnore());
         excludedDirectoriesPanel = new ExcludedDirectoriesPanel(settings.getExcludedDirectories());
         includedFileExtensionsPanel = new IncludedFileExtensionsPanel(settings.getIncludedFileExtensions());
         excludeJavadocCheckBox = new JCheckBox("Exclude Javadoc", settings.getExcludeJavaDoc());
@@ -31,7 +33,6 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     @Override
     public JPanel createPanel() {
-
         // Add description
         JBLabel descriptionLabel = new JBLabel("<html><body style='width: 100%;'>" +
             "These settings control which files and directories are included when creating a Full Project Context." +
@@ -45,6 +46,9 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.add(excludedDirectoriesPanel);
+
+        contentPanel.add(createUseGitIgnorePanel());
+
         contentPanel.add(includedFileExtensionsPanel);
 
         JPanel javaDocPanel = new JPanel(new BorderLayout());
@@ -55,7 +59,9 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
             "</body></html>");
         javaDocInfo.setForeground(UIUtil.getContextHelpForeground());
         javaDocInfo.setBorder(JBUI.Borders.empty(10));
+
         javaDocPanel.add(javaDocInfo);
+
         contentPanel.add(javaDocPanel);
         contentPanel.add(createExcludeJavadocPanel());
 
@@ -72,6 +78,21 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     public List<String> getIncludedFileExtensions() {
         return includedFileExtensionsPanel.getData();
+    }
+
+    private @NotNull JPanel createUseGitIgnorePanel() {
+        JPanel gitIgnorePanel = new JPanel(new BorderLayout());
+        JBLabel gitIgnoreLabel = new JBLabel("<html><body style='width: 100%;'>" +
+            "This will exclude all the files and directories specified in the .gitignore file" +
+            "</body></html>");
+        gitIgnoreLabel.setForeground(UIUtil.getContextHelpForeground());
+        gitIgnoreLabel.setBorder(JBUI.Borders.empty(10));
+        gitIgnorePanel.add(gitIgnoreLabel);
+        gitIgnorePanel.add(useGitIgnoreCheckBox, BorderLayout.SOUTH);
+
+        JPanel useGitIgnorePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        useGitIgnorePanel.add(gitIgnorePanel);
+        return useGitIgnorePanel;
     }
 
     private @NotNull JPanel createExcludeJavadocPanel() {
@@ -154,6 +175,10 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     public boolean getExcludeJavadoc() {
         return excludeJavadocCheckBox.isSelected();
+    }
+
+    public boolean getUseGitIgnore() {
+        return useGitIgnoreCheckBox.isSelected();
     }
 
     private static class ExcludedDirectoriesModel extends AddEditRemovePanel.TableModel<String> {

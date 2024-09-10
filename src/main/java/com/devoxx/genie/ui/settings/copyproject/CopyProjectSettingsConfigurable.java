@@ -29,8 +29,9 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     public boolean isModified() {
         DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
         return !copyProjectSettingsComponent.getExcludedDirectories().equals(settings.getExcludedDirectories()) ||
-            !copyProjectSettingsComponent.getIncludedFileExtensions().equals(settings.getIncludedFileExtensions()) ||
-            copyProjectSettingsComponent.getExcludeJavadoc() != settings.getExcludeJavaDoc();
+               !copyProjectSettingsComponent.getIncludedFileExtensions().equals(settings.getIncludedFileExtensions()) ||
+                copyProjectSettingsComponent.getExcludeJavadoc() != settings.getExcludeJavaDoc() ||
+                copyProjectSettingsComponent.getUseGitIgnore() != settings.getUseGitIgnore();
     }
 
     @Override
@@ -39,6 +40,7 @@ public class CopyProjectSettingsConfigurable implements Configurable {
         settings.setExcludedDirectories(copyProjectSettingsComponent.getExcludedDirectories());
         settings.setIncludedFileExtensions(copyProjectSettingsComponent.getIncludedFileExtensions());
         settings.setExcludeJavaDoc(copyProjectSettingsComponent.getExcludeJavadoc());
+        settings.setUseGitIgnore(copyProjectSettingsComponent.getUseGitIgnore());
     }
 
     @Override

@@ -76,6 +76,8 @@ public interface DevoxxGenieSettingsService {
 
     Boolean getExcludeJavaDoc();
 
+    Boolean getUseGitIgnore();
+
     List<String> getExcludedDirectories();
 
     List<String> getIncludedFileExtensions();
@@ -169,4 +171,6 @@ public interface DevoxxGenieSettingsService {
     Boolean getShowExecutionTime();
 
     void setShowExecutionTime(Boolean showExecutionTime);
+
+    void setUseGitIgnore(Boolean useGitIgnore);
 }
