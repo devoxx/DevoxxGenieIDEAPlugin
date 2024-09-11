@@ -3,8 +3,6 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.openrouter.Data;
-import com.devoxx.genie.service.openrouter.OpenRouterService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
@@ -16,7 +14,6 @@ import dev.langchain4j.model.openai.OpenAiChatModelName;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -336,21 +333,21 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama-3.1-405b-reasoning")
-            .displayName("Llama 3.1 405B Reasoning")
+            .modelName("gemma-7b-it")
+            .displayName("Gemma 7B it")
             .inputCost(0.07)
             .outputCost(0.07)
-            .contextWindow(131_072)
+            .contextWindow(8_192)
             .apiKeyUsed(true)
             .build());
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("gemma-7b-it")
-            .displayName("Gemma 7B it")
-            .inputCost(0.07)
-            .outputCost(0.07)
-            .contextWindow(8_000)
+            .modelName("gemma2-9b-it")
+            .displayName("Gemma 2 9B it")
+            .inputCost(0.2)
+            .outputCost(0.2)
+            .contextWindow(8_192)
             .apiKeyUsed(true)
             .build());
 
@@ -366,11 +363,21 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
         models.add(LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama3-70b-8192")
-            .displayName("Llama 3 70B")
+            .modelName("llama-3.1-70b-versatile")
+            .displayName("Llama 3.1 70B")
             .inputCost(0.59)
             .outputCost(0.79)
-            .contextWindow(8_000)
+            .contextWindow(131_072)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Groq)
+            .modelName("llama-3.1-8b-instant")
+            .displayName("Llama 3.1 8B")
+            .inputCost(0.05)
+            .outputCost(0.08)
+            .contextWindow(131_072)
             .apiKeyUsed(true)
             .build());
 
@@ -381,6 +388,26 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .inputCost(0.24)
             .outputCost(0.24)
             .contextWindow(32_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Groq)
+            .modelName("llama3-8b-8192")
+            .displayName("Llama 3 8B")
+            .inputCost(0.05)
+            .outputCost(0.08)
+            .contextWindow(8192)
+            .apiKeyUsed(true)
+            .build());
+
+        models.add(LanguageModel.builder()
+            .provider(ModelProvider.Groq)
+            .modelName("llama3-70b-8192")
+            .displayName("Llama 3 70B")
+            .inputCost(0.59)
+            .outputCost(0.79)
+            .contextWindow(8192)
             .apiKeyUsed(true)
             .build());
     }
