@@ -4,29 +4,23 @@ import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.util.xmlb.XmlSerializerUtil;
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 
-@Service(Service.Level.APP)
-@State(
-    name = "com.devoxx.genie.LLMModelRegistry",
-    storages = @Storage("devoxxGenieLLMModels.xml")
-)
-public final class LLMModelRegistryService implements PersistentStateComponent<LLMModelRegistryService> {
-    private List<LanguageModel> models = new ArrayList<>();
+@Service
+public final class LLMModelRegistryService {
+
+    private Map<String, LanguageModel> models = new HashMap<>();
 
     @NotNull
     public static LLMModelRegistryService getInstance() {
@@ -45,7 +39,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
     private void addAnthropicModels() {
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_INSTANT_1_2, LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(CLAUDE_INSTANT_1_2.toString())
             .displayName("Claude 1.2")
@@ -55,7 +49,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + AnthropicChatModelName.CLAUDE_2,
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(AnthropicChatModelName.CLAUDE_2.toString())
             .displayName("Claude 2.0")
@@ -65,7 +60,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + AnthropicChatModelName.CLAUDE_2_1,
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(AnthropicChatModelName.CLAUDE_2_1.toString())
             .displayName("Claude 2.1")
@@ -75,7 +71,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_HAIKU_20240307,
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(CLAUDE_3_HAIKU_20240307.toString())
             .displayName("Claude 3 Haiku")
@@ -85,7 +82,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_HAIKU_20240307,
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(CLAUDE_3_HAIKU_20240307.toString())
             .displayName("Claude 3 Sonnet")
@@ -95,7 +93,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_OPUS_20240229,
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName(CLAUDE_3_OPUS_20240229.toString())
             .displayName("Claude 3 Opus")
@@ -105,7 +104,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-sonnet-20240620",
+            LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName("claude-3-5-sonnet-20240620")
             .displayName("Claude 3.5 Sonnet")
@@ -118,7 +118,30 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
     private void addOpenAiModels() {
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":o1-mini",
+            LanguageModel.builder()
+            .provider(ModelProvider.OpenAI)
+            .modelName("o1-mini")
+            .displayName("o1 mini")
+            .inputCost(5)
+            .outputCost(15)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.put(ModelProvider.OpenAI.getName() + ":o1-preview",
+            LanguageModel.builder()
+            .provider(ModelProvider.OpenAI)
+            .modelName("o1-preview")
+            .displayName("o1 preview")
+            .inputCost(10)
+            .outputCost(30)
+            .contextWindow(128_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_3_5_TURBO,
+            LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName(OpenAiChatModelName.GPT_3_5_TURBO.toString())
             .displayName("GPT 3.5 Turbo")
@@ -128,9 +151,10 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_3_5_TURBO,
+            LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName(OpenAiChatModelName.GPT_4.toString())
+            .modelName(OpenAiChatModelName.GPT_3_5_TURBO.toString())
             .displayName("GPT 4")
             .inputCost(30)
             .outputCost(60)
@@ -138,7 +162,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_4_TURBO_PREVIEW,
+            LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName(OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString())
             .displayName("GPT 4 Turbo")
@@ -148,7 +173,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_4_O,
+            LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName(OpenAiChatModelName.GPT_4_O.toString())
             .displayName("GPT 4o")
@@ -158,7 +184,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":gpt-4o-mini", LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName("gpt-4o-mini")
             .displayName("GPT 4o mini")
@@ -170,7 +196,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     }
 
     private void addDeepInfraModels() {
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-405B-Instruct",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("meta-llama/Meta-Llama-3.1-405B-Instruct")
             .displayName("Meta Llama 3.1 405B")
@@ -180,7 +207,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-70B-Instruct",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("meta-llama/Meta-Llama-3.1-70B-Instruct")
             .displayName("Meta Llama 3.1 70B")
@@ -190,7 +218,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-8B-Instruct",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("meta-llama/Meta-Llama-3.1-8B-Instruct")
             .displayName("Meta Llama 3.1 8B")
@@ -200,7 +229,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mistral-Nemo-Instruct-2407",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mistral-Nemo-Instruct-2407")
             .displayName("Mistral Nemo 12B")
@@ -210,7 +240,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mixtral-8x7B-Instruct-v0.1",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mixtral-8x7B-Instruct-v0.1")
             .displayName("Mixtral 8x7B Instruct v0.1")
@@ -220,7 +251,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mixtral-8x22B-Instruct-v0.1",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mixtral-8x22B-Instruct-v0.1")
             .displayName("Mixtral 8x22B Instruct v0.1")
@@ -230,7 +262,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mistral-7B-Instruct-v0.3",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mistral-7B-Instruct-v0.3")
             .displayName("Mistral 7B Instruct v0.3")
@@ -240,7 +273,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":microsoft/WizardLM-2-8x22B",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("microsoft/WizardLM-2-8x22B")
             .displayName("Wizard LM 2 8x22B")
@@ -250,7 +284,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":microsoft/WizardLM-2-7B",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("microsoft/WizardLM-2-7B")
             .displayName("Wizard LM 2 7B")
@@ -260,7 +295,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":openchat/openchat_3.5",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("openchat/openchat_3.5")
             .displayName("OpenChat 3.5")
@@ -270,7 +306,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepInfra.getName() + ":google/gemma-2-9b-it",
+            LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("google/gemma-2-9b-it")
             .displayName("Gemma 2 9B it")
@@ -288,7 +325,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
      */
     private void addGeminiModels() {
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Google.getName() + ":gemini-1.5-flash",
+            LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash")
             .displayName("Gemini 1.5 Flash")
@@ -298,7 +336,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Google.getName() + ":gemini-1.5-pro",
+            LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-pro")
             .displayName("Gemini 1.5 Pro")
@@ -308,7 +347,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Google.getName() + ":gemini-1.5-pro-exp-0801",
+            LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-pro-exp-0801")
             .displayName("Gemini 1.5 Pro 0801")
@@ -318,7 +358,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Google.getName() + ":gemini-1.0-pro",
+            LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.0-pro")
             .displayName("Gemini 1.0 Pro")
@@ -331,7 +372,8 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
 
     private void addGroqModels() {
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":gemma-7b-it",
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("gemma-7b-it")
             .displayName("Gemma 7B it")
@@ -341,7 +383,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":gemma2-9b-it", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("gemma2-9b-it")
             .displayName("Gemma 2 9B it")
@@ -351,7 +393,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":llama3-8b-8192", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("llama3-8b-8192")
             .displayName("Llama 3 8B")
@@ -361,7 +403,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":llama-3.1-70b-versatile", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("llama-3.1-70b-versatile")
             .displayName("Llama 3.1 70B")
@@ -371,7 +413,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":llama-3.1-8b-instant", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("llama-3.1-8b-instant")
             .displayName("Llama 3.1 8B")
@@ -381,7 +423,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":mixtral-8x7b-32768", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("mixtral-8x7b-32768")
             .displayName("Mixtral 8x7B")
@@ -391,17 +433,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
-            .provider(ModelProvider.Groq)
-            .modelName("llama3-8b-8192")
-            .displayName("Llama 3 8B")
-            .inputCost(0.05)
-            .outputCost(0.08)
-            .contextWindow(8192)
-            .apiKeyUsed(true)
-            .build());
-
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Groq.getName() + ":llama3-70b-8192", LanguageModel.builder()
             .provider(ModelProvider.Groq)
             .modelName("llama3-70b-8192")
             .displayName("Llama 3 70B")
@@ -413,7 +445,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     }
 
     private void addMistralModels() {
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MISTRAL_7B, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(OPEN_MISTRAL_7B.toString())
             .displayName("Mistral 7B")
@@ -423,7 +455,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MIXTRAL_8x7B, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(OPEN_MIXTRAL_8x7B.toString())
             .displayName("Mistral 8x7B")
@@ -433,7 +465,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MIXTRAL_8X22B, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(OPEN_MIXTRAL_8X22B.toString())
             .displayName("Mistral 8x22b")
@@ -443,7 +475,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_SMALL_LATEST, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(MISTRAL_SMALL_LATEST.toString())
             .displayName("Mistral Small")
@@ -453,7 +485,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_MEDIUM_LATEST, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(MISTRAL_MEDIUM_LATEST.toString())
             .displayName("Mistral Medium")
@@ -463,7 +495,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_LARGE_LATEST, LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName(MISTRAL_LARGE_LATEST.toString())
             .displayName("Mistral Large")
@@ -473,7 +505,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.Mistral.getName() + ":codestral-2405", LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName("codestral-2405")
             .displayName("Codestral")
@@ -485,7 +517,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
     }
 
     private void addDeepSeekModels() {
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepSeek.getName() + ":deepseek-coder", LanguageModel.builder()
             .provider(ModelProvider.DeepSeek)
             .modelName("deepseek-coder")
             .displayName("DeepSeek Coder")
@@ -495,7 +527,7 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .apiKeyUsed(true)
             .build());
 
-        models.add(LanguageModel.builder()
+        models.put(ModelProvider.DeepSeek.getName() + ":deepseek-chat", LanguageModel.builder()
             .provider(ModelProvider.DeepSeek)
             .modelName("deepseek-chat")
             .displayName("DeepSeek Chat")
@@ -506,33 +538,23 @@ public final class LLMModelRegistryService implements PersistentStateComponent<L
             .build());
     }
 
-    @Contract(value = " -> new", pure = true)
     public @NotNull List<LanguageModel> getModels() {
-        ArrayList<LanguageModel> languageModels = new ArrayList<>(models);
+        Map<String, LanguageModel> languageModels = new HashMap<>(models);
         addOpenRouterModels(languageModels);
-        return languageModels;
+        return new ArrayList<>(languageModels.values());
     }
 
-    private static void addOpenRouterModels(ArrayList<LanguageModel> languageModels) {
+    private static void addOpenRouterModels(Map<String, LanguageModel> languageModels) {
         OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
         String apiKey = openRouterChatModelFactory.getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
-            List<LanguageModel> openRouterModels = new OpenRouterChatModelFactory().getModels();
-            languageModels.addAll(openRouterModels);
+            new OpenRouterChatModelFactory().getModels().forEach(model -> {
+                languageModels.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model);
+            });
         }
     }
 
-    public void setModels(List<LanguageModel> models) {
-        this.models = new ArrayList<>(models);
-    }
-
-    @Override
-    public LLMModelRegistryService getState() {
-        return this;
-    }
-
-    @Override
-    public void loadState(@NotNull LLMModelRegistryService state) {
-        XmlSerializerUtil.copyBean(state, this);
+    public void setModels(Map<String, LanguageModel> models) {
+        this.models = new HashMap<>(models);
     }
 }
