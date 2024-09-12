@@ -3,6 +3,7 @@ package com.devoxx.genie.model;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -10,6 +11,7 @@ import java.util.Comparator;
 @Data
 @Builder
 public class LanguageModel implements Comparable<LanguageModel> {
+
     private ModelProvider provider;
     private String modelName;
     private String displayName;

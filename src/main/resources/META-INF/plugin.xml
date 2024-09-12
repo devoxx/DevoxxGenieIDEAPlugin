@@ -37,9 +37,11 @@
     <change-notes><![CDATA[
         <h2>v0.2.19</h2>
         <UL>
+            <LI>Support for OpenAI o1 preview and o1 mini</LI>
             <LI>Feat #244 : Fix for Jan 👋🏼</LI>
             <LI>Feat #231 : Use .gitignore in the "Copy Project to Prompt" feature</LI>
             <LI>Fix #179 : Groq models updated</LI>
+            <LI>Fix #289 : Avoid duplicates in LLMModelRegistryService</LI>
         </UL>
         <h2>v0.2.18</h2>
         <UL>
