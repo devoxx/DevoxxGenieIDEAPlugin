@@ -6,6 +6,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.exception.ModelNotActiveException;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
+import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
@@ -55,11 +56,20 @@ public class PromptExecutionService {
 
             if (ChatMemoryService.getInstance().isEmpty(chatMessageContext.getProject())) {
                 LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
-                ChatMemoryService
-                    .getInstance()
-                    .add(chatMessageContext.getProject(),
-                        new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
-                    );
+
+                if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
+                    ChatMemoryService
+                        .getInstance()
+                        .add(chatMessageContext.getProject(),
+                             new UserMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                        );
+                } else {
+                    ChatMemoryService
+                            .getInstance()
+                            .add(chatMessageContext.getProject(),
+                                 new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                            );
+                }
             }
 
             UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);

@@ -18,26 +18,27 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+        boolean isO1 = chatModel.getModelName().startsWith("o1-");
         return OpenAiChatModel.builder()
-            .apiKey(getApiKey())
-            .modelName(chatModel.getModelName())
-            .maxRetries(chatModel.getMaxRetries())
-            .temperature(chatModel.getTemperature())
-            .maxTokens(chatModel.getMaxTokens())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .topP(chatModel.getTopP())
-            .build();
+                .apiKey(getApiKey())
+                .modelName(chatModel.getModelName())
+                .maxRetries(chatModel.getMaxRetries())
+                .temperature(isO1 ? 1.0 : chatModel.getTemperature())
+                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .topP(isO1 ? 1.0 : chatModel.getTopP())
+                .build();
     }
 
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        boolean isO1 = chatModel.getModelName().startsWith("o1-");
         return OpenAiStreamingChatModel.builder()
-            .apiKey(getApiKey())
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .build();
+                .apiKey(getApiKey())
+                .modelName(chatModel.getModelName())
+                .temperature(isO1 ? 1.0 : chatModel.getTemperature())
+                .topP(isO1 ? 1.0 : chatModel.getTopP())
+                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .build();
     }
 
     @Override
