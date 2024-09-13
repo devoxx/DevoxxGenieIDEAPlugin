@@ -14,6 +14,11 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 [![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
 
+### More Video Tutorials:
+
+- [How ChatMemory works](https://www.youtube.com/watch?v=NRAe4d7n6_4)
+- [Hands-on with DevoxxGenie](https://youtu.be/Rs8S4rMTR9s?feature=shared)
+
 ### Key Features:
 
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
