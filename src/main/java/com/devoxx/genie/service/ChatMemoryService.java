@@ -1,13 +1,16 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
@@ -21,6 +24,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
 
     private final Map<String, MessageWindowChatMemory> projectMemories = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
+    private LanguageModel currentLanguageModel;
 
     public static ChatMemoryService getInstance() {
         return ApplicationManager.getApplication().getService(ChatMemoryService.class);
@@ -42,10 +46,15 @@ public class ChatMemoryService implements ChatMemorySizeListener {
     }
 
     public void add(@NotNull Project project, ChatMessage chatMessage) {
+        if (chatMessage instanceof SystemMessage && ChatMessageContextUtil.isOpenAIo1Model(currentLanguageModel)) {
+            return;
+        }
         projectMemories.get(project.getLocationHash()).add(chatMessage);
     }
 
     public void remove(@NotNull ChatMessageContext chatMessageContext) {
+        currentLanguageModel = chatMessageContext.getLanguageModel();
+
         Project project = chatMessageContext.getProject();
         List<ChatMessage> messages = projectMemories.get(project.getLocationHash()).messages();
         messages.remove(chatMessageContext.getAiMessage());
@@ -53,6 +62,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
 
         // Remove the conversation from the storage service
         projectMemories.get(project.getLocationHash()).clear();
+        this.currentLanguageModel = chatMessageContext.getLanguageModel();
         messages.forEach(message -> add(project, message));
     }
 
