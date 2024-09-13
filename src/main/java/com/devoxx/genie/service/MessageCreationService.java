@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -52,9 +53,13 @@ public class MessageCreationService {
     private @NotNull UserMessage constructUserMessageWithEditorContent(@NotNull ChatMessageContext chatMessageContext) {
         StringBuilder stringBuilder = new StringBuilder();
 
+        if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
+            String systemPrompt = DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt();
+            stringBuilder.append("System: ").append(systemPrompt).append("\n\n");
+        }
+
         // The user prompt is always added
         appendIfNotEmpty(stringBuilder, chatMessageContext.getUserPrompt());
-
 
         // Add the editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
@@ -118,11 +123,18 @@ public class MessageCreationService {
                                                                      String context) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        // Check if this is the first message in the conversation
-        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1) {
+        // Check if this is the first message in the conversation and if it's not GPT-4
+        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1 &&
+                !ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             stringBuilder.append(context);
             stringBuilder.append("\n\n");
             stringBuilder.append("=========================================\n\n");
+        }
+
+        // For GPT-4, prepend the system message to the user's question
+        if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
+            String systemPrompt = DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt();
+            stringBuilder.append("System: ").append(systemPrompt).append("\n\n");
         }
 
         stringBuilder.append("User Question: ");
