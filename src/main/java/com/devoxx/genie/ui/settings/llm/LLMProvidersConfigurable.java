@@ -70,6 +70,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), settings.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), settings.getJanModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), settings.getExoModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), settings.getCustomOpenAIUrl());
 
         isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         llmSettingsComponent.getHideSearchButtonsField().addItemListener(event -> {
@@ -102,6 +103,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
+        settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -121,15 +123,15 @@ public class LLMProvidersConfigurable implements Configurable {
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
             boolean hasKey = !settings.getAnthropicKey().isBlank() ||
-                             !settings.getOpenAIKey().isBlank() ||
-                             !settings.getOpenRouterKey().isBlank() ||
-                             !settings.getDeepSeekKey().isBlank() ||
-                             !settings.getDeepInfraKey().isBlank() ||
-                             !settings.getGeminiKey().isBlank();
+                    !settings.getOpenAIKey().isBlank() ||
+                    !settings.getOpenRouterKey().isBlank() ||
+                    !settings.getDeepSeekKey().isBlank() ||
+                    !settings.getDeepInfraKey().isBlank() ||
+                    !settings.getGeminiKey().isBlank();
 
             ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
-                .settingsChanged(hasKey);
+                    .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
+                    .settingsChanged(hasKey);
         }
     }
 
@@ -148,6 +150,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
+        llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());

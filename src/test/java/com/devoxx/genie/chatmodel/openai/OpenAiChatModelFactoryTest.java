@@ -1,53 +1,64 @@
 package com.devoxx.genie.chatmodel.openai;
 
-import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.testFramework.ServiceContainerUtil;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.jgoodies.common.base.Strings;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+public class OpenAIChatModelFactory implements ChatModelFactory {
 
-public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
+    @Override
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+        boolean isO1 = chatModel.getModelName().startsWith("o1-");
 
-    @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
-        // Mock SettingsState
-        DevoxxGenieStateService settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getOpenAIKey()).thenReturn("dummy-api-key");
+        final var builder = OpenAiChatModel.builder()
+                .apiKey(getApiKey())
+                .modelName(chatModel.getModelName())
+                .maxRetries(chatModel.getMaxRetries())
+                .temperature(isO1 ? 1.0 : chatModel.getTemperature())
+                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .topP(isO1 ? 1.0 : chatModel.getTopP());
 
-        // Replace the service instance with the mock
-        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
+        if (Strings.isNotBlank(DevoxxGenieSettingsServiceProvider.getInstance().getCustomOpenAIUrl())) {
+            builder.baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getCustomOpenAIUrl());
+        }
+
+        return builder.build();
     }
 
-    @Test
-    public void createChatModel() {
-        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
-        ChatModel chatModel = new ChatModel();
-        chatModel.setModelName("gpt-3.5-turbo");
-        chatModel.setTemperature(0.7);
-        chatModel.setMaxTokens(100);
+    @Override
+    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        boolean isO1 = chatModel.getModelName().startsWith("o1-");
+        final var builder = OpenAiStreamingChatModel.builder()
+                .apiKey(getApiKey())
+                .modelName(chatModel.getModelName())
+                .temperature(isO1 ? 1.0 : chatModel.getTemperature())
+                .topP(isO1 ? 1.0 : chatModel.getTopP())
+                .timeout(Duration.ofSeconds(chatModel.getTimeout()));
 
-        ChatLanguageModel result = factory.createChatModel(chatModel);
-
-        assertThat(result).isNotNull();
+        if (Strings.isNotBlank(DevoxxGenieSettingsServiceProvider.getInstance().getCustomOpenAIUrl())) {
+            builder.baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getCustomOpenAIUrl());
+        }
+        return builder.build();
     }
 
-    @Test
-    public void getModels() {
-        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
-        assertThat(factory.getModels()).isNotEmpty();
+    @Override
+    public String getApiKey() {
+        return DevoxxGenieSettingsServiceProvider.getInstance().getOpenAIKey().trim();
+    }
 
-        List<LanguageModel> models = factory.getModels();
-        assertThat(models).size().isEqualTo(4);
+    @Override
+    public List<LanguageModel> getModels() {
+        return getModels(ModelProvider.OpenAI);
     }
 }
