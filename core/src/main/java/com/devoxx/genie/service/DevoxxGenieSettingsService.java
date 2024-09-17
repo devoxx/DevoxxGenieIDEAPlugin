@@ -173,4 +173,8 @@ public interface DevoxxGenieSettingsService {
     void setShowExecutionTime(Boolean showExecutionTime);
 
     void setUseGitIgnore(Boolean useGitIgnore);
+
+    void setCustomOpenAIUrl(String text);
+
+    String getCustomOpenAIUrl();
 }
