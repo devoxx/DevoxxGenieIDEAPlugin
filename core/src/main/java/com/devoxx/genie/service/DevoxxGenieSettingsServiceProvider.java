@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import java.lang.reflect.Constructor;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 public interface DevoxxGenieSettingsServiceProvider {
@@ -19,7 +20,11 @@ public interface DevoxxGenieSettingsServiceProvider {
 
         // This is the original code of the SPI implementation using ServiceLoader. Not working in the plugin for unknown reasons.
         ServiceLoader<DevoxxGenieSettingsServiceProvider> serviceLoader = ServiceLoader.load(DevoxxGenieSettingsServiceProvider.class);
-        return serviceLoader.findFirst().orElseThrow().getDevoxxGenieSettingsService();
+        Optional<DevoxxGenieSettingsServiceProvider> firstService = serviceLoader.findFirst();
+        if (firstService.isEmpty()) {
+            throw new IllegalStateException("No implementation found for DevoxxGenieSettingsServiceProvider");
+        }
+        return firstService.get().getDevoxxGenieSettingsService();
     }
 
     DevoxxGenieSettingsService getDevoxxGenieSettingsService();
