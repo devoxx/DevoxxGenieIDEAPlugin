@@ -38,12 +38,9 @@ public class MessageCreationService {
         UserMessage userMessage;
         String context = chatMessageContext.getContext();
 
-        if (context != null && !context.isEmpty() && !chatMessageContext.isFullProjectContextAdded()) {
-            // This is likely the full project context scenario
+        if (context != null && !context.isEmpty()) {
             userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
-            chatMessageContext.setFullProjectContextAdded(true);
         } else {
-            // Here we include the editor content instead
             userMessage = constructUserMessageWithEditorContent(chatMessageContext);
         }
 
@@ -53,21 +50,24 @@ public class MessageCreationService {
     private @NotNull UserMessage constructUserMessageWithEditorContent(@NotNull ChatMessageContext chatMessageContext) {
         StringBuilder stringBuilder = new StringBuilder();
 
+        // Add system prompt to user message if the AI model is o1
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             String systemPrompt = DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt();
-            stringBuilder.append("System: ").append(systemPrompt).append("\n\n");
+            stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
 
-        // The user prompt is always added
-        appendIfNotEmpty(stringBuilder, chatMessageContext.getUserPrompt());
+        // The user prompt is always appended
+        appendIfNotEmpty(stringBuilder, "<UserPrompt>" + chatMessageContext.getUserPrompt() + "</UserPrompt>");
 
         // Add the editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
 
         if (!editorContent.isEmpty()) {
             // Add the context prompt if it is not empty
+            appendIfNotEmpty(stringBuilder, "<context>");
             appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
             appendIfNotEmpty(stringBuilder, editorContent);
+            appendIfNotEmpty(stringBuilder, "</context>");
         }
 
         UserMessage userMessage = new UserMessage(stringBuilder.toString());
@@ -85,20 +85,21 @@ public class MessageCreationService {
 
         // Add selected text if present
         if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
-            contentBuilder.append("Selected Text:\n")
+            contentBuilder.append("<SelectedText>\n")
                 .append(editorInfo.getSelectedText())
-                .append("\n\n");
+                .append("</SelectedText>\n\n");
         }
 
         // Add content of selected files
         List<VirtualFile> selectedFiles = editorInfo.getSelectedFiles();
         if (selectedFiles != null && !selectedFiles.isEmpty()) {
-            contentBuilder.append("File Contents:\n");
+            contentBuilder.append("<FileContents>\n");
             for (VirtualFile file : selectedFiles) {
                 contentBuilder.append("File: ").append(file.getName()).append("\n")
                     .append(readFileContent(file))
                     .append("\n\n");
             }
+            contentBuilder.append("\n</FileContents>\n");
         }
 
         return contentBuilder.toString().trim();
@@ -113,7 +114,7 @@ public class MessageCreationService {
     }
 
     /**
-     * Construct user message with full context.
+     * Construct a user message with full context.
      *
      * @param chatMessageContext the chat message context
      * @param context            the context
@@ -123,22 +124,18 @@ public class MessageCreationService {
                                                                      String context) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        // Check if this is the first message in the conversation and if it's not GPT-4
-        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1 &&
-                !ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
+        // Check if this is the first message in the conversation, if so add the context
+        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1) {
+            stringBuilder.append("<Context>");
             stringBuilder.append(context);
-            stringBuilder.append("\n\n");
+            stringBuilder.append("</Context>\n\n");
             stringBuilder.append("=========================================\n\n");
         }
 
-        // For GPT-4, prepend the system message to the user's question
-        if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-            String systemPrompt = DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt();
-            stringBuilder.append("System: ").append(systemPrompt).append("\n\n");
-        }
-
+        stringBuilder.append("<UserPrompt>");
         stringBuilder.append("User Question: ");
         stringBuilder.append(chatMessageContext.getUserPrompt());
+        stringBuilder.append("</UserPrompt>");
 
         UserMessage userMessage = new UserMessage("user_message", stringBuilder.toString());
         chatMessageContext.setUserMessage(userMessage);

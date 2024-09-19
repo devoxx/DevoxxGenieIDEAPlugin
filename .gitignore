@@ -7,3 +7,5 @@ build/**
 /core/.gradle
 output-examples/**
 gradle/**
+/bin/
+/.vscode/
