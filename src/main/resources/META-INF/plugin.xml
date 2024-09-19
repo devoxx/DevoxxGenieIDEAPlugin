@@ -37,8 +37,9 @@
     <change-notes><![CDATA[
         <h2>v0.2.21</h2>
         <UL>
-            <LI>Fix #291 : Fix OpenAI o1 model context</LI>
             <LI>Feat #294 : Add possibility to use a custom base url for OpenAI</LI>
+            <LI>Fix #291 : Fix OpenAI o1 model context</LI>
+            <LI>Fix #293 : Extra logging for issue</LI>
         </UL>
         <h2>v0.2.20</h2>
         <UL>
