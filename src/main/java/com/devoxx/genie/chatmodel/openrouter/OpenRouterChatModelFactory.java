@@ -57,7 +57,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return DevoxxGenieSettingsServiceProvider.getInstance().getOpenRouterKey();
+        return DevoxxGenieSettingsServiceProvider.getInstance().getOpenRouterKey().trim();
     }
 
     /**
