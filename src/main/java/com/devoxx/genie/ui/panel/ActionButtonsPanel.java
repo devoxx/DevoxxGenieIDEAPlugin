@@ -232,7 +232,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         isProjectContextAdded = false;
         if (currentChatMessageContext != null) {
             currentChatMessageContext.setContext(null);
-            currentChatMessageContext.setFullProjectContextAdded(false);
         }
         updateAddProjectButton();
     }
