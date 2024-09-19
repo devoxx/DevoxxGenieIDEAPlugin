@@ -58,7 +58,9 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        setMinimumSize(new Dimension(0, Math.min(300, 30 * fileCount)));
+        if (isExpanded) {
+            setMinimumSize(new Dimension(0, Math.min(300, 30 * fileCount)));
+        }
     }
 
     private void toggleContent() {

@@ -35,9 +35,6 @@ public class ChatMessageContext {
     @Builder.Default
     private boolean webSearchRequested = false;
 
-    @Builder.Default
-    private boolean fullProjectContextAdded = false;
-
     // Custom method
     public boolean hasFiles() {
         return totalFileCount > 0;

@@ -57,13 +57,7 @@ public class PromptExecutionService {
             if (ChatMemoryService.getInstance().isEmpty(chatMessageContext.getProject())) {
                 LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
 
-                if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-                    ChatMemoryService
-                        .getInstance()
-                        .add(chatMessageContext.getProject(),
-                             new UserMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
-                        );
-                } else {
+                if (!ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
                     ChatMemoryService
                             .getInstance()
                             .add(chatMessageContext.getProject(),
@@ -124,8 +118,7 @@ public class PromptExecutionService {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             Response<AiMessage> response =
                 chatLanguageModel
-                    .generate(ChatMemoryService.getInstance()
-                        .messages(chatMessageContext.getProject()));
+                    .generate(ChatMemoryService.getInstance().messages(chatMessageContext.getProject()));
             ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
         } catch (Exception e) {
