@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -52,7 +53,7 @@ public class MessageCreationService {
 
         // Add system prompt to user message if the AI model is o1
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-            String systemPrompt = DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt();
+            String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
 

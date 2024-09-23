@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.AddEditRemovePanel;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
@@ -24,7 +24,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox useGitIgnoreCheckBox;
 
     public CopyProjectSettingsComponent() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         useGitIgnoreCheckBox = new JCheckBox("Use .gitignore", settings.getUseGitIgnore());
         excludedDirectoriesPanel = new ExcludedDirectoriesPanel(settings.getExcludedDirectories());
         includedFileExtensionsPanel = new IncludedFileExtensionsPanel(settings.getIncludedFileExtensions());

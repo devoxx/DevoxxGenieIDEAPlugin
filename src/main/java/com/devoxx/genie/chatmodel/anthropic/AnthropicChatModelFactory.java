@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -40,7 +40,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return DevoxxGenieSettingsServiceProvider.getInstance().getAnthropicKey().trim();
+        return DevoxxGenieStateService.getInstance().getAnthropicKey().trim();
     }
 
     @Override

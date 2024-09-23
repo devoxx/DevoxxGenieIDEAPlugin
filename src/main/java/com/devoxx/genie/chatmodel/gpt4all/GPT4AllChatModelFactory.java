@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
@@ -20,7 +20,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
-            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getGpt4allModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
             .modelName(TEST_MODEL)
             .maxRetries(chatModel.getMaxRetries())
             .maxTokens(chatModel.getMaxTokens())
@@ -32,7 +32,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
 
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getGpt4allModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
             .modelName(TEST_MODEL)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())

@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.util;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ResourceBundle;
@@ -20,7 +20,7 @@ public class HelpUtil {
     }
 
     public static @NotNull String getCustomPromptCommands() {
-        return DevoxxGenieSettingsServiceProvider.getInstance()
+        return DevoxxGenieStateService.getInstance()
             .getCustomPrompts()
             .stream()
             .map(customPrompt -> "<li>/" + customPrompt.getName() + " : " + customPrompt.getPrompt() + "</li>")
