@@ -14,6 +14,7 @@ import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
@@ -293,7 +294,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             return false;
         }
 
-        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
 
         // If selectedLanguageModel is null, create a default one
@@ -382,13 +383,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Set the search buttons visibility based on settings.
      */
     public void configureSearchButtonsVisibility() {
-        if (DevoxxGenieSettingsServiceProvider.getInstance().getHideSearchButtonsFlag()) {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        if (stateService.getHideSearchButtonsFlag()) {
             tavilySearchBtn.setVisible(false);
             googleSearchBtn.setVisible(false);
         } else {
-            tavilySearchBtn.setVisible(!DevoxxGenieSettingsServiceProvider.getInstance().getTavilySearchKey().isEmpty());
-            googleSearchBtn.setVisible(!DevoxxGenieSettingsServiceProvider.getInstance().getGoogleSearchKey().isEmpty() &&
-                !DevoxxGenieSettingsServiceProvider.getInstance().getGoogleCSIKey().isEmpty());
+            tavilySearchBtn.setVisible(!stateService.getTavilySearchKey().isEmpty());
+            googleSearchBtn.setVisible(!stateService.getGoogleSearchKey().isEmpty() &&
+                !stateService.getGoogleCSIKey().isEmpty());
         }
     }
 

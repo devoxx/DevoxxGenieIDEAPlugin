@@ -5,8 +5,8 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.lmstudio.LMStudioModelEntryDTO;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.lmstudio.LMStudioService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.LMStudioUtil;
 import com.intellij.openapi.project.ProjectManager;
@@ -33,7 +33,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LMStudioChatModel.builder()
-            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -46,7 +46,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl())
+            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())

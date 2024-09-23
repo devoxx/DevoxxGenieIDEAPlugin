@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
@@ -78,7 +79,7 @@ public class TokenCalculationService {
                                           @NotNull ModelProvider selectedProvider,
                                           @NotNull LanguageModel languageModel,
                                           @NotNull CompletableFuture<ScanContentResult> contentFuture) {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         AtomicDouble inputCost = new AtomicDouble(settings.getModelInputCost(selectedProvider, languageModel.getModelName()));
 
         contentFuture.thenAccept(scanResult -> {

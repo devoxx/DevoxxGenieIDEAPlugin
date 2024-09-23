@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -114,7 +115,7 @@ public class ProjectContentService {
                                              ScanContentResult scanContentResult,
                                              boolean isTokenCalculation,
                                              Encoding encoding) {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
         for (VirtualFile child : directory.getChildren()) {
             if (child.isDirectory()) {

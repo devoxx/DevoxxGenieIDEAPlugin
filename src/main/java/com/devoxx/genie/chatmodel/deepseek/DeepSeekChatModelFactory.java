@@ -4,7 +4,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -45,7 +45,7 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
 
     @Override
     public String getApiKey() {
-        return DevoxxGenieSettingsServiceProvider.getInstance().getDeepSeekKey().trim();
+        return DevoxxGenieStateService.getInstance().getDeepSeekKey().trim();
     }
 
     @Override

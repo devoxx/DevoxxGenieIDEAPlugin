@@ -2,7 +2,7 @@ package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -18,7 +18,7 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
 
     private LanguageModelCostSettingsComponent llmCostSettingsComponent = new LanguageModelCostSettingsComponent();
     private final LanguageModelCostSettingsComponent component = new LanguageModelCostSettingsComponent();
-    private final DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     private final MessageBus messageBus;
 

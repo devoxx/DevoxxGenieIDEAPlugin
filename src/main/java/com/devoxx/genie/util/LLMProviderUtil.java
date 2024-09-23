@@ -2,7 +2,7 @@ package com.devoxx.genie.util;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +16,7 @@ public class LLMProviderUtil {
      * @return List of LLM providers
      */
     public static List<ModelProvider> getApiKeyEnabledProviders() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return Arrays.stream(ModelProvider.values())
             .filter(provider -> switch (provider) {
                 case OpenAI -> !settings.getOpenAIKey().isEmpty();

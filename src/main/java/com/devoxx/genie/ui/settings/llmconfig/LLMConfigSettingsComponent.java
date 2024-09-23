@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
@@ -14,7 +14,7 @@ import java.awt.*;
 
 public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
-    private final DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     @Getter
     private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(stateService.getChatMemorySize(), 1, 100));
