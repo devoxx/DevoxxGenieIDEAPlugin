@@ -3,9 +3,9 @@ package com.devoxx.genie.action;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
@@ -51,7 +51,7 @@ public class AddDirectoryAction extends DumbAwareAction {
     private void addDirectoryToContext(Project project, @NotNull VirtualFile directory) {
         FileListManager fileListManager = FileListManager.getInstance();
         List<VirtualFile> filesToAdd = new ArrayList<>();
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
         addFilesRecursively(directory, fileListManager, filesToAdd, settings);
 

@@ -2,7 +2,7 @@ package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.GitignoreParser;
@@ -295,7 +295,7 @@ public class ProjectScannerService {
      * @return true if the directory should be excluded, false otherwise
      */
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return file.isDirectory() &&
             (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
     }
@@ -307,7 +307,7 @@ public class ProjectScannerService {
      * @return true if the file should be excluded, false otherwise
      */
     private boolean shouldExcludeFile(@NotNull VirtualFile file) {
-        if (DevoxxGenieSettingsServiceProvider.getInstance().getUseGitIgnore()) {
+        if (DevoxxGenieStateService.getInstance().getUseGitIgnore()) {
             if (gitignoreParser != null) {
                 Path path = Paths.get(file.getPath());
                 return gitignoreParser.matches(path);
@@ -323,7 +323,7 @@ public class ProjectScannerService {
      * @return true if the file should be included, false otherwise
      */
     private boolean shouldIncludeFile(@NotNull VirtualFile file) {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         String extension = file.getExtension();
         boolean includedByExtension = extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
         return includedByExtension && !shouldExcludeFile(file);
@@ -336,7 +336,7 @@ public class ProjectScannerService {
      * @return the processed content
      */
     private String processFileContent(String content) {
-        if (DevoxxGenieSettingsServiceProvider.getInstance().getExcludeJavaDoc()) {
+        if (DevoxxGenieStateService.getInstance().getExcludeJavaDoc()) {
             return removeJavadoc(content);
         }
         return content;

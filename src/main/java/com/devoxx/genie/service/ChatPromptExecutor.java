@@ -7,6 +7,7 @@ import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
 import com.devoxx.genie.service.websearch.WebSearchExecutor;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -65,7 +66,7 @@ public class ChatPromptExecutor {
                             promptInputArea.requestInputFocus();
                         });
                     });
-                } else if (DevoxxGenieSettingsServiceProvider.getInstance().getStreamMode()) {
+                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
@@ -151,7 +152,7 @@ public class ChatPromptExecutor {
     private Optional<String> getCommandFromPrompt(@NotNull String prompt,
                                                   PromptOutputPanel promptOutputPanel) {
         if (prompt.startsWith("/")) {
-            DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+            DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
             // Check for custom prompts
             for (CustomPrompt customPrompt : settings.getCustomPrompts()) {

@@ -4,6 +4,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -31,7 +32,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
     }
 
     public void init(@NotNull Project project) {
-        createChatMemory(project.getLocationHash(), DevoxxGenieSettingsServiceProvider.getInstance().getChatMemorySize());
+        createChatMemory(project.getLocationHash(), DevoxxGenieStateService.getInstance().getChatMemorySize());
         createChangeListener();
     }
 

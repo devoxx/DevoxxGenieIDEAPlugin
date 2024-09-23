@@ -2,9 +2,9 @@ package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.dialog.CustomPromptDialog;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -24,7 +24,7 @@ import java.util.List;
 
 public class PromptSettingsComponent extends AbstractSettingsComponent {
 
-    private final DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     private final int NAME_COLUMN = 0;
     private final int PROMPT_COLUMN = 1;
@@ -52,7 +52,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     public PromptSettingsComponent(Project project) {
         this.project = project;
 
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         setupCustomPromptsTable();
         setCustomPrompts(settings.getCustomPrompts());

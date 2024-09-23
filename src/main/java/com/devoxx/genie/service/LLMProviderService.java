@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,14 +19,15 @@ public class LLMProviderService {
     private static final EnumMap<ModelProvider, Supplier<String>> providerKeyMap = new EnumMap<>(ModelProvider.class);
 
     static {
-        providerKeyMap.put(OpenAI, DevoxxGenieSettingsServiceProvider.getInstance()::getOpenAIKey);
-        providerKeyMap.put(Anthropic, DevoxxGenieSettingsServiceProvider.getInstance()::getAnthropicKey);
-        providerKeyMap.put(Mistral, DevoxxGenieSettingsServiceProvider.getInstance()::getMistralKey);
-        providerKeyMap.put(Groq, DevoxxGenieSettingsServiceProvider.getInstance()::getGroqKey);
-        providerKeyMap.put(DeepInfra, DevoxxGenieSettingsServiceProvider.getInstance()::getDeepInfraKey);
-        providerKeyMap.put(Google, DevoxxGenieSettingsServiceProvider.getInstance()::getGeminiKey);
-        providerKeyMap.put(DeepSeek, DevoxxGenieSettingsServiceProvider.getInstance()::getDeepSeekKey);
-        providerKeyMap.put(OpenRouter, DevoxxGenieSettingsServiceProvider.getInstance()::getOpenRouterKey);
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        providerKeyMap.put(OpenAI, stateService::getOpenAIKey);
+        providerKeyMap.put(Anthropic, stateService::getAnthropicKey);
+        providerKeyMap.put(Mistral, stateService::getMistralKey);
+        providerKeyMap.put(Groq, stateService::getGroqKey);
+        providerKeyMap.put(DeepInfra, stateService::getDeepInfraKey);
+        providerKeyMap.put(Google, stateService::getGeminiKey);
+        providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
+        providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
     }
 
     @NotNull

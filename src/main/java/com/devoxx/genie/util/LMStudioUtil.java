@@ -1,6 +1,6 @@
 package com.devoxx.genie.util;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.diagnostic.Logger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -31,7 +31,7 @@ public class LMStudioUtil {
     }
 
     public static @NotNull Response executeRequest(String endpoint) throws IOException {
-        String baseUrl = ensureEndsWithSlash(DevoxxGenieSettingsServiceProvider.getInstance().getLmstudioModelUrl());
+        String baseUrl = ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getLmstudioModelUrl());
         Request request = new Request.Builder()
             .url(baseUrl + endpoint)
             .build();

@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
@@ -46,7 +46,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
@@ -62,7 +62,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void apply() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
 
         settings.setCustomPrompts(promptSettingsComponent.getCustomPrompts());
@@ -79,7 +79,7 @@ public class PromptSettingsConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         promptSettingsComponent.getSystemPromptField().setText(settings.getSystemPrompt());
 
         promptSettingsComponent.setCustomPrompts(settings.getCustomPrompts());

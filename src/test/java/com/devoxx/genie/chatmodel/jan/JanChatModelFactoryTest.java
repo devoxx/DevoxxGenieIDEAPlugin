@@ -1,7 +1,6 @@
 package com.devoxx.genie.chatmodel.jan;
 
 import com.devoxx.genie.model.ChatModel;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
@@ -16,10 +15,10 @@ public class JanChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
-        try (MockedStatic<DevoxxGenieSettingsServiceProvider> mockedSettings = Mockito.mockStatic(DevoxxGenieSettingsServiceProvider.class)) {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Setup the mock for SettingsState
             DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
-            when(DevoxxGenieSettingsServiceProvider.getInstance()).thenReturn(mockSettingsState);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
             when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:8080");
 
             // Instance of the class containing the method to be tested
@@ -38,10 +37,10 @@ public class JanChatModelFactoryTest {
 
     @Test
     void testHelloChat() {
-        try (MockedStatic<DevoxxGenieSettingsServiceProvider> mockedSettings = Mockito.mockStatic(DevoxxGenieSettingsServiceProvider.class)) {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Setup the mock for SettingsState
             DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
-            when(DevoxxGenieSettingsServiceProvider.getInstance()).thenReturn(mockSettingsState);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
             when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
 
             // Instance of the class containing the method to be tested
