@@ -2,9 +2,9 @@ package com.devoxx.genie.service.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatMemoryService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -56,7 +56,7 @@ public class StreamingPromptExecutor {
         if (chatMemoryService.isEmpty(chatMessageContext.getProject())) {
             chatMemoryService.add(
                 chatMessageContext.getProject(),
-                new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt())
+                new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt())
             );
         }
 

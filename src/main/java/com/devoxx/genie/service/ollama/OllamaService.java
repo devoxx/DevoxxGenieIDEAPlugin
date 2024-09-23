@@ -2,7 +2,7 @@ package com.devoxx.genie.service.ollama;
 
 import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.google.gson.Gson;
 import com.intellij.openapi.application.ApplicationManager;
 import okhttp3.OkHttpClient;
@@ -30,7 +30,7 @@ public class OllamaService {
      * @throws IOException if there is an error
      */
     public OllamaModelEntryDTO[] getModels() throws IOException {
-        String baseUrl = ensureEndsWithSlash(DevoxxGenieSettingsServiceProvider.getInstance().getOllamaModelUrl());
+        String baseUrl = ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl());
 
         Request request = new Request.Builder()
             .url(baseUrl + "api/tags")

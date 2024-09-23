@@ -145,12 +145,12 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         return modifiedModels;
     }
 
-    private static int getContextWindow(Object contextWindowObj) {
+    public static int getContextWindow(Object contextWindowObj) {
         int contextWindow;
         if (contextWindowObj instanceof Integer) {
             contextWindow = (Integer) contextWindowObj;
         } else if (contextWindowObj instanceof String) {
-            String contextWindowStr = ((String) contextWindowObj).replace(",", "").split("\\.")[0];
+            String contextWindowStr = ((String) contextWindowObj).replaceAll("[^\\d.]", "").split("\\.")[0];
             contextWindow = Integer.parseInt(contextWindowStr);
         } else {
             // Handle unexpected type or throw an exception

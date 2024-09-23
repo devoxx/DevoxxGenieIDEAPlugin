@@ -1,9 +1,9 @@
 package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.UINumericRange;
@@ -21,7 +21,7 @@ import java.awt.event.ItemEvent;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
 
-    private final DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     public static final String LINK_EMOJI = "\uD83D\uDD17";
     public static final String PASSWORD_EMOJI = "\uD83D\uDD11";

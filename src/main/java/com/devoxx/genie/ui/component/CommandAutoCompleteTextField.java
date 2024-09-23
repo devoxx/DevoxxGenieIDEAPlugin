@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -52,7 +52,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         commands.add("/review");
         commands.add("/help");
 
-        DevoxxGenieSettingsService stateService = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
         for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {
             commands.add("/" + customPrompt.getName());
         }

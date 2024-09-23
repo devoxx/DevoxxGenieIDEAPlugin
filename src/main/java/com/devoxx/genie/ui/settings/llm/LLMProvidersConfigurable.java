@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.DevoxxGenieSettingsServiceProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
@@ -49,7 +49,7 @@ public class LLMProvidersConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
@@ -93,7 +93,7 @@ public class LLMProvidersConfigurable implements Configurable {
     public void apply() {
         boolean isModified = isModified();
 
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
@@ -140,7 +140,7 @@ public class LLMProvidersConfigurable implements Configurable {
      */
     @Override
     public void reset() {
-        DevoxxGenieSettingsService settings = DevoxxGenieSettingsServiceProvider.getInstance();
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
 

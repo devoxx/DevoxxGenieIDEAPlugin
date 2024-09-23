@@ -6,6 +6,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.exception.ModelNotActiveException;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -61,7 +62,7 @@ public class PromptExecutionService {
                     ChatMemoryService
                             .getInstance()
                             .add(chatMessageContext.getProject(),
-                                 new SystemMessage(DevoxxGenieSettingsServiceProvider.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                                 new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                             );
                 }
             }
