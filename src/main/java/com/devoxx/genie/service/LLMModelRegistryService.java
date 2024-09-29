@@ -67,7 +67,7 @@ public final class LLMModelRegistryService {
             .displayName("Claude 2.1")
             .inputCost(8)
             .outputCost(24)
-            .contextWindow(100_000)
+            .contextWindow(200_000)
             .apiKeyUsed(true)
             .build());
 
@@ -82,10 +82,10 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_HAIKU_20240307,
+        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_SONNET_20240229,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(CLAUDE_3_HAIKU_20240307.toString())
+            .modelName(CLAUDE_3_SONNET_20240229.toString())
             .displayName("Claude 3 Sonnet")
             .inputCost(3)
             .outputCost(15)
