@@ -45,10 +45,10 @@ public class Constant {
     public static final String MESSAGES = "messages";
 
     // The LLM Settings
-    public static final Double TEMPERATURE = 0.7d;
+    public static final Double TEMPERATURE = 0.0d;
     public static final Double TOP_P = 0.9d;
     public static final Integer MAX_OUTPUT_TOKENS = 4000;
-    public static final Integer MAX_RETRIES = 3;
+    public static final Integer MAX_RETRIES = 1;
     public static final Integer TIMEOUT = 180;
     public static final Integer MAX_MEMORY = 10;
 
