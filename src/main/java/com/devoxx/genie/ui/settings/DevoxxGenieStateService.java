@@ -117,7 +117,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     ));
 
     private List<String> includedFileExtensions = new ArrayList<>(Arrays.asList(
-            "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md"
+            "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md", "js", "ts", "css", "scss", "html"
     ));
 
     private Map<String, Double> modelInputCosts = new HashMap<>();
