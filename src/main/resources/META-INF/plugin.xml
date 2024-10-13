@@ -35,6 +35,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.23</h2>
+        <UL>
+            <LI>Fix #301: Fix anthrophic models data</LI>
+            <LI>Fix #306: Added some tooltips for LLM specific settings</LI>
+            <LI>Fix #309: Add some common file extensions for frontend code</LI>
+        </UL>
         <h2>v0.2.22</h2>
         <UL>
             <LI>Fix : Number format exception for cost value</LI>
