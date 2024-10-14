@@ -3,7 +3,6 @@ package com.devoxx.genie.chatmodel.jlama;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -21,7 +20,7 @@ public class JLamaChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getJlamaUrl())
-            .modelName(chatModel.getModelName())
+            .modelName(TEST_MODEL)
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
             .maxTokens(chatModel.getMaxTokens())
@@ -34,7 +33,7 @@ public class JLamaChatModelFactory implements ChatModelFactory {
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getJlamaUrl())
-            .modelName(chatModel.getModelName())
+            .modelName(TEST_MODEL)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
