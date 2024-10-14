@@ -177,4 +177,8 @@ public interface DevoxxGenieSettingsService {
     void setCustomOpenAIUrl(String text);
 
     String getCustomOpenAIUrl();
+
+    String getJlamaUrl();
+
+    void setJlamaUrl(String text);
 }

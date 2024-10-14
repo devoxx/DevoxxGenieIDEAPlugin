@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.2.23"
+version = "0.2.24"
 
 repositories {
     mavenCentral()
