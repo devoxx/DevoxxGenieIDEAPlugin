@@ -22,25 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.devoxx.genie.model.Constant.EXO_MODEL_URL;
-import static com.devoxx.genie.model.Constant.EXPLAIN_PROMPT;
-import static com.devoxx.genie.model.Constant.GPT4ALL_MODEL_URL;
-import static com.devoxx.genie.model.Constant.HIDE_SEARCH_BUTTONS;
-import static com.devoxx.genie.model.Constant.JAN_MODEL_URL;
-import static com.devoxx.genie.model.Constant.LLAMA_CPP_MODEL_URL;
-import static com.devoxx.genie.model.Constant.LMSTUDIO_MODEL_URL;
-import static com.devoxx.genie.model.Constant.MAX_MEMORY;
-import static com.devoxx.genie.model.Constant.MAX_OUTPUT_TOKENS;
-import static com.devoxx.genie.model.Constant.MAX_RETRIES;
-import static com.devoxx.genie.model.Constant.MAX_SEARCH_RESULTS;
-import static com.devoxx.genie.model.Constant.OLLAMA_MODEL_URL;
-import static com.devoxx.genie.model.Constant.REVIEW_PROMPT;
-import static com.devoxx.genie.model.Constant.STREAM_MODE;
-import static com.devoxx.genie.model.Constant.SYSTEM_PROMPT;
-import static com.devoxx.genie.model.Constant.TEMPERATURE;
-import static com.devoxx.genie.model.Constant.TEST_PROMPT;
-import static com.devoxx.genie.model.Constant.TIMEOUT;
-import static com.devoxx.genie.model.Constant.TOP_P;
+import static com.devoxx.genie.model.Constant.*;
 
 @Getter
 @Setter
@@ -67,6 +49,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String janModelUrl = JAN_MODEL_URL;
     private String exoModelUrl = EXO_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
+    private String jlamaUrl = JLAMA_MODEL_URL;
     private String customOpenAIUrl = "";
 
     // LLM API Keys

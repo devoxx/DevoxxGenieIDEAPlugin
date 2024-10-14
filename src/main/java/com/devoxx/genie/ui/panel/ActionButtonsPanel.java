@@ -257,8 +257,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      */
     private boolean isProjectContextSupportedProvider() {
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
-        return selectedProvider != null &&
-            isSupportedProvider(selectedProvider);
+        return selectedProvider != null && isSupportedProvider(selectedProvider);
     }
 
     /**
@@ -327,8 +326,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         if (selectedProvider != null &&
             (selectedProvider.equals(ModelProvider.LMStudio) ||
-                selectedProvider.equals(ModelProvider.GPT4All) ||
-                selectedProvider.equals(ModelProvider.LLaMA))) {
+             selectedProvider.equals(ModelProvider.GPT4All) ||
+             selectedProvider.equals(ModelProvider.LLaMA))) {
             return LanguageModel.builder()
                 .provider(selectedProvider)
                 .apiKeyUsed(false)

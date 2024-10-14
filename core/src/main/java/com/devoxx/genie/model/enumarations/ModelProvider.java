@@ -5,6 +5,10 @@ import org.jetbrains.annotations.NotNull;
 
 @Getter
 public enum ModelProvider {
+    //
+    // Make sure to add local models to the LLMProviderService.getLocalModelProviders() method
+    // TODO : Would be great if this info was added to this enum instead of a separate method !!
+    //
     Ollama("Ollama"),
     LMStudio("LMStudio"),
     GPT4All("GPT4All"),
@@ -18,7 +22,8 @@ public enum ModelProvider {
     Exo("Exo (Experimental)"),
     LLaMA("LLaMA.c++"),
     OpenRouter("OpenRouter"),
-    DeepSeek("DeepSeek");
+    DeepSeek("DeepSeek"),
+    Jlama("Jlama (Experimental /w REST API)");
 
     private final String name;
 
