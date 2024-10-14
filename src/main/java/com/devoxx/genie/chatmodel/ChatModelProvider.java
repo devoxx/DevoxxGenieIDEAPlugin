@@ -87,6 +87,9 @@ public class ChatModelProvider {
             case LLaMA:
                 chatModel.setBaseUrl(stateService.getLlamaCPPUrl());
                 break;
+            case Jlama:
+                chatModel.setBaseUrl(stateService.getJlamaUrl());
+                break;
             // Add other local providers as needed
         }
     }
