@@ -45,9 +45,11 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
 
-        String modelInfo = languageModel.getProvider().getName() +
-            (languageModel.getModelName() != null && !languageModel.getModelName().equalsIgnoreCase(TEST_MODEL) ?
-                " (" + languageModel.getModelName() + ")" : "");
+        String modelInfo = languageModel.getProvider().getName();
+        String modelName = languageModel.getModelName();
+        if (modelName != null && !modelName.isBlank() && !modelName.equalsIgnoreCase(TEST_MODEL)) {
+            modelInfo += " (" + languageModel.getModelName() + ")";
+        }
 
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
 
