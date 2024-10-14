@@ -327,6 +327,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         if (selectedProvider != null &&
             (selectedProvider.equals(ModelProvider.LMStudio) ||
              selectedProvider.equals(ModelProvider.GPT4All) ||
+             selectedProvider.equals(ModelProvider.Jlama) ||
              selectedProvider.equals(ModelProvider.LLaMA))) {
             return LanguageModel.builder()
                 .provider(selectedProvider)
