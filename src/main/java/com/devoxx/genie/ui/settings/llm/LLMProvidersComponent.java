@@ -41,6 +41,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
     @Getter
+    private final JTextField jlamaModelUrlField = new JTextField(stateService.getJlamaUrl());
+    @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
@@ -95,6 +97,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Jan URL", createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
         addSettingRow(panel, gbc, "Exo URL", createTextWithLinkButton(exoModelUrlField, "https://github.com/exo-explore/exo"));
         addSettingRow(panel, gbc, "LLaMA.c++ URL", createTextWithLinkButton(llamaCPPModelUrlField, "https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md"));
+        addSettingRow(panel, gbc, "JLama URL", createTextWithLinkButton(jlamaModelUrlField, "https://github.com/tjake/Jlama"));
         addSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlField);
 
         addSection(panel, gbc, "Cloud LLM Providers");
