@@ -46,7 +46,7 @@ We now support also streaming responses which you can enable in the Settings pag
 
 https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283-af1d-19061b7ae7bf
 
-### Start in 5 Minutes
+### Start in 5 Minutes with local LLM
 
 - Download and start [Ollama](https://ollama.com/download)
 - Open terminal and download a model using command "ollama run llama3.2"
@@ -54,6 +54,16 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283
 - Select "DevoxxGenie" and install plugin
 - In the DevoxxGenie window select Ollama and available model
 - Start prompting
+
+### Start in 2 Minutes using Cloud LLM
+
+- Start your IDEA and go to plugins > Marketplace and enter "Devoxx"
+- Select "DevoxxGenie" and install plugin
+- Click on DevoxxGenie cog (settings) icon and click on Cloud Provider link icon to create API KEY
+- Paste API Key in Settings panel
+- In the DevoxxGenie window select your cloud provider and model
+- Start prompting
+ 
  
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
