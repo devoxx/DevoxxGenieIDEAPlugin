@@ -7,6 +7,8 @@ public class AbstractSettingsComponent implements SettingsComponent {
 
     protected final JPanel panel = new JPanel(new BorderLayout());
 
+    protected JPanel azureOpenAISettingsPanel = new JPanel(new GridBagLayout());
+
     @Override
     public JPanel createPanel() {
         return panel;

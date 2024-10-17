@@ -24,6 +24,12 @@ public interface DevoxxGenieSettingsService {
 
     String getOpenAIKey();
 
+    String getAzureOpenAIEndpoint();
+
+    String getAzureOpenAIDeployment();
+
+    String getAzureOpenAIKey();
+
     String getMistralKey();
 
     String getAnthropicKey();
@@ -99,6 +105,12 @@ public interface DevoxxGenieSettingsService {
     void setExoModelUrl(String url);
 
     void setOpenAIKey(String key);
+
+    void setAzureOpenAIEndpoint(String endpoint);
+
+    void setAzureOpenAIDeployment(String deployment);
+
+    void setAzureOpenAIKey(String key);
 
     void setMistralKey(String key);
 
