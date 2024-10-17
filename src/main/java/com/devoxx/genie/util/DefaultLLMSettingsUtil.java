@@ -35,7 +35,8 @@ public class DefaultLLMSettingsUtil {
             provider == ModelProvider.Mistral ||
             provider == ModelProvider.Groq ||
             provider == ModelProvider.DeepInfra ||
-            provider == ModelProvider.Google;
+            provider == ModelProvider.Google ||
+			provider == ModelProvider.AzureOpenAI;
     }
 
     public static class CostKey {

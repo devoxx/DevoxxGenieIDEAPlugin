@@ -20,6 +20,7 @@ public class LLMProviderUtil {
         return Arrays.stream(ModelProvider.values())
             .filter(provider -> switch (provider) {
                 case OpenAI -> !settings.getOpenAIKey().isEmpty();
+                case AzureOpenAI -> !settings.getAzureOpenAIKey().isEmpty() && !settings.getAzureOpenAIEndpoint().isEmpty() && !settings.getAzureOpenAIDeployment().isEmpty();
                 case Anthropic -> !settings.getAnthropicKey().isEmpty();
                 case Mistral -> !settings.getMistralKey().isEmpty();
                 case Groq -> !settings.getGroqKey().isEmpty();

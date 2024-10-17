@@ -61,6 +61,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String geminiKey = "";
     private String deepSeekKey = "";
     private String openRouterKey = "";
+    private String azureOpenAIEndpoint = "";
+    private String azureOpenAIDeployment = "";
+    private String azureOpenAIKey = "";
 
     // Search API Keys
     private Boolean hideSearchButtonsFlag = HIDE_SEARCH_BUTTONS;
@@ -91,6 +94,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String explainPrompt = EXPLAIN_PROMPT;
 
     private Boolean excludeJavaDoc = false;
+
+    private Boolean showAzureOpenAIFields = false;
 
     @Setter
     private Boolean useGitIgnore = true;

@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class LLMProviderService {
         providerKeyMap.put(Google, stateService::getGeminiKey);
         providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
         providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
+        providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
     }
 
     @NotNull
@@ -35,8 +37,17 @@ public class LLMProviderService {
         return ApplicationManager.getApplication().getService(LLMProviderService.class);
     }
 
-    public List<ModelProvider> getLocalModelProviders() {
-        return List.of(GPT4All, LMStudio, Ollama, Exo, LLaMA, Jan, Jlama);
+    public List<ModelProvider> getAvailableModelProviders() {
+        List<ModelProvider> providers = new ArrayList<>();
+        providers.addAll(getModelProvidersWithApiKeyConfigured());
+        providers.addAll(getLocalModelProviders());
+        providers.addAll(getOptionalProviders());
+
+        return providers;
+    }
+
+    private List<ModelProvider> getLocalModelProviders() {
+        return ModelProvider.fromType(Type.LOCAL);
     }
 
     /**
@@ -44,7 +55,7 @@ public class LLMProviderService {
      *
      * @return List of LLM providers
      */
-    public List<ModelProvider> getModelProvidersWithApiKeyConfigured() {
+    private List<ModelProvider> getModelProvidersWithApiKeyConfigured() {
         return LLMModelRegistryService.getInstance().getModels()
             .stream()
             .filter(LanguageModel::isApiKeyUsed)
@@ -55,5 +66,15 @@ public class LLMProviderService {
                 .filter(key -> !key.isBlank())
                 .isPresent())
             .collect(Collectors.toList());
+    }
+
+    private List<ModelProvider> getOptionalProviders() {
+        List<ModelProvider> optionalModelProviders = new ArrayList<>();
+
+        if (DevoxxGenieStateService.getInstance().getShowAzureOpenAIFields()) {
+            optionalModelProviders.add(AzureOpenAI);
+        }
+
+        return optionalModelProviders;
     }
 }
