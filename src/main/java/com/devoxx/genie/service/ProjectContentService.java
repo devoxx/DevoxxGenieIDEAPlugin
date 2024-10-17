@@ -91,7 +91,7 @@ public class ProjectContentService {
 
     public static Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
         return switch (provider) {
-            case OpenAI, Anthropic, Google ->
+            case OpenAI, Anthropic, Google, AzureOpenAI ->
                 Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
             case Mistral, DeepInfra, Groq, DeepSeek, OpenRouter ->
                 // These often use the Llama tokenizer or similar

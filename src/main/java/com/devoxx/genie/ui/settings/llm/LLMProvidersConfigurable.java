@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.llm;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
@@ -73,6 +72,11 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), settings.getExoModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), settings.getCustomOpenAIUrl());
 
+        isModified |= !settings.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAI().isSelected());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), settings.getAzureOpenAIEndpoint());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIDeploymentField(), settings.getAzureOpenAIDeployment());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), settings.getAzureOpenAIKey());
+
         isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         llmSettingsComponent.getHideSearchButtonsField().addItemListener(event -> {
             String text = llmSettingsComponent.getHideSearchButtonsField().getText();
@@ -122,6 +126,11 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
         settings.setMaxSearchResults(llmSettingsComponent.getMaxSearchResults().getNumber());
 
+        settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAI().isSelected());
+        settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
+        settings.setAzureOpenAIDeployment(llmSettingsComponent.getAzureOpenAIDeploymentField().getText());
+        settings.setAzureOpenAIKey(llmSettingsComponent.getAzureOpenAIKeyField().getText());
+
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
             boolean hasKey = !settings.getAnthropicKey().isBlank() ||
@@ -163,6 +172,11 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
         llmSettingsComponent.getDeepSeekApiKeyField().setText(settings.getDeepSeekKey());
         llmSettingsComponent.getOpenRouterApiKeyField().setText(settings.getOpenRouterKey());
+
+        llmSettingsComponent.getEnableAzureOpenAI().setSelected(settings.getShowAzureOpenAIFields());
+        llmSettingsComponent.getAzureOpenAIEndpointField().setText(settings.getAzureOpenAIEndpoint());
+        llmSettingsComponent.getAzureOpenAIDeploymentField().setText(settings.getAzureOpenAIDeployment());
+        llmSettingsComponent.getAzureOpenAIKeyField().setText(settings.getAzureOpenAIKey());
 
         llmSettingsComponent.getHideSearchButtonsField().setSelected(settings.getHideSearchButtonsFlag());
         llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
