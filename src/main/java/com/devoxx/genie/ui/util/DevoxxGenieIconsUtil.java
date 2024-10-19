@@ -28,6 +28,7 @@ public final class DevoxxGenieIconsUtil {
     public static final Icon CodeSnippetIcon = load("/icons/codeSnippet.svg");
     public static final Icon CopyIcon = load("/icons/copy.svg");
     public static final Icon InsertCodeIcon = load("/icons/insertCode.svg");
+    public static final Icon RefreshIcon = load("/icons/refresh.svg");
 
     private DevoxxGenieIconsUtil() {
     }

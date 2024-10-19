@@ -58,4 +58,9 @@ public interface ChatModelFactory {
     default String getApiKey() {
         return "";
     }
+
+    /**
+     * Reset the list of local models
+     */
+    default void resetModels() {}
 }

@@ -95,4 +95,9 @@ public class JanChatModelFactory implements ChatModelFactory {
         }
         return cachedModels;
     }
+
+    @Override
+    public void resetModels() {
+        cachedModels = null;
+    }
 }
