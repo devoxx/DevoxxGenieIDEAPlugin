@@ -7,6 +7,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.*;
+import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
@@ -19,6 +20,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -38,10 +40,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
 /**
  * The Devoxx Genie Tool Window Content.
@@ -78,6 +81,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private String lastSelectedLanguageModel = null;
     private final ChatService chatService;
     private final ConversationStorageService storageService = ConversationStorageService.getInstance();
+
+    private JButton refreshButton;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -296,7 +301,50 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private @NotNull JPanel createProviderPanel() {
         JPanel providerPanel = new JPanel(new BorderLayout());
         providerPanel.add(modelProviderComboBox, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        refreshButton = new JHoverButton(RefreshIcon, true);
+        refreshButton.setToolTipText("Refresh models");
+        refreshButton.addActionListener(e -> refreshModels());
+        buttonPanel.add(refreshButton);
+
+        providerPanel.add(buttonPanel, BorderLayout.EAST);
         return providerPanel;
+    }
+
+    /**
+     * Refresh the list of local models
+     */
+    private void refreshModels() {
+        ModelProvider selectedProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        if (selectedProvider == null) {
+            return;
+        }
+
+        if (selectedProvider == ModelProvider.LMStudio || selectedProvider == ModelProvider.Ollama || selectedProvider == ModelProvider.Jan) {
+            SwingUtilities.invokeLater(() -> {
+                refreshButton.setEnabled(false);
+                modelNameComboBox.removeAllItems();
+
+                CompletableFuture.runAsync(() -> {
+                    List<LanguageModel> models = getRefreshedModels(selectedProvider);
+                    SwingUtilities.invokeLater(() -> {
+                        modelNameComboBox.removeAllItems();
+                        models.forEach(modelNameComboBox::addItem);
+                        refreshButton.setEnabled(true);
+                    });
+                });
+            });
+        } else {
+            NotificationUtil.sendNotification(project, "Model refresh is only available for LMStudio, Ollama and Jan providers.");
+        }
+    }
+
+    private List<LanguageModel> getRefreshedModels(ModelProvider provider) {
+        ChatModelFactory factory = ChatModelFactoryProvider.getFactoryByProvider(provider.name())
+                .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + provider));
+        factory.resetModels();
+        return factory.getModels();
     }
 
     /**
