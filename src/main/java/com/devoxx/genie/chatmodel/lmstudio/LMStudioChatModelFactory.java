@@ -101,4 +101,9 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
         }
         return cachedModels;
     }
+
+    @Override
+    public void resetModels() {
+        cachedModels = null;
+    }
 }
