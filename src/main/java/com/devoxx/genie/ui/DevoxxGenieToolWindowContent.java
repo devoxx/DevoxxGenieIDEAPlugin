@@ -254,15 +254,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      * Only show the cloud-based LLM providers for which we have an API Key.
      */
     private void addModelProvidersToComboBox() {
-        LLMProviderService providerService = LLMProviderService.getInstance();
-        Stream.concat(
-                providerService.getModelProvidersWithApiKeyConfigured().stream(),
-                providerService.getLocalModelProviders().stream()
-            )
-            .distinct()
-            .sorted(Comparator.comparing(ModelProvider::getName))
-            .forEach(modelProviderComboBox::addItem);
-    }
+		LLMProviderService providerService = LLMProviderService.getInstance();
+		    providerService.getAvailableModelProviders().stream()
+				.distinct()
+				.sorted(Comparator.comparing(ModelProvider::getName))
+				.forEach(modelProviderComboBox::addItem);
+	}
 
     /**
      * Create the LLM and model name selection panel.

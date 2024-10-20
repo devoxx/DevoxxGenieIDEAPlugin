@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.azureopenai.AzureOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
@@ -13,6 +14,8 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.error.ErrorHandler;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +52,7 @@ public class ChatModelFactoryProvider {
             case "Google" -> new GoogleChatModelFactory();
             case "DeepSeek" -> new DeepSeekChatModelFactory();
             case "Jlama" -> new JLamaChatModelFactory();
+            case "AzureOpenAI" -> new AzureOpenAIChatModelFactory();
             default -> null;
         };
     }
