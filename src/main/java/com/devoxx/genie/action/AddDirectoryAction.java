@@ -58,7 +58,7 @@ public class AddDirectoryAction extends DumbAwareAction {
         if (!filesToAdd.isEmpty()) {
             fileListManager.addFiles(filesToAdd);
 
-            ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash())); //todo test
+            ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash()));
 
             ProjectContentService.getInstance()
                 .getDirectoryContentAndTokens(directory, false, selectedProvider)

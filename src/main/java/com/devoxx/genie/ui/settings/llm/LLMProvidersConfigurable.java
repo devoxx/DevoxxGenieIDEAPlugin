@@ -120,16 +120,16 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setDeepSeekKey(new String(llmSettingsComponent.getDeepSeekApiKeyField().getPassword()));
         settings.setOpenRouterKey(new String(llmSettingsComponent.getOpenRouterApiKeyField().getPassword()));
 
+        settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAI().isSelected());
+        settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
+        settings.setAzureOpenAIDeployment(llmSettingsComponent.getAzureOpenAIDeploymentField().getText());
+        settings.setAzureOpenAIKey(new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()));
+
         settings.setHideSearchButtonsFlag(llmSettingsComponent.getHideSearchButtonsField().isSelected());
         settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
         settings.setGoogleSearchKey(new String(llmSettingsComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
         settings.setMaxSearchResults(llmSettingsComponent.getMaxSearchResults().getNumber());
-
-        settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAI().isSelected());
-        settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
-        settings.setAzureOpenAIDeployment(llmSettingsComponent.getAzureOpenAIDeploymentField().getText());
-        settings.setAzureOpenAIKey(llmSettingsComponent.getAzureOpenAIKeyField().getText());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {

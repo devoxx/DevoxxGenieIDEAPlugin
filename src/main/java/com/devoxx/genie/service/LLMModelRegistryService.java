@@ -6,7 +6,6 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
-import dev.langchain4j.model.azure.AzureOpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +35,6 @@ public final class LLMModelRegistryService {
         addGeminiModels();
         addMistralModels();
         addDeepSeekModels();
-//        addAzureOpenAiModels();
     }
 
     private void addAnthropicModels() {
