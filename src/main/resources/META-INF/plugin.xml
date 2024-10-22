@@ -38,6 +38,7 @@
         <h2>v0.2.24</h2>
         <UL>
             <LI>Feat #206 : Support for JLama using REST API</LI>
+            <LI>Feat #311 : Support reload language model without restart of IDEA</LI>
             <LI>Feat #315 : Support for Azure OpenAI</LI>
         </UL>
         <h2>v0.2.23</h2>
