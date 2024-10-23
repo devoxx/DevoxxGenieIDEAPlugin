@@ -51,6 +51,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-google-ai-gemini:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
