@@ -40,7 +40,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
