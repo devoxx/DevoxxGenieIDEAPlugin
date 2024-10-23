@@ -184,7 +184,8 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":gpt-4o-mini", LanguageModel.builder()
+        models.put(ModelProvider.OpenAI.getName() + ":gpt-4o-mini",
+                LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName("gpt-4o-mini")
             .displayName("GPT 4o mini")

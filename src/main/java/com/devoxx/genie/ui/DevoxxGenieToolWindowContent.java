@@ -40,7 +40,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
@@ -255,13 +254,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      */
     private void addModelProvidersToComboBox() {
         LLMProviderService providerService = LLMProviderService.getInstance();
-        Stream.concat(
-                providerService.getModelProvidersWithApiKeyConfigured().stream(),
-                providerService.getLocalModelProviders().stream()
-            )
-            .distinct()
-            .sorted(Comparator.comparing(ModelProvider::getName))
-            .forEach(modelProviderComboBox::addItem);
+        providerService.getAvailableModelProviders().stream()
+                .distinct()
+                .sorted(Comparator.comparing(ModelProvider::getName))
+                .forEach(modelProviderComboBox::addItem);
     }
 
     /**

@@ -31,11 +31,12 @@ public class DefaultLLMSettingsUtil {
      */
     public static boolean isApiKeyBasedProvider(ModelProvider provider) {
         return provider == ModelProvider.OpenAI ||
-            provider == ModelProvider.Anthropic ||
-            provider == ModelProvider.Mistral ||
-            provider == ModelProvider.Groq ||
-            provider == ModelProvider.DeepInfra ||
-            provider == ModelProvider.Google;
+                provider == ModelProvider.Anthropic ||
+                provider == ModelProvider.Mistral ||
+                provider == ModelProvider.Groq ||
+                provider == ModelProvider.DeepInfra ||
+                provider == ModelProvider.Google ||
+                provider == ModelProvider.AzureOpenAI;
     }
 
     public static class CostKey {
