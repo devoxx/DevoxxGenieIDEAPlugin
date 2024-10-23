@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.util.ArrayList;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
 
@@ -79,7 +80,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
     @Getter
-    private final JCheckBox enableAzureOpenAI = new JCheckBox("Use Azure OpenAI Provider", stateService.getShowAzureOpenAIFields());
+    private final JCheckBox enableAzureOpenAI = new JCheckBox("", stateService.getShowAzureOpenAIFields());
+
+    private final java.util.List<JComponent> azureComponents = new ArrayList<>();
+
 
     public LLMProvidersComponent() {
         addListeners();
@@ -118,7 +122,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Deep Seek API Key", createTextWithPasswordButton(deepSeekApiKeyField, "https://platform.deepseek.com/api_keys"));
         addSettingRow(panel, gbc, "Open Router API Key", createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
 
-        addAzureOpenAIPanel(panel, azureOpenAISettingsPanel, gbc, "Enable Azure OpenAI Settings");
+        addAzureOpenAIPanel(panel, gbc);
 
         addSection(panel, gbc, "Search Providers");
         addSettingRow(panel, gbc, "Tavily Web Search API Key", createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
@@ -133,25 +137,18 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         return panel;
     }
 
-    private void addAzureOpenAIPanel(JPanel panel, JPanel azureOpenAISettingsPanel, GridBagConstraints gbc, String label) {
-        addSettingRow(panel, gbc, label, enableAzureOpenAI);
+    private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {
+        addSettingRow(panel, gbc, "Enable Azure OpenAI Provider", enableAzureOpenAI);
 
-        GridBagConstraints azureGbc = new GridBagConstraints();
-        azureGbc.gridx = 0;
-        azureGbc.gridy = 0;
-        azureGbc.gridwidth = 2;
-        azureGbc.fill = GridBagConstraints.HORIZONTAL;
-        azureGbc.insets = JBUI.insets(5);
+        addAzureComponentsSettingRow(panel, gbc, "Azure OpenAI Endpoint", createTextWithLinkButton(azureOpenAIEndpointField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
+        addAzureComponentsSettingRow(panel, gbc, "Azure OpenAI Deployment", createTextWithLinkButton(azureOpenAIDeploymentField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
+        addAzureComponentsSettingRow(panel, gbc, "Azure OpenAI API Key", createTextWithPasswordButton(azureOpenAIKeyField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
 
-        addSettingRow(azureOpenAISettingsPanel, azureGbc, "Azure OpenAI Endpoint", createTextWithLinkButton(azureOpenAIEndpointField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
-        addSettingRow(azureOpenAISettingsPanel, azureGbc, "Azure OpenAI Deployment", createTextWithLinkButton(azureOpenAIDeploymentField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
-        addSettingRow(azureOpenAISettingsPanel, azureGbc, "Azure OpenAI API Key", createTextWithPasswordButton(azureOpenAIKeyField, "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview"));
-
-        azureOpenAISettingsPanel.setVisible(enableAzureOpenAI.isSelected());
-
-        // Add Azure OpenAI Settings Panel to Main Panel
-        gbc.gridy++;
-        panel.add(azureOpenAISettingsPanel, gbc);
+        // Set initial visibility
+        boolean azureEnabled = enableAzureOpenAI.isSelected();
+        for (JComponent comp : azureComponents) {
+            comp.setVisible(azureEnabled);
+        }
     }
 
     private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
@@ -171,21 +168,37 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gbc.gridy++;
     }
 
+    private void addAzureComponentsSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        gbc.insets = JBUI.insets(5, 20, 5, 5); // Indent by 20 pixels on the left
+        JLabel jLabel = new JLabel(label);
+        panel.add(jLabel, gbc);
+        azureComponents.add(jLabel);
+
+        gbc.gridx = 1;
+        panel.add(component, gbc);
+        azureComponents.add(component);
+        gbc.gridy++;
+
+        gbc.insets = JBUI.insets(5);
+    }
+
     @Override
     public void addListeners() {
-        hideSearchButtonsField.addItemListener(e -> {
-            boolean selected = e.getStateChange() == ItemEvent.SELECTED;
+        hideSearchButtonsField.addItemListener(event -> {
+            boolean selected = event.getStateChange() == ItemEvent.SELECTED;
             tavilySearchApiKeyField.setEnabled(!selected);
             googleSearchApiKeyField.setEnabled(!selected);
             googleCSIApiKeyField.setEnabled(!selected);
         });
 
-        enableAzureOpenAI.addItemListener(e -> {
-            boolean selected = e.getStateChange() == ItemEvent.SELECTED;
-            azureOpenAISettingsPanel.setVisible(selected);
-            azureOpenAISettingsPanel.revalidate();
-            azureOpenAISettingsPanel.repaint();
+        enableAzureOpenAI.addItemListener(event -> {
+            azureComponents.forEach(comp -> comp.setVisible(event.getStateChange() == ItemEvent.SELECTED));
+            panel.revalidate();
+            panel.repaint();
         });
+
     }
 
     private @NotNull JComponent createTextWithPasswordButton(JComponent jComponent, String url) {
