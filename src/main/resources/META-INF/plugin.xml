@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.25</h2>
+        <UL>
+            <LI></LI>
+        </UL>
         <h2>v0.2.24</h2>
         <UL>
             <LI>Feat #206 : Support for JLama using REST API</LI>
