@@ -93,10 +93,10 @@ public class LMStudioChatModel implements ChatLanguageModel {
             .maxTokens(maxTokens);
 
         if (toolSpecifications != null && !toolSpecifications.isEmpty()) {
-            requestBuilder.functions(toFunctions(toolSpecifications));
+            requestBuilder.tools(toTools(toolSpecifications, false));
         }
         if (toolThatMustBeExecuted != null) {
-            requestBuilder.functionCall(toolThatMustBeExecuted.name());
+            requestBuilder.toolChoice(toolThatMustBeExecuted.name());
         }
 
         ChatCompletionRequest request = requestBuilder.build();
