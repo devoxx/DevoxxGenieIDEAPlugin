@@ -11,6 +11,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -29,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -94,12 +96,15 @@ public class ProjectScannerService {
      * @param project the project
      * @param startDirectory the start directory
      */
-    public void initGitignoreParser(Project project, VirtualFile startDirectory) {
-        VirtualFile gitignoreFile;
+    private void initGitignoreParser(Project project, VirtualFile startDirectory) {
+
+        VirtualFile gitignoreFile = null;
         if (startDirectory != null) {
             gitignoreFile = startDirectory.findChild(GITIGNORE);
+        } else if (project != null) {
+            gitignoreFile = Objects.requireNonNull(ProjectUtil.guessProjectDir(project)).findChild(GITIGNORE);
         } else {
-            gitignoreFile = project.getBaseDir().findChild(GITIGNORE);
+            LOG.error("Error initializing GitignoreParser: .gitignore file could not be found");
         }
 
         if (gitignoreFile != null && gitignoreFile.exists()) {
