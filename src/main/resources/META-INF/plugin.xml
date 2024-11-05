@@ -37,6 +37,7 @@
     <change-notes><![CDATA[
         <h2>v0.2.25</h2>
         <UL>
+            <LI>Fix #320 : Replace deprecated methods</LI>
             <LI>Feature #322: Add Claude 3.5 Haiku and update Claude 3.5 Sonnet version</LI>
         </UL>
         <h2>v0.2.24</h2>

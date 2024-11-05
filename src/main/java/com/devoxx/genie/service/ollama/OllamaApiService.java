@@ -25,8 +25,8 @@ public class OllamaApiService {
      */
     public static int getModelContext(@NotNull String modelName) throws IOException {
         RequestBody body = RequestBody.create(
-            MediaType.parse("application/json"),
-            "{\"name\":\"" + modelName + "\"}"
+            "{\"name\":\"" + modelName + "\"}",
+            MediaType.parse("application/json")
         );
 
         Request request = new Request.Builder()
