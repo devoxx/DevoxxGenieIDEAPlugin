@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.2.26</h2>
+        <UL>
+            <LI></LI>
+        </UL>
         <h2>v0.2.25</h2>
         <UL>
             <LI>Fix #320 : Replace deprecated methods</LI>
