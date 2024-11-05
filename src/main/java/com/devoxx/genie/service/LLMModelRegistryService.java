@@ -104,13 +104,24 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-sonnet-20240620",
+        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-sonnet-20241022",
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName("claude-3-5-sonnet-20240620")
+            .modelName("claude-3-5-sonnet-20241022")
             .displayName("Claude 3.5 Sonnet")
             .inputCost(3)
             .outputCost(15)
+            .contextWindow(200_000)
+            .apiKeyUsed(true)
+            .build());
+
+        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-haiku-20241022",
+            LanguageModel.builder()
+            .provider(ModelProvider.Anthropic)
+            .modelName("claude-3-5-haiku-20241022")
+            .displayName("Claude 3.5 Haiku")
+            .inputCost(1)
+            .outputCost(5)
             .contextWindow(200_000)
             .apiKeyUsed(true)
             .build());
