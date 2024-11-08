@@ -312,7 +312,15 @@ public class ProjectScannerService {
      * @return true if the file should be excluded, false otherwise
      */
     private boolean shouldExcludeFile(@NotNull VirtualFile file) {
-        if (DevoxxGenieStateService.getInstance().getUseGitIgnore()) {
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+
+        // Check if file is in excluded files list
+        if (settings.getExcludedFiles().contains(file.getName())) {
+            return true;
+        }
+
+        // Check gitignore if enabled
+        if (settings.getUseGitIgnore()) {
             if (gitignoreParser != null) {
                 Path path = Paths.get(file.getPath());
                 return gitignoreParser.matches(path);
@@ -329,9 +337,15 @@ public class ProjectScannerService {
      */
     private boolean shouldIncludeFile(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+
+        // First check if file should be excluded
+        if (shouldExcludeFile(file)) {
+            return false;
+        }
+
+        // Then check if extension is included
         String extension = file.getExtension();
-        boolean includedByExtension = extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
-        return includedByExtension && !shouldExcludeFile(file);
+        return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }
 
     /**
