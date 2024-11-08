@@ -30,7 +30,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
      * @param chatMessageContext the chat message context
      */
     public ChatStreamingResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
-        super(chatMessageContext.getName());
+        super(chatMessageContext.getId());
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(new ResponseHeaderPanel(chatMessageContext));

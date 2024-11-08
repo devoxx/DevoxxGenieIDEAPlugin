@@ -20,7 +20,7 @@ public class WarningPanel extends BackgroundPanel {
     public WarningPanel(String warning,
                         ChatMessageContext chatMessageContext) {
         super(warning);
-        setName(chatMessageContext.getName());
+        setName(chatMessageContext.getId());
         setLayout(new BorderLayout());
         withMaximumSize(1500, 75)
             .withBorder(BorderFactory.createCompoundBorder(

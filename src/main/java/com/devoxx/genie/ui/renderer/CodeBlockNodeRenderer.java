@@ -133,13 +133,6 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
             TextAttributes codeAttributes =
                 EditorColorsManager.getInstance().getGlobalScheme().getAttributes(HighlighterColors.TEXT).clone();
             codeAttributes.setBackgroundColor(null);
-
-//            highlightedAndEncodedAsHtmlCodeSnippet = new StringBuilder(
-//                HtmlSyntaxInfoUtil.appendStyledSpan(
-//                    highlightedAndEncodedAsHtmlCodeSnippet,
-//                    codeAttributes,
-//                    DocumentationSettings.getHighlightingSaturation(true)
-//                ));
         }
 
         return highlightedAndEncodedAsHtmlCodeSnippet.toString();
