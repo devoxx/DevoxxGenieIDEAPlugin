@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
