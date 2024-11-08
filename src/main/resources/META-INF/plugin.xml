@@ -38,6 +38,8 @@
         <h2>v0.2.27</h2>
         <UL>
             <LI>Feature #327: Test Driven Generation integration</LI>
+            <LI>Fix #324: Replace invocations of SwingUtilities.invokeLater()</LI>
+            <LI>Fix #236: Refactoring large class ActionButtonsPanel<LI>
         </UL>
         <h2>v0.2.26</h2>
         <UL>
