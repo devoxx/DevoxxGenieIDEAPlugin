@@ -35,39 +35,39 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         llmCostSettingsComponent = new LanguageModelCostSettingsComponent();
-        llmCostSettingsComponent.reset(); // This will load the current (including default) values
+        // llmCostSettingsComponent.reset(); // This will load the current (including default) values
         return llmCostSettingsComponent.createPanel();
     }
 
     @Override
     public boolean isModified() {
         List<LanguageModel> currentModels = stateService.getLanguageModels();
-        List<LanguageModel> modifiedModels = component.getModifiedModels();
+        // List<LanguageModel> modifiedModels = component.getModifiedModels();
 
-        if (currentModels.size() != modifiedModels.size()) {
-            return true;
-        }
-
-        for (int i = 0; i < currentModels.size(); i++) {
-            LanguageModel current = currentModels.get(i);
-            LanguageModel modified = modifiedModels.get(i);
-
-            if (!current.getProvider().equals(modified.getProvider()) ||
-                !current.getModelName().equals(modified.getModelName()) ||
-                current.getInputCost() != modified.getInputCost() ||
-                current.getOutputCost() != modified.getOutputCost() ||
-                current.getContextWindow() != modified.getContextWindow()) {
-                return true;
-            }
-        }
+//        if (currentModels.size() != modifiedModels.size()) {
+//            return true;
+//        }
+//
+//        for (int i = 0; i < currentModels.size(); i++) {
+//            LanguageModel current = currentModels.get(i);
+//            LanguageModel modified = modifiedModels.get(i);
+//
+//            if (!current.getProvider().equals(modified.getProvider()) ||
+//                !current.getModelName().equals(modified.getModelName()) ||
+//                current.getInputCost() != modified.getInputCost() ||
+//                current.getOutputCost() != modified.getOutputCost() ||
+//                current.getContextWindow() != modified.getContextWindow()) {
+//                return true;
+//            }
+//        }
 
         return false;
     }
 
     @Override
     public void apply() {
-        List<LanguageModel> modifiedModels = component.getModifiedModels();
-        stateService.setLanguageModels(modifiedModels);
+        // List<LanguageModel> modifiedModels = component.getModifiedModels();
+        // stateService.setLanguageModels(modifiedModels);
 
         // Notify listeners that settings have changed
         messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).settingsChanged();
@@ -75,6 +75,6 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
 
     @Override
     public void reset() {
-        llmCostSettingsComponent.reset();
+        // llmCostSettingsComponent.reset();
     }
 }
