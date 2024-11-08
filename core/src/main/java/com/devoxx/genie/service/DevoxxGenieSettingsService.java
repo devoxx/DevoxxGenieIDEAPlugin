@@ -90,6 +90,8 @@ public interface DevoxxGenieSettingsService {
 
     Integer getDefaultWindowContext();
 
+    List<String> getExcludedFiles();
+
     void setCustomPrompts(List<CustomPrompt> customPrompts);
 
     void setLanguageModels(List<LanguageModel> languageModels);
