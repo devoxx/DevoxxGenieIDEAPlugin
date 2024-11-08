@@ -172,11 +172,7 @@ public interface DevoxxGenieSettingsService {
 
     void setDefaultWindowContext(Integer context);
 
-    void setModelCost(ModelProvider provider, String modelName, double inputCost, double outputCost);
-
     void setModelWindowContext(ModelProvider provider, String modelName, int windowContext);
-
-    double getModelInputCost(ModelProvider provider, String modelName);
 
     String getLlamaCPPUrl();
 

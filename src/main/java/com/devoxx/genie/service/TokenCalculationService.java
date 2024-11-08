@@ -3,15 +3,14 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
-import com.google.common.util.concurrent.AtomicDouble;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class TokenCalculationService {
@@ -79,11 +78,15 @@ public class TokenCalculationService {
                                           @NotNull ModelProvider selectedProvider,
                                           @NotNull LanguageModel languageModel,
                                           @NotNull CompletableFuture<ScanContentResult> contentFuture) {
-        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
-        AtomicDouble inputCost = new AtomicDouble(settings.getModelInputCost(selectedProvider, languageModel.getModelName()));
+        Optional<Double> inputCost = LLMModelRegistryService.getInstance().getModels()
+            .stream()
+            .filter(model -> model.getProvider().getName().equals(selectedProvider.getName()) &&
+                            model.getModelName().equals(languageModel.getModelName()))
+            .findFirst()
+            .map(LanguageModel::getInputCost);
 
-        contentFuture.thenAccept(scanResult -> {
-            double estimatedInputCost = calculateCost(scanResult.getTokenCount(), inputCost.get());
+        inputCost.ifPresentOrElse(aDouble -> contentFuture.thenAccept(scanResult -> {
+            double estimatedInputCost = calculateCost(scanResult.getTokenCount(), aDouble);
             String message;
             if (scanResult.getSkippedFileCount() > 0 || scanResult.getSkippedDirectoryCount() > 0) {
                 message = String.format("%s Estimated cost using %s %s is $%.5f",
@@ -108,7 +111,9 @@ public class TokenCalculationService {
                 message += String.format(". Total project size exceeds model's max context of %s tokens.",
                     WindowContextFormatterUtil.format(languageModel.getContextWindow()));
             }
-
+            NotificationUtil.sendNotification(project, message);
+        }), () -> {
+            String message = "No input cost found for the selected model.";
             NotificationUtil.sendNotification(project, message);
         });
     }

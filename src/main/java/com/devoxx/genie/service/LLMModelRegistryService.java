@@ -104,10 +104,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-sonnet-20241022",
+        String claudeSonnet35 = "claude-3-5-sonnet-20241022";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet35,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName("claude-3-5-sonnet-20241022")
+            .modelName(claudeSonnet35)
             .displayName("Claude 3.5 Sonnet")
             .inputCost(3)
             .outputCost(15)
@@ -115,10 +116,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-claude-3-5-haiku-20241022",
+        String claudeHaiku35 = "claude-3-5-haiku-20241022";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku35,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName("claude-3-5-haiku-20241022")
+            .modelName(claudeHaiku35)
             .displayName("Claude 3.5 Haiku")
             .inputCost(1)
             .outputCost(5)
@@ -560,9 +562,7 @@ public final class LLMModelRegistryService {
         OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
         String apiKey = openRouterChatModelFactory.getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
-            new OpenRouterChatModelFactory().getModels().forEach(model -> {
-                languageModels.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model);
-            });
+            new OpenRouterChatModelFactory().getModels().forEach(model -> languageModels.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
         }
     }
 
