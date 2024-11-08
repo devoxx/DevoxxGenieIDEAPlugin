@@ -37,6 +37,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     private final ConversationHistoryPanel historyPanel;
     private final PromptOutputPanel promptOutputPanel;
     private final JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+    private JBPopup historyPopup;
 
     /**
      * The conversation panel constructor.
@@ -88,6 +89,9 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     }
 
     public void onConversationSelected(Conversation conversation) {
+        if (historyPopup != null && historyPopup.isVisible()) {
+            historyPopup.closeOk(null);
+        }
         promptOutputPanel.displayConversation(project, conversation);
     }
 
@@ -132,7 +136,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     }
 
     private void showConversationHistory() {
-        JBPopup popup = JBPopupFactory.getInstance()
+        historyPopup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(historyPanel, null)
             .setTitle("Conversation History")
             .setMovable(true)
@@ -149,6 +153,6 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         SwingUtilities.convertPointToScreen(screenPoint, settingsBtn.getParent());
 
         // Show the popup at the calculated position
-        popup.show(new RelativePoint(screenPoint));
+        historyPopup.show(new RelativePoint(screenPoint));
     }
 }

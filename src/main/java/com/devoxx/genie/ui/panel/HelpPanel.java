@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.components.JBScrollPane;
 
 import javax.swing.*;
@@ -32,7 +33,7 @@ public class HelpPanel extends BackgroundPanel {
     }
 
     private void updatePanelSize() {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             int preferredHeight = calculatePreferredHeight();
             setPreferredSize(new Dimension(getWidth(), preferredHeight));
             revalidate();

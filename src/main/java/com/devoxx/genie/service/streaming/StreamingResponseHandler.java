@@ -67,7 +67,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
 
     private void addExpandablePanelIfNeeded() {
         if (chatMessageContext.hasFiles()) {
-            SwingUtilities.invokeLater(() -> {
+            ApplicationManager.getApplication().invokeLater(() -> {
                 ExpandablePanel fileListPanel =
                     new ExpandablePanel(chatMessageContext, FileListManager.getInstance().getFiles());
                 fileListPanel.setName(chatMessageContext.getName());

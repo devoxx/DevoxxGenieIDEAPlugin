@@ -83,7 +83,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
         scrollPane.setVisible(true);
 
         // Ensure the scroll pane is at the top when shown
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
             verticalScrollBar.setValue(verticalScrollBar.getMinimum());
         });

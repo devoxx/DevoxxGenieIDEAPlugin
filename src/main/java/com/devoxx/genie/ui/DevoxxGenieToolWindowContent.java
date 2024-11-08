@@ -21,6 +21,7 @@ import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -314,7 +315,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         }
 
         if (selectedProvider == ModelProvider.LMStudio || selectedProvider == ModelProvider.Ollama || selectedProvider == ModelProvider.Jan) {
-            SwingUtilities.invokeLater(() -> {
+            ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 
                 ChatModelFactory factory = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
@@ -375,7 +376,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
         chatService.startNewConversation("");
 
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             conversationPanel.updateNewConversationLabel();
             promptInputArea.clear();
             promptOutputPanel.clear();
@@ -487,7 +488,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     @Override
     public void onCustomPromptsChanged() {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             // Update the help panel or any other UI components that display custom prompts
             if (promptOutputPanel != null) {
                 promptOutputPanel.updateHelpText();

@@ -74,7 +74,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
      * @param token the LLM string token
      */
     public void insertToken(String token) {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             markdownContent.append(token);
             String fullHtmlContent = renderer.render(parser.parse(markdownContent.toString()));
             editorPane.setText(fullHtmlContent);
