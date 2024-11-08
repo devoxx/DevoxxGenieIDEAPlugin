@@ -5,6 +5,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.util.LLMProviderUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
@@ -185,7 +186,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         newRow.add(0.0);
         newRow.add(8000);
         tableModel.addRow(newRow);
-        SwingUtilities.invokeLater(this::scrollToBottom);
+        ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
     }
 
     private void scrollToBottom() {

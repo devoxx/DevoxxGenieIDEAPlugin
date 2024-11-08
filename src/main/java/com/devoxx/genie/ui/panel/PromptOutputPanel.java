@@ -8,6 +8,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.HelpUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -118,7 +119,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     private void scrollToBottom() {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             Timer timer = new Timer(100, e -> {
                 JScrollBar vertical = scrollPane.getVerticalScrollBar();
                 vertical.setValue(vertical.getMaximum());
@@ -133,7 +134,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
     }
 
     public void displayConversation(Project project, Conversation conversation) {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             String conversationId = UUID.randomUUID().toString();
             for (ChatMessage message : conversation.getMessages()) {
                 conversation.setId(conversationId);

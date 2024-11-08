@@ -28,6 +28,9 @@ public class EditorFileButtonManager {
             FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                    if (addFileBtn == null) {
+                        return;
+                    }
                     addFileBtn.setEnabled(true);
                     addFileBtn.setToolTipText("Select file(s) for prompt context");
                 }

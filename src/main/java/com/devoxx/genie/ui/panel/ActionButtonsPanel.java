@@ -1,11 +1,11 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.chatmodel.ChatModelProvider;
+import com.devoxx.genie.controller.ActionPanelController;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.*;
+import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.service.TokenCalculationService;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -18,7 +18,6 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
-import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -30,7 +29,6 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.EncodingType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,13 +39,11 @@ import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
-import static javax.swing.SwingUtilities.invokeLater;
 
 public class ActionButtonsPanel extends JPanel implements SettingsChangeListener, PromptSubmissionListener {
 
     private final Project project;
 
-    private final ChatPromptExecutor chatPromptExecutor;
     private final EditorFileButtonManager editorFileButtonManager;
     private final JPanel calcProjectPanel = new JPanel(new GridLayout(1, 2));
 
@@ -59,21 +55,19 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final JButton calcTokenCostBtn = new JHoverButton("Calc tokens/cost", CalculateIcon, true);
 
     private final PromptInputArea promptInputArea;
-    private final PromptOutputPanel promptOutputPanel;
     private final ComboBox<ModelProvider> llmProvidersComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final TokenUsageBar tokenUsageBar = new TokenUsageBar();
     private int tokenCount;
 
     private final DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
-    private final ChatModelProvider chatModelProvider = new ChatModelProvider();
 
-    private boolean isPromptRunning = false;
     private boolean isProjectContextAdded = false;
-    private ChatMessageContext currentChatMessageContext;
     private String projectContext;
 
     private final TokenCalculationService tokenCalculationService;
+
+    private final ActionPanelController controller;
 
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputArea,
@@ -83,10 +77,17 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                               DevoxxGenieToolWindowContent devoxxGenieToolWindowContent) {
         setLayout(new BorderLayout());
 
+        this.controller = new ActionPanelController(
+            project,
+            promptInputArea,
+            promptOutputPanel,
+            llmProvidersComboBox,
+            modelNameComboBox,
+            this
+        );
+
         this.project = project;
         this.promptInputArea = promptInputArea;
-        this.promptOutputPanel = promptOutputPanel;
-        this.chatPromptExecutor = new ChatPromptExecutor(promptInputArea);
         this.editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
         this.llmProvidersComboBox = llmProvidersComboBox;
         this.modelNameComboBox = modelNameComboBox;
@@ -94,11 +95,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
         this.tokenCalculationService = new TokenCalculationService();
 
+        setupUI();
+
         MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
-
-        setupUI();
     }
 
     private void updateAddProjectButtonVisibility() {
@@ -185,55 +186,46 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        if (isPromptRunning) {
-            stopPromptExecution();
+        if (controller.isPromptRunning()) {
+            controller.stopPromptExecution();
             return;
         }
 
-        if (!validateAndPreparePrompt(actionEvent)) {
-            return;
-        }
-
-        executePrompt();
-    }
-
-    /**
-     * Execute the prompt.
-     */
-    private void executePrompt() {
         disableUIForPromptExecution();
 
-        chatPromptExecutor.updatePromptWithCommandIfPresent(currentChatMessageContext, promptOutputPanel)
-            .ifPresentOrElse(
-                command -> startPromptExecution(),
-                this::enableButtons
-            );
+        boolean response = controller.executePrompt(actionEvent.getActionCommand(), isProjectContextAdded, projectContext);
+        if (!response) {
+            enableButtons();
+        }
     }
 
-    /**
-     * Start the prompt execution.
-     */
-    private void startPromptExecution() {
-        isPromptRunning = true;
+    private void disableUIForPromptExecution() {
+        disableSubmitBtn();
+        disableButtons();
         promptInputArea.startGlowing();
-        chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, this::enableButtons);
     }
 
-    /**
-     * Stop the prompt execution.
-     */
-    private void stopPromptExecution() {
-        chatPromptExecutor.stopPromptExecution(project);
-        isPromptRunning = false;
-        enableButtons();
+    public void enableButtons() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            submitBtn.setIcon(SubmitIcon);
+            submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
+            promptInputArea.setEnabled(true);
+            promptInputArea.stopGlowing();
+        });
+    }
+
+    private void disableSubmitBtn() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            submitBtn.setIcon(StopIcon);
+            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
+        });
+    }
+
+    private void disableButtons() {
+        promptInputArea.setEnabled(false);
     }
 
     public void resetProjectContext() {
-        projectContext = null;
-        isProjectContextAdded = false;
-        if (currentChatMessageContext != null) {
-            currentChatMessageContext.setContext(null);
-        }
         updateAddProjectButton();
     }
 
@@ -258,125 +250,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private boolean isProjectContextSupportedProvider() {
         ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
         return selectedProvider != null && isSupportedProvider(selectedProvider);
-    }
-
-    /**
-     * get the user prompt text.
-     */
-    private @Nullable String getUserPromptText() {
-        String userPromptText = promptInputArea.getText();
-        if (userPromptText.isEmpty()) {
-            NotificationUtil.sendNotification(project, "Please enter a prompt.");
-            return null;
-        }
-        return userPromptText;
-    }
-
-    /**
-     * Disable the UI for prompt execution.
-     */
-    private void disableUIForPromptExecution() {
-        disableSubmitBtn();
-        disableButtons();
-        promptInputArea.startGlowing();
-    }
-
-    /**
-     * Validate and prepare the prompt.
-     *
-     * @param actionEvent the action event
-     * @return true if the prompt is valid
-     */
-    private boolean validateAndPreparePrompt(ActionEvent actionEvent) {
-        String userPromptText = getUserPromptText();
-        if (userPromptText == null) {
-            return false;
-        }
-
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        LanguageModel selectedLanguageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
-
-        // If selectedLanguageModel is null, create a default one
-        if (selectedLanguageModel == null) {
-            selectedLanguageModel = createDefaultLanguageModel(stateService);
-        }
-
-        currentChatMessageContext = ChatMessageContextUtil.createContext(
-            project,
-            userPromptText,
-            selectedLanguageModel,
-            chatModelProvider,
-            stateService,
-            actionEvent.getActionCommand(),
-            editorFileButtonManager,
-            projectContext,
-            isProjectContextAdded
-        );
-
-        return true;
-    }
-
-    /**
-     * Create a default language model.
-     *
-     * @param stateService the state service
-     * @return the default language model
-     */
-    private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieSettingsService stateService) {
-        ModelProvider selectedProvider = (ModelProvider) llmProvidersComboBox.getSelectedItem();
-        if (selectedProvider != null &&
-            (selectedProvider.equals(ModelProvider.LMStudio) ||
-             selectedProvider.equals(ModelProvider.GPT4All) ||
-             selectedProvider.equals(ModelProvider.Jlama) ||
-             selectedProvider.equals(ModelProvider.LLaMA))) {
-            return LanguageModel.builder()
-                .provider(selectedProvider)
-                .apiKeyUsed(false)
-                .inputCost(0)
-                .outputCost(0)
-                .contextWindow(4096)
-                .build();
-        } else {
-            String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
-            return LanguageModel.builder()
-                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
-                .modelName(modelName)
-                .apiKeyUsed(false)
-                .inputCost(0)
-                .outputCost(0)
-                .contextWindow(128_000)
-                .build();
-        }
-    }
-
-    /**
-     * Enable the prompt input component and reset the Submit button icon.
-     */
-    public void enableButtons() {
-        SwingUtilities.invokeLater(() -> {
-            submitBtn.setIcon(SubmitIcon);
-            submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
-            promptInputArea.setEnabled(true);
-            isPromptRunning = false;
-            promptInputArea.stopGlowing();
-        });
-    }
-
-    /**
-     * Disable the Submit button.
-     */
-    private void disableSubmitBtn() {
-        invokeLater(() -> {
-            submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
-        });
-    }
-
-    /**
-     * Disable the prompt input component.
-     */
-    private void disableButtons() {
-        promptInputArea.setEnabled(false);
     }
 
     /**
@@ -470,7 +343,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             .thenAccept(projectContent -> {
                 projectContext = "Project Context:\n" + projectContent.getContent();
                 isProjectContextAdded = true;
-                SwingUtilities.invokeLater(() -> {
+                ApplicationManager.getApplication().invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);
                     tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent.getContent());
                     addProjectBtn.setText("Full Project (" + WindowContextFormatterUtil.format(tokenCount, "tokens") + ")");
@@ -481,7 +354,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 });
             })
             .exceptionally(ex -> {
-                SwingUtilities.invokeLater(() -> {
+                ApplicationManager.getApplication().invokeLater(() -> {
                     addProjectBtn.setEnabled(true);
                     tokenUsageBar.setVisible(false);
                     NotificationUtil.sendNotification(project, "Error adding project content: " + ex.getMessage());
@@ -535,11 +408,11 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     public void updateTokenUsage(int maxTokens) {
-        SwingUtilities.invokeLater(() -> tokenUsageBar.setMaxTokens(maxTokens));
+        ApplicationManager.getApplication().invokeLater(() -> tokenUsageBar.setMaxTokens(maxTokens));
     }
 
     public void resetTokenUsageBar() {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             tokenUsageBar.reset();
             tokenCount = 0;
         });
@@ -550,7 +423,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         if (!this.project.getName().equals(projectPrompt.getName())) {
             return;
         }
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             promptInputArea.setText(prompt);
             onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
         });

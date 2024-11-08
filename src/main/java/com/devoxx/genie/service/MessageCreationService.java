@@ -26,7 +26,6 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
  */
 public class MessageCreationService {
 
-
     public static final String CONTEXT_PROMPT = "Context: \n";
 
     @NotNull

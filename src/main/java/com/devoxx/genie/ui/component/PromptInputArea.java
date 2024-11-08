@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
@@ -91,7 +92,7 @@ public class PromptInputArea extends JPanel {
     }
 
     public void requestInputFocus() {
-        SwingUtilities.invokeLater(() -> {
+        ApplicationManager.getApplication().invokeLater(() -> {
             inputField.requestFocusInWindow();
             inputField.setCaretPosition(inputField.getText().length());
         });

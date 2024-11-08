@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.component;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupListener;
 import com.intellij.openapi.ui.popup.LightweightWindowEvent;
@@ -33,6 +34,6 @@ public class ContextPopupMenu {
         });
 
         // Ensure this is on the EDT
-        SwingUtilities.invokeLater(() -> popup.show(northWest));
+        ApplicationManager.getApplication().invokeLater(() -> popup.show(northWest));
     }
 }
