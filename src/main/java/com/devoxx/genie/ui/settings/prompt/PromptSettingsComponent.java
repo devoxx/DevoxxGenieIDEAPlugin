@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.model.CustomPrompt;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.dialog.CustomPromptDialog;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -26,7 +25,6 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-    private final int NAME_COLUMN = 0;
     private final int PROMPT_COLUMN = 1;
 
     @Getter
@@ -72,9 +70,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         gbc.insets = JBUI.insets(5);
 
         addSection(panel, gbc, "Prompts");
-
         addPromptArea(panel, gbc, "System prompt", systemPromptField);
-
         addSection(panel, gbc, "Custom Prompts");
 
         gbc.gridy++;
@@ -165,6 +161,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     }
 
     public List<CustomPrompt> getCustomPrompts() {
+        int NAME_COLUMN = 0;
         List<CustomPrompt> prompts = new ArrayList<>();
         for (int i = 0; i < customPromptsTableModel.getRowCount(); i++) {
             String name = (String) customPromptsTableModel.getValueAt(i, NAME_COLUMN);

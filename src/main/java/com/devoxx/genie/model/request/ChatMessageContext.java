@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ChatMessageContext {
     private final LocalDateTime createdOn = LocalDateTime.now();
-    private String name;
+    private String id;
     private Project project;
     private Integer timeout;
     private String userPrompt;
@@ -30,6 +30,7 @@ public class ChatMessageContext {
     private int totalFileCount;
     private long executionTimeMs;
     private TokenUsage tokenUsage;
+    private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
     private double cost;
 
     @Builder.Default

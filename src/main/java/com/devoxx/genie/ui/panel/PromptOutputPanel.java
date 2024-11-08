@@ -84,14 +84,14 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
             userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         }
 
-        addFiller(chatMessageContext.getName());
+        addFiller(chatMessageContext.getId());
         container.add(userPromptPanel);
         scrollToBottom();
     }
 
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
-        addFiller(chatMessageContext.getName());
+        addFiller(chatMessageContext.getId());
         container.add(new ChatResponsePanel(chatMessageContext));
         scrollToBottom();
     }
@@ -108,7 +108,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
 
     public void removeLastUserPrompt(ChatMessageContext chatMessageContext) {
         for (Component component : container.getComponents()) {
-            if (component instanceof UserPromptPanel && component.getName().equals(chatMessageContext.getName())) {
+            if (component instanceof UserPromptPanel && component.getName().equals(chatMessageContext.getId())) {
                 container.remove(component);
                 break;
             }
@@ -153,7 +153,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
                                                         @NotNull Conversation conversation,
                                                         @NotNull ChatMessage message) {
         return ChatMessageContext.builder()
-            .name(conversation.getId())
+            .id(conversation.getId())
             .project(project)
             .userPrompt(message.isUser() ? message.getContent() : "")
             .aiMessage(message.isUser() ? null : AiMessage.aiMessage(message.getContent()))

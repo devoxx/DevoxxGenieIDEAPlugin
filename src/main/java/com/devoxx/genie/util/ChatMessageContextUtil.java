@@ -42,7 +42,7 @@ public class ChatMessageContextUtil {
                                                             boolean isProjectContextAdded) {
         ChatMessageContext context = ChatMessageContext.builder()
             .project(project)
-            .name(String.valueOf(System.currentTimeMillis()))
+            .id(String.valueOf(System.currentTimeMillis()))
             .userPrompt(userPromptText)
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
