@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.FileTypeUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -61,7 +62,7 @@ public class ChatPromptExecutor {
                     new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
-                        SwingUtilities.invokeLater(() -> {
+                        ApplicationManager.getApplication().invokeLater(() -> {
                             promptInputArea.clear();
                             promptInputArea.requestInputFocus();
                         });
@@ -70,7 +71,7 @@ public class ChatPromptExecutor {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
-                        SwingUtilities.invokeLater(() -> {
+                        ApplicationManager.getApplication().invokeLater(() -> {
                             promptInputArea.clear();
                             promptInputArea.requestInputFocus();
                         });
@@ -79,7 +80,7 @@ public class ChatPromptExecutor {
                     nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
-                        SwingUtilities.invokeLater(() -> {
+                        ApplicationManager.getApplication().invokeLater(() -> {
                             promptInputArea.clear();
                             promptInputArea.requestInputFocus();
                         });
