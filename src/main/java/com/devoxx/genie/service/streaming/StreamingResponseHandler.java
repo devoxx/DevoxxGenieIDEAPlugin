@@ -13,8 +13,6 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.output.Response;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
-
 public class StreamingResponseHandler implements dev.langchain4j.model.StreamingResponseHandler<AiMessage> {
     private final ChatMessageContext chatMessageContext;
     private final Runnable enableButtons;
@@ -70,7 +68,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
             ApplicationManager.getApplication().invokeLater(() -> {
                 ExpandablePanel fileListPanel =
                     new ExpandablePanel(chatMessageContext, FileListManager.getInstance().getFiles());
-                fileListPanel.setName(chatMessageContext.getName());
+                fileListPanel.setName(chatMessageContext.getId());
                 promptOutputPanel.addStreamFileReferencesResponse(fileListPanel);
             });
         }

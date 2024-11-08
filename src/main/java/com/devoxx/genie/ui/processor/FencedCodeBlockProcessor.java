@@ -27,7 +27,6 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Process the fenced code block.
-     *
      * @return the panel
      */
     @Override
@@ -43,8 +42,8 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
         overlayPanel.setOpaque(true);
 
         // Add components to the overlay panel in the correct order
-        overlayPanel.add(editorPane, BorderLayout.CENTER);  // Editor pane at the bottom
-        overlayPanel.add(codeSnippetAction.createClipBoardButtonPanel(fencedCodeBlock), BorderLayout.NORTH); // Button panel on top
+        overlayPanel.add(editorPane, BorderLayout.CENTER);
+        overlayPanel.add(codeSnippetAction.createClipBoardButtonPanel(chatMessageContext, fencedCodeBlock), BorderLayout.NORTH);
 
         return overlayPanel;
     }

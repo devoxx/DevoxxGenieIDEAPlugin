@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +37,6 @@ public class ChatPromptExecutor {
 
     /**
      * Execute the prompt.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -92,13 +90,12 @@ public class ChatPromptExecutor {
 
     /**
      * Process possible command prompt.
-     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      */
     public Optional<String> updatePromptWithCommandIfPresent(@NotNull ChatMessageContext chatMessageContext,
                                                              PromptOutputPanel promptOutputPanel) {
-        Optional<String> commandFromPrompt = getCommandFromPrompt(chatMessageContext.getUserPrompt().trim(), promptOutputPanel);
+        Optional<String> commandFromPrompt = getCommandFromPrompt(chatMessageContext, promptOutputPanel);
         chatMessageContext.setUserPrompt(commandFromPrompt.orElse(chatMessageContext.getUserPrompt()));
 
         // Ensure that EditorInfo is set in the ChatMessageContext
@@ -109,6 +106,11 @@ public class ChatPromptExecutor {
         return commandFromPrompt;
     }
 
+    /**
+     * Get the editor info.
+     * @param project the project
+     * @return the editor info
+     */
     private @NotNull EditorInfo getEditorInfo(Project project) {
         EditorInfo editorInfo = new EditorInfo();
         FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
@@ -132,7 +134,6 @@ public class ChatPromptExecutor {
 
     /**
      * Stop streaming or the non-streaming prompt execution
-     *
      * @param project the project
      */
     public void stopPromptExecution(Project project) {
@@ -145,21 +146,21 @@ public class ChatPromptExecutor {
 
     /**
      * Get the command from the prompt.
-     *
-     * @param prompt            the prompt
+     * @param chatMessageContext the chat message context
      * @param promptOutputPanel the prompt output panel
      * @return the command
      */
-    private Optional<String> getCommandFromPrompt(@NotNull String prompt,
+    private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
                                                   PromptOutputPanel promptOutputPanel) {
+        String prompt = chatMessageContext.getUserPrompt().trim();
         if (prompt.startsWith("/")) {
             DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
             // Check for custom prompts
             for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
                 if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {
-                    prompt = customPrompt.getPrompt();
-                    return Optional.of(prompt);
+                    chatMessageContext.setCommandName(customPrompt.getName());
+                    return Optional.of(customPrompt.getPrompt());
                 }
             }
             promptOutputPanel.showHelpText();

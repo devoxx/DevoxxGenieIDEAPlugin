@@ -36,7 +36,7 @@ public class ChatResponsePanel extends BackgroundPanel {
      * @param chatMessageContext the chat message context
      */
     public ChatResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
-        super(chatMessageContext.getName());
+        super(chatMessageContext.getId());
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         this.chatMessageContext = chatMessageContext;

@@ -16,14 +16,12 @@ public interface NodeProcessor {
 
     /**
      * Process the node.
-     *
      * @return the panel
      */
     JPanel processNode();
 
     /**
      * Create an editor pane.
-     *
      * @param htmlResponse the HTML response
      * @return the editor pane
      */
@@ -39,7 +37,6 @@ public interface NodeProcessor {
 
     /**
      * Create an HTML renderer.
-     *
      * @return the HTML renderer
      */
     default HtmlRenderer createHtmlRenderer(Project project) {
