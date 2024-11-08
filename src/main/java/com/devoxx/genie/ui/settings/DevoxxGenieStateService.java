@@ -151,51 +151,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         loadListeners.add(listener);
     }
 
-    public void setModelCost(ModelProvider provider,
-                             String modelName,
-                             double inputCost,
-                             double outputCost) {
-        if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(provider)) {
-            String key = provider.getName() + ":" + modelName;
-            modelInputCosts.put(key, inputCost);
-            modelOutputCosts.put(key, outputCost);
-        }
-    }
-
-    public double getModelInputCost(@NotNull ModelProvider provider, String modelName) {
-        String key = provider.getName() + ":" + modelName;
-        double cost = modelInputCosts.getOrDefault(key, 0.0);
-        if (cost == 0.0) {
-            DefaultLLMSettingsUtil.CostKey costKey = new DefaultLLMSettingsUtil.CostKey(provider, modelName);
-            cost = DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.getOrDefault(costKey, 0.0);
-            if (cost == 0.0) {
-                // Fallback to similar model names
-                for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
-                    if (entry.getKey().provider == provider && entry.getKey().modelName.startsWith(modelName.split("-")[0])) {
-                        cost = entry.getValue();
-                        break;
-                    }
-                }
-            }
-        }
-        return cost;
-    }
-
     private void initializeDefaultCostsIfEmpty() {
-//        if (modelInputCosts.isEmpty()) {
-//            DefaultLLMSettingsUtil.initializeDefaultCosts();
-            for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
-                String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
-                modelInputCosts.put(key, entry.getValue());
-            }
-//        }
-//        if (modelOutputCosts.isEmpty()) {
-//            DefaultLLMSettingsUtil.initializeDefaultCosts();
-            for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.entrySet()) {
-                String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
-                modelOutputCosts.put(key, entry.getValue());
-            }
-//        }
+        for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
+            String key = entry.getKey().provider().getName() + ":" + entry.getKey().modelName();
+            modelInputCosts.put(key, entry.getValue());
+        }
+        for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.entrySet()) {
+            String key = entry.getKey().provider().getName() + ":" + entry.getKey().modelName();
+            modelOutputCosts.put(key, entry.getValue());
+        }
     }
 
     public void setModelWindowContext(ModelProvider provider, String modelName, int windowContext) {

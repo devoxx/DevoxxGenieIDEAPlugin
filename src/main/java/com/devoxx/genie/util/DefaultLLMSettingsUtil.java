@@ -1,8 +1,6 @@
 package com.devoxx.genie.util;
 
-import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.LLMModelRegistryService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,35 +34,24 @@ public class DefaultLLMSettingsUtil {
                 provider == ModelProvider.Groq ||
                 provider == ModelProvider.DeepInfra ||
                 provider == ModelProvider.Google ||
+                provider == ModelProvider.OpenRouter ||
                 provider == ModelProvider.AzureOpenAI;
     }
 
-    public static class CostKey {
-        public final ModelProvider provider;
-        public final String modelName;
-
-        public CostKey(ModelProvider provider, String modelName) {
-            this.provider = provider;
-            this.modelName = modelName;
-        }
+    public record CostKey(ModelProvider provider, String modelName) {
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            CostKey costKey = (CostKey) o;
-            return provider == costKey.provider &&
-                Objects.equals(modelName, costKey.modelName);
-        }
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                CostKey costKey = (CostKey) o;
+                return provider == costKey.provider &&
+                    Objects.equals(modelName, costKey.modelName);
+            }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(provider, modelName);
+            public String toString() {
+                return "CostKey{provider=" + provider + ", modelName='" + modelName + "'}";
+            }
         }
-
-        @Override
-        public String toString() {
-            return "CostKey{provider=" + provider + ", modelName='" + modelName + "'}";
-        }
-    }
 }

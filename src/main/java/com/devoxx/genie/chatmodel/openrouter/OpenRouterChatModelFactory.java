@@ -16,6 +16,8 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
 
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private List<LanguageModel> cachedModels = null;
+    private static final int PRICE_SCALING_FACTOR = 1_000_000; // To convert to per million tokens
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -78,12 +81,16 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             List<Data> models = OpenRouterService.getInstance().getModels();
             for (Data model : models) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    // Convert scientific notation prices to regular decimals and scale to per million tokens
+                    double inputCost = convertAndScalePrice(model.getPricing().getPrompt());
+                    double outputCost = convertAndScalePrice(model.getPricing().getCompletion());
+
                     LanguageModel languageModel = LanguageModel.builder()
                         .provider(ModelProvider.OpenRouter)
                         .modelName(model.getId())
                         .displayName(model.getName())
-                        .inputCost(model.getPricing().getPrompt())
-                        .outputCost(model.getPricing().getCompletion())
+                        .inputCost(inputCost)
+                        .outputCost(outputCost)
                         .contextWindow(model.getContextLength() == null ? model.getTopProvider().getContextLength() : model.getContextLength())
                         .apiKeyUsed(true)
                         .build();
@@ -102,5 +109,15 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             cachedModels = List.of();
         }
         return cachedModels;
+    }
+
+    private double convertAndScalePrice(double price) {
+        // Convert the price to BigDecimal for precise calculation
+        BigDecimal bd = BigDecimal.valueOf(price);
+        // Multiply by 1,000,000 to get price per million tokens
+        bd = bd.multiply(BigDecimal.valueOf(PRICE_SCALING_FACTOR));
+        // Round to 6 decimal places
+        bd = bd.setScale(6, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

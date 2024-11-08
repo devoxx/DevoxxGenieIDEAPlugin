@@ -552,18 +552,20 @@ public final class LLMModelRegistryService {
             .build());
     }
 
-    public @NotNull List<LanguageModel> getModels() {
-        Map<String, LanguageModel> languageModels = new HashMap<>(models);
-        addOpenRouterModels(languageModels);
-        return new ArrayList<>(languageModels.values());
-    }
+    @NotNull
+    public List<LanguageModel> getModels() {
+        // Create a copy of the current models
+        Map<String, LanguageModel> modelsCopy = new HashMap<>(models);
 
-    private static void addOpenRouterModels(Map<String, LanguageModel> languageModels) {
+        // Add OpenRouter models if API key exists
         OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
         String apiKey = openRouterChatModelFactory.getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
-            new OpenRouterChatModelFactory().getModels().forEach(model -> languageModels.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
+            openRouterChatModelFactory.getModels().forEach(model ->
+                modelsCopy.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
         }
+
+        return new ArrayList<>(modelsCopy.values());
     }
 
     public void setModels(Map<String, LanguageModel> models) {
