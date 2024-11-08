@@ -113,7 +113,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
 
             super.insertString(offs, str, a);
 
-            SwingUtilities.invokeLater(() -> {
+            ApplicationManager.getApplication().invokeLater(() -> {
                 try {
                     String text = getText(0, getLength());
                     String[] lines = text.split("\n");

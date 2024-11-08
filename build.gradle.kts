@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.2.26"
+version = "0.2.27"
 
 repositories {
     mavenCentral()
@@ -55,6 +55,15 @@ dependencies {
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
+
+    // TDG : Add Log4j dependencies
+    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
+
+    // TDG : Add other TDG dependencies
+    implementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
+    implementation("org.junit.jupiter:junit-jupiter-engine:5.11.3")
+    implementation("org.junit.platform:junit-platform-launcher:1.11.3")
 
     compileOnly("org.projectlombok:lombok:1.18.34")
     annotationProcessor("org.projectlombok:lombok:1.18.34")
