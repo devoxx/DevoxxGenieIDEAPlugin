@@ -27,7 +27,7 @@ public class UserPromptPanel extends BackgroundPanel {
      */
     public UserPromptPanel(JPanel container,
                            @NotNull ChatMessageContext chatMessageContext) {
-        super(chatMessageContext.getName());
+        super(chatMessageContext.getId());
         this.container = container;
         setLayout(new BorderLayout());
 
@@ -77,7 +77,7 @@ public class UserPromptPanel extends BackgroundPanel {
      * @param chatMessageContext the chat message context
      */
     private void removeChat(@NotNull ChatMessageContext chatMessageContext) {
-        String nameToRemove = chatMessageContext.getName();
+        String nameToRemove = chatMessageContext.getId();
         java.util.List<Component> componentsToRemove = new ArrayList<>();
 
         for (Component c : container.getComponents()) {

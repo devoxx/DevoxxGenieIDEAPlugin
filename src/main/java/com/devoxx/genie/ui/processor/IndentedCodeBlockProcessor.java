@@ -22,7 +22,6 @@ public class IndentedCodeBlockProcessor implements NodeProcessor {
 
     /**
      * Process the fenced code block.
-     *
      * @return the panel
      */
     @Override
