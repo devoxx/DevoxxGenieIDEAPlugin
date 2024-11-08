@@ -32,6 +32,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
 
+    private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
+        "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"
+    ));
+
     private List<CustomPrompt> customPrompts = new ArrayList<>();
 
     private List<LanguageModel> languageModels = new ArrayList<>();

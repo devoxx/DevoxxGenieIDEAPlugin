@@ -37,7 +37,7 @@
     <change-notes><![CDATA[
         <h2>v0.2.26</h2>
         <UL>
-            <LI></LI>
+            <LI>Feature #325: Exclude a single file for 'Scan & Copy Project'</LI>
         </UL>
         <h2>v0.2.25</h2>
         <UL>

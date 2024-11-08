@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.AddEditRemovePanel;
@@ -19,6 +18,7 @@ import java.util.List;
 public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     private final ExcludedDirectoriesPanel excludedDirectoriesPanel;
+    private final ExcludedFilesPanel excludedFilesPanel;  // New panel for excluded files
     private final IncludedFileExtensionsPanel includedFileExtensionsPanel;
     private final JCheckBox excludeJavadocCheckBox;
     private final JCheckBox useGitIgnoreCheckBox;
@@ -27,6 +27,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         useGitIgnoreCheckBox = new JCheckBox("Use .gitignore", settings.getUseGitIgnore());
         excludedDirectoriesPanel = new ExcludedDirectoriesPanel(settings.getExcludedDirectories());
+        excludedFilesPanel = new ExcludedFilesPanel(settings.getExcludedFiles());  // Initialize the new panel
         includedFileExtensionsPanel = new IncludedFileExtensionsPanel(settings.getIncludedFileExtensions());
         excludeJavadocCheckBox = new JCheckBox("Exclude Javadoc", settings.getExcludeJavaDoc());
     }
@@ -46,6 +47,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.add(excludedDirectoriesPanel);
+        contentPanel.add(excludedFilesPanel);
 
         contentPanel.add(createUseGitIgnorePanel());
 
@@ -103,7 +105,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     private static class ExcludedDirectoriesPanel extends AddEditRemovePanel<String> {
         public ExcludedDirectoriesPanel(List<String> initialData) {
-            super(new ExcludedDirectoriesModel(), initialData, "Excluded Directories");
+            super(new ExcludedDirectoriesModel(), initialData, "Excluded directories");
             setPreferredSize(new Dimension(400, 200));
         }
 
@@ -139,7 +141,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
     private static class IncludedFileExtensionsPanel extends AddEditRemovePanel<String> {
         public IncludedFileExtensionsPanel(List<String> initialData) {
-            super(new IncludedFileExtensionsModel(), initialData, "Included File Extensions");
+            super(new IncludedFileExtensionsModel(), initialData, "Included file extensions");
             setPreferredSize(new Dimension(400, 200));
         }
 
@@ -177,6 +179,10 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         return excludeJavadocCheckBox.isSelected();
     }
 
+    public List<String> getExcludedFiles() {
+        return excludedFilesPanel.getData();
+    }
+
     public boolean getUseGitIgnore() {
         return useGitIgnoreCheckBox.isSelected();
     }
@@ -209,6 +215,60 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         @Override
         public @NotNull String getColumnName(int columnIndex) {
             return "Extension";
+        }
+
+        @Override
+        public Object getField(String o, int columnIndex) {
+            return o;
+        }
+    }
+
+    private static class ExcludedFilesPanel extends AddEditRemovePanel<String> {
+        public ExcludedFilesPanel(List<String> initialData) {
+            super(new ExcludedFilesModel(), initialData, "Excluded files");
+            setPreferredSize(new Dimension(400, 200));
+        }
+
+        @Override
+        protected String addItem() {
+            return showEditDialog("");
+        }
+
+        @Override
+        protected boolean removeItem(String item) {
+            return true;
+        }
+
+        @Override
+        protected String editItem(String item) {
+            return showEditDialog(item);
+        }
+
+        private @Nullable String showEditDialog(String initialValue) {
+            JBTextField field = new JBTextField(initialValue);
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(new JLabel("File name:"), BorderLayout.NORTH);
+            panel.add(field, BorderLayout.CENTER);
+            panel.setBorder(JBUI.Borders.empty(10));
+
+            int result = JOptionPane.showConfirmDialog(this, panel, "Enter File Name", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                return field.getText().trim();
+            }
+            return null;
+        }
+    }
+
+    private static class ExcludedFilesModel extends AddEditRemovePanel.TableModel<String> {
+        @Override
+        public int getColumnCount() {
+            return 1;
+        }
+
+        @Contract(pure = true)
+        @Override
+        public @NotNull String getColumnName(int columnIndex) {
+            return "File Name";
         }
 
         @Override
