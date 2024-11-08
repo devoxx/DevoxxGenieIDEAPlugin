@@ -13,15 +13,15 @@ public class DefaultLLMSettingsUtil {
     public static final Map<CostKey, Double> DEFAULT_INPUT_COSTS = new HashMap<>();
     public static final Map<CostKey, Double> DEFAULT_OUTPUT_COSTS = new HashMap<>();
 
-    public static void initializeDefaultCosts() {
-        LLMModelRegistryService modelRegistry = LLMModelRegistryService.getInstance();
-        for (LanguageModel model : modelRegistry.getModels()) {
-            if (isApiKeyBasedProvider(model.getProvider())) {
-                DEFAULT_INPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getInputCost());
-                DEFAULT_OUTPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getOutputCost());
-            }
-        }
-    }
+//    public static void initializeDefaultCosts() {
+//        LLMModelRegistryService modelRegistry = LLMModelRegistryService.getInstance();
+//        for (LanguageModel model : modelRegistry.getModels()) {
+//            if (isApiKeyBasedProvider(model.getProvider())) {
+//                DEFAULT_INPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getInputCost());
+//                DEFAULT_OUTPUT_COSTS.put(new CostKey(model.getProvider(), model.getModelName()), model.getOutputCost());
+//            }
+//        }
+//    }
 
     /**
      * Does the ModelProvider use an API KEY?

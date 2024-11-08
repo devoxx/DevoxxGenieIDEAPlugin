@@ -182,20 +182,20 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     private void initializeDefaultCostsIfEmpty() {
-        if (modelInputCosts.isEmpty()) {
-            DefaultLLMSettingsUtil.initializeDefaultCosts();
+//        if (modelInputCosts.isEmpty()) {
+//            DefaultLLMSettingsUtil.initializeDefaultCosts();
             for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_INPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelInputCosts.put(key, entry.getValue());
             }
-        }
-        if (modelOutputCosts.isEmpty()) {
-            DefaultLLMSettingsUtil.initializeDefaultCosts();
+//        }
+//        if (modelOutputCosts.isEmpty()) {
+//            DefaultLLMSettingsUtil.initializeDefaultCosts();
             for (Map.Entry<DefaultLLMSettingsUtil.CostKey, Double> entry : DefaultLLMSettingsUtil.DEFAULT_OUTPUT_COSTS.entrySet()) {
                 String key = entry.getKey().provider.getName() + ":" + entry.getKey().modelName;
                 modelOutputCosts.put(key, entry.getValue());
             }
-        }
+//        }
     }
 
     public void setModelWindowContext(ModelProvider provider, String modelName, int windowContext) {

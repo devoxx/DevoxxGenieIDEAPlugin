@@ -170,9 +170,8 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         for (ColumnName columnName : ColumnName.values()) {
             TableColumn column = costTable.getColumnModel().getColumn(columnName.ordinal());
             switch (columnName) {
-                case PROVIDER -> column.setPreferredWidth(60);
+                case PROVIDER, INPUT_COST, OUTPUT_COST -> column.setPreferredWidth(60);
                 case MODEL -> column.setPreferredWidth(220);
-                case INPUT_COST, OUTPUT_COST -> column.setPreferredWidth(60);
                 case CONTEXT_WINDOW -> column.setPreferredWidth(100);
             }
         }
@@ -200,15 +199,13 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     private void loadCurrentCosts() {
         LLMModelRegistryService.getInstance()
             .getModels()
-            .forEach(model -> {
-                tableModel.addRow(new Object[]{
-                    model.getProvider().getName(),
-                    model.getModelName(),
-                    model.getInputCost(),
-                    model.getOutputCost(),
-                    NumberFormat.getInstance().format(model.getContextWindow())
-                });
-            });
+            .forEach(model -> tableModel.addRow(new Object[]{
+                model.getProvider().getName(),
+                model.getModelName(),
+                model.getInputCost(),
+                model.getOutputCost(),
+                NumberFormat.getInstance().format(model.getContextWindow())
+            }));
     }
 
     public void reset() {
