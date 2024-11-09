@@ -41,7 +41,8 @@ public class CodeSnippetAction {
         insertButton.addActionListener(e -> insertCode(fencedCodeBlock.getLiteral()));
         buttonPanel.add(insertButton);
 
-        if (chatMessageContext.getCommandName().equalsIgnoreCase("tdg")) {
+        String commandName = chatMessageContext.getCommandName();
+        if (commandName != null && commandName.equalsIgnoreCase("tdg")) {
             JHoverButton createButton = new JHoverButton(CreateIcon, true);
             createButton.setToolTipText("Create class");
             createButton.addActionListener(e -> createClass(fencedCodeBlock.getLiteral()));
