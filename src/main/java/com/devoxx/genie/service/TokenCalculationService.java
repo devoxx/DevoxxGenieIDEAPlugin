@@ -30,7 +30,7 @@ public class TokenCalculationService {
 
         CompletableFuture<ScanContentResult> contentFuture;
         if (directory != null) {
-            contentFuture = projectContentService.getDirectoryContentAndTokens(directory, true, selectedProvider);
+            contentFuture = projectContentService.getDirectoryContent(project, directory, maxTokens, true);
         } else {
             contentFuture = projectContentService.getProjectContent(project, maxTokens, true);
         }
