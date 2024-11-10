@@ -21,6 +21,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - [DevoxxGenie in action (Devoxx Belgium 2024)](https://www.youtube.com/watch?v=c5EyVLAXaGQ)
 - [How ChatMemory works](https://www.youtube.com/watch?v=NRAe4d7n6_4)
 - [Hands-on with DevoxxGenie](https://youtu.be/Rs8S4rMTR9s?feature=shared)
+- [The Era of AAP: Ai Augmented Programming using only Java](https://www.youtube.com/watch?v=yvgvALVs3xo)
 
 ### Blog Posts:
 
