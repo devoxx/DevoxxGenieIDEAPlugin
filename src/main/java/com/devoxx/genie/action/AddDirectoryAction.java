@@ -1,9 +1,11 @@
 package com.devoxx.genie.action;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -18,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
@@ -59,9 +62,16 @@ public class AddDirectoryAction extends DumbAwareAction {
             fileListManager.addFiles(filesToAdd);
 
             ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash()));
+            String selectedModel = settings.getSelectedLanguageModel(project.getLocationHash());
+            Optional<Integer> contextWindow = LLMModelRegistryService.getInstance().getModels()
+                    .stream()
+                    .filter(model -> model.getProvider().getName().equals(selectedProvider.getName()) &&
+                            model.getModelName().equals(selectedModel))
+                    .findFirst()
+                    .map(LanguageModel::getContextWindow);
 
             ProjectContentService.getInstance()
-                .getDirectoryContentAndTokens(directory, false, selectedProvider)
+                .getDirectoryContent(project, directory, contextWindow.orElse(settings.getDefaultWindowContext()), false)
                 .thenAccept(result -> {
                     int fileCount = filesToAdd.size();
                     int tokenCount = result.getTokenCount();

@@ -39,7 +39,7 @@ public class ProjectScannerService {
     private static final Logger LOG = Logger.getInstance(ProjectScannerService.class);
 
     private static final Encoding ENCODING = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE);
-    public static final String GITIGNORE = ".gitignore";
+    private static final String GITIGNORE = ".gitignore";
 
     private GitignoreParser gitignoreParser;
 
@@ -270,7 +270,7 @@ public class ProjectScannerService {
      * @param depth the depth
      * @return the tree structure
      */
-    public @NotNull String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
+    private @NotNull String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
         StringBuilder result = new StringBuilder();
         String indent = "  ".repeat(depth);
 
