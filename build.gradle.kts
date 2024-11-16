@@ -37,7 +37,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "0.34.0"
+    val lg4j_version = "0.36.0"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
