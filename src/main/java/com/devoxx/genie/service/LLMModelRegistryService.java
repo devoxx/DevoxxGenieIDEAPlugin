@@ -5,8 +5,6 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import dev.langchain4j.model.anthropic.AnthropicChatModelName;
-import dev.langchain4j.model.openai.OpenAiChatModelName;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,6 +14,7 @@ import java.util.Map;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
+import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
 @Service
 public final class LLMModelRegistryService {
@@ -39,20 +38,11 @@ public final class LLMModelRegistryService {
 
     private void addAnthropicModels() {
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_INSTANT_1_2, LanguageModel.builder()
-            .provider(ModelProvider.Anthropic)
-            .modelName(CLAUDE_INSTANT_1_2.toString())
-            .displayName("Claude 1.2")
-            .inputCost(0.8)
-            .outputCost(2.4)
-            .contextWindow(100_000)
-            .apiKeyUsed(true)
-            .build());
-
-        models.put(ModelProvider.Anthropic.getName() + "-" + AnthropicChatModelName.CLAUDE_2,
+        String claude2 = CLAUDE_2.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude2,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(AnthropicChatModelName.CLAUDE_2.toString())
+            .modelName(claude2)
             .displayName("Claude 2.0")
             .inputCost(8)
             .outputCost(24)
@@ -60,10 +50,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + AnthropicChatModelName.CLAUDE_2_1,
+        String claude21 = CLAUDE_2_1.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude21,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(AnthropicChatModelName.CLAUDE_2_1.toString())
+            .modelName(claude21)
             .displayName("Claude 2.1")
             .inputCost(8)
             .outputCost(24)
@@ -71,10 +62,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_HAIKU_20240307,
+        String claudeHaiku3 = CLAUDE_3_HAIKU_20240307.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku3,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(CLAUDE_3_HAIKU_20240307.toString())
+            .modelName(claudeHaiku3)
             .displayName("Claude 3 Haiku")
             .inputCost(0.25)
             .outputCost(1.25)
@@ -82,10 +74,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_SONNET_20240229,
+        String claudeSonnet3 = CLAUDE_3_SONNET_20240229.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet3,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(CLAUDE_3_SONNET_20240229.toString())
+            .modelName(claudeSonnet3)
             .displayName("Claude 3 Sonnet")
             .inputCost(3)
             .outputCost(15)
@@ -93,10 +86,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Anthropic.getName() + "-" + CLAUDE_3_OPUS_20240229,
+        String claudeOpus3 = CLAUDE_3_OPUS_20240229.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeOpus3,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
-            .modelName(CLAUDE_3_OPUS_20240229.toString())
+            .modelName(claudeOpus3)
             .displayName("Claude 3 Opus")
             .inputCost(15)
             .outputCost(75)
@@ -104,7 +98,7 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        String claudeSonnet35 = "claude-3-5-sonnet-20241022";
+        String claudeSonnet35 = CLAUDE_3_5_SONNET_20241022.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet35,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
@@ -116,7 +110,7 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        String claudeHaiku35 = "claude-3-5-haiku-20241022";
+        String claudeHaiku35 = CLAUDE_3_5_HAIKU_20241022.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku35,
             LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
@@ -131,10 +125,11 @@ public final class LLMModelRegistryService {
 
     private void addOpenAiModels() {
 
-        models.put(ModelProvider.OpenAI.getName() + ":o1-mini",
+        String o1Mini = "o1-mini";
+        models.put(ModelProvider.OpenAI.getName() + ":" + o1Mini,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName("o1-mini")
+            .modelName(o1Mini)
             .displayName("o1 mini")
             .inputCost(5)
             .outputCost(15)
@@ -142,10 +137,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":o1-preview",
+        String o1Preview = "o1-preview";
+        models.put(ModelProvider.OpenAI.getName() + ":" + o1Preview,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName("o1-preview")
+            .modelName(o1Preview)
             .displayName("o1 preview")
             .inputCost(10)
             .outputCost(30)
@@ -153,10 +149,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_3_5_TURBO,
+        String gpt35Turbo = GPT_3_5_TURBO.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt35Turbo,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName(OpenAiChatModelName.GPT_3_5_TURBO.toString())
+            .modelName(gpt35Turbo)
             .displayName("GPT 3.5 Turbo")
             .inputCost(0.5)
             .outputCost(1.5)
@@ -164,10 +161,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_3_5_TURBO,
+        String gpt4 = GPT_4.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName(OpenAiChatModelName.GPT_3_5_TURBO.toString())
+            .modelName(gpt4)
             .displayName("GPT 4")
             .inputCost(30)
             .outputCost(60)
@@ -175,10 +173,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_4_TURBO_PREVIEW,
+        String gpt4TurboPreview = GPT_4_TURBO_PREVIEW.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4TurboPreview,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName(OpenAiChatModelName.GPT_4_TURBO_PREVIEW.toString())
+            .modelName(gpt4TurboPreview)
             .displayName("GPT 4 Turbo")
             .inputCost(10)
             .outputCost(30)
@@ -186,10 +185,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":" + OpenAiChatModelName.GPT_4_O,
+        String gpt4o = GPT_4_O.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4o,
             LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName(OpenAiChatModelName.GPT_4_O.toString())
+            .modelName(gpt4o)
             .displayName("GPT 4o")
             .inputCost(5)
             .outputCost(15)
@@ -197,10 +197,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.OpenAI.getName() + ":gpt-4o-mini",
+        String gpt4oMini = GPT_4_O_MINI.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4oMini,
                 LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
-            .modelName("gpt-4o-mini")
+            .modelName(gpt4oMini)
             .displayName("GPT 4o mini")
             .inputCost(0.15)
             .outputCost(0.6)
@@ -210,10 +211,11 @@ public final class LLMModelRegistryService {
     }
 
     private void addDeepInfraModels() {
-        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-405B-Instruct",
+        String metaLlama31Instruct405B = "meta-llama/Meta-Llama-3.1-405B-Instruct";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + metaLlama31Instruct405B,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("meta-llama/Meta-Llama-3.1-405B-Instruct")
+            .modelName(metaLlama31Instruct405B)
             .displayName("Meta Llama 3.1 405B")
             .inputCost(2.7)
             .outputCost(2.7)
@@ -221,10 +223,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-70B-Instruct",
+        String metaLlama31Instruct70B = "meta-llama/Meta-Llama-3.1-70B-Instruct";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + metaLlama31Instruct70B,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("meta-llama/Meta-Llama-3.1-70B-Instruct")
+            .modelName(metaLlama31Instruct70B)
             .displayName("Meta Llama 3.1 70B")
             .inputCost(0.35)
             .outputCost(0.4)
@@ -232,10 +235,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":meta-llama/Meta-Llama-3.1-8B-Instruct",
+        String metaLlama31Instruct8B = "meta-llama/Meta-Llama-3.1-8B-Instruct";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + metaLlama31Instruct8B,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("meta-llama/Meta-Llama-3.1-8B-Instruct")
+            .modelName(metaLlama31Instruct8B)
             .displayName("Meta Llama 3.1 8B")
             .inputCost(0.055)
             .outputCost(0.055)
@@ -243,10 +247,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mistral-Nemo-Instruct-2407",
+        String mistralNemoInstruct2407 = "mistralai/Mistral-Nemo-Instruct-2407";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + mistralNemoInstruct2407,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("mistralai/Mistral-Nemo-Instruct-2407")
+            .modelName(mistralNemoInstruct2407)
             .displayName("Mistral Nemo 12B")
             .inputCost(0.13)
             .outputCost(0.13)
@@ -254,10 +259,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mixtral-8x7B-Instruct-v0.1",
+        String mistralMixtral8x7BInstruct = "mistralai/Mixtral-8x7B-Instruct-v0.1";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + mistralMixtral8x7BInstruct,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("mistralai/Mixtral-8x7B-Instruct-v0.1")
+            .modelName(mistralMixtral8x7BInstruct)
             .displayName("Mixtral 8x7B Instruct v0.1")
             .inputCost(0.24)
             .outputCost(0.24)
@@ -265,10 +271,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mixtral-8x22B-Instruct-v0.1",
+        String mistralMixtral8x22BInstruct = "mistralai/Mixtral-8x22B-Instruct-v0.1";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + mistralMixtral8x22BInstruct,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("mistralai/Mixtral-8x22B-Instruct-v0.1")
+            .modelName(mistralMixtral8x22BInstruct)
             .displayName("Mixtral 8x22B Instruct v0.1")
             .inputCost(0.65)
             .outputCost(0.65)
@@ -276,10 +283,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":mistralai/Mistral-7B-Instruct-v0.3",
+        String mistralMistral7BInstruct = "mistralai/Mistral-7B-Instruct-v0.3";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + mistralMistral7BInstruct,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("mistralai/Mistral-7B-Instruct-v0.3")
+            .modelName(mistralMistral7BInstruct)
             .displayName("Mistral 7B Instruct v0.3")
             .inputCost(0.07)
             .outputCost(0.07)
@@ -287,10 +295,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":microsoft/WizardLM-2-8x22B",
+        String microsoftWizardLM8x22B = "microsoft/WizardLM-2-8x22B";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + microsoftWizardLM8x22B,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("microsoft/WizardLM-2-8x22B")
+            .modelName(microsoftWizardLM8x22B)
             .displayName("Wizard LM 2 8x22B")
             .inputCost(0.5)
             .outputCost(0.5)
@@ -298,10 +307,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":microsoft/WizardLM-2-7B",
+        String microsoftWizardLM7B = "microsoft/WizardLM-2-7B";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + microsoftWizardLM7B,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("microsoft/WizardLM-2-7B")
+            .modelName(microsoftWizardLM7B)
             .displayName("Wizard LM 2 7B")
             .inputCost(0.055)
             .outputCost(0.055)
@@ -309,10 +319,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":openchat/openchat_3.5",
+        String openchat35 = "openchat/openchat_3.5";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + openchat35,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("openchat/openchat_3.5")
+            .modelName(openchat35)
             .displayName("OpenChat 3.5")
             .inputCost(0.055)
             .outputCost(0.055)
@@ -320,10 +331,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepInfra.getName() + ":google/gemma-2-9b-it",
+        String googleGemma9b = "google/gemma-2-9b-it";
+        models.put(ModelProvider.DeepInfra.getName() + ":" + googleGemma9b,
             LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
-            .modelName("google/gemma-2-9b-it")
+            .modelName(googleGemma9b)
             .displayName("Gemma 2 9B it")
             .inputCost(0.06)
             .outputCost(0.06)
@@ -339,10 +351,11 @@ public final class LLMModelRegistryService {
      */
     private void addGeminiModels() {
 
-        models.put(ModelProvider.Google.getName() + ":gemini-1.5-flash",
+        String gemini15Flash = "gemini-1.5-flash";
+        models.put(ModelProvider.Google.getName() + ":" + gemini15Flash,
             LanguageModel.builder()
             .provider(ModelProvider.Google)
-            .modelName("gemini-1.5-flash")
+            .modelName(gemini15Flash)
             .displayName("Gemini 1.5 Flash")
             .inputCost(0.0375)
             .outputCost(0.6)
@@ -350,10 +363,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Google.getName() + ":gemini-1.5-pro",
+        String gemini15Pro = "gemini-1.5-pro";
+        models.put(ModelProvider.Google.getName() + ":" + gemini15Pro,
             LanguageModel.builder()
             .provider(ModelProvider.Google)
-            .modelName("gemini-1.5-pro")
+            .modelName(gemini15Pro)
             .displayName("Gemini 1.5 Pro")
             .inputCost(7)
             .outputCost(21)
@@ -361,10 +375,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Google.getName() + ":gemini-1.5-pro-exp-0801",
+        String gemini15ProExp0801 = "gemini-1.5-pro-exp-0801";
+        models.put(ModelProvider.Google.getName() + ":" + gemini15ProExp0801,
             LanguageModel.builder()
             .provider(ModelProvider.Google)
-            .modelName("gemini-1.5-pro-exp-0801")
+            .modelName(gemini15ProExp0801)
             .displayName("Gemini 1.5 Pro 0801")
             .inputCost(7)
             .outputCost(21)
@@ -372,10 +387,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Google.getName() + ":gemini-1.0-pro",
+        String gemini10Pro = "gemini-1.0-pro";
+        models.put(ModelProvider.Google.getName() + ":" + gemini10Pro,
             LanguageModel.builder()
             .provider(ModelProvider.Google)
-            .modelName("gemini-1.0-pro")
+            .modelName(gemini10Pro)
             .displayName("Gemini 1.0 Pro")
             .inputCost(0.5)
             .outputCost(1.5)
@@ -386,10 +402,11 @@ public final class LLMModelRegistryService {
 
     private void addGroqModels() {
 
-        models.put(ModelProvider.Groq.getName() + ":gemma-7b-it",
+        String gemma7b = "gemma-7b-it";
+        models.put(ModelProvider.Groq.getName() + ":" + gemma7b,
             LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("gemma-7b-it")
+            .modelName(gemma7b)
             .displayName("Gemma 7B it")
             .inputCost(0.07)
             .outputCost(0.07)
@@ -397,9 +414,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":gemma2-9b-it", LanguageModel.builder()
+        String gemma2 = "gemma2-9b-it";
+        models.put(ModelProvider.Groq.getName() + ":" + gemma2,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("gemma2-9b-it")
+            .modelName(gemma2)
             .displayName("Gemma 2 9B it")
             .inputCost(0.2)
             .outputCost(0.2)
@@ -407,9 +426,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":llama3-8b-8192", LanguageModel.builder()
+        String llama3 = "llama3-8b-8192";
+        models.put(ModelProvider.Groq.getName() + ":" + llama3,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama3-8b-8192")
+            .modelName(llama3)
             .displayName("Llama 3 8B")
             .inputCost(0.05)
             .outputCost(0.05)
@@ -417,9 +438,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":llama-3.1-70b-versatile", LanguageModel.builder()
+        String llama31Versatile = "llama-3.1-70b-versatile";
+        models.put(ModelProvider.Groq.getName() + ":" + llama31Versatile,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama-3.1-70b-versatile")
+            .modelName(llama31Versatile)
             .displayName("Llama 3.1 70B")
             .inputCost(0.59)
             .outputCost(0.79)
@@ -427,9 +450,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":llama-3.1-8b-instant", LanguageModel.builder()
+        String llama31Instant = "llama-3.1-8b-instant";
+        models.put(ModelProvider.Groq.getName() + ":" + llama31Instant,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama-3.1-8b-instant")
+            .modelName(llama31Instant)
             .displayName("Llama 3.1 8B")
             .inputCost(0.05)
             .outputCost(0.08)
@@ -437,9 +462,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":mixtral-8x7b-32768", LanguageModel.builder()
+        String mixtral8x7b = "mixtral-8x7b-32768";
+        models.put(ModelProvider.Groq.getName() + ":" + mixtral8x7b,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("mixtral-8x7b-32768")
+            .modelName(mixtral8x7b)
             .displayName("Mixtral 8x7B")
             .inputCost(0.24)
             .outputCost(0.24)
@@ -447,9 +474,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Groq.getName() + ":llama3-70b-8192", LanguageModel.builder()
+        String llama370b = "llama3-70b-8192";
+        models.put(ModelProvider.Groq.getName() + ":" + llama370b,
+            LanguageModel.builder()
             .provider(ModelProvider.Groq)
-            .modelName("llama3-70b-8192")
+            .modelName(llama370b)
             .displayName("Llama 3 70B")
             .inputCost(0.59)
             .outputCost(0.79)
@@ -459,9 +488,11 @@ public final class LLMModelRegistryService {
     }
 
     private void addMistralModels() {
-        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MISTRAL_7B, LanguageModel.builder()
+        String openMistral7B = OPEN_MISTRAL_7B.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + openMistral7B,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(OPEN_MISTRAL_7B.toString())
+            .modelName(openMistral7B)
             .displayName("Mistral 7B")
             .inputCost(0.25)
             .outputCost(0.25)
@@ -469,9 +500,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MIXTRAL_8x7B, LanguageModel.builder()
+        String openMixtral8x7B = OPEN_MIXTRAL_8x7B.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + openMixtral8x7B,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(OPEN_MIXTRAL_8x7B.toString())
+            .modelName(openMixtral8x7B)
             .displayName("Mistral 8x7B")
             .inputCost(0.7)
             .outputCost(0.7)
@@ -479,9 +512,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":" + OPEN_MIXTRAL_8X22B, LanguageModel.builder()
+        String openMixtral8x22B = OPEN_MIXTRAL_8X22B.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + openMixtral8x22B,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(OPEN_MIXTRAL_8X22B.toString())
+            .modelName(openMixtral8x22B)
             .displayName("Mistral 8x22b")
             .inputCost(2)
             .outputCost(6)
@@ -489,9 +524,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_SMALL_LATEST, LanguageModel.builder()
+        String mistralSmallLatest = MISTRAL_SMALL_LATEST.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + mistralSmallLatest,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(MISTRAL_SMALL_LATEST.toString())
+            .modelName(mistralSmallLatest)
             .displayName("Mistral Small")
             .inputCost(1)
             .outputCost(3)
@@ -499,9 +536,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_MEDIUM_LATEST, LanguageModel.builder()
+        String mistralMediumLatest = MISTRAL_MEDIUM_LATEST.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + mistralMediumLatest,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(MISTRAL_MEDIUM_LATEST.toString())
+            .modelName(mistralMediumLatest)
             .displayName("Mistral Medium")
             .inputCost(2.7)
             .outputCost(0.1)
@@ -509,9 +548,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":" + MISTRAL_LARGE_LATEST, LanguageModel.builder()
+        String mistralLargeLatest = MISTRAL_LARGE_LATEST.toString();
+        models.put(ModelProvider.Mistral.getName() + ":" + mistralLargeLatest,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName(MISTRAL_LARGE_LATEST.toString())
+            .modelName(mistralLargeLatest)
             .displayName("Mistral Large")
             .inputCost(4)
             .outputCost(12)
@@ -519,9 +560,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.Mistral.getName() + ":codestral-2405", LanguageModel.builder()
+        String codestral = "codestral-2405";
+        models.put(ModelProvider.Mistral.getName() + ":" + codestral,
+            LanguageModel.builder()
             .provider(ModelProvider.Mistral)
-            .modelName("codestral-2405")
+            .modelName(codestral)
             .displayName("Codestral")
             .inputCost(1)
             .outputCost(3)
@@ -531,9 +574,11 @@ public final class LLMModelRegistryService {
     }
 
     private void addDeepSeekModels() {
-        models.put(ModelProvider.DeepSeek.getName() + ":deepseek-coder", LanguageModel.builder()
+        String coder = "deepseek-coder";
+        models.put(ModelProvider.DeepSeek.getName() + ":" + coder,
+            LanguageModel.builder()
             .provider(ModelProvider.DeepSeek)
-            .modelName("deepseek-coder")
+            .modelName(coder)
             .displayName("DeepSeek Coder")
             .inputCost(0.14)
             .outputCost(0.28)
@@ -541,9 +586,11 @@ public final class LLMModelRegistryService {
             .apiKeyUsed(true)
             .build());
 
-        models.put(ModelProvider.DeepSeek.getName() + ":deepseek-chat", LanguageModel.builder()
+        String chat = "deepseek-chat";
+        models.put(ModelProvider.DeepSeek.getName() + ":" + chat,
+            LanguageModel.builder()
             .provider(ModelProvider.DeepSeek)
-            .modelName("deepseek-chat")
+            .modelName(chat)
             .displayName("DeepSeek Chat")
             .inputCost(0.14)
             .outputCost(0.28)

@@ -41,6 +41,7 @@
             <LI>Fix #324: Replace invocations of SwingUtilities.invokeLater()</LI>
             <LI>Fix #236: Refactoring large class ActionButtonsPanel<LI>
             <LI>Fix #329: Refactored the calc token cost</LI>
+            <LI>Fix #333: Use LangChain4j new model names</LI>
         </UL>
         <h2>v0.2.26</h2>
         <UL>
