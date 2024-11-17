@@ -42,6 +42,7 @@
             <LI>Fix #236: Refactoring large class ActionButtonsPanel<LI>
             <LI>Fix #329: Refactored the calc token cost</LI>
             <LI>Fix #333: Use LangChain4j new model names</LI>
+            <LI>Fix #336: Cost Calculation is consistent now between calculation from directory and calculation from DevoxxGenie panel</LI>
         </UL>
         <h2>v0.2.26</h2>
         <UL>
