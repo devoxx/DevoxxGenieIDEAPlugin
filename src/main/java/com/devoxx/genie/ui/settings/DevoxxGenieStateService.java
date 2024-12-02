@@ -42,6 +42,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean showExecutionTime = true;
 
+    // Git Diff features
+    private Boolean useDiffMerge = false;
+    private Boolean useSimpleDiff = false;
+
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
