@@ -43,6 +43,7 @@ public class WelcomeUtil {
             <h2>New features 🚀</h2>
             Configure features in the settings page.<br>
             <ul>
+                 <li><strong>💪🏻Git Diff/Merge</strong>: Show Git Diff/Merge dialog to commit LLM suggestion</li>
                  <li><strong>❌.gitignore</strong>: Exclude files and directories based on .gitignore file</li>
                  <li><strong>👀Chat History</strong>: All chats are saved and can be restored or removed</li>
                  <li><strong>🧠Project Scanner</strong>: Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>

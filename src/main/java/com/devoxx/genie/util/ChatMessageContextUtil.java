@@ -49,7 +49,8 @@ public class ChatMessageContextUtil {
             .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) || actionCommand.equals(GOOGLE_SEARCH_ACTION))
             .totalFileCount(FileListManager.getInstance().size())
             .executionTimeMs(0)
-            .cost(0).build();
+            .cost(0)
+            .build();
 
         boolean isStreamMode = stateService.getStreamMode() && actionCommand.equals(Constant.SUBMIT_ACTION);
         if (isStreamMode) {
