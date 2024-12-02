@@ -35,9 +35,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v0.2.28</h2>
+        <h2>v0.3.0</h2>
         <UL>
-            <LI></LI>
+            <LI>Feature #339: Git Merge Diff</LI>
         </UL>
         <h2>v0.2.27</h2>
         <UL>
@@ -415,6 +415,11 @@
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
                              displayName="Token Cost &amp; Context Window"/>
 
+        <projectConfigurable id="com.devoxx.genie.DiffSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.gitmerge.GitMergeSettingsConfigurable"
+                             displayName="LLM Git Diff Merge"/>
+
         <toolWindow id="DevoxxGenie"
                     anchor="right"
                     icon="/icons/pluginIcon.svg"
@@ -435,6 +440,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.lmstudio.LMStudioService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
