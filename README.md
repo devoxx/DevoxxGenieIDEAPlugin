@@ -29,7 +29,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
-- **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to commit LLM suggestion.
+- **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
 - **💰 Token Cost Calculator**: Calculate the cost when using Cloud LLM providers.
