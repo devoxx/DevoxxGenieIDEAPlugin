@@ -141,6 +141,15 @@ https://github.com/user-attachments/assets/817159ab-586f-4d46-bd46-bc0097805aed
 The DevoxxGenie project itself, at about 70K tokens, fits comfortably within most high-end LLM context windows. 
 This allows for incredibly nuanced interactions – we're talking advanced queries and feature requests that leave tools like GitHub Copilot scratching their virtual heads!
 
+## Support for JLama & LLama3.java
+DevoxxGenie now also supports the 100% Modern Java LLM inference engines: [JLama](https://github.com/tjake/Jlama).
+
+JLama offers a REST API compatible with the widely-used OpenAI API.
+
+![image](https://github.com/user-attachments/assets/65096be3-2b34-4fea-8295-d63e04066390)
+
+You can also integrate it seamlessly with [Llama3.java](https://github.com/stephanj/Llama3JavaChatCompletionService) but using the Spring Boot OpenAI API wrapper coupled with the JLama DevoxxGenie option.
+
 ## Local LLM Cluster with Exo
 
 V0.2.7 also supports Exo, a local LLM cluster for Apple Silicon which allows you to run Llama 3.1 8b, 70b and 405b on your own Apple computers 🤩
