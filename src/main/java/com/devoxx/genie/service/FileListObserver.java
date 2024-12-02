@@ -11,4 +11,3 @@ public interface FileListObserver {
 
     void allFilesRemoved();
 }
-

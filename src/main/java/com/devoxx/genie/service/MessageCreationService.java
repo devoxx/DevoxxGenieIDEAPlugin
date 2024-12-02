@@ -28,6 +28,13 @@ public class MessageCreationService {
 
     public static final String CONTEXT_PROMPT = "Context: \n";
 
+    private static final String GIT_DIFF_INSTRUCTIONS = """
+        Please analyze the code and provide ONLY the modified code in your response.
+        Do not include any explanations or comments.
+        The response should contain just the modified code wrapped in a code block using the appropriate language identifier.
+        If multiple files need to be modified, provide each file's content in a separate code block.
+        """;
+
     @NotNull
     public static MessageCreationService getInstance() {
         return ApplicationManager.getApplication().getService(MessageCreationService.class);
@@ -54,6 +61,11 @@ public class MessageCreationService {
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
+        }
+
+        // If git diff is enabled, add special instructions
+        if (DevoxxGenieStateService.getInstance().getUseDiffMerge()) {
+            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
         // The user prompt is always appended
@@ -123,6 +135,12 @@ public class MessageCreationService {
     private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
                                                                      String context) {
         StringBuilder stringBuilder = new StringBuilder();
+
+        // If git diff is enabled, add special instructions at the beginning
+        if (DevoxxGenieStateService.getInstance().getUseDiffMerge() ||
+            DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
+            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
+        }
 
         // Check if this is the first message in the conversation, if so add the context
         if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1) {
