@@ -49,7 +49,6 @@ public class GitMergeSettingsConfigurable implements Configurable {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         GitDiffMode selectedMode = (GitDiffMode) diffSettingsComponent.getGitDiffModeComboBox().getSelectedItem();
 
-        stateService.setUseDiffMerge(selectedMode == GitDiffMode.DIFF_MERGE);
         stateService.setUseSimpleDiff(selectedMode == GitDiffMode.SIMPLE_DIFF);
     }
 
@@ -61,9 +60,7 @@ public class GitMergeSettingsConfigurable implements Configurable {
     }
 
     private GitDiffMode determineCurrentMode(@NotNull DevoxxGenieStateService stateService) {
-        if (stateService.getUseDiffMerge()) {
-            return GitDiffMode.DIFF_MERGE;
-        } else if (stateService.getUseSimpleDiff()) {
+        if (stateService.getUseSimpleDiff()) {
             return GitDiffMode.SIMPLE_DIFF;
         }
         return GitDiffMode.DISABLED;

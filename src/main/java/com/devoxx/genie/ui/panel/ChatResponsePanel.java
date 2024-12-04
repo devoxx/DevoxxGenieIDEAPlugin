@@ -10,12 +10,6 @@ import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.processor.NodeProcessorFactory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import com.knuddels.jtokkit.api.Encoding;
@@ -33,7 +27,6 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
@@ -68,9 +61,7 @@ public class ChatResponsePanel extends BackgroundPanel {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // If git diff is enabled, try to extract code blocks and show diff
-        if (stateService.getUseDiffMerge()) {
-            processGitMerge(chatMessageContext, document);
-        } else if (stateService.getUseSimpleDiff()) {
+        if (stateService.getUseSimpleDiff()) {
             processGitDiff(chatMessageContext, document);
         }
 
@@ -85,65 +76,6 @@ public class ChatResponsePanel extends BackgroundPanel {
         if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
             // Add execution time, token usage and cost information
             addMetricExecutionInfo(chatMessageContext);
-        }
-    }
-
-    private void processGitMerge(@NotNull ChatMessageContext chatMessageContext, @NotNull Node document) {
-        // Get original code from context
-        String originalCode;
-        EditorInfo editorInfo = chatMessageContext.getEditorInfo();
-
-        // Wrap the document access in a read action
-        originalCode = ApplicationManager
-            .getApplication()
-            .runReadAction((Computable<String>)  () -> {
-            if (editorInfo.getSelectedText() != null) {
-                return editorInfo.getSelectedText();
-            } else {
-                List<VirtualFile> selectedFiles = editorInfo.getSelectedFiles();
-                if (selectedFiles == null || selectedFiles.isEmpty()) {
-                    return null;
-                }
-                VirtualFile originalFile = selectedFiles.get(0);
-                Document originalDoc = FileDocumentManager.getInstance().getDocument(originalFile);
-                if (originalDoc == null) {
-                    return null;
-                }
-                return originalDoc.getText();
-            }
-        });
-
-        if (originalCode == null) {
-            return;
-        }
-
-
-        // Find the first code block in the response
-        Node node = document.getFirstChild();
-        while (node != null) {
-            if (node instanceof FencedCodeBlock codeBlock) {
-                String modifiedCode = codeBlock.getLiteral();
-
-                Document editorDocument = com.intellij.openapi.application.ApplicationManager.getApplication()
-                    .runReadAction((com.intellij.openapi.util.Computable<Document>) () ->
-                        Objects.requireNonNull(FileEditorManager.getInstance(chatMessageContext.getProject())
-                                .getSelectedTextEditor())
-                            .getDocument()
-                    );
-
-                // Show merge using our service
-                GitMergeService.getInstance().showMerge(
-                    chatMessageContext.getProject(),
-                    originalCode,
-                    modifiedCode,
-                    "Merge LLM Changes",
-                    editorDocument
-                );
-
-                // Only show diff for first code block
-                break;
-            }
-            node = node.getNext();
         }
     }
 
@@ -191,34 +123,7 @@ public class ChatResponsePanel extends BackgroundPanel {
             return;
         }
 
-        // Handle single file case
-        if (editorInfo.getSelectedText() != null) {
-            Editor editor = FileEditorManager.getInstance(chatMessageContext.getProject())
-                .getSelectedTextEditor();
-
-            if (editor != null) {
-                String originalCode = editorInfo.getSelectedText();
-
-                // Find first code block in response
-                Node node = document.getFirstChild();
-                while (node != null) {
-                    if (node instanceof FencedCodeBlock codeBlock) {
-
-                        GitMergeService.getInstance().showMerge(
-                            chatMessageContext.getProject(),
-                            originalCode,
-                            codeBlock.getLiteral(),
-                            "Merge LLM Changes",
-                            editor.getDocument()
-                        );
-                        break;
-                    }
-                    node = node.getNext();
-                }
-            }
-        }
-        // Handle multiple files case
-        else if (editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty()) {
+        if (editorInfo.getSelectedFiles() != null && !editorInfo.getSelectedFiles().isEmpty()) {
             List<VirtualFile> files = editorInfo.getSelectedFiles();
             List<String> modifiedContents = new ArrayList<>();
 

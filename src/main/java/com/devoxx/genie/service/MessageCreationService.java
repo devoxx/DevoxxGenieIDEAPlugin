@@ -64,7 +64,7 @@ public class MessageCreationService {
         }
 
         // If git diff is enabled, add special instructions
-        if (DevoxxGenieStateService.getInstance().getUseDiffMerge()) {
+        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
@@ -137,8 +137,7 @@ public class MessageCreationService {
         StringBuilder stringBuilder = new StringBuilder();
 
         // If git diff is enabled, add special instructions at the beginning
-        if (DevoxxGenieStateService.getInstance().getUseDiffMerge() ||
-            DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
+        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
