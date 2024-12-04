@@ -2,39 +2,6 @@ package com.devoxx.genie.ui.settings.gitmerge;
 
 public enum GitDiffMode {
     DISABLED("Disabled", "", ""),
-    DIFF_MERGE("Git Diff Merge", "/images/diff_merge.jpg",
-        """
-        <html>
-        <head>
-            <style type="text/css">
-               body {
-                  font-family: 'Source Code Pro', monospace;
-                  zoom: %s;
-              }
-              h2 {
-                margin-bottom: 5px;
-              }
-              p {
-                margin: 0;
-              }
-              ul {
-                margin-bottom: 5px;
-              }
-              li {
-                margin-bottom: 5px;
-              }
-            </style>
-        </head>
-        <body>
-        <h3>Three-panel comparison</h2>
-        <p>Shows three-way comparison between original, suggested, and merged changes</p>
-        <UL>
-            <LI>Left panel: Original file labeled "Original code"</LI>
-            <LI>Center panel: Merge result labeled "Merged"</LI>
-            <LI>Right panel: LLM's modified version labeled "LLM suggested"</LI>
-        </UL>
-        </body></html>
-    """),
     SIMPLE_DIFF("Simple Git Diff", "/images/simple_diff.jpg",
         """
         <html>

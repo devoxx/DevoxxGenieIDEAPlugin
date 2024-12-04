@@ -43,7 +43,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean showExecutionTime = true;
 
     // Git Diff features
-    private Boolean useDiffMerge = false;
     private Boolean useSimpleDiff = false;
 
     // Local LLM URL fields

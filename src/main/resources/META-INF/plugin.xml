@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.3.1</h2>
+        <UL>
+            <LI>Feature #339: Use simple Git Diff using com.intellij.diff.DiffManagerEx</LI>
+        </UL>
         <h2>v0.3.0</h2>
         <UL>
             <LI>Feature #339: Git Merge Diff</LI>
