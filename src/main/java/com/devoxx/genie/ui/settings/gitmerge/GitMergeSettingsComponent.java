@@ -52,9 +52,7 @@ public class GitMergeSettingsComponent extends AbstractSettingsComponent {
     }
 
     private GitDiffMode determineCurrentMode() {
-        if (stateService.getUseDiffMerge()) {
-            return GitDiffMode.DIFF_MERGE;
-        } else if (stateService.getUseSimpleDiff()) {
+        if (stateService.getUseSimpleDiff()) {
             return GitDiffMode.SIMPLE_DIFF;
         }
         return GitDiffMode.DISABLED;

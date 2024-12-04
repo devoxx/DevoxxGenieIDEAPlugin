@@ -1,16 +1,11 @@
 package com.devoxx.genie.service.gitdiff;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.diff.DiffContentFactory;
-import com.intellij.diff.DiffManager;
-import com.intellij.diff.DiffManagerImpl;
+import com.intellij.diff.DiffManagerEx;
 import com.intellij.diff.contents.DiffContent;
-import com.intellij.diff.contents.DocumentContent;
 import com.intellij.diff.contents.DocumentContentImpl;
 import com.intellij.diff.requests.DiffRequest;
 import com.intellij.diff.requests.SimpleDiffRequest;
-import com.intellij.diff.requests.TextMergeRequestImpl;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -28,48 +23,6 @@ public class GitMergeService {
     @NotNull
     public static GitMergeService getInstance() {
         return ApplicationManager.getApplication().getService(GitMergeService.class);
-    }
-
-    /**
-     * Shows a three-way merge view with:
-     * - Left: Original code
-     * - Center: Merge result (initially empty)
-     * - Right: LLM's modified version
-     */
-    public void showMerge(@NotNull Project project,
-                          @NotNull String originalContent,
-                          @NotNull String modifiedContent,
-                          @NotNull String title,
-                          @NotNull Document targetDocument) {
-        DevoxxGenieStateService instance = DevoxxGenieStateService.getInstance();
-        if (!instance.getUseSimpleDiff() && !instance.getUseDiffMerge()) {
-            LOG.info("Diff view is disabled");
-            return;
-        }
-
-        ApplicationManager.getApplication().invokeLater(() -> {
-            DiffContentFactory factory = DiffContentFactory.getInstance();
-
-            // Create contents for three-way merge
-            DocumentContent originalContentDoc = factory.create(project, originalContent);
-
-            DocumentContent modifiedContent1 = factory.create(project, modifiedContent);
-            DocumentContent targetDocumentContent = factory.create(project, targetDocument);
-
-            Document originalDocument = originalContentDoc.getDocument();
-
-            TextMergeRequestImpl request = new TextMergeRequestImpl(
-                project,
-                targetDocumentContent,
-                originalDocument.getCharsSequence(),
-                List.of(originalContentDoc, modifiedContent1, targetDocumentContent),
-                title,
-                List.of("Original Code", "LLM Modified Code", "Merge Result")
-            );
-
-            // Show the merge dialog
-            DiffManager.getInstance().showMerge(project, request);
-        });
     }
 
     /**
@@ -107,7 +60,7 @@ public class GitMergeService {
             );
 
             ApplicationManager.getApplication().invokeLater(() ->
-                DiffManagerImpl.getInstance().showDiff(project, diffRequest));
+                DiffManagerEx.getInstance().showDiff(project, diffRequest));
         });
     }
 }
