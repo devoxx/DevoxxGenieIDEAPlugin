@@ -99,7 +99,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
-        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC, this);
     }
 
     private void updateAddProjectButtonVisibility() {
