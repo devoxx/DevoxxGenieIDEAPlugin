@@ -5,7 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.*;
-import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.component.SubmitPanel;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
@@ -23,7 +23,6 @@ import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBusConnection;
 import lombok.Getter;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -44,7 +43,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
     private static final float SPLITTER_PROPORTION = 0.8f;
-    public static final int MIN_INPUT_HEIGHT = 200;
+    public static final int MIN_INPUT_HEIGHT = 100;
 
     private final Project project;
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
@@ -52,12 +51,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     @Getter
     private final JPanel contentPanel = new JPanel();
 
+    @Getter
     private LlmProviderPanel llmProviderPanel;
     private ConversationPanel conversationPanel;
-    private PromptInputArea promptInputArea;
+    private SubmitPanel submitPanel;
+    @Getter
     private PromptOutputPanel promptOutputPanel;
-    private PromptContextFileListPanel promptContextFileListPanel;
-    private ActionButtonsPanel actionButtonsPanel;
 
     private boolean isInitializationComplete = false;
 
@@ -113,10 +112,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private void initializeComponents() {
         llmProviderPanel = new LlmProviderPanel(project);
-        llmProviderPanel.getModelNameComboBox().setRenderer(new ModelInfoRenderer());
-        promptInputArea = new PromptInputArea(resourceBundle, project);
         promptOutputPanel = new PromptOutputPanel(resourceBundle);
-        promptContextFileListPanel = new PromptContextFileListPanel(project);
+        submitPanel = new SubmitPanel(this, project, resourceBundle);
         conversationPanel = new ConversationPanel(project, this, storageService, promptOutputPanel);
     }
 
@@ -150,7 +147,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     private @NotNull Splitter createSplitter() {
         OnePixelSplitter splitter = new OnePixelSplitter(true, SPLITTER_PROPORTION);
         splitter.setFirstComponent(promptOutputPanel);
-        splitter.setSecondComponent(createInputPanel());
+        splitter.setSecondComponent(submitPanel);
         splitter.setHonorComponentsMinimumSize(true);
         return splitter;
     }
@@ -178,38 +175,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             llmProviderPanel.setLastSelectedProvider();
         }
 
-        actionButtonsPanel.configureSearchButtonsVisibility();
-    }
-
-    /**
-     * Create the Submit panel.
-     *
-     * @return the Submit panel
-     */
-    private @NotNull JPanel createInputPanel() {
-        JPanel submitPanel = new JPanel(new BorderLayout());
-        submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
-        submitPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
-        submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
-        submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
-        submitPanel.add(createActionButtonsPanel(), BorderLayout.SOUTH);
-        return submitPanel;
-    }
-
-    /**
-     * The bottom action buttons panel (Submit, Search buttons and Add Files)
-     *
-     * @return the action buttons panel
-     */
-    @Contract(" -> new")
-    private @NotNull JPanel createActionButtonsPanel() {
-        actionButtonsPanel = new ActionButtonsPanel(project,
-            promptInputArea,
-            promptOutputPanel,
-                llmProviderPanel.getModelProviderComboBox(),
-                llmProviderPanel.getModelNameComboBox(),
-            this);
-        return actionButtonsPanel;
+        submitPanel.getActionButtonsPanel().configureSearchButtonsVisibility();
     }
 
     /**
@@ -225,12 +191,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
         ApplicationManager.getApplication().invokeLater(() -> {
             conversationPanel.updateNewConversationLabel();
-            promptInputArea.clear();
+            submitPanel.getPromptInputArea().clear();
             promptOutputPanel.clear();
-            actionButtonsPanel.resetProjectContext();
-            actionButtonsPanel.enableButtons();
-            actionButtonsPanel.resetTokenUsageBar();
-            promptInputArea.requestFocusInWindow();
+            submitPanel.getActionButtonsPanel().resetProjectContext();
+            submitPanel.getActionButtonsPanel().enableButtons();
+            submitPanel.getActionButtonsPanel().resetTokenUsageBar();
+            submitPanel.getPromptInputArea().requestFocusInWindow();
         });
     }
 
@@ -243,7 +209,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             LanguageModel selectedModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
             if (selectedModel != null) {
                 DevoxxGenieStateService.getInstance().setSelectedLanguageModel(project.getLocationHash(), selectedModel.getModelName());
-                actionButtonsPanel.updateTokenUsage(selectedModel.getContextWindow());
+                submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getContextWindow());
             }
         }
     }

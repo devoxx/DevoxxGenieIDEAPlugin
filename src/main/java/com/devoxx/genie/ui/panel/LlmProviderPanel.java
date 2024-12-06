@@ -6,22 +6,17 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.service.*;
-import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
-import com.intellij.util.messages.MessageBusConnection;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +26,6 @@ import java.awt.event.ActionEvent;
 import java.util.*;
 import java.util.List;
 
-import static com.devoxx.genie.model.Constant.MESSAGES;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
 public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {
