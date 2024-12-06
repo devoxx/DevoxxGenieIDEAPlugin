@@ -70,7 +70,7 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
         // stateService.setLanguageModels(modifiedModels);
 
         // Notify listeners that settings have changed
-        messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).settingsChanged();
+        messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).llmSettingsChanged();
     }
 
     @Override
