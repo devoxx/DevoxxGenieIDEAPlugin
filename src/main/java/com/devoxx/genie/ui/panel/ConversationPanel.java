@@ -8,7 +8,6 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.component.SubmitPanel;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
@@ -100,7 +99,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         if (historyPopup != null && historyPopup.isVisible()) {
             historyPopup.closeOk(null);
         }
-        promptOutputPanel.displayConversation(project, conversation);
+        promptOutputPanel.displayConversation(conversation);
     }
 
     public void loadConversationHistory() {
