@@ -14,7 +14,6 @@ import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
@@ -44,19 +43,14 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class ActionButtonsPanel extends JPanel implements SettingsChangeListener, PromptSubmissionListener {
 
-    public static final String ADD_FULL_PROJECT_TO_PROMPT = "Add full project to prompt";
-    public static final String CALC_TOKENS_COST = "Calc tokens/cost";
-
     private final transient Project project;
 
     private final transient EditorFileButtonManager editorFileButtonManager;
     private final JPanel calcProjectPanel = new JPanel(new GridLayout(1, 2));
 
-    private final JButton addFileBtn = new JHoverButton(AddFileIcon, true);
-    private final JButton submitBtn = new JHoverButton(SubmitIcon, true);
-    private final JButton tavilySearchBtn = new JHoverButton(WebSearchIcon, true);
-    private final JButton googleSearchBtn = new JHoverButton(GoogleIcon, true);
-    private final JButton addProjectBtn = new JHoverButton(ADD_FULL_PROJECT_TO_PROMPT, AddFileIcon, true);
+    private final JButton addFileBtn = new JHoverButton(AddFileIcon, false);
+    private final JButton submitBtn = new JHoverButton(SubmitIcon, false);
+    private final JButton addProjectBtn = new JHoverButton(ADD_PROJECT_TO_CONTEXT, AddFileIcon, true);
     private final JButton calcTokenCostBtn = new JHoverButton(CALC_TOKENS_COST, CalculateIcon, true);
     private final JPanel mainContent = new JPanel(new BorderLayout());
 
@@ -74,6 +68,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final transient TokenCalculationService tokenCalculationService;
     private final transient ActionPanelController controller;
 
+    private final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+
     public ActionButtonsPanel(Project project,
                               PromptInputArea promptInputArea,
                               PromptOutputPanel promptOutputPanel,
@@ -83,88 +79,87 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         setLayout(new BorderLayout());
         setBorder(JBUI.Borders.empty(10));
 
-        this.controller = new ActionPanelController(
-            project,
-            promptInputArea,
-            promptOutputPanel,
-            llmProvidersComboBox,
-            modelNameComboBox,
-            this
-        );
-
+        // Initialize fields and components
         this.project = project;
         this.promptInputArea = promptInputArea;
         this.editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
         this.llmProvidersComboBox = llmProvidersComboBox;
         this.modelNameComboBox = modelNameComboBox;
         this.devoxxGenieToolWindowContent = devoxxGenieToolWindowContent;
-        this.llmProvidersComboBox.addActionListener(e -> updateAddProjectButtonVisibility());
         this.tokenCalculationService = new TokenCalculationService();
+
+        this.controller = new ActionPanelController(
+                project, promptInputArea, promptOutputPanel,
+                llmProvidersComboBox, modelNameComboBox, this
+        );
+
+        this.llmProvidersComboBox.addActionListener(e -> updateButtonVisibility());
 
         setupUI();
         setupAccessibility();
-
-        MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-        messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
-        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC, this);
+        setupMessageBus();
     }
 
-    private void updateAddProjectButtonVisibility() {
-        calcProjectPanel.setVisible(isProjectContextSupportedProvider());
-    }
+    private void setupUI() {
 
-    /**
-     * Create the Action button panel with Submit, the Web Search and Add file buttons.
-     */
-    public void setupUI() {
-        setLayout(new BorderLayout());
-
-        submitBtn.setToolTipText(SUBMIT_THE_PROMPT);
-        submitBtn.setActionCommand(Constant.SUBMIT_ACTION);
-        submitBtn.addActionListener(this::onSubmitPrompt);
-        mainContent.add(submitBtn, BorderLayout.WEST);
-
-        JPanel searchPanel = new JPanel(new FlowLayout());
-        searchPanel.setBorder(JBUI.Borders.empty(0, 10));
-        createSearchButton(searchPanel, tavilySearchBtn, TAVILY_SEARCH_ACTION, SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER);
-        createSearchButton(searchPanel, googleSearchBtn, GOOGLE_SEARCH_ACTION, SEARCH_GOOGLE_FOR_AN_ANSWER);
-        add(searchPanel, BorderLayout.CENTER);
-
-        addFileBtn.setToolTipText(ADD_FILE_S_TO_PROMPT_CONTEXT + " (Ctrl+F)");
-        addFileBtn.addActionListener(this::selectFilesForPromptContext);
-
-        add(addFileBtn, BorderLayout.EAST);
-        add(addProjectBtn, BorderLayout.SOUTH);
-
+        // Setup token usage bar
         tokenUsageBar.setVisible(false);
         tokenUsageBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
-
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
         add(progressPanel, BorderLayout.NORTH);
 
-        setupAddProjectButton();
-        configureSearchButtonsVisibility();
+        // Configure buttons
+        setupButtons();
 
+        // Add button panel to main content
+        mainContent.add(buttonPanel, BorderLayout.CENTER);
         add(mainContent, BorderLayout.CENTER);
     }
 
-    /**
-     * Create the search button.
-     * @param panel        the panel
-     * @param searchBtn    the search button
-     * @param searchAction the search action
-     * @param tooltipText  the tooltip text
-     */
-    private void createSearchButton(@NotNull JPanel panel,
-                                    @NotNull JButton searchBtn,
-                                    String searchAction,
-                                    String tooltipText) {
-        searchBtn.setMaximumSize(new Dimension(30, 30));
-        searchBtn.setActionCommand(searchAction);
-        searchBtn.setToolTipText(tooltipText);
-        searchBtn.addActionListener(this::onSubmitPrompt);
-        panel.add(searchBtn);
+    private void setupButtons() {
+        // Configure Submit button
+        submitBtn.setToolTipText(SUBMIT_THE_PROMPT + SHIFT_ENTER);
+        submitBtn.setActionCommand(Constant.SUBMIT_ACTION);
+        submitBtn.addActionListener(this::onSubmitPrompt);
+
+        // Configure Add File button
+        addFileBtn.setToolTipText(ADD_FILE_S_TO_PROMPT_CONTEXT);
+        addFileBtn.addActionListener(this::selectFilesForPromptContext);
+
+        calcTokenCostBtn.setToolTipText(CALCULATE_TOKENS_COST);
+        calcTokenCostBtn.addActionListener(e -> calculateTokensAndCost());
+
+        addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
+        addProjectBtn.addActionListener(e -> {
+            if (isProjectContextAdded) {
+                confirmProjectContextRemoval();
+            } else {
+                addProjectToContext();
+            }
+        });
+
+        buttonPanel.setLayout(new GridLayout(1, 4, 5, 0));
+
+        // Add buttons with horizontal glue between them
+        buttonPanel.add(submitBtn);
+        buttonPanel.add(calcTokenCostBtn);
+        buttonPanel.add(addProjectBtn);
+        buttonPanel.add(addFileBtn);
+
+        // Set minimum size for buttons to prevent them from becoming too small
+        Dimension minSize = new Dimension(100, 30);
+        submitBtn.setMinimumSize(minSize);
+        calcTokenCostBtn.setMinimumSize(minSize);
+        addProjectBtn.setMinimumSize(minSize);
+        addFileBtn.setMinimumSize(minSize);
+
+        // Set maximum size to prevent buttons from growing too large
+        Dimension maxSize = new Dimension(200, 30);
+        submitBtn.setMaximumSize(maxSize);
+        calcTokenCostBtn.setMaximumSize(maxSize);
+        addProjectBtn.setMaximumSize(maxSize);
+        addFileBtn.setMaximumSize(maxSize);
     }
 
     /**
@@ -177,7 +172,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         JBPopup popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project, sortedFiles), null)
-            .setTitle("Filter and Double-Click To Add To Prompt Context")
+            .setTitle(FILTER_AND_DOUBLE_CLICK_TO_ADD_TO_PROMPT_CONTEXT)
             .setRequestFocus(true)
             .setResizable(true)
             .setMovable(false)
@@ -231,6 +226,27 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         });
     }
 
+    private void setupMessageBus() {
+        MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC, this);
+    }
+
+    @Override
+    public void setSize(@NotNull Dimension dimension) {
+        super.setSize(dimension);
+        revalidateLayout();
+    }
+
+    private void revalidateLayout() {
+        if (getWidth() < 400) {
+            buttonPanel.setLayout(new GridLayout(0, 1, 0, 5)); // Stack vertically when narrow
+        } else {
+            buttonPanel.setLayout(new GridBagLayout()); // Single row when wide
+        }
+        buttonPanel.revalidate();
+    }
+
     private void disableButtons() {
         promptInputArea.setEnabled(false);
     }
@@ -242,12 +258,12 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void updateAddProjectButton() {
         if (isProjectContextAdded) {
             addProjectBtn.setIcon(DeleteIcon);
-            addProjectBtn.setText("Remove full project from prompt");
-            addProjectBtn.setToolTipText("Remove entire project from prompt context");
+            addProjectBtn.setText(REMOVE_CONTEXT);
+            addProjectBtn.setToolTipText(REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT);
         } else {
             addProjectBtn.setIcon(AddFileIcon);
-            addProjectBtn.setText(ADD_FULL_PROJECT_TO_PROMPT);
-            addProjectBtn.setToolTipText("Add entire project to prompt context");
+            addProjectBtn.setText(ADD_PROJECT_TO_CONTEXT);
+            addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
         }
     }
 
@@ -262,56 +278,13 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         return selectedProvider != null && isSupportedProvider(selectedProvider);
     }
 
-    /**
-     * Set the search buttons visibility based on settings.
-     */
-    public void configureSearchButtonsVisibility() {
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        if (Boolean.TRUE.equals(stateService.getEnableWebSearch())) {
-            tavilySearchBtn.setVisible(!stateService.getTavilySearchKey().isEmpty());
-            googleSearchBtn.setVisible(!stateService.getGoogleSearchKey().isEmpty() &&
-                                       !stateService.getGoogleCSIKey().isEmpty());
-        } else {
-            tavilySearchBtn.setVisible(false);
-            googleSearchBtn.setVisible(false);
-        }
-    }
-
-    /**
-     * Setup the Add Project button.
-     */
-    private void setupAddProjectButton() {
-        addProjectBtn.setToolTipText("Add entire project to prompt context");
-        addProjectBtn.addActionListener(e -> toggleProjectContext());
-
-        calcTokenCostBtn.setToolTipText("Calculate tokens and cost for the entire project");
-        calcTokenCostBtn.addActionListener(e -> calculateTokensAndCost());
-
-        calcProjectPanel.add(calcTokenCostBtn);
-        calcProjectPanel.add(addProjectBtn);
-        add(calcProjectPanel, BorderLayout.SOUTH);
-
-        updateAddProjectButtonVisibility();
-    }
-
-    /**
-     * Add the project source code to the prompt context.
-     */
-    private void toggleProjectContext() {
-        if (isProjectContextAdded) {
-            confirmProjectContextRemoval();
-        } else {
-            addProjectToContext();
-        }
-    }
-
     private void removeProjectContext() {
         projectContext = null;
         isProjectContextAdded = false;
 
         addProjectBtn.setIcon(AddFileIcon);
-        addProjectBtn.setText(ADD_FULL_PROJECT_TO_PROMPT);
-        addProjectBtn.setToolTipText("Add entire project to prompt context");
+        addProjectBtn.setText(ADD_PROJECT_TO_CONTEXT);
+        addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
 
         resetTokenUsageBar();
         tokenCount = 0;
@@ -356,8 +329,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 ApplicationManager.getApplication().invokeLater(() -> {
                     addProjectBtn.setIcon(DeleteIcon);
                     tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent.getContent());
-                    addProjectBtn.setText("Full Project (" + WindowContextFormatterUtil.format(tokenCount, "tokens") + ")");
-                    addProjectBtn.setToolTipText("Remove entire project from prompt context");
+                    addProjectBtn.setText(WindowContextFormatterUtil.format(tokenCount, "tokens"));
+                    addProjectBtn.setToolTipText(REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT);
                     addProjectBtn.setEnabled(true);
 
                     tokenUsageBar.setTokens(tokenCount, tokenLimit);
@@ -387,10 +360,16 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         return tokenLimit;
     }
 
+    private void updateButtonVisibility() {
+        boolean isSupported = isProjectContextSupportedProvider();
+        calcTokenCostBtn.setVisible(isSupported);
+        addProjectBtn.setVisible(isSupported);
+    }
+
     @Override
     public void settingsChanged(boolean hasKey) {
         calcProjectPanel.setVisible(hasKey && isProjectContextSupportedProvider());
-        updateAddProjectButtonVisibility();
+        updateButtonVisibility();
     }
 
     private void calculateTokensAndCost() {
@@ -439,21 +418,6 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         });
     }
 
-    @Override public void setSize(@NotNull Dimension dimension) {
-        super.setSize(dimension);
-        revalidateLayout();
-    }
-
-    private void revalidateLayout() {
-        if (getWidth() < 400) {
-            // Switch to compact layout
-             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        } else {
-            // Use regular layout
-             setLayout(new BorderLayout());
-        }
-    }
-
     private void setupAccessibility() {
         submitBtn.getAccessibleContext().setAccessibleDescription("Submit prompt to AI");
         addFileBtn.getAccessibleContext().setAccessibleDescription("Add files to context");
@@ -465,7 +429,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
     private void confirmProjectContextRemoval() {
         int result = Messages.showYesNoDialog(project,
-                "Are you sure you want to remove the project context?",         "Confirm Removal",
+                "Are you sure you want to remove the project context?",
+                "Confirm Removal",
                 Messages.getQuestionIcon()
         );     if (result == Messages.YES) {
             removeProjectContext();

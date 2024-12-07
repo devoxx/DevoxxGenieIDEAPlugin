@@ -81,15 +81,24 @@ public class MessageCreationService {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        // Add system prompt for o1 models
+        // Add system prompt for OpenAI o1 models
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
 
         // If git diff is enabled, add special instructions
-        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getGitDiffActivated())) {
+            // Git diff is enabled, add special instructions at the beginning
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
+        } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSemanticSearchActivated())) {
+            // Semantic search is enabled, add search results
+            String semanticContext = addSemanticSearchResults(chatMessageContext);
+            if (!semanticContext.isEmpty()) {
+                stringBuilder.append("<SemanticContext>\n");
+                stringBuilder.append(semanticContext);
+                stringBuilder.append("\n</SemanticContext>");
+            }
         }
 
         // Add the user's prompt
@@ -101,14 +110,6 @@ public class MessageCreationService {
             stringBuilder.append("<EditorContext>\n");
             stringBuilder.append(editorContent);
             stringBuilder.append("\n</EditorContext>\n\n");
-        }
-
-        // Add semantic search results if available
-        String semanticContext = addSemanticSearchResults(chatMessageContext);
-        if (!semanticContext.isEmpty()) {
-            stringBuilder.append("<SemanticContext>\n");
-            stringBuilder.append(semanticContext);
-            stringBuilder.append("\n</SemanticContext>");
         }
 
         UserMessage userMessage = new UserMessage(stringBuilder.toString());
@@ -175,7 +176,7 @@ public class MessageCreationService {
     private static List<SemanticFile> extractFileReferences(@NotNull Map<String, SearchResult> searchResults) {
         return searchResults.keySet().stream()
                 .map(value -> new SemanticFile(value, searchResults.get(value).score()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -233,7 +234,7 @@ public class MessageCreationService {
         StringBuilder stringBuilder = new StringBuilder();
 
         // If git diff is enabled, add special instructions at the beginning
-        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
@@ -291,17 +292,5 @@ public class MessageCreationService {
             userPromptContext.append(userPrompt);
             return userPromptContext.toString();
         });
-    }
-
-    /**
-     * Append the text to the string builder if it is not empty.
-     *
-     * @param sb   the string builder
-     * @param text the text
-     */
-    private void appendIfNotEmpty(StringBuilder sb, String text) {
-        if (text != null && !text.isEmpty()) {
-            sb.append(text).append("\n");
-        }
     }
 }

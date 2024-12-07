@@ -61,10 +61,21 @@ public class Constant {
     // Stream mode settings
     public static final Boolean STREAM_MODE = false;
 
+    // Button labels
+    public static final String ADD_PROJECT_TO_CONTEXT = "Add project";
+    public static final String CALC_TOKENS_COST = "Calc Tokens";
+    public static final String REMOVE_CONTEXT = "Remove context";
+
     // Button tooltip texts
+    public static final String SHIFT_ENTER = " (Shift+Enter)";
     public static final String ADD_FILE_S_TO_PROMPT_CONTEXT = "Add file(s) to prompt context";
     public static final String SUBMIT_THE_PROMPT = "Submit the prompt";
-    public static final String SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER = "Search the web with Tavily for an answer";
-    public static final String SEARCH_GOOGLE_FOR_AN_ANSWER = "Search Google for an answer";
+    public static final String CALCULATE_TOKENS_COST = "Calculate tokens cost";
+    public static final String ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT = "Add entire project to prompt context";
     public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
+    public static final String REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT = "Remove entire project from prompt context";
+
+    // Titles
+    public static final String FILTER_AND_DOUBLE_CLICK_TO_ADD_TO_PROMPT_CONTEXT = "Filter and Double-Click To Add To Prompt Context";
+
 }

@@ -37,6 +37,7 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).settingsChanged();
+        // Notify listeners that settings have changed
+        messageBus.syncPublisher(AppTopics.LLM_SETTINGS_CHANGED_TOPIC).llmSettingsChanged();
     }
 }

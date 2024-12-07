@@ -31,7 +31,7 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
             new JBIntSpinner(new UINumericRange(stateService.getMaxSearchResults(), 1, 10));
 
     public WebSearchProvidersComponent() {
-        activateSearchElements(stateService.getEnableWebSearch());
+        validateSearchElements();
         addListeners();
     }
 
@@ -76,16 +76,11 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
     @Override
     public void addListeners() {
-        enableWebSearchCheckbox.addItemListener(event -> {
-            boolean selected = event.getStateChange() == ItemEvent.SELECTED;
-            activateSearchElements(selected);
-        });
+        enableWebSearchCheckbox.addItemListener(
+                event -> stateService.setEnableWebSearch(event.getStateChange() == ItemEvent.SELECTED));
     }
 
-    private void activateSearchElements(boolean selected) {
-        tavilySearchApiKeyField.setEnabled(selected);
-        googleSearchApiKeyField.setEnabled(selected);
-        googleCSIApiKeyField.setEnabled(selected);
-        maxSearchResults.setEnabled(selected);
+    private void validateSearchElements() {
+        // TODO We need to check if either Google search URL or Tavily search URL is set to enable the search feature
     }
 }

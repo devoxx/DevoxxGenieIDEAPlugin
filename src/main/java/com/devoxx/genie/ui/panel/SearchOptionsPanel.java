@@ -18,10 +18,13 @@ import java.util.List;
 
 public class SearchOptionsPanel extends JPanel {
     private final List<InputSwitch> switches = new ArrayList<>();
+    private static final int DEFAULT_HEIGHT = JBUI.scale(30);
 
     public SearchOptionsPanel() {
         super(new FlowLayout(FlowLayout.CENTER, JBUI.scale(10), 0));
         setOpaque(false);
+
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // Create switches
         InputSwitch semanticSearchSwitch = new InputSwitch(
@@ -30,7 +33,7 @@ public class SearchOptionsPanel extends JPanel {
         );
 
         InputSwitch gitDiffSwitch = new InputSwitch(
-                "GitDiff",
+                "Git Diff",
                 "Show Git diff window to compare and merge code suggestions"
         );
 
@@ -38,14 +41,16 @@ public class SearchOptionsPanel extends JPanel {
                 "Web",
                 "Search the web for additional information"
         );
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // Add switches to our list for tracking
         switches.add(semanticSearchSwitch);
         switches.add(gitDiffSwitch);
         switches.add(webSearchSwitch);
 
-        // Load saved state
+        // Initialize visibility based on state service
+        updateInitialVisibility(stateService);
+
+        // Load saved state for enabled switches
         semanticSearchSwitch.setSelected(stateService.getSemanticSearchEnabled());
         gitDiffSwitch.setSelected(stateService.getGitDiffEnabled());
         webSearchSwitch.setSelected(stateService.getEnableWebSearch());
@@ -58,8 +63,8 @@ public class SearchOptionsPanel extends JPanel {
             if (selected) {
                 deactivateOtherSwitches(semanticSearchSwitch);
             }
-
             stateService.setSemanticSearchActivated(selected);
+            updatePanelVisibility();
         });
 
         gitDiffSwitch.addEventSelected(selected -> {
@@ -67,6 +72,7 @@ public class SearchOptionsPanel extends JPanel {
                 deactivateOtherSwitches(gitDiffSwitch);
             }
             stateService.setGitDiffActivated(selected);
+            updatePanelVisibility();
         });
 
         webSearchSwitch.addEventSelected(selected -> {
@@ -74,9 +80,11 @@ public class SearchOptionsPanel extends JPanel {
                 deactivateOtherSwitches(webSearchSwitch);
             }
             stateService.setWebSearchActivated(selected);
+            updatePanelVisibility();
         });
 
-        addMessageBusListener();
+        // Set up message bus listeners for visibility changes
+        setupMessageBusListeners();
 
         // Add components
         add(semanticSearchSwitch);
@@ -86,37 +94,85 @@ public class SearchOptionsPanel extends JPanel {
         // Add some padding
         setBorder(JBUI.Borders.empty(5, 10));
 
-        // Set minimum size
-        int minHeight = JBUI.scale(30);  // adjust this value as needed
-        setMinimumSize(new Dimension(0, minHeight));
-        setPreferredSize(new Dimension(getPreferredSize().width, minHeight));
+        // Update panel visibility based on initial state
+        updatePanelVisibility();
     }
 
-    private void addMessageBusListener() {
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(0, shouldBeVisible() ? DEFAULT_HEIGHT : 0);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (!shouldBeVisible()) {
+            return new Dimension(0, 0);
+        }
+        Dimension size = super.getPreferredSize();
+        return new Dimension(size.width, DEFAULT_HEIGHT);
+    }
+
+    private boolean shouldBeVisible() {
+        return switches.stream().anyMatch(sw -> sw.isVisible());
+    }
+
+    private void updatePanelVisibility() {
+        setVisible(shouldBeVisible());
+        revalidate();
+        repaint();
+    }
+
+    private void updateInitialVisibility(DevoxxGenieStateService stateService) {
+        // Set initial visibility based on state service
+        switches.get(0).setVisible(stateService.getSemanticSearchEnabled());
+        switches.get(1).setVisible(stateService.getGitDiffEnabled());
+        switches.get(2).setVisible(stateService.getEnableWebSearch());
+
+        // Update panel visibility
+        updatePanelVisibility();
+    }
+
+    private void setupMessageBusListeners() {
         Application application = ApplicationManager.getApplication();
         MessageBusConnection connect = application.getMessageBus().connect();
 
+        // Subscribe to state changes and update both visibility and selection
         connect.subscribe(AppTopics.SEMANTIC_SEARCH_STATE_TOPIC,
-               (SemanticSearchStateListener) enabled -> switches.get(0).setSelected(enabled));
+                (SemanticSearchStateListener) enabled -> {
+                    InputSwitch semanticSwitch = switches.get(0);
+                    semanticSwitch.setVisible(enabled);
+                    semanticSwitch.setSelected(enabled);
+                    updatePanelVisibility();
+                });
 
         connect.subscribe(AppTopics.GITDIFF_STATE_TOPIC,
-                (GitDiffStateListener) enabled -> switches.get(1).setSelected(enabled));
+                (GitDiffStateListener) enabled -> {
+                    InputSwitch gitDiffSwitch = switches.get(1);
+                    gitDiffSwitch.setVisible(enabled);
+                    gitDiffSwitch.setSelected(enabled);
+                    updatePanelVisibility();
+                });
 
         connect.subscribe(AppTopics.WEB_SEARCH_STATE_TOPIC,
-                (WebSearchStateListener) enabled -> switches.get(2).setSelected(enabled));
+                (WebSearchStateListener) enabled -> {
+                    InputSwitch webSearchSwitch = switches.get(2);
+                    webSearchSwitch.setVisible(enabled);
+                    webSearchSwitch.setSelected(enabled);
+                    updatePanelVisibility();
+                });
     }
 
     private void deactivateOtherSwitches(InputSwitch activeSwitch) {
         switches.stream()
-                .filter(sw -> sw != activeSwitch)
+                .filter(sw -> sw != activeSwitch && sw.isVisible())
                 .forEach(sw -> sw.setSelected(false));
     }
 
     private void enforceInitialSingleSelection() {
-        // Find the first active switch
+        // Find the first active and visible switch
         switches.stream()
-                .filter(InputSwitch::isSelected)
-                .findFirst().ifPresent(this::deactivateOtherSwitches);
-
+                .filter(sw -> sw.isSelected() && sw.isVisible())
+                .findFirst()
+                .ifPresent(this::deactivateOtherSwitches);
     }
 }

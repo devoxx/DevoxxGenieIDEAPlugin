@@ -46,7 +46,7 @@ public class ChatPromptExecutor {
                               Runnable enableButtons) {
 
         Project project = chatMessageContext.getProject();
-        if (isRunningMap.getOrDefault(project, false)) {
+        if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
             stopPromptExecution(project);
             return;
         }
@@ -65,7 +65,7 @@ public class ChatPromptExecutor {
                             promptInputArea.requestInputFocus();
                         });
                     });
-                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+                } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
@@ -137,7 +137,7 @@ public class ChatPromptExecutor {
      * @param project the project
      */
     public void stopPromptExecution(Project project) {
-        if (isRunningMap.getOrDefault(project, false)) {
+        if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
             isRunningMap.put(project, false);
             streamingPromptExecutor.stopStreaming();
             nonStreamingPromptExecutor.stopExecution();

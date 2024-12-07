@@ -48,8 +48,12 @@ public class InputSwitch extends JPanel {
     // Inner class for the actual switch button
     private class SwitchButton extends JComponent {
 
+        private static final String ON_TEXT = "On";
+        private static final String OFF_TEXT = "Off";
+        private static final int LABEL_PADDING = 4;
+
         public SwitchButton() {
-            setPreferredSize(new Dimension(30, 10));
+            setPreferredSize(new Dimension(45, 20)); // Increased size to accommodate labels
             setBackground(new Color(255, 165, 0));
             setForeground(Color.WHITE);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -83,23 +87,48 @@ public class InputSwitch extends JPanel {
         protected void paintComponent(Graphics grphcs) {
             Graphics2D g2 = (Graphics2D) grphcs;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
             int width = getWidth();
             int height = getHeight();
             float alpha = getAlpha();
+
+            // Draw background
             if (alpha < 1) {
                 g2.setColor(Color.GRAY);
-                g2.fillRoundRect(0, 0, width, height, 15, 15);
+                g2.fillRoundRect(0, 0, width, height, height, height);
             }
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, width, height, 15, 15);
+            g2.fillRoundRect(0, 0, width, height, height, height);
+
+            // Draw the switch circle
             g2.setColor(getForeground());
             g2.setComposite(AlphaComposite.SrcOver);
             g2.fillOval((int) location, 2, height - 4, height - 4);
+
+            // Draw labels
+            g2.setFont(new Font("Arial", Font.BOLD, 10));
+            FontMetrics fm = g2.getFontMetrics();
+
+            // Calculate text positions
+            String text = selected ? ON_TEXT : OFF_TEXT;
+            int textX;
+            if (selected) {
+                textX = LABEL_PADDING;
+            } else {
+                textX = width - fm.stringWidth(text) - LABEL_PADDING;
+            }
+
+            int textY = (height - fm.getHeight()) / 2 + fm.getAscent();
+
+            // Draw text with contrasting color
+            g2.setColor(selected ? Color.WHITE : Color.GRAY);
+            g2.drawString(text, textX, textY);
         }
 
         private float getAlpha() {
-            float width = switchButton.getWidth() - switchButton.getHeight();
+            float width = getWidth() - getHeight();
             float alpha = (location - 2) / width;
             if (alpha < 0) {
                 alpha = 0;

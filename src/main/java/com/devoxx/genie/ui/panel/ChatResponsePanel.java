@@ -33,7 +33,7 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPla
 
 public class ChatResponsePanel extends BackgroundPanel {
 
-    private final ChatMessageContext chatMessageContext;
+    private final transient ChatMessageContext chatMessageContext;
 
     /**
      * Create a new chat response panel.
@@ -61,8 +61,8 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        // If git diff is enabled, try to extract code blocks and show diff
-        if (stateService.getUseSimpleDiff()) {
+        // If git diff is activated, try to extract code blocks and show diff
+        if (Boolean.TRUE.equals(stateService.getGitDiffActivated())) {
             processGitDiff(chatMessageContext, document);
         }
 
@@ -83,7 +83,7 @@ public class ChatResponsePanel extends BackgroundPanel {
             add(semanticPanel);
         }
 
-        if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
             // Add execution time, token usage and cost information
             addMetricExecutionInfo(chatMessageContext);
         }
