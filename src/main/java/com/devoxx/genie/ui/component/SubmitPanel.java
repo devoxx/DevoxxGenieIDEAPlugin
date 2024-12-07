@@ -16,7 +16,7 @@ import java.util.ResourceBundle;
 
 public class SubmitPanel extends JBPanel<SubmitPanel> {
 
-    public static final int MIN_INPUT_HEIGHT = 100;
+    public static final int MIN_INPUT_HEIGHT = 200;
     private final Project project;
     private final DevoxxGenieToolWindowContent toolWindowContent;
     @Getter
