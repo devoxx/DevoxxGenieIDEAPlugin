@@ -24,8 +24,12 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
     @Getter
     private ActionButtonsPanel actionButtonsPanel;
 
+    /**
+     * The Submit Panel constructor.
+     *
+     * @param toolWindowContent the tool window content
+     */
     public SubmitPanel(DevoxxGenieToolWindowContent toolWindowContent)
-
     {
         super(new BorderLayout());
         this.toolWindowContent = toolWindowContent;

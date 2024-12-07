@@ -4,7 +4,6 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ChatService;
-import com.devoxx.genie.service.ConversationStorageService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
@@ -13,7 +12,6 @@ import com.devoxx.genie.ui.component.SubmitPanel;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
-import com.devoxx.genie.ui.util.WelcomeUtil;
 import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -54,6 +52,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     /**
      * The conversation panel constructor.
      *
+     * @param toolWindowContent the tool window content
      */
     public ConversationPanel(DevoxxGenieToolWindowContent toolWindowContent) {
         super(new BorderLayout());
