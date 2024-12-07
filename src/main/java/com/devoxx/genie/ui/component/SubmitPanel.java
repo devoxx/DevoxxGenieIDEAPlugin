@@ -18,24 +18,21 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
 
     public static final int MIN_INPUT_HEIGHT = 100;
     private final Project project;
-
     private final DevoxxGenieToolWindowContent toolWindowContent;
-    private PromptContextFileListPanel promptContextFileListPanel;
     @Getter
     private final PromptInputArea promptInputArea;
-
     @Getter
     private ActionButtonsPanel actionButtonsPanel;
 
-
-    public SubmitPanel(DevoxxGenieToolWindowContent devoxxGenieToolWindowContent, Project project, ResourceBundle resourceBundle)
+    public SubmitPanel(DevoxxGenieToolWindowContent toolWindowContent)
 
     {
         super(new BorderLayout());
-        this.toolWindowContent = devoxxGenieToolWindowContent;
-        this.project = project;
+        this.toolWindowContent = toolWindowContent;
+        this.project = toolWindowContent.getProject();
+        ResourceBundle resourceBundle = toolWindowContent.getResourceBundle();
 
-        promptContextFileListPanel = new PromptContextFileListPanel(project);
+        PromptContextFileListPanel promptContextFileListPanel = new PromptContextFileListPanel(project);
         promptInputArea = new PromptInputArea(resourceBundle, project);
 
         JPanel submitPanel = new JPanel(new BorderLayout());
@@ -47,7 +44,6 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
 
         add(submitPanel);
     }
-
 
     /**
      * The bottom action buttons panel (Submit, Search buttons and Add Files)

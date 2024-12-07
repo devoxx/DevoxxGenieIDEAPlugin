@@ -6,12 +6,17 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.ExpandablePanel;
+import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.messages.MessageBusConnection;
 import dev.langchain4j.data.message.AiMessage;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,18 +28,22 @@ import java.util.UUID;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
-public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
+public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
+
+    private final Project project;
+    private final ResourceBundle resourceBundle;
 
     private final JPanel container = new JPanel();
     private final WelcomePanel welcomePanel;
     private final HelpPanel helpPanel;
     private final WaitingPanel waitingPanel = new WaitingPanel();
     private final JBScrollPane scrollPane;
-    private final ResourceBundle resourceBundle;
 
-    public PromptOutputPanel(ResourceBundle resourceBundle) {
+
+    public PromptOutputPanel(Project project, ResourceBundle resourceBundle) {
         super();
 
+        this.project = project;
         this.resourceBundle = resourceBundle;
         welcomePanel = new WelcomePanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage(resourceBundle));
@@ -169,4 +178,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
                 .build())
             .cost(0).build();
     }
+
+    @Override
+    public void onCustomPromptsChanged() {
+        // Update the help panel or any other UI components that display custom prompts
+        ApplicationManager.getApplication().invokeLater(this::updateHelpText);
+    }
+
 }

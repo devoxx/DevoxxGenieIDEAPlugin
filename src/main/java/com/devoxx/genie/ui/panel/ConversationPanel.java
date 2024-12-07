@@ -1,9 +1,16 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.conversation.Conversation;
+import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.service.ConversationStorageService;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.ConversationStarter;
+import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.JHoverButton;
+import com.devoxx.genie.ui.component.SubmitPanel;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.devoxx.genie.ui.util.WelcomeUtil;
@@ -25,36 +32,35 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 
 @Getter
-public class ConversationPanel extends JPanel implements ConversationSelectionListener {
+public class ConversationPanel extends JPanel implements ConversationSelectionListener, ConversationEventListener, ConversationStarter {
+
+    private final DevoxxGenieToolWindowContent toolWindowContent;
 
     private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
     private final JButton settingsBtn = new JHoverButton(CogIcon, true);
     private final JButton historyButton = new JHoverButton(ClockIcon, true);
 
     private final Project project;
-    private final ConversationStarter conversationStarter;
     private final JLabel newConversationLabel;
     private final ConversationHistoryPanel historyPanel;
     private final PromptOutputPanel promptOutputPanel;
+    private final SubmitPanel submitPanel;
     private final JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+
     private JBPopup historyPopup;
+
+    private final ChatService chatService;
 
     /**
      * The conversation panel constructor.
      *
-     * @param project             the project
-     * @param conversationStarter the conversation starter
-     * @param storageService      the storage service
      */
-    public ConversationPanel(Project project,
-                             ConversationStarter conversationStarter,
-                             ConversationStorageService storageService,
-                             PromptOutputPanel promptOutputPanel) {
-
+    public ConversationPanel(DevoxxGenieToolWindowContent toolWindowContent) {
         super(new BorderLayout());
-        this.project = project;
-        this.conversationStarter = conversationStarter;
-        this.promptOutputPanel = promptOutputPanel;
+
+        this.toolWindowContent = toolWindowContent;
+        this.project = toolWindowContent.getProject();
+        this.promptOutputPanel = toolWindowContent.getPromptOutputPanel();
 
         setPreferredSize(new Dimension(0, 30));
 
@@ -62,15 +68,18 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         newConversationLabel.setForeground(JBColor.GRAY);
         newConversationLabel.setPreferredSize(new Dimension(0, 30));
 
-        historyPanel = new ConversationHistoryPanel(storageService, this, project);
+        historyPanel = new ConversationHistoryPanel(toolWindowContent.getStorageService(), this, project);
 
         setupConversationButtons();
 
         add(newConversationLabel, BorderLayout.CENTER);
         add(createButtonPanel(), BorderLayout.EAST);
 
+        chatService = new ChatService(toolWindowContent.getStorageService(), project);
+
         ApplicationManager.getApplication().getMessageBus().connect()
             .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> updateFontSize());
+        submitPanel = toolWindowContent.getSubmitPanel();
     }
 
     private void updateFontSize() {
@@ -111,7 +120,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
         settingsBtn.addActionListener(e -> SettingsDialogUtil.showSettingsDialog(project));
 
         newConversationBtn.setToolTipText("Start a new conversation");
-        newConversationBtn.addActionListener(e -> conversationStarter.startNewConversation());
+        newConversationBtn.addActionListener(e -> startNewConversation());
 
         updateFontSize();
     }
@@ -154,5 +163,32 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
         // Show the popup at the calculated position
         historyPopup.show(new RelativePoint(screenPoint));
+    }
+
+    @Override
+    public void onNewConversation(ChatMessageContext chatMessageContext) {
+        loadConversationHistory();
+    }
+
+    /**
+     * Start a new conversation.
+     * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
+     */
+    @Override
+    public void startNewConversation() {
+        FileListManager.getInstance().clear();
+        ChatMemoryService.getInstance().clear(project);
+
+        chatService.startNewConversation("");
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            updateNewConversationLabel();
+            submitPanel.getPromptInputArea().clear();
+            promptOutputPanel.clear();
+            submitPanel.getActionButtonsPanel().resetProjectContext();
+            submitPanel.getActionButtonsPanel().enableButtons();
+            submitPanel.getActionButtonsPanel().resetTokenUsageBar();
+            submitPanel.getPromptInputArea().requestFocusInWindow();
+        });
     }
 }
