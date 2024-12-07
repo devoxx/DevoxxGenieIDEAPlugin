@@ -43,8 +43,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
     private final JButton refreshButton = new JHoverButton(RefreshIcon, true);
 
-    private final ConversationStorageService storageService = ConversationStorageService.getInstance();
-
     private String lastSelectedProvider = null;
     private String lastSelectedLanguageModel = null;
 
