@@ -32,14 +32,14 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  */
 public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
 
-    private final Project project; // Holds the current project context
-    private final ResourceBundle resourceBundle; // Resource bundle for localization
+    private final Project project;
+    private final ResourceBundle resourceBundle;
 
-    private final JPanel container = new JPanel(); // Main container for chat components
-    private final WelcomePanel welcomePanel; // Panel to display welcome message
-    private final HelpPanel helpPanel; // Panel to display help information
-    private final WaitingPanel waitingPanel = new WaitingPanel(); // Panel to indicate waiting state
-    private final JBScrollPane scrollPane; // Scrollable pane for the container
+    private final JPanel container = new JPanel();
+    private final WelcomePanel welcomePanel;
+    private final HelpPanel helpPanel;
+    private final WaitingPanel waitingPanel = new WaitingPanel();
+    private final JBScrollPane scrollPane;
 
     /**
      * Constructor for PromptOutputPanel.
@@ -50,54 +50,49 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public PromptOutputPanel(Project project, ResourceBundle resourceBundle) {
         super();
 
-        // Initialize fields
         this.project = project;
         this.resourceBundle = resourceBundle;
         welcomePanel = new WelcomePanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage(resourceBundle));
 
-        // Set layout for the container
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
 
-        // Initialize scroll pane with the container
         scrollPane = new JBScrollPane(container);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Set layout for the main panel and add components
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
 
-        // Set minimum size for the panel
         setMinimumSize(new Dimension(200, 200));
-        showWelcomeText(); // Display the welcome message on initialization
+        showWelcomeText();
     }
 
     /**
      * Clears the container and shows the welcome text.
      */
     public void clear() {
-        container.removeAll(); // Remove all components
-        showWelcomeText(); // Show welcome panel
-        scrollToBottom(); // Scroll to the bottom
+        container.removeAll();
+        showWelcomeText();
+        scrollToBottom();
     }
 
     /**
      * Displays the welcome message in the panel.
      */
     public void showWelcomeText() {
-        welcomePanel.showMsg(); // Show the welcome message
-        container.add(welcomePanel); // Add welcome panel to the container
-        scrollToBottom(); // Scroll to the bottom
+        welcomePanel.showMsg();
+        container.add(welcomePanel);
+        scrollToBottom();
     }
 
     /**
      * Displays help text in the panel.
      */
     public void showHelpText() {
-        container.remove(welcomePanel); // Remove welcome panel
-        container.add(helpPanel); // Add help panel
-        scrollToBottom(); // Scroll to the bottom
+        container.remove(welcomePanel);
+        container.add(helpPanel);
+        scrollToBottom();
     }
 
     /**
@@ -106,7 +101,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param name The name of the filler.
      */
     private void addFiller(String name) {
-        container.add(new FillerPanel(name)); // Add a filler panel
+        container.add(new FillerPanel(name));
     }
 
     /**
@@ -115,19 +110,18 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
-        container.remove(welcomePanel); // Remove the welcome panel
+        container.remove(welcomePanel);
 
-        UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext); // Create user prompt panel
+        UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
 
-        // Display waiting message if not in stream mode
         if (!DevoxxGenieStateService.getInstance().getStreamMode()) {
             waitingPanel.showMsg();
             userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         }
 
-        addFiller(chatMessageContext.getId()); // Add filler for the user prompt
-        container.add(userPromptPanel); // Add user prompt panel
-        scrollToBottom(); // Scroll to the bottom
+        addFiller(chatMessageContext.getId());
+        container.add(userPromptPanel);
+        scrollToBottom();
     }
 
     /**
@@ -136,10 +130,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
-        waitingPanel.hideMsg(); // Hide the waiting message
-        addFiller(chatMessageContext.getId()); // Add filler for the chat response
-        container.add(new ChatResponsePanel(chatMessageContext)); // Add chat response panel
-        scrollToBottom(); // Scroll to the bottom
+        waitingPanel.hideMsg();
+        addFiller(chatMessageContext.getId());
+        container.add(new ChatResponsePanel(chatMessageContext));
+        scrollToBottom();
     }
 
     /**
@@ -148,8 +142,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatResponseStreamingPanel The streaming response panel.
      */
     public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
-        container.add(chatResponseStreamingPanel); // Add the streaming response panel
-        scrollToBottom(); // Scroll to the bottom
+        container.add(chatResponseStreamingPanel);
+        scrollToBottom();
     }
 
     /**
@@ -158,8 +152,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param fileListPanel The panel containing file references.
      */
     public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
-        container.add(fileListPanel); // Add the file references panel
-        scrollToBottom(); // Scroll to the bottom
+        container.add(fileListPanel);
+        scrollToBottom();
     }
 
     /**
@@ -168,16 +162,15 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void removeLastUserPrompt(ChatMessageContext chatMessageContext) {
-        // Iterate through components to find and remove the last user prompt
         for (Component component : container.getComponents()) {
             if (component instanceof UserPromptPanel && component.getName().equals(chatMessageContext.getId())) {
-                container.remove(component); // Remove the user prompt panel
+                container.remove(component);
                 break;
             }
         }
-        revalidate(); // Revalidate the container
-        repaint(); // Repaint the container
-        scrollToBottom(); // Scroll to the bottom
+        revalidate();
+        repaint();
+        scrollToBottom();
     }
 
     /**
@@ -186,11 +179,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     private void scrollToBottom() {
         ApplicationManager.getApplication().invokeLater(() -> {
             Timer timer = new Timer(100, e -> {
-                JScrollBar vertical = scrollPane.getVerticalScrollBar(); // Get the vertical scrollbar
-                vertical.setValue(vertical.getMaximum()); // Set the scrollbar to the maximum value
+                JScrollBar vertical = scrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
             });
-            timer.setRepeats(false); // Ensure timer only runs once
-            timer.start(); // Start the timer
+            timer.setRepeats(false);
+            timer.start();
         });
     }
 
@@ -198,7 +191,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * Updates the help text displayed in the help panel.
      */
     public void updateHelpText() {
-        helpPanel.updateHelpText(HelpUtil.getHelpMessage(resourceBundle)); // Update help text from resource bundle
+        helpPanel.updateHelpText(HelpUtil.getHelpMessage(resourceBundle));
     }
 
     /**
@@ -208,17 +201,17 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      */
     public void displayConversation(Conversation conversation) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            String conversationId = UUID.randomUUID().toString(); // Generate a unique ID for the conversation
+            String conversationId = UUID.randomUUID().toString();
             for (ChatMessage message : conversation.getMessages()) {
-                conversation.setId(conversationId); // Set the conversation ID
-                ChatMessageContext chatMessageContext = createChatMessageContext(conversation, message); // Create message context
+                conversation.setId(conversationId);
+                ChatMessageContext chatMessageContext = createChatMessageContext(conversation, message);
                 if (message.isUser()) {
-                    addUserPrompt(chatMessageContext); // Add user prompt
+                    addUserPrompt(chatMessageContext);
                 } else {
-                    addChatResponse(chatMessageContext); // Add chat response
+                    addChatResponse(chatMessageContext);
                 }
             }
-            scrollToBottom(); // Scroll to the bottom after adding messages
+            scrollToBottom();
         });
     }
 
@@ -231,7 +224,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      */
     private ChatMessageContext createChatMessageContext(@NotNull Conversation conversation,
                                                         @NotNull ChatMessage message) {
-        // Build and return a ChatMessageContext
         return ChatMessageContext.builder()
                 .id(conversation.getId())
                 .project(project)
@@ -255,7 +247,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      */
     @Override
     public void onCustomPromptsChanged() {
-        // Update the help panel or any other UI components that display custom prompts
         ApplicationManager.getApplication().invokeLater(this::updateHelpText);
     }
 }
