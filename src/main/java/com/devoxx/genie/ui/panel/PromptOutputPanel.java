@@ -204,15 +204,14 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     /**
      * Displays an entire conversation in the panel.
      *
-     * @param project      The current project.
      * @param conversation The conversation to be displayed.
      */
-    public void displayConversation(Project project, Conversation conversation) {
+    public void displayConversation(Conversation conversation) {
         ApplicationManager.getApplication().invokeLater(() -> {
             String conversationId = UUID.randomUUID().toString(); // Generate a unique ID for the conversation
             for (ChatMessage message : conversation.getMessages()) {
                 conversation.setId(conversationId); // Set the conversation ID
-                ChatMessageContext chatMessageContext = createChatMessageContext(project, conversation, message); // Create message context
+                ChatMessageContext chatMessageContext = createChatMessageContext(conversation, message); // Create message context
                 if (message.isUser()) {
                     addUserPrompt(chatMessageContext); // Add user prompt
                 } else {
@@ -226,13 +225,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     /**
      * Creates a ChatMessageContext from a conversation and a chat message.
      *
-     * @param project      The current project.
      * @param conversation The conversation containing the message.
      * @param message      The chat message.
      * @return The created ChatMessageContext.
      */
-    private ChatMessageContext createChatMessageContext(Project project,
-                                                        @NotNull Conversation conversation,
+    private ChatMessageContext createChatMessageContext(@NotNull Conversation conversation,
                                                         @NotNull ChatMessage message) {
         // Build and return a ChatMessageContext
         return ChatMessageContext.builder()

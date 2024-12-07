@@ -67,7 +67,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
         JPanel providerPanel = createProviderPanel();
         toolPanel.add(providerPanel);
-
         toolPanel.add(Box.createVerticalStrut(5));
 
         JPanel modelPanel = new JPanel(new BorderLayout());
@@ -88,7 +87,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
         add(toolPanel, BorderLayout.CENTER);
         isInitializationComplete = true;
-
     }
 
     /**

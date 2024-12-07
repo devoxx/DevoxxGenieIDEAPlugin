@@ -4,7 +4,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.*;
-import com.devoxx.genie.ui.component.SubmitPanel;
+import com.devoxx.genie.ui.panel.SubmitPanel;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.*;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;

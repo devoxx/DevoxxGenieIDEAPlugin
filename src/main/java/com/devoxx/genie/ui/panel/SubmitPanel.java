@@ -1,8 +1,7 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
-import com.devoxx.genie.ui.panel.ActionButtonsPanel;
-import com.devoxx.genie.ui.panel.PromptContextFileListPanel;
+import com.devoxx.genie.ui.component.PromptInputArea;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
