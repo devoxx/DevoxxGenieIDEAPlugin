@@ -10,7 +10,6 @@ import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.*;
-import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
@@ -20,7 +19,6 @@ import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.OnePixelSplitter;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.messages.MessageBusConnection;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -35,32 +33,30 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 /**
  * The Devoxx Genie Tool Window Content.
  */
-public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
-                                                     ConversationStarter,
-                                                     CustomPromptChangeListener,
-                                                     ConversationEventListener {
+public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
 
     private static final float SPLITTER_PROPORTION = 0.8f;
-    public static final int MIN_INPUT_HEIGHT = 100;
 
+    @Getter
     private final Project project;
+    @Getter
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
-
     @Getter
     private final JPanel contentPanel = new JPanel();
-
     @Getter
     private LlmProviderPanel llmProviderPanel;
+    @Getter
     private ConversationPanel conversationPanel;
+    @Getter
     private SubmitPanel submitPanel;
     @Getter
     private PromptOutputPanel promptOutputPanel;
 
     private boolean isInitializationComplete = false;
 
-    private final ChatService chatService;
+    @Getter
     private final ConversationStorageService storageService = ConversationStorageService.getInstance();
 
     /**
@@ -75,8 +71,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         stateService.addLoadListener(this::onStateLoaded);
         stateService.loadState(DevoxxGenieStateService.getInstance());
 
-        chatService = new ChatService(storageService, project);
-
         setupMessageBusConnection(toolWindow);
     }
 
@@ -86,19 +80,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
             setupUI();
             isInitializationComplete = true;
         }
-    }
-
-    /**
-     * Set up the message bus connection.
-     *
-     * @param toolWindow the tool window
-     */
-    private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
-        MessageBusConnection messageBusConnection = project.getMessageBus().connect();
-        messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this.llmProviderPanel);
-        messageBusConnection.subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
-        messageBusConnection.subscribe(AppTopics.CONVERSATION_TOPIC, this);
-        Disposer.register(toolWindow.getDisposable(), messageBusConnection);
     }
 
     /**
@@ -112,9 +93,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
 
     private void initializeComponents() {
         llmProviderPanel = new LlmProviderPanel(project);
-        promptOutputPanel = new PromptOutputPanel(resourceBundle);
-        submitPanel = new SubmitPanel(this, project, resourceBundle);
-        conversationPanel = new ConversationPanel(project, this, storageService, promptOutputPanel);
+        promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
+        submitPanel = new SubmitPanel(this);
+        conversationPanel = new ConversationPanel(this);
     }
 
     private void setupLayout() {
@@ -153,6 +134,19 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     }
 
     /**
+     * Set up the message bus connection.
+     *
+     * @param toolWindow the tool window
+     */
+    private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
+        MessageBusConnection messageBusConnection = project.getMessageBus().connect();
+        messageBusConnection.subscribe(AppTopics.LLM_SETTINGS_CHANGED_TOPIC, this.llmProviderPanel);
+        messageBusConnection.subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this.promptOutputPanel);
+        messageBusConnection.subscribe(AppTopics.CONVERSATION_TOPIC, this.conversationPanel);
+        Disposer.register(toolWindow.getDisposable(), messageBusConnection);
+    }
+
+    /**
      * Refresh the UI elements because the settings have changed.
      */
     @Override
@@ -179,28 +173,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
     }
 
     /**
-     * Start a new conversation.
-     * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
-     */
-    @Override
-    public void startNewConversation() {
-        FileListManager.getInstance().clear();
-        ChatMemoryService.getInstance().clear(project);
-
-        chatService.startNewConversation("");
-
-        ApplicationManager.getApplication().invokeLater(() -> {
-            conversationPanel.updateNewConversationLabel();
-            submitPanel.getPromptInputArea().clear();
-            promptOutputPanel.clear();
-            submitPanel.getActionButtonsPanel().resetProjectContext();
-            submitPanel.getActionButtonsPanel().enableButtons();
-            submitPanel.getActionButtonsPanel().resetTokenUsageBar();
-            submitPanel.getPromptInputArea().requestFocusInWindow();
-        });
-    }
-
-    /**
      * Process the model name selection.
      */
     private void processModelNameSelection(@NotNull ActionEvent e) {
@@ -212,20 +184,5 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
                 submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getContextWindow());
             }
         }
-    }
-
-    @Override
-    public void onCustomPromptsChanged() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            // Update the help panel or any other UI components that display custom prompts
-            if (promptOutputPanel != null) {
-                promptOutputPanel.updateHelpText();
-            }
-        });
-    }
-
-    @Override
-    public void onNewConversation(ChatMessageContext chatMessageContext) {
-        conversationPanel.loadConversationHistory();
     }
 }
