@@ -93,7 +93,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getId());
         container.add(new ChatResponsePanel(chatMessageContext));
-        scrollToBottom();
+        container.revalidate();
+        container.repaint();
+        ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
     }
 
     public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
