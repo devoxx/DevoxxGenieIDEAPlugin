@@ -133,7 +133,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getId());
         container.add(new ChatResponsePanel(chatMessageContext));
-        scrollToBottom();
+        container.revalidate();
+        container.repaint();
+        ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
     }
 
     /**
