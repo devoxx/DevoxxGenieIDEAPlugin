@@ -12,7 +12,6 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -76,7 +75,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         String text = getText().trim();
         if (!text.isEmpty()) {
             ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC_TOPIC)
+                .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
                 .onPromptSubmitted(project, text);
         }
     }

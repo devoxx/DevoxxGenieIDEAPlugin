@@ -17,7 +17,7 @@ public class AppTopics {
     public static final Topic<CustomPromptChangeListener> CUSTOM_PROMPT_CHANGED_TOPIC =
         Topic.create("CustomPromptChanged", CustomPromptChangeListener.class);
 
-    public static final Topic<PromptSubmissionListener> PROMPT_SUBMISSION_TOPIC_TOPIC =
+    public static final Topic<PromptSubmissionListener> PROMPT_SUBMISSION_TOPIC =
         Topic.create("PromptSubmission", PromptSubmissionListener.class);
 
     public static final Topic<ConversationEventListener> CONVERSATION_TOPIC =
