@@ -11,7 +11,6 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
-import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -23,9 +22,8 @@ import java.util.List;
 
 public class PromptSettingsComponent extends AbstractSettingsComponent {
 
-    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-
-    private final int PROMPT_COLUMN = 1;
+    private static final int NAME_COLUMN = 0;
+    private static final int PROMPT_COLUMN = 1;
 
     @Getter
     private final JTextArea systemPromptField = new JTextArea(stateService.getSystemPrompt());
@@ -70,7 +68,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         gbc.insets = JBUI.insets(5);
 
         addSection(panel, gbc, "Prompts");
-        addPromptArea(panel, gbc, "System prompt", systemPromptField);
+        addPromptArea(panel, gbc, systemPromptField);
         addSection(panel, gbc, "Custom Prompts");
 
         gbc.gridy++;
@@ -161,7 +159,6 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     }
 
     public List<CustomPrompt> getCustomPrompts() {
-        int NAME_COLUMN = 0;
         List<CustomPrompt> prompts = new ArrayList<>();
         for (int i = 0; i < customPromptsTableModel.getRowCount(); i++) {
             String name = (String) customPromptsTableModel.getValueAt(i, NAME_COLUMN);
@@ -178,20 +175,11 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         }
     }
 
-    private void addSection(@NotNull JPanel panel,
-                            @NotNull GridBagConstraints gbc,
-                            String title) {
-        gbc.gridy++;
-        panel.add(new JXTitledSeparator(title), gbc);
-        gbc.gridy++;
-    }
-
     private void addPromptArea(@NotNull JPanel panel,
                                @NotNull GridBagConstraints gbc,
-                               String label,
                                @NotNull JTextArea textArea) {
         gbc.gridy++;
-        panel.add(new JLabel(label), gbc);
+        panel.add(new JLabel("System prompt"), gbc);
 
         gbc.gridy++;
         textArea.setRows(5);

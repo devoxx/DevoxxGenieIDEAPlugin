@@ -191,6 +191,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
         contentPanel.setLayout(new BorderLayout());
         contentPanel.add(createTopPanel(), BorderLayout.NORTH);
         contentPanel.add(createSplitter(), BorderLayout.CENTER);
+        contentPanel.add(createActionButtonsPanel(), BorderLayout.SOUTH);
     }
 
     private void setupListeners() {
@@ -215,11 +216,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener,
      *
      * @return the splitter
      */
-    private @NotNull Splitter createSplitter() {
-        OnePixelSplitter splitter = new OnePixelSplitter(true, SPLITTER_PROPORTION);
-        splitter.setFirstComponent(promptOutputPanel);
-        splitter.setSecondComponent(createInputPanel());
+    private OnePixelSplitter createSplitter() {
+        OnePixelSplitter splitter = new OnePixelSplitter(true); // vertical split
+        splitter.setProportion(0.75f);
         splitter.setHonorComponentsMinimumSize(true);
+        splitter.setFirstComponent(promptOutputPanel);
+        splitter.setSecondComponent(promptInputArea);
         return splitter;
     }
 

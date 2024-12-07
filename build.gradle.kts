@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.3.1"
+version = "0.3.2"
 
 repositories {
     mavenCentral()
@@ -52,6 +52,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
+
+    implementation("com.github.docker-java:docker-java:3.4.0")
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")

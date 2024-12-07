@@ -169,4 +169,5 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> {
                 .build())
             .cost(0).build();
     }
+
 }

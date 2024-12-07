@@ -2,16 +2,8 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.ide.BrowserUtil;
-import com.intellij.ide.ui.UINumericRange;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
-import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -20,11 +12,6 @@ import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
-
-    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-
-    public static final String LINK_EMOJI = "\uD83D\uDD17";
-    public static final String PASSWORD_EMOJI = "\uD83D\uDD11";
 
     @Getter
     private final JTextField projectVersion = new JTextField(PropertiesService.getInstance().getVersion());
@@ -67,23 +54,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
-    private final JCheckBox hideSearchButtonsField = new JCheckBox("", stateService.getHideSearchButtonsFlag());
-    @Getter
-    private final JPasswordField tavilySearchApiKeyField = new JPasswordField(stateService.getTavilySearchKey());
-    @Getter
-    private final JPasswordField googleSearchApiKeyField = new JPasswordField(stateService.getGoogleSearchKey());
-    @Getter
-    private final JPasswordField googleCSIApiKeyField = new JPasswordField(stateService.getGoogleCSIKey());
-    @Getter
-    private final JBIntSpinner maxSearchResults = new JBIntSpinner(new UINumericRange(stateService.getMaxSearchResults(), 1, 10));
-    @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
-
     @Getter
     private final JCheckBox enableAzureOpenAI = new JCheckBox("", stateService.getShowAzureOpenAIFields());
 
     private final java.util.List<JComponent> azureComponents = new ArrayList<>();
-
 
     public LLMProvidersComponent() {
         addListeners();
@@ -124,13 +99,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         addAzureOpenAIPanel(panel, gbc);
 
-        addSection(panel, gbc, "Search Providers");
-        addSettingRow(panel, gbc, "Tavily Web Search API Key", createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
-        addSettingRow(panel, gbc, "Google Web Search API Key", createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"));
-        addSettingRow(panel, gbc, "Google Custom Search Engine ID", createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"));
-        addSettingRow(panel, gbc, "Max search results", maxSearchResults);
-        addSettingRow(panel, gbc, "Hide Search Providers", hideSearchButtonsField);
-
         addSection(panel, gbc, "Plugin version");
         addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
 
@@ -151,23 +119,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         }
     }
 
-    private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
-        gbc.gridx = 0;
-        gbc.gridy++;
-        gbc.gridwidth = 2;
-        panel.add(new JXTitledSeparator(title), gbc);
-        gbc.gridy++;
-    }
-
-    private void addSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
-        gbc.gridwidth = 1;
-        gbc.gridx = 0;
-        panel.add(new JLabel(label), gbc);
-        gbc.gridx = 1;
-        panel.add(component, gbc);
-        gbc.gridy++;
-    }
-
     private void addAzureComponentsSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
         gbc.gridwidth = 1;
         gbc.gridx = 0;
@@ -186,47 +137,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
     @Override
     public void addListeners() {
-        hideSearchButtonsField.addItemListener(event -> {
-            boolean selected = event.getStateChange() == ItemEvent.SELECTED;
-            tavilySearchApiKeyField.setEnabled(!selected);
-            googleSearchApiKeyField.setEnabled(!selected);
-            googleCSIApiKeyField.setEnabled(!selected);
-        });
-
         enableAzureOpenAI.addItemListener(event -> {
             azureComponents.forEach(comp -> comp.setVisible(event.getStateChange() == ItemEvent.SELECTED));
             panel.revalidate();
             panel.repaint();
         });
 
-    }
-
-    private @NotNull JComponent createTextWithPasswordButton(JComponent jComponent, String url) {
-        return createTextWithLinkButton(jComponent, PASSWORD_EMOJI, "Get your API Key from ", url);
-    }
-
-    private @NotNull JComponent createTextWithLinkButton(JComponent jComponent, String url) {
-        return createTextWithLinkButton(jComponent, LINK_EMOJI, "Download from ", url);
-    }
-
-    private @NotNull JComponent createTextWithLinkButton(JComponent jComponent,
-                                                         String emoji,
-                                                         String toolTipMsg,
-                                                         String url) {
-        JPanel jPanel = new JPanel(new BorderLayout());
-        jPanel.add(jComponent, BorderLayout.CENTER);
-
-        JButton btnApiKey = new JButton(emoji);
-        btnApiKey.setToolTipText(toolTipMsg + " " + url);
-        btnApiKey.addActionListener(e -> {
-            try {
-                BrowserUtil.open(url);
-            } catch (Exception ex) {
-                Project project = ProjectManager.getInstance().getOpenProjects()[0];
-                NotificationUtil.sendNotification(project, "Error: Unable to open the link");
-            }
-        });
-        jPanel.add(btnApiKey, BorderLayout.WEST);
-        return jPanel;
     }
 }

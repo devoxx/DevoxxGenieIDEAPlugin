@@ -55,7 +55,7 @@ public class Constant {
     public static final Integer MAX_MEMORY = 10;
 
     // Hide Search Button
-    public static final Boolean HIDE_SEARCH_BUTTONS = false;
+    public static final Boolean ENABLE_WEB_SEARCH = false;
     public static final Integer MAX_SEARCH_RESULTS = 3;
 
     // Stream mode settings

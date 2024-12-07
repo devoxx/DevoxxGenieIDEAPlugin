@@ -42,6 +42,20 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean showExecutionTime = true;
 
+    // Settings panel
+    private Boolean semanticSearchEnabled = false;
+    private Boolean gitDiffEnabled = false;
+
+    // Search panel
+    private Boolean semanticSearchActivated = false;
+    private Boolean gitDiffActivated = false;
+    private Boolean webSearchActivated = false;
+
+    // Indexer
+    private Integer indexerPort = 8000;
+    private Integer indexerMaxResults = 10;
+    private Double indexerMinScore = 0.7;
+
     // Git Diff features
     private Boolean useSimpleDiff = false;
 
@@ -69,7 +83,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIKey = "";
 
     // Search API Keys
-    private Boolean hideSearchButtonsFlag = HIDE_SEARCH_BUTTONS;
+    private Boolean enableWebSearch = ENABLE_WEB_SEARCH;
     private String googleSearchKey = "";
     private String googleCSIKey = "";
     private String tavilySearchKey = "";

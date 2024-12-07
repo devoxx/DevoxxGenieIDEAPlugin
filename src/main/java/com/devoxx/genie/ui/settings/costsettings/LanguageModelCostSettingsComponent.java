@@ -13,6 +13,9 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.SwingConstants.RIGHT;
+
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
     private final JTable costTable;
     private final SortableTableModel tableModel;
@@ -49,9 +52,9 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         // Set custom comparators for different column types
         sorter.setComparator(ColumnName.PROVIDER.ordinal(), String.CASE_INSENSITIVE_ORDER);
         sorter.setComparator(ColumnName.MODEL.ordinal(), String.CASE_INSENSITIVE_ORDER);
-        sorter.setComparator(ColumnName.INPUT_COST.ordinal(), Comparator.comparingDouble(value -> (Double) value));
-        sorter.setComparator(ColumnName.OUTPUT_COST.ordinal(), Comparator.comparingDouble(value -> (Double) value));
-        sorter.setComparator(ColumnName.CONTEXT_WINDOW.ordinal(), Comparator.comparingInt(value -> (Integer) value));
+        sorter.setComparator(ColumnName.INPUT_COST.ordinal(), Comparator.comparingDouble(Double.class::cast));
+        sorter.setComparator(ColumnName.OUTPUT_COST.ordinal(), Comparator.comparingDouble(Double.class::cast));
+        sorter.setComparator(ColumnName.CONTEXT_WINDOW.ordinal(), Comparator.comparingInt(Integer.class::cast));
 
         // Sort by provider by default
         List<RowSorter.SortKey> sortKeys = new ArrayList<>();
@@ -63,7 +66,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         loadCurrentCosts();
 
         JScrollPane scrollPane = new JBScrollPane(costTable);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
         panel.add(scrollPane, BorderLayout.CENTER);
     }
 
@@ -77,7 +80,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
 
     private void setCustomRenderers() {
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
-        rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        rightRenderer.setHorizontalAlignment(RIGHT);
 
         // Set right alignment for numeric columns
         costTable.getColumnModel().getColumn(ColumnName.CONTEXT_WINDOW.ordinal()).setCellRenderer(rightRenderer);

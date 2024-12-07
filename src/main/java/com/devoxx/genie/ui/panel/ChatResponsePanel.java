@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.service.gitdiff.GitMergeService;
@@ -67,10 +68,19 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         addDocumentNodesToPanel(document);
 
+        // Add regular files panel
         if (chatMessageContext.hasFiles()) {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);
+        }
+
+        // Add semantic references panel
+        List<SemanticFile> semanticReferences = chatMessageContext.getSemanticReferences();
+        if (semanticReferences != null && !semanticReferences.isEmpty()) {
+            ExpandablePanel semanticPanel = new ExpandablePanel(chatMessageContext.getProject(), semanticReferences);
+            semanticPanel.setName(chatMessageContext.getId() + "_semantic");
+            add(semanticPanel);
         }
 
         if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {

@@ -5,6 +5,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -15,6 +19,8 @@ public class ScanContentResult {
     private int fileCount;
     private int skippedFileCount;
     private int skippedDirectoryCount;
+    @Getter
+    private List<Path> files = new ArrayList<>();  // Add this field
 
     public void incrementFileCount() {
         fileCount++;
@@ -30,5 +36,9 @@ public class ScanContentResult {
 
     public void addTokenCount(int tokenCount) {
         this.tokenCount += tokenCount;
+    }
+
+    public void addFile(Path file) {
+        files.add(file);
     }
 }

@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.3.2</h2>
+        <UL>
+            <LI>Feature Indexer : Uses vector DB to index and search code</LI>
+        </UL>
         <h2>v0.3.1</h2>
         <UL>
             <LI>Feature #339: Only support Simple Git Diff (with com.intellij.diff.DiffManagerEx)</LI>
@@ -396,8 +400,8 @@
 
         <projectConfigurable parentId="tools"
                              id="com.devoxx.genie.DevoxxGenie"
-                             displayName="DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"/>
+                             instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"
+                             displayName="DevoxxGenie"/>
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -409,20 +413,30 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
+        <projectConfigurable id="com.devoxx.genie.WebSearch"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"
+                             displayName="Web search"/>
+
         <projectConfigurable id="com.devoxx.genie.CopyProjectSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
                              displayName="Scan &amp; Copy Project"/>
 
+        <projectConfigurable id="com.devoxx.genie.DiffSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.gitdiff.GitDiffSettingsConfigurable"
+                             displayName="LLM Git Diff View"/>
+
+        <projectConfigurable id="com.devoxx.genie.SemanticSearch"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.semanticsearch.SemanticSearchSettingsConfigurable"
+                             displayName="Semantic Search"/>
+
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
                              displayName="Token Cost &amp; Context Window"/>
-
-        <projectConfigurable id="com.devoxx.genie.DiffSettings"
-                             parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.gitmerge.GitMergeSettingsConfigurable"
-                             displayName="LLM Git Diff Merge"/>
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
@@ -445,11 +459,14 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.semanticsearch.ProjectIndexerService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
         <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
+
     </extensions>
 
     <actions>
