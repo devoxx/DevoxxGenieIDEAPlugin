@@ -58,6 +58,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private final JPanel validationPanel;
     private final RAGSettingsHandler validationHandler;
     private ButtonEditor buttonEditor;
+    private boolean isInitialValidationDone = false;
 
     public RAGSettingsComponent(Project project) {
         this.project = project;
@@ -67,13 +68,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         initializeComponents();
         addListeners();
         setupTable();
-        initialValidation();
         loadCollections();
         setupProgressBar();
-    }
-
-    private void initialValidation() {
-        validationHandler.performValidation();
     }
 
     private void initializeComponents() {

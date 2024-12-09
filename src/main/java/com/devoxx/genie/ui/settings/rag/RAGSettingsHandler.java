@@ -26,6 +26,8 @@ public class RAGSettingsHandler implements ActionListener {
     private final ChromaDBManager chromaDBManager;
     private final RAGSettingsComponent settingsComponent;
     private volatile boolean validationInProgress = false;
+    private volatile boolean validationQueued = false;
+    private volatile boolean isInitialValidationDone = false;  // Add this flag
 
     public RAGSettingsHandler(Project project,
                               JPanel validationPanel,
@@ -36,25 +38,38 @@ public class RAGSettingsHandler implements ActionListener {
         this.chromaDBManager = ChromaDBManager.getInstance();
     }
 
-
     public void performValidation() {
-        if (validationInProgress) {
-            return; // Skip if validation already in progress
+        if (!isInitialValidationDone) {
+            isInitialValidationDone = true;
+        } else if (validationInProgress) {
+            validationQueued = true;
+            return;
         }
 
-        validationPanel.removeAll();
-        validationPanel.setLayout(new BoxLayout(validationPanel, BoxLayout.Y_AXIS));
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                validationInProgress = true;
 
-        ValidationResult result = RagValidatorService.getInstance().validate();
+                validationPanel.removeAll();
+                validationPanel.setLayout(new BoxLayout(validationPanel, BoxLayout.Y_AXIS));
 
-        ValidatorsPanel statusPanel = new ValidatorsPanel(result.statuses(), this);
-        validationPanel.add(statusPanel);
-        validationPanel.add(Box.createVerticalStrut(5));
+                ValidationResult result = RagValidatorService.getInstance().validate();
+                ValidatorsPanel statusPanel = new ValidatorsPanel(result.statuses(), this);
+                validationPanel.add(statusPanel);
+                validationPanel.add(Box.createVerticalStrut(5));
 
-        validationPanel.revalidate();
-        validationPanel.repaint();
+                validationPanel.revalidate();
+                validationPanel.repaint();
 
-        settingsComponent.updateValidationStatus();
+                settingsComponent.updateValidationStatus();
+            } finally {
+                validationInProgress = false;
+                if (validationQueued) {
+                    validationQueued = false;
+                    performValidation();
+                }
+            }
+        });
     }
 
     public void handleValidationAction(@Nullable ValidatorStatus status) {
