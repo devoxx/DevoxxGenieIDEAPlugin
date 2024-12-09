@@ -3,15 +3,9 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.Constant;
-<<<<<<< HEAD
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
-=======
-import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.service.*;
->>>>>>> master
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
@@ -29,15 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-=======
-import java.util.*;
-import java.util.List;
->>>>>>> master
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 

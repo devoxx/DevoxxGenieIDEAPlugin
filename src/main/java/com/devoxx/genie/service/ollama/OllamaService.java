@@ -4,7 +4,6 @@ import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.google.gson.Gson;
-<<<<<<< HEAD
 import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
 import okhttp3.*;
@@ -14,26 +13,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.function.Consumer;
-=======
-import com.intellij.openapi.application.ApplicationManager;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
->>>>>>> master
 
 import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class OllamaService {
 
     private final OkHttpClient client = new OkHttpClient();
-<<<<<<< HEAD
     private final Gson gson = new Gson();
     private final MediaType JSON = MediaType.parse("application/json");
-=======
->>>>>>> master
 
     @NotNull
     public static OllamaService getInstance() {
@@ -65,7 +52,6 @@ public class OllamaService {
         }
     }
 
-<<<<<<< HEAD
     public void pullModel(String modelName, Consumer<String> statusCallback) throws IOException {
         String baseUrl = ensureEndsWithSlash(DevoxxGenieStateService.getInstance().getOllamaModelUrl());
 
@@ -107,8 +93,6 @@ public class OllamaService {
         }
     }
 
-=======
->>>>>>> master
     /**
      * Exception for unsuccessful requests.
      */

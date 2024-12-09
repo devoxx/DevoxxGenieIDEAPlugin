@@ -6,10 +6,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-<<<<<<< HEAD
-=======
-import java.util.List;
->>>>>>> master
 
 public class CopyProjectSettingsConfigurable implements Configurable {
 
@@ -48,13 +44,6 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     }
 
     @Override
-<<<<<<< HEAD
-=======
-    public void reset() {
-    }
-
-    @Override
->>>>>>> master
     public void disposeUIResources() {
         copyProjectSettingsComponent = null;
     }

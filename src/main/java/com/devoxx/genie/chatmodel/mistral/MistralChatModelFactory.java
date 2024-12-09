@@ -4,10 +4,6 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-<<<<<<< HEAD
-=======
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
->>>>>>> master
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;

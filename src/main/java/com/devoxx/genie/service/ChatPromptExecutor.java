@@ -8,10 +8,7 @@ import com.devoxx.genie.service.websearch.WebSearchExecutor;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-<<<<<<< HEAD
 import com.devoxx.genie.ui.util.NotificationUtil;
-=======
->>>>>>> master
 import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
@@ -26,11 +23,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-<<<<<<< HEAD
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 
-=======
->>>>>>> master
 public class ChatPromptExecutor {
 
     private final StreamingPromptExecutor streamingPromptExecutor;
@@ -55,11 +49,7 @@ public class ChatPromptExecutor {
                               Runnable enableButtons) {
 
         Project project = chatMessageContext.getProject();
-<<<<<<< HEAD
         if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
-=======
-        if (isRunningMap.getOrDefault(project, false)) {
->>>>>>> master
             stopPromptExecution(project);
             return;
         }
@@ -78,11 +68,7 @@ public class ChatPromptExecutor {
                             promptInputArea.requestInputFocus();
                         });
                     });
-<<<<<<< HEAD
                 } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-=======
-                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
->>>>>>> master
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
@@ -154,11 +140,7 @@ public class ChatPromptExecutor {
      * @param project the project
      */
     public void stopPromptExecution(Project project) {
-<<<<<<< HEAD
         if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
-=======
-        if (isRunningMap.getOrDefault(project, false)) {
->>>>>>> master
             isRunningMap.put(project, false);
             streamingPromptExecutor.stopStreaming();
             nonStreamingPromptExecutor.stopExecution();
@@ -177,7 +159,6 @@ public class ChatPromptExecutor {
         if (prompt.startsWith("/")) {
             DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
-<<<<<<< HEAD
             if (prompt.toLowerCase().startsWith("/" + FIND_COMMAND + " ")) {
                 if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
                     NotificationUtil.sendNotification(chatMessageContext.getProject(),
@@ -188,8 +169,6 @@ public class ChatPromptExecutor {
                 return Optional.of(prompt.substring(6).trim());
             }
 
-=======
->>>>>>> master
             // Check for custom prompts
             for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
                 if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {

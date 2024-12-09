@@ -42,7 +42,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean showExecutionTime = true;
 
-<<<<<<< HEAD
     // Settings panel
     private Boolean ragEnabled = false;
     private Boolean gitDiffEnabled = false;
@@ -57,8 +56,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer indexerMaxResults = 10;
     private Double indexerMinScore = 0.7;
 
-=======
->>>>>>> master
     // Git Diff features
     private Boolean useSimpleDiff = false;
 
@@ -86,11 +83,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIKey = "";
 
     // Search API Keys
-<<<<<<< HEAD
     private Boolean enableWebSearch = ENABLE_WEB_SEARCH;
-=======
-    private Boolean hideSearchButtonsFlag = HIDE_SEARCH_BUTTONS;
->>>>>>> master
+
     private String googleSearchKey = "";
     private String googleCSIKey = "";
     private String tavilySearchKey = "";
@@ -138,7 +132,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
 
-    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private List<Runnable> loadListeners = new ArrayList<>();
 
@@ -148,18 +141,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private void initializeDefaultPrompts() {
         if (customPrompts.isEmpty()) {
-<<<<<<< HEAD
             customPrompts.add(new CustomPrompt(TEST_COMMAND, TEST_PROMPT));
             customPrompts.add(new CustomPrompt(EXPLAIN_COMMAND, EXPLAIN_PROMPT));
             customPrompts.add(new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT));
             customPrompts.add(new CustomPrompt(FIND_COMMAND, FIND_PROMPT));
             customPrompts.add(new CustomPrompt(TDG_COMMAND, TDG_PROMPT));
-=======
-            customPrompts.add(new CustomPrompt("test", TEST_PROMPT));
-            customPrompts.add(new CustomPrompt("explain", EXPLAIN_PROMPT));
-            customPrompts.add(new CustomPrompt("review", REVIEW_PROMPT));
-            customPrompts.add(new CustomPrompt("tdg", TDG_PROMPT));
->>>>>>> master
         }
     }
 

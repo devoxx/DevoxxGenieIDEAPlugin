@@ -14,11 +14,6 @@ import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
-<<<<<<< HEAD
-=======
-import com.devoxx.genie.error.ErrorHandler;
-import com.intellij.openapi.diagnostic.Logger;
->>>>>>> master
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,23 +1,15 @@
 package com.devoxx.genie.ui.component;
 
-<<<<<<< HEAD
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.intellij.openapi.application.ApplicationManager;
-=======
-import com.devoxx.genie.ui.listener.FileRemoveListener;
-import com.devoxx.genie.ui.util.FileTypeIconUtil;
->>>>>>> master
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-<<<<<<< HEAD
 import com.intellij.openapi.vfs.VirtualFileManager;
-=======
->>>>>>> master
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.Contract;
@@ -25,10 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-<<<<<<< HEAD
 import java.io.File;
-=======
->>>>>>> master
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CloseSmalllIcon;
@@ -69,7 +58,6 @@ public class FileEntryComponent extends JPanel {
         }
     }
 
-<<<<<<< HEAD
     public FileEntryComponent(Project project, SemanticFile semanticFile) {
         this.virtualFile = findVirtualFile(semanticFile.filePath());
 
@@ -103,8 +91,6 @@ public class FileEntryComponent extends JPanel {
         });
     }
 
-=======
->>>>>>> master
     /**
      * Open the file with selected code and highlight the selected text in the editor when applicable.
      *
