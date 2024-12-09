@@ -137,7 +137,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
             chatMessageContext.getSemanticReferences() != null &&
             !chatMessageContext.getSemanticReferences().isEmpty()) {
-
             container.add(new FindResultsPanel(project, chatMessageContext.getSemanticReferences()));
         } else {
             container.add(new ChatResponsePanel(chatMessageContext));
