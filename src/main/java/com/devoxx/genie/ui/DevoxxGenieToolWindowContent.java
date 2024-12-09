@@ -30,7 +30,7 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
-    private static final float SPLITTER_PROPORTION = 0.8f;
+    private static final float SPLITTER_PROPORTION = 0.75f;
 
     @Getter
     private final Project project;

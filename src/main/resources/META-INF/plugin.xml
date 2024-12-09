@@ -37,7 +37,9 @@
     <change-notes><![CDATA[
         <h2>v0.3.2</h2>
         <UL>
-            <LI>Feature Indexer : Uses vector DB to index and search code</LI>
+            <LI>RAG feature : Uses Chroma DB to index and search code using RAG</LI>
+            <LI>Added Google Gemini Exp 1206 model</LI>
+            <LI>Fixed horizontal scrolling in chat response panel</LI>
         </UL>
         <h2>v0.3.1</h2>
         <UL>
@@ -428,10 +430,10 @@
                              instance="com.devoxx.genie.ui.settings.gitdiff.GitDiffSettingsConfigurable"
                              displayName="LLM Git Diff View"/>
 
-        <projectConfigurable id="com.devoxx.genie.SemanticSearch"
+        <projectConfigurable id="com.devoxx.genie.RAG"
                              parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.semanticsearch.SemanticSearchSettingsConfigurable"
-                             displayName="Semantic Search"/>
+                             instance="com.devoxx.genie.ui.settings.rag.RAGSettingsConfigurable"
+                             displayName="RAG"/>
 
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -460,7 +462,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.semanticsearch.ProjectIndexerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

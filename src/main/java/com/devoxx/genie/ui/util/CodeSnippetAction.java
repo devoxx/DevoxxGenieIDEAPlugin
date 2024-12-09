@@ -9,7 +9,6 @@ import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.vfs.VirtualFile;
 import org.commonmark.node.FencedCodeBlock;
 
 import javax.swing.*;

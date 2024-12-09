@@ -35,7 +35,7 @@ public class PromptInputArea extends JPanel {
         // Set minimum size for 2 lines
         FontMetrics fontMetrics = inputField.getFontMetrics(inputField.getFont());
         int lineHeight = fontMetrics.getHeight();
-        int minHeight = (lineHeight * 2) +
+        int minHeight = (lineHeight * 3) +
                 inputField.getInsets().top +
                 inputField.getInsets().bottom +
                 10; // Additional padding

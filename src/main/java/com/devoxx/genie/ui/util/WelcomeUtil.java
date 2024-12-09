@@ -43,6 +43,7 @@ public class WelcomeUtil {
             <h2>New features 🚀</h2>
             Configure features in the settings page.<br>
             <ul>
+                 <li><strong>🧐RAG Support</strong>: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>
                  <li><strong>💪🏻Git Diff</strong>: Show Git Diff dialog to commit LLM suggestions</li>
                  <li><strong>❌.gitignore</strong>: Exclude files and directories based on .gitignore file</li>
                  <li><strong>👀Chat History</strong>: All chats are saved and can be restored or removed</li>

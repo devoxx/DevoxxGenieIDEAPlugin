@@ -21,15 +21,15 @@ public class SearchOptionsPanel extends JPanel {
     private static final int DEFAULT_HEIGHT = JBUI.scale(30);
 
     public SearchOptionsPanel() {
-        super(new FlowLayout(FlowLayout.CENTER, JBUI.scale(10), 0));
+        super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
         setOpaque(false);
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // Create switches
         InputSwitch semanticSearchSwitch = new InputSwitch(
-                "Semantic",
-                "Enable semantic code search in responses"
+                "RAG",
+                "Enable RAG-enabled code search"
         );
 
         InputSwitch gitDiffSwitch = new InputSwitch(
@@ -51,7 +51,7 @@ public class SearchOptionsPanel extends JPanel {
         updateInitialVisibility(stateService);
 
         // Load saved state for enabled switches
-        semanticSearchSwitch.setSelected(stateService.getSemanticSearchEnabled());
+        semanticSearchSwitch.setSelected(stateService.getRagEnabled());
         gitDiffSwitch.setSelected(stateService.getGitDiffEnabled());
         webSearchSwitch.setSelected(stateService.getEnableWebSearch());
 
@@ -63,7 +63,7 @@ public class SearchOptionsPanel extends JPanel {
             if (selected) {
                 deactivateOtherSwitches(semanticSearchSwitch);
             }
-            stateService.setSemanticSearchActivated(selected);
+            stateService.setRagActivated(selected);
             updatePanelVisibility();
         });
 
@@ -124,7 +124,7 @@ public class SearchOptionsPanel extends JPanel {
 
     private void updateInitialVisibility(DevoxxGenieStateService stateService) {
         // Set initial visibility based on state service
-        switches.get(0).setVisible(stateService.getSemanticSearchEnabled());
+        switches.get(0).setVisible(stateService.getRagEnabled());
         switches.get(1).setVisible(stateService.getGitDiffEnabled());
         switches.get(2).setVisible(stateService.getEnableWebSearch());
 

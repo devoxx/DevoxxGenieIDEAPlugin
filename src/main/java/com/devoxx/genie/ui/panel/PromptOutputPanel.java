@@ -21,8 +21,7 @@ import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
-import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.*;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.
@@ -58,7 +57,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         scrollPane = new JBScrollPane(container);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
@@ -132,7 +131,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getId());
         container.add(new ChatResponsePanel(chatMessageContext));
-        scrollToBottom();
+        container.revalidate();
+        container.repaint();
+        ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
     }
 
     /**

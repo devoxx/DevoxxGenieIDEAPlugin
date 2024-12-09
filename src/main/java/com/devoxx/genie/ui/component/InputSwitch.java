@@ -1,5 +1,10 @@
 package com.devoxx.genie.ui.component;
 
+import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBPanel;
+import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.StartupUiUtil;
+import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
 import javax.swing.*;
 import java.awt.*;
@@ -7,7 +12,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InputSwitch extends JPanel {
+public class InputSwitch extends JBPanel<InputSwitch> {
 
     private final Timer timer;
     private float location;
@@ -20,6 +25,7 @@ public class InputSwitch extends JPanel {
     private final SwitchButton switchButton;
 
     public InputSwitch(String label, String tooltip) {
+
         setLayout(new BorderLayout(5, 0));
         events = new ArrayList<>();
 
@@ -49,12 +55,15 @@ public class InputSwitch extends JPanel {
     private class SwitchButton extends JComponent {
 
         private static final String ON_TEXT = "On";
-        private static final String OFF_TEXT = "Off";
+
         private static final int LABEL_PADDING = 4;
 
         public SwitchButton() {
-            setPreferredSize(new Dimension(45, 20)); // Increased size to accommodate labels
-            setBackground(new Color(255, 165, 0));
+            setPreferredSize(new Dimension(35, 20));
+            setBackground(new JBColor(
+                    new Color(255, 165, 0),  // light theme
+                    new Color(255, 140, 0).brighter()  // dark theme
+            ));
             setForeground(Color.WHITE);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             location = 2;
@@ -72,12 +81,10 @@ public class InputSwitch extends JPanel {
 
                 @Override
                 public void mouseReleased(MouseEvent me) {
-                    if (SwingUtilities.isLeftMouseButton(me)) {
-                        if (mouseOver) {
-                            selected = !selected;
-                            timer.start();
-                            runEvent();
-                        }
+                    if (SwingUtilities.isLeftMouseButton(me) && mouseOver) {
+                        selected = !selected;
+                        timer.start();
+                        runEvent();
                     }
                 }
             });
@@ -98,6 +105,7 @@ public class InputSwitch extends JPanel {
                 g2.setColor(Color.GRAY);
                 g2.fillRoundRect(0, 0, width, height, height, height);
             }
+
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
             g2.setColor(getBackground());
             g2.fillRoundRect(0, 0, width, height, height, height);
@@ -108,11 +116,11 @@ public class InputSwitch extends JPanel {
             g2.fillOval((int) location, 2, height - 4, height - 4);
 
             // Draw labels
-            g2.setFont(new Font("Arial", Font.BOLD, 10));
+            g2.setFont(new Font("Arial", Font.BOLD, 8));
             FontMetrics fm = g2.getFontMetrics();
 
             // Calculate text positions
-            String text = selected ? ON_TEXT : OFF_TEXT;
+            String text = selected ? ON_TEXT : "";
             int textX;
             if (selected) {
                 textX = LABEL_PADDING;

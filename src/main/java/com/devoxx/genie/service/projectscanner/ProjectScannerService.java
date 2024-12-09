@@ -2,14 +2,12 @@ package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.service.NoOpProgressIndicator;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.GitignoreParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -46,14 +44,6 @@ public class ProjectScannerService {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
     }
 
-
-    public CompletableFuture<ScanContentResult> scanProject(Project project,
-                                                            VirtualFile startDirectory,
-                                                            int windowContextMaxTokens,
-                                                            boolean isTokenCalculation) {
-        return scanProject(project, startDirectory, windowContextMaxTokens, isTokenCalculation, new NoOpProgressIndicator());
-    }
-
     /**
      * Scan the project from start directory and return the project source tree and file contents.
      *
@@ -66,8 +56,7 @@ public class ProjectScannerService {
     public CompletableFuture<ScanContentResult> scanProject(Project project,
                                                             VirtualFile startDirectory,
                                                             int windowContextMaxTokens,
-                                                            boolean isTokenCalculation,
-                                                            @NotNull ProgressIndicator indicator) {
+                                                            boolean isTokenCalculation) {
         CompletableFuture<ScanContentResult> future = new CompletableFuture<>();
         ScanContentResult scanContentResult = new ScanContentResult();
 
@@ -80,14 +69,10 @@ public class ProjectScannerService {
 
                             initGitignoreParser(project, startDirectory);
 
-                            // Show initial progress
-                            indicator.setText("Preparing to scan project files...");
-                            indicator.setIndeterminate(true);
-
                             if (startDirectory == null) {
-                                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult, indicator);
+                                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
                             } else {
-                                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens, indicator);
+                                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
                             }
 
                             String content = isTokenCalculation ? fullContent.toString() :
@@ -109,24 +94,29 @@ public class ProjectScannerService {
         return future;
     }
 
-    private int countProcessableFiles(@NotNull VirtualFile directory,
-                                      @NotNull ProjectFileIndex fileIndex) {
-        AtomicInteger count = new AtomicInteger(0);
-        VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
-            @Override
-            public boolean visitFile(@NotNull VirtualFile file) {
-                if (fileIndex.isInContent(file) && !shouldExcludeFile(file) && shouldIncludeFile(file)) {
-                    count.incrementAndGet();
-                }
-                return true;
+    public ScanContentResult scanProjectSynchronously(Project project, VirtualFile startDirectory, int windowContextMaxTokens, boolean isTokenCalculation) {
+        ScanContentResult scanContentResult = new ScanContentResult();
+        ReadAction.run(() -> {
+            StringBuilder result = new StringBuilder();
+            result.append("Directory Structure:\n");
+            StringBuilder fullContent;
+            initGitignoreParser(project, startDirectory);
+            if (startDirectory == null) {
+                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
+            } else {
+                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
             }
+            String content = isTokenCalculation ? fullContent.toString() : truncateToTokens(fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
+            scanContentResult.setTokenCount(ENCODING.countTokens(content));
+            scanContentResult.setContent(content);
         });
-        return count.get();
+        return scanContentResult;
     }
 
     /**
      * Initialize the GitignoreParser with the .gitignore file from the project.
-     * @param project the project
+     *
+     * @param project        the project
      * @param startDirectory the start directory
      */
     private void initGitignoreParser(Project project, VirtualFile startDirectory) {
@@ -160,8 +150,7 @@ public class ProjectScannerService {
     private StringBuilder getContentFromModules(Project project,
                                                 int windowContextMaxTokens,
                                                 StringBuilder result,
-                                                ScanContentResult scanContentResult,
-                                                @NotNull ProgressIndicator indicator) {
+                                                ScanContentResult scanContentResult) {
 
         UniqueDirectoryScannerService uniqueDirectoryScanner = new UniqueDirectoryScannerService();
 
@@ -181,8 +170,7 @@ public class ProjectScannerService {
                         highestCommonRoot,
                         result,
                         scanContentResult,
-                        windowContextMaxTokens,
-                        indicator))
+                        windowContextMaxTokens))
                 .orElseThrow();
     }
 
@@ -198,8 +186,7 @@ public class ProjectScannerService {
                                                     VirtualFile startDirectory,
                                                     @NotNull StringBuilder result,
                                                     ScanContentResult scanContentResult,
-                                                    int windowContextMaxTokens,
-                                                    @NotNull ProgressIndicator indicator) {
+                                                    int windowContextMaxTokens) {
         result.append(generateSourceTreeRecursive(startDirectory, 0));
 
         result.append("\n\nFile Contents:\n");
@@ -209,8 +196,7 @@ public class ProjectScannerService {
         StringBuilder fullContent = new StringBuilder(result);
         AtomicInteger currentTokens = new AtomicInteger(0);
 
-        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens,
-                windowContextMaxTokens, scanContentResult, indicator);
+        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, scanContentResult);
         return fullContent;
     }
 
@@ -218,25 +204,11 @@ public class ProjectScannerService {
                                       @NotNull ProjectFileIndex fileIndex,
                                       @NotNull StringBuilder fullContent,
                                       @NotNull AtomicInteger currentTokens,
-                                      int maxTokens,
-                                      @NotNull ScanContentResult scanContentResult,
-                                      @NotNull ProgressIndicator indicator) {
-
-        // Count total files first
-        int totalFiles = countProcessableFiles(directory, fileIndex);
-        AtomicInteger processedFiles = new AtomicInteger(0);
-
-        // Set main progress text
-        indicator.setIndeterminate(false);
-        indicator.setText("Indexing project files");
+                                      @NotNull ScanContentResult scanContentResult) {
 
         VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
-                // Check for cancellation
-                if (indicator.isCanceled()) {
-                    return false;
-                }
 
                 if (shouldExcludeDirectory(file)) {
                     scanContentResult.incrementSkippedDirectoryCount();
@@ -244,16 +216,6 @@ public class ProjectScannerService {
                 }
 
                 if (fileIndex.isInContent(file) && !shouldExcludeFile(file) && shouldIncludeFile(file)) {
-                    // Update progress for each file
-                    int currentFileCount = processedFiles.incrementAndGet();
-                    double progress = (double) currentFileCount / totalFiles;
-
-                    // Update indicator with detailed progress
-                    indicator.setFraction(progress);
-                    indicator.setText2(String.format("Processing file %d of %d: %s",
-                            currentFileCount,
-                            totalFiles,
-                            file.getPath()));
 
                     scanContentResult.incrementFileCount();
                     scanContentResult.addFile(Paths.get(file.getPath()));
@@ -292,6 +254,7 @@ public class ProjectScannerService {
     /**
      * Truncate the project context to a maximum number of tokens.
      * If the project context exceeds the limit, truncate it and append a message.
+     *
      * @param text               the project context
      * @param windowContext      the model window context
      * @param isTokenCalculation whether the scan is for token calculation
@@ -318,7 +281,7 @@ public class ProjectScannerService {
      * Generate a tree structure of the project source files recursively.
      *
      * @param virtualFile the virtual file/directory
-     * @param depth the depth
+     * @param depth       the depth
      * @return the tree structure
      */
     private @NotNull String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
@@ -353,7 +316,7 @@ public class ProjectScannerService {
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return file.isDirectory() &&
-            (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
+                (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
     }
 
     /**
@@ -371,11 +334,10 @@ public class ProjectScannerService {
         }
 
         // Check gitignore if enabled
-        if (settings.getUseGitIgnore()) {
-            if (gitignoreParser != null) {
-                Path path = Paths.get(file.getPath());
-                return gitignoreParser.matches(path);
-            }
+        if (Boolean.TRUE.equals(settings.getUseGitIgnore()) &&
+                gitignoreParser != null) {
+            Path path = Paths.get(file.getPath());
+            return gitignoreParser.matches(path);
         }
         return false;
     }
@@ -406,7 +368,7 @@ public class ProjectScannerService {
      * @return the processed content
      */
     private String processFileContent(String content) {
-        if (DevoxxGenieStateService.getInstance().getExcludeJavaDoc()) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getExcludeJavaDoc())) {
             return removeJavadoc(content);
         }
         return content;

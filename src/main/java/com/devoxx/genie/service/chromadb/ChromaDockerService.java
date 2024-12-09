@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -15,8 +17,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 public final class ChromaDockerService {
@@ -68,10 +73,17 @@ public final class ChromaDockerService {
      * @throws IOException if an I/O error occurs
      */
     private @NotNull String setupVolumeDirectory(@NotNull Project project) throws IOException {
-        int projectId = project.getLocationHash().hashCode();
-        String volumePath = project.getBasePath() + "/.devoxx-genie-data-" + projectId;
-        Files.createDirectories(Paths.get(volumePath));
-        return volumePath;
+        // Get the plugin's data directory using PathManager
+        Path pluginDataPath = Paths.get(PathManager.getSystemPath(), "DevoxxGenie", "chromadb");
+
+        // Create a project-specific subdirectory using project hash to avoid name conflicts
+        int projectId = project.hashCode();
+        Path volumePath = pluginDataPath.resolve("data-" + projectId);
+
+        // Create all necessary directories
+        Files.createDirectories(volumePath);
+
+        return volumePath.toString();
     }
 
     /**
@@ -79,7 +91,7 @@ public final class ChromaDockerService {
      * @param callback the callback to notify the status
      * @throws DockerException if an error occurs while pulling the image
      */
-    private void pullChromaDockerImage(ChromaDBStatusCallback callback) throws DockerException {
+    public void pullChromaDockerImage(ChromaDBStatusCallback callback) throws DockerException {
         try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
             dockerClient.pullImageCmd(CHROMA_IMAGE).start().awaitCompletion();
         } catch (IOException e) {
@@ -155,6 +167,36 @@ public final class ChromaDockerService {
         } catch (IOException e) {
             callback.onError("Failed to start ChromaDB container: " + e.getMessage());
             throw new ChromaDBException("Failed to start ChromaDB container", e);
+        }
+    }
+
+    public void deleteCollectionData(@NotNull Project project, @NotNull String collectionName) {
+        Path volumePath = Paths.get(PathManager.getSystemPath(), "DevoxxGenie", "chromadb", "data-" + project.getLocationHash());
+        Path collectionPath = volumePath.resolve(collectionName);
+
+        if (!Files.exists(collectionPath)) {
+            LOG.info("Collection directory does not exist: " + collectionPath);
+            return;
+        }
+
+        ApplicationManager.getApplication().invokeLater(() ->
+                deleteCollectionData(collectionPath, collectionName));
+    }
+
+    private void deleteCollectionData(@NotNull Path collectionPath, @NotNull String collectionName) {
+        try (Stream<Path> pathStream = Files.walk(collectionPath)) {
+            pathStream
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                            LOG.info("Deleted: " + path);
+                        } catch (IOException e) {
+                            LOG.warn("Failed to delete: " + path, e);
+                        }
+                    });
+        } catch (IOException e) {
+            LOG.error("Failed to delete collection data for: " + collectionName, e);
         }
     }
 }

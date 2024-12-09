@@ -29,7 +29,7 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
         withBackground(PROMPT_BG_COLOR);
         withBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
-        toggleButton = new JButton("Expand", ArrowExpand);
+        toggleButton = new JButton("File references", ArrowExpand);
         toggleButton.addActionListener(e -> toggleContent());
         toggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         toggleButton.setBorder(BorderFactory.createEmptyBorder());

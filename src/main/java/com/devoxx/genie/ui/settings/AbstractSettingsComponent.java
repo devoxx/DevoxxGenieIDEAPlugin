@@ -4,6 +4,7 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.ui.components.JBLabel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,6 +43,13 @@ public class AbstractSettingsComponent implements SettingsComponent {
         panel.add(new JLabel(label), gbc);
         gbc.gridx = 1;
         panel.add(component, gbc);
+        gbc.gridy++;
+    }
+
+    protected void addSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label) {
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        panel.add(new JBLabel(label), gbc);
         gbc.gridy++;
     }
 

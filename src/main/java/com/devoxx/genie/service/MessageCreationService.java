@@ -1,8 +1,8 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.SemanticFile;
-import com.devoxx.genie.service.semanticsearch.SearchResult;
-import com.devoxx.genie.service.semanticsearch.SemanticSearchService;
+import com.devoxx.genie.service.rag.SearchResult;
+import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -91,7 +91,7 @@ public class MessageCreationService {
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getGitDiffActivated())) {
             // Git diff is enabled, add special instructions at the beginning
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
-        } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSemanticSearchActivated())) {
+        } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
             // Semantic search is enabled, add search results
             String semanticContext = addSemanticSearchResults(chatMessageContext);
             if (!semanticContext.isEmpty()) {
@@ -153,7 +153,7 @@ public class MessageCreationService {
                 // Log the number of relevant snippets found
                 NotificationUtil.sendNotification(
                         chatMessageContext.getProject(),
-                        String.format("Found %d relevant project file%s", searchResults.size(), searchResults.size() > 1 ? "s" : "")
+                        String.format("Found %d relevant project file%s using RAG", searchResults.size(), searchResults.size() > 1 ? "s" : "")
                 );
             }
         } catch (Exception e) {
