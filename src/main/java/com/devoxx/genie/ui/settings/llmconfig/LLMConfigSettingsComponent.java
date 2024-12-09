@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;

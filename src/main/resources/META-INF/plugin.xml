@@ -35,7 +35,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v0.3.2</h2>
+        <h2>v0.4.0</h2>
         <UL>
             <LI>RAG feature : Uses Chroma DB to index and search code using RAG</LI>
             <LI>Added Google Gemini Exp 1206 model</LI>

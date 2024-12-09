@@ -3,10 +3,12 @@ package com.devoxx.genie.ui;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.*;
-import com.devoxx.genie.ui.panel.SubmitPanel;
+import com.devoxx.genie.service.ConversationStorageService;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.panel.*;
+import com.devoxx.genie.ui.panel.ConversationPanel;
+import com.devoxx.genie.ui.panel.LlmProviderPanel;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.panel.SubmitPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
@@ -21,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.*;
+import java.util.ResourceBundle;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 

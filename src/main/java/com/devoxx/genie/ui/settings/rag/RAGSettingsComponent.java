@@ -12,7 +12,6 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -29,7 +28,7 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.Objects;
 
-import static com.intellij.openapi.application.ApplicationManager.*;
+import static com.intellij.openapi.application.ApplicationManager.getApplication;
 
 public class RAGSettingsComponent extends AbstractSettingsComponent {
 
@@ -98,7 +97,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         });
     }
 
-    private void addProgressSection(JPanel panel, GridBagConstraints gbc) {
+    private void addProgressSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
         JPanel progressPanel = new JPanel(new BorderLayout(5, 5));
         progressPanel.add(progressLabel, BorderLayout.NORTH);
         progressPanel.add(progressBar, BorderLayout.CENTER);
@@ -106,16 +105,13 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         // Allow the panel to expand horizontally
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        // Set weightx to 1.0 to take up available horizontal space
         gbc.weightx = 1.0;
         panel.add(progressPanel, gbc);
         gbc.gridy++;
-        // Reset gridwidth and weightx for subsequent components
         gbc.gridwidth = 2;
         gbc.weightx = 0;
     }
 
-    // Add a new method to load collections
     private void loadCollections() {
         buttonEditor.safeLoadCollections();
         collectionsTable.setVisible(true); // Show the table after loading data
@@ -201,6 +197,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
+
+        // Set a fixed height for the validationPanel
+        int fixedHeight = 100; // Adjust this value as needed
+        validationPanel.setPreferredSize(new Dimension(validationPanel.getPreferredSize().width, fixedHeight));
+
         panel.add(validationPanel, gbc);
         gbc.gridy++;
     }
@@ -282,6 +283,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     public void updateValidationStatus() {
         updateStartIndexButtonVisibility();
+        updateActionButtonState();
+        buttonEditor.safeLoadCollections();
     }
 
     private void updateStartIndexButtonVisibility() {
@@ -309,9 +312,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void setupTable() {
         TableColumn actionColumn = collectionsTable.getColumnModel().getColumn(2);
         actionColumn.setCellRenderer(new ButtonRenderer());
-        buttonEditor = new ButtonEditor(project, collectionsTable, tableModel); // Store the ButtonEditor instance
+        buttonEditor = new ButtonEditor(project, collectionsTable, tableModel);
         actionColumn.setCellEditor(buttonEditor);
-
         collectionsTable.setVisible(false);
     }
 }

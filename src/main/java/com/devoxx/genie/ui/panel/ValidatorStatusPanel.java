@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
+import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
@@ -18,50 +18,78 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
     private static final Color ERROR_COLOR = new Color(204, 0, 0);     // Red
     private static final Font ICON_FONT = new Font("Dialog", Font.BOLD, 14);
 
-    public ValidatorStatusPanel(@NotNull ValidatorStatus validatorStatus, ActionListener actionListener) {
-        super(new BorderLayout(10, 0));
+    private static final int VERTICAL_PADDING = 1;
+    private static final int HORIZONTAL_PADDING = 5;
 
-        LOG.debug("Creating ValidatorStatusPanel for " +
-                (validatorStatus.validatorType() == null ? "status validatorType is null" : validatorStatus.validatorType().getName()));
+    public ValidatorStatusPanel(@NotNull ValidatorStatus validatorStatus, ActionListener actionListener) {
+        super(new BorderLayout(HORIZONTAL_PADDING, 0));
 
         setOpaque(false);
+        setBorder(BorderFactory.createEmptyBorder(VERTICAL_PADDING, HORIZONTAL_PADDING, VERTICAL_PADDING, HORIZONTAL_PADDING));
 
-        // Status icon and validator name
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        // Left panel with icon and name
+        JPanel leftPanel = createLeftPanel(validatorStatus);
+        add(leftPanel, BorderLayout.WEST);
+
+        // Center/right panel with message and action button
+        JPanel rightPanel = createRightPanel(validatorStatus, actionListener);
+        add(rightPanel, BorderLayout.CENTER);
+    }
+
+    private JPanel createLeftPanel(ValidatorStatus validatorStatus) {
+        JPanel leftPanel = new JPanel();
+        // Using BoxLayout for better control over component spacing
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
         leftPanel.setOpaque(false);
 
-        // Status icon (✓ or ✗)
-        JBLabel statusIcon = new JBLabel(validatorStatus.isValid() ? "✓" : "✗");
-        statusIcon.setFont(ICON_FONT);
-        statusIcon.setForeground(validatorStatus.isValid() ? SUCCESS_COLOR : ERROR_COLOR);
-        leftPanel.add(statusIcon);
+        // Status icon
+        JBLabel statusIconLabel = new JBLabel(validatorStatus.isValid() ? "✓" : "✗");
+        statusIconLabel.setFont(ICON_FONT);
+        statusIconLabel.setForeground(validatorStatus.isValid() ? SUCCESS_COLOR : ERROR_COLOR);
+        statusIconLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        leftPanel.add(statusIconLabel);
+        leftPanel.add(Box.createHorizontalStrut(5));
 
         // Validator name
         if (validatorStatus.validatorType() != null) {
             JBLabel nameLabel = new JBLabel(validatorStatus.validatorType().getName());
+            nameLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
             leftPanel.add(nameLabel);
-            add(leftPanel, BorderLayout.WEST);
         }
 
-        // Message and action button panel
-        JPanel rightPanel = new JPanel(new BorderLayout(5, 0));
+        return leftPanel;
+    }
+
+    private JPanel createRightPanel(ValidatorStatus validatorStatus, ActionListener actionListener) {
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
         rightPanel.setOpaque(false);
 
-        // Error/success message
+        // Message label with proper vertical alignment
         JBLabel messageLabel = new JBLabel(validatorStatus.message());
         messageLabel.setForeground(validatorStatus.isValid() ? SUCCESS_COLOR : ERROR_COLOR);
-        rightPanel.add(messageLabel, BorderLayout.CENTER);
+        messageLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        rightPanel.add(messageLabel);
+
+        // Add flexible space between message and button
+        rightPanel.add(Box.createHorizontalGlue());
 
         // Action button if needed
         if (!validatorStatus.isValid() && validatorStatus.action() != ValidationActionType.OK) {
-            JButton actionButton = new JButton(getActionButtonText(validatorStatus.action()));
-            actionButton.addActionListener(actionListener);
-            actionButton.putClientProperty("validatorType", validatorStatus.validatorType());
-            actionButton.putClientProperty("action", validatorStatus.action());
-            rightPanel.add(actionButton, BorderLayout.EAST);
+            JButton actionButton = createActionButton(validatorStatus, actionListener);
+            rightPanel.add(Box.createHorizontalStrut(HORIZONTAL_PADDING));
+            rightPanel.add(actionButton);
         }
 
-        add(rightPanel, BorderLayout.CENTER);
+        return rightPanel;
+    }
+
+    private JButton createActionButton(ValidatorStatus validatorStatus, ActionListener actionListener) {
+        JButton actionButton = new JButton(getActionButtonText(validatorStatus.action()));
+        actionButton.addActionListener(actionListener);
+        actionButton.putClientProperty("validatorType", validatorStatus.validatorType());
+        actionButton.putClientProperty("action", validatorStatus.action());
+        return actionButton;
     }
 
     private String getActionButtonText(@NotNull ValidationActionType action) {

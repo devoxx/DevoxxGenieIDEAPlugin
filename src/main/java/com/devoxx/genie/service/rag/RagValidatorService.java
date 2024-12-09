@@ -1,8 +1,5 @@
 package com.devoxx.genie.service.rag;
 
-import com.devoxx.genie.service.rag.validator.ValidationResult;
-import com.devoxx.genie.service.rag.validator.Validator;
-import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;

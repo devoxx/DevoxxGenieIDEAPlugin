@@ -9,6 +9,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
+
 import javax.swing.*;
 import java.awt.*;
 

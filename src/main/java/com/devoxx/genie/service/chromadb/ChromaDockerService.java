@@ -44,15 +44,15 @@ public final class ChromaDockerService {
     public void startChromaDB(Project project, ChromaDBStatusCallback callback) {
         try {
             // We assume Docker is already installed and running
-             if (isChromaDBRunning()) {
-                 LOG.info("ChromaDB is already running");
-                 callback.onSuccess();
-                 return;
-             }
+            if (isChromaDBRunning()) {
+                LOG.info("ChromaDB is already running");
+                callback.onSuccess();
+                return;
+            }
 
             pullChromaDockerImage(callback);
-            String volumenPath = setupVolumeDirectory(project);
-            startChromaContainer(volumenPath, callback);
+            String volumePath = setupVolumeDirectory(project);
+            startChromaContainer(volumePath, callback);
 
         } catch (ChromaDBException e) {
             LOG.error(FAILED_TO_START_CHROMA_DB + e.getMessage());
@@ -68,6 +68,7 @@ public final class ChromaDockerService {
 
     /**
      * Create a ChromaDB volume directory for persistent storage
+     *
      * @param project the current project
      * @return the path to the volume directory
      * @throws IOException if an I/O error occurs
@@ -88,6 +89,7 @@ public final class ChromaDockerService {
 
     /**
      * Pull the ChromaDB Docker image
+     *
      * @param callback the callback to notify the status
      * @throws DockerException if an error occurs while pulling the image
      */
@@ -105,6 +107,7 @@ public final class ChromaDockerService {
 
     /**
      * Check if the ChromaDB container is already running
+     *
      * @return true if the container is running, false otherwise
      * @throws IOException if an I/O error occurs
      */
@@ -116,14 +119,15 @@ public final class ChromaDockerService {
                     .exec()
                     .stream()
                     .anyMatch(container -> container.getImage().contains(CHROMADB_DOCKER_NAME) &&
-                                                    RUNNING.equalsIgnoreCase(container.getState()));
+                            RUNNING.equalsIgnoreCase(container.getState()));
         }
     }
 
     /**
      * Start the ChromaDB container
+     *
      * @param volumePath the path to the volume directory
-     * @param callback the callback to notify the status
+     * @param callback   the callback to notify the status
      * @throws ChromaDBException if an error occurs while starting the container
      */
     private void startChromaContainer(String volumePath, ChromaDBStatusCallback callback) throws ChromaDBException {
@@ -155,10 +159,10 @@ public final class ChromaDockerService {
                 String containerState = existingContainer.getState();
 
                 // Only start if the container is stopped or created
-                if (EXITED.equalsIgnoreCase(containerState) ||
-                    CREATED.equalsIgnoreCase(containerState)) {
+                if (EXITED.equalsIgnoreCase(containerState) || CREATED.equalsIgnoreCase(containerState)) {
                     try {
                         dockerClient.startContainerCmd(existingContainer.getId()).exec();
+                        callback.onSuccess();
                     } catch (NotModifiedException ignored) {
                         callback.onError("Container is already running or in transition");
                     }

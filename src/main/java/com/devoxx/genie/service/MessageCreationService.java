@@ -1,10 +1,10 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
-import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;

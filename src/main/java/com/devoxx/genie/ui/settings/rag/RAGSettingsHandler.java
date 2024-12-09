@@ -3,14 +3,18 @@ package com.devoxx.genie.ui.settings.rag;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaDBStatusCallback;
 import com.devoxx.genie.service.rag.RagValidatorService;
-import com.devoxx.genie.service.rag.validator.*;
-import com.devoxx.genie.ui.panel.ValidatorStatusPanel;
+import com.devoxx.genie.service.rag.validator.ValidationActionType;
+import com.devoxx.genie.service.rag.validator.ValidationResult;
+import com.devoxx.genie.service.rag.validator.ValidatorStatus;
+import com.devoxx.genie.service.rag.validator.ValidatorType;
+import com.devoxx.genie.ui.panel.ValidatorsPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -21,6 +25,7 @@ public class RAGSettingsHandler implements ActionListener {
     private final JPanel validationPanel;
     private final ChromaDBManager chromaDBManager;
     private final RAGSettingsComponent settingsComponent;
+    private volatile boolean validationInProgress = false;
 
     public RAGSettingsHandler(Project project,
                               JPanel validationPanel,
@@ -31,28 +36,41 @@ public class RAGSettingsHandler implements ActionListener {
         this.chromaDBManager = ChromaDBManager.getInstance();
     }
 
+
     public void performValidation() {
+        if (validationInProgress) {
+            return; // Skip if validation already in progress
+        }
+
         validationPanel.removeAll();
         validationPanel.setLayout(new BoxLayout(validationPanel, BoxLayout.Y_AXIS));
 
         ValidationResult result = RagValidatorService.getInstance().validate();
 
-        for (ValidatorStatus status : result.statuses()) {
-            ValidatorStatusPanel statusPanel = new ValidatorStatusPanel(status, this);
-            validationPanel.add(statusPanel);
-            validationPanel.add(Box.createVerticalStrut(5));
-        }
+        ValidatorsPanel statusPanel = new ValidatorsPanel(result.statuses(), this);
+        validationPanel.add(statusPanel);
+        validationPanel.add(Box.createVerticalStrut(5));
 
         validationPanel.revalidate();
         validationPanel.repaint();
 
-        // Update the start index button visibility after validation
         settingsComponent.updateValidationStatus();
     }
 
-    public void handleValidationAction(@NotNull ValidatorStatus status) {
+    public void handleValidationAction(@Nullable ValidatorStatus status) {
+        if (status == null || validationInProgress) {
+            return;
+        }
+
+        ValidationActionType action = status.action();
+        if (action == ValidationActionType.OK) {
+            return;
+        }
+
+        validationInProgress = true;
+
         if (status.validatorType() == ValidatorType.CHROMADB) {
-            handleChromaDBAction(status.action());
+            handleChromaDBAction(action);
         }
     }
 
@@ -113,23 +131,27 @@ public class RAGSettingsHandler implements ActionListener {
                 chromaDBManager.startChromaDB(project, new ChromaDBStatusCallback() {
                     @Override
                     public void onSuccess() {
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            NotificationUtil.sendNotification(project,
-                                    "ChromaDB started successfully");
-                            performValidation();
-                        });
+                        refreshValidationState("ChromaDB started successfully");
                     }
 
                     @Override
                     public void onError(String message) {
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            NotificationUtil.sendNotification(project,
-                                    "Failed to start ChromaDB: " + message);
-                            performValidation();
-                        });
+                        refreshValidationState("Failed to start ChromaDB: " + message);
                     }
                 });
             }
         }.queue();
+    }
+
+    private void refreshValidationState(String notification) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                NotificationUtil.sendNotification(project, notification);
+                performValidation();
+                settingsComponent.updateValidationStatus();
+            } finally {
+                validationInProgress = false; // Reset flag
+            }
+        });
     }
 }

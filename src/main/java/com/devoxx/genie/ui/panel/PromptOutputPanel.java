@@ -21,7 +21,8 @@ import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-import static javax.swing.ScrollPaneConstants.*;
+import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.

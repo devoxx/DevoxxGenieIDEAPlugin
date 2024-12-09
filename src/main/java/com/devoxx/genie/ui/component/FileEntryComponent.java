@@ -21,7 +21,6 @@ import java.io.File;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CloseSmalllIcon;
-import static org.intellij.plugins.relaxNG.validation.RngSchemaValidator.findVirtualFile;
 
 /**
  * Class uses to display a file entry in the list of files with label and remove button.

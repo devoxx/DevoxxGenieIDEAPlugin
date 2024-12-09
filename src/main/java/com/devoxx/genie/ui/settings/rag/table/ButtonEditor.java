@@ -11,8 +11,7 @@ import com.intellij.ui.table.JBTable;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-
-import java.awt.Component;
+import java.awt.*;
 import java.io.IOException;
 import java.util.List;
 
