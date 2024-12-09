@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.4.0"
+version = "0.4.1"
 
 repositories {
     mavenCentral()
@@ -37,7 +37,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "0.36.0"
+    val lg4j_version = "0.36.2"
 
     // Add the dependencies for the core module
     implementation(project(":core"))

@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import org.commonmark.node.FencedCodeBlock;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,7 +27,9 @@ public class CodeSnippetAction {
         this.chatMessageContext = chatMessageContext;
     }
 
-    public JPanel createClipBoardButtonPanel(ChatMessageContext chatMessageContext, FencedCodeBlock fencedCodeBlock) {
+    public JPanel createClipBoardButtonPanel(@NotNull ChatMessageContext chatMessageContext,
+                                             FencedCodeBlock fencedCodeBlock) {
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         buttonPanel.setOpaque(true);
 
