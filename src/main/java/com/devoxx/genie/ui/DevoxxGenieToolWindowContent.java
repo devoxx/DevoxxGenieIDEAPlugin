@@ -33,6 +33,8 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     private static final float SPLITTER_PROPORTION = 0.75f;
+    private static final float MIN_PROPORTION = 0.3f;
+    private static final float MAX_PROPORTION = 0.85f;
 
     @Getter
     private final Project project;
@@ -117,11 +119,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Create the splitter.
-     *
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
-        OnePixelSplitter splitter = new OnePixelSplitter(true, SPLITTER_PROPORTION);
+        OnePixelSplitter splitter =
+                new OnePixelSplitter(true, SPLITTER_PROPORTION, MIN_PROPORTION, MAX_PROPORTION);
         splitter.setFirstComponent(promptOutputPanel);
         splitter.setSecondComponent(submitPanel);
         splitter.setHonorComponentsMinimumSize(true);
@@ -130,7 +132,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Set up the message bus connection.
-     *
      * @param toolWindow the tool window
      */
     private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {

@@ -48,6 +48,11 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
         add(submitPanel);
     }
 
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(0, 150);
+    }
+
     /**
      * The bottom action buttons panel (Submit, Search buttons and Add Files)
      *
