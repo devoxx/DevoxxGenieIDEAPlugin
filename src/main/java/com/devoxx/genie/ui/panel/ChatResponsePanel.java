@@ -3,6 +3,10 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+<<<<<<< HEAD
+import com.devoxx.genie.model.request.SemanticFile;
+=======
+>>>>>>> master
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.service.gitdiff.GitMergeService;
@@ -32,7 +36,11 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPla
 
 public class ChatResponsePanel extends BackgroundPanel {
 
+<<<<<<< HEAD
+    private final transient ChatMessageContext chatMessageContext;
+=======
     private final ChatMessageContext chatMessageContext;
+>>>>>>> master
 
     /**
      * Create a new chat response panel.
@@ -60,20 +68,41 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
+<<<<<<< HEAD
+        // If git diff is activated, try to extract code blocks and show diff
+        if (Boolean.TRUE.equals(stateService.getGitDiffActivated())) {
+=======
         // If git diff is enabled, try to extract code blocks and show diff
         if (stateService.getUseSimpleDiff()) {
+>>>>>>> master
             processGitDiff(chatMessageContext, document);
         }
 
         addDocumentNodesToPanel(document);
 
+<<<<<<< HEAD
+        // Add regular files panel
+=======
+>>>>>>> master
         if (chatMessageContext.hasFiles()) {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);
         }
 
+<<<<<<< HEAD
+        // Add semantic references panel
+        List<SemanticFile> semanticReferences = chatMessageContext.getSemanticReferences();
+        if (semanticReferences != null && !semanticReferences.isEmpty()) {
+            ExpandablePanel semanticPanel = new ExpandablePanel(chatMessageContext.getProject(), semanticReferences);
+            semanticPanel.setName(chatMessageContext.getId() + "_semantic");
+            add(semanticPanel);
+        }
+
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
+=======
         if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
+>>>>>>> master
             // Add execution time, token usage and cost information
             addMetricExecutionInfo(chatMessageContext);
         }

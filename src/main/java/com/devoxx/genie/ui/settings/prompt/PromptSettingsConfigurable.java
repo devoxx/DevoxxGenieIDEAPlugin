@@ -1,6 +1,9 @@
 package com.devoxx.genie.ui.settings.prompt;
 
+<<<<<<< HEAD
+=======
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
+>>>>>>> master
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;

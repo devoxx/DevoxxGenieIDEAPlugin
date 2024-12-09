@@ -1,8 +1,12 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
+<<<<<<< HEAD
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+=======
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+>>>>>>> master
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
@@ -12,6 +16,17 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import javax.swing.*;
 import java.awt.*;
 
+<<<<<<< HEAD
+@Getter
+public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
+
+    private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(stateService.getChatMemorySize(), 1, 100));
+    private final JSpinner temperatureField = new JSpinner(new SpinnerNumberModel(stateService.getTemperature().doubleValue(), 0.0d, 2.0d, 0.1d));
+    private final JSpinner topPField = new JSpinner(new SpinnerNumberModel(stateService.getTopP().doubleValue(), 0.0d, 1.0d, 0.1d));
+    private final JBIntSpinner maxOutputTokensField = new JBIntSpinner(new UINumericRange(stateService.getMaxOutputTokens(), 1, 1_000_000));
+    private final JBIntSpinner timeoutField = new JBIntSpinner(new UINumericRange(stateService.getTimeout(), 1, 600));
+    private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(stateService.getMaxRetries(), 1, 5));
+=======
 public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
@@ -29,6 +44,7 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
     @Getter
     private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(stateService.getMaxRetries(), 1, 5));
     @Getter
+>>>>>>> master
     private final JCheckBox showExecutionTimeCheckBox = new JCheckBox("", stateService.getShowExecutionTime());
 
     public LLMConfigSettingsComponent() {
@@ -45,7 +61,11 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = JBUI.insets(5);
 
+<<<<<<< HEAD
+        panel.add(new JXTitledSeparator("LLM Chat Settings"), gbc);
+=======
         panel.add(new JXTitledSeparator("Local Large Language Models"), gbc);
+>>>>>>> master
 
         gbc.gridy++;
         gbc.gridwidth = 1;

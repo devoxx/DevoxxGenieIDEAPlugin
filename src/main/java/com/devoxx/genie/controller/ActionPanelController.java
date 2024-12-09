@@ -4,7 +4,12 @@ import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+<<<<<<< HEAD
+import com.devoxx.genie.service.ChatPromptExecutor;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+=======
 import com.devoxx.genie.service.*;
+>>>>>>> master
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -14,8 +19,13 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+<<<<<<< HEAD
+import com.intellij.openapi.ui.ComboBox;
+import org.jetbrains.annotations.NotNull;
+=======
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.ui.ComboBox;
+>>>>>>> master
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;

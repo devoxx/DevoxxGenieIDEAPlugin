@@ -2,6 +2,10 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+<<<<<<< HEAD
+import com.intellij.util.ui.JBUI;
+import lombok.Getter;
+=======
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
@@ -12,6 +16,7 @@ import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
+>>>>>>> master
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -21,11 +26,14 @@ import java.util.ArrayList;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
 
+<<<<<<< HEAD
+=======
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     public static final String LINK_EMOJI = "\uD83D\uDD17";
     public static final String PASSWORD_EMOJI = "\uD83D\uDD11";
 
+>>>>>>> master
     @Getter
     private final JTextField projectVersion = new JTextField(PropertiesService.getInstance().getVersion());
     @Getter
@@ -67,6 +75,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
+<<<<<<< HEAD
+    private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
+=======
     private final JCheckBox hideSearchButtonsField = new JCheckBox("", stateService.getHideSearchButtonsFlag());
     @Getter
     private final JPasswordField tavilySearchApiKeyField = new JPasswordField(stateService.getTavilySearchKey());
@@ -79,12 +90,16 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
+>>>>>>> master
     @Getter
     private final JCheckBox enableAzureOpenAI = new JCheckBox("", stateService.getShowAzureOpenAIFields());
 
     private final java.util.List<JComponent> azureComponents = new ArrayList<>();
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
     public LLMProvidersComponent() {
         addListeners();
     }
@@ -124,6 +139,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         addAzureOpenAIPanel(panel, gbc);
 
+<<<<<<< HEAD
+=======
         addSection(panel, gbc, "Search Providers");
         addSettingRow(panel, gbc, "Tavily Web Search API Key", createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
         addSettingRow(panel, gbc, "Google Web Search API Key", createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"));
@@ -131,6 +148,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Max search results", maxSearchResults);
         addSettingRow(panel, gbc, "Hide Search Providers", hideSearchButtonsField);
 
+>>>>>>> master
         addSection(panel, gbc, "Plugin version");
         addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
 
@@ -151,6 +169,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         }
     }
 
+<<<<<<< HEAD
+=======
     private void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
         gbc.gridx = 0;
         gbc.gridy++;
@@ -168,6 +188,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gbc.gridy++;
     }
 
+>>>>>>> master
     private void addAzureComponentsSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
         gbc.gridwidth = 1;
         gbc.gridx = 0;
@@ -186,6 +207,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
     @Override
     public void addListeners() {
+<<<<<<< HEAD
+=======
         hideSearchButtonsField.addItemListener(event -> {
             boolean selected = event.getStateChange() == ItemEvent.SELECTED;
             tavilySearchApiKeyField.setEnabled(!selected);
@@ -193,6 +216,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             googleCSIApiKeyField.setEnabled(!selected);
         });
 
+>>>>>>> master
         enableAzureOpenAI.addItemListener(event -> {
             azureComponents.forEach(comp -> comp.setVisible(event.getStateChange() == ItemEvent.SELECTED));
             panel.revalidate();
@@ -200,6 +224,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         });
 
     }
+<<<<<<< HEAD
+=======
 
     private @NotNull JComponent createTextWithPasswordButton(JComponent jComponent, String url) {
         return createTextWithLinkButton(jComponent, PASSWORD_EMOJI, "Get your API Key from ", url);
@@ -229,4 +255,5 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
     }
+>>>>>>> master
 }

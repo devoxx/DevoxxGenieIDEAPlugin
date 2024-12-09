@@ -7,12 +7,29 @@ import com.intellij.ui.table.JBTable;
 import lombok.Getter;
 
 import javax.swing.*;
+<<<<<<< HEAD
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.SwingConstants.RIGHT;
+
+=======
 import javax.swing.table.*;
 import java.awt.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 
+>>>>>>> master
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
     private final JTable costTable;
     private final SortableTableModel tableModel;
@@ -49,9 +66,15 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         // Set custom comparators for different column types
         sorter.setComparator(ColumnName.PROVIDER.ordinal(), String.CASE_INSENSITIVE_ORDER);
         sorter.setComparator(ColumnName.MODEL.ordinal(), String.CASE_INSENSITIVE_ORDER);
+<<<<<<< HEAD
+        sorter.setComparator(ColumnName.INPUT_COST.ordinal(), Comparator.comparingDouble(Double.class::cast));
+        sorter.setComparator(ColumnName.OUTPUT_COST.ordinal(), Comparator.comparingDouble(Double.class::cast));
+        sorter.setComparator(ColumnName.CONTEXT_WINDOW.ordinal(), Comparator.comparingInt(Integer.class::cast));
+=======
         sorter.setComparator(ColumnName.INPUT_COST.ordinal(), Comparator.comparingDouble(value -> (Double) value));
         sorter.setComparator(ColumnName.OUTPUT_COST.ordinal(), Comparator.comparingDouble(value -> (Double) value));
         sorter.setComparator(ColumnName.CONTEXT_WINDOW.ordinal(), Comparator.comparingInt(value -> (Integer) value));
+>>>>>>> master
 
         // Sort by provider by default
         List<RowSorter.SortKey> sortKeys = new ArrayList<>();
@@ -63,7 +86,11 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         loadCurrentCosts();
 
         JScrollPane scrollPane = new JBScrollPane(costTable);
+<<<<<<< HEAD
+        scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
+=======
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+>>>>>>> master
         panel.add(scrollPane, BorderLayout.CENTER);
     }
 
@@ -77,7 +104,11 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
 
     private void setCustomRenderers() {
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+<<<<<<< HEAD
+        rightRenderer.setHorizontalAlignment(RIGHT);
+=======
         rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+>>>>>>> master
 
         // Set right alignment for numeric columns
         costTable.getColumnModel().getColumn(ColumnName.CONTEXT_WINDOW.ordinal()).setCellRenderer(rightRenderer);
