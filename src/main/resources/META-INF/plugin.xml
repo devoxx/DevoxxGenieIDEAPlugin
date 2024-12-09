@@ -35,12 +35,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+<<<<<<< HEAD
         <h2>v0.4.0</h2>
         <UL>
             <LI>RAG feature : Uses Chroma DB to index and search code using RAG</LI>
             <LI>Added Google Gemini Exp 1206 model</LI>
             <LI>Fixed horizontal scrolling in chat response panel</LI>
         </UL>
+=======
+>>>>>>> master
         <h2>v0.3.1</h2>
         <UL>
             <LI>Feature #339: Only support Simple Git Diff (with com.intellij.diff.DiffManagerEx)</LI>
@@ -402,8 +405,13 @@
 
         <projectConfigurable parentId="tools"
                              id="com.devoxx.genie.DevoxxGenie"
+<<<<<<< HEAD
                              instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"
                              displayName="DevoxxGenie"/>
+=======
+                             displayName="DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"/>
+>>>>>>> master
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -415,16 +423,20 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
+<<<<<<< HEAD
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"
                              displayName="Web search"/>
 
+=======
+>>>>>>> master
         <projectConfigurable id="com.devoxx.genie.CopyProjectSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
                              displayName="Scan &amp; Copy Project"/>
 
+<<<<<<< HEAD
         <projectConfigurable id="com.devoxx.genie.DiffSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.gitdiff.GitDiffSettingsConfigurable"
@@ -435,10 +447,20 @@
                              instance="com.devoxx.genie.ui.settings.rag.RAGSettingsConfigurable"
                              displayName="RAG"/>
 
+=======
+>>>>>>> master
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
                              displayName="Token Cost &amp; Context Window"/>
+<<<<<<< HEAD
+=======
+
+        <projectConfigurable id="com.devoxx.genie.DiffSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.gitmerge.GitMergeSettingsConfigurable"
+                             displayName="LLM Git Diff Merge"/>
+>>>>>>> master
 
         <toolWindow id="DevoxxGenie"
                     anchor="right"
@@ -461,14 +483,20 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
+<<<<<<< HEAD
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
+=======
+>>>>>>> master
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
         <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     </extensions>
 
     <actions>

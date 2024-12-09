@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
+<<<<<<< HEAD
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
@@ -8,6 +9,8 @@ import com.intellij.ui.components.JBLabel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
+=======
+>>>>>>> master
 import javax.swing.*;
 import java.awt.*;
 
@@ -15,11 +18,14 @@ public class AbstractSettingsComponent implements SettingsComponent {
 
     protected final JPanel panel = new JPanel(new BorderLayout());
 
+<<<<<<< HEAD
     protected static final String LINK_EMOJI = "\uD83D\uDD17";
     protected static final String PASSWORD_EMOJI = "\uD83D\uDD11";
 
     protected final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
+=======
+>>>>>>> master
     @Override
     public JPanel createPanel() {
         return panel;
@@ -28,6 +34,7 @@ public class AbstractSettingsComponent implements SettingsComponent {
     @Override
     public void addListeners() {
     }
+<<<<<<< HEAD
 
     protected void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {
         gbc.gridx = 0;
@@ -75,4 +82,6 @@ public class AbstractSettingsComponent implements SettingsComponent {
         jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
     }
+=======
+>>>>>>> master
 }

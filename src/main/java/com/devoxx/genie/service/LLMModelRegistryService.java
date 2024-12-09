@@ -398,6 +398,7 @@ public final class LLMModelRegistryService {
             .contextWindow(1_000_000)
             .apiKeyUsed(true)
             .build());
+<<<<<<< HEAD
 
         String geminiExp1206 = "gemini-exp-1206";
         models.put(ModelProvider.Google.getName() + ":" + gemini10Pro,
@@ -410,6 +411,8 @@ public final class LLMModelRegistryService {
                         .contextWindow(2_000_000)
                         .apiKeyUsed(true)
                         .build());
+=======
+>>>>>>> master
     }
 
     private void addGroqModels() {

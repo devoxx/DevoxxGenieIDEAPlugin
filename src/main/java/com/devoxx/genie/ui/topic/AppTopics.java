@@ -23,6 +23,7 @@ public class AppTopics {
     public static final Topic<ConversationEventListener> CONVERSATION_TOPIC =
         Topic.create("NewConversation", ConversationEventListener.class);
 
+<<<<<<< HEAD
     public static final Topic<SemanticSearchStateListener> SEMANTIC_SEARCH_STATE_TOPIC =
             Topic.create("SemanticSearchState", SemanticSearchStateListener.class);
 
@@ -31,4 +32,6 @@ public class AppTopics {
 
     public static final Topic<GitDiffStateListener> GITDIFF_STATE_TOPIC =
             Topic.create("GitDiffState", GitDiffStateListener.class);
+=======
+>>>>>>> master
 }

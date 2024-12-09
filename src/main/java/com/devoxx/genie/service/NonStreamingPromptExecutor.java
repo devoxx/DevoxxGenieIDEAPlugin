@@ -2,16 +2,22 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
+<<<<<<< HEAD
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+=======
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.topic.AppTopics;
+>>>>>>> master
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -19,6 +25,10 @@ import java.util.concurrent.Future;
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
 
+=======
+import java.util.concurrent.Future;
+
+>>>>>>> master
 public class NonStreamingPromptExecutor {
 
     private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutor.class);
@@ -44,6 +54,7 @@ public class NonStreamingPromptExecutor {
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 
+<<<<<<< HEAD
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName())) {
             semanticSearch(chatMessageContext, promptOutputPanel, enableButtons);
             enableButtons.run();
@@ -62,6 +73,8 @@ public class NonStreamingPromptExecutor {
     private void prompt(ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
+=======
+>>>>>>> master
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
             .thenAccept(response -> {
                 if (!isCancelled && response != null) {
@@ -90,6 +103,7 @@ public class NonStreamingPromptExecutor {
     }
 
     /**
+<<<<<<< HEAD
      * Perform semantic search.
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel the prompt output panel
@@ -121,6 +135,8 @@ public class NonStreamingPromptExecutor {
     }
 
     /**
+=======
+>>>>>>> master
      * Stop prompt execution.
      */
     public void stopExecution() {

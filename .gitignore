@@ -10,4 +10,4 @@ gradle/**
 /bin/
 /.vscode/
 /core/bin/
-.DS_Store.devoxx-genie-data--*
+.DS_Store
