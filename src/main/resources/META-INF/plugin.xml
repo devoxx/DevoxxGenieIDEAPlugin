@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.4.1</h2>
+        <UL>
+            <LI>Fix #352 : Restore horizontal scrolling in chat response panel</LI>
+        </UL>
         <h2>v0.4.0</h2>
         <UL>
             <LI>RAG feature : Uses Chroma DB to index and search code using RAG</LI>

@@ -22,8 +22,7 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
-import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
-import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.*;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.
@@ -59,7 +58,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         scrollPane = new JBScrollPane(container);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
 
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
