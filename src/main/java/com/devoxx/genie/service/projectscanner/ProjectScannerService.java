@@ -3,8 +3,6 @@ package com.devoxx.genie.service.projectscanner;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.GitignoreParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -28,7 +26,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -63,37 +60,62 @@ public class ProjectScannerService {
         CompletableFuture<ScanContentResult> future = new CompletableFuture<>();
         ScanContentResult scanContentResult = new ScanContentResult();
 
-        ReadAction.nonBlocking(() -> {
-                StringBuilder result = new StringBuilder();
-                result.append("Directory Structure:\n");
-                StringBuilder fullContent;
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                ReadAction.nonBlocking(() -> {
+                            StringBuilder result = new StringBuilder();
+                            result.append("Directory Structure:\n");
+                            StringBuilder fullContent;
 
-                initGitignoreParser(project, startDirectory);
+                            initGitignoreParser(project, startDirectory);
 
-                if (startDirectory == null) {
-                    fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
-                } else {
-                    fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
-                }
+                            if (startDirectory == null) {
+                                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
+                            } else {
+                                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
+                            }
 
-                String content = isTokenCalculation ? fullContent.toString() :
-                    truncateToTokens(project, fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
+                            String content = isTokenCalculation ? fullContent.toString() :
+                                    truncateToTokens(fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
 
-                scanContentResult.setTokenCount(ENCODING.countTokens(content));
+                            scanContentResult.setTokenCount(ENCODING.countTokens(content));
+                            scanContentResult.setContent(content);
 
-                scanContentResult.setContent(content);
-
-                return scanContentResult;
-            }).inSmartMode(project)
-            .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)
-            .submit(AppExecutorUtil.getAppExecutorService());
+                            return scanContentResult;
+                        })
+                        .inSmartMode(project)
+                        .finishOnUiThread(ModalityState.defaultModalityState(), future::complete)
+                        .submit(AppExecutorUtil.getAppExecutorService());
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
 
         return future;
     }
 
+    public ScanContentResult scanProjectSynchronously(Project project, VirtualFile startDirectory, int windowContextMaxTokens, boolean isTokenCalculation) {
+        ScanContentResult scanContentResult = new ScanContentResult();
+        ReadAction.run(() -> {
+            StringBuilder result = new StringBuilder();
+            result.append("Directory Structure:\n");
+            StringBuilder fullContent;
+            initGitignoreParser(project, startDirectory);
+            if (startDirectory == null) {
+                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
+            } else {
+                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
+            }
+            String content = isTokenCalculation ? fullContent.toString() : truncateToTokens(fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
+            scanContentResult.setTokenCount(ENCODING.countTokens(content));
+            scanContentResult.setContent(content);
+        });
+        return scanContentResult;
+    }
+
     /**
      * Initialize the GitignoreParser with the .gitignore file from the project.
-     * @param project the project
+     * @param project        the project
      * @param startDirectory the start directory
      */
     private void initGitignoreParser(Project project, VirtualFile startDirectory) {
@@ -133,22 +155,22 @@ public class ProjectScannerService {
 
         // Collect all content roots from modules
         VirtualFile[] contentRootsFromAllModules =
-            ProjectRootManager.getInstance(project).getContentRootsFromAllModules();
+        ProjectRootManager.getInstance(project).getContentRootsFromAllModules();
 
         // Add all content roots to the unique directory scanner
         Arrays.stream(contentRootsFromAllModules)
-            .distinct()
-            .forEach(uniqueDirectoryScanner::addDirectory);
+                .distinct()
+                .forEach(uniqueDirectoryScanner::addDirectory);
 
         // Get the highest root directory and process the content
         return uniqueDirectoryScanner
-            .getHighestCommonRoot()
-            .map(highestCommonRoot -> processDirectory(project,
-                highestCommonRoot,
-                result,
-                scanContentResult,
-                windowContextMaxTokens))
-            .orElseThrow();
+                .getHighestCommonRoot()
+                .map(highestCommonRoot -> processDirectory(project,
+                        highestCommonRoot,
+                        result,
+                        scanContentResult,
+                        windowContextMaxTokens))
+                .orElseThrow();
     }
 
     /**
@@ -173,26 +195,20 @@ public class ProjectScannerService {
         StringBuilder fullContent = new StringBuilder(result);
         AtomicInteger currentTokens = new AtomicInteger(0);
 
-        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, windowContextMaxTokens, scanContentResult);
+        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, scanContentResult);
         return fullContent;
     }
 
-    /**
-     * Walk through the project directory and append the file contents to the full content.
-     *
-     * @param directory   the selected directory
-     * @param fileIndex   the project file index
-     * @param fullContent the full content
-     */
-    private void walkThroughDirectory(VirtualFile directory,
-                                      ProjectFileIndex fileIndex,
-                                      StringBuilder fullContent,
-                                      AtomicInteger currentTokens,
-                                      int maxTokens,
-                                      ScanContentResult scanContentResult) {
+    private void walkThroughDirectory(@NotNull VirtualFile directory,
+                                      @NotNull ProjectFileIndex fileIndex,
+                                      @NotNull StringBuilder fullContent,
+                                      @NotNull AtomicInteger currentTokens,
+                                      @NotNull ScanContentResult scanContentResult) {
+
         VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
+
                 if (shouldExcludeDirectory(file)) {
                     scanContentResult.incrementSkippedDirectoryCount();
                     return false;
@@ -200,21 +216,27 @@ public class ProjectScannerService {
 
                 if (fileIndex.isInContent(file) && !shouldExcludeFile(file) && shouldIncludeFile(file)) {
                     scanContentResult.incrementFileCount();
+                    scanContentResult.addFile(Paths.get(file.getPath()));
 
                     String header = "\n--- " + file.getPath() + " ---\n";
                     fullContent.append(header);
 
                     try {
-                        String content = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+                        // Wrap file I/O in read action
+                        String content = ReadAction.compute(() -> {
+                            try {
+                                return new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+                            } catch (IOException e) {
+                                LOG.error("Error reading file: " + file.getPath(), e);
+                                return "";
+                            }
+                        });
+
                         content = processFileContent(content);
                         fullContent.append(content).append("\n");
 
                         int tokens = ENCODING.countTokens(content);
                         currentTokens.addAndGet(tokens);
-
-                        if (currentTokens.get() >= maxTokens) {
-                            return false; // Stop scanning if token limit is reached
-                        }
                     } catch (Exception e) {
                         String errorMsg = "Error reading file: " + e.getMessage() + "\n";
                         fullContent.append(errorMsg);
@@ -231,43 +253,32 @@ public class ProjectScannerService {
      * Truncate the project context to a maximum number of tokens.
      * If the project context exceeds the limit, truncate it and append a message.
      *
-     * @param project            the project
      * @param text               the project context
      * @param windowContext      the model window context
      * @param isTokenCalculation whether the scan is for token calculation
      */
-    private String truncateToTokens(Project project,
-                                    String text,
+    private String truncateToTokens(String text,
                                     int windowContext,
                                     boolean isTokenCalculation) {
-        NumberFormat formatter = NumberFormat.getInstance();
         IntArrayList tokens = ENCODING.encode(text);
         if (tokens.size() <= windowContext) {
-            if (!isTokenCalculation) {
-                NotificationUtil.sendNotification(project, "Added. Project context " +
-                    WindowContextFormatterUtil.format(tokens.size(), "tokens"));
-            }
             return text;
         }
+
         IntArrayList truncatedTokens = new IntArrayList(windowContext);
         for (int i = 0; i < windowContext; i++) {
             truncatedTokens.add(tokens.get(i));
         }
 
-        if (!isTokenCalculation) {
-            NotificationUtil.sendNotification(project, "Project context truncated due to token limit, was " +
-                formatter.format(tokens.size()) + " tokens but limit is " + formatter.format(windowContext) + " tokens. " +
-                "You can exclude directories or files in the settings page.");
-        }
         String truncatedContent = ENCODING.decode(truncatedTokens);
-        return isTokenCalculation ? truncatedContent : truncatedContent + "\n--- Project context truncated due to token limit ---\n";
+        return isTokenCalculation ? truncatedContent :
+                truncatedContent + "\n--- Project context truncated due to token limit ---\n";
     }
 
     /**
      * Generate a tree structure of the project source files recursively.
-     *
      * @param virtualFile the virtual file/directory
-     * @param depth the depth
+     * @param depth       the depth
      * @return the tree structure
      */
     private @NotNull String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
@@ -302,7 +313,7 @@ public class ProjectScannerService {
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return file.isDirectory() &&
-            (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
+                (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
     }
 
     /**
@@ -320,11 +331,10 @@ public class ProjectScannerService {
         }
 
         // Check gitignore if enabled
-        if (settings.getUseGitIgnore()) {
-            if (gitignoreParser != null) {
-                Path path = Paths.get(file.getPath());
-                return gitignoreParser.matches(path);
-            }
+        if (Boolean.TRUE.equals(settings.getUseGitIgnore()) &&
+                gitignoreParser != null) {
+            Path path = Paths.get(file.getPath());
+            return gitignoreParser.matches(path);
         }
         return false;
     }
@@ -355,7 +365,7 @@ public class ProjectScannerService {
      * @return the processed content
      */
     private String processFileContent(String content) {
-        if (DevoxxGenieStateService.getInstance().getExcludeJavaDoc()) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getExcludeJavaDoc())) {
             return removeJavadoc(content);
         }
         return content;

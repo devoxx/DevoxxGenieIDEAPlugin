@@ -1,8 +1,6 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
@@ -12,23 +10,16 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import javax.swing.*;
 import java.awt.*;
 
+@Getter
 public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
-    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-
-    @Getter
     private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(stateService.getChatMemorySize(), 1, 100));
-    @Getter
     private final JSpinner temperatureField = new JSpinner(new SpinnerNumberModel(stateService.getTemperature().doubleValue(), 0.0d, 2.0d, 0.1d));
-    @Getter
     private final JSpinner topPField = new JSpinner(new SpinnerNumberModel(stateService.getTopP().doubleValue(), 0.0d, 1.0d, 0.1d));
-    @Getter
     private final JBIntSpinner maxOutputTokensField = new JBIntSpinner(new UINumericRange(stateService.getMaxOutputTokens(), 1, 1_000_000));
-    @Getter
     private final JBIntSpinner timeoutField = new JBIntSpinner(new UINumericRange(stateService.getTimeout(), 1, 600));
-    @Getter
     private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(stateService.getMaxRetries(), 1, 5));
-    @Getter
+
     private final JCheckBox showExecutionTimeCheckBox = new JCheckBox("", stateService.getShowExecutionTime());
 
     public LLMConfigSettingsComponent() {
@@ -45,7 +36,7 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = JBUI.insets(5);
 
-        panel.add(new JXTitledSeparator("Local Large Language Models"), gbc);
+        panel.add(new JXTitledSeparator("LLM Chat Settings"), gbc);
 
         gbc.gridy++;
         gbc.gridwidth = 1;

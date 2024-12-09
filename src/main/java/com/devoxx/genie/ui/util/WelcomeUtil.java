@@ -2,14 +2,12 @@ package com.devoxx.genie.ui.util;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class WelcomeUtil {
 
-    private static final DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.US));
+    private WelcomeUtil() {
+    }
 
     public static @NotNull String getWelcomeText(@NotNull ResourceBundle resourceBundle, float scaleFactor) {
         return """
@@ -36,13 +34,14 @@ public class WelcomeUtil {
         </head>
         <body>
             <h2>%s</h2>
-            <small>Follow us on 𝕏 : <a href="https://twitter.com/DevoxxGenie">@DevoxxGenie</a></small>
+            <small>Follow us on Bluesky : <a href="https://bsky.app/profile/devoxxgenie.bsky.social">@DevoxGenie.bsky.social</a></small>
             <p>%s</p>
             <p>%s</p>
 
             <h2>New features 🚀</h2>
             Configure features in the settings page.<br>
             <ul>
+                 <li><strong>🧐RAG Support</strong>: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>
                  <li><strong>💪🏻Git Diff</strong>: Show Git Diff dialog to commit LLM suggestions</li>
                  <li><strong>❌.gitignore</strong>: Exclude files and directories based on .gitignore file</li>
                  <li><strong>👀Chat History</strong>: All chats are saved and can be restored or removed</li>

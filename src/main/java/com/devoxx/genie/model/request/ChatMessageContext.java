@@ -9,8 +9,11 @@ import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.output.TokenUsage;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -32,11 +35,17 @@ public class ChatMessageContext {
     private TokenUsage tokenUsage;
     private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
     private double cost;
+    private boolean ragActivated;
+    private boolean gitDiffActivated;
+    private boolean webSearchActivated;
 
     @Builder.Default
     private boolean webSearchRequested = false;
 
-    // Custom method
+    @Getter
+    @Setter
+    private List<SemanticFile> semanticReferences;
+
     public boolean hasFiles() {
         return totalFileCount > 0;
     }

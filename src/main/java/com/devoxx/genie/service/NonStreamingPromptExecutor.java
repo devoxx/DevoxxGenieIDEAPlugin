@@ -2,13 +2,22 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.request.SemanticFile;
+import com.devoxx.genie.service.rag.SearchResult;
+import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
+
+import static com.devoxx.genie.model.Constant.FIND_COMMAND;
+import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
 
 public class NonStreamingPromptExecutor {
 
@@ -35,6 +44,24 @@ public class NonStreamingPromptExecutor {
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 
+        if (FIND_COMMAND.equals(chatMessageContext.getCommandName())) {
+            semanticSearch(chatMessageContext, promptOutputPanel, enableButtons);
+            enableButtons.run();
+            return;
+        }
+
+        prompt(chatMessageContext, promptOutputPanel, enableButtons);
+    }
+
+    /**
+     * Execute the prompt.
+     * @param chatMessageContext the chat message context
+     * @param promptOutputPanel the prompt output panel
+     * @param enableButtons the enable buttons
+     */
+    private void prompt(ChatMessageContext chatMessageContext,
+                        @NotNull PromptOutputPanel promptOutputPanel,
+                        Runnable enableButtons) {
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
             .thenAccept(response -> {
                 if (!isCancelled && response != null) {
@@ -60,6 +87,37 @@ public class NonStreamingPromptExecutor {
                 return null;
             })
             .whenComplete((result, throwable) -> enableButtons.run());
+    }
+
+    /**
+     * Perform semantic search.
+     * @param chatMessageContext the chat message context
+     * @param promptOutputPanel the prompt output panel
+     * @param enableButtons the enable buttons
+     */
+    private static void semanticSearch(ChatMessageContext chatMessageContext,
+                                       @NotNull PromptOutputPanel promptOutputPanel,
+                                       Runnable enableButtons) {
+        try {
+            SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
+            Map<String, SearchResult> searchResults = semanticSearchService.search(
+                    chatMessageContext.getProject(),
+                    chatMessageContext.getUserPrompt()
+            );
+
+            if (!searchResults.isEmpty()) {
+                List<SemanticFile> fileReferences = extractFileReferences(searchResults);
+                chatMessageContext.setSemanticReferences(fileReferences);
+                promptOutputPanel.addChatResponse(chatMessageContext);
+            } else {
+                NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                        "No relevant files found for your search query.");
+            }
+        } catch (Exception e) {
+            LOG.error("Error performing semantic search", e);
+            ErrorHandler.handleError(chatMessageContext.getProject(), e);
+
+        }
     }
 
     /**

@@ -6,7 +6,8 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [OpenRouter](https://www.openrouter.ai/) and [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 
-We now also support LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
+We now also support RAG-based prompt context based on your vectorized project files. 
+In addition to Git Dif viewer and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a glimpse into the future of software engineering. As we eagerly await Claude 3.5 Opus, one thing is clear: we're witnessing a paradigm shift in Ai Augmented Programming (AAP) 🐒
 
@@ -29,6 +30,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
+- **🧐 RAG Support (🔥 NEW)**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
 - **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
@@ -41,12 +43,6 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - **👀 Code Highlighting**: Supports highlighting of code blocks.
 - **💬 Chat conversations**: Supports chat conversations with configurable memory size.
 - **📁 Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
-
-![GenieExample](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/5064cef3-e7f8-4ab8-9485-2dbd0a7788df)
-
-We now support also streaming responses which you can enable in the Settings page 🤩 🚀
-
-https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283-af1d-19061b7ae7bf
 
 ### Start in 5 Minutes with local LLM
 
@@ -65,14 +61,34 @@ https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/8081d4f2-c5c4-4283
 - Paste API Key in Settings panel
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
- 
- 
+
+### 🔥 NEW RAG Feature 
+
+<img width="749" alt="RAG" src="https://github.com/user-attachments/assets/ea34247a-b33d-40a2-b96a-d10de0868dfa">
+
+Devoxx Genie now includes starting from v0.4.0 a Retrieval-Augmented Generation (RAG) feature, which enables advanced code search and retrieval capabilities. 
+This feature uses a combination of natural language processing (NLP) and machine learning algorithms to analyze code snippets and identify relevant results based on their semantic meaning.
+
+With RAG, you can:
+
+* Search for code snippets using natural language queries
+* Retrieve relevant code examples that match your query's intent
+* Explore related concepts and ideas in the codebase
+
+We currently use Ollama and Nomic Text embedding to generates vector representations of your project files.
+These embedding vectors are then stored in a Chroma DB running locally within Docker. 
+The vectors are used to compute similarity scores between search queries and your code all running locally.
+
+The RAG feature is a significant enhancement to Devoxx Genie's code search capabilities, enabling developers to quickly find relevant code examples and accelerate their coding workflow.
+
+See also [Demo](https://www.youtube.com/watch?v=VVU8x45jIt4)
+
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
 
 We now also support Cloud based LLMs, you can paste the API keys on the Settings page. 
 
-<img width="1196" alt="DevoxxGenieSettings" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/266780ce-e640-4815-b6fc-7b2a3f86292a">
+<img width="1072" alt="Settings" src="https://github.com/user-attachments/assets/a88f1ae8-55dc-4c6b-b5eb-ec0c3d70b28f">
 
 ### Smart Model Selection and Cost Estimation
 The language model dropdown is not just a list anymore, it's your compass for smart model selection.
@@ -118,7 +134,7 @@ Exclude specific directories
 Filter by file extensions
 Remove JavaDocs to slim down your context
 
-![Filter](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/9dd782db-5f2a-4397-90d9-21cfefac753c)
+<img width="1072" alt="ScanProject" src="https://github.com/user-attachments/assets/51523394-1b36-442b-adfa-91d0c7a8182e">
 
 3. Selective Inclusion 
 
@@ -126,7 +142,7 @@ Right-click to add only the most relevant parts of your project to the context.
 
 ![RightClick](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a86c311a-4589-41f9-bb4a-c8c4f0b884ee)
 
-## Git Diff/Merge viewer
+## Git Diff viewer
 Starting from v0.3.0, you can enable a Git diff/merge viewer to directly review and accept LLM-generated code changes without needing to copy and paste them from the LLM's response.
 To activate this feature, navigate to Settings and select "LLM Git Diff Merge." You can then choose between a two-panel or three-panel Git diff view.
 

@@ -8,6 +8,7 @@ import com.devoxx.genie.service.websearch.WebSearchExecutor;
 import com.devoxx.genie.ui.component.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
@@ -21,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 
 public class ChatPromptExecutor {
 
@@ -46,7 +49,7 @@ public class ChatPromptExecutor {
                               Runnable enableButtons) {
 
         Project project = chatMessageContext.getProject();
-        if (isRunningMap.getOrDefault(project, false)) {
+        if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
             stopPromptExecution(project);
             return;
         }
@@ -65,7 +68,7 @@ public class ChatPromptExecutor {
                             promptInputArea.requestInputFocus();
                         });
                     });
-                } else if (DevoxxGenieStateService.getInstance().getStreamMode()) {
+                } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
                     streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
                         isRunningMap.put(project, false);
                         enableButtons.run();
@@ -137,7 +140,7 @@ public class ChatPromptExecutor {
      * @param project the project
      */
     public void stopPromptExecution(Project project) {
-        if (isRunningMap.getOrDefault(project, false)) {
+        if (Boolean.TRUE.equals(isRunningMap.getOrDefault(project, false))) {
             isRunningMap.put(project, false);
             streamingPromptExecutor.stopStreaming();
             nonStreamingPromptExecutor.stopExecution();
@@ -155,6 +158,16 @@ public class ChatPromptExecutor {
         String prompt = chatMessageContext.getUserPrompt().trim();
         if (prompt.startsWith("/")) {
             DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+
+            if (prompt.toLowerCase().startsWith("/" + FIND_COMMAND + " ")) {
+                if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+                    NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                            "The /find command requires RAG to be enabled in settings");
+                    return Optional.empty();
+                }
+                chatMessageContext.setCommandName(FIND_COMMAND);
+                return Optional.of(prompt.substring(6).trim());
+            }
 
             // Check for custom prompts
             for (CustomPrompt customPrompt : settings.getCustomPrompts()) {

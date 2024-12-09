@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.List;
 
 public class CopyProjectSettingsConfigurable implements Configurable {
 
@@ -42,10 +41,6 @@ public class CopyProjectSettingsConfigurable implements Configurable {
         stateService.setIncludedFileExtensions(copyProjectSettingsComponent.getIncludedFileExtensions());
         stateService.setExcludeJavaDoc(copyProjectSettingsComponent.getExcludeJavadoc());
         stateService.setUseGitIgnore(copyProjectSettingsComponent.getUseGitIgnore());
-    }
-
-    @Override
-    public void reset() {
     }
 
     @Override

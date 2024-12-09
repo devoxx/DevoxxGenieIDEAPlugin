@@ -12,7 +12,6 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.util.EditorUtil;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -25,8 +24,6 @@ import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
 import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
 
 public class ChatMessageContextUtil {
-
-    private static final Logger LOG = Logger.getInstance(ChatMessageContextUtil.class);
 
     public static final int ZERO_SECONDS = 0;
     public static final int SIXTY_SECONDS = 60;

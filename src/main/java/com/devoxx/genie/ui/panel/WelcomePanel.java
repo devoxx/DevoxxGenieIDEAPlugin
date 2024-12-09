@@ -9,7 +9,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.scale.JBUIScale;
-import com.intellij.util.ui.JBUI;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;

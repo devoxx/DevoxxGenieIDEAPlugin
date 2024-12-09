@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.service.gitdiff.GitMergeService;
@@ -32,7 +33,7 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPla
 
 public class ChatResponsePanel extends BackgroundPanel {
 
-    private final ChatMessageContext chatMessageContext;
+    private final transient ChatMessageContext chatMessageContext;
 
     /**
      * Create a new chat response panel.
@@ -60,20 +61,29 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        // If git diff is enabled, try to extract code blocks and show diff
-        if (stateService.getUseSimpleDiff()) {
+        // If git diff is activated, try to extract code blocks and show diff
+        if (Boolean.TRUE.equals(stateService.getGitDiffActivated())) {
             processGitDiff(chatMessageContext, document);
         }
 
         addDocumentNodesToPanel(document);
 
+        // Add regular files panel
         if (chatMessageContext.hasFiles()) {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles();
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);
         }
 
-        if (DevoxxGenieStateService.getInstance().getShowExecutionTime()) {
+        // Add semantic references panel
+        List<SemanticFile> semanticReferences = chatMessageContext.getSemanticReferences();
+        if (semanticReferences != null && !semanticReferences.isEmpty()) {
+            ExpandablePanel semanticPanel = new ExpandablePanel(chatMessageContext.getProject(), semanticReferences);
+            semanticPanel.setName(chatMessageContext.getId() + "_semantic");
+            add(semanticPanel);
+        }
+
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
             // Add execution time, token usage and cost information
             addMetricExecutionInfo(chatMessageContext);
         }

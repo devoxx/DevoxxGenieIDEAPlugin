@@ -44,7 +44,7 @@ public interface DevoxxGenieSettingsService {
 
     String getOpenRouterKey();
 
-    Boolean getHideSearchButtonsFlag();
+    Boolean getEnableWebSearch();
 
     String getGoogleSearchKey();
 
@@ -128,7 +128,7 @@ public interface DevoxxGenieSettingsService {
 
     void setOpenRouterKey(String key);
 
-    void setHideSearchButtonsFlag(Boolean flag);
+    void setEnableWebSearch(Boolean flag);
 
     void setGoogleSearchKey(String key);
 

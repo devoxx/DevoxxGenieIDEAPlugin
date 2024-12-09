@@ -77,17 +77,6 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIDeploymentField(), settings.getAzureOpenAIDeployment());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), settings.getAzureOpenAIKey());
 
-        isModified |= !settings.getHideSearchButtonsFlag().equals(llmSettingsComponent.getHideSearchButtonsField().isSelected());
-        llmSettingsComponent.getHideSearchButtonsField().addItemListener(event -> {
-            String text = llmSettingsComponent.getHideSearchButtonsField().getText();
-            settings.setHideSearchButtonsFlag(text.equals("true"));
-        });
-
-        isModified |= isFieldModified(llmSettingsComponent.getTavilySearchApiKeyField(), settings.getTavilySearchKey());
-        isModified |= isFieldModified(llmSettingsComponent.getGoogleSearchApiKeyField(), settings.getGoogleSearchKey());
-        isModified |= isFieldModified(llmSettingsComponent.getGoogleCSIApiKeyField(), settings.getGoogleCSIKey());
-        isModified |= llmSettingsComponent.getMaxSearchResults().getNumber() != settings.getMaxSearchResults();
-
         return isModified;
     }
 
@@ -124,12 +113,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
         settings.setAzureOpenAIDeployment(llmSettingsComponent.getAzureOpenAIDeploymentField().getText());
         settings.setAzureOpenAIKey(new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()));
-
-        settings.setHideSearchButtonsFlag(llmSettingsComponent.getHideSearchButtonsField().isSelected());
-        settings.setTavilySearchKey(new String(llmSettingsComponent.getTavilySearchApiKeyField().getPassword()));
-        settings.setGoogleSearchKey(new String(llmSettingsComponent.getGoogleSearchApiKeyField().getPassword()));
-        settings.setGoogleCSIKey(new String(llmSettingsComponent.getGoogleCSIApiKeyField().getPassword()));
-        settings.setMaxSearchResults(llmSettingsComponent.getMaxSearchResults().getNumber());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
@@ -177,11 +160,5 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getAzureOpenAIEndpointField().setText(settings.getAzureOpenAIEndpoint());
         llmSettingsComponent.getAzureOpenAIDeploymentField().setText(settings.getAzureOpenAIDeployment());
         llmSettingsComponent.getAzureOpenAIKeyField().setText(settings.getAzureOpenAIKey());
-
-        llmSettingsComponent.getHideSearchButtonsField().setSelected(settings.getHideSearchButtonsFlag());
-        llmSettingsComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
-        llmSettingsComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
-        llmSettingsComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
-        llmSettingsComponent.getMaxSearchResults().setValue(settings.getMaxSearchResults());
     }
 }
