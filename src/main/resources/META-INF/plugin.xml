@@ -38,6 +38,7 @@
         <h2>v0.4.1</h2>
         <UL>
             <LI>Fix #352 : Restore horizontal scrolling in chat response panel</LI>
+            <LI>Fix #354 : Fix splitter proportion for chat window</LI>
         </UL>
         <h2>v0.4.0</h2>
         <UL>
