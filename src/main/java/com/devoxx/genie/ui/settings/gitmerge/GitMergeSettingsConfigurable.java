@@ -60,7 +60,7 @@ public class GitMergeSettingsConfigurable implements Configurable {
     }
 
     private GitDiffMode determineCurrentMode(@NotNull DevoxxGenieStateService stateService) {
-        if (stateService.getUseSimpleDiff()) {
+        if (Boolean.TRUE.equals(stateService.getUseSimpleDiff())) {
             return GitDiffMode.SIMPLE_DIFF;
         }
         return GitDiffMode.DISABLED;

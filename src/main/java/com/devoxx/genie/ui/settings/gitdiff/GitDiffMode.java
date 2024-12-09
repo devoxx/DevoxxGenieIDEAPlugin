@@ -1,5 +1,8 @@
 package com.devoxx.genie.ui.settings.gitdiff;
 
+import lombok.Getter;
+
+@Getter
 public enum GitDiffMode {
     DISABLED("Disabled", "", ""),
     SIMPLE_DIFF("Simple Git Diff", "/images/simple_diff.jpg",
@@ -45,15 +48,4 @@ public enum GitDiffMode {
         this.description = description;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getIconPath() {
-        return iconPath;
-    }
-
-    public String getDescription() {
-        return description;
-    }
 }

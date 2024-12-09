@@ -2,12 +2,9 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-<<<<<<< HEAD
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
-=======
->>>>>>> master
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
@@ -21,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-<<<<<<< HEAD
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -30,10 +26,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-=======
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
->>>>>>> master
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 
@@ -42,10 +34,7 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
  * Here's where also the basic prompt "engineering" is happening, including calling the AST magic.
  */
 public class MessageCreationService {
-<<<<<<< HEAD
     private static final Logger LOG = Logger.getLogger(MessageCreationService.class.getName());
-=======
->>>>>>> master
 
     public static final String CONTEXT_PROMPT = "Context: \n";
 
@@ -56,7 +45,6 @@ public class MessageCreationService {
         If multiple files need to be modified, provide each file's content in a separate code block.
         """;
 
-<<<<<<< HEAD
     public static final String SEMANTIC_RESULT = """
             File: %s
             Score: %.2f
@@ -65,21 +53,16 @@ public class MessageCreationService {
             ```
             """;
 
-=======
->>>>>>> master
     @NotNull
     public static MessageCreationService getInstance() {
         return ApplicationManager.getApplication().getService(MessageCreationService.class);
     }
 
-<<<<<<< HEAD
     /**
      * Create user message.
      * @param chatMessageContext the chat message context
      * @return the user message
      */
-=======
->>>>>>> master
     @NotNull
     public UserMessage createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
         UserMessage userMessage;
@@ -88,35 +71,23 @@ public class MessageCreationService {
         if (context != null && !context.isEmpty()) {
             userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
         } else {
-<<<<<<< HEAD
             userMessage = constructUserMessageWithCombinedContext(chatMessageContext);
-=======
-            userMessage = constructUserMessageWithEditorContent(chatMessageContext);
->>>>>>> master
         }
 
         return userMessage;
     }
 
-<<<<<<< HEAD
     private @NotNull UserMessage constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
 
         StringBuilder stringBuilder = new StringBuilder();
 
         // Add system prompt for OpenAI o1 models
-=======
-    private @NotNull UserMessage constructUserMessageWithEditorContent(@NotNull ChatMessageContext chatMessageContext) {
-        StringBuilder stringBuilder = new StringBuilder();
-
-        // Add system prompt to user message if the AI model is o1
->>>>>>> master
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
 
         // If git diff is enabled, add special instructions
-<<<<<<< HEAD
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getGitDiffActivated())) {
             // Git diff is enabled, add special instructions at the beginning
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
@@ -139,24 +110,6 @@ public class MessageCreationService {
             stringBuilder.append("<EditorContext>\n");
             stringBuilder.append(editorContent);
             stringBuilder.append("\n</EditorContext>\n\n");
-=======
-        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
-            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
-        }
-
-        // The user prompt is always appended
-        appendIfNotEmpty(stringBuilder, "<UserPrompt>" + chatMessageContext.getUserPrompt() + "</UserPrompt>");
-
-        // Add the editor content or selected text
-        String editorContent = getEditorContentOrSelectedText(chatMessageContext);
-
-        if (!editorContent.isEmpty()) {
-            // Add the context prompt if it is not empty
-            appendIfNotEmpty(stringBuilder, "<context>");
-            appendIfNotEmpty(stringBuilder, CONTEXT_PROMPT);
-            appendIfNotEmpty(stringBuilder, editorContent);
-            appendIfNotEmpty(stringBuilder, "</context>");
->>>>>>> master
         }
 
         UserMessage userMessage = new UserMessage(stringBuilder.toString());
@@ -164,7 +117,6 @@ public class MessageCreationService {
         return userMessage;
     }
 
-<<<<<<< HEAD
     /**
      * Create user message with project content based on semantic search results.
      * @param chatMessageContext the chat message context
@@ -232,8 +184,6 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      * @return the editor content or selected text
      */
-=======
->>>>>>> master
     private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext) {
         EditorInfo editorInfo = chatMessageContext.getEditorInfo();
         if (editorInfo == null) {
@@ -284,11 +234,7 @@ public class MessageCreationService {
         StringBuilder stringBuilder = new StringBuilder();
 
         // If git diff is enabled, add special instructions at the beginning
-<<<<<<< HEAD
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
-=======
-        if (DevoxxGenieStateService.getInstance().getUseSimpleDiff()) {
->>>>>>> master
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
@@ -347,19 +293,4 @@ public class MessageCreationService {
             return userPromptContext.toString();
         });
     }
-<<<<<<< HEAD
-=======
-
-    /**
-     * Append the text to the string builder if it is not empty.
-     *
-     * @param sb   the string builder
-     * @param text the text
-     */
-    private void appendIfNotEmpty(StringBuilder sb, String text) {
-        if (text != null && !text.isEmpty()) {
-            sb.append(text).append("\n");
-        }
-    }
->>>>>>> master
 }

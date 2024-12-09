@@ -3,10 +3,6 @@ package com.devoxx.genie.service.openrouter;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.model.openrouter.ResponseDTO;
 import com.devoxx.genie.service.exception.UnsuccessfulRequestException;
-<<<<<<< HEAD
-=======
-import com.fasterxml.jackson.databind.ObjectMapper;
->>>>>>> master
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

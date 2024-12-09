@@ -1,10 +1,7 @@
 package com.devoxx.genie.ui.component;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
-<<<<<<< HEAD
 import com.devoxx.genie.ui.panel.SearchOptionsPanel;
-=======
->>>>>>> master
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
@@ -17,10 +14,6 @@ import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 public class PromptInputArea extends JPanel {
-<<<<<<< HEAD
-=======
-
->>>>>>> master
     private final CommandAutoCompleteTextField inputField;
     private final GlowingBorder glowingBorder;
     private final Timer glowTimer;
@@ -29,12 +22,8 @@ public class PromptInputArea extends JPanel {
     public PromptInputArea(@NotNull ResourceBundle resourceBundle, Project project) {
         super(new BorderLayout());
 
-<<<<<<< HEAD
         // Create main input area panel
         JPanel inputAreaPanel = new JPanel(new BorderLayout());
-
-=======
->>>>>>> master
         inputField = new CommandAutoCompleteTextField(project);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);
@@ -42,7 +31,6 @@ public class PromptInputArea extends JPanel {
         inputField.addFocusListener(new PromptInputFocusListener(inputField));
         inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-<<<<<<< HEAD
         // Set minimum size for 2 lines
         FontMetrics fontMetrics = inputField.getFontMetrics(inputField.getFont());
         int lineHeight = fontMetrics.getHeight();
@@ -63,12 +51,6 @@ public class PromptInputArea extends JPanel {
         inputAreaPanel.add(inputField, BorderLayout.CENTER);
 
         add(inputAreaPanel, BorderLayout.CENTER);
-=======
-        glowingBorder = new GlowingBorder(new JBColor(new Color(0, 120, 215), new Color(0, 120, 213))); // You can change this color
-        setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4)); // To accommodate the glowing border
-
-        add(inputField, BorderLayout.CENTER);
->>>>>>> master
 
         glowTimer = new Timer(50, new ActionListener() {
             private float direction = 0.05f;

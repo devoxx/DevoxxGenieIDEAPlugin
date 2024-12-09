@@ -16,11 +16,7 @@ public class Constant {
         /help: show commands
 
         The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
-<<<<<<< HEAD
         You can follow us on Bluesky @ https://bsky.app/profile/devoxxgenie.bsky.social.
-=======
-        You can follow us on Twitter @DevoxxGenie.
->>>>>>> master
         Do not include any more info which might be incorrect, like discord, documentation or other websites.
         Only provide info that is correct and relevant to the code or plugin.
         """;
@@ -31,7 +27,6 @@ public class Constant {
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
     public static final String TDG_PROMPT = "You are a professional Java developer. Give me a SINGLE FILE COMPLETE java implementation that will pass this test. Do not respond with a test. Give me only complete code and no snippets. Include imports and use the right package.";
-<<<<<<< HEAD
     public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files.";
 
     public static final String TEST_COMMAND = "test";
@@ -39,8 +34,6 @@ public class Constant {
     public static final String REVIEW_COMMAND = "review";
     public static final String EXPLAIN_COMMAND = "explain";
     public static final String TDG_COMMAND = "tdg";
-=======
->>>>>>> master
 
     // The Local LLM Model URLs, these can be overridden in the settings page
     public static final String OLLAMA_MODEL_URL = "http://localhost:11434/";
@@ -69,17 +62,12 @@ public class Constant {
     public static final Integer MAX_MEMORY = 10;
 
     // Hide Search Button
-<<<<<<< HEAD
     public static final Boolean ENABLE_WEB_SEARCH = false;
-=======
-    public static final Boolean HIDE_SEARCH_BUTTONS = false;
->>>>>>> master
     public static final Integer MAX_SEARCH_RESULTS = 3;
 
     // Stream mode settings
     public static final Boolean STREAM_MODE = false;
 
-<<<<<<< HEAD
     // Button labels
     public static final String ADD_PROJECT_TO_CONTEXT = "Add project";
     public static final String CALC_TOKENS_COST = "Calc Tokens";
@@ -96,13 +84,4 @@ public class Constant {
 
     // Titles
     public static final String FILTER_AND_DOUBLE_CLICK_TO_ADD_TO_PROMPT_CONTEXT = "Filter and Double-Click To Add To Prompt Context";
-
-=======
-    // Button tooltip texts
-    public static final String ADD_FILE_S_TO_PROMPT_CONTEXT = "Add file(s) to prompt context";
-    public static final String SUBMIT_THE_PROMPT = "Submit the prompt";
-    public static final String SEARCH_THE_WEB_WITH_TAVILY_FOR_AN_ANSWER = "Search the web with Tavily for an answer";
-    public static final String SEARCH_GOOGLE_FOR_AN_ANSWER = "Search Google for an answer";
-    public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
->>>>>>> master
 }

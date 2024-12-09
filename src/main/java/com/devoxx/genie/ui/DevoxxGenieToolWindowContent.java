@@ -3,7 +3,6 @@ package com.devoxx.genie.ui;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-<<<<<<< HEAD
 import com.devoxx.genie.service.ConversationStorageService;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
@@ -12,15 +11,6 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.SubmitPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-=======
-import com.devoxx.genie.service.*;
-import com.devoxx.genie.ui.panel.SubmitPanel;
-import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.panel.*;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.diagnostic.Logger;
->>>>>>> master
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
@@ -33,11 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-<<<<<<< HEAD
 import java.util.ResourceBundle;
-=======
-import java.util.*;
->>>>>>> master
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 
@@ -46,13 +32,7 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
  */
 public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
-<<<<<<< HEAD
     private static final float SPLITTER_PROPORTION = 0.75f;
-=======
-    private static final Logger LOG = Logger.getInstance(DevoxxGenieToolWindowContent.class);
-
-    private static final float SPLITTER_PROPORTION = 0.8f;
->>>>>>> master
 
     @Getter
     private final Project project;
@@ -183,11 +163,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         } else {
             llmProviderPanel.setLastSelectedProvider();
         }
-<<<<<<< HEAD
-=======
-
-        submitPanel.getActionButtonsPanel().configureSearchButtonsVisibility();
->>>>>>> master
     }
 
     /**

@@ -1,9 +1,5 @@
 package com.devoxx.genie.ui.panel;
 
-<<<<<<< HEAD
-=======
-// Import necessary classes and packages
->>>>>>> master
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
@@ -25,12 +21,8 @@ import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-<<<<<<< HEAD
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
-=======
-import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
->>>>>>> master
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 /**
@@ -40,13 +32,8 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  */
 public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
 
-<<<<<<< HEAD
     private final transient Project project;
     private final transient ResourceBundle resourceBundle;
-=======
-    private final Project project;
-    private final ResourceBundle resourceBundle;
->>>>>>> master
 
     private final JPanel container = new JPanel();
     private final WelcomePanel welcomePanel;
@@ -72,11 +59,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         scrollPane = new JBScrollPane(container);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
-<<<<<<< HEAD
         scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_AS_NEEDED);
-=======
-        scrollPane.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
->>>>>>> master
 
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
@@ -131,11 +114,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
 
-<<<<<<< HEAD
         if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-=======
-        if (!DevoxxGenieStateService.getInstance().getStreamMode()) {
->>>>>>> master
             waitingPanel.showMsg();
             userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
         }
@@ -153,7 +132,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
         waitingPanel.hideMsg();
         addFiller(chatMessageContext.getId());
-<<<<<<< HEAD
 
         // Special handling for find command
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
@@ -168,10 +146,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         container.revalidate();
         container.repaint();
         ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
-=======
-        container.add(new ChatResponsePanel(chatMessageContext));
-        scrollToBottom();
->>>>>>> master
     }
 
     /**
@@ -287,8 +261,4 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void onCustomPromptsChanged() {
         ApplicationManager.getApplication().invokeLater(this::updateHelpText);
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> master
