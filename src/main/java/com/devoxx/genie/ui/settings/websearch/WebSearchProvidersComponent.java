@@ -51,11 +51,10 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         gbc.gridy++;
         JBLabel infoLabel = new JBLabel();
         infoLabel.setText(
-            """
-                <html><body style='width: 100%;'>
-                Post your prompt on the web using eitherGoogle search or Tavily search.
-                </body></html>
-            """);
+                "<html><body style='width: 100%;'>" +
+                "Post your prompt on the web using eitherGoogle search or Tavily search." +
+                "</body></html>");
+
         infoLabel.setForeground(UIUtil.getContextHelpForeground());
         infoLabel.setBorder(JBUI.Borders.emptyBottom(10));
         panel.add(infoLabel, gbc);
