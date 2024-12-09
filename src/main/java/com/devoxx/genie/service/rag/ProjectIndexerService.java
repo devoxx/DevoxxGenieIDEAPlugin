@@ -136,25 +136,18 @@ public final class ProjectIndexerService {
         for (int i = 0; i < totalFiles; i++) {
             Path path = filesToProcess.get(i);
             String fileName = path.getFileName().toString();
-            // Update progress bar and label
             int progress = (int) (((double) (i + 1) / totalFiles) * 100);
+            final int currentFileIndex = i;
             SwingUtilities.invokeLater(() -> {
                 progressBar.setValue(progress);
-                progressLabel.setText(String.format("Processing %d of %d: %s", progress, totalFiles, fileName));
+                progressLabel.setText(String.format("Processing %d of %d: %s", currentFileIndex, totalFiles, fileName));
             });
             indexSingleFile(path);
         }
     }
 
-    // Define a functional interface for progress updates
-    @FunctionalInterface
-    public interface IndexingProgressCallback {
-        void onProgress(int currentFile, int totalFiles, String fileName);
-    }
-
     /**
      * Index a single file by checking if it is already indexed and processing the content.
-     *
      * @param filePath Path to the file to index
      */
     private void indexSingleFile(Path filePath) {

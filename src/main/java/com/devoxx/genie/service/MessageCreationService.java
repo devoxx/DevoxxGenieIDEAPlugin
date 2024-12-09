@@ -173,7 +173,7 @@ public class MessageCreationService {
         return SEMANTIC_RESULT.formatted(entry.getKey(), entry.getValue().score(), fileContent);
     }
 
-    private static List<SemanticFile> extractFileReferences(@NotNull Map<String, SearchResult> searchResults) {
+    public static List<SemanticFile> extractFileReferences(@NotNull Map<String, SearchResult> searchResults) {
         return searchResults.keySet().stream()
                 .map(value -> new SemanticFile(value, searchResults.get(value).score()))
                 .toList();

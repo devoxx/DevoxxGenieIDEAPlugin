@@ -27,6 +27,13 @@ public class Constant {
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
     public static final String TDG_PROMPT = "You are a professional Java developer. Give me a SINGLE FILE COMPLETE java implementation that will pass this test. Do not respond with a test. Give me only complete code and no snippets. Include imports and use the right package.";
+    public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files.";
+
+    public static final String TEST_COMMAND = "test";
+    public static final String FIND_COMMAND = "find";
+    public static final String REVIEW_COMMAND = "review";
+    public static final String EXPLAIN_COMMAND = "explain";
+    public static final String TDG_COMMAND = "tdg";
 
     // The Local LLM Model URLs, these can be overridden in the settings page
     public static final String OLLAMA_MODEL_URL = "http://localhost:11434/";
