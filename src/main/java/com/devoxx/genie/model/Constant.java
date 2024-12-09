@@ -16,7 +16,7 @@ public class Constant {
         /help: show commands
 
         The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
-        You can follow us on Twitter @DevoxxGenie.
+        You can follow us on Bluesky @ https://bsky.app/profile/devoxxgenie.bsky.social.
         Do not include any more info which might be incorrect, like discord, documentation or other websites.
         Only provide info that is correct and relevant to the code or plugin.
         """;

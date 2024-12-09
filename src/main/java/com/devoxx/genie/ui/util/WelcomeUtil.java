@@ -2,14 +2,12 @@ package com.devoxx.genie.ui.util;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class WelcomeUtil {
 
-    private static final DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.US));
+    private WelcomeUtil() {
+    }
 
     public static @NotNull String getWelcomeText(@NotNull ResourceBundle resourceBundle, float scaleFactor) {
         return """
@@ -36,7 +34,7 @@ public class WelcomeUtil {
         </head>
         <body>
             <h2>%s</h2>
-            <small>Follow us on 𝕏 : <a href="https://twitter.com/DevoxxGenie">@DevoxxGenie</a></small>
+            <small>Follow us on Bluesky : <a href="https://bsky.app/profile/devoxxgenie.bsky.social">@DevoxGenie.bsky.social</a></small>
             <p>%s</p>
             <p>%s</p>
 

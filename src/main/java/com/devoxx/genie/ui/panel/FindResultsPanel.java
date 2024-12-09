@@ -11,13 +11,16 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
-public class FindResultsPanel extends JPanel {
+public class FindResultsPanel extends BackgroundPanel {
     private final JPanel resultsContainer;
     private final transient Project project;
 
-    public FindResultsPanel(Project project, List<SemanticFile> results) {
-        super(new BorderLayout());
+    public FindResultsPanel(Project project,
+                            @NotNull List<SemanticFile> results) {
+        super("FindResultsPanel");
+
         this.project = project;
+        setLayout(new BorderLayout());
 
         // Create header with search stats
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -26,14 +29,21 @@ public class FindResultsPanel extends JPanel {
         header.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         headerPanel.add(header, BorderLayout.NORTH);
 
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         // Add summary
         JLabel summary = new JLabel(String.format(
-                "Showing matches with relevance scores above %.0f%%",
-                DevoxxGenieStateService.getInstance().getIndexerMinScore() * 100));
+                "Showing %d matches max. with relevance scores above %.0f%%",
+                stateService.getIndexerMaxResults(),
+                stateService.getIndexerMinScore() * 100));
         summary.setForeground(JBColor.GRAY);
-        headerPanel.add(summary, BorderLayout.CENTER);
-
+        headerPanel.add(summary, BorderLayout.NORTH);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         add(headerPanel, BorderLayout.NORTH);
+
+        JLabel footerLabel = new JLabel("Set max. results, min. relevance score in plugin RAG settings.");
+        footerLabel.setForeground(JBColor.GRAY);
+        footerLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        add(footerLabel, BorderLayout.SOUTH);
 
         // Create scrollable results container
         resultsContainer = new JPanel();
@@ -41,9 +51,11 @@ public class FindResultsPanel extends JPanel {
 
         // Add results
         addResults(results);
+        setMaximumSize(new Dimension(Short.MAX_VALUE, results.size() * 20));
 
         // Add scroll pane
         JBScrollPane scrollPane = new JBScrollPane(resultsContainer);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane, BorderLayout.CENTER);
@@ -58,7 +70,6 @@ public class FindResultsPanel extends JPanel {
         for (SemanticFile result : sortedResults) {
             // Create result panel
             JPanel resultPanel = new JPanel(new BorderLayout());
-            resultPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
             // Add file component with click handling
             FileEntryComponent fileComponent = new FileEntryComponent(project, result);
