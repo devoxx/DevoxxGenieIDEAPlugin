@@ -96,6 +96,7 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
         return switch (action) {
             case PULL_CHROMA_DB -> "Pull Image";
             case START_CHROMA_DB -> "Start ChromaDB";
+            case PULL_NOMIC -> "Pull model";
             default -> "Fix";
         };
     }

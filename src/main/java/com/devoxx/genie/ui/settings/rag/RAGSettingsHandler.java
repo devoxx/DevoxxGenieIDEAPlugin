@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings.rag;
 
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaDBStatusCallback;
+import com.devoxx.genie.service.ollama.OllamaService;
 import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 public class RAGSettingsHandler implements ActionListener {
     private final Project project;
@@ -86,6 +88,14 @@ public class RAGSettingsHandler implements ActionListener {
 
         if (status.validatorType() == ValidatorType.CHROMADB) {
             handleChromaDBAction(action);
+        } else if (status.validatorType() == ValidatorType.NOMIC) {
+            handleNomicAction(action);
+        }
+    }
+
+    private void handleNomicAction(@NotNull ValidationActionType action) {
+        if (action == ValidationActionType.PULL_NOMIC) {
+            pullNomicModel();
         }
     }
 
@@ -100,7 +110,45 @@ public class RAGSettingsHandler implements ActionListener {
 
         if (validatorType == ValidatorType.CHROMADB) {
             handleChromaDBAction(action);
+        } else if (validatorType == ValidatorType.NOMIC) {
+            handleNomicAction(action);
         }
+    }
+
+    private void pullNomicModel() {
+        new Task.Backgroundable(project, "Pulling Nomic Embed Model") {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setIndeterminate(false);
+
+                try {
+                    OllamaService.getInstance().pullModel("nomic-embed-text", status -> {
+                        if (status.startsWith("Downloading:")) {
+                            try {
+                                double progress = Double.parseDouble(status.substring(12, status.length() - 1));
+                                indicator.setFraction(progress / 100.0);
+                                indicator.setText(status);
+                            } catch (NumberFormatException ignored) {}
+                        } else {
+                            indicator.setText(status);
+                        }
+                    });
+
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        NotificationUtil.sendNotification(project, "Nomic Embed model pulled successfully");
+                        performValidation();
+                    });
+                } catch (IOException e) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        NotificationUtil.sendNotification(project, "Failed to pull Nomic Embed model: " +
+                                e.getMessage());
+                        performValidation();
+                    });
+                } finally {
+                    validationInProgress = false;
+                }
+            }
+        }.queue();
     }
 
     private void handleChromaDBAction(@NotNull ValidationActionType action) {

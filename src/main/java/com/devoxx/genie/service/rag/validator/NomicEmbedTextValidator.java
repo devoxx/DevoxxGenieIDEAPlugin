@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
 public class NomicEmbedTextValidator implements Validator {
     private String message;
+    private ValidationActionType action = ValidationActionType.OK;
 
     @Override
     public boolean isValid() {
@@ -23,10 +24,12 @@ public class NomicEmbedTextValidator implements Validator {
 
             for (OllamaModelEntryDTO model : ollamaModels) {
                 if (model.getName().startsWith("nomic-embed-text")) {
+                    this.message = "Nomic Embed model found";
                     return true;
                 }
             }
             this.message = "Nomic Embed model not found";
+            this.action = ValidationActionType.PULL_NOMIC;
             return false;
         } catch (Exception e) {
             this.message = "Unable to check if Nomic Embed model is present";
@@ -36,12 +39,17 @@ public class NomicEmbedTextValidator implements Validator {
 
     @Override
     public String getMessage() {
-        return "Nomic Embed model found";
+        return this.message;
     }
 
     @Override
     public String getErrorMessage() {
         return this.message;
+    }
+
+    @Override
+    public ValidationActionType getAction() {
+        return this.action;
     }
 
     @Override
