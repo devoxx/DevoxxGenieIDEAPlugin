@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
@@ -25,7 +25,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
 
     private final List<String> commands = new ArrayList<>();
-    private final Project project;
+    private final transient Project project;
 
     private boolean isAutoCompleting = false;
     private String placeholder = "";
@@ -69,35 +69,35 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
                 e.consume();
             }
         }
-    }
 
-    private void sendPrompt() {
-        String text = getText().trim();
-        if (!text.isEmpty()) {
-            ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                .onPromptSubmitted(project, text);
+        private void sendPrompt() {
+            String text = getText().trim();
+            if (!text.isEmpty()) {
+                ApplicationManager.getApplication().getMessageBus()
+                        .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
+                        .onPromptSubmitted(project, text);
+            }
         }
-    }
 
-    private void autoComplete() {
-        String text = getText();
-        String[] lines = text.split("\n");
-        if (lines.length > 0 && lines[lines.length - 1].startsWith("/")) {
-            String currentLine = lines[lines.length - 1];
-            for (String command : commands) {
-                if (command.startsWith(currentLine)) {
-                    isAutoCompleting = true;
-                    int start = text.lastIndexOf("\n") + 1;
-                    try {
-                        getDocument().remove(start, currentLine.length());
-                        getDocument().insertString(start, command, null);
-                    } catch (BadLocationException ex) {
-                        LOG.error("Error while auto-completing command", ex);
+        private void autoComplete() {
+            String text = getText();
+            String[] lines = text.split("\n");
+            if (lines.length > 0 && lines[lines.length - 1].startsWith("/")) {
+                String currentLine = lines[lines.length - 1];
+                for (String command : commands) {
+                    if (command.startsWith(currentLine)) {
+                        isAutoCompleting = true;
+                        int start = text.lastIndexOf("\n") + 1;
+                        try {
+                            getDocument().remove(start, currentLine.length());
+                            getDocument().insertString(start, command, null);
+                        } catch (BadLocationException ex) {
+                            LOG.error("Error while auto-completing command", ex);
+                        }
+                        setCaretPosition(text.length() - currentLine.length() + command.length());
+                        isAutoCompleting = false;
+                        break;
                     }
-                    setCaretPosition(text.length() - currentLine.length() + command.length());
-                    isAutoCompleting = false;
-                    break;
                 }
             }
         }
@@ -112,31 +112,54 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             }
 
             super.insertString(offs, str, a);
+            scheduleAutoComplete();
+        }
 
+        private void scheduleAutoComplete() {
             ApplicationManager.getApplication().invokeLater(() -> {
                 try {
-                    String text = getText(0, getLength());
-                    String[] lines = text.split("\n");
-                    if (lines.length > 0) {
-                        String currentLine = lines[lines.length - 1];
-                        if (currentLine.startsWith("/") && currentLine.length() > 1) {
-                            for (String command : commands) {
-                                if (command.startsWith(currentLine) && !command.equals(currentLine)) {
-                                    String completion = command.substring(currentLine.length());
-                                    isAutoCompleting = true;
-                                    insertString(getLength(), completion, null);
-                                    setCaretPosition(getLength());
-                                    moveCaretPosition(getLength() - completion.length());
-                                    isAutoCompleting = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    handleAutoComplete();
                 } catch (BadLocationException e) {
                     LOG.error("Error while auto-completing command", e);
                 }
             });
+        }
+
+        private void handleAutoComplete() throws BadLocationException {
+            String text = getText(0, getLength());
+            String currentLine = getCurrentLine(text);
+
+            if (shouldAttemptAutoComplete(currentLine)) {
+                attemptAutoComplete(currentLine);
+            }
+        }
+
+        private String getCurrentLine(@NotNull String text) {
+            String[] lines = text.split("\n");
+            return lines.length > 0 ? lines[lines.length - 1] : "";
+        }
+
+        private boolean shouldAttemptAutoComplete(@NotNull String currentLine) {
+            return currentLine.startsWith("/") && currentLine.length() > 1;
+        }
+
+        private void attemptAutoComplete(String currentLine) throws BadLocationException {
+            for (String command : commands) {
+                if (command.startsWith(currentLine) && !command.equals(currentLine)) {
+                    applyAutoComplete(command, currentLine);
+                    break;
+                }
+            }
+        }
+
+        private void applyAutoComplete(@NotNull String command,
+                                       @NotNull String currentLine) throws BadLocationException {
+            String completion = command.substring(currentLine.length());
+            isAutoCompleting = true;
+            insertString(getLength(), completion, null);
+            setCaretPosition(getLength());
+            moveCaretPosition(getLength() - completion.length());
+            isAutoCompleting = false;
         }
     }
 
@@ -145,6 +168,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         repaint();
     }
 
+    @Override
     public void onCustomPromptsChanged() {
         initializeCommands();
     }

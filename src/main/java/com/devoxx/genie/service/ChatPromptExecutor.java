@@ -5,7 +5,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
 import com.devoxx.genie.service.websearch.WebSearchExecutor;
-import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
