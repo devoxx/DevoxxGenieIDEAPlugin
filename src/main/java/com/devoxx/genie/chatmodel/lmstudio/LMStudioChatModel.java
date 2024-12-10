@@ -90,7 +90,7 @@ public class LMStudioChatModel implements ChatLanguageModel {
             .messages(toOpenAiMessages(messages))
             .temperature(temperature)
             .topP(topP)
-            .maxTokens(maxTokens);
+            .maxCompletionTokens(maxTokens);
 
         if (toolSpecifications != null && !toolSpecifications.isEmpty()) {
             requestBuilder.tools(toTools(toolSpecifications, false));
