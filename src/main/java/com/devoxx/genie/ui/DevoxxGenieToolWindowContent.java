@@ -107,7 +107,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Create the top panel.
-     *
      * @return the top panel
      */
     private @NotNull JPanel createTopPanel() {

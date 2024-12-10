@@ -43,7 +43,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     @Override
     public List<LanguageModel> getModels() {
         LanguageModel lmStudio = LanguageModel.builder()
-            .provider(ModelProvider.GPT4All)
+            .provider(ModelProvider.GPT_4_ALL)
             .modelName("GPT4All")
             .inputCost(0)
             .outputCost(0)

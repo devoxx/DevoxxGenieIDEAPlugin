@@ -123,7 +123,7 @@ public class PromptExecutionService {
             ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
         } catch (Exception e) {
-            if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
+            if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.JAN)) {
                 throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");
             }
             ChatMemoryService.getInstance().removeLast(chatMessageContext.getProject());

@@ -28,14 +28,14 @@ public class DefaultLLMSettingsUtil {
      * @return true when API Key is required, meaning a cost is involved
      */
     public static boolean isApiKeyBasedProvider(ModelProvider provider) {
-        return provider == ModelProvider.OpenAI ||
-                provider == ModelProvider.Anthropic ||
-                provider == ModelProvider.Mistral ||
-                provider == ModelProvider.Groq ||
-                provider == ModelProvider.DeepInfra ||
-                provider == ModelProvider.Google ||
-                provider == ModelProvider.OpenRouter ||
-                provider == ModelProvider.AzureOpenAI;
+        return provider == ModelProvider.OPENAI ||
+                provider == ModelProvider.ANTHROPIC ||
+                provider == ModelProvider.MISTRAL ||
+                provider == ModelProvider.GROQ ||
+                provider == ModelProvider.DEEP_INFRA ||
+                provider == ModelProvider.GOOGLE ||
+                provider == ModelProvider.OPEN_ROUTER ||
+                provider == ModelProvider.AZURE_OPEN_AI;
     }
 
     public record CostKey(ModelProvider provider, String modelName) {

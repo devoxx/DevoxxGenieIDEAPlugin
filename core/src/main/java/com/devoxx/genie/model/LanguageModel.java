@@ -3,7 +3,6 @@ package com.devoxx.genie.model;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -21,7 +20,7 @@ public class LanguageModel implements Comparable<LanguageModel> {
     private int contextWindow;
 
     public LanguageModel() {
-        this(ModelProvider.OpenAI, "", "", false, 0.0, 0.0, 0);
+        this(ModelProvider.OPENAI, "", "", false, 0.0, 0.0, 0);
     }
 
     public LanguageModel(ModelProvider provider,

@@ -21,15 +21,15 @@ public class LLMProviderService {
 
     static {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        providerKeyMap.put(OpenAI, stateService::getOpenAIKey);
-        providerKeyMap.put(Anthropic, stateService::getAnthropicKey);
-        providerKeyMap.put(Mistral, stateService::getMistralKey);
-        providerKeyMap.put(Groq, stateService::getGroqKey);
-        providerKeyMap.put(DeepInfra, stateService::getDeepInfraKey);
-        providerKeyMap.put(Google, stateService::getGeminiKey);
-        providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
-        providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
-        providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
+        providerKeyMap.put(OPENAI, stateService::getOpenAIKey);
+        providerKeyMap.put(ANTHROPIC, stateService::getAnthropicKey);
+        providerKeyMap.put(MISTRAL, stateService::getMistralKey);
+        providerKeyMap.put(GROQ, stateService::getGroqKey);
+        providerKeyMap.put(DEEP_INFRA, stateService::getDeepInfraKey);
+        providerKeyMap.put(GOOGLE, stateService::getGeminiKey);
+        providerKeyMap.put(DEEP_SEEK, stateService::getDeepSeekKey);
+        providerKeyMap.put(OPEN_ROUTER, stateService::getOpenRouterKey);
+        providerKeyMap.put(AZURE_OPEN_AI, stateService::getAzureOpenAIKey);
     }
 
     @NotNull
@@ -72,7 +72,7 @@ public class LLMProviderService {
         List<ModelProvider> optionalModelProviders = new ArrayList<>();
 
         if (DevoxxGenieStateService.getInstance().getShowAzureOpenAIFields()) {
-            optionalModelProviders.add(AzureOpenAI);
+            optionalModelProviders.add(AZURE_OPEN_AI);
         }
 
         return optionalModelProviders;

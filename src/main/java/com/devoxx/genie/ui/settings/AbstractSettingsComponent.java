@@ -53,6 +53,14 @@ public class AbstractSettingsComponent implements SettingsComponent {
         gbc.gridy++;
     }
 
+    protected void addProviderSettingRow(JPanel panel, GridBagConstraints gbc, String label, JCheckBox checkbox, JComponent urlComponent) {
+        JPanel providerPanel = new JPanel(new BorderLayout(5, 0));
+        providerPanel.add(checkbox, BorderLayout.WEST);
+        providerPanel.add(urlComponent, BorderLayout.CENTER);
+
+        addSettingRow(panel, gbc, label, providerPanel);
+    }
+
     protected @NotNull JComponent createTextWithPasswordButton(JComponent jComponent, String url) {
         return createTextWithLinkButton(jComponent, url);
     }

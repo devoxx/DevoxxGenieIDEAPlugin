@@ -75,7 +75,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
                     try {
                         int contextWindow = OllamaApiService.getModelContext(model.getName());
                         LanguageModel languageModel = LanguageModel.builder()
-                            .provider(ModelProvider.Ollama)
+                            .provider(ModelProvider.OLLAMA)
                             .modelName(model.getName())
                             .displayName(model.getName())
                             .inputCost(0)
