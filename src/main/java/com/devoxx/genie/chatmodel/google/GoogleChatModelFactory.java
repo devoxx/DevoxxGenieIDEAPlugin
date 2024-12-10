@@ -30,6 +30,6 @@ public class GoogleChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.GOOGLE);
+        return getModels(ModelProvider.Google);
     }
 }

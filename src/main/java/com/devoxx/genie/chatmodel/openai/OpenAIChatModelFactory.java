@@ -59,6 +59,6 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.OPENAI);
+        return getModels(ModelProvider.OpenAI);
     }
 }

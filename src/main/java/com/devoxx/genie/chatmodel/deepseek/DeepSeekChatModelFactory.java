@@ -50,6 +50,6 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.DEEP_SEEK);
+        return getModels(ModelProvider.DeepSeek);
     }
 }

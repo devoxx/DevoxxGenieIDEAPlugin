@@ -155,10 +155,10 @@ public class ActionPanelController {
     private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieSettingsService stateService) {
         ModelProvider selectedProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
         if (selectedProvider != null &&
-            (selectedProvider.equals(ModelProvider.LMSTUDIO) ||
-                selectedProvider.equals(ModelProvider.GPT_4_ALL) ||
-                selectedProvider.equals(ModelProvider.JLAMA) ||
-                selectedProvider.equals(ModelProvider.LLAMA))) {
+            (selectedProvider.equals(ModelProvider.LMStudio) ||
+                selectedProvider.equals(ModelProvider.GPT4All) ||
+                selectedProvider.equals(ModelProvider.Jlama) ||
+                selectedProvider.equals(ModelProvider.LLaMA))) {
             return LanguageModel.builder()
                 .provider(selectedProvider)
                 .apiKeyUsed(false)
@@ -169,7 +169,7 @@ public class ActionPanelController {
         } else {
             String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
             return LanguageModel.builder()
-                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OPENAI)
+                .provider(selectedProvider != null ? selectedProvider : ModelProvider.OpenAI)
                 .modelName(modelName)
                 .apiKeyUsed(false)
                 .inputCost(0)

@@ -117,23 +117,23 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
         providerService.getAvailableModelProviders().stream()
                 .filter(provider -> switch (provider) {
-                    case OLLAMA -> stateService.isOllamaEnabled();
-                    case LMSTUDIO -> stateService.isLmStudioEnabled();
-                    case GPT_4_ALL -> stateService.isGpt4AllEnabled();
-                    case JAN -> stateService.isJanEnabled();
-                    case EXO -> stateService.isExoEnabled();
-                    case LLAMA -> stateService.isLlamaCPPEnabled();
-                    case JLAMA -> stateService.isJlamaEnabled();
-                    case CUSTOM_OPEN_AI -> stateService.isCustomOpenAIEnabled();
-                    case OPENAI -> stateService.isOpenAIEnabled();
-                    case MISTRAL -> stateService.isMistralEnabled();
-                    case ANTHROPIC -> stateService.isAnthropicEnabled();
-                    case GROQ -> stateService.isGroqEnabled();
-                    case DEEP_INFRA -> stateService.isDeepInfraEnabled();
-                    case GOOGLE -> stateService.isGoogleEnabled();
-                    case DEEP_SEEK -> stateService.isDeepSeekEnabled();
-                    case OPEN_ROUTER -> stateService.isOpenRouterEnabled();
-                    case AZURE_OPEN_AI -> stateService.isAzureOpenAIEnabled();
+                    case Ollama -> stateService.isOllamaEnabled();
+                    case LMStudio -> stateService.isLmStudioEnabled();
+                    case GPT4All -> stateService.isGpt4AllEnabled();
+                    case Jan -> stateService.isJanEnabled();
+                    case Exo -> stateService.isExoEnabled();
+                    case LLaMA -> stateService.isLlamaCPPEnabled();
+                    case Jlama -> stateService.isJlamaEnabled();
+                    case CustomOpenAI -> stateService.isCustomOpenAIEnabled();
+                    case OpenAI -> stateService.isOpenAIEnabled();
+                    case Mistral -> stateService.isMistralEnabled();
+                    case Anthropic -> stateService.isAnthropicEnabled();
+                    case Groq -> stateService.isGroqEnabled();
+                    case DeepInfra -> stateService.isDeepInfraEnabled();
+                    case Google -> stateService.isGoogleEnabled();
+                    case DeepSeek -> stateService.isDeepSeekEnabled();
+                    case OpenRouter -> stateService.isOpenRouterEnabled();
+                    case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
@@ -149,7 +149,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             return;
         }
 
-        if (selectedProvider == ModelProvider.LMSTUDIO || selectedProvider == ModelProvider.OLLAMA || selectedProvider == ModelProvider.JAN) {
+        if (selectedProvider == ModelProvider.LMStudio || selectedProvider == ModelProvider.Ollama || selectedProvider == ModelProvider.Jan) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 

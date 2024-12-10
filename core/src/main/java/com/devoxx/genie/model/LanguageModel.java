@@ -20,7 +20,7 @@ public class LanguageModel implements Comparable<LanguageModel> {
     private int contextWindow;
 
     public LanguageModel() {
-        this(ModelProvider.OPENAI, "", "", false, 0.0, 0.0, 0);
+        this(ModelProvider.OpenAI, "", "", false, 0.0, 0.0, 0);
     }
 
     public LanguageModel(ModelProvider provider,

@@ -45,6 +45,6 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.ANTHROPIC);
+        return getModels(ModelProvider.Anthropic);
     }
 }

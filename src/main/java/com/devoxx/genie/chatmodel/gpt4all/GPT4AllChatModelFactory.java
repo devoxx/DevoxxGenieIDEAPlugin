@@ -30,6 +30,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
             .build();
     }
 
+    @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
@@ -43,7 +44,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     @Override
     public List<LanguageModel> getModels() {
         LanguageModel lmStudio = LanguageModel.builder()
-            .provider(ModelProvider.GPT_4_ALL)
+            .provider(ModelProvider.GPT4All)
             .modelName("GPT4All")
             .inputCost(0)
             .outputCost(0)

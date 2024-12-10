@@ -23,6 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatModelFactoryProvider {
 
+    private ChatModelFactoryProvider() {
+        throw new IllegalStateException("Utility class");
+    }
+
     private static final Map<String, ChatModelFactory> factoryCache = new ConcurrentHashMap<>();
 
     public static @NotNull Optional<ChatModelFactory> getFactoryByProvider(@NotNull String modelProvider) {

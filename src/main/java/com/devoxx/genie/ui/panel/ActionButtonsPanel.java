@@ -293,14 +293,14 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     }
 
     private boolean isSupportedProvider(@NotNull ModelProvider modelProvider) {
-        return modelProvider.equals(ModelProvider.GOOGLE) ||
-            modelProvider.equals(ModelProvider.ANTHROPIC) ||
-            modelProvider.equals(ModelProvider.OPENAI) ||
-            modelProvider.equals(ModelProvider.MISTRAL) ||
-            modelProvider.equals(ModelProvider.DEEP_SEEK) ||
-            modelProvider.equals(ModelProvider.OPEN_ROUTER) ||
-            modelProvider.equals(ModelProvider.DEEP_INFRA) ||
-            modelProvider.equals(ModelProvider.OLLAMA);
+        return modelProvider.equals(ModelProvider.Google) ||
+            modelProvider.equals(ModelProvider.Anthropic) ||
+            modelProvider.equals(ModelProvider.OpenAI) ||
+            modelProvider.equals(ModelProvider.Mistral) ||
+            modelProvider.equals(ModelProvider.DeepSeek) ||
+            modelProvider.equals(ModelProvider.OpenRouter) ||
+            modelProvider.equals(ModelProvider.DeepInfra) ||
+            modelProvider.equals(ModelProvider.Ollama);
     }
 
     private void addProjectToContext() {

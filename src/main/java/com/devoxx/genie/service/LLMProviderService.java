@@ -11,7 +11,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 
@@ -21,15 +20,15 @@ public class LLMProviderService {
 
     static {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        providerKeyMap.put(OPENAI, stateService::getOpenAIKey);
-        providerKeyMap.put(ANTHROPIC, stateService::getAnthropicKey);
-        providerKeyMap.put(MISTRAL, stateService::getMistralKey);
-        providerKeyMap.put(GROQ, stateService::getGroqKey);
-        providerKeyMap.put(DEEP_INFRA, stateService::getDeepInfraKey);
-        providerKeyMap.put(GOOGLE, stateService::getGeminiKey);
-        providerKeyMap.put(DEEP_SEEK, stateService::getDeepSeekKey);
-        providerKeyMap.put(OPEN_ROUTER, stateService::getOpenRouterKey);
-        providerKeyMap.put(AZURE_OPEN_AI, stateService::getAzureOpenAIKey);
+        providerKeyMap.put(OpenAI, stateService::getOpenAIKey);
+        providerKeyMap.put(Anthropic, stateService::getAnthropicKey);
+        providerKeyMap.put(Mistral, stateService::getMistralKey);
+        providerKeyMap.put(Groq, stateService::getGroqKey);
+        providerKeyMap.put(DeepInfra, stateService::getDeepInfraKey);
+        providerKeyMap.put(Google, stateService::getGeminiKey);
+        providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
+        providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
+        providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
     }
 
     @NotNull
@@ -65,14 +64,14 @@ public class LLMProviderService {
                 .map(Supplier::get)
                 .filter(key -> !key.isBlank())
                 .isPresent())
-            .collect(Collectors.toList());
+            .toList();
     }
 
-    private List<ModelProvider> getOptionalProviders() {
+    private @NotNull List<ModelProvider> getOptionalProviders() {
         List<ModelProvider> optionalModelProviders = new ArrayList<>();
 
-        if (DevoxxGenieStateService.getInstance().getShowAzureOpenAIFields()) {
-            optionalModelProviders.add(AZURE_OPEN_AI);
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowAzureOpenAIFields())) {
+            optionalModelProviders.add(AzureOpenAI);
         }
 
         return optionalModelProviders;

@@ -161,7 +161,7 @@ public class ChatResponsePanel extends BackgroundPanel {
      * @return the updated token usage
      */
     private static TokenUsage calcOllamaInputTokenCount(@NotNull ChatMessageContext chatMessageContext, TokenUsage tokenUsage) {
-        if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.OLLAMA)) {
+        if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Ollama)) {
             int inputContextTokens = 0;
             if (chatMessageContext.getContext() != null) {
                 Encoding encodingForProvider = ProjectContentService.getEncodingForProvider(chatMessageContext.getLanguageModel().getProvider());

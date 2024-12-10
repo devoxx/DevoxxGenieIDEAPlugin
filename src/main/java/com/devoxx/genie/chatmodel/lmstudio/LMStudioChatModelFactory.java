@@ -74,7 +74,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
             for (LMStudioModelEntryDTO model : lmStudioModels) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.LMSTUDIO)
+                        .provider(ModelProvider.LMStudio)
                         .modelName(model.getId())
                         .displayName(model.getId())
                         .inputCost(0)

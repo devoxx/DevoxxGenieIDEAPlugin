@@ -86,7 +86,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
                     double outputCost = convertAndScalePrice(model.getPricing().getCompletion());
 
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.OPEN_ROUTER)
+                        .provider(ModelProvider.OpenRouter)
                         .modelName(model.getId())
                         .displayName(model.getName())
                         .inputCost(inputCost)
