@@ -1,5 +1,6 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui.component.input;
 
+import com.devoxx.genie.ui.component.GlowingBorder;
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
 import com.devoxx.genie.ui.panel.SearchOptionsPanel;
 import com.intellij.openapi.application.ApplicationManager;
@@ -31,17 +32,7 @@ public class PromptInputArea extends JPanel {
         inputField.addFocusListener(new PromptInputFocusListener(inputField));
         inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
 
-        // Set minimum size for 2 lines
-        FontMetrics fontMetrics = inputField.getFontMetrics(inputField.getFont());
-        int lineHeight = fontMetrics.getHeight();
-        int minHeight = (lineHeight * 3) +
-                inputField.getInsets().top +
-                inputField.getInsets().bottom +
-                10; // Additional padding
-
-        Dimension minimumSize = new Dimension(0, minHeight);
-        inputField.setMinimumSize(minimumSize);
-        inputField.setPreferredSize(minimumSize);
+        inputField.setRows(3);
 
         glowingBorder = new GlowingBorder(new JBColor(new Color(0, 120, 215), new Color(0, 120, 213)));
         setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
@@ -52,7 +43,11 @@ public class PromptInputArea extends JPanel {
 
         add(inputAreaPanel, BorderLayout.CENTER);
 
-        glowTimer = new Timer(50, new ActionListener() {
+        glowTimer = getGlowTimer();
+    }
+
+    private Timer getGlowTimer() {
+        return new Timer(50, new ActionListener() {
             private float direction = 0.05f;
 
             @Override
@@ -101,10 +96,12 @@ public class PromptInputArea extends JPanel {
         inputField.setText("");
     }
 
+    @Override
     public void setEnabled(boolean enabled) {
         inputField.setEnabled(enabled);
     }
 
+    @Override
     public boolean requestFocusInWindow() {
         return inputField.requestFocusInWindow();
     }

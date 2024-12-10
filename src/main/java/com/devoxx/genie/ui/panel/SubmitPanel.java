@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
-import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -39,8 +39,9 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
         promptInputArea = new PromptInputArea(resourceBundle, project);
 
         JPanel submitPanel = new JPanel(new BorderLayout());
-        submitPanel.setMinimumSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
+        submitPanel.setMinimumSize(new Dimension(0, MIN_INPUT_HEIGHT));
         submitPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
+
         submitPanel.add(promptContextFileListPanel, BorderLayout.NORTH);
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(createActionButtonsPanel(), BorderLayout.SOUTH);

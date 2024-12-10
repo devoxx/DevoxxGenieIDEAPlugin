@@ -10,7 +10,7 @@ import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
-import com.devoxx.genie.ui.component.PromptInputArea;
+import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;

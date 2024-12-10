@@ -39,6 +39,7 @@
         <UL>
             <LI>Fix #352 : Restore horizontal scrolling in chat response panel</LI>
             <LI>Fix #354 : Fix splitter proportion for chat window</LI>
+            <LI>Fix #356 : Fix PromptInputArea scrolling of text</LI>
         </UL>
         <h2>v0.4.0</h2>
         <UL>
