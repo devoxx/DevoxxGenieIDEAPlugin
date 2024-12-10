@@ -71,7 +71,7 @@ public class JanChatModelFactory implements ChatModelFactory {
             for (Data model : models) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.JAN)
+                        .provider(ModelProvider.Jan)
                         .modelName(model.getId())
                         .displayName(model.getName())
                         .inputCost(0)

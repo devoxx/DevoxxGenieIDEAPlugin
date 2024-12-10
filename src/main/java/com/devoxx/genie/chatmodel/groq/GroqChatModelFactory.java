@@ -47,6 +47,6 @@ public class GroqChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.GROQ);
+        return getModels(ModelProvider.Groq);
     }
 }

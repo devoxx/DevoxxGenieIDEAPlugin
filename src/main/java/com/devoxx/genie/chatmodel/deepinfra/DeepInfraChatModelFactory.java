@@ -49,6 +49,6 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.DEEP_INFRA);
+        return getModels(ModelProvider.DeepInfra);
     }
 }

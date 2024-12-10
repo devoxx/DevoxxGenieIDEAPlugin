@@ -28,6 +28,9 @@ public class ChatMessageContextUtil {
     public static final int ZERO_SECONDS = 0;
     public static final int SIXTY_SECONDS = 60;
 
+    private ChatMessageContextUtil() {
+    }
+
     public static @NotNull ChatMessageContext createContext(Project project,
                                                             String userPromptText,
                                                             LanguageModel languageModel,
@@ -125,7 +128,7 @@ public class ChatMessageContextUtil {
 
     public static boolean isOpenAIo1Model(LanguageModel languageModel) {
         return languageModel != null &&
-                languageModel.getProvider() == ModelProvider.OPENAI &&
+                languageModel.getProvider() == ModelProvider.OpenAI &&
                 languageModel.getModelName() != null &&
                 languageModel.getModelName().toLowerCase().startsWith("o1-");
     }

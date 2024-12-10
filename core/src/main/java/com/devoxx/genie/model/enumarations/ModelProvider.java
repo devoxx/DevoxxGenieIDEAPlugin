@@ -8,28 +8,28 @@ import java.util.List;
 
 @Getter
 public enum ModelProvider {
-    OPENAI("OpenAI", Type.CLOUD),
-    ANTHROPIC("Anthropic", Type.CLOUD),
-    MISTRAL("Mistral", Type.CLOUD),
-    GROQ("Groq", Type.CLOUD),
-    DEEP_INFRA("DeepInfra", Type.CLOUD),
-    GOOGLE("Google", Type.CLOUD),
-    LLAMA("LLaMA.c++", Type.LOCAL),
-    OPEN_ROUTER("OpenRouter", Type.CLOUD),
-    DEEP_SEEK("DeepSeek", Type.CLOUD),
-    AZURE_OPEN_AI("AzureOpenAI", Type.CLOUD),
-    OLLAMA("Ollama", Type.LOCAL),
-    LMSTUDIO("LMStudio", Type.LOCAL),
-    GPT_4_ALL("GPT4All", Type.LOCAL),
-    JAN("Jan", Type.LOCAL),
-    JLAMA("Jlama (Experimental /w REST API)", Type.LOCAL),
-    EXO("Exo (Experimental)", Type.LOCAL),
-    CUSTOM_OPEN_AI("CustomOpenAI", Type.OPTIONAL);
+    Ollama("Ollama", Type.LOCAL),
+    LMStudio("LMStudio", Type.LOCAL),
+    GPT4All("GPT4All", Type.LOCAL),
+    Jan("Jan", Type.LOCAL),
+    OpenAI("OpenAI", Type.CLOUD),
+    Anthropic("Anthropic", Type.CLOUD),
+    Mistral("Mistral", Type.CLOUD),
+    Groq("Groq", Type.CLOUD),
+    DeepInfra("DeepInfra", Type.CLOUD),
+    Google("Google", Type.CLOUD),
+    Exo("Exo (Experimental)", Type.LOCAL),
+    LLaMA("LLaMA.c++", Type.LOCAL),
+    OpenRouter("OpenRouter", Type.CLOUD),
+    DeepSeek("DeepSeek", Type.CLOUD),
+    Jlama("Jlama (Experimental /w REST API)", Type.LOCAL),
+    AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
+    CustomOpenAI("CustomOpenAI", Type.OPTIONAL);
 
     public enum Type {
         LOCAL, // Local Providers
         CLOUD, // Cloud Providers
-        OPTIONAL // Optional Providers (Need to be enabled from settings, due to inconvenient setup)
+        OPTIONAL // Optional Providers(Need to be enabled from settings, due to inconvenient setup)
     }
 
     private final String name;

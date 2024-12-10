@@ -59,7 +59,7 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
     @Override
     public List<LanguageModel> getModels() {
         return List.of(LanguageModel.builder()
-                .provider(ModelProvider.AZURE_OPEN_AI)
+                .provider(ModelProvider.AzureOpenAI)
                 .modelName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .displayName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .inputCost(0.0)

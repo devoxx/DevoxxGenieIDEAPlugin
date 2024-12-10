@@ -47,6 +47,6 @@ public class MistralChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.MISTRAL);
+        return getModels(ModelProvider.Mistral);
     }
 }

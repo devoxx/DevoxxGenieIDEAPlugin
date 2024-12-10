@@ -241,9 +241,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public String getSelectedProvider(@NotNull String projectLocation) {
         if (lastSelectedProvider != null) {
-            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.OLLAMA.getName());
+            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.Ollama.getName());
         } else {
-            return ModelProvider.OLLAMA.getName();
+            return ModelProvider.Ollama.getName();
         }
     }
 
