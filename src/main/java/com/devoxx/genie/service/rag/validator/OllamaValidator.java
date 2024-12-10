@@ -3,6 +3,7 @@ package com.devoxx.genie.service.rag.validator;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 public class OllamaValidator implements Validator {
@@ -17,7 +18,8 @@ public class OllamaValidator implements Validator {
 
         try {
             // Try to connect to Ollama's default port
-            URL url = new URL(ollamaModelUrl);
+            URI uri = new URI(ollamaModelUrl);
+            URL url = uri.toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);

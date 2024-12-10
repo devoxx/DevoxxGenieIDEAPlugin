@@ -142,11 +142,14 @@ public final class ChromaDockerService {
             if (existingContainers.isEmpty()) {
                 Integer port = DevoxxGenieStateService.getInstance().getIndexerPort();
 
+                HostConfig hostConfig = new HostConfig()
+                        .withPortBindings(new PortBinding(Ports.Binding.bindPort(8000), ExposedPort.tcp(port)))
+                        .withBinds(new Bind(volumePath, new Volume("/chroma/chroma")));
+
                 // Create new container if none exists
                 CreateContainerResponse container = dockerClient.createContainerCmd(CHROMA_IMAGE)
                         .withName(CONTAINER_NAME)
-                        .withPortBindings(new PortBinding(Ports.Binding.bindPort(8000), ExposedPort.tcp(port)))
-                        .withBinds(new Bind(volumePath, new Volume("/chroma/chroma")))
+                        .withHostConfig(hostConfig)
                         .exec();
 
                 // Start the container
