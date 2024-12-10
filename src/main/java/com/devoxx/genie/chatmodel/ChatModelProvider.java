@@ -20,7 +20,7 @@ import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 @Setter
 public class ChatModelProvider {
 
-    private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI; // Choose an appropriate default
+    private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OPENAI; // Choose an appropriate default
 
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
@@ -72,22 +72,22 @@ public class ChatModelProvider {
                                  DevoxxGenieSettingsService stateService) {
         // Set base URL for local providers
         switch (languageModel.getProvider()) {
-            case LMStudio:
+            case LMSTUDIO:
                 chatModel.setBaseUrl(stateService.getLmstudioModelUrl());
                 break;
-            case Ollama:
+            case OLLAMA:
                 chatModel.setBaseUrl(stateService.getOllamaModelUrl());
                 break;
-            case GPT4All:
+            case GPT_4_ALL:
                 chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
                 break;
-            case Exo:
+            case EXO:
                 chatModel.setBaseUrl(stateService.getExoModelUrl());
                 break;
-            case LLaMA:
+            case LLAMA:
                 chatModel.setBaseUrl(stateService.getLlamaCPPUrl());
                 break;
-            case Jlama:
+            case JLAMA:
                 chatModel.setBaseUrl(stateService.getJlamaUrl());
                 break;
             // Add other local providers as needed

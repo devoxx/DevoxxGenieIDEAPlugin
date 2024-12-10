@@ -34,7 +34,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
     private static final Logger LOG = Logger.getInstance(LlmProviderPanel.class);
 
-    private final Project project;
+    private final transient Project project;
 
     @Getter
     private final JPanel contentPanel = new JPanel();
@@ -56,7 +56,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      *
      * @param project             the project instance
      */
-    public LlmProviderPanel(Project project) {
+    public LlmProviderPanel(@NotNull Project project) {
         super(new BorderLayout());
         this.project = project;
 
@@ -109,11 +109,32 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
     /**
      * Add the LLM providers to combobox.
-     * Only show the cloud-based LLM providers for which we have an API Key.
+     * Only show the enabled LLM providers.
      */
     public void addModelProvidersToComboBox() {
         LLMProviderService providerService = LLMProviderService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+
         providerService.getAvailableModelProviders().stream()
+                .filter(provider -> switch (provider) {
+                    case OLLAMA -> stateService.isOllamaEnabled();
+                    case LMSTUDIO -> stateService.isLmStudioEnabled();
+                    case GPT_4_ALL -> stateService.isGpt4AllEnabled();
+                    case JAN -> stateService.isJanEnabled();
+                    case EXO -> stateService.isExoEnabled();
+                    case LLAMA -> stateService.isLlamaCPPEnabled();
+                    case JLAMA -> stateService.isJlamaEnabled();
+                    case CUSTOM_OPEN_AI -> stateService.isCustomOpenAIEnabled();
+                    case OPENAI -> stateService.isOpenAIEnabled();
+                    case MISTRAL -> stateService.isMistralEnabled();
+                    case ANTHROPIC -> stateService.isAnthropicEnabled();
+                    case GROQ -> stateService.isGroqEnabled();
+                    case DEEP_INFRA -> stateService.isDeepInfraEnabled();
+                    case GOOGLE -> stateService.isGoogleEnabled();
+                    case DEEP_SEEK -> stateService.isDeepSeekEnabled();
+                    case OPEN_ROUTER -> stateService.isOpenRouterEnabled();
+                    case AZURE_OPEN_AI -> stateService.isAzureOpenAIEnabled();
+                })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
                 .forEach(modelProviderComboBox::addItem);
@@ -128,7 +149,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             return;
         }
 
-        if (selectedProvider == ModelProvider.LMStudio || selectedProvider == ModelProvider.Ollama || selectedProvider == ModelProvider.Jan) {
+        if (selectedProvider == ModelProvider.LMSTUDIO || selectedProvider == ModelProvider.OLLAMA || selectedProvider == ModelProvider.JAN) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 

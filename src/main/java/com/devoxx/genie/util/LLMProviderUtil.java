@@ -19,16 +19,16 @@ public class LLMProviderUtil {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return Arrays.stream(ModelProvider.values())
             .filter(provider -> switch (provider) {
-                case OpenAI -> !settings.getOpenAIKey().isEmpty();
-                case AzureOpenAI -> !settings.getAzureOpenAIKey().isEmpty() &&
+                case OPENAI -> !settings.getOpenAIKey().isEmpty();
+                case AZURE_OPEN_AI -> !settings.getAzureOpenAIKey().isEmpty() &&
                         !settings.getAzureOpenAIEndpoint().isEmpty() && !settings.getAzureOpenAIDeployment().isEmpty();
-                case Anthropic -> !settings.getAnthropicKey().isEmpty();
-                case Mistral -> !settings.getMistralKey().isEmpty();
-                case Groq -> !settings.getGroqKey().isEmpty();
-                case DeepInfra -> !settings.getDeepInfraKey().isEmpty();
-                case DeepSeek -> !settings.getDeepSeekKey().isEmpty();
-                case OpenRouter -> !settings.getOpenRouterKey().isEmpty();
-                case Google -> !settings.getGeminiKey().isEmpty();
+                case ANTHROPIC -> !settings.getAnthropicKey().isEmpty();
+                case MISTRAL -> !settings.getMistralKey().isEmpty();
+                case GROQ -> !settings.getGroqKey().isEmpty();
+                case DEEP_INFRA -> !settings.getDeepInfraKey().isEmpty();
+                case DEEP_SEEK -> !settings.getDeepSeekKey().isEmpty();
+                case OPEN_ROUTER -> !settings.getOpenRouterKey().isEmpty();
+                case GOOGLE -> !settings.getGeminiKey().isEmpty();
                 default -> false;
             })
             .collect(Collectors.toList());

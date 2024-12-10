@@ -125,7 +125,7 @@ public class ChatMessageContextUtil {
 
     public static boolean isOpenAIo1Model(LanguageModel languageModel) {
         return languageModel != null &&
-                languageModel.getProvider() == ModelProvider.OpenAI &&
+                languageModel.getProvider() == ModelProvider.OPENAI &&
                 languageModel.getModelName() != null &&
                 languageModel.getModelName().toLowerCase().startsWith("o1-");
     }

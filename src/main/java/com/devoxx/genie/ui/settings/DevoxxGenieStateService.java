@@ -33,7 +33,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
-        "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"
+            "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"
     ));
 
     private List<CustomPrompt> customPrompts = new ArrayList<>();
@@ -68,6 +68,26 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
     private String jlamaUrl = JLAMA_MODEL_URL;
     private String customOpenAIUrl = "";
+
+    //
+    private boolean isOllamaEnabled = true;
+    private boolean isLmStudioEnabled = true;
+    private boolean isGpt4AllEnabled = true;
+    private boolean isJanEnabled = true;
+    private boolean isExoEnabled = true;
+    private boolean isLlamaCPPEnabled = true;
+    private boolean isJlamaEnabled = true;
+    private boolean isCustomOpenAIEnabled = false;
+
+    private boolean isOpenAIEnabled = false;
+    private boolean isMistralEnabled = false;
+    private boolean isAnthropicEnabled = false;
+    private boolean isGroqEnabled = false;
+    private boolean isDeepInfraEnabled = false;
+    private boolean isGoogleEnabled = false;
+    private boolean isDeepSeekEnabled = false;
+    private boolean isOpenRouterEnabled = false;
+    private boolean isAzureOpenAIEnabled = false;
 
     // LLM API Keys
     private String openAIKey = "";
@@ -221,9 +241,16 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public String getSelectedProvider(@NotNull String projectLocation) {
         if (lastSelectedProvider != null) {
-            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.Ollama.getName());
+            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.OLLAMA.getName());
         } else {
-            return ModelProvider.Ollama.getName();
+            return ModelProvider.OLLAMA.getName();
         }
+    }
+
+    public boolean isAzureOpenAIEnabled() {
+        return showAzureOpenAIFields &&
+                !azureOpenAIKey.isEmpty() &&
+                !azureOpenAIEndpoint.isEmpty() &&
+                !azureOpenAIDeployment.isEmpty();
     }
 }
