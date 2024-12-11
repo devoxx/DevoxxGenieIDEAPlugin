@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.listener.GlowingListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
@@ -12,7 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
-public class SubmitPanel extends JBPanel<SubmitPanel> {
+public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListener {
 
     private static final int MIN_INPUT_HEIGHT = 200;
 
@@ -71,10 +72,12 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
                 toolWindowContent);
     }
 
+    @Override
     public void startGlowing() {
         this.toolWindowContent.startGlowing();
     }
 
+    @Override
     public void stopGlowing() {
         this.toolWindowContent.stopGlowing();
     }

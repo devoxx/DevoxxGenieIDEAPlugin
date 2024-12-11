@@ -1,9 +1,9 @@
 package com.devoxx.genie.controller;
 
+import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.TokenCalculationService;
-import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.project.Project;
@@ -14,18 +14,18 @@ public class TokenCalculationController {
     private final Project project;
     private final ComboBox<ModelProvider> modelProviderComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
-    private final ActionButtonsPanel actionButtonsPanel;
     private final TokenCalculationService tokenCalculationService;
+    private TokenCalculationListener listener;
 
     public TokenCalculationController(Project project,
                                       ComboBox<ModelProvider> modelProviderComboBox,
                                       ComboBox<LanguageModel> modelNameComboBox,
-                                      ActionButtonsPanel actionButtonsPanel) {
+                                      TokenCalculationListener listener){
         this.project = project;
         this.modelProviderComboBox = modelProviderComboBox;
         this.modelNameComboBox = modelNameComboBox;
-        this.actionButtonsPanel = actionButtonsPanel;
         this.tokenCalculationService = new TokenCalculationService();
+        this.listener = listener;
     }
 
     /**
@@ -51,7 +51,8 @@ public class TokenCalculationController {
                 maxTokens,
                 selectedProvider,
                 selectedModel,
-                isApiKeyBased
+                isApiKeyBased,
+                listener
         );
     }
 

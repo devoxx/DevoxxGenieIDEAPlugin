@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.controller.ActionButtonsPanelController;
 import com.devoxx.genie.controller.ProjectContextController;
+import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -11,9 +12,11 @@ import com.devoxx.genie.ui.component.ContextPopupMenu;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.component.TokenUsageBar;
+import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -36,7 +39,8 @@ import java.util.List;
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
-public class ActionButtonsPanel extends JPanel implements SettingsChangeListener, PromptSubmissionListener {
+public class ActionButtonsPanel extends JPanel
+        implements SettingsChangeListener, PromptSubmissionListener, GlowingListener, TokenCalculationListener {
 
     private final transient Project project;
 
@@ -216,8 +220,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         }
 
         boolean response = controller.handlePromptSubmission(actionEvent.getActionCommand(),
-                                                             projectContextController.isProjectContextAdded(),
-                                                             projectContextController.getProjectContext());
+                projectContextController.isProjectContextAdded(),
+                projectContextController.getProjectContext());
         if (!response) {
             controller.endPromptExecution();
         }
@@ -321,7 +325,8 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
                 "Are you sure you want to remove the project context?",
                 "Confirm Removal",
                 Messages.getQuestionIcon()
-        );     if (result == Messages.YES) {
+        );
+        if (result == Messages.YES) {
             projectContextController.resetProjectContext();
         }
     }
@@ -334,11 +339,24 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
         addProjectBtn.setVisible(visible);
     }
 
+    @Override
     public void startGlowing() {
         submitPanel.startGlowing();
     }
 
+    @Override
+    public void stopGlowing() {
+        submitPanel.stopGlowing();
+    }
+
     public void updateTokenUsageBar(int tokenCount, int tokenLimit) {
         ApplicationManager.getApplication().invokeLater(() -> tokenUsageBar.setTokens(tokenCount, tokenLimit));
+    }
+
+    @Override
+    public void onTokenCalculationComplete(String message) {         // Update the UI with the token count and limit         // Example: Display in a label or status bar         System.out.println("Token count: " + tokenCount + ", Token limit: " + tokenLimit);     }
+//        System.out.println("Token count: " + tokenCount + ", Token limit: " + tokenLimit);
+        NotificationUtil.sendNotification(project, message);
+
     }
 }
