@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.4.4</h2>
+        <UL>
+            <LI>Fix #367: Check if file is directory in ProjectScannerService</LI>
+        </UL>
         <h2>v0.4.3</h2>
         <UL>
             <LI>Feature #367: Added Gemini 2.0 Flash Exp</LI>
