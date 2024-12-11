@@ -11,6 +11,7 @@ import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -35,11 +36,13 @@ public class ChatMessageContextUtil {
                                                             String userPromptText,
                                                             LanguageModel languageModel,
                                                             ChatModelProvider chatModelProvider,
-                                                            @NotNull DevoxxGenieSettingsService stateService,
                                                             @NotNull String actionCommand,
                                                             EditorFileButtonManager editorFileButtonManager,
                                                             String projectContext,
                                                             boolean isProjectContextAdded) {
+
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+
         ChatMessageContext context = ChatMessageContext.builder()
             .project(project)
             .id(String.valueOf(System.currentTimeMillis()))
