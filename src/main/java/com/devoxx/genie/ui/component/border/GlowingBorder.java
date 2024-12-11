@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.component;
+package com.devoxx.genie.ui.component.border;
 
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
