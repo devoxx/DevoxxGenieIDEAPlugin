@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.4.3</h2>
+        <UL>
+            <LI>Feature #367: Added Gemini 2.0 Flash Exp</LI>
+        </UL>
         <h2>v0.4.2</h2>
         <UL>
             <LI>Feature #364: Show specific RAG prompt placeholder when turned on</LI>
