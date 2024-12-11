@@ -415,7 +415,7 @@ public final class LLMModelRegistryService {
         models.put(ModelProvider.Google.getName() + ":" + gemini2FlashExp,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
-                        .modelName(geminiExp1206)
+                        .modelName(gemini2FlashExp)
                         .displayName("Gemini 2.0 Flash Exp")
                         .inputCost(0)
                         .outputCost(0)
