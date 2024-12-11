@@ -74,8 +74,8 @@ public class RAGSettingsConfigurable implements Configurable {
 
         if (oldValue != newValue) {
             ApplicationManager.getApplication().getMessageBus()
-                    .syncPublisher(AppTopics.SEMANTIC_SEARCH_STATE_TOPIC)
-                    .onSemanticSearchStateChanged(newValue);
+                    .syncPublisher(AppTopics.RAG_STATE_TOPIC)
+                    .onRAGStateChanged(newValue);
         }
     }
 
