@@ -400,7 +400,7 @@ public final class LLMModelRegistryService {
                         .build());
 
         String geminiExp1206 = "gemini-exp-1206";
-        models.put(ModelProvider.Google.getName() + ":" + gemini10Pro,
+        models.put(ModelProvider.Google.getName() + ":" + geminiExp1206,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(geminiExp1206)
@@ -410,6 +410,19 @@ public final class LLMModelRegistryService {
                         .contextWindow(2_000_000)
                         .apiKeyUsed(true)
                         .build());
+
+        String gemini2FlashExp = "gemini-2.0-flash-exp";
+        models.put(ModelProvider.Google.getName() + ":" + gemini2FlashExp,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(geminiExp1206)
+                        .displayName("Gemini 2.0 Flash Exp")
+                        .inputCost(0)
+                        .outputCost(0)
+                        .contextWindow(1_000_000)
+                        .apiKeyUsed(true)
+                        .build());
+
     }
 
     private void addGroqModels() {
