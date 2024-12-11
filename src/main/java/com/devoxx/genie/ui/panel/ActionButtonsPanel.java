@@ -69,8 +69,10 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private final transient ActionPanelController controller;
 
     private final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+    private final SubmitPanel submitPanel;
 
     public ActionButtonsPanel(Project project,
+                              SubmitPanel submitPanel,
                               PromptInputArea promptInputArea,
                               PromptOutputPanel promptOutputPanel,
                               ComboBox<ModelProvider> llmProvidersComboBox,
@@ -81,6 +83,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
 
         // Initialize fields and components
         this.project = project;
+        this.submitPanel = submitPanel;
         this.promptInputArea = promptInputArea;
         this.editorFileButtonManager = new EditorFileButtonManager(project, addFileBtn);
         this.llmProvidersComboBox = llmProvidersComboBox;
@@ -207,7 +210,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
     private void disableUIForPromptExecution() {
         disableSubmitBtn();
         disableButtons();
-        promptInputArea.startGlowing();
+        submitPanel.startGlowing();
     }
 
     public void enableButtons() {
@@ -215,7 +218,7 @@ public class ActionButtonsPanel extends JPanel implements SettingsChangeListener
             submitBtn.setIcon(SubmitIcon);
             submitBtn.setToolTipText(SUBMIT_THE_PROMPT + " (Ctrl+Enter)");
             promptInputArea.setEnabled(true);
-            promptInputArea.stopGlowing();
+            submitPanel.stopGlowing();
         });
     }
 

@@ -28,8 +28,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
      *
      * @param toolWindowContent the tool window content
      */
-    public SubmitPanel(DevoxxGenieToolWindowContent toolWindowContent)
-    {
+    public SubmitPanel(DevoxxGenieToolWindowContent toolWindowContent) {
         super(new BorderLayout());
         this.toolWindowContent = toolWindowContent;
         this.project = toolWindowContent.getProject();
@@ -49,6 +48,14 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
         add(submitPanel);
     }
 
+    public void startGlowing() {
+        this.toolWindowContent.startGlowing();
+    }
+
+    public void stopGlowing() {
+        this.toolWindowContent.stopGlowing();
+    }
+
     @Override
     public Dimension getMinimumSize() {
         return new Dimension(0, 150);
@@ -62,6 +69,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel> {
     @Contract(" -> new")
     private @NotNull JPanel createActionButtonsPanel() {
         actionButtonsPanel = new ActionButtonsPanel(project,
+                this,
                 promptInputArea,
                 toolWindowContent.getPromptOutputPanel(),
                 toolWindowContent.getLlmProviderPanel().getModelProviderComboBox(),

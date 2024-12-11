@@ -4,6 +4,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ConversationStorageService;
+import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.LlmProviderPanel;
@@ -55,6 +56,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     @Getter
     private final ConversationStorageService storageService = ConversationStorageService.getInstance();
+    private final AnimatedGlowingBorder animatedBorder;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -69,6 +71,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         stateService.loadState(DevoxxGenieStateService.getInstance());
 
         setupMessageBusConnection(toolWindow);
+
+        animatedBorder = new AnimatedGlowingBorder(contentPanel);
     }
 
     private void onStateLoaded() {
@@ -105,8 +109,17 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         llmProviderPanel.getModelNameComboBox().addActionListener(this::processModelNameSelection);
     }
 
+    public void startGlowing() {
+        animatedBorder.startGlowing();
+    }
+
+    public void stopGlowing() {
+        animatedBorder.stopGlowing();
+    }
+
     /**
      * Create the top panel.
+     *
      * @return the top panel
      */
     private @NotNull JPanel createTopPanel() {
@@ -118,6 +131,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
 
     /**
      * Create the splitter.
+     *
      * @return the splitter
      */
     private @NotNull Splitter createSplitter() {
@@ -126,11 +140,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         splitter.setFirstComponent(promptOutputPanel);
         splitter.setSecondComponent(submitPanel);
         splitter.setHonorComponentsMinimumSize(true);
+
         return splitter;
     }
 
     /**
      * Set up the message bus connection.
+     *
      * @param toolWindow the tool window
      */
     private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
