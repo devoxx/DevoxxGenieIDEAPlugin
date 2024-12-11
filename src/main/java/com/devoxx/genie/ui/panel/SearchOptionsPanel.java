@@ -2,14 +2,16 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.listener.GitDiffStateListener;
-import com.devoxx.genie.ui.listener.SemanticSearchStateListener;
+import com.devoxx.genie.ui.listener.RAGStateListener;
 import com.devoxx.genie.ui.listener.WebSearchStateListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,15 +21,16 @@ import java.util.List;
 public class SearchOptionsPanel extends JPanel {
     private final List<InputSwitch> switches = new ArrayList<>();
     private static final int DEFAULT_HEIGHT = JBUI.scale(30);
+    private Project project;
 
-    public SearchOptionsPanel() {
+    public SearchOptionsPanel(Project project) {
         super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
         setOpaque(false);
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // Create switches
-        InputSwitch semanticSearchSwitch = new InputSwitch(
+        InputSwitch ragSwitch = new InputSwitch(
                 "RAG",
                 "Enable RAG-enabled code search"
         );
@@ -43,7 +46,7 @@ public class SearchOptionsPanel extends JPanel {
         );
 
         // Add switches to our list for tracking
-        switches.add(semanticSearchSwitch);
+        switches.add(ragSwitch);
         switches.add(gitDiffSwitch);
         switches.add(webSearchSwitch);
 
@@ -51,7 +54,7 @@ public class SearchOptionsPanel extends JPanel {
         updateInitialVisibility(stateService);
 
         // Load saved state for enabled switches
-        semanticSearchSwitch.setSelected(stateService.getRagEnabled());
+        ragSwitch.setSelected(stateService.getRagEnabled());
         gitDiffSwitch.setSelected(stateService.getGitDiffEnabled());
         webSearchSwitch.setSelected(stateService.getEnableWebSearch());
 
@@ -59,10 +62,15 @@ public class SearchOptionsPanel extends JPanel {
         enforceInitialSingleSelection();
 
         // Add state change listeners with mutual exclusion
-        semanticSearchSwitch.addEventSelected(selected -> {
+        ragSwitch.addEventSelected(selected -> {
             if (selected) {
-                deactivateOtherSwitches(semanticSearchSwitch);
+                deactivateOtherSwitches(ragSwitch);
             }
+
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.RAG_ACTIVATED_CHANGED_TOPIC)
+                    .onRAGStateChanged(selected);
+
             stateService.setRagActivated(selected);
             updatePanelVisibility();
         });
@@ -87,7 +95,7 @@ public class SearchOptionsPanel extends JPanel {
         setupMessageBusListeners();
 
         // Add components
-        add(semanticSearchSwitch);
+        add(ragSwitch);
         add(gitDiffSwitch);
         add(webSearchSwitch);
 
@@ -113,7 +121,7 @@ public class SearchOptionsPanel extends JPanel {
     }
 
     private boolean shouldBeVisible() {
-        return switches.stream().anyMatch(sw -> sw.isVisible());
+        return switches.stream().anyMatch(Component::isVisible);
     }
 
     private void updatePanelVisibility() {
@@ -122,7 +130,7 @@ public class SearchOptionsPanel extends JPanel {
         repaint();
     }
 
-    private void updateInitialVisibility(DevoxxGenieStateService stateService) {
+    private void updateInitialVisibility(@NotNull DevoxxGenieStateService stateService) {
         // Set initial visibility based on state service
         switches.get(0).setVisible(stateService.getRagEnabled());
         switches.get(1).setVisible(stateService.getGitDiffEnabled());
@@ -137,11 +145,11 @@ public class SearchOptionsPanel extends JPanel {
         MessageBusConnection connect = application.getMessageBus().connect();
 
         // Subscribe to state changes and update both visibility and selection
-        connect.subscribe(AppTopics.SEMANTIC_SEARCH_STATE_TOPIC,
-                (SemanticSearchStateListener) enabled -> {
-                    InputSwitch semanticSwitch = switches.get(0);
-                    semanticSwitch.setVisible(enabled);
-                    semanticSwitch.setSelected(enabled);
+        connect.subscribe(AppTopics.RAG_STATE_TOPIC,
+                (RAGStateListener) enabled -> {
+                    InputSwitch ragSwitch = switches.get(0);
+                    ragSwitch.setVisible(enabled);
+                    ragSwitch.setSelected(enabled);
                     updatePanelVisibility();
                 });
 
