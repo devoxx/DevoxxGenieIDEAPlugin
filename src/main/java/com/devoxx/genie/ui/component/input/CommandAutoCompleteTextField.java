@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.component.input;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
-import com.devoxx.genie.ui.listener.RAGStateListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;

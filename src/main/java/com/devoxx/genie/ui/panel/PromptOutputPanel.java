@@ -22,7 +22,8 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
-import static javax.swing.ScrollPaneConstants.*;
+import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.
@@ -52,7 +53,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         this.project = project;
         this.resourceBundle = resourceBundle;
         welcomePanel = new WelcomePanel(resourceBundle);
-        helpPanel = new HelpPanel(HelpUtil.getHelpMessage(resourceBundle));
+        helpPanel = new HelpPanel(HelpUtil.getHelpMessage());
 
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
 
@@ -201,7 +202,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * Updates the help text displayed in the help panel.
      */
     public void updateHelpText() {
-        helpPanel.updateHelpText(HelpUtil.getHelpMessage(resourceBundle));
+        helpPanel.updateHelpText(HelpUtil.getHelpMessage());
     }
 
     /**

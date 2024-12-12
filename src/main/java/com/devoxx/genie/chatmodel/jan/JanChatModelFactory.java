@@ -43,7 +43,6 @@ public class JanChatModelFactory implements ChatModelFactory {
             .build();
     }
 
-
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return LocalAiStreamingChatModel.builder()

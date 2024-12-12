@@ -2,11 +2,12 @@ package com.devoxx.genie.ui.settings.gitmerge;
 
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jdesktop.swingx.JXTitledSeparator;
-import com.intellij.openapi.ui.ComboBox;
+
 import javax.swing.*;
 import java.awt.*;
 
