@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.component.border;
 
+import com.devoxx.genie.ui.listener.GlowingListener;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,7 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class AnimatedGlowingBorder implements Border {
+public class AnimatedGlowingBorder implements Border, GlowingListener {
     private final Timer glowTimer;
     private final GlowingBorder glowingBorder;
     private boolean isGlowing = false;
@@ -19,8 +20,8 @@ public class AnimatedGlowingBorder implements Border {
     public AnimatedGlowingBorder(@NotNull JComponent component) {
         this.component = component;
         this.defaultBorder = BorderFactory.createEmptyBorder(4, 4, 4, 4);
-        this.glowingBorder = new GlowingBorder(new JBColor(new Color(0, 120, 215),
-                new Color(0, 120, 213)));
+        this.glowingBorder = new GlowingBorder(
+                new JBColor(new Color(0, 120, 215), new Color(0, 120, 213)));
         this.glowTimer = createGlowTimer();
     }
 
@@ -45,6 +46,7 @@ public class AnimatedGlowingBorder implements Border {
         });
     }
 
+    @Override
     public void startGlowing() {
         if (!isGlowing) {
             isGlowing = true;
@@ -53,6 +55,7 @@ public class AnimatedGlowingBorder implements Border {
         }
     }
 
+    @Override
     public void stopGlowing() {
         if (isGlowing) {
             isGlowing = false;

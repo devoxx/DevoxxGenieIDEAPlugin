@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -26,7 +27,8 @@ public class TokenCalculationService {
                                        int maxTokens,
                                        @NotNull ModelProvider selectedProvider,
                                        LanguageModel selectedLanguageModel,
-                                       boolean showCost) {
+                                       boolean showCost,
+                                       TokenCalculationListener listener) {
 
         CompletableFuture<ScanContentResult> contentFuture;
         if (directory != null) {
@@ -36,16 +38,17 @@ public class TokenCalculationService {
         }
 
         if (showCost) {
-            showCostAndScanInfo(project, selectedProvider, selectedLanguageModel, contentFuture);
+            showCostAndScanInfo(project, selectedProvider, selectedLanguageModel, contentFuture, listener);
         } else {
-            showOnlyScanInfo(project, directory, selectedProvider, contentFuture);
+            showOnlyScanInfo(project, directory, selectedProvider, contentFuture, listener);
         }
     }
 
     private static void showOnlyScanInfo(@NotNull Project project,
                                          VirtualFile directory,
                                          @NotNull ModelProvider selectedProvider,
-                                         @NotNull CompletableFuture<ScanContentResult> contentFuture) {
+                                         @NotNull CompletableFuture<ScanContentResult> contentFuture,
+                                         TokenCalculationListener listener) {
         contentFuture.thenAccept(result -> {
             String message = String.format(
                 "%s contains %s tokens using the %s tokenizer.  " +
@@ -56,32 +59,34 @@ public class TokenCalculationService {
                 result.getFileCount(),
                 result.getSkippedFileCount(),
                 result.getSkippedDirectoryCount());
-            NotificationUtil.sendNotification(project, message);
+            listener.onTokenCalculationComplete(message);
         });
     }
 
     private void showCostAndScanInfo(@NotNull Project project,
                                      @NotNull ModelProvider selectedProvider,
                                      @NotNull LanguageModel languageModel,
-                                     CompletableFuture<ScanContentResult> contentFuture) {
+                                     CompletableFuture<ScanContentResult> contentFuture,
+                                     TokenCalculationListener listener) {
         if (!DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider)) {
             contentFuture.thenAccept(scanResult -> {
                 String defaultMessage = getDefaultMessage(scanResult);
-                NotificationUtil.sendNotification(project, defaultMessage);
+                listener.onTokenCalculationComplete(defaultMessage);
             });
         } else {
-            showInfoForCloudProvider(project, selectedProvider, languageModel, contentFuture);
+            showInfoForCloudProvider(project, selectedProvider, languageModel, contentFuture, listener);
         }
     }
 
     private void showInfoForCloudProvider(@NotNull Project project,
                                           @NotNull ModelProvider selectedProvider,
                                           @NotNull LanguageModel languageModel,
-                                          @NotNull CompletableFuture<ScanContentResult> contentFuture) {
+                                          @NotNull CompletableFuture<ScanContentResult> contentFuture,
+                                          TokenCalculationListener listener) {
         Optional<Double> inputCost = LLMModelRegistryService.getInstance().getModels()
             .stream()
             .filter(model -> model.getProvider().getName().equals(selectedProvider.getName()) &&
-                            model.getModelName().equals(languageModel.getModelName()))
+                                           model.getModelName().equals(languageModel.getModelName()))
             .findFirst()
             .map(LanguageModel::getInputCost);
 
@@ -89,33 +94,45 @@ public class TokenCalculationService {
             double estimatedInputCost = calculateCost(scanResult.getTokenCount(), aDouble);
             String message;
             if (scanResult.getSkippedFileCount() > 0 || scanResult.getSkippedDirectoryCount() > 0) {
-                message = String.format("%s Estimated cost using %s %s is $%.5f",
-                    getDefaultMessage(scanResult),
-                    selectedProvider.getName(),
-                    languageModel.getDisplayName(),
-                    estimatedInputCost
-                );
+                message = getEstimatedCostMessage(selectedProvider, languageModel, scanResult, estimatedInputCost);
             } else {
-                message = String.format(
-                    "Project contains %s in %d file%s.  Estimated cost using %s %s is $%.5f",
-                    WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
-                    scanResult.getFileCount(),
-                    scanResult.getFileCount() > 1 ? "s" : "",
-                    selectedProvider.getName(),
-                    languageModel.getDisplayName(),
-                    estimatedInputCost
-                );
+                message = getTotalFilesAndEstimatedCostMessage(selectedProvider, languageModel, scanResult, estimatedInputCost);
             }
 
             if (scanResult.getTokenCount() > languageModel.getContextWindow()) {
                 message += String.format(". Total project size exceeds model's max context of %s tokens.",
                     WindowContextFormatterUtil.format(languageModel.getContextWindow()));
             }
-            NotificationUtil.sendNotification(project, message);
+            listener.onTokenCalculationComplete(message);
         }), () -> {
             String message = "No input cost found for the selected model.";
             NotificationUtil.sendNotification(project, message);
         });
+    }
+
+    private @NotNull String getEstimatedCostMessage(@NotNull ModelProvider selectedProvider, @NotNull LanguageModel languageModel, ScanContentResult scanResult, double estimatedInputCost) {
+        String message;
+        message = String.format("%s Estimated cost using %s %s is $%.5f",
+            getDefaultMessage(scanResult),
+            selectedProvider.getName(),
+            languageModel.getDisplayName(),
+                estimatedInputCost
+        );
+        return message;
+    }
+
+    private static @NotNull String getTotalFilesAndEstimatedCostMessage(@NotNull ModelProvider selectedProvider, @NotNull LanguageModel languageModel, @NotNull ScanContentResult scanResult, double estimatedInputCost) {
+        String message;
+        message = String.format(
+            "Project contains %s in %d file%s.  Estimated cost using %s %s is $%.5f",
+            WindowContextFormatterUtil.format(scanResult.getTokenCount(), "tokens"),
+            scanResult.getFileCount(),
+            scanResult.getFileCount() > 1 ? "s" : "",
+            selectedProvider.getName(),
+            languageModel.getDisplayName(),
+                estimatedInputCost
+        );
+        return message;
     }
 
     private @NotNull String getDefaultMessage(@NotNull ScanContentResult scanResult) {

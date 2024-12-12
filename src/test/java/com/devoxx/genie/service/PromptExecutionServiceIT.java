@@ -142,7 +142,6 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
                 .modelName(languageModel.getModelName())
                 .build();
             case DeepInfra
-                    -> OpenAiChatModel.builder()
                 .baseUrl("https://api.deepinfra.com/v1/openai")
                 .apiKey(dotenv.get("DEEPINFRA_API_KEY"))
                 .modelName(languageModel.getModelName())
