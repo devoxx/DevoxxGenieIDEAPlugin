@@ -75,7 +75,7 @@ public class ActionButtonsPanel extends JPanel
                               ComboBox<LanguageModel> modelNameComboBox,
                               DevoxxGenieToolWindowContent devoxxGenieToolWindowContent) {
         setLayout(new BorderLayout());
-        setBorder(JBUI.Borders.empty(10));
+        // setBorder(JBUI.Borders.empty(10));
 
         // Initialize fields and components
         this.project = project;

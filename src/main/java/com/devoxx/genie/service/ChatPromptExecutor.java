@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
@@ -11,6 +12,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.FileTypeUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -21,11 +23,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 
 public class ChatPromptExecutor {
+
+    private static final Logger LOG = Logger.getInstance(ChatPromptExecutor.class);
 
     private final StreamingPromptExecutor streamingPromptExecutor;
     private final NonStreamingPromptExecutor nonStreamingPromptExecutor;
@@ -40,6 +45,7 @@ public class ChatPromptExecutor {
 
     /**
      * Execute the prompt.
+     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
@@ -88,11 +94,29 @@ public class ChatPromptExecutor {
                     });
                 }
             }
+
+            @Override
+            public void onCancel() {
+                super.onCancel();
+                // Handle cancellation if needed
+                LOG.info("Prompt execution was cancelled.");
+            }
+
+            @Override
+            public void onThrowable(@NotNull Throwable error) {
+                super.onThrowable(error);
+                // Handle other exceptions
+                if (!(error instanceof CancellationException)) {
+                    LOG.error("Error occurred while processing chat message", error);
+                    ErrorHandler.handleError(chatMessageContext.getProject(), error);
+                }
+            }
         }.queue();
     }
 
     /**
      * Process possible command prompt.
+     *
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel  the prompt output panel
      */
@@ -111,6 +135,7 @@ public class ChatPromptExecutor {
 
     /**
      * Get the editor info.
+     *
      * @param project the project
      * @return the editor info
      */
@@ -137,6 +162,7 @@ public class ChatPromptExecutor {
 
     /**
      * Stop streaming or the non-streaming prompt execution
+     *
      * @param project the project
      */
     public void stopPromptExecution(Project project) {
@@ -149,8 +175,9 @@ public class ChatPromptExecutor {
 
     /**
      * Get the command from the prompt.
+     *
      * @param chatMessageContext the chat message context
-     * @param promptOutputPanel the prompt output panel
+     * @param promptOutputPanel  the prompt output panel
      * @return the command
      */
     private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
