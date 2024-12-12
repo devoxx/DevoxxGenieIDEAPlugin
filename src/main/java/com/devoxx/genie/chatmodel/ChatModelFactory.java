@@ -4,6 +4,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
+import com.devoxx.genie.service.LLMProviderService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 
@@ -50,13 +51,17 @@ public interface ChatModelFactory {
      */
     List<LanguageModel> getModels();
 
-    /**
-     * Get the model provider API key.
-     *
-     * @return the API key
-     */
-    default String getApiKey() {
-        return "";
+//    /**
+//     * Get the model provider API key.
+//     *
+//     * @return the API key
+//     */
+//    default String getApiKey() {
+//        return "";
+//    }
+
+    default String getApiKey(ModelProvider modelProvider) {
+        return LLMProviderService.getInstance().getApiKey(modelProvider).trim();
     }
 
     /**

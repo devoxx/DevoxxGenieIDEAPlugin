@@ -16,12 +16,14 @@ import java.util.List;
 
 public class AzureOpenAIChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         boolean isO1 = chatModel.getModelName().startsWith("o1-");
 
         final var builder = AzureOpenAiChatModel.builder()
-                .apiKey(getApiKey())
+                .apiKey(getApiKey(MODEL_PROVIDER))
                 .deploymentName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .maxRetries(chatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
@@ -36,18 +38,13 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
         boolean isO1 = chatModel.getModelName().startsWith("o1-");
 
         final var builder = AzureOpenAiStreamingChatModel.builder()
-                .apiKey(getApiKey())
+                .apiKey(getApiKey(MODEL_PROVIDER))
                 .deploymentName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
                 .topP(isO1 ? 1.0 : chatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint());
 
         return builder.build();
-    }
-
-    @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getAzureOpenAIKey().trim();
     }
 
     /**
@@ -59,7 +56,7 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
     @Override
     public List<LanguageModel> getModels() {
         return List.of(LanguageModel.builder()
-                .provider(ModelProvider.AzureOpenAI)
+                .provider(MODEL_PROVIDER)
                 .modelName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .displayName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .inputCost(0.0)

@@ -17,6 +17,8 @@ import java.util.List;
 
 public class ExoChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Exo;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
@@ -55,7 +57,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("llama-3.1-405b")
             .displayName("Llama 3.1 405B")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(131_000)
@@ -65,7 +67,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("llama-3.1-8b")
             .displayName("Llama 3.1 8B")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)
@@ -75,7 +77,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("llama-3.1-70b")
             .displayName("Llama 3.1 70B")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(131_000)
@@ -85,7 +87,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("llama-3-8b")
             .displayName("Llama 3 8B")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)
@@ -96,7 +98,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("mistral-nemo")
             .displayName("Mistral Nemo")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)
@@ -107,7 +109,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("mistral-large")
             .displayName("Mistral Large")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)
@@ -118,7 +120,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("deepseek-coder-v2-lite")
             .displayName("Deepseek Coder V2 Lite")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)
@@ -129,7 +131,7 @@ public class ExoChatModelFactory implements ChatModelFactory {
             .modelName("llava-1.5-7b-hf")
             .displayName("Llava 1.5 7B HF")
             .apiKeyUsed(false)
-            .provider(ModelProvider.Exo)
+            .provider(MODEL_PROVIDER)
             .outputCost(0)
             .inputCost(0)
             .contextWindow(8_000)

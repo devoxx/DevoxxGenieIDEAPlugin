@@ -6,7 +6,6 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.service.openrouter.OpenRouterService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -27,6 +26,8 @@ import java.util.concurrent.Executors;
 
 public class OpenRouterChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.OpenRouter;
+
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private List<LanguageModel> cachedModels = null;
     private static final int PRICE_SCALING_FACTOR = 1_000_000; // To convert to per million tokens
@@ -35,7 +36,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://openrouter.ai/api/v1/")
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
@@ -49,18 +50,13 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return OpenAiStreamingChatModel.builder()
             .baseUrl("https://openrouter.ai/api/v1/")
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .maxTokens(4_000)
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .build();
-    }
-
-    @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getOpenRouterKey().trim();
     }
 
     /**
@@ -86,7 +82,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
                     double outputCost = convertAndScalePrice(model.getPricing().getCompletion());
 
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.OpenRouter)
+                        .provider(MODEL_PROVIDER)
                         .modelName(model.getId())
                         .displayName(model.getName())
                         .inputCost(inputCost)

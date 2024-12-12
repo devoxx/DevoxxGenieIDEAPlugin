@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 
 public class LMStudioChatModelFactory implements ChatModelFactory {
 
+    public static final ModelProvider MODEL_PROVIDER = ModelProvider.LMStudio;
+
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private static boolean warningShown = false;
     private List<LanguageModel> cachedModels = null;
@@ -74,7 +76,7 @@ public class LMStudioChatModelFactory implements ChatModelFactory {
             for (LMStudioModelEntryDTO model : lmStudioModels) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.LMStudio)
+                        .provider(MODEL_PROVIDER)
                         .modelName(model.getId())
                         .displayName(model.getId())
                         .inputCost(0)

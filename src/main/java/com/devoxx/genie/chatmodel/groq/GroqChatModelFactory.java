@@ -14,11 +14,13 @@ import java.util.List;
 
 public class GroqChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Groq;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.groq.com/openai/v1")
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .maxTokens(chatModel.getMaxTokens())
@@ -41,12 +43,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
 //    }
 
     @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getGroqKey().trim();
-    }
-
-    @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.Groq);
+        return getModels(MODEL_PROVIDER);
     }
 }

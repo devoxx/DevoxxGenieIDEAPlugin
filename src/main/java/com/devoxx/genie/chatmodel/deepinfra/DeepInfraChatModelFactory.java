@@ -16,11 +16,13 @@ import java.util.List;
 
 public class DeepInfraChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.DeepInfra;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.deepinfra.com/v1/openai")
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
@@ -34,7 +36,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return OpenAiStreamingChatModel.builder()
             .baseUrl("https://api.deepinfra.com/v1/openai")
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -43,12 +45,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getDeepInfraKey().trim();
-    }
-
-    @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.DeepInfra);
+        return getModels(MODEL_PROVIDER);
     }
 }

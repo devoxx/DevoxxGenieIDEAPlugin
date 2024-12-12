@@ -4,8 +4,6 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
@@ -17,10 +15,12 @@ import java.util.List;
 
 public class MistralChatModelFactory implements ChatModelFactory {
 
+    public static final ModelProvider MODEL_PROVIDER = ModelProvider.Mistral;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return MistralAiChatModel.builder()
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
@@ -33,7 +33,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return MistralAiStreamingChatModel.builder()
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -42,12 +42,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getMistralKey().trim();
-    }
-
-    @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.Mistral);
+        return getModels(MODEL_PROVIDER);
     }
 }
