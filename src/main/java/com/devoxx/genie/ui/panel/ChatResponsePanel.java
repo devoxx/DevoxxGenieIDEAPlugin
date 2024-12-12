@@ -76,16 +76,20 @@ public class ChatResponsePanel extends BackgroundPanel {
         }
 
         // Add semantic references panel
+        addSemanticSearchReferences(chatMessageContext);
+
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
+            // Add execution time, token usage and cost information
+            addMetricExecutionInfo(chatMessageContext);
+        }
+    }
+
+    private void addSemanticSearchReferences(@NotNull ChatMessageContext chatMessageContext) {
         List<SemanticFile> semanticReferences = chatMessageContext.getSemanticReferences();
         if (semanticReferences != null && !semanticReferences.isEmpty()) {
             ExpandablePanel semanticPanel = new ExpandablePanel(chatMessageContext.getProject(), semanticReferences);
             semanticPanel.setName(chatMessageContext.getId() + "_semantic");
             add(semanticPanel);
-        }
-
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
-            // Add execution time, token usage and cost information
-            addMetricExecutionInfo(chatMessageContext);
         }
     }
 

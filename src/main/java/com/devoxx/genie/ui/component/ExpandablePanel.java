@@ -67,6 +67,8 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
                            @NotNull List<VirtualFile> files) {
         this();
 
+        toggleButton.setText("Referenced Files (" + files.size() + ")");
+
         for (VirtualFile file : files) {
             contentPanel.add(new FileEntryComponent(chatMessageContext.getProject(), file, null));
         }
@@ -78,11 +80,22 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
         contentPanel.setVisible(isExpanded);
         toggleButton.setIcon(isExpanded ? ArrowExpanded : ArrowExpand);
 
-        contentPanel.getParent().revalidate();
-        contentPanel.getParent().repaint();
+        // Recompute the size of the panel
+        revalidate();
+        repaint();
 
-        Rectangle rectangle = SwingUtilities.calculateInnerArea(contentPanel, contentPanel.getBounds());
-        contentPanel.scrollRectToVisible(rectangle);
+        // Update the parent container
+        Container parent = getParent();
+        while (parent != null) {
+            parent.revalidate();
+            parent.repaint();
+            parent = parent.getParent();
+        }
+
+        if (isExpanded) {
+            Rectangle rectangle = SwingUtilities.calculateInnerArea(contentPanel, contentPanel.getBounds());
+            contentPanel.scrollRectToVisible(rectangle);
+        }
     }
 
     @Override
@@ -92,6 +105,26 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
             return new Dimension(0, Math.min(300, contentHeight));
         } else {
             return new Dimension(0, toggleButton.getPreferredSize().height + 10);
+        }
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (isExpanded) {
+            int contentHeight = contentPanel.getComponentCount() * 30;
+            return new Dimension(super.getPreferredSize().width, Math.min(300, contentHeight + toggleButton.getPreferredSize().height + 10));
+        } else {
+            return new Dimension(super.getPreferredSize().width, toggleButton.getPreferredSize().height + 10);
+        }
+    }
+
+    @Override
+    public Dimension getMaximumSize() {
+        if (isExpanded) {
+            int contentHeight = contentPanel.getComponentCount() * 30;
+            return new Dimension(Integer.MAX_VALUE, Math.min(300, contentHeight + toggleButton.getPreferredSize().height + 10));
+        } else {
+            return new Dimension(Integer.MAX_VALUE, toggleButton.getPreferredSize().height + 10);
         }
     }
 }
