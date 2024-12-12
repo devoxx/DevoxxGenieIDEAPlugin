@@ -1,6 +1,7 @@
 package com.devoxx.genie.controller;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
+import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 
-public class ActionButtonsPanelController {
+public class ActionButtonsPanelController implements PromptExecutionListener {
 
     private final Project project;
     private final EditorFileButtonManager editorFileButtonManager;
@@ -64,12 +65,10 @@ public class ActionButtonsPanelController {
             return false;
         }
 
-        LanguageModel selectedLanguageModel = getSelectedLanguageModel();
-
         ChatMessageContext currentChatMessageContext =
                 ChatMessageContextUtil.createContext(project,
                         userPromptText,
-                        selectedLanguageModel,
+                        getSelectedLanguageModel(),
                         chatModelProvider,
                         actionCommand,
                         editorFileButtonManager,
@@ -82,8 +81,19 @@ public class ActionButtonsPanelController {
     /**
      * Stop the prompt execution.
      */
+    @Override
     public void stopPromptExecution() {
         promptExecutionController.stopPromptExecution();
+    }
+
+    @Override
+    public void startPromptExecution() {
+        promptExecutionController.startPromptExecution();
+    }
+
+    @Override
+    public void endPromptExecution() {
+        promptExecutionController.endPromptExecution();
     }
 
     private LanguageModel getSelectedLanguageModel() {
@@ -140,18 +150,6 @@ public class ActionButtonsPanelController {
                     .contextWindow(128_000)
                     .build();
         }
-    }
-
-    public void initiatePromptExecution() {
-        promptExecutionController.startPromptExecution();
-    }
-
-    public void endPromptExecution() {
-        promptExecutionController.endPromptExecution();
-    }
-
-    public boolean isProjectContextAdded() {
-        return projectContextController.isProjectContextAdded();
     }
 
     /**

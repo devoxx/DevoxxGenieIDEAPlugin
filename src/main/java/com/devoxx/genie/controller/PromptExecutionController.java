@@ -44,14 +44,15 @@ public class PromptExecutionController implements PromptExecutionListener {
             return true;
         }
 
+        startPromptExecution();
+
         isPromptRunning = true;
 
         AtomicBoolean response = new AtomicBoolean(true);
         chatPromptExecutor.updatePromptWithCommandIfPresent(currentChatMessageContext, promptOutputPanel)
                 .ifPresentOrElse(
                         this::executePromptWithContext,
-                        // TODO Throw exception instead of returning false
-                        () -> response.set(false)
+                        () -> response.set(false) // TODO Throw exception instead of returning false
                 );
 
         return response.get();
@@ -59,8 +60,7 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     private void executePromptWithContext(String command) {
         chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, () -> {
-            isPromptRunning = false;
-            actionButtonsPanel.enableButtons();
+            endPromptExecution();
             ApplicationManager.getApplication().invokeLater(() -> {
                 promptInputArea.clear();
                 promptInputArea.requestInputFocus();
@@ -71,8 +71,7 @@ public class PromptExecutionController implements PromptExecutionListener {
     @Override
     public void stopPromptExecution() {
         chatPromptExecutor.stopPromptExecution(project);
-        isPromptRunning = false;
-        actionButtonsPanel.enableButtons();
+        endPromptExecution();
     }
 
     @Override
@@ -84,6 +83,7 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     @Override
     public void endPromptExecution() {
+        isPromptRunning = false;
         actionButtonsPanel.enableButtons();
     }
 }

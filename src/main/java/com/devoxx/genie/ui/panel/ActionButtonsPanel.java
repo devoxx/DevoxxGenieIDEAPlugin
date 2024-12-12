@@ -222,6 +222,7 @@ public class ActionButtonsPanel extends JPanel
         boolean response = controller.handlePromptSubmission(actionEvent.getActionCommand(),
                 projectContextController.isProjectContextAdded(),
                 projectContextController.getProjectContext());
+
         if (!response) {
             controller.endPromptExecution();
         }
@@ -354,8 +355,7 @@ public class ActionButtonsPanel extends JPanel
     }
 
     @Override
-    public void onTokenCalculationComplete(String message) {         // Update the UI with the token count and limit         // Example: Display in a label or status bar         System.out.println("Token count: " + tokenCount + ", Token limit: " + tokenLimit);     }
-//        System.out.println("Token count: " + tokenCount + ", Token limit: " + tokenLimit);
+    public void onTokenCalculationComplete(String message) {
         NotificationUtil.sendNotification(project, message);
 
     }
