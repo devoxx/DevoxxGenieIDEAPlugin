@@ -4,7 +4,6 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,6 @@ public class GoogleChatModelFactory implements ChatModelFactory {
             .maxOutputTokens(chatModel.getMaxTokens())
             .build();
     }
-
 
     @Override
     public List<LanguageModel> getModels() {

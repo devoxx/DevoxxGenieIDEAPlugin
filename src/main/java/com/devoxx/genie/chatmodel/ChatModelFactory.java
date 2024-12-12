@@ -51,15 +51,6 @@ public interface ChatModelFactory {
      */
     List<LanguageModel> getModels();
 
-//    /**
-//     * Get the model provider API key.
-//     *
-//     * @return the API key
-//     */
-//    default String getApiKey() {
-//        return "";
-//    }
-
     default String getApiKey(ModelProvider modelProvider) {
         return LLMProviderService.getInstance().getApiKey(modelProvider).trim();
     }
