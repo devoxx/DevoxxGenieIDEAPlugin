@@ -1,9 +1,9 @@
 package com.devoxx.genie.service.websearch;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
@@ -17,10 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
-import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
-
 public class WebSearchService {
+
+    private static final Logger LOG = Logger.getInstance(WebSearchService.class);
 
     public static WebSearchService getInstance() {
         return ApplicationManager.getApplication().getService(WebSearchService.class);
@@ -41,7 +40,10 @@ public class WebSearchService {
      * @return the AI message
      */
     public @NotNull Optional<AiMessage> searchWeb(@NotNull ChatMessageContext chatMessageContext) {
-        WebSearchEngine engine = createWebSearchEngine(chatMessageContext.getContext());
+        LOG.debug("Searching the web for: " + chatMessageContext.getUserPrompt());
+
+        WebSearchEngine engine = createWebSearchEngine();
+
         return Optional.ofNullable(engine)
             .flatMap(webSearchEngine -> executeSearchCommand(webSearchEngine, chatMessageContext));
     }
@@ -55,6 +57,8 @@ public class WebSearchService {
      */
     private @NotNull Optional<AiMessage> executeSearchCommand(WebSearchEngine webSearchEngine,
                                                               @NotNull ChatMessageContext chatMessageContext) {
+        LOG.debug("Executing search command for: " + chatMessageContext.getUserPrompt());
+
         ContentRetriever contentRetriever = WebSearchContentRetriever.builder()
             .webSearchEngine(webSearchEngine)
             .maxResults(DevoxxGenieStateService.getInstance().getMaxSearchResults())
@@ -70,25 +74,25 @@ public class WebSearchService {
 
     /**
      * Get the web search engine.
-     *
-     * @param searchType the search type
      * @return the web search engine
      */
-    private @Nullable WebSearchEngine createWebSearchEngine(@NotNull String searchType) {
-        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+    private @Nullable WebSearchEngine createWebSearchEngine() {
+        LOG.debug("Creating web search engine");
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        if (searchType.equals(TAVILY_SEARCH_ACTION) && settings.getTavilySearchKey() != null) {
+        if (stateService.isTavilySearchEnabled()) {
             return TavilyWebSearchEngine.builder()
-                .apiKey(settings.getTavilySearchKey())
+                .apiKey(stateService.getTavilySearchKey())
                 .build();
-        } else if (searchType.equals(GOOGLE_SEARCH_ACTION) &&
-            settings.getGoogleSearchKey() != null &&
-            settings.getGoogleCSIKey() != null) {
+        } else if (stateService.isGoogleSearchEnabled() &&
+                stateService.getGoogleSearchKey() != null &&
+                stateService.getGoogleCSIKey() != null) {
             return GoogleCustomWebSearchEngine.builder()
-                .apiKey(settings.getGoogleSearchKey())
-                .csi(settings.getGoogleCSIKey())
+                .apiKey(stateService.getGoogleSearchKey())
+                .csi(stateService.getGoogleCSIKey())
                 .build();
         }
+        LOG.info("Web search engine not found or all disabled");
         return null;
     }
 }

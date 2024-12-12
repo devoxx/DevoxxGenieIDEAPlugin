@@ -49,19 +49,24 @@ public class WebSearchProvidersConfigurable implements Configurable {
 
         boolean isModified = false;
 
-        isModified |= !stateService.getEnableWebSearch().equals(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
+        isModified |= !stateService.getIsWebSearchEnabled().equals(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
+
         webSearchProvidersComponent.getEnableWebSearchCheckbox().addItemListener(event -> {
             String text = webSearchProvidersComponent.getEnableWebSearchCheckbox().getText();
-            stateService.setEnableWebSearch(text.equals("true"));
+            stateService.setIsWebSearchEnabled(text.equalsIgnoreCase("true"));
         });
 
         boolean oldValue = stateService.getGitDiffEnabled();
         boolean newValue = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected();
 
-        isModified |= webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != stateService.getEnableWebSearch();
+        isModified |= webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != stateService.getIsWebSearchEnabled();
+        isModified |= stateService.isTavilySearchEnabled() != webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected();
         isModified |= isFieldModified(webSearchProvidersComponent.getTavilySearchApiKeyField(), stateService.getTavilySearchKey());
+
+        isModified |= stateService.isGoogleSearchEnabled() != webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected();
         isModified |= isFieldModified(webSearchProvidersComponent.getGoogleSearchApiKeyField(), stateService.getGoogleSearchKey());
         isModified |= isFieldModified(webSearchProvidersComponent.getGoogleCSIApiKeyField(), stateService.getGoogleCSIKey());
+
         isModified |= webSearchProvidersComponent.getMaxSearchResults().getNumber() != stateService.getMaxSearchResults();
 
         if (oldValue != newValue) {
@@ -80,8 +85,10 @@ public class WebSearchProvidersConfigurable implements Configurable {
     public void apply() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-        settings.setEnableWebSearch(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
+        settings.setIsWebSearchEnabled(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
+        settings.setTavilySearchEnabled(webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected());
         settings.setTavilySearchKey(new String(webSearchProvidersComponent.getTavilySearchApiKeyField().getPassword()));
+        settings.setGoogleSearchEnabled(webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected());
         settings.setGoogleSearchKey(new String(webSearchProvidersComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(webSearchProvidersComponent.getGoogleCSIApiKeyField().getPassword()));
         settings.setMaxSearchResults(webSearchProvidersComponent.getMaxSearchResults().getNumber());
@@ -94,9 +101,14 @@ public class WebSearchProvidersConfigurable implements Configurable {
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-        webSearchProvidersComponent.getEnableWebSearchCheckbox().setSelected(settings.getEnableWebSearch());
+        webSearchProvidersComponent.getEnableWebSearchCheckbox().setSelected(settings.getIsWebSearchEnabled());
+
+        webSearchProvidersComponent.getTavilySearchEnabledCheckBox().setSelected(settings.isTavilySearchEnabled());
         webSearchProvidersComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
+
+        webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().setSelected(settings.isGoogleSearchEnabled());
         webSearchProvidersComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
+
         webSearchProvidersComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
         webSearchProvidersComponent.getMaxSearchResults().setValue(settings.getMaxSearchResults());
     }

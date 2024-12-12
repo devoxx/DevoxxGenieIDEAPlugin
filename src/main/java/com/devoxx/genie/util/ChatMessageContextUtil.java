@@ -48,7 +48,7 @@ public class ChatMessageContextUtil {
             .userPrompt(userPromptText)
             .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
-            .webSearchRequested(actionCommand.equals(TAVILY_SEARCH_ACTION) || actionCommand.equals(GOOGLE_SEARCH_ACTION))
+            .webSearchRequested(stateService.getIsWebSearchEnabled() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
             .totalFileCount(FileListManager.getInstance().size())
             .executionTimeMs(0)
             .cost(0)
@@ -63,7 +63,7 @@ public class ChatMessageContextUtil {
 
         context.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());
 
-        setWindowContext(context, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded, actionCommand);
+        setWindowContext(context, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded);
 
         return context;
     }
@@ -76,22 +76,14 @@ public class ChatMessageContextUtil {
      * @param editorFileButtonManager the editor file button manager
      * @param projectContext          the project context
      * @param isProjectContextAdded   the is project context added
-     * @param actionCommand           the action command for setting the context for web requests
      */
     private static void setWindowContext(@NotNull ChatMessageContext chatMessageContext,
                                          String userPrompt,
                                          EditorFileButtonManager editorFileButtonManager,
                                          String projectContext,
-                                         boolean isProjectContextAdded,
-                                         String actionCommand) {
+                                         boolean isProjectContextAdded) {
 
-        if (chatMessageContext.isWebSearchRequested()) {
-            if (actionCommand.equals(GOOGLE_SEARCH_ACTION)) {
-                chatMessageContext.setContext(GOOGLE_SEARCH_ACTION);
-            } else if (actionCommand.equals(TAVILY_SEARCH_ACTION)) {
-                chatMessageContext.setContext(TAVILY_SEARCH_ACTION);
-            }
-        } else if (projectContext != null && isProjectContextAdded) {
+        if (projectContext != null && isProjectContextAdded) {
             chatMessageContext.setContext(projectContext);
         } else {
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
@@ -109,6 +101,12 @@ public class ChatMessageContextUtil {
         }
     }
 
+    /**
+     * Add the user selected files to chat message context.
+     * @param chatMessageContext the chat message context
+     * @param userPrompt the user prompt
+     * @param files the add files
+     */
     private static void addSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
                                          String userPrompt,
                                          List<VirtualFile> files) {
@@ -128,6 +126,11 @@ public class ChatMessageContextUtil {
         chatMessageContext.setEditorInfo(editorInfo);
     }
 
+    /**
+     * Check if the language model is an OpenAI O1 model because that doesn't support system prompts.
+     * @param languageModel the language model
+     * @return true if the language model is an OpenAI O1 model
+     */
     public static boolean isOpenAIo1Model(LanguageModel languageModel) {
         return languageModel != null &&
                 languageModel.getProvider() == ModelProvider.OpenAI &&

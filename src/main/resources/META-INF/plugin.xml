@@ -39,6 +39,7 @@
         <UL>
             <LI>Feat #379: Cache file icons to increase performance</LI>
             <LI>Fix #382: Restore the correct switch buttons states for RAG, Search, GitDiff</LI>
+            <LI>Fix #384: Fix web search with enable/disable of Google or Tavily feature</LI>
         </UL>
         <h2>v0.4.4</h2>
         <UL>

@@ -46,7 +46,7 @@ public class NonStreamingPromptExecutor {
         isCancelled = false;
 
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName())) {
-            semanticSearch(chatMessageContext, promptOutputPanel, enableButtons);
+            semanticSearch(chatMessageContext, promptOutputPanel);
             enableButtons.run();
             return;
         }
@@ -101,8 +101,7 @@ public class NonStreamingPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      */
     private static void semanticSearch(ChatMessageContext chatMessageContext,
-                                       @NotNull PromptOutputPanel promptOutputPanel,
-                                       Runnable enableButtons) {
+                                       @NotNull PromptOutputPanel promptOutputPanel) {
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
             Map<String, SearchResult> searchResults = semanticSearchService.search(

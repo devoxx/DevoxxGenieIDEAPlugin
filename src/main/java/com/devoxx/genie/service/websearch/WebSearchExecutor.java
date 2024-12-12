@@ -13,9 +13,11 @@ public class WebSearchExecutor {
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
         promptOutputPanel.addUserPrompt(chatMessageContext);
+        long startTime = System.currentTimeMillis();
         WebSearchService.getInstance().searchWeb(chatMessageContext)
             .ifPresent(aiMessage -> {
                 chatMessageContext.setAiMessage(aiMessage);
+                chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
                 promptOutputPanel.addChatResponse(chatMessageContext);
                 enableButtons.run();
             });

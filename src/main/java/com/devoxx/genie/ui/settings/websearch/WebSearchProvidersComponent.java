@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,12 +16,18 @@ import java.awt.event.ItemEvent;
 @Getter
 public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
+    @Getter
     private final JCheckBox enableWebSearchCheckbox =
-            new JCheckBox("", stateService.getEnableWebSearch());
+            new JCheckBox("", stateService.getIsWebSearchEnabled());
+
+    @Getter
+    private final JCheckBox tavilySearchEnabledCheckBox = new JCheckBox("", stateService.isTavilySearchEnabled());
 
     private final JPasswordField tavilySearchApiKeyField =
             new JPasswordField(stateService.getTavilySearchKey());
 
+    @Getter
+    private final JCheckBox googleSearchEnabledCheckBox = new JCheckBox("", stateService.isGoogleSearchEnabled());
     private final JPasswordField googleSearchApiKeyField =
             new JPasswordField(stateService.getGoogleSearchKey());
 
@@ -31,7 +38,6 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
             new JBIntSpinner(new UINumericRange(stateService.getMaxSearchResults(), 1, 10));
 
     public WebSearchProvidersComponent() {
-        validateSearchElements();
         addListeners();
     }
 
@@ -52,8 +58,8 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         JBLabel infoLabel = new JBLabel();
         infoLabel.setText(
                 "<html><body style='width: 100%;'>" +
-                "Post your prompt on the web using eitherGoogle search or Tavily search." +
-                "</body></html>");
+                        "Post your prompt on the web using either Google search or Tavily search." +
+                        "</body></html>");
 
         infoLabel.setForeground(UIUtil.getContextHelpForeground());
         infoLabel.setBorder(JBUI.Borders.emptyBottom(10));
@@ -62,10 +68,10 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         gbc.gridy++;
         addSettingRow(panel, gbc, "Enable feature", enableWebSearchCheckbox);
 
-        addSettingRow(panel, gbc, "Tavily Web Search API Key",
+        addProviderSettingRow(panel, gbc, "Tavily Web Search API Key", tavilySearchEnabledCheckBox,
                 createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
 
-        addSettingRow(panel, gbc, "Google Web Search API Key",
+        addProviderSettingRow(panel, gbc, "Google Web Search API Key", googleSearchEnabledCheckBox,
                 createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"));
 
         addSettingRow(panel, gbc, "Google Custom Search Engine ID",
@@ -78,11 +84,42 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
     @Override
     public void addListeners() {
-        enableWebSearchCheckbox.addItemListener(
-                event -> stateService.setEnableWebSearch(event.getStateChange() == ItemEvent.SELECTED));
+        enableWebSearchCheckbox.addItemListener(e -> {
+            stateService.setIsWebSearchEnabled(e.getStateChange() == ItemEvent.SELECTED);
+            // Disable both providers when the feature is disabled
+            if (!enableWebSearchCheckbox.isSelected()) {
+                tavilySearchEnabledCheckBox.setSelected(false);
+                googleSearchEnabledCheckBox.setSelected(false);
+                updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
+                updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+            }
+        });
+
+        tavilySearchEnabledCheckBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                // Disable Google Search if Tavily is selected
+                googleSearchEnabledCheckBox.setSelected(false);
+                stateService.setGoogleSearchEnabled(false);
+                updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+            }
+            stateService.setTavilySearchEnabled(tavilySearchEnabledCheckBox.isSelected());
+            updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
+        });
+
+        googleSearchEnabledCheckBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                // Disable Tavily if Google Search is selected
+                tavilySearchEnabledCheckBox.setSelected(false);
+                stateService.setTavilySearchEnabled(false);
+                updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
+            }
+            stateService.setGoogleSearchEnabled(googleSearchEnabledCheckBox.isSelected());
+            updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+        });
     }
 
-    private void validateSearchElements() {
-        // TODO We need to check if either Google search URL or Tavily search URL is set to enable the search feature
+    private void updateUrlFieldState(@NotNull JCheckBox checkbox,
+                                     @NotNull JComponent urlComponent) {
+        urlComponent.setEnabled(checkbox.isSelected());
     }
 }

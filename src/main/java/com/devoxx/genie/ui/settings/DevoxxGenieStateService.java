@@ -69,7 +69,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String jlamaUrl = JLAMA_MODEL_URL;
     private String customOpenAIUrl = "";
 
-    //
+    // Local LLM Providers
     private boolean isOllamaEnabled = true;
     private boolean isLmStudioEnabled = true;
     private boolean isGpt4AllEnabled = true;
@@ -79,6 +79,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isJlamaEnabled = true;
     private boolean isCustomOpenAIEnabled = false;
 
+    // Remote LLM Providers
     private boolean isOpenAIEnabled = false;
     private boolean isMistralEnabled = false;
     private boolean isAnthropicEnabled = false;
@@ -103,7 +104,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIKey = "";
 
     // Search API Keys
-    private Boolean enableWebSearch = ENABLE_WEB_SEARCH;
+    private Boolean isWebSearchEnabled = ENABLE_WEB_SEARCH;
+
+    private boolean tavilySearchEnabled = false;
+    private boolean googleSearchEnabled = false;
 
     private String googleSearchKey = "";
     private String googleCSIKey = "";
