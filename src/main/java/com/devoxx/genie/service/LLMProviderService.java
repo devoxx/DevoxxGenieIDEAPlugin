@@ -76,4 +76,17 @@ public class LLMProviderService {
 
         return optionalModelProviders;
     }
+
+    /**
+     * Get the API key for the specified model provider.
+     *
+     * @param provider The model provider for which to retrieve the API key.
+     * @return The API key as a string, or an empty string if not configured.
+     */
+    public String getApiKey(ModelProvider provider) {
+        return Optional.ofNullable(providerKeyMap.get(provider))
+                .map(Supplier::get)
+                .filter(key -> !key.isBlank())
+                .orElse("");
+    }
 }

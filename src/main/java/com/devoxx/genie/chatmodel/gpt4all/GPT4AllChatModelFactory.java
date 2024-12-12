@@ -17,6 +17,8 @@ import java.util.List;
 
 public class GPT4AllChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.GPT4All;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LocalAiChatModel.builder()
@@ -44,7 +46,7 @@ public class GPT4AllChatModelFactory implements ChatModelFactory {
     @Override
     public List<LanguageModel> getModels() {
         LanguageModel lmStudio = LanguageModel.builder()
-            .provider(ModelProvider.GPT4All)
+            .provider(MODEL_PROVIDER)
             .modelName("GPT4All")
             .inputCost(0)
             .outputCost(0)

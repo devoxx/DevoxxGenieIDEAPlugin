@@ -15,10 +15,12 @@ import java.util.List;
 
 public class AnthropicChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Anthropic;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return AnthropicChatModel.builder()
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -30,7 +32,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         return AnthropicStreamingChatModel.builder()
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -39,12 +41,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getAnthropicKey().trim();
-    }
-
-    @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.Anthropic);
+        return getModels(MODEL_PROVIDER);
     }
 }

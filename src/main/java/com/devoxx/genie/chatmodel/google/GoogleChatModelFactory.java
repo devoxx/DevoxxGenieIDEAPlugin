@@ -13,23 +13,21 @@ import java.util.List;
 
 public class GoogleChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Google;;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return GoogleAiGeminiChatModel.builder()
-            .apiKey(getApiKey())
+            .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .maxOutputTokens(chatModel.getMaxTokens())
             .build();
     }
 
-    @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getGeminiKey().trim();
-    }
 
     @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.Google);
+        return getModels(MODEL_PROVIDER);
     }
 }
