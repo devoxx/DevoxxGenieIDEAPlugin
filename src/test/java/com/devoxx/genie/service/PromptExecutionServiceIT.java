@@ -56,7 +56,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryOpenAI() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.OPENAI)
+            .provider(ModelProvider.OpenAI)
             .modelName("gpt-3.5-turbo")
             .displayName("GPT-3.5 Turbo")
             .apiKeyUsed(true)
@@ -70,7 +70,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryAnthropic() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.ANTHROPIC)
+            .provider(ModelProvider.Anthropic)
             .modelName("claude-3-5-sonnet-20240620")
             .displayName("claude-3-5-sonnet-20240620")
             .apiKeyUsed(true)
@@ -84,7 +84,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryGemini() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.GOOGLE)
+            .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash")
             .displayName("Gemini 1.5 Flash")
             .apiKeyUsed(true)
@@ -98,7 +98,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryMistral() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.MISTRAL)
+            .provider(ModelProvider.Mistral)
             .modelName("mistral-medium")
             .displayName("Mistral Medium")
             .apiKeyUsed(true)
@@ -112,7 +112,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     @Test
     public void testExecuteQueryDeepInfra() {
         LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.DEEP_INFRA)
+            .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mixtral-8x7B-Instruct-v0.1")
             .displayName("Mixtral 8x7B")
             .apiKeyUsed(true)
@@ -125,23 +125,23 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     private ChatLanguageModel createChatModel(LanguageModel languageModel) {
         return switch (languageModel.getProvider()) {
-            case OPENAI -> OpenAiChatModel.builder()
+            case OpenAI -> OpenAiChatModel.builder()
                 .apiKey(dotenv.get("OPENAI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case ANTHROPIC -> AnthropicChatModel.builder()
+            case Anthropic -> AnthropicChatModel.builder()
                 .apiKey(dotenv.get("ANTHROPIC_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case GOOGLE -> GoogleAiGeminiChatModel.builder()
+            case Google -> GoogleAiGeminiChatModel.builder()
                 .apiKey(dotenv.get("GEMINI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case MISTRAL -> MistralAiChatModel.builder()
+            case Mistral -> MistralAiChatModel.builder()
                 .apiKey(dotenv.get("MISTRAL_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
-            case DEEP_INFRA -> OpenAiChatModel.builder()
+            case DeepInfra -> OpenAiChatModel.builder()
                 .baseUrl("https://api.deepinfra.com/v1/openai")
                 .apiKey(dotenv.get("DEEPINFRA_API_KEY"))
                 .modelName(languageModel.getModelName())
