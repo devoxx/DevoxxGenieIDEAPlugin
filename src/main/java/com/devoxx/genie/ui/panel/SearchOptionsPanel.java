@@ -21,7 +21,6 @@ import java.util.List;
 public class SearchOptionsPanel extends JPanel {
     private final List<InputSwitch> switches = new ArrayList<>();
     private static final int DEFAULT_HEIGHT = JBUI.scale(30);
-    private Project project;
 
     public SearchOptionsPanel(Project project) {
         super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
@@ -53,10 +52,10 @@ public class SearchOptionsPanel extends JPanel {
         // Initialize visibility based on state service
         updateInitialVisibility(stateService);
 
-        // Load saved state for enabled switches
-        ragSwitch.setSelected(stateService.getRagEnabled());
-        gitDiffSwitch.setSelected(stateService.getGitDiffEnabled());
-        webSearchSwitch.setSelected(stateService.getEnableWebSearch());
+        // Load saved states for enabled switches
+        ragSwitch.setSelected(stateService.getRagActivated());
+        gitDiffSwitch.setSelected(stateService.getGitDiffActivated());
+        webSearchSwitch.setSelected(stateService.getWebSearchActivated());
 
         // Ensure only one switch is initially active
         enforceInitialSingleSelection();
@@ -67,6 +66,7 @@ public class SearchOptionsPanel extends JPanel {
                 deactivateOtherSwitches(ragSwitch);
             }
 
+            // Change input field placeholder based on RAG state
             project.getMessageBus()
                     .syncPublisher(AppTopics.RAG_ACTIVATED_CHANGED_TOPIC)
                     .onRAGStateChanged(selected);
