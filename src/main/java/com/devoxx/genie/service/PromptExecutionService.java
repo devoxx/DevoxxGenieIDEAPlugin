@@ -18,12 +18,10 @@ import dev.langchain4j.model.output.Response;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class PromptExecutionService {
@@ -33,7 +31,8 @@ public class PromptExecutionService {
     private CompletableFuture<Response<AiMessage>> queryFuture = null;
 
     @Getter
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private boolean running = false;
+
     private final ReentrantLock queryLock = new ReentrantLock();
 
     @NotNull
@@ -52,12 +51,7 @@ public class PromptExecutionService {
 
         queryLock.lock();
         try {
-            if (running.get()) {
-                LOG.info("Another query is already running. Cancelling it.");
-                cancelCurrentQuery();
-            }
-
-            running.set(true);
+            if (isCanceled()) return CompletableFuture.completedFuture(null);
 
             MessageCreationService messageCreationService = MessageCreationService.getInstance();
 
@@ -68,7 +62,7 @@ public class PromptExecutionService {
                     ChatMemoryService
                             .getInstance()
                             .add(chatMessageContext.getProject(),
-                                    new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
+                                 new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
                             );
                 }
             }
@@ -81,26 +75,18 @@ public class PromptExecutionService {
             long startTime = System.currentTimeMillis();
 
             queryFuture = CompletableFuture
-                    .supplyAsync(() -> {
-                        if (Thread.currentThread().isInterrupted()) {
-                            throw new CancellationException("Query was cancelled before execution.");
-                        }
-                        return processChatMessage(chatMessageContext);
-                    }, queryExecutor)
-                    .orTimeout(
-                            chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), TimeUnit.SECONDS)
-                    .thenApply(result -> {
-                        chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
-                        return result;
-                    })
-                    .whenComplete((r, t) -> {
-                        queryLock.lock();
-                        try {
-                            running.set(false);
-                        } finally {
-                            queryLock.unlock();
-                        }
-                    });
+                .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
+                .orTimeout(
+                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), TimeUnit.SECONDS)
+                .thenApply(result -> {
+                    chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+                    return result;
+                })
+                .exceptionally(throwable -> {
+                    LOG.error("Error occurred while processing chat message", throwable);
+                    ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                    return null;
+                });
         } finally {
             queryLock.unlock();
         }
@@ -108,18 +94,18 @@ public class PromptExecutionService {
     }
 
     /**
-     * Cancels the current query if it's running.
+     * If the future task is not null this means we need to cancel it
+     *
+     * @return true if the task is canceled
      */
-    public void cancelCurrentQuery() {
-        queryLock.lock();
-        try {
-            if (queryFuture != null) {
-                queryFuture.cancel(true);
-                queryFuture = null;
-            }
-        } finally {
-            queryLock.unlock();
+    private boolean isCanceled() {
+        if (queryFuture != null && !queryFuture.isDone()) {
+            queryFuture.cancel(true);
+            running = false;
+            return true;
         }
+        running = true;
+        return false;
     }
 
     /**
@@ -130,18 +116,12 @@ public class PromptExecutionService {
      */
     private @NotNull Response<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new CancellationException("Query was cancelled during execution.");
-            }
-
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             Response<AiMessage> response =
-                    chatLanguageModel
-                            .generate(ChatMemoryService.getInstance().messages(chatMessageContext.getProject()));
+                chatLanguageModel
+                    .generate(ChatMemoryService.getInstance().messages(chatMessageContext.getProject()));
             ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
-        } catch (CancellationException e) {
-            throw e; // Re-throw cancellation exceptions
         } catch (Exception e) {
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
                 throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");

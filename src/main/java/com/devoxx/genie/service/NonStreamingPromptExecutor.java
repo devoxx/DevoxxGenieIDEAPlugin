@@ -45,7 +45,7 @@ public class NonStreamingPromptExecutor {
         isCancelled = false;
 
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName())) {
-            semanticSearch(chatMessageContext, promptOutputPanel);
+            semanticSearch(chatMessageContext, promptOutputPanel, enableButtons);
             enableButtons.run();
             return;
         }
@@ -73,14 +73,18 @@ public class NonStreamingPromptExecutor {
 
                     // Add the conversation to the chat service
                     ApplicationManager.getApplication().getMessageBus()
-                            .syncPublisher(AppTopics.CONVERSATION_TOPIC)
-                            .onNewConversation(chatMessageContext);
+                        .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                        .onNewConversation(chatMessageContext);
 
                     promptOutputPanel.addChatResponse(chatMessageContext);
                 } else if (isCancelled) {
                     LOG.debug(">>>> Prompt execution cancelled");
                     promptOutputPanel.removeLastUserPrompt(chatMessageContext);
                 }
+            })
+            .exceptionally(throwable -> {
+                ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                return null;
             })
             .whenComplete((result, throwable) -> enableButtons.run());
     }
@@ -91,7 +95,8 @@ public class NonStreamingPromptExecutor {
      * @param promptOutputPanel the prompt output panel
      */
     private static void semanticSearch(ChatMessageContext chatMessageContext,
-                                       @NotNull PromptOutputPanel promptOutputPanel) {
+                                       @NotNull PromptOutputPanel promptOutputPanel,
+                                       Runnable enableButtons) {
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
             Map<String, SearchResult> searchResults = semanticSearchService.search(
@@ -119,7 +124,6 @@ public class NonStreamingPromptExecutor {
      */
     public void stopExecution() {
         if (currentTask != null && !currentTask.isDone()) {
-            promptExecutionService.cancelCurrentQuery();
             isCancelled = true;
             currentTask.cancel(true);
         }
