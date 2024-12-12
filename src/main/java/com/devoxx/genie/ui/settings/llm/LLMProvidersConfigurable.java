@@ -48,53 +48,53 @@ public class LLMProvidersConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
-        isModified |= !settings.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
+        isModified |= !stateService.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
-        isModified |= isFieldModified(llmSettingsComponent.getOpenAIKeyField(), settings.getOpenAIKey());
-        isModified |= isFieldModified(llmSettingsComponent.getMistralApiKeyField(), settings.getMistralKey());
-        isModified |= isFieldModified(llmSettingsComponent.getAnthropicApiKeyField(), settings.getAnthropicKey());
-        isModified |= isFieldModified(llmSettingsComponent.getGroqApiKeyField(), settings.getGroqKey());
-        isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), settings.getDeepInfraKey());
-        isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), settings.getGeminiKey());
-        isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), settings.getDeepSeekKey());
-        isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), settings.getLlamaCPPUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getJlamaModelUrlField(), settings.getJlamaUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), settings.getOpenRouterKey());
+        isModified |= isFieldModified(llmSettingsComponent.getOpenAIKeyField(), stateService.getOpenAIKey());
+        isModified |= isFieldModified(llmSettingsComponent.getMistralApiKeyField(), stateService.getMistralKey());
+        isModified |= isFieldModified(llmSettingsComponent.getAnthropicApiKeyField(), stateService.getAnthropicKey());
+        isModified |= isFieldModified(llmSettingsComponent.getGroqApiKeyField(), stateService.getGroqKey());
+        isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), stateService.getDeepInfraKey());
+        isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), stateService.getGeminiKey());
+        isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), stateService.getDeepSeekKey());
+        isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), stateService.getLlamaCPPUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getJlamaModelUrlField(), stateService.getJlamaUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), stateService.getOpenRouterKey());
 
-        isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), settings.getOllamaModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), settings.getLmstudioModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), settings.getGpt4allModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), settings.getJanModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), settings.getExoModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), settings.getCustomOpenAIUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), stateService.getLmstudioModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
 
-        isModified |= !settings.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
-        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), settings.getAzureOpenAIEndpoint());
-        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIDeploymentField(), settings.getAzureOpenAIDeployment());
-        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), settings.getAzureOpenAIKey());
+        isModified |= !stateService.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), stateService.getAzureOpenAIEndpoint());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIDeploymentField(), stateService.getAzureOpenAIDeployment());
+        isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), stateService.getAzureOpenAIKey());
 
-        isModified |= settings.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
-        isModified |= settings.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
-        isModified |= settings.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
-        isModified |= settings.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
-        isModified |= settings.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
-        isModified |= settings.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
-        isModified |= settings.isJlamaEnabled() != llmSettingsComponent.getJlamaEnabledCheckBox().isSelected();
-        isModified |= settings.isCustomOpenAIEnabled() != llmSettingsComponent.getCustomOpenAIEnabledCheckBox().isSelected();
+        isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
+        isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
+        isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
+        isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
+        isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
+        isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
+        isModified |= stateService.isJlamaEnabled() != llmSettingsComponent.getJlamaEnabledCheckBox().isSelected();
+        isModified |= stateService.isCustomOpenAIEnabled() != llmSettingsComponent.getCustomOpenAIEnabledCheckBox().isSelected();
 
-        isModified |= settings.isOpenAIEnabled() != llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected();
-        isModified |= settings.isMistralEnabled() != llmSettingsComponent.getMistralEnabledCheckBox().isSelected();
-        isModified |= settings.isAnthropicEnabled() != llmSettingsComponent.getAnthropicEnabledCheckBox().isSelected();
-        isModified |= settings.isGroqEnabled() != llmSettingsComponent.getGroqEnabledCheckBox().isSelected();
-        isModified |= settings.isDeepInfraEnabled() != llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected();
-        isModified |= settings.isGoogleEnabled() != llmSettingsComponent.getGeminiEnabledCheckBox().isSelected();
-        isModified |= settings.isDeepSeekEnabled() != llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected();
-        isModified |= settings.isOpenRouterEnabled() != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
-        isModified |= settings.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
+        isModified |= stateService.isOpenAIEnabled() != llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected();
+        isModified |= stateService.isMistralEnabled() != llmSettingsComponent.getMistralEnabledCheckBox().isSelected();
+        isModified |= stateService.isAnthropicEnabled() != llmSettingsComponent.getAnthropicEnabledCheckBox().isSelected();
+        isModified |= stateService.isGroqEnabled() != llmSettingsComponent.getGroqEnabledCheckBox().isSelected();
+        isModified |= stateService.isDeepInfraEnabled() != llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected();
+        isModified |= stateService.isGoogleEnabled() != llmSettingsComponent.getGeminiEnabledCheckBox().isSelected();
+        isModified |= stateService.isDeepSeekEnabled() != llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected();
+        isModified |= stateService.isOpenRouterEnabled() != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
+        isModified |= stateService.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
 
         return isModified;
     }

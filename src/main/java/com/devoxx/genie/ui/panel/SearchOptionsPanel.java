@@ -134,7 +134,7 @@ public class SearchOptionsPanel extends JPanel {
         // Set initial visibility based on state service
         switches.get(0).setVisible(stateService.getRagEnabled());
         switches.get(1).setVisible(stateService.getGitDiffEnabled());
-        switches.get(2).setVisible(stateService.getEnableWebSearch());
+        switches.get(2).setVisible(stateService.getIsWebSearchEnabled());
 
         // Update panel visibility
         updatePanelVisibility();
