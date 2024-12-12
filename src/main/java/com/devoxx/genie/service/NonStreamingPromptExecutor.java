@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
@@ -55,44 +56,49 @@ public class NonStreamingPromptExecutor {
 
     /**
      * Execute the prompt.
+     *
      * @param chatMessageContext the chat message context
-     * @param promptOutputPanel the prompt output panel
-     * @param enableButtons the enable buttons
+     * @param promptOutputPanel  the prompt output panel
+     * @param enableButtons      the enable buttons
      */
     private void prompt(ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
-            .thenAccept(response -> {
-                if (!isCancelled && response != null) {
-                    LOG.debug(">>>> Adding AI message to prompt output panel");
-                    chatMessageContext.setAiMessage(response.content());
+                .thenAccept(response -> {
+                    if (!isCancelled && response != null) {
+                        LOG.debug(">>>> Adding AI message to prompt output panel");
+                        chatMessageContext.setAiMessage(response.content());
 
-                    // Set token usage and cost
-                    chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
+                        // Set token usage and cost
+                        chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
 
-                    // Add the conversation to the chat service
-                    ApplicationManager.getApplication().getMessageBus()
-                        .syncPublisher(AppTopics.CONVERSATION_TOPIC)
-                        .onNewConversation(chatMessageContext);
+                        // Add the conversation to the chat service
+                        ApplicationManager.getApplication().getMessageBus()
+                                .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                                .onNewConversation(chatMessageContext);
 
-                    promptOutputPanel.addChatResponse(chatMessageContext);
-                } else if (isCancelled) {
-                    LOG.debug(">>>> Prompt execution cancelled");
-                    promptOutputPanel.removeLastUserPrompt(chatMessageContext);
-                }
-            })
-            .exceptionally(throwable -> {
-                ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
-                return null;
-            })
-            .whenComplete((result, throwable) -> enableButtons.run());
+                        promptOutputPanel.addChatResponse(chatMessageContext);
+                    } else if (isCancelled) {
+                        LOG.debug(">>>> Prompt execution cancelled");
+                        promptOutputPanel.removeLastUserPrompt(chatMessageContext);
+                    }
+                })
+                .exceptionally(throwable -> {
+                    if (!(throwable.getCause() instanceof CancellationException)) {
+                        LOG.error("Error occurred while processing chat message", throwable);
+                        ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                    }
+                    return null;
+                })
+                .whenComplete((result, throwable) -> enableButtons.run());
     }
 
     /**
      * Perform semantic search.
+     *
      * @param chatMessageContext the chat message context
-     * @param promptOutputPanel the prompt output panel
+     * @param promptOutputPanel  the prompt output panel
      */
     private static void semanticSearch(ChatMessageContext chatMessageContext,
                                        @NotNull PromptOutputPanel promptOutputPanel,
