@@ -5,6 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ConversationStorageService;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
+import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.LlmProviderPanel;
@@ -31,7 +32,7 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 /**
  * The Devoxx Genie Tool Window Content.
  */
-public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
+public class DevoxxGenieToolWindowContent implements SettingsChangeListener, GlowingListener {
 
     private static final float SPLITTER_PROPORTION = 0.75f;
     private static final float MIN_PROPORTION = 0.3f;
@@ -109,10 +110,12 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener {
         llmProviderPanel.getModelNameComboBox().addActionListener(this::processModelNameSelection);
     }
 
+    @Override
     public void startGlowing() {
         animatedBorder.startGlowing();
     }
 
+    @Override
     public void stopGlowing() {
         animatedBorder.stopGlowing();
     }

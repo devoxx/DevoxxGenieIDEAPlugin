@@ -93,7 +93,6 @@ public class NonStreamingPromptExecutor {
      * Perform semantic search.
      * @param chatMessageContext the chat message context
      * @param promptOutputPanel the prompt output panel
-     * @param enableButtons the enable buttons
      */
     private static void semanticSearch(ChatMessageContext chatMessageContext,
                                        @NotNull PromptOutputPanel promptOutputPanel,
