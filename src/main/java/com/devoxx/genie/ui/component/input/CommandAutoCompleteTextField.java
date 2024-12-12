@@ -20,6 +20,8 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.devoxx.genie.model.Constant.*;
+
 public class CommandAutoCompleteTextField extends JBTextArea implements CustomPromptChangeListener {
 
     private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
@@ -46,11 +48,11 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
 
     private void initializeCommands() {
         commands.clear();
-        commands.add("/test");
-        commands.add("/explain");
-        commands.add("/review");
-        commands.add("/tdg");
-        commands.add("/help");
+        commands.add("/" + TEST_COMMAND);
+        commands.add("/" + EXPLAIN_COMMAND);
+        commands.add("/" + REVIEW_COMMAND);
+        commands.add("/" + TDG_COMMAND);
+        commands.add("/" + HELP_COMMAND);
 
         DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
         for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {

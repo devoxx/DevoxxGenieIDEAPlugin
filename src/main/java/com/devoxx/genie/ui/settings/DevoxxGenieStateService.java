@@ -170,6 +170,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             customPrompts.add(new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT));
             customPrompts.add(new CustomPrompt(FIND_COMMAND, FIND_PROMPT));
             customPrompts.add(new CustomPrompt(TDG_COMMAND, TDG_PROMPT));
+            customPrompts.add(new CustomPrompt(HELP_COMMAND, ""));
         }
     }
 

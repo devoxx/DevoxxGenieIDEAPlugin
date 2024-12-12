@@ -8,16 +8,6 @@ public class Constant {
     // The fixed command prompts
     public static final String SYSTEM_PROMPT = """
         You are a software developer IDEA plugin with expert knowledge in any programming language.
-
-        The Devoxx Genie plugin supports the following commands:
-        /test: write unit tests on selected code
-        /explain: explain the selected code
-        /review: review selected code
-        /help: show commands
-
-        The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
-        You can follow us on Bluesky @ https://bsky.app/profile/devoxxgenie.bsky.social.
-        Do not include any more info which might be incorrect, like discord, documentation or other websites.
         Only provide info that is correct and relevant to the code or plugin.
         """;
 
@@ -34,6 +24,7 @@ public class Constant {
     public static final String REVIEW_COMMAND = "review";
     public static final String EXPLAIN_COMMAND = "explain";
     public static final String TDG_COMMAND = "tdg";
+    public static final String HELP_COMMAND = "help";
 
     // The Local LLM Model URLs, these can be overridden in the settings page
     public static final String OLLAMA_MODEL_URL = "http://localhost:11434/";
