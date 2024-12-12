@@ -25,6 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class OllamaChatModelFactory implements ChatModelFactory {
+
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Ollama;
+
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private static boolean warningShown = false;
     private List<LanguageModel> cachedModels = null;
@@ -75,7 +78,7 @@ public class OllamaChatModelFactory implements ChatModelFactory {
                     try {
                         int contextWindow = OllamaApiService.getModelContext(model.getName());
                         LanguageModel languageModel = LanguageModel.builder()
-                            .provider(ModelProvider.Ollama)
+                            .provider(MODEL_PROVIDER)
                             .modelName(model.getName())
                             .displayName(model.getName())
                             .inputCost(0)

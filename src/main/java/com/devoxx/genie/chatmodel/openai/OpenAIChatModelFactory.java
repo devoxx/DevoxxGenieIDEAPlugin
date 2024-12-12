@@ -17,12 +17,14 @@ import java.util.List;
 
 public class OpenAIChatModelFactory implements ChatModelFactory {
 
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.OpenAI;
+
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         boolean isO1 = chatModel.getModelName().startsWith("o1-");
 
         final var builder = OpenAiChatModel.builder()
-                .apiKey(getApiKey())
+                .apiKey(getApiKey(MODEL_PROVIDER))
                 .modelName(chatModel.getModelName())
                 .maxRetries(chatModel.getMaxRetries())
                 .temperature(isO1 ? 1.0 : chatModel.getTemperature())
@@ -40,7 +42,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
         boolean isO1 = chatModel.getModelName().startsWith("o1-");
         final var builder = OpenAiStreamingChatModel.builder()
-                .apiKey(getApiKey())
+                .apiKey(getApiKey(MODEL_PROVIDER))
                 .modelName(chatModel.getModelName())
                 .temperature(isO1 ? 1.0 : chatModel.getTemperature())
                 .topP(isO1 ? 1.0 : chatModel.getTopP())
@@ -53,12 +55,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public String getApiKey() {
-        return DevoxxGenieStateService.getInstance().getOpenAIKey().trim();
-    }
-
-    @Override
     public List<LanguageModel> getModels() {
-        return getModels(ModelProvider.OpenAI);
+        return getModels(MODEL_PROVIDER);
     }
 }

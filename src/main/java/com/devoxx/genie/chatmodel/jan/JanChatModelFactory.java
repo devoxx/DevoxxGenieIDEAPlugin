@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class JanChatModelFactory implements ChatModelFactory {
+
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.Jan;
+
     private List<LanguageModel> cachedModels = null;
     private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
 
@@ -71,7 +74,7 @@ public class JanChatModelFactory implements ChatModelFactory {
             for (Data model : models) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.Jan)
+                        .provider(MODEL_PROVIDER)
                         .modelName(model.getId())
                         .displayName(model.getName())
                         .inputCost(0)
