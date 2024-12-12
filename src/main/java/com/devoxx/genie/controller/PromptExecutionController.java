@@ -46,8 +46,6 @@ public class PromptExecutionController implements PromptExecutionListener {
 
         startPromptExecution();
 
-        isPromptRunning = true;
-
         AtomicBoolean response = new AtomicBoolean(true);
         chatPromptExecutor.updatePromptWithCommandIfPresent(currentChatMessageContext, promptOutputPanel)
                 .ifPresentOrElse(
@@ -76,6 +74,7 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     @Override
     public void startPromptExecution() {
+        isPromptRunning = true;
         actionButtonsPanel.disableSubmitBtn();
         actionButtonsPanel.disableButtons();
         actionButtonsPanel.startGlowing();
