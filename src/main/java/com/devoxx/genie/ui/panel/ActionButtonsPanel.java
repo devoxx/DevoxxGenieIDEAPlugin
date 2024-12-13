@@ -141,7 +141,6 @@ public class ActionButtonsPanel extends JPanel
 
     private @NotNull JButton createCalcTokenCostButton() {
         JButton button = new JHoverButton(CALC_TOKENS_COST, CalculateIcon, true);
-        button.setToolTipText(CALCULATE_TOKENS_COST);
         button.addActionListener(e -> controller.calculateTokensAndCost());
         button.setMinimumSize(minSize);
         button.setMaximumSize(maxSize);
@@ -150,7 +149,6 @@ public class ActionButtonsPanel extends JPanel
 
     private @NotNull JButton createAddProjectButton() {
         JButton button = new JHoverButton(ADD_PROJECT_TO_CONTEXT, AddFileIcon, true);
-        button.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
         button.addActionListener(this::handleProjectContext);
         button.setMinimumSize(minSize);
         button.setMaximumSize(maxSize);
@@ -167,7 +165,6 @@ public class ActionButtonsPanel extends JPanel
 
     private @NotNull JButton createAddFileButton() {
         JButton button = new JHoverButton(AddFileIcon, false);
-        button.setToolTipText(ADD_FILE_S_TO_PROMPT_CONTEXT);
         button.addActionListener(this::selectFilesForPromptContext);
         button.setMinimumSize(minSize);
         button.setMaximumSize(maxSize);
@@ -176,7 +173,6 @@ public class ActionButtonsPanel extends JPanel
 
     private @NotNull JButton createSubmitButton() {
         JButton button = new JHoverButton(SubmitIcon, false);
-        button.setToolTipText(SUBMIT_THE_PROMPT + SHIFT_ENTER);
         button.setActionCommand(Constant.SUBMIT_ACTION);
         button.addActionListener(this::onSubmitPrompt);
         button.setMinimumSize(minSize);
@@ -230,7 +226,6 @@ public class ActionButtonsPanel extends JPanel
     public void enableButtons() {
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
-            submitBtn.setToolTipText(SUBMIT_THE_PROMPT + " (Ctrl+Enter)");
             promptInputArea.setEnabled(true);
             submitPanel.stopGlowing();
         });
