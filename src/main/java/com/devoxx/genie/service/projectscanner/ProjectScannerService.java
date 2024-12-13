@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProjectScannerService {
 
@@ -60,20 +59,20 @@ public class ProjectScannerService {
 
                             if (startDirectory == null) {
                                 result.append("Directory Structure:\n");
-                                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
+                                fullContent = getContentFromModules(project, result, scanContentResult);
                             } else if (startDirectory.isDirectory()) {
                                 result.append("Directory Structure:\n");
-                                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
+                                fullContent = processDirectory(project, startDirectory, result, scanContentResult);
                             } else {
                                 // Handle the case where startDirectory is a file
                                 result.append("File:\n");
-                                fullContent = processSingleFile(project, startDirectory, result, scanContentResult);
+                                fullContent = processSingleFile(startDirectory, result, scanContentResult);
                             }
 
                             String content = isTokenCalculation ? fullContent.toString() :
                                     truncateToTokens(fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
 
-                            scanContentResult.setTokenCount(ENCODING.countTokens(content));
+                            scanContentResult.setTokenCount(ENCODING.countTokensOrdinary(content));
                             scanContentResult.setContent(content);
 
                             return scanContentResult;
@@ -98,14 +97,14 @@ public class ProjectScannerService {
 
             if (startDirectory == null) {
                 result.append("Directory Structure:\n");
-                fullContent = getContentFromModules(project, windowContextMaxTokens, result, scanContentResult);
+                fullContent = getContentFromModules(project, result, scanContentResult);
             } else if (startDirectory.isDirectory()) {
                 result.append("Directory Structure:\n");
-                fullContent = processDirectory(project, startDirectory, result, scanContentResult, windowContextMaxTokens);
+                fullContent = processDirectory(project, startDirectory, result, scanContentResult);
             } else {
                 // Handle the case where startDirectory is a file
                 result.append("File:\n");
-                fullContent = processSingleFile(project, startDirectory, result, scanContentResult);
+                fullContent = processSingleFile(startDirectory, result, scanContentResult);
             }
 
             String content = isTokenCalculation ? fullContent.toString() : truncateToTokens(fullContent.toString(), windowContextMaxTokens, isTokenCalculation);
@@ -136,7 +135,6 @@ public class ProjectScannerService {
     }
 
     private StringBuilder getContentFromModules(Project project,
-                                                int windowContextMaxTokens,
                                                 StringBuilder result,
                                                 ScanContentResult scanContentResult) {
 
@@ -157,16 +155,14 @@ public class ProjectScannerService {
                 .map(highestCommonRoot -> processDirectory(project,
                         highestCommonRoot,
                         result,
-                        scanContentResult,
-                        windowContextMaxTokens))
+                        scanContentResult))
                 .orElseThrow();
     }
 
     private @NotNull StringBuilder processDirectory(Project project,
                                                     VirtualFile startDirectory,
                                                     @NotNull StringBuilder result,
-                                                    ScanContentResult scanContentResult,
-                                                    int windowContextMaxTokens) {
+                                                    ScanContentResult scanContentResult) {
         result.append(generateSourceTreeRecursive(startDirectory, 0));
 
         result.append("\n\nFile Contents:\n");
@@ -174,14 +170,13 @@ public class ProjectScannerService {
         ProjectFileIndex fileIndex = ProjectFileIndex.getInstance(project);
 
         StringBuilder fullContent = new StringBuilder(result);
-        AtomicInteger currentTokens = new AtomicInteger(0);
 
-        walkThroughDirectory(startDirectory, fileIndex, fullContent, currentTokens, scanContentResult);
+        walkThroughDirectory(startDirectory, fileIndex, fullContent, scanContentResult);
+
         return fullContent;
     }
 
-    private @NotNull StringBuilder processSingleFile(Project project,
-                                                     VirtualFile file,
+    private @NotNull StringBuilder processSingleFile(@NotNull VirtualFile file,
                                                      @NotNull StringBuilder result,
                                                      ScanContentResult scanContentResult) {
         result.append(file.getName()).append("\n");
@@ -200,7 +195,6 @@ public class ProjectScannerService {
     private void walkThroughDirectory(@NotNull VirtualFile directory,
                                       @NotNull ProjectFileIndex fileIndex,
                                       @NotNull StringBuilder fullContent,
-                                      @NotNull AtomicInteger currentTokens,
                                       @NotNull ScanContentResult scanContentResult) {
 
         VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
@@ -224,7 +218,9 @@ public class ProjectScannerService {
         });
     }
 
-    private void readFileContent(@NotNull VirtualFile file, @NotNull StringBuilder fullContent, @NotNull ScanContentResult scanContentResult) {
+    private void readFileContent(@NotNull VirtualFile file,
+                                 @NotNull StringBuilder fullContent,
+                                 @NotNull ScanContentResult scanContentResult) {
         scanContentResult.incrementFileCount();
         scanContentResult.addFile(Paths.get(file.getPath()));
 
@@ -249,10 +245,11 @@ public class ProjectScannerService {
         }
     }
 
-    private String truncateToTokens(String text,
+    private String truncateToTokens(@NotNull String text,
                                     int windowContext,
                                     boolean isTokenCalculation) {
-        IntArrayList tokens = ENCODING.encode(text);
+
+        IntArrayList tokens = ENCODING.encodeOrdinary(text);
         if (tokens.size() <= windowContext) {
             return text;
         }
