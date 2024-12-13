@@ -69,7 +69,9 @@ public class ProjectContextController {
                     projectContext = "Project Context:\n" + projectContent.getContent();
                     isProjectContextAdded = true;
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        tokenCount = Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE).countTokens(projectContent.getContent());
+                        tokenCount = Encodings.newDefaultEncodingRegistry()
+                                              .getEncoding(EncodingType.CL100K_BASE)
+                                              .countTokensOrdinary(projectContent.getContent());
                         actionButtonsPanel.updateAddProjectButton(isProjectContextAdded, tokenCount);
                         actionButtonsPanel.setAddProjectButtonEnabled(true);
                         actionButtonsPanel.updateTokenUsageBar(tokenCount, tokenLimit);
