@@ -197,13 +197,13 @@ public class ChatPromptExecutor {
         // if OK
         if (matchingPrompt.isPresent()) {
             // Check if the prompt is "/help" --> we display the help
-            if (matchingPrompt.get().getPrompt().equalsIgnoreCase(HELP_COMMAND)) {
+            if (matchingPrompt.get().getName().equalsIgnoreCase(HELP_COMMAND)) {
                 promptOutputPanel.showHelpText();
                 return Optional.empty(); // Return empty since we handled the help case
             }
 
             // Check for the /find command
-            if (matchingPrompt.get().getPrompt().equalsIgnoreCase(FIND_COMMAND)) {
+            if (matchingPrompt.get().getName().equalsIgnoreCase(FIND_COMMAND)) {
                 if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
                     NotificationUtil.sendNotification(chatMessageContext.getProject(),
                             "The /find command requires RAG to be enabled in settings");

@@ -38,6 +38,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private List<CustomPrompt> customPrompts = new ArrayList<>();
 
+    private final List<CustomPrompt> defaultPrompts = Arrays.asList(
+            new CustomPrompt(TEST_COMMAND, TEST_PROMPT),
+            new CustomPrompt(EXPLAIN_COMMAND, EXPLAIN_PROMPT),
+            new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT),
+            new CustomPrompt(TDG_COMMAND, TDG_PROMPT),
+            new CustomPrompt(FIND_COMMAND, FIND_PROMPT),
+            new CustomPrompt(HELP_COMMAND, HELP_PROMPT)
+    );
+
     private List<LanguageModel> languageModels = new ArrayList<>();
 
     private Boolean showExecutionTime = true;
@@ -160,17 +169,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private List<Runnable> loadListeners = new ArrayList<>();
 
     public DevoxxGenieStateService() {
-        initializeDefaultPrompts();
+        initializeUserPrompt();
     }
 
-    private void initializeDefaultPrompts() {
-        if (customPrompts.isEmpty()) {
-            customPrompts.add(new CustomPrompt(TEST_COMMAND, TEST_PROMPT));
-            customPrompts.add(new CustomPrompt(EXPLAIN_COMMAND, EXPLAIN_PROMPT));
-            customPrompts.add(new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT));
-            customPrompts.add(new CustomPrompt(FIND_COMMAND, FIND_PROMPT));
-            customPrompts.add(new CustomPrompt(TDG_COMMAND, TDG_PROMPT));
-            customPrompts.add(new CustomPrompt(HELP_COMMAND, ""));
+    private void initializeUserPrompt() {
+        //If User prompt happens to be empty then we load the default list
+        if (customPrompts == null || customPrompts.isEmpty()) {
+            customPrompts = new ArrayList<>(defaultPrompts);
         }
     }
 
@@ -183,7 +188,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
         initializeDefaultCostsIfEmpty();
-        initializeDefaultPrompts();
+        initializeUserPrompt();
 
         // Notify all listeners that the state has been loaded
         for (Runnable listener : loadListeners) {
