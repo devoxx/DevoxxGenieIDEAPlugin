@@ -8,6 +8,10 @@ public class Constant {
     // The fixed command prompts
     public static final String SYSTEM_PROMPT = """
         You are a software developer IDEA plugin with expert knowledge in any programming language.
+
+        The Devoxx Genie is open source and available at https://github.com/devoxx/DevoxxGenieIDEAPlugin.
+        You can follow us on Bluesky @ https://bsky.app/profile/devoxxgenie.bsky.social.
+        Do not include any more info which might be incorrect, like discord, documentation or other websites.
         Only provide info that is correct and relevant to the code or plugin.
         """;
 
@@ -17,7 +21,7 @@ public class Constant {
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
     public static final String TDG_PROMPT = "You are a professional Java developer. Give me a SINGLE FILE COMPLETE java implementation that will pass this test. Do not respond with a test. Give me only complete code and no snippets. Include imports and use the right package.";
-    public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files. (NOTE: RAG feature should be enabled)";
+    public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files. (NOTE: The /find command requires RAG to be enabled in settings)";
     public static final String HELP_PROMPT = "Display help and available commands for the Genie Devoxx Plugin";
 
     public static final String TEST_COMMAND = "test";
