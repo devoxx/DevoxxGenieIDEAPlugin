@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.RoundBorder;
+import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
