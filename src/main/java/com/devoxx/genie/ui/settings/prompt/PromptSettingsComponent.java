@@ -25,6 +25,8 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     private static final int NAME_COLUMN = 0;
     private static final int PROMPT_COLUMN = 1;
 
+
+    private final DevoxxGenieStateService settings;
     @Getter
     private final JTextArea systemPromptField = new JTextArea(stateService.getSystemPrompt());
     @Getter
@@ -48,7 +50,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     public PromptSettingsComponent(Project project) {
         this.project = project;
 
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        settings = DevoxxGenieStateService.getInstance();
 
         setupCustomPromptsTable();
         setCustomPrompts(settings.getCustomPrompts());
@@ -87,6 +89,10 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         JButton removeCustomPromptBtn = new JButton("Remove Custom Prompt");
         removeCustomPromptBtn.addActionListener(e -> removeCustomPrompt());
         buttonPanel.add(removeCustomPromptBtn);
+
+        JButton restoreDefaultCustomPromptBtn = new JButton("Restore Default Prompt");
+        restoreDefaultCustomPromptBtn.addActionListener(e -> restoreDefaultPrompts());
+        buttonPanel.add(restoreDefaultCustomPromptBtn);
 
         gbc.gridy++;
         gbc.weighty = 0.0;
@@ -156,6 +162,10 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
                 .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
                 .onCustomPromptsChanged();
         }
+    }
+
+    private void restoreDefaultPrompts() {
+        setCustomPrompts(settings.getDefaultPrompts());
     }
 
     public List<CustomPrompt> getCustomPrompts() {

@@ -22,11 +22,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
+import static com.devoxx.genie.model.Constant.HELP_COMMAND;
 
 public class ChatPromptExecutor {
 
@@ -183,10 +185,25 @@ public class ChatPromptExecutor {
     private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
                                                   PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
-        if (prompt.startsWith("/")) {
-            DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+        List<CustomPrompt> customPrompts = settings.getCustomPrompts();
 
-            if (prompt.toLowerCase().startsWith("/" + FIND_COMMAND + " ")) {
+        Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
+                .filter(customPrompt ->
+                        prompt.equalsIgnoreCase("/" + customPrompt.getName())
+                )
+                .findFirst();
+
+        // if OK
+        if (matchingPrompt.isPresent()) {
+            // Check if the prompt is "/help" --> we display the help
+            if (matchingPrompt.get().getName().equalsIgnoreCase(HELP_COMMAND)) {
+                promptOutputPanel.showHelpText();
+                return Optional.empty(); // Return empty since we handled the help case
+            }
+
+            // Check for the /find command
+            if (matchingPrompt.get().getName().equalsIgnoreCase(FIND_COMMAND)) {
                 if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
                     NotificationUtil.sendNotification(chatMessageContext.getProject(),
                             "The /find command requires RAG to be enabled in settings");
@@ -196,15 +213,9 @@ public class ChatPromptExecutor {
                 return Optional.of(prompt.substring(6).trim());
             }
 
-            // Check for custom prompts
-            for (CustomPrompt customPrompt : settings.getCustomPrompts()) {
-                if (prompt.equalsIgnoreCase("/" + customPrompt.getName())) {
-                    chatMessageContext.setCommandName(customPrompt.getName());
-                    return Optional.of(customPrompt.getPrompt());
-                }
-            }
-            promptOutputPanel.showHelpText();
-            return Optional.empty();
+            // Set the command name and return the prompt
+            chatMessageContext.setCommandName(matchingPrompt.get().getName());
+            return Optional.of(matchingPrompt.get().getPrompt());
         }
         return Optional.of(prompt);
     }
