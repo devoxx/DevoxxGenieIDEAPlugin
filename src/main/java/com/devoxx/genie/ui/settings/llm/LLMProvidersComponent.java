@@ -32,6 +32,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
+    private final JTextField customOpenAIModelField = new JTextField(stateService.getCustomOpenAIModel());
+    @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
     private final JTextField azureOpenAIEndpointField = new JTextField(stateService.getAzureOpenAIEndpoint());
@@ -72,6 +74,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox jlamaEnabledCheckBox = new JCheckBox("", stateService.isJlamaEnabled());
     @Getter
     private final JCheckBox customOpenAIEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIEnabled());
+    @Getter
+    private final JCheckBox customOpenAIModelEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIModelEnabled());
 
     @Getter
     private final JCheckBox openAIEnabledCheckBox = new JCheckBox("", stateService.isOpenAIEnabled());
@@ -129,6 +133,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "JLama URL", jlamaEnabledCheckBox,
                 createTextWithLinkButton(jlamaModelUrlField, "https://github.com/tjake/Jlama"));
         addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIEnabledCheckBox, customOpenAIUrlField);
+        addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelEnabledCheckBox, customOpenAIModelField);
 
         // Cloud LLM Providers section
         addSection(panel, gbc, "Cloud LLM Providers");

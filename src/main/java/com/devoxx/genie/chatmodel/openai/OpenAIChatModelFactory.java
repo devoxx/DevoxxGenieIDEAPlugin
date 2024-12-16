@@ -35,6 +35,10 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
             builder.baseUrl(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl());
         }
 
+        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIModel())) {
+            builder.modelName(DevoxxGenieStateService.getInstance().getCustomOpenAIModel());
+        }
+
         return builder.build();
     }
 
@@ -51,6 +55,11 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
         if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl())) {
             builder.baseUrl(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl());
         }
+
+        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIModel())) {
+            builder.modelName(DevoxxGenieStateService.getInstance().getCustomOpenAIModel());
+        }
+
         return builder.build();
     }
 
