@@ -387,18 +387,6 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gemini10Pro = "gemini-1.0-pro";
-        models.put(ModelProvider.Google.getName() + ":" + gemini10Pro,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini10Pro)
-                        .displayName("Gemini 1.0 Pro")
-                        .inputCost(0.5)
-                        .outputCost(1.5)
-                        .contextWindow(1_000_000)
-                        .apiKeyUsed(true)
-                        .build());
-
         String geminiExp1206 = "gemini-exp-1206";
         models.put(ModelProvider.Google.getName() + ":" + geminiExp1206,
                 LanguageModel.builder()
