@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel.lmstudio;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.LocalChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -12,100 +12,63 @@ import com.devoxx.genie.util.LMStudioUtil;
 import com.intellij.openapi.project.ProjectManager;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class LMStudioChatModelFactory implements ChatModelFactory {
+public class LMStudioChatModelFactory extends LocalChatModelFactory {
 
-    public static final ModelProvider MODEL_PROVIDER = ModelProvider.LMStudio;
-
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
-    private static boolean warningShown = false;
-    private List<LanguageModel> cachedModels = null;
     public static final int DEFAULT_CONTEXT_LENGTH = 8000;
+
+    public LMStudioChatModelFactory() {
+        super(ModelProvider.LMStudio);
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         return LMStudioChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .maxTokens(chatModel.getMaxTokens())
-            .maxRetries(chatModel.getMaxRetries())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .build();
+                .baseUrl(getModelUrl())
+                .modelName(chatModel.getModelName())
+                .temperature(chatModel.getTemperature())
+                .topP(chatModel.getTopP())
+                .maxTokens(chatModel.getMaxTokens())
+                .maxRetries(chatModel.getMaxRetries())
+                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .build();
     }
 
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getLmstudioModelUrl())
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .build();
+        return createLocalAiStreamingChatModel(chatModel);
     }
 
     @Override
-    public List<LanguageModel> getModels() {
+    protected String getModelUrl() {
+        return DevoxxGenieStateService.getInstance().getLmstudioModelUrl();
+    }
+
+    @Override
+    protected LMStudioModelEntryDTO[] fetchModels() throws IOException {
         if (!LMStudioUtil.isLMStudioRunning()) {
             NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "LMStudio is not running. Please start it and try again.");
-            return List.of();
+                    "LMStudio is not running. Please start it and try again.");
+            throw new IOException("LMStudio is not running");
         }
-
-        if (cachedModels != null) {
-            return cachedModels;
-        }
-
-        List<LanguageModel> modelNames = new ArrayList<>();
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-
-        try {
-            LMStudioModelEntryDTO[] lmStudioModels = LMStudioService.getInstance().getModels();
-            for (LMStudioModelEntryDTO model : lmStudioModels) {
-                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                    LanguageModel languageModel = LanguageModel.builder()
-                        .provider(MODEL_PROVIDER)
-                        .modelName(model.getId())
-                        .displayName(model.getId())
-                        .inputCost(0)
-                        .outputCost(0)
-                        .contextWindow(DEFAULT_CONTEXT_LENGTH)
-                        .apiKeyUsed(false)
-                        .build();
-                    synchronized (modelNames) {
-                        modelNames.add(languageModel);
-                    }
-                }, executorService);
-                futures.add(future);
-            }
-
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            cachedModels = modelNames;
-        } catch (IOException e) {
-            if (!warningShown) {
-                NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                    "LMStudio is not running, please start it.");
-                warningShown = true;
-            }
-            cachedModels = List.of();
-        }
-        return cachedModels;
+        return LMStudioService.getInstance().getModels();
     }
 
     @Override
-    public void resetModels() {
-        cachedModels = null;
+    protected LanguageModel buildLanguageModel(Object model) {
+        LMStudioModelEntryDTO lmStudioModel = (LMStudioModelEntryDTO) model;
+        return LanguageModel.builder()
+                .provider(modelProvider)
+                .modelName(lmStudioModel.getId())
+                .displayName(lmStudioModel.getId())
+                .inputCost(0)
+                .outputCost(0)
+                .contextWindow(DEFAULT_CONTEXT_LENGTH)
+                .apiKeyUsed(false)
+                .build();
     }
 }

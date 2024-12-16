@@ -149,7 +149,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             return;
         }
 
-        if (selectedProvider == ModelProvider.LMStudio || selectedProvider == ModelProvider.Ollama || selectedProvider == ModelProvider.Jan) {
+        if (selectedProvider == ModelProvider.LMStudio ||
+            selectedProvider == ModelProvider.Ollama ||
+            selectedProvider == ModelProvider.Jan ||
+            selectedProvider == ModelProvider.GPT4All) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 
@@ -167,8 +170,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         } else {
             NotificationUtil.sendNotification(project, "Model refresh is only available for LMStudio, Ollama and Jan providers.");
         }
-
-
     }
 
     /**

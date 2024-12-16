@@ -1,4 +1,4 @@
-package com.devoxx.genie.model.jan;
+package com.devoxx.genie.model.gpt4all;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -6,12 +6,11 @@ import lombok.Setter;
 
 import java.util.List;
 
-@Setter
 @Getter
+@Setter
 public class ResponseDTO {
-
     @JsonProperty("data")
-    private List<Data> data;
+    private List<Model> data;
 
     @JsonProperty("object")
     private String object;

@@ -11,6 +11,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
 import lombok.Builder;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
@@ -81,9 +82,9 @@ public class LMStudioChatModel implements ChatLanguageModel {
         return generate(messages, singletonList(toolSpecification), toolSpecification);
     }
 
-    private Response<AiMessage> generate(List<ChatMessage> messages,
-                                         List<ToolSpecification> toolSpecifications,
-                                         ToolSpecification toolThatMustBeExecuted
+    private @NotNull Response<AiMessage> generate(List<ChatMessage> messages,
+                                                  List<ToolSpecification> toolSpecifications,
+                                                  ToolSpecification toolThatMustBeExecuted
     ) {
         ChatCompletionRequest.Builder requestBuilder = ChatCompletionRequest.builder()
             .model(modelName)

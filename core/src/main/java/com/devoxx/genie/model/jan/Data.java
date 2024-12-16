@@ -14,6 +14,18 @@ public class Data {
     @JsonProperty("object")
     private String object;
 
+    @JsonProperty("ctx_len")
+    private Integer ctxLen;
+
+    @JsonProperty("max_tokens")
+    private Integer maxTokens;
+
+    @JsonProperty("top_k")
+    private Integer topK;
+
+    @JsonProperty("top_p")
+    private Double topP;
+
     @JsonProperty("name")
     private String name;
 
