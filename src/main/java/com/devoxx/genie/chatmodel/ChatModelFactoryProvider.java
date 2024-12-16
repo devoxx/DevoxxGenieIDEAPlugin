@@ -6,6 +6,7 @@ import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
+import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.jlama.JLamaChatModelFactory;
@@ -55,6 +56,7 @@ public class ChatModelFactoryProvider {
             case "DeepSeek" -> new DeepSeekChatModelFactory();
             case "Jlama" -> new JLamaChatModelFactory();
             case "AzureOpenAI" -> new AzureOpenAIChatModelFactory();
+            case "GPT4All" -> new GPT4AllChatModelFactory();
             default -> null;
         };
     }

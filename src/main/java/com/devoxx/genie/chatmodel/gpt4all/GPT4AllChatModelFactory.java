@@ -1,61 +1,56 @@
 package com.devoxx.genie.chatmodel.gpt4all;
 
-import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.LocalChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.gpt4all.Model;
+import com.devoxx.genie.service.gpt4all.GPT4AllService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 
-public class GPT4AllChatModelFactory implements ChatModelFactory {
+public class GPT4AllChatModelFactory extends LocalChatModelFactory {
 
-    private final ModelProvider MODEL_PROVIDER = ModelProvider.GPT4All;;
+    public GPT4AllChatModelFactory() {
+        super(ModelProvider.GPT4All);
+    }
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
-            .modelName(TEST_MODEL)
-            .maxRetries(chatModel.getMaxRetries())
-            .maxTokens(chatModel.getMaxTokens())
-            .temperature(chatModel.getTemperature())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .topP(chatModel.getTopP())
-            .build();
+        return createLocalAiChatModel(chatModel);
     }
 
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getGpt4allModelUrl())
-            .modelName(TEST_MODEL)
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .build();
+        return createLocalAiStreamingChatModel(chatModel);
     }
 
     @Override
-    public List<LanguageModel> getModels() {
-        LanguageModel lmStudio = LanguageModel.builder()
-            .provider(MODEL_PROVIDER)
-            .modelName("GPT4All")
-            .inputCost(0)
-            .outputCost(0)
-            .contextWindow(8000)
-            .apiKeyUsed(false)
-            .build();
+    protected String getModelUrl() {
+        return DevoxxGenieStateService.getInstance().getGpt4allModelUrl();
+    }
 
-        List<LanguageModel> modelNames = new ArrayList<>();
-        modelNames.add(lmStudio);
-        return modelNames;
+    @Override
+    protected Model[] fetchModels() throws IOException {
+        return GPT4AllService.getInstance().getModels().toArray(new Model[0]);
+    }
+
+    @Override
+    protected LanguageModel buildLanguageModel(Object model) {
+        Model gpt4AllModel = (Model) model;
+        // int contextWindow = GPT4AllService.getInstance()
+        return LanguageModel.builder()
+                .provider(modelProvider)
+                .modelName(gpt4AllModel.getId())
+                .displayName(gpt4AllModel.getId())
+                .inputCost(0)
+                .outputCost(0)
+                // .contextWindow(contextWindow)
+                .apiKeyUsed(false)
+                .build();
     }
 }

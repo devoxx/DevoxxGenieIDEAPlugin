@@ -42,6 +42,7 @@
             <LI>Fix #384: Fix web search with enable/disable of Google or Tavily feature</LI>
             <LI>Fix #387: Fix tokens encoding for special chars</LI>
             <LI>Fix #389: Remove action buttons tooltips</LI>
+            <LI>Fix #392: Fixed GPT4All support</LI>
         </UL>
         <h2>v0.4.4</h2>
         <UL>
@@ -482,6 +483,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ollama.OllamaService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.gpt4all.GPT4AllService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.websearch.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
