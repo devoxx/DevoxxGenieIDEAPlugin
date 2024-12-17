@@ -101,7 +101,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
         clear(project);
         for (com.devoxx.genie.model.conversation.ChatMessage message : conversation.getMessages()) {
             if (message.isUser()) {
-                add(project, UserMessage.from(new TextContent(message.getContent())));
+                add(project, UserMessage.from(message.getContent()));
             } else {
                 add(project, AiMessage.from(message.getContent()));
             }
