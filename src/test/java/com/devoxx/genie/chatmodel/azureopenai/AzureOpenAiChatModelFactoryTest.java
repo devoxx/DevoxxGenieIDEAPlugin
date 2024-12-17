@@ -1,7 +1,7 @@
 package com.devoxx.genie.chatmodel.azureopenai;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.azureopenai.AzureOpenAIChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.set;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.jan;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.chatmodel.local.jan.JanModelService;
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -29,7 +30,7 @@ public class JanServiceTest extends AbstractLightPlatformTestCase {
 
     @Test
     public void testGetModels() throws IOException {
-        JanService janService = new JanService();
+        JanModelService janService = new JanModelService();
         List<Data> models = janService.getModels();
         assertThat(models).isNotEmpty();
 

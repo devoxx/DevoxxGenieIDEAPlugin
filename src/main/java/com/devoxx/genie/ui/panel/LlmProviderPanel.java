@@ -148,9 +148,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         }
 
         if (selectedProvider == ModelProvider.LMStudio ||
-                selectedProvider == ModelProvider.Ollama ||
-                selectedProvider == ModelProvider.Jan ||
-                selectedProvider == ModelProvider.GPT4All) {
+            selectedProvider == ModelProvider.Ollama ||
+            selectedProvider == ModelProvider.Jan ||
+            selectedProvider == ModelProvider.GPT4All) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 
@@ -223,7 +223,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         modelNameComboBox.setVisible(false);
     }
 
-
     /**
      * Restore the last selected provider from persistent storage
      */
@@ -280,7 +279,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Set the model provider and update the model names.
      */
     private void handleModelProviderSelectionChange(@NotNull ActionEvent e) {
-        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames)
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) ||
+            !isInitializationComplete ||
+            isUpdatingModelNames)
             return;
 
         isUpdatingModelNames = true;

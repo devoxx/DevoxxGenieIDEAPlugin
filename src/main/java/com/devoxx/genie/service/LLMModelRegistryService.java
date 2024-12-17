@@ -1,6 +1,6 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;

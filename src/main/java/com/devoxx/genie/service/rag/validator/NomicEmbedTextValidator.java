@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.rag.validator;
 
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
-import com.devoxx.genie.service.ollama.OllamaService;
+import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
 public class NomicEmbedTextValidator implements Validator {
@@ -16,7 +16,7 @@ public class NomicEmbedTextValidator implements Validator {
             return false;
         }
         try {
-            OllamaModelEntryDTO[] ollamaModels = OllamaService.getInstance().getModels();
+            OllamaModelEntryDTO[] ollamaModels = OllamaModelService.getInstance().getModels();
             if (ollamaModels == null) {
                 this.message = "Unable to check if Nomic Embed model is present";
                 return false;

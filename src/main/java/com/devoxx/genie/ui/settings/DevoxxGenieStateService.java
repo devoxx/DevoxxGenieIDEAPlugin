@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -264,5 +265,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                 !azureOpenAIKey.isEmpty() &&
                 !azureOpenAIEndpoint.isEmpty() &&
                 !azureOpenAIDeployment.isEmpty();
+    }
+
+    public @Nullable String getConfigValue(@NotNull String key) {
+        return switch (key) {
+            case "janModelUrl" -> getJanModelUrl();
+            case "gpt4allModelUrl" -> getGpt4allModelUrl();
+            case "lmStudioModelUrl" -> getLmstudioModelUrl();
+            case "ollamaModelUrl" -> getOllamaModelUrl();
+            default -> null;
+        };
     }
 }
