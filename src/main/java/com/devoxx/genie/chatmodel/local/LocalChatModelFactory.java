@@ -1,5 +1,6 @@
-package com.devoxx.genie.chatmodel;
+package com.devoxx.genie.chatmodel.local;
 
+import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;

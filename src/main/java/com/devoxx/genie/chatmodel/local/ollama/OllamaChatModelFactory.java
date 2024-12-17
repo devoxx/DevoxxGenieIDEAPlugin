@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
-import com.devoxx.genie.chatmodel.LocalChatModelFactory;
+import com.devoxx.genie.chatmodel.local.LocalChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
