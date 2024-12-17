@@ -105,7 +105,7 @@ public class MessageCreationService {
             stringBuilder.append(editorContent);
         }
 
-        chatMessageContext.setUserMessage(UserMessage.from(new TextContent(stringBuilder.toString())));
+        chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
     }
 
     /**
@@ -244,7 +244,7 @@ public class MessageCreationService {
         stringBuilder.append(chatMessageContext.getUserPrompt());
         stringBuilder.append("</UserPrompt>");
 
-        chatMessageContext.setUserMessage(UserMessage.from(new TextContent(stringBuilder.toString())));
+        chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
     }
 
     /**

@@ -66,8 +66,7 @@ public class PromptExecutionService {
 
             // Add User message to context
             MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
-
-            // chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
+            chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
 
             long startTime = System.currentTimeMillis();
 
@@ -114,17 +113,11 @@ public class PromptExecutionService {
     private @NotNull Response<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-
-            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
-            List<ChatMessage> messages = chatMemoryService.messages(chatMessageContext.getProject());
-
+            List<ChatMessage> messages = ChatMemoryService.getInstance().messages(chatMessageContext.getProject());
             Response<AiMessage> response = chatLanguageModel.generate(messages);
-
-            chatMemoryService.add(chatMessageContext.getProject(), response.content());
-
+            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;
         } catch (Exception e) {
-            LOG.error("Error occurred while processing chat message", e);
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
                 throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");
             }
