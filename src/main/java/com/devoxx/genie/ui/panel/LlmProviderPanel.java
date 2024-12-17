@@ -54,7 +54,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     /**
      * The conversation panel constructor.
      *
-     * @param project             the project instance
+     * @param project the project instance
      */
     public LlmProviderPanel(@NotNull Project project) {
         super(new BorderLayout());
@@ -121,10 +121,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case LMStudio -> stateService.isLmStudioEnabled();
                     case GPT4All -> stateService.isGpt4AllEnabled();
                     case Jan -> stateService.isJanEnabled();
-                    case Exo -> stateService.isExoEnabled();
                     case LLaMA -> stateService.isLlamaCPPEnabled();
-                    case Jlama -> stateService.isJlamaEnabled();
-                    case CustomOpenAI -> stateService.isCustomOpenAIEnabled();
+                    case CustomOpenAI -> stateService.isCustomOpenAIUrlEnabled();
                     case OpenAI -> stateService.isOpenAIEnabled();
                     case Mistral -> stateService.isMistralEnabled();
                     case Anthropic -> stateService.isAnthropicEnabled();
@@ -150,9 +148,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         }
 
         if (selectedProvider == ModelProvider.LMStudio ||
-            selectedProvider == ModelProvider.Ollama ||
-            selectedProvider == ModelProvider.Jan ||
-            selectedProvider == ModelProvider.GPT4All) {
+                selectedProvider == ModelProvider.Ollama ||
+                selectedProvider == ModelProvider.Jan ||
+                selectedProvider == ModelProvider.GPT4All) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 
@@ -168,7 +166,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
             });
         } else {
-            NotificationUtil.sendNotification(project, "Model refresh is only available for LMStudio, Ollama and Jan providers.");
+            NotificationUtil.sendNotification(project,
+                    "Model refresh is only available for LMStudio, Ollama, GPT4All and Jan providers.");
         }
     }
 
@@ -287,12 +286,14 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         isUpdatingModelNames = true;
 
         try {
+            DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
-                DevoxxGenieStateService.getInstance().setSelectedProvider(project.getLocationHash(), modelProvider.getName());
+                stateInstance.setSelectedProvider(project.getLocationHash(), modelProvider.getName());
 
                 updateModelNamesComboBox(modelProvider.getName());
+
                 modelNameComboBox.setRenderer(new ModelInfoRenderer());
                 modelNameComboBox.revalidate();
                 modelNameComboBox.repaint();
@@ -301,6 +302,4 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             isUpdatingModelNames = false;
         }
     }
-
-
 }

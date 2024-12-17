@@ -8,23 +8,23 @@ import java.util.List;
 
 @Getter
 public enum ModelProvider {
-    Ollama("Ollama", Type.LOCAL),
-    LMStudio("LMStudio", Type.LOCAL),
+    CustomOpenAI("CustomOpenAI", Type.LOCAL),
     GPT4All("GPT4All", Type.LOCAL),
     Jan("Jan", Type.LOCAL),
+    LLaMA("LLaMA.c++", Type.LOCAL),
+    LMStudio("LMStudio", Type.LOCAL),
+    Ollama("Ollama", Type.LOCAL),
+
     OpenAI("OpenAI", Type.CLOUD),
     Anthropic("Anthropic", Type.CLOUD),
     Mistral("Mistral", Type.CLOUD),
     Groq("Groq", Type.CLOUD),
     DeepInfra("DeepInfra", Type.CLOUD),
     Google("Google", Type.CLOUD),
-    Exo("Exo (Experimental)", Type.LOCAL),
-    LLaMA("LLaMA.c++", Type.LOCAL),
     OpenRouter("OpenRouter", Type.CLOUD),
     DeepSeek("DeepSeek", Type.CLOUD),
-    Jlama("Jlama (Experimental /w REST API)", Type.LOCAL),
-    AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
-    CustomOpenAI("CustomOpenAI", Type.OPTIONAL);
+
+    AzureOpenAI("AzureOpenAI", Type.OPTIONAL);
 
     public enum Type {
         LOCAL, // Local Providers

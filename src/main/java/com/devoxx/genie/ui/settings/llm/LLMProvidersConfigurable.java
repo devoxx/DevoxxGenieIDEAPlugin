@@ -62,16 +62,15 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), stateService.getGeminiKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), stateService.getDeepSeekKey());
         isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), stateService.getLlamaCPPUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getJlamaModelUrlField(), stateService.getJlamaUrl());
         isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), stateService.getOpenRouterKey());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), stateService.getLmstudioModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
+
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIModelField(), stateService.getCustomOpenAIModel());
+        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIModelNameField(), stateService.getCustomOpenAIModelName());
 
         isModified |= !stateService.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), stateService.getAzureOpenAIEndpoint());
@@ -82,10 +81,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
         isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
         isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
-        isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
         isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
-        isModified |= stateService.isJlamaEnabled() != llmSettingsComponent.getJlamaEnabledCheckBox().isSelected();
-        isModified |= stateService.isCustomOpenAIEnabled() != llmSettingsComponent.getCustomOpenAIEnabledCheckBox().isSelected();
+
+        isModified |= stateService.isCustomOpenAIUrlEnabled() != llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().isSelected();
+        isModified |= stateService.isCustomOpenAIModelNameEnabled() != llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().isSelected();
 
         isModified |= stateService.isOpenAIEnabled() != llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected();
         isModified |= stateService.isMistralEnabled() != llmSettingsComponent.getMistralEnabledCheckBox().isSelected();
@@ -115,11 +114,10 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
-        settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
-        settings.setJlamaUrl(llmSettingsComponent.getJlamaModelUrlField().getText());
+
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
-        settings.setCustomOpenAIModel(llmSettingsComponent.getCustomOpenAIModelField().getText());
+        settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -139,10 +137,10 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
         settings.setGpt4AllEnabled(llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected());
         settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
-        settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
         settings.setLlamaCPPEnabled(llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected());
-        settings.setJlamaEnabled(llmSettingsComponent.getJlamaEnabledCheckBox().isSelected());
-        settings.setCustomOpenAIEnabled(llmSettingsComponent.getCustomOpenAIEnabledCheckBox().isSelected());
+
+        settings.setCustomOpenAIUrlEnabled(llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().isSelected());
+        settings.setCustomOpenAIModelNameEnabled(llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().isSelected());
 
         settings.setOpenAIEnabled(llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected());
         settings.setMistralEnabled(llmSettingsComponent.getMistralEnabledCheckBox().isSelected());
@@ -185,11 +183,10 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
-        llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
-        llmSettingsComponent.getJlamaModelUrlField().setText(settings.getJlamaUrl());
+
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
-        llmSettingsComponent.getCustomOpenAIModelField().setText(settings.getCustomOpenAIModel());
+        llmSettingsComponent.getCustomOpenAIModelNameField().setText(settings.getCustomOpenAIModelName());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());
@@ -209,10 +206,10 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
         llmSettingsComponent.getGpt4AllEnabledCheckBox().setSelected(settings.isGpt4AllEnabled());
         llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
-        llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());
         llmSettingsComponent.getLlamaCPPEnabledCheckBox().setSelected(settings.isLlamaCPPEnabled());
-        llmSettingsComponent.getJlamaEnabledCheckBox().setSelected(settings.isJlamaEnabled());
-        llmSettingsComponent.getCustomOpenAIEnabledCheckBox().setSelected(settings.isCustomOpenAIEnabled());
+
+        llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().setSelected(settings.isCustomOpenAIUrlEnabled());
+        llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().setSelected(settings.isCustomOpenAIModelNameEnabled());
 
         llmSettingsComponent.getOpenAIEnabledCheckBox().setSelected(settings.isOpenAIEnabled());
         llmSettingsComponent.getMistralEnabledCheckBox().setSelected(settings.isMistralEnabled());
