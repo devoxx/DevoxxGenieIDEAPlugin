@@ -1,6 +1,5 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
@@ -20,19 +19,11 @@ import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 @Setter
 public class ChatModelProvider {
 
-    private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI; // Choose an appropriate default
+    private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI;
 
     public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
         ChatModel chatModel = initChatModel(chatMessageContext);
-        ChatModelFactory factory = getFactory(chatMessageContext);
-
-        if (factory instanceof LMStudioChatModelFactory) {
-            if (factory.getModels().isEmpty()) {
-                throw new IllegalStateException("LMStudio is not running. Please start it and try again.");
-            }
-        }
-
-        return factory.createChatModel(chatModel);
+        return getFactory(chatMessageContext).createChatModel(chatModel);
     }
 
     public StreamingChatLanguageModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
