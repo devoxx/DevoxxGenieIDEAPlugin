@@ -208,6 +208,18 @@ public final class LLMModelRegistryService {
                         .contextWindow(128_000)
                         .apiKeyUsed(true)
                         .build());
+
+        String custom = "custom";
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4oMini,
+              LanguageModel.builder()
+                    .provider(ModelProvider.OpenAI)
+                    .modelName(custom)
+                    .displayName("Custom Model")
+                    .inputCost(0.15)
+                    .outputCost(0.6)
+                    .contextWindow(128_000)
+                    .apiKeyUsed(true)
+                    .build());
     }
 
     private void addDeepInfraModels() {

@@ -71,6 +71,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIModelField(), stateService.getCustomOpenAIModel());
 
         isModified |= !stateService.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), stateService.getAzureOpenAIEndpoint());
@@ -118,6 +119,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
         settings.setJlamaUrl(llmSettingsComponent.getJlamaModelUrlField().getText());
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
+        settings.setCustomOpenAIModel(llmSettingsComponent.getCustomOpenAIModelField().getText());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -187,6 +189,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
         llmSettingsComponent.getJlamaModelUrlField().setText(settings.getJlamaUrl());
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
+        llmSettingsComponent.getCustomOpenAIModelField().setText(settings.getCustomOpenAIModel());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());

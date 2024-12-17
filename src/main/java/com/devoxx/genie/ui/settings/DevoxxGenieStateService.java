@@ -77,6 +77,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
     private String jlamaUrl = JLAMA_MODEL_URL;
     private String customOpenAIUrl = "";
+    private String customOpenAIModel = "";
 
     // Local LLM Providers
     private boolean isOllamaEnabled = true;
@@ -87,6 +88,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isLlamaCPPEnabled = true;
     private boolean isJlamaEnabled = true;
     private boolean isCustomOpenAIEnabled = false;
+    private boolean isCustomOpenAIModelEnabled = false;
 
     // Remote LLM Providers
     private boolean isOpenAIEnabled = false;
