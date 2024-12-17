@@ -32,6 +32,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
 
+    // Default excluded files for scan project
     private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
             "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"
     ));
@@ -73,22 +74,22 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
-    private String exoModelUrl = EXO_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
-    private String jlamaUrl = JLAMA_MODEL_URL;
+
+    // Local custom OpenAI-compliant LLM fields
     private String customOpenAIUrl = "";
-    private String customOpenAIModel = "";
+    private String customOpenAIModelName = "";
 
     // Local LLM Providers
     private boolean isOllamaEnabled = true;
     private boolean isLmStudioEnabled = true;
     private boolean isGpt4AllEnabled = true;
     private boolean isJanEnabled = true;
-    private boolean isExoEnabled = true;
     private boolean isLlamaCPPEnabled = true;
-    private boolean isJlamaEnabled = true;
-    private boolean isCustomOpenAIEnabled = false;
-    private boolean isCustomOpenAIModelEnabled = false;
+
+    // Local custom OpenAI-compliant LLM fields
+    private boolean isCustomOpenAIUrlEnabled = false;
+    private boolean isCustomOpenAIModelNameEnabled = false;
 
     // Remote LLM Providers
     private boolean isOpenAIEnabled = false;
@@ -99,7 +100,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGoogleEnabled = false;
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
-    private boolean isAzureOpenAIEnabled = false;
 
     // LLM API Keys
     private String openAIKey = "";

@@ -24,15 +24,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
-    private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
-    @Getter
     private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
-    @Getter
-    private final JTextField jlamaModelUrlField = new JTextField(stateService.getJlamaUrl());
     @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
-    private final JTextField customOpenAIModelField = new JTextField(stateService.getCustomOpenAIModel());
+    private final JTextField customOpenAIModelNameField = new JTextField(stateService.getCustomOpenAIModelName());
     @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
@@ -67,16 +63,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
     @Getter
-    private final JCheckBox exoEnabledCheckBox = new JCheckBox("", stateService.isExoEnabled());
-    @Getter
     private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
     @Getter
-    private final JCheckBox jlamaEnabledCheckBox = new JCheckBox("", stateService.isJlamaEnabled());
+    private final JCheckBox customOpenAIUrlEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIUrlEnabled());
     @Getter
-    private final JCheckBox customOpenAIEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIEnabled());
-    @Getter
-    private final JCheckBox customOpenAIModelEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIModelEnabled());
-
+    private final JCheckBox customOpenAIModelNameEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIModelNameEnabled());
     @Getter
     private final JCheckBox openAIEnabledCheckBox = new JCheckBox("", stateService.isOpenAIEnabled());
     @Getter
@@ -126,14 +117,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addProviderSettingRow(panel, gbc, "Jan URL", janEnabledCheckBox,
                 createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
-        addProviderSettingRow(panel, gbc, "Exo URL", exoEnabledCheckBox,
-                createTextWithLinkButton(exoModelUrlField, "https://github.com/exo-explore/exo"));
         addProviderSettingRow(panel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithLinkButton(llamaCPPModelUrlField, "https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md"));
-        addProviderSettingRow(panel, gbc, "JLama URL", jlamaEnabledCheckBox,
-                createTextWithLinkButton(jlamaModelUrlField, "https://github.com/tjake/Jlama"));
-        addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIEnabledCheckBox, customOpenAIUrlField);
-        addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelEnabledCheckBox, customOpenAIModelField);
+        addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
+        addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
 
         // Cloud LLM Providers section
         addSection(panel, gbc, "Cloud LLM Providers");
@@ -181,10 +168,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         lmStudioEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioEnabledCheckBox, lmStudioModelUrlField));
         gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
-        exoEnabledCheckBox.addItemListener(e -> updateUrlFieldState(exoEnabledCheckBox, exoModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
-        jlamaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(jlamaEnabledCheckBox, jlamaModelUrlField));
-        customOpenAIEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIEnabledCheckBox, customOpenAIUrlField));
+
+        customOpenAIUrlEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIUrlEnabledCheckBox, customOpenAIUrlField));
+        customOpenAIModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField));
 
         openAIEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openAIEnabledCheckBox, openAIKeyField));
         mistralEnabledCheckBox.addItemListener(e -> updateUrlFieldState(mistralEnabledCheckBox, mistralApiKeyField));
@@ -197,12 +184,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
     }
 
-    // In LLMProvidersComponent.java
-    private boolean isAzureConfigValid() {
-        return !azureOpenAIKeyField.getPassword().toString().isEmpty()
-                && !azureOpenAIEndpointField.getText().trim().isEmpty()
-                && !azureOpenAIDeploymentField.getText().trim().isEmpty();
-    }
+//    // In LLMProvidersComponent.java
+//    private boolean isAzureConfigValid() {
+//        return !azureOpenAIKeyField.getPassword().toString().isEmpty()
+//                && !azureOpenAIEndpointField.getText().trim().isEmpty()
+//                && !azureOpenAIDeploymentField.getText().trim().isEmpty();
+//    }
 
     private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {
         addSettingRow(panel, gbc, "Enable Azure OpenAI Provider", enableAzureOpenAICheckBox);

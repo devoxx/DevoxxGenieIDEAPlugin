@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.jlama;
+package com.devoxx.genie.chatmodel.customopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
@@ -14,13 +14,14 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-public class JLamaChatModelFactory implements ChatModelFactory {
+public class CustomOpenAIChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+        DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
         return LocalAiChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getJlamaUrl())
-            .modelName(TEST_MODEL)
+            .baseUrl(stateInstance.getCustomOpenAIUrl())
+            .modelName(stateInstance.getCustomOpenAIModelName().isBlank()?"default":stateInstance.getCustomOpenAIModelName())
             .maxRetries(chatModel.getMaxRetries())
             .temperature(chatModel.getTemperature())
             .maxTokens(chatModel.getMaxTokens())
@@ -31,9 +32,10 @@ public class JLamaChatModelFactory implements ChatModelFactory {
 
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
         return LocalAiStreamingChatModel.builder()
-            .baseUrl(DevoxxGenieStateService.getInstance().getJlamaUrl())
-            .modelName(TEST_MODEL)
+            .baseUrl(stateInstance.getCustomOpenAIUrl())
+            .modelName(stateInstance.getCustomOpenAIModelName().isBlank()?"default":stateInstance.getCustomOpenAIModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
@@ -41,7 +43,7 @@ public class JLamaChatModelFactory implements ChatModelFactory {
     }
 
     /**
-     * Get the model names from the Jlama service.
+     * Get the model names from the custom local OpenAI compliant service.
      * @return List of model names
      */
     @Override

@@ -129,9 +129,8 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
         ModelProvider selectedProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
         if (selectedProvider != null &&
                 (selectedProvider.equals(LMStudio) ||
-                        selectedProvider.equals(GPT4All) ||
-                        selectedProvider.equals(Jlama) ||
-                        selectedProvider.equals(LLaMA))) {
+                 selectedProvider.equals(GPT4All) ||
+                 selectedProvider.equals(LLaMA))) {
             return LanguageModel.builder()
                     .provider(selectedProvider)
                     .apiKeyUsed(false)

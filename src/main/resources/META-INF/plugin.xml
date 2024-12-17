@@ -39,6 +39,8 @@
         <UL>
             <LI>Fix #196 : Continue with prompt if '/' command is unknown</LI>
             <LI>Fix #394 : Removed Google Gemini 1.0 Pro</LI>
+            <LI>Feat #397:  add a way to specify custom model name </LI>
+            <LI>Feat #400 : List "custom local model" when enabled in dropdown</LI>
         </UL>
         <h2>V0.4.5</h2>
         <UL>

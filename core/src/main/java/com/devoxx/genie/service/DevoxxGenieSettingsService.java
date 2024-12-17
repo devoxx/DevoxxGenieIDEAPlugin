@@ -20,8 +20,6 @@ public interface DevoxxGenieSettingsService {
 
     String getJanModelUrl();
 
-    String getExoModelUrl();
-
     String getOpenAIKey();
 
     String getAzureOpenAIEndpoint();
@@ -103,8 +101,6 @@ public interface DevoxxGenieSettingsService {
     void setGpt4allModelUrl(String url);
 
     void setJanModelUrl(String url);
-
-    void setExoModelUrl(String url);
 
     void setOpenAIKey(String key);
 
@@ -188,7 +184,7 @@ public interface DevoxxGenieSettingsService {
 
     String getCustomOpenAIUrl();
 
-    String getJlamaUrl();
+    void setCustomOpenAIModelName(String text);
 
-    void setJlamaUrl(String text);
+    String getCustomOpenAIModelName();
 }

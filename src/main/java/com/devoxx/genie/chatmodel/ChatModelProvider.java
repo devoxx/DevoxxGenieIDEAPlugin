@@ -81,14 +81,11 @@ public class ChatModelProvider {
             case GPT4All:
                 chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
                 break;
-            case Exo:
-                chatModel.setBaseUrl(stateService.getExoModelUrl());
-                break;
             case LLaMA:
                 chatModel.setBaseUrl(stateService.getLlamaCPPUrl());
                 break;
-            case Jlama:
-                chatModel.setBaseUrl(stateService.getJlamaUrl());
+            case CustomOpenAI:
+                chatModel.setBaseUrl(stateService.getCustomOpenAIUrl());
                 break;
             // Add other local providers as needed
         }
