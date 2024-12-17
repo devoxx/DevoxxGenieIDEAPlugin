@@ -42,6 +42,7 @@
             <LI>Feat #397:  add a way to specify custom model name </LI>
             <LI>Feat #400 : List "custom local model" when enabled in dropdown</LI>
             <LI>Feat #400 : Removed Exo & JLama because they can use the Custom OpenAI-compliant local provider</LI>
+            <LI>Fix #399 : Fixed UserMessage GPT4ALL issue</LI>
         </UL>
         <h2>V0.4.5</h2>
         <UL>
