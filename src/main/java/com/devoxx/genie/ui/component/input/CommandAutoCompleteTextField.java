@@ -32,14 +32,13 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private boolean isAutoCompleting = false;
     private String placeholder = "";
 
-    public CommandAutoCompleteTextField(Project project) {
+    public CommandAutoCompleteTextField(@NotNull Project project) {
         super();
         this.project = project;
         setDocument(new CommandDocument());
         addKeyListener(new CommandKeyListener());
 
-        ApplicationManager.getApplication()
-            .getMessageBus()
+        project.getMessageBus()
             .connect()
             .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
 
@@ -48,15 +47,15 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
 
     private void initializeCommands() {
         commands.clear();
-        commands.add("/" + TEST_COMMAND);
-        commands.add("/" + EXPLAIN_COMMAND);
-        commands.add("/" + REVIEW_COMMAND);
-        commands.add("/" + TDG_COMMAND);
-        commands.add("/" + HELP_COMMAND);
+        commands.add(COMMAND_PREFIX + TEST_COMMAND);
+        commands.add(COMMAND_PREFIX + EXPLAIN_COMMAND);
+        commands.add(COMMAND_PREFIX + REVIEW_COMMAND);
+        commands.add(COMMAND_PREFIX + TDG_COMMAND);
+        commands.add(COMMAND_PREFIX + HELP_COMMAND);
 
         DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
         for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {
-            commands.add("/" + customPrompt.getName());
+            commands.add(COMMAND_PREFIX + customPrompt.getName());
         }
     }
 
@@ -84,7 +83,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         private void autoComplete() {
             String text = getText();
             String[] lines = text.split("\n");
-            if (lines.length > 0 && lines[lines.length - 1].startsWith("/")) {
+            if (lines.length > 0 && lines[lines.length - 1].startsWith(COMMAND_PREFIX)) {
                 String currentLine = lines[lines.length - 1];
                 for (String command : commands) {
                     if (command.startsWith(currentLine)) {
@@ -142,7 +141,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         }
 
         private boolean shouldAttemptAutoComplete(@NotNull String currentLine) {
-            return currentLine.startsWith("/") && currentLine.length() > 1;
+            return currentLine.startsWith(COMMAND_PREFIX) && currentLine.length() > 1;
         }
 
         private void attemptAutoComplete(String currentLine) throws BadLocationException {

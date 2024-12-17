@@ -92,7 +92,7 @@ public class WebSearchService {
                 .csi(stateService.getGoogleCSIKey())
                 .build();
         }
-        LOG.info("Web search engine not found or all disabled");
+        LOG.debug("Web search engine not found or all disabled");
         return null;
     }
 }

@@ -48,7 +48,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
                     try {
                         Desktop.getDesktop().browse(new URI(e.getURL().toString()));
                     } catch (Exception ex) {
-                        LOG.info("Error opening browser link: " + e.getURL().toString(), ex);
+                        LOG.warn("Error opening browser link: " + e.getURL().toString(), ex);
                     }
                 }
             }

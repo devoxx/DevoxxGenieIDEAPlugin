@@ -9,10 +9,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.*;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +33,8 @@ public class ChatMemoryService implements ChatMemorySizeListener {
         createChangeListener();
     }
 
+    // TODO - This method is currently not used anywhere in the codebase
+    // TODO - Should be triggered when user changes the chat memory size in the settings
     private void createChangeListener() {
         ApplicationManager.getApplication().getMessageBus()
             .connect()
@@ -102,9 +101,9 @@ public class ChatMemoryService implements ChatMemorySizeListener {
         clear(project);
         for (com.devoxx.genie.model.conversation.ChatMessage message : conversation.getMessages()) {
             if (message.isUser()) {
-                add(project, new UserMessage(message.getContent()));
+                add(project, UserMessage.from(new TextContent(message.getContent())));
             } else {
-                add(project, new AiMessage(message.getContent()));
+                add(project, AiMessage.from(message.getContent()));
             }
         }
     }

@@ -38,7 +38,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         this.project = toolWindowContent.getProject();
         ResourceBundle resourceBundle = toolWindowContent.getResourceBundle();
 
-        promptInputArea = new PromptInputArea(resourceBundle, project);
+        promptInputArea = new PromptInputArea(project, resourceBundle);
         actionButtonsPanel = createActionButtonsPanel();
 
         add(createSubmitPanel(actionButtonsPanel), BorderLayout.CENTER);

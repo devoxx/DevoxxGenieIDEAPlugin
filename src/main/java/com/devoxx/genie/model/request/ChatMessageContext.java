@@ -7,14 +7,15 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.output.TokenUsage;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Represents the context of a chat message with all the necessary information.
+ */
+@ToString
 @Data
 @Builder
 public class ChatMessageContext {
@@ -22,11 +23,11 @@ public class ChatMessageContext {
     private String id;
     private Project project;
     private Integer timeout;
-    private String userPrompt;
-    private UserMessage userMessage;
-    private AiMessage aiMessage;
-    private String context;
-    private EditorInfo editorInfo;
+    private String userPrompt;          // The user prompt
+    private UserMessage userMessage;    // The user message
+    private AiMessage aiMessage;        // The LLM response message
+    private String context;             // The context of the prompt
+    private EditorInfo editorInfo;      // The editor info
     private LanguageModel languageModel;
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;

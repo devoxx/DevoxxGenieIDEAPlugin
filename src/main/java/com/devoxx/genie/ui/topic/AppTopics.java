@@ -8,6 +8,8 @@ public class AppTopics {
     public static final Topic<SettingsChangeListener> SETTINGS_CHANGED_TOPIC =
         Topic.create("SettingsChanged", SettingsChangeListener.class);
 
+    // TODO - This method is currently not used anywhere in the codebase
+    // TODO - Should be triggered when user changes the chat memory size in the settings
     public static final Topic<ChatMemorySizeListener> CHAT_MEMORY_SIZE_TOPIC =
         new Topic<>("chatMemorySizeChanged", ChatMemorySizeListener.class);
 

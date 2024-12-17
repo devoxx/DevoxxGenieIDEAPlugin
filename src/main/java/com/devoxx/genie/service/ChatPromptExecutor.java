@@ -27,8 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.devoxx.genie.model.Constant.FIND_COMMAND;
-import static com.devoxx.genie.model.Constant.HELP_COMMAND;
+import static com.devoxx.genie.model.Constant.*;
 
 public class ChatPromptExecutor {
 
@@ -182,16 +181,20 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @return the command
      */
-    private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
+    public Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
                                                   PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
+
+        // Early exit if not a command
+        if (!prompt.startsWith(COMMAND_PREFIX)) {
+            return Optional.of(prompt);
+        }
+
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         List<CustomPrompt> customPrompts = settings.getCustomPrompts();
 
         Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
-                .filter(customPrompt ->
-                        prompt.equalsIgnoreCase("/" + customPrompt.getName())
-                )
+                .filter(customPrompt -> prompt.equalsIgnoreCase(COMMAND_PREFIX + customPrompt.getName()))
                 .findFirst();
 
         // if OK

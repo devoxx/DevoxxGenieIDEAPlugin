@@ -10,14 +10,13 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.output.Response;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,30 +46,28 @@ public class PromptExecutionService {
      * @return the response
      */
     public @NotNull CompletableFuture<Response<AiMessage>> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
-        LOG.info("Execute query : " + chatMessageContext);
+        LOG.debug("Execute query : " + chatMessageContext);
 
         queryLock.lock();
         try {
             if (isCanceled()) return CompletableFuture.completedFuture(null);
 
-            MessageCreationService messageCreationService = MessageCreationService.getInstance();
+            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
 
+            // Add System Message if ChatMemoryService is empty
             if (ChatMemoryService.getInstance().isEmpty(chatMessageContext.getProject())) {
-                LOG.info("ChatMemoryService is empty, adding a new SystemMessage");
+                LOG.debug("ChatMemoryService is empty, adding a new SystemMessage");
 
                 if (!ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-                    ChatMemoryService
-                            .getInstance()
-                            .add(chatMessageContext.getProject(),
-                                 new SystemMessage(DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN)
-                            );
+                    String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN;
+                    chatMemoryService.add(chatMessageContext.getProject(), SystemMessage.from(systemPrompt));
                 }
             }
 
-            UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
-            LOG.info("Created UserMessage: " + userMessage);
+            // Add User message to context
+            MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
 
-            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), userMessage);
+            // chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
 
             long startTime = System.currentTimeMillis();
 
@@ -117,12 +114,17 @@ public class PromptExecutionService {
     private @NotNull Response<AiMessage> processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-            Response<AiMessage> response =
-                chatLanguageModel
-                    .generate(ChatMemoryService.getInstance().messages(chatMessageContext.getProject()));
-            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
+
+            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
+            List<ChatMessage> messages = chatMemoryService.messages(chatMessageContext.getProject());
+
+            Response<AiMessage> response = chatLanguageModel.generate(messages);
+
+            chatMemoryService.add(chatMessageContext.getProject(), response.content());
+
             return response;
         } catch (Exception e) {
+            LOG.error("Error occurred while processing chat message", e);
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
                 throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");
             }

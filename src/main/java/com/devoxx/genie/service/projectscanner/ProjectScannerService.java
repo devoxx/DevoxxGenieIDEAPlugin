@@ -187,7 +187,7 @@ public class ProjectScannerService {
             readFileContent(file, fullContent, scanContentResult);
         } else {
             scanContentResult.incrementSkippedFileCount();
-            LOG.info("Skipping file: " + file.getPath() + " (excluded by settings or .gitignore)");
+            LOG.debug("Skipping file: " + file.getPath() + " (excluded by settings or .gitignore)");
         }
         return fullContent;
     }
@@ -210,7 +210,7 @@ public class ProjectScannerService {
                         readFileContent(file, fullContent, scanContentResult);
                     } else {
                         scanContentResult.incrementSkippedFileCount();
-                        LOG.info("Skipping file: " + file.getPath() + " (not in content, excluded by settings, or .gitignore)");
+                        LOG.debug("Skipping file: " + file.getPath() + " (not in content, excluded by settings, or .gitignore)");
                     }
                 }
                 return true;
