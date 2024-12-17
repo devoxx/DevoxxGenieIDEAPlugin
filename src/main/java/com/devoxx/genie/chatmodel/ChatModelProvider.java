@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
+import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;

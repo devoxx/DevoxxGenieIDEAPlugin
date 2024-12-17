@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.jan;
 
+import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;

@@ -39,11 +39,12 @@
         <UL>
             <LI>Fix #196 : Continue with prompt if '/' command is unknown</LI>
             <LI>Fix #394 : Removed Google Gemini 1.0 Pro</LI>
-            <LI>Feat #397:  add a way to specify custom model name </LI>
+            <LI>Feat #397: Support custom model name for OpenAI compliant provider</LI>
             <LI>Feat #400 : List "custom local model" when enabled in dropdown</LI>
             <LI>Feat #400 : Removed Exo & JLama because they can use the Custom OpenAI-compliant local provider</LI>
             <LI>Fix #399 : Fixed UserMessage GPT4ALL issue</LI>
             <LI>Feat #402 : Allow all LLM Providers to have the "Add Project" feature</LI>
+            <LI>Feat #406 : Show "Jan" model in combobox</LI>
         </UL>
         <h2>V0.4.5</h2>
         <UL>
@@ -492,17 +493,17 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.ollama.OllamaService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.gpt4all.GPT4AllService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.websearch.WebSearchService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.projectscanner.ProjectScannerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.lmstudio.LMStudioService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.jan.JanService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>

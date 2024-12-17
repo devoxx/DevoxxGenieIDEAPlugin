@@ -15,7 +15,7 @@ public class Data {
     private String object;
 
     @JsonProperty("ctx_len")
-    private Integer ctxLen;
+    private Long ctxLen;
 
     @JsonProperty("max_tokens")
     private Integer maxTokens;

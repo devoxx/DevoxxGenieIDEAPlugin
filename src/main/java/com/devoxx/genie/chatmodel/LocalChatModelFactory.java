@@ -25,6 +25,8 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     protected List<LanguageModel> cachedModels = null;
     protected static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     protected static boolean warningShown = false;
+    protected boolean providerRunning = false;
+    protected boolean providerChecked = false;
 
     protected LocalChatModelFactory(ModelProvider modelProvider) {
         this.modelProvider = modelProvider;
@@ -62,9 +64,18 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        if (cachedModels != null) {
-            return cachedModels;
+        if (!providerChecked) {
+            checkAndFetchModels();
         }
+        if (!providerRunning) {
+            NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                    "LLM provider is not running. Please start it and try again.");
+            return List.of();
+        }
+        return cachedModels;
+    }
+
+    private void checkAndFetchModels() {
         List<LanguageModel> modelNames = new ArrayList<>();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         try {
@@ -77,25 +88,28 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
                             modelNames.add(languageModel);
                         }
                     } catch (IOException e) {
-                        handleModelFetchError(model, e);
+                        handleModelFetchError(e);
                     }
                 }, executorService);
                 futures.add(future);
             }
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             cachedModels = modelNames;
+            providerRunning = true;
         } catch (IOException e) {
             handleGeneralFetchError(e);
             cachedModels = List.of();
+            providerRunning = false;
+        } finally {
+            providerChecked = true;
         }
-        return cachedModels;
     }
 
     protected abstract Object[] fetchModels() throws IOException;
 
     protected abstract LanguageModel buildLanguageModel(Object model) throws IOException;
 
-    protected void handleModelFetchError(Object model, @NotNull IOException e) {
+    protected void handleModelFetchError(@NotNull IOException e) {
         NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(), "Error fetching model details: " + e.getMessage());
     }
 
@@ -109,5 +123,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     @Override
     public void resetModels() {
         cachedModels = null;
+        providerChecked = false;
+        providerRunning = false;
     }
 }

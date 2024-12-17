@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.gpt4all;
 
+import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;

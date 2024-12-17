@@ -1,19 +1,20 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.chatmodel.anthropic.AnthropicChatModelFactory;
-import com.devoxx.genie.chatmodel.azureopenai.AzureOpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.customopenai.CustomOpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.deepinfra.DeepInfraChatModelFactory;
-import com.devoxx.genie.chatmodel.deepseek.DeepSeekChatModelFactory;
-import com.devoxx.genie.chatmodel.google.GoogleChatModelFactory;
-import com.devoxx.genie.chatmodel.gpt4all.GPT4AllChatModelFactory;
-import com.devoxx.genie.chatmodel.groq.GroqChatModelFactory;
-import com.devoxx.genie.chatmodel.jan.JanChatModelFactory;
-import com.devoxx.genie.chatmodel.lmstudio.LMStudioChatModelFactory;
-import com.devoxx.genie.chatmodel.mistral.MistralChatModelFactory;
-import com.devoxx.genie.chatmodel.ollama.OllamaChatModelFactory;
-import com.devoxx.genie.chatmodel.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.anthropic.AnthropicChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.azureopenai.AzureOpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.deepinfra.DeepInfraChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.deepseek.DeepSeekChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.google.GoogleChatModelFactory;
+import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.groq.GroqChatModelFactory;
+import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
+import com.devoxx.genie.chatmodel.local.llamaCPP.LlamaChatModelFactory;
+import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
+import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,6 +51,7 @@ public class ChatModelFactoryProvider {
             case "Groq" -> new GroqChatModelFactory();
             case "GPT4All" -> new GPT4AllChatModelFactory();
             case "Jan" -> new JanChatModelFactory();
+            case "LLaMA" -> new LlamaChatModelFactory();
             case "LMStudio" -> new LMStudioChatModelFactory();
             case "Mistral" -> new MistralChatModelFactory();
             case "Ollama" -> new OllamaChatModelFactory();

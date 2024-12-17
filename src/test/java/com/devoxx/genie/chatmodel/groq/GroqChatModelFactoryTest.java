@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.groq;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.chatmodel.cloud.groq.GroqChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
