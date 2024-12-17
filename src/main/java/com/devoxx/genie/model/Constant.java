@@ -24,6 +24,7 @@ public class Constant {
     public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files. (NOTE: The /find command requires RAG to be enabled in settings)";
     public static final String HELP_PROMPT = "Display help and available commands for the Genie Devoxx Plugin";
 
+    public static final String COMMAND_PREFIX = "/";
     public static final String TEST_COMMAND = "test";
     public static final String FIND_COMMAND = "find";
     public static final String REVIEW_COMMAND = "review";

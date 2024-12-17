@@ -45,7 +45,7 @@ public final class ChromaDockerService {
         try {
             // We assume Docker is already installed and running
             if (isChromaDBRunning()) {
-                LOG.info("ChromaDB is already running");
+                LOG.debug("ChromaDB is already running");
                 callback.onSuccess();
                 return;
             }
@@ -182,7 +182,7 @@ public final class ChromaDockerService {
         Path collectionPath = volumePath.resolve(collectionName);
 
         if (!Files.exists(collectionPath)) {
-            LOG.info("Collection directory does not exist: " + collectionPath);
+            LOG.debug("Collection directory does not exist: " + collectionPath);
             return;
         }
 
@@ -197,7 +197,7 @@ public final class ChromaDockerService {
                     .forEach(path -> {
                         try {
                             Files.delete(path);
-                            LOG.info("Deleted: " + path);
+                            LOG.debug("Deleted: " + path);
                         } catch (IOException e) {
                             LOG.warn("Failed to delete: " + path, e);
                         }

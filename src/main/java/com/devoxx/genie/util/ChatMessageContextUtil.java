@@ -46,7 +46,6 @@ public class ChatMessageContextUtil {
             .project(project)
             .id(String.valueOf(System.currentTimeMillis()))
             .userPrompt(userPromptText)
-            .userMessage(UserMessage.userMessage(userPromptText))
             .languageModel(languageModel)
             .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
             .totalFileCount(FileListManager.getInstance().size())

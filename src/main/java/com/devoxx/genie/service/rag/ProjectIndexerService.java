@@ -123,7 +123,7 @@ public final class ProjectIndexerService {
 
         VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
         if (baseDir == null) {
-            LOG.info("Could not find base directory: " + basePath);
+            LOG.debug("Could not find base directory: " + basePath);
             return;
         }
 
@@ -151,17 +151,17 @@ public final class ProjectIndexerService {
      * @param filePath Path to the file to index
      */
     private void indexSingleFile(Path filePath) {
-        LOG.info("Indexing file: " + filePath);
+        LOG.debug("Indexing file: " + filePath);
         try {
             if (isFileIndexed(filePath)) {
-                LOG.info("File already indexed: " + filePath);
+                LOG.debug("File already indexed: " + filePath);
                 return;
             }
 
             processPath(filePath);
-            LOG.info("File successfully indexed: " + filePath);
+            LOG.debug("File successfully indexed: " + filePath);
         } catch (Exception e) {
-            LOG.error("Error indexing file: " + filePath + " - " + e.getMessage());
+            LOG.warn("Error indexing file: " + filePath + " - " + e.getMessage());
         }
     }
 
@@ -208,7 +208,7 @@ public final class ProjectIndexerService {
 
     private void processPath(Path path) {
         try {
-            LOG.info("Processing file: " + path);
+            LOG.debug("Processing file: " + path);
 
             String content = Files.readString(path);
             if (content.isBlank()) {

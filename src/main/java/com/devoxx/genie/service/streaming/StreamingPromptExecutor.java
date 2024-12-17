@@ -7,7 +7,6 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,8 +59,8 @@ public class StreamingPromptExecutor {
             );
         }
 
-        UserMessage userMessage = messageCreationService.createUserMessage(chatMessageContext);
-        chatMemoryService.add(chatMessageContext.getProject(), userMessage);
+        messageCreationService.addUserMessageToContext(chatMessageContext);
+        chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
     }
 
     /**

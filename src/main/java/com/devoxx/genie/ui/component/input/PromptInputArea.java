@@ -19,7 +19,7 @@ public class PromptInputArea extends JPanel {
     private final transient Project project;
     private final transient ResourceBundle resourceBundle;
 
-    public PromptInputArea(@NotNull ResourceBundle resourceBundle, Project project) {
+    public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
         super(new BorderLayout());
 
         this.resourceBundle = resourceBundle;

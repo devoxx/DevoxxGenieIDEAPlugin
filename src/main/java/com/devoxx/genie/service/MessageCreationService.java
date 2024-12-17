@@ -9,10 +9,12 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -34,9 +35,8 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
  * Here's where also the basic prompt "engineering" is happening, including calling the AST magic.
  */
 public class MessageCreationService {
-    private static final Logger LOG = Logger.getLogger(MessageCreationService.class.getName());
 
-    public static final String CONTEXT_PROMPT = "Context: \n";
+    private static final Logger LOG = Logger.getInstance(MessageCreationService.class.getName());
 
     private static final String GIT_DIFF_INSTRUCTIONS = """
         Please analyze the code and provide ONLY the modified code in your response.
@@ -61,23 +61,18 @@ public class MessageCreationService {
     /**
      * Create user message.
      * @param chatMessageContext the chat message context
-     * @return the user message
      */
-    @NotNull
-    public UserMessage createUserMessage(@NotNull ChatMessageContext chatMessageContext) {
-        UserMessage userMessage;
+    public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
         String context = chatMessageContext.getContext();
-
         if (context != null && !context.isEmpty()) {
-            userMessage = constructUserMessageWithFullContext(chatMessageContext, context);
+            constructUserMessageWithFullContext(chatMessageContext, context);
         } else {
-            userMessage = constructUserMessageWithCombinedContext(chatMessageContext);
+            constructUserMessageWithCombinedContext(chatMessageContext);
         }
-
-        return userMessage;
     }
 
-    private @NotNull UserMessage constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
+    private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
+        LOG.debug("Constructing user message with combined context");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -107,14 +102,10 @@ public class MessageCreationService {
         // Add editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
         if (!editorContent.isEmpty()) {
-            stringBuilder.append("<EditorContext>\n");
             stringBuilder.append(editorContent);
-            stringBuilder.append("\n</EditorContext>\n\n");
         }
 
-        UserMessage userMessage = new UserMessage(stringBuilder.toString());
-        chatMessageContext.setUserMessage(userMessage);
-        return userMessage;
+        chatMessageContext.setUserMessage(UserMessage.from(new TextContent(stringBuilder.toString())));
     }
 
     /**
@@ -123,6 +114,8 @@ public class MessageCreationService {
      * @return the user message
      */
     private @NotNull String addSemanticSearchResults(@NotNull ChatMessageContext chatMessageContext) {
+        LOG.debug("Adding semantic search results to user message");
+
         StringBuilder contextBuilder = new StringBuilder();
 
         try {
@@ -157,7 +150,7 @@ public class MessageCreationService {
                 );
             }
         } catch (Exception e) {
-            LOG.warning("Failed to get semantic search results: " + e.getMessage());
+            LOG.warn("Failed to get semantic search results: " + e.getMessage());
         }
 
         return contextBuilder.toString();
@@ -227,10 +220,10 @@ public class MessageCreationService {
      *
      * @param chatMessageContext the chat message context
      * @param context            the context
-     * @return the user message
      */
-    private @NotNull UserMessage constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
-                                                                     String context) {
+    private void constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
+                                                     String context) {
+        LOG.debug("Constructing user message with full context");
         StringBuilder stringBuilder = new StringBuilder();
 
         // If git diff is enabled, add special instructions at the beginning
@@ -251,9 +244,7 @@ public class MessageCreationService {
         stringBuilder.append(chatMessageContext.getUserPrompt());
         stringBuilder.append("</UserPrompt>");
 
-        UserMessage userMessage = new UserMessage("user_message", stringBuilder.toString());
-        chatMessageContext.setUserMessage(userMessage);
-        return userMessage;
+        chatMessageContext.setUserMessage(UserMessage.from(new TextContent(stringBuilder.toString())));
     }
 
     /**

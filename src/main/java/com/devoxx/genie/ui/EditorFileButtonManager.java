@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -14,17 +13,19 @@ import java.util.List;
 
 public class EditorFileButtonManager {
 
+    private final Project project;
     private final FileEditorManager fileEditorManager;
     private final JButton addFileBtn;
 
     public EditorFileButtonManager(Project project, JButton addFileBtn) {
+        this.project = project;
         this.fileEditorManager = FileEditorManager.getInstance(project);
         this.addFileBtn = addFileBtn;
         handleFileOpenClose();
     }
 
     private void handleFileOpenClose() {
-        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
+        project.getMessageBus().connect().subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
