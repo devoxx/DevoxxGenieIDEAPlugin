@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.panel.chatresponse;
+package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
