@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.panel;
+package com.devoxx.genie.ui.panel.chatresponse;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
@@ -26,7 +26,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      */
     public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
         super(new BorderLayout());
-
+        setBackground(Color.BLUE);
         andTransparent()
             .withMaximumHeight(30)
             .withPreferredHeight(30);

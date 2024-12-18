@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
+import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.vfs.VirtualFile;
