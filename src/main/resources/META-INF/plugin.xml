@@ -45,6 +45,7 @@
             <LI>Fix #399 : Fixed UserMessage GPT4ALL issue</LI>
             <LI>Feat #402 : Allow all LLM Providers to have the "Add Project" feature</LI>
             <LI>Feat #406 : Show "Jan" model in combobox</LI>
+            <LI>Feat #243 : Make ChatResponsePanel more modular</LI>
         </UL>
         <h2>V0.4.5</h2>
         <UL>
