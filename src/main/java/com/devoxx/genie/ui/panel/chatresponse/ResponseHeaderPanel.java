@@ -26,7 +26,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      */
     public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
         super(new BorderLayout());
-
+        setBackground(Color.BLUE);
         andTransparent()
             .withMaximumHeight(30)
             .withPreferredHeight(30);
