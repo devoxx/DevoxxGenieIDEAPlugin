@@ -34,7 +34,6 @@ public class GoogleChatModelFactory implements ChatModelFactory {
                 .modelName(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
                 .maxOutputTokens(chatModel.getMaxTokens())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
                 .build();
     }
 
