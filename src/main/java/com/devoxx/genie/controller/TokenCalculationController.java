@@ -41,7 +41,7 @@ public class TokenCalculationController {
             return;
         }
 
-        int maxTokens = selectedModel.getContextWindow();
+        int maxTokens = selectedModel.getInputMaxTokens();
         boolean isApiKeyBased = DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider);
 
         // Perform the token and cost calculation

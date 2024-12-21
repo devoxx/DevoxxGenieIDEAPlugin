@@ -102,7 +102,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
                 model.getModelName(),
                 model.getInputCost(),
                 model.getOutputCost(),
-                NumberFormat.getInstance().format(model.getContextWindow())
+                NumberFormat.getInstance().format(model.getInputMaxTokens())
             }));
     }
 

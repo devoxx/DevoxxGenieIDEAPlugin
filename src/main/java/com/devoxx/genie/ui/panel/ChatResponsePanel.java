@@ -4,6 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.chatresponse.*;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
 
 public class ChatResponsePanel extends BackgroundPanel {

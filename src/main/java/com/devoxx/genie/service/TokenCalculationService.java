@@ -99,9 +99,9 @@ public class TokenCalculationService {
                 message = getTotalFilesAndEstimatedCostMessage(selectedProvider, languageModel, scanResult, estimatedInputCost);
             }
 
-            if (scanResult.getTokenCount() > languageModel.getContextWindow()) {
+            if (scanResult.getTokenCount() > languageModel.getInputMaxTokens()) {
                 message += String.format(". Total project size exceeds model's max context of %s tokens.",
-                    WindowContextFormatterUtil.format(languageModel.getContextWindow()));
+                    WindowContextFormatterUtil.format(languageModel.getInputMaxTokens()));
             }
             listener.onTokenCalculationComplete(message);
         }), () -> {

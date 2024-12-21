@@ -36,13 +36,13 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
             infoLabel.setText("");
         } else {
             nameLabel.setText(model.getDisplayName());
-            String windowContext = WindowContextFormatterUtil.format(model.getContextWindow(), "tokens");
+            String windowContext = WindowContextFormatterUtil.format(model.getInputMaxTokens(), "tokens");
             if (model.getInputCost() > 0.0) {
                 double cost;
                 if (model.getProvider().getName().equalsIgnoreCase("openrouter")) {
-                    cost = model.getInputCost() * model.getContextWindow();
+                    cost = model.getInputCost() * model.getInputMaxTokens();
                 } else {
-                    cost = (model.getInputCost() / 1_000_000) * model.getContextWindow();
+                    cost = (model.getInputCost() / 1_000_000) * model.getInputMaxTokens();
                 }
                 infoLabel.setText(String.format("%s @ %s USD", windowContext, decimalFormat.format(cost)));
             } else {

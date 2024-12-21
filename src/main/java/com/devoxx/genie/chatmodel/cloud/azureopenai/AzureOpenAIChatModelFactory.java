@@ -61,7 +61,7 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
                 .displayName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .inputCost(0.0)
                 .outputCost(0.0)
-                .contextWindow(0)
+                .inputMaxTokens(0)
                 .apiKeyUsed(true)
                 .build());
     }

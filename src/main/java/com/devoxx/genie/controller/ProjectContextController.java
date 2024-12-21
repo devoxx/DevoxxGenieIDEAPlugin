@@ -114,7 +114,7 @@ public class ProjectContextController {
         LanguageModel languageModel = (LanguageModel) modelNameComboBox.getSelectedItem();
         int tokenLimit = 4096;
         if (languageModel != null) {
-            tokenLimit = languageModel.getContextWindow();
+            tokenLimit = languageModel.getInputMaxTokens();
         }
         return tokenLimit;
     }

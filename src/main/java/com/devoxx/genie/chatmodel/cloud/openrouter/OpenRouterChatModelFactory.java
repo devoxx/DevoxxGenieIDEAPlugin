@@ -87,7 +87,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
                         .displayName(model.getName())
                         .inputCost(inputCost)
                         .outputCost(outputCost)
-                        .contextWindow(model.getContextLength() == null ? model.getTopProvider().getContextLength() : model.getContextLength())
+                        .inputMaxTokens(model.getContextLength() == null ? model.getTopProvider().getContextLength() : model.getContextLength())
                         .apiKeyUsed(true)
                         .build();
                     synchronized (modelNames) {

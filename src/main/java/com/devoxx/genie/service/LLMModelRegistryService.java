@@ -46,7 +46,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 2.0")
                         .inputCost(8)
                         .outputCost(24)
-                        .contextWindow(100_000)
+                        .inputMaxTokens(100_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -58,7 +58,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 2.1")
                         .inputCost(8)
                         .outputCost(24)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -70,7 +70,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3 Haiku")
                         .inputCost(0.25)
                         .outputCost(1.25)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -82,7 +82,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3 Sonnet")
                         .inputCost(3)
                         .outputCost(15)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -94,7 +94,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3 Opus")
                         .inputCost(15)
                         .outputCost(75)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -106,7 +106,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3.5 Sonnet")
                         .inputCost(3)
                         .outputCost(15)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -118,12 +118,27 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3.5 Haiku")
                         .inputCost(1)
                         .outputCost(5)
-                        .contextWindow(200_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
     }
 
     private void addOpenAiModels() {
+
+        // TODO Add o3 and o3-mini when available in Feb 2025
+
+        String o1Model = "o1";
+        models.put(ModelProvider.OpenAI.getName() + ":" + o1Model,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(o1Model)
+                        .displayName("o1")
+                        .inputCost(5)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .outputMaxTokens(100_000)
+                        .apiKeyUsed(true)
+                        .build());
 
         String o1Mini = "o1-mini";
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Mini,
@@ -133,7 +148,8 @@ public final class LLMModelRegistryService {
                         .displayName("o1 mini")
                         .inputCost(5)
                         .outputCost(15)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
+                        .outputMaxTokens(65_536)
                         .apiKeyUsed(true)
                         .build());
 
@@ -145,19 +161,8 @@ public final class LLMModelRegistryService {
                         .displayName("o1 preview")
                         .inputCost(10)
                         .outputCost(30)
-                        .contextWindow(128_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gpt35Turbo = GPT_3_5_TURBO.toString();
-        models.put(ModelProvider.OpenAI.getName() + ":" + gpt35Turbo,
-                LanguageModel.builder()
-                        .provider(ModelProvider.OpenAI)
-                        .modelName(gpt35Turbo)
-                        .displayName("GPT 3.5 Turbo")
-                        .inputCost(0.5)
-                        .outputCost(1.5)
-                        .contextWindow(16_000)
+                        .inputMaxTokens(128_000)
+                        .outputMaxTokens(32_768)
                         .apiKeyUsed(true)
                         .build());
 
@@ -169,19 +174,8 @@ public final class LLMModelRegistryService {
                         .displayName("GPT 4")
                         .inputCost(30)
                         .outputCost(60)
-                        .contextWindow(8_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gpt4TurboPreview = GPT_4_TURBO_PREVIEW.toString();
-        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4TurboPreview,
-                LanguageModel.builder()
-                        .provider(ModelProvider.OpenAI)
-                        .modelName(gpt4TurboPreview)
-                        .displayName("GPT 4 Turbo")
-                        .inputCost(10)
-                        .outputCost(30)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(8_192)
+                        .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
@@ -193,7 +187,7 @@ public final class LLMModelRegistryService {
                         .displayName("GPT 4o")
                         .inputCost(5)
                         .outputCost(15)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -205,7 +199,34 @@ public final class LLMModelRegistryService {
                         .displayName("GPT 4o mini")
                         .inputCost(0.15)
                         .outputCost(0.6)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
+                        .outputMaxTokens(16_384)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt4TurboPreview = GPT_4_TURBO_PREVIEW.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4TurboPreview,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt4TurboPreview)
+                        .displayName("GPT 4 Turbo")
+                        .inputCost(10)
+                        .outputCost(30)
+                        .inputMaxTokens(128_000)
+                        .outputMaxTokens(4_096)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt35Turbo = GPT_3_5_TURBO.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt35Turbo,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt35Turbo)
+                        .displayName("GPT 3.5 Turbo")
+                        .inputCost(0.5)
+                        .outputCost(1.5)
+                        .inputMaxTokens(16_385)
+                        .outputMaxTokens(4_096)
                         .apiKeyUsed(true)
                         .build());
 
@@ -217,7 +238,7 @@ public final class LLMModelRegistryService {
                     .displayName("Custom Model")
                     .inputCost(0.15)
                     .outputCost(0.6)
-                    .contextWindow(128_000)
+                    .inputMaxTokens(128_000)
                     .apiKeyUsed(true)
                     .build());
     }
@@ -231,7 +252,7 @@ public final class LLMModelRegistryService {
                         .displayName("Meta Llama 3.1 405B")
                         .inputCost(2.7)
                         .outputCost(2.7)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -243,7 +264,7 @@ public final class LLMModelRegistryService {
                         .displayName("Meta Llama 3.1 70B")
                         .inputCost(0.35)
                         .outputCost(0.4)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -255,7 +276,7 @@ public final class LLMModelRegistryService {
                         .displayName("Meta Llama 3.1 8B")
                         .inputCost(0.055)
                         .outputCost(0.055)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -267,7 +288,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral Nemo 12B")
                         .inputCost(0.13)
                         .outputCost(0.13)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -279,7 +300,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mixtral 8x7B Instruct v0.1")
                         .inputCost(0.24)
                         .outputCost(0.24)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -291,7 +312,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mixtral 8x22B Instruct v0.1")
                         .inputCost(0.65)
                         .outputCost(0.65)
-                        .contextWindow(64_000)
+                        .inputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -303,7 +324,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral 7B Instruct v0.3")
                         .inputCost(0.07)
                         .outputCost(0.07)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -315,7 +336,7 @@ public final class LLMModelRegistryService {
                         .displayName("Wizard LM 2 8x22B")
                         .inputCost(0.5)
                         .outputCost(0.5)
-                        .contextWindow(64_000)
+                        .inputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -327,7 +348,7 @@ public final class LLMModelRegistryService {
                         .displayName("Wizard LM 2 7B")
                         .inputCost(0.055)
                         .outputCost(0.055)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -339,7 +360,7 @@ public final class LLMModelRegistryService {
                         .displayName("OpenChat 3.5")
                         .inputCost(0.055)
                         .outputCost(0.055)
-                        .contextWindow(8_000)
+                        .inputMaxTokens(8_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -351,7 +372,7 @@ public final class LLMModelRegistryService {
                         .displayName("Gemma 2 9B it")
                         .inputCost(0.06)
                         .outputCost(0.06)
-                        .contextWindow(4_000)
+                        .inputMaxTokens(4_000)
                         .apiKeyUsed(true)
                         .build());
     }
@@ -362,7 +383,6 @@ public final class LLMModelRegistryService {
      * @see <a href="https://ai.google.dev/gemini-api/docs/models/gemini">V1 Gemini models</a>
      */
     private void addGeminiModels() {
-
         String gemini15Flash = "gemini-1.5-flash";
         models.put(ModelProvider.Google.getName() + ":" + gemini15Flash,
                 LanguageModel.builder()
@@ -371,7 +391,21 @@ public final class LLMModelRegistryService {
                         .displayName("Gemini 1.5 Flash")
                         .inputCost(0.0375)
                         .outputCost(0.6)
-                        .contextWindow(1_000_000)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(8_192)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gemini15Flash8B = "gemini-1.5-flash-8b";
+        models.put(ModelProvider.Google.getName() + ":" + gemini15Flash8B,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(gemini15Flash8B)
+                        .displayName("Gemini 1.5 Flash 8B")
+                        .inputCost(0.0375)
+                        .outputCost(0.6)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
@@ -383,7 +417,8 @@ public final class LLMModelRegistryService {
                         .displayName("Gemini 1.5 Pro")
                         .inputCost(7)
                         .outputCost(21)
-                        .contextWindow(2_000_000)
+                        .inputMaxTokens(2_097_152)
+                        .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
@@ -392,10 +427,22 @@ public final class LLMModelRegistryService {
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini15ProExp0801)
-                        .displayName("Gemini 1.5 Pro 0801")
+                        .displayName("Gemini 1.5 Pro Exp. 0801")
                         .inputCost(7)
                         .outputCost(21)
-                        .contextWindow(2_000_000)
+                        .inputMaxTokens(2_000_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String geminiLearnLM = "learnlm-1.5-pro-experimental";
+        models.put(ModelProvider.Google.getName() + ":" + geminiLearnLM,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(geminiLearnLM)
+                        .displayName("Learn LM 1.5 Pro Exp.")
+                        .inputCost(0)
+                        .outputCost(0)
+                        .inputMaxTokens(2_000_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -404,10 +451,10 @@ public final class LLMModelRegistryService {
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(geminiExp1206)
-                        .displayName("Gemini Exp 1206")
+                        .displayName("Gemini Exp. 1206")
                         .inputCost(0)
                         .outputCost(0)
-                        .contextWindow(2_000_000)
+                        .inputMaxTokens(2_000_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -416,13 +463,26 @@ public final class LLMModelRegistryService {
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2FlashExp)
-                        .displayName("Gemini 2.0 Flash Exp")
+                        .displayName("Gemini 2.0 Flash Exp.")
                         .inputCost(0)
                         .outputCost(0)
-                        .contextWindow(1_000_000)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
+        String geminiFlashThinking = "gemini-2.0-flash-thinking-exp-1219";
+        models.put(ModelProvider.Google.getName() + ":" + geminiFlashThinking,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(geminiFlashThinking)
+                        .displayName("Gemini 2.0 Flash Thinking Exp.")
+                        .inputCost(0)
+                        .outputCost(0)
+                        .inputMaxTokens(32_000)
+                        .outputMaxTokens(8_000)
+                        .apiKeyUsed(true)
+                        .build());
     }
 
     private void addGroqModels() {
@@ -435,7 +495,7 @@ public final class LLMModelRegistryService {
                         .displayName("Gemma 7B it")
                         .inputCost(0.07)
                         .outputCost(0.07)
-                        .contextWindow(8_192)
+                        .inputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
@@ -447,7 +507,7 @@ public final class LLMModelRegistryService {
                         .displayName("Gemma 2 9B it")
                         .inputCost(0.2)
                         .outputCost(0.2)
-                        .contextWindow(8_192)
+                        .inputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
@@ -459,7 +519,7 @@ public final class LLMModelRegistryService {
                         .displayName("Llama 3 8B")
                         .inputCost(0.05)
                         .outputCost(0.05)
-                        .contextWindow(8_000)
+                        .inputMaxTokens(8_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -471,7 +531,7 @@ public final class LLMModelRegistryService {
                         .displayName("Llama 3.1 70B")
                         .inputCost(0.59)
                         .outputCost(0.79)
-                        .contextWindow(131_072)
+                        .inputMaxTokens(131_072)
                         .apiKeyUsed(true)
                         .build());
 
@@ -483,7 +543,7 @@ public final class LLMModelRegistryService {
                         .displayName("Llama 3.1 8B")
                         .inputCost(0.05)
                         .outputCost(0.08)
-                        .contextWindow(131_072)
+                        .inputMaxTokens(131_072)
                         .apiKeyUsed(true)
                         .build());
 
@@ -495,7 +555,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mixtral 8x7B")
                         .inputCost(0.24)
                         .outputCost(0.24)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -507,7 +567,7 @@ public final class LLMModelRegistryService {
                         .displayName("Llama 3 70B")
                         .inputCost(0.59)
                         .outputCost(0.79)
-                        .contextWindow(8192)
+                        .inputMaxTokens(8192)
                         .apiKeyUsed(true)
                         .build());
     }
@@ -521,7 +581,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral 7B")
                         .inputCost(0.25)
                         .outputCost(0.25)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -533,7 +593,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral 8x7B")
                         .inputCost(0.7)
                         .outputCost(0.7)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -545,7 +605,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral 8x22b")
                         .inputCost(2)
                         .outputCost(6)
-                        .contextWindow(64_000)
+                        .inputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -557,7 +617,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral Small")
                         .inputCost(1)
                         .outputCost(3)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -569,7 +629,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral Medium")
                         .inputCost(2.7)
                         .outputCost(0.1)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -581,7 +641,7 @@ public final class LLMModelRegistryService {
                         .displayName("Mistral Large")
                         .inputCost(4)
                         .outputCost(12)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -593,7 +653,7 @@ public final class LLMModelRegistryService {
                         .displayName("Codestral")
                         .inputCost(1)
                         .outputCost(3)
-                        .contextWindow(32_000)
+                        .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
     }
@@ -607,7 +667,7 @@ public final class LLMModelRegistryService {
                         .displayName("DeepSeek Coder")
                         .inputCost(0.14)
                         .outputCost(0.28)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -619,7 +679,7 @@ public final class LLMModelRegistryService {
                         .displayName("DeepSeek Chat")
                         .inputCost(0.14)
                         .outputCost(0.28)
-                        .contextWindow(128_000)
+                        .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
     }

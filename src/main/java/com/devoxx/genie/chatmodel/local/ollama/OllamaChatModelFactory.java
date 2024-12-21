@@ -64,7 +64,7 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .displayName(ollamaModel.getName())
                 .inputCost(0)
                 .outputCost(0)
-                .contextWindow(contextWindow)
+                .inputMaxTokens(contextWindow)
                 .apiKeyUsed(false)
                 .build();
     }
