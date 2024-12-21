@@ -47,7 +47,7 @@ public class JanChatModelFactory extends LocalChatModelFactory {
                 .displayName(janModel.getName())
                 .inputCost(0)
                 .outputCost(0)
-                .contextWindow(janModel.getCtxLen() == null ? 8_000 : janModel.getSettings().getCtxLen())
+                .inputMaxTokens(janModel.getCtxLen() == null ? 8_000 : janModel.getSettings().getCtxLen())
                 .apiKeyUsed(false)
                 .build();
     }

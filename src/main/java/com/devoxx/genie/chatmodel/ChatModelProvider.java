@@ -1,9 +1,5 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
-import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
-import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
-import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;

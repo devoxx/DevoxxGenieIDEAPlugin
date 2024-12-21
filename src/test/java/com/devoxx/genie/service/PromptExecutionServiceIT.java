@@ -62,7 +62,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
-            .contextWindow(4096)
+            .inputMaxTokens(4096)
             .build();
         verifyResponse(createChatModel(model), model);
     }
@@ -76,7 +76,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
-            .contextWindow(100000)
+            .inputMaxTokens(100000)
             .build();
         verifyResponse(createChatModel(model), model);
     }
@@ -90,7 +90,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
-            .contextWindow(32768)
+            .inputMaxTokens(32768)
             .build();
         verifyResponse(createChatModel(model), model);
     }
@@ -104,7 +104,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
-            .contextWindow(32768)
+            .inputMaxTokens(32768)
             .build();
         verifyResponse(createChatModel(model), model);
     }
@@ -118,7 +118,7 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .apiKeyUsed(true)
             .inputCost(0.0)
             .outputCost(0.0)
-            .contextWindow(32768)
+            .inputMaxTokens(32768)
             .build();
         verifyResponse(createChatModel(model), model);
     }

@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.rag.validator;
 
-import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
+import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
 public class NomicEmbedTextValidator implements Validator {

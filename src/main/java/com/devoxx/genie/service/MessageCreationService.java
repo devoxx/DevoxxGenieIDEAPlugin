@@ -14,7 +14,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 

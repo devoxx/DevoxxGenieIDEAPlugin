@@ -68,7 +68,7 @@ public class AddDirectoryAction extends DumbAwareAction {
                     .filter(model -> model.getProvider().getName().equals(selectedProvider.getName()) &&
                             model.getModelName().equals(selectedModel))
                     .findFirst()
-                    .map(LanguageModel::getContextWindow);
+                    .map(LanguageModel::getInputMaxTokens);
 
             ProjectContentService.getInstance()
                 .getDirectoryContent(project, directory, contextWindow.orElse(settings.getDefaultWindowContext()), false)

@@ -35,7 +35,7 @@ public class LlamaChatModelFactory implements ChatModelFactory {
             .displayName(TEST_MODEL)
             .inputCost(0)
             .outputCost(0)
-            .contextWindow(8000)
+            .inputMaxTokens(8000)
             .apiKeyUsed(false)
             .build();
 

@@ -136,7 +136,7 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                     .apiKeyUsed(false)
                     .inputCost(0)
                     .outputCost(0)
-                    .contextWindow(4096)
+                    .inputMaxTokens(4096)
                     .build();
         } else {
             String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
@@ -146,7 +146,7 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                     .apiKeyUsed(false)
                     .inputCost(0)
                     .outputCost(0)
-                    .contextWindow(128_000)
+                    .inputMaxTokens(128_000)
                     .build();
         }
     }

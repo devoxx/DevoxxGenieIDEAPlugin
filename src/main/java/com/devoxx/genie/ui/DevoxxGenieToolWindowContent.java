@@ -193,7 +193,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             LanguageModel selectedModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
             if (selectedModel != null) {
                 DevoxxGenieStateService.getInstance().setSelectedLanguageModel(project.getLocationHash(), selectedModel.getModelName());
-                submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getContextWindow());
+                submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getInputMaxTokens());
             }
         }
     }

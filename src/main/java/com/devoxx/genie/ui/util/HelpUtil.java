@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.util;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.scale.JBUIScale;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.stream.Collectors;
 
 public class HelpUtil {

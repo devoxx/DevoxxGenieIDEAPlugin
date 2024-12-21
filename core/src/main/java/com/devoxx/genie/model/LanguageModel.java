@@ -17,10 +17,19 @@ public class LanguageModel implements Comparable<LanguageModel> {
     private boolean apiKeyUsed;
     private double inputCost;
     private double outputCost;
-    private int contextWindow;
+    private int inputMaxTokens;
+    private int outputMaxTokens;
 
     public LanguageModel() {
-        this(ModelProvider.OpenAI, "", "", false, 0.0, 0.0, 0);
+
+        this(ModelProvider.OpenAI,
+                "",
+                "",
+                false,
+                0.0,
+                0.0,
+                0,
+                0);
     }
 
     public LanguageModel(ModelProvider provider,
@@ -29,14 +38,16 @@ public class LanguageModel implements Comparable<LanguageModel> {
                          boolean apiKeyUsed,
                          double inputCost,
                          double outputCost,
-                         int contextWindow) {
+                         int inputMaxTokens,
+                         int outputMaxTokens) {
         this.provider = provider;
         this.modelName = modelName;
         this.displayName = displayName;
         this.apiKeyUsed = apiKeyUsed;
         this.inputCost = inputCost;
         this.outputCost = outputCost;
-        this.contextWindow = contextWindow;
+        this.inputMaxTokens = inputMaxTokens;
+        this.outputMaxTokens = outputMaxTokens;
     }
 
     @Override

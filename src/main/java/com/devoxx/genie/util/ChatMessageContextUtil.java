@@ -15,13 +15,9 @@ import com.devoxx.genie.ui.util.EditorUtil;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-import static com.devoxx.genie.model.Constant.GOOGLE_SEARCH_ACTION;
-import static com.devoxx.genie.model.Constant.TAVILY_SEARCH_ACTION;
 
 public class ChatMessageContextUtil {
 

@@ -1,8 +1,8 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaDBStatusCallback;
-import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
 import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;

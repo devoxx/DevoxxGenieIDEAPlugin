@@ -58,7 +58,7 @@ public class LMStudioChatModelFactory extends LocalChatModelFactory {
                 .displayName(lmStudioModel.getId())
                 .inputCost(0)
                 .outputCost(0)
-                .contextWindow(DEFAULT_CONTEXT_LENGTH)
+                .inputMaxTokens(DEFAULT_CONTEXT_LENGTH)
                 .apiKeyUsed(false)
                 .build();
     }

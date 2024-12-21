@@ -248,7 +248,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
                         .apiKeyUsed(conversation.getApiKeyUsed())
                         .inputCost(conversation.getInputCost() == null ? 0 : conversation.getInputCost())
                         .outputCost(conversation.getOutputCost() == null ? 0 : conversation.getOutputCost())
-                        .contextWindow(conversation.getContextWindow() == null ? 0 : conversation.getContextWindow())
+                        .inputMaxTokens(conversation.getContextWindow() == null ? 0 : conversation.getContextWindow())
                         .build())
                 .cost(0).build();
     }
