@@ -3,6 +3,8 @@
 <img height="128" src="src/main/resources/icons/pluginIcon.svg" width="128"/>
 
 [![X](https://img.shields.io/twitter/follow/DevoxxGenie)](https://x.com/devoxxgenie)
+![GitHub Repo stars](https://img.shields.io/github/stars/devoxx/DevoxxGenieIDEAPlugin)
+![JetBrains Plugin Rating](https://img.shields.io/jetbrains/plugin/r/stars/24169-devoxxgenie)
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [OpenRouter](https://www.openrouter.ai/) and [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 
@@ -27,6 +29,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 ### Blog Posts:
 
 - [DevoxxGenie: Your AI Assistant for IDEA](https://mydeveloperplanet.com/2024/10/08/devoxxgenie-your-ai-assistant-for-idea/)
+- [The Devoxx Genie IntelliJ Plugin Provides Access to Local or Cloud Based LLM Models](https://www.infoq.com/news/2024/05/devoxx-genie-intellij-plugin/)
 
 ### Key Features:
 
