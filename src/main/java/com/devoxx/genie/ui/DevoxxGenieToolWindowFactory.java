@@ -1,14 +1,12 @@
 package com.devoxx.genie.ui;
 
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,8 +20,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         toolWindow.getContentManager().addContent(content);
 
         // Subscribe to settings changes
-        MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-        MessageBusConnection connection = bus.connect();
+        MessageBusConnection connection = project.getMessageBus().connect();
         connection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, toolWindowContent);
     }
 }
