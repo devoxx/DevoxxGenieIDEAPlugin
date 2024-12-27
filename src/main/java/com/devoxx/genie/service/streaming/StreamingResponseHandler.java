@@ -67,7 +67,7 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
         if (chatMessageContext.hasFiles()) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 ExpandablePanel fileListPanel =
-                    new ExpandablePanel(chatMessageContext, FileListManager.getInstance().getFiles());
+                    new ExpandablePanel(chatMessageContext, FileListManager.getInstance().getFiles(chatMessageContext.getProject()));
                 fileListPanel.setName(chatMessageContext.getId());
                 promptOutputPanel.addStreamFileReferencesResponse(fileListPanel);
             });

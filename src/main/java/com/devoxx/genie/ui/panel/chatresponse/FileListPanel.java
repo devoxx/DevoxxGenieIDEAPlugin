@@ -7,6 +7,6 @@ import com.devoxx.genie.ui.component.ExpandablePanel;
 public class FileListPanel extends ExpandablePanel {
 
     public FileListPanel(ChatMessageContext chatMessageContext) {
-        super(chatMessageContext, FileListManager.getInstance().getFiles());
+        super(chatMessageContext, FileListManager.getInstance().getFiles(chatMessageContext.getProject()));
     }
 }

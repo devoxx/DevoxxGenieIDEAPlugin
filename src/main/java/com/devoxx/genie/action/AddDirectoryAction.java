@@ -56,10 +56,10 @@ public class AddDirectoryAction extends DumbAwareAction {
         List<VirtualFile> filesToAdd = new ArrayList<>();
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
-        addFilesRecursively(directory, fileListManager, filesToAdd, settings);
+        addFilesRecursively(project, directory, fileListManager, filesToAdd, settings);
 
         if (!filesToAdd.isEmpty()) {
-            fileListManager.addFiles(filesToAdd);
+            fileListManager.addFiles(project, filesToAdd);
 
             ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash()));
             String selectedModel = settings.getSelectedLanguageModel(project.getLocationHash());
@@ -86,15 +86,15 @@ public class AddDirectoryAction extends DumbAwareAction {
         }
     }
 
-    private void addFilesRecursively(@NotNull VirtualFile directory, FileListManager fileListManager,
+    private void addFilesRecursively(Project project, @NotNull VirtualFile directory, FileListManager fileListManager,
                                      List<VirtualFile> filesToAdd, DevoxxGenieSettingsService settings) {
         VirtualFile[] children = directory.getChildren();
         for (VirtualFile child : children) {
             if (child.isDirectory()) {
                 if (!settings.getExcludedDirectories().contains(child.getName())) {
-                    addFilesRecursively(child, fileListManager, filesToAdd, settings);
+                    addFilesRecursively(project, child, fileListManager, filesToAdd, settings);
                 }
-            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(child)) {
+            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(project, child)) {
                 filesToAdd.add(child);
             }
         }

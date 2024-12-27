@@ -37,7 +37,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     public static @NotNull JPanel createPanel(Project project, List<VirtualFile> openFiles) {
         DefaultListModel<VirtualFile> listModel = new DefaultListModel<>();
-        JBList<VirtualFile> resultList = createResultList(listModel);
+        JBList<VirtualFile> resultList = createResultList(project, listModel);
         JBTextField filterField = createFilterField(project, listModel, resultList, openFiles);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -64,15 +64,16 @@ public class FileSelectionPanelFactory implements DumbAware {
     /**
      * Create the result list
      *
+     * @param project
      * @param listModel the list model
      * @return the list
      */
-    private static @NotNull JBList<VirtualFile> createResultList(DefaultListModel<VirtualFile> listModel) {
+    private static @NotNull JBList<VirtualFile> createResultList(Project project, DefaultListModel<VirtualFile> listModel) {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
         resultList.setCellRenderer(new FileListCellRenderer());
         resultList.setVisibleRowCount(10); // Show 10 rows by default
 
-        addMouseListenerToResultList(resultList);
+        addMouseListenerToResultList(project, resultList);
         return resultList;
     }
 
@@ -201,14 +202,15 @@ public class FileSelectionPanelFactory implements DumbAware {
     /**
      * Add a mouse listener to the result list
      *
+     * @param project
      * @param resultList the result list
      */
-    private static void addMouseListenerToResultList(@NotNull JBList<VirtualFile> resultList) {
+    private static void addMouseListenerToResultList(Project project, @NotNull JBList<VirtualFile> resultList) {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == DOUBLE_CLICK) {
-                    addSelectedFile(resultList);
+                    addSelectedFile(project, resultList);
                 }
             }
         });
@@ -217,12 +219,13 @@ public class FileSelectionPanelFactory implements DumbAware {
     /**
      * Add the selected file to the file list
      *
+     * @param project
      * @param resultList the result list
      */
-    private static void addSelectedFile(@NotNull JBList<VirtualFile> resultList) {
+    private static void addSelectedFile(Project project, @NotNull JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
-            FileListManager.getInstance().addFile(selectedFile);
+            FileListManager.getInstance().addFile(project, selectedFile);
         }
     }
 

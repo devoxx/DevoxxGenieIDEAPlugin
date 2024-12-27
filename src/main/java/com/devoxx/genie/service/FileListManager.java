@@ -1,18 +1,16 @@
 package com.devoxx.genie.service;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class FileListManager {
 
-    private final List<VirtualFile> files = new ArrayList<>();
-    private final List<FileListObserver> observers = new ArrayList<>();
+    private final Map<String, List<VirtualFile>> filesMap = new HashMap<>();
+    private final Map<String, List<FileListObserver>> observersMap = new HashMap<>();
     @Getter
     private int totalFileCount = 0;
 
@@ -28,68 +26,79 @@ public class FileListManager {
         return instance;
     }
 
-    public void addFile(VirtualFile file) {
-        files.add(file);
-        notifyObservers(file);
+    public void addFile(Project project, VirtualFile file) {
+        List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+        currentFiles.add(file);
+        notifyObservers(project, file);
     }
 
-    public void addFiles(@NotNull List<VirtualFile> newFiles) {
+    public void addFiles(Project project, @NotNull List<VirtualFile> newFiles) {
         List<VirtualFile> actuallyAddedFiles = new ArrayList<>();
+        List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+        Set<VirtualFile> currentFilesSet = new HashSet<>(currentFiles);
+
         for (VirtualFile file : newFiles) {
-            if (!files.contains(file)) {
-                files.add(file);
+            if (!currentFilesSet.contains(file)) {
+                currentFiles.add(file);
                 actuallyAddedFiles.add(file);
+                currentFilesSet.add(file);
             }
         }
         if (!actuallyAddedFiles.isEmpty()) {
             actuallyAddedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
-            notifyObserversOfBatchAdd(actuallyAddedFiles);
+            notifyObserversOfBatchAdd(project, actuallyAddedFiles);
         }
     }
 
-    private void notifyObserversOfBatchAdd(@NotNull List<VirtualFile> addedFiles) {
+
+    private void notifyObserversOfBatchAdd(Project project, @NotNull List<VirtualFile> addedFiles) {
+        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.filesAdded(addedFiles);
         }
     }
 
-    public void removeFile(VirtualFile file) {
-        files.remove(file);
+    public void removeFile(Project project, VirtualFile file) {
+        List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+        currentFiles.remove(file);
     }
 
-    public List<VirtualFile> getFiles() {
-        return Collections.unmodifiableList(files);
+    public List<VirtualFile> getFiles(Project project) {
+        return Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
 
-    public boolean isEmpty() {
-        return files.isEmpty();
+    public boolean isEmpty(Project project) {
+        return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).isEmpty();
     }
 
-    public int size() {
-        return files.size();
+    public int size(Project project) {
+        return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).size();
     }
 
-    public boolean contains(VirtualFile file) {
-        return files.contains(file);
+    public boolean contains(Project project, VirtualFile file) {
+        return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).contains(file);
     }
 
-    public void addObserver(FileListObserver observer) {
-        observers.add(observer);
+    public void addObserver(Project project, FileListObserver observer) {
+        observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).add(observer);
     }
 
-    public void clear() {
+    public void clear(Project project) {
+        List<VirtualFile> files = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         files.clear();
         totalFileCount = 0;
-        notifyAllObservers();
+        notifyAllObservers(project);
     }
 
-    private void notifyObservers(VirtualFile file) {
+    private void notifyObservers(Project project, VirtualFile file) {
+        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.fileAdded(file);
         }
     }
 
-    private void notifyAllObservers() {
+    private void notifyAllObservers(Project project) {
+        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.allFilesRemoved();
         }
