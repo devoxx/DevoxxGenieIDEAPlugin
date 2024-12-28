@@ -30,7 +30,7 @@ public class PromptContextFileListPanel extends JPanel
     public PromptContextFileListPanel(Project project) {
         this.project = project;
         fileListManager = FileListManager.getInstance();
-        fileListManager.addObserver(this);
+        fileListManager.addObserver(project,this);
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -75,13 +75,13 @@ public class PromptContextFileListPanel extends JPanel
     }
 
     private void updateFilesPanelVisibility() {
-        if (fileListManager.isEmpty()) {
+        if (fileListManager.isEmpty(project)) {
             filesScrollPane.setVisible(false);
             filesScrollPane.setPreferredSize(new Dimension(0, 0));
         } else {
             filesScrollPane.setVisible(true);
             int MAX_VISIBLE_FILES = 3;
-            int fileCount = Math.min(fileListManager.size(), MAX_VISIBLE_FILES);
+            int fileCount = Math.min(fileListManager.size(project), MAX_VISIBLE_FILES);
             int heightPerFile = 30;
             int prefHeight = fileCount * heightPerFile;
             filesScrollPane.setPreferredSize(new Dimension(getPreferredSize().width, prefHeight));
@@ -92,7 +92,7 @@ public class PromptContextFileListPanel extends JPanel
 
     @Override
     public void onFileRemoved(VirtualFile file) {
-        fileListManager.removeFile(file);
+        fileListManager.removeFile(project, file);
         removeFromFilesPanel(file);
         updateFilesPanelVisibility();
         updateUIState();

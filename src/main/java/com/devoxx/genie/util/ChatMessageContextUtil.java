@@ -44,7 +44,7 @@ public class ChatMessageContextUtil {
             .userPrompt(userPromptText)
             .languageModel(languageModel)
             .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
-            .totalFileCount(FileListManager.getInstance().size())
+            .totalFileCount(FileListManager.getInstance().size(project))
             .executionTimeMs(0)
             .cost(0)
             .build();
@@ -84,7 +84,7 @@ public class ChatMessageContextUtil {
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
 
             // Add files to the context
-            List<VirtualFile> files = FileListManager.getInstance().getFiles();
+            List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
             if (!files.isEmpty()) {
                 addSelectedFiles(chatMessageContext, userPrompt, files);
             }

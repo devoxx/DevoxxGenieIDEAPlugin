@@ -32,13 +32,13 @@ public class AddFileAction extends DumbAwareAction {
         if (selectedFiles != null && selectedFiles.length > 0) {
             List<VirtualFile> filesToAdd = new ArrayList<>();
             for (VirtualFile file : selectedFiles) {
-                if (!file.isDirectory() && !fileListManager.contains(file)) {
+                if (!file.isDirectory() && !fileListManager.contains(project, file)) {
                     filesToAdd.add(file);
                 }
             }
 
             if (!filesToAdd.isEmpty()) {
-                fileListManager.addFiles(filesToAdd);
+                fileListManager.addFiles(project, filesToAdd);
                 NotificationUtil.sendNotification(project, "Added " + filesToAdd.size() + " file(s) to prompt context");
             } else {
                 NotificationUtil.sendNotification(project, "No new files to add or only directories selected");

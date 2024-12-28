@@ -9,10 +9,12 @@ import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.LightVirtualFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
@@ -45,10 +47,10 @@ public class AddSnippetAction extends DumbAwareAction {
             SelectionModel selectionModel = editor.getSelectionModel();
             String selectedText = selectionModel.getSelectedText();
             if (selectedText != null) {
-                createAndAddVirtualFile(selectedFile, selectionModel, selectedText);
+                createAndAddVirtualFile(e.getProject(), selectedFile, selectionModel, selectedText);
             } else {
                 // No text selected, add complete file
-                addSelectedFile(selectedFile);
+                addSelectedFile(e.getProject(), selectedFile);
             }
         }
     }
@@ -58,22 +60,23 @@ public class AddSnippetAction extends DumbAwareAction {
      *
      * @param selectedFile the selected file
      */
-    private static void addSelectedFile(VirtualFile selectedFile) {
+    private static void addSelectedFile(Project project, VirtualFile selectedFile) {
         FileListManager fileListManager = FileListManager.getInstance();
-        if (fileListManager.contains(selectedFile)) {
+        if (fileListManager.contains(project, selectedFile)) {
             return;
         }
-        fileListManager.addFile(selectedFile);
+        fileListManager.addFile(project, selectedFile);
     }
 
     /**
      * Create a virtual file and add it to the file list manager.
      *
+     * @param project
      * @param originalFile   the original file
      * @param selectionModel the selection model
      * @param selectedText   the selected text
      */
-    private void createAndAddVirtualFile(@NotNull VirtualFile originalFile,
+    private void createAndAddVirtualFile(@Nullable Project project, @NotNull VirtualFile originalFile,
                                          @NotNull SelectionModel selectionModel,
                                          String selectedText) {
         LightVirtualFile virtualFile = new LightVirtualFile(originalFile.getName(), selectedText);
@@ -82,7 +85,7 @@ public class AddSnippetAction extends DumbAwareAction {
         virtualFile.putUserData(SELECTED_TEXT_KEY, selectedText);
         virtualFile.putUserData(SELECTION_START_KEY, selectionModel.getSelectionStart());
         virtualFile.putUserData(SELECTION_END_KEY, selectionModel.getSelectionEnd());
-        FileListManager.getInstance().addFile(virtualFile);
+        FileListManager.getInstance().addFile(project, virtualFile);
     }
 
 
