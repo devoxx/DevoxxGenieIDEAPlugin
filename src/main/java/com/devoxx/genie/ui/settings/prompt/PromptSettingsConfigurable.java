@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -16,9 +15,11 @@ import java.util.function.Consumer;
 public class PromptSettingsConfigurable implements Configurable {
 
     private final PromptSettingsComponent promptSettingsComponent;
+    private final Project project;
 
     public PromptSettingsConfigurable(Project project) {
         promptSettingsComponent = new PromptSettingsComponent(project);
+        this.project = project;
     }
 
     @Nullable
@@ -66,8 +67,7 @@ public class PromptSettingsConfigurable implements Configurable {
 
         settings.setCustomPrompts(promptSettingsComponent.getCustomPrompts());
 
-        ApplicationManager
-            .getApplication()
+        project
             .getMessageBus()
             .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
             .onCustomPromptsChanged();

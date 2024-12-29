@@ -25,6 +25,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
 
     private final Map<String, MessageWindowChatMemory> projectMemories = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
+    private Project project;
     private LanguageModel currentLanguageModel;
 
     public static ChatMemoryService getInstance() {
@@ -32,6 +33,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
     }
 
     public void init(@NotNull Project project) {
+        this.project = project;
         createChatMemory(project.getLocationHash(), DevoxxGenieStateService.getInstance().getChatMemorySize());
         createChangeListener();
     }
@@ -39,9 +41,9 @@ public class ChatMemoryService implements ChatMemorySizeListener {
     // TODO - This method is currently not used anywhere in the codebase
     // TODO - Should be triggered when user changes the chat memory size in the settings
     private void createChangeListener() {
-        ApplicationManager.getApplication().getMessageBus()
-            .connect()
-            .subscribe(AppTopics.CHAT_MEMORY_SIZE_TOPIC, this);
+        project.getMessageBus()
+                .connect()
+                .subscribe(AppTopics.CHAT_MEMORY_SIZE_TOPIC, this);
     }
 
     public void clear(@NotNull Project project) {
@@ -93,10 +95,10 @@ public class ChatMemoryService implements ChatMemorySizeListener {
 
     private void createChatMemory(@NotNull String projectHash, int chatMemorySize) {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
-            .id("devoxxgenie-" + projectHash)
-            .chatMemoryStore(inMemoryChatMemoryStore)
-            .maxMessages(chatMemorySize)
-            .build();
+                .id("devoxxgenie-" + projectHash)
+                .chatMemoryStore(inMemoryChatMemoryStore)
+                .maxMessages(chatMemorySize)
+                .build();
         projectMemories.put(projectHash, chatMemory);
     }
 

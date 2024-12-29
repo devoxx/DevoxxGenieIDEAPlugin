@@ -11,7 +11,6 @@ import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
-import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
@@ -43,10 +42,8 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     private final PromptOutputPanel promptOutputPanel;
     private final SubmitPanel submitPanel;
     private final JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-
-    private JBPopup historyPopup;
-
     private final ChatService chatService;
+    private JBPopup historyPopup;
 
     /**
      * The conversation panel constructor.
@@ -75,13 +72,11 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
         chatService = new ChatService(toolWindowContent.getStorageService(), project);
 
-        ApplicationManager.getApplication().getMessageBus().connect()
-            .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> updateFontSize());
         submitPanel = toolWindowContent.getSubmitPanel();
     }
 
-    private void updateFontSize() {
-        int fontSize = (int)JBUIScale.scale(14f) + 6;
+    public void updateFontSize() {
+        int fontSize = (int) JBUIScale.scale(14f) + 6;
         settingsBtn.setPreferredSize(new Dimension(fontSize, 30));
         historyButton.setPreferredSize(new Dimension(fontSize, 30));
         newConversationBtn.setPreferredSize(new Dimension(fontSize, 30));
@@ -144,12 +139,12 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
     private void showConversationHistory() {
         historyPopup = JBPopupFactory.getInstance()
-            .createComponentPopupBuilder(historyPanel, null)
-            .setTitle("Conversation History")
-            .setMovable(true)
-            .setResizable(true)
-            .setMinSize(new Dimension(500, 400))
-            .createPopup();
+                .createComponentPopupBuilder(historyPanel, null)
+                .setTitle("Conversation History")
+                .setMovable(true)
+                .setResizable(true)
+                .setMinSize(new Dimension(500, 400))
+                .createPopup();
 
         // Calculate the position for the popup
         int x = settingsBtn.getX() + settingsBtn.getWidth() - 500;

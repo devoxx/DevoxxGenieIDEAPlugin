@@ -1,16 +1,11 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.component.InputSwitch;
-import com.devoxx.genie.ui.listener.GitDiffStateListener;
-import com.devoxx.genie.ui.listener.RAGStateListener;
-import com.devoxx.genie.ui.listener.WebSearchStateListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -19,8 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SearchOptionsPanel extends JPanel {
-    private final List<InputSwitch> switches = new ArrayList<>();
     private static final int DEFAULT_HEIGHT = JBUI.scale(30);
+    @Getter
+    private final List<InputSwitch> switches = new ArrayList<>();
 
     public SearchOptionsPanel(Project project) {
         super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
@@ -91,9 +87,6 @@ public class SearchOptionsPanel extends JPanel {
             updatePanelVisibility();
         });
 
-        // Set up message bus listeners for visibility changes
-        setupMessageBusListeners();
-
         // Add components
         add(ragSwitch);
         add(gitDiffSwitch);
@@ -124,7 +117,7 @@ public class SearchOptionsPanel extends JPanel {
         return switches.stream().anyMatch(Component::isVisible);
     }
 
-    private void updatePanelVisibility() {
+    public void updatePanelVisibility() {
         setVisible(shouldBeVisible());
         revalidate();
         repaint();
@@ -138,36 +131,6 @@ public class SearchOptionsPanel extends JPanel {
 
         // Update panel visibility
         updatePanelVisibility();
-    }
-
-    private void setupMessageBusListeners() {
-        Application application = ApplicationManager.getApplication();
-        MessageBusConnection connect = application.getMessageBus().connect();
-
-        // Subscribe to state changes and update both visibility and selection
-        connect.subscribe(AppTopics.RAG_STATE_TOPIC,
-                (RAGStateListener) enabled -> {
-                    InputSwitch ragSwitch = switches.get(0);
-                    ragSwitch.setVisible(enabled);
-                    ragSwitch.setSelected(enabled);
-                    updatePanelVisibility();
-                });
-
-        connect.subscribe(AppTopics.GITDIFF_STATE_TOPIC,
-                (GitDiffStateListener) enabled -> {
-                    InputSwitch gitDiffSwitch = switches.get(1);
-                    gitDiffSwitch.setVisible(enabled);
-                    gitDiffSwitch.setSelected(enabled);
-                    updatePanelVisibility();
-                });
-
-        connect.subscribe(AppTopics.WEB_SEARCH_STATE_TOPIC,
-                (WebSearchStateListener) enabled -> {
-                    InputSwitch webSearchSwitch = switches.get(2);
-                    webSearchSwitch.setVisible(enabled);
-                    webSearchSwitch.setSelected(enabled);
-                    updatePanelVisibility();
-                });
     }
 
     private void deactivateOtherSwitches(InputSwitch activeSwitch) {

@@ -1,9 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.WelcomeUtil;
-import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBPanel;
@@ -18,9 +16,8 @@ import java.util.ResourceBundle;
 
 public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptChangeListener {
 
-    private static final Logger LOG = Logger.getInstance(WelcomePanel.class);
-
     public static final float DEFAULT_FONT_SIZE = 20f;
+    private static final Logger LOG = Logger.getInstance(WelcomePanel.class);
     private final JEditorPane jEditorPane;
     private final JBScrollPane scrollPane;
     private final ResourceBundle resourceBundle;
@@ -29,14 +26,6 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
         super(new BorderLayout());
 
         this.resourceBundle = resourceBundle;
-
-        ApplicationManager.getApplication()
-            .getMessageBus()
-            .connect()
-            .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
-
-        ApplicationManager.getApplication().getMessageBus().connect()
-            .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> updateFontSize());
 
         jEditorPane = new JEditorPane("text/html", "");
         jEditorPane.setEditable(false);
@@ -68,7 +57,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
         setPreferredSize(new Dimension(600, 400));
     }
 
-    private void updateFontSize() {
+    public void updateFontSize() {
         float scaleFactor = JBUIScale.scale(1f);
         String welcomeText = WelcomeUtil.getWelcomeText(resourceBundle, scaleFactor);
         jEditorPane.setText(welcomeText);

@@ -15,7 +15,6 @@ import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,7 +24,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBusConnection;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -43,6 +42,7 @@ public class ActionButtonsPanel extends JPanel
 
     private final transient Project project;
 
+    @Getter
     private final transient EditorFileButtonManager editorFileButtonManager;
 
     private JButton addFileBtn;
@@ -96,7 +96,6 @@ public class ActionButtonsPanel extends JPanel
         // Call setupUI which will create the buttons before creating the button panel
         setupUI();
         setupAccessibility();
-        setupMessageBus();
     }
 
     private void setupUI() {
@@ -240,12 +239,6 @@ public class ActionButtonsPanel extends JPanel
             submitBtn.setIcon(StopIcon);
             submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
-    }
-
-    private void setupMessageBus() {
-        MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-        messageBusConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, this);
-        messageBusConnection.subscribe(AppTopics.PROMPT_SUBMISSION_TOPIC, this);
     }
 
     public void resetProjectContext() {

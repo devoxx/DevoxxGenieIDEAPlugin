@@ -5,7 +5,6 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,9 +21,9 @@ public class ChatService implements ConversationEventListener {
         this.storageService = storageService;
         this.project = project;
 
-        ApplicationManager.getApplication().getMessageBus()
-            .connect()
-            .subscribe(AppTopics.CONVERSATION_TOPIC, this);
+        project.getMessageBus()
+                .connect()
+                .subscribe(AppTopics.CONVERSATION_TOPIC, this);
     }
 
     @Override
@@ -35,7 +34,7 @@ public class ChatService implements ConversationEventListener {
     private void saveConversation(@NotNull ChatMessageContext chatMessageContext) {
         String userPrompt = chatMessageContext.getUserPrompt();
         if (!chatMessageContext.getProject().getName().equalsIgnoreCase(project.getName()) ||
-            userPrompt == null || userPrompt.trim().isEmpty()) {
+                userPrompt == null || userPrompt.trim().isEmpty()) {
             return;
         }
         Conversation conversation = new Conversation();

@@ -38,10 +38,10 @@ public class ChatPromptExecutor {
     private final PromptInputArea promptInputArea;
     private final ConcurrentHashMap<Project, Boolean> isRunningMap = new ConcurrentHashMap<>();
 
-    public ChatPromptExecutor(PromptInputArea promptInputArea) {
+    public ChatPromptExecutor(Project project, PromptInputArea promptInputArea) {
         this.promptInputArea = promptInputArea;
         this.streamingPromptExecutor = new StreamingPromptExecutor();
-        this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor();
+        this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor(project);
     }
 
     /**
@@ -182,7 +182,7 @@ public class ChatPromptExecutor {
      * @return the command
      */
     public Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
-                                                  PromptOutputPanel promptOutputPanel) {
+                                                 PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
 
         // Early exit if not a command

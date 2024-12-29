@@ -8,8 +8,8 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -24,11 +24,13 @@ public class NonStreamingPromptExecutor {
 
     private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutor.class);
 
+    private final Project project;
     private final PromptExecutionService promptExecutionService;
     private volatile Future<?> currentTask;
     private volatile boolean isCancelled;
 
-    public NonStreamingPromptExecutor() {
+    public NonStreamingPromptExecutor(Project project) {
+        this.project = project;
         this.promptExecutionService = PromptExecutionService.getInstance();
     }
 
@@ -74,7 +76,7 @@ public class NonStreamingPromptExecutor {
                         chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
 
                         // Add the conversation to the chat service
-                        ApplicationManager.getApplication().getMessageBus()
+                        project.getMessageBus()
                                 .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                                 .onNewConversation(chatMessageContext);
 

@@ -28,7 +28,7 @@ public class PromptExecutionController implements PromptExecutionListener {
         this.project = project;
         this.promptInputArea = promptInputArea;
         this.promptOutputPanel = promptOutputPanel;
-        this.chatPromptExecutor = new ChatPromptExecutor(promptInputArea);
+        this.chatPromptExecutor = new ChatPromptExecutor(project, promptInputArea);
         this.actionButtonsPanel = actionButtonsPanel;
     }
 

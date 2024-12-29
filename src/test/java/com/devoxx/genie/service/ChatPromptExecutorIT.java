@@ -5,15 +5,13 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ex.ApplicationEx;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.extensions.ExtensionsArea;
+import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import dev.langchain4j.data.message.UserMessage;
-
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.util.messages.MessageBus;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -60,7 +58,7 @@ public class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
 
         promptInputArea = new PromptInputArea(getProject(), resourceBundle);
         promptOutputPanel = new PromptOutputPanel(getProject(), resourceBundle);
-        chatPromptExecutor = new ChatPromptExecutor(promptInputArea);
+        chatPromptExecutor = new ChatPromptExecutor(getProject(), promptInputArea);
     }
 
     private void setApplication(ApplicationEx applicationEx) throws Exception {
