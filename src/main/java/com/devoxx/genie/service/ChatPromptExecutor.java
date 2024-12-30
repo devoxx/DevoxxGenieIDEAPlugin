@@ -6,7 +6,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
 import com.devoxx.genie.service.websearch.WebSearchExecutor;
-import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.component.input.AbstractPromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -35,10 +35,10 @@ public class ChatPromptExecutor {
 
     private final StreamingPromptExecutor streamingPromptExecutor;
     private final NonStreamingPromptExecutor nonStreamingPromptExecutor;
-    private final PromptInputArea promptInputArea;
+    private final AbstractPromptInputArea promptInputArea;
     private final ConcurrentHashMap<Project, Boolean> isRunningMap = new ConcurrentHashMap<>();
 
-    public ChatPromptExecutor(PromptInputArea promptInputArea) {
+    public ChatPromptExecutor(AbstractPromptInputArea promptInputArea) {
         this.promptInputArea = promptInputArea;
         this.streamingPromptExecutor = new StreamingPromptExecutor();
         this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor();

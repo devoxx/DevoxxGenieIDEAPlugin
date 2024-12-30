@@ -3,7 +3,7 @@ package com.devoxx.genie.controller;
 import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatPromptExecutor;
-import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.component.input.AbstractPromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.application.ApplicationManager;
@@ -15,14 +15,14 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     private final Project project;
     private final ChatPromptExecutor chatPromptExecutor;
-    private final PromptInputArea promptInputArea;
+    private final AbstractPromptInputArea promptInputArea;
     private final PromptOutputPanel promptOutputPanel;
     private final ActionButtonsPanel actionButtonsPanel;
     private boolean isPromptRunning = false;
     private ChatMessageContext currentChatMessageContext;
 
     public PromptExecutionController(Project project,
-                                     PromptInputArea promptInputArea,
+                                     AbstractPromptInputArea promptInputArea,
                                      PromptOutputPanel promptOutputPanel,
                                      ActionButtonsPanel actionButtonsPanel) {
         this.project = project;

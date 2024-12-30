@@ -561,5 +561,10 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="CopyDirectoryToClipboard"/>
         </action>
 
+        <action id="InlineChatAction" class="com.devoxx.genie.action.InlineChatAction"
+                text="Open Inline Chat">
+            <keyboard-shortcut keymap="$default" first-keystroke="shift A"/>
+        </action>
+
     </actions>
 </idea-plugin>

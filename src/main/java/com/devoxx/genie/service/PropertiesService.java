@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -8,6 +9,8 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class PropertiesService {
+
+    private static final Logger LOG = Logger.getInstance(PropertiesService.class);
 
     private final Properties properties = new Properties();
 
@@ -23,12 +26,12 @@ public class PropertiesService {
     private void loadProperties() {
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
             if (input == null) {
-                System.out.println("Sorry, unable to find application.properties");
+                LOG.warn("Sorry, unable to find application.properties"); // Use LOG.warn
                 return;
             }
             properties.load(input);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            LOG.error("Error loading properties", ex); // Use LOG.error with exception
         }
     }
 

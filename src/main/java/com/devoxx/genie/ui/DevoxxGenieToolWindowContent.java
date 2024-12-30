@@ -14,6 +14,7 @@ import com.devoxx.genie.ui.panel.SubmitPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
@@ -32,7 +33,7 @@ import static com.devoxx.genie.model.Constant.MESSAGES;
 /**
  * The Devoxx Genie Tool Window Content.
  */
-public class DevoxxGenieToolWindowContent implements SettingsChangeListener, GlowingListener {
+public class DevoxxGenieToolWindowContent extends SimpleToolWindowPanel implements SettingsChangeListener, GlowingListener {
 
     private static final float SPLITTER_PROPORTION = 0.75f;
     private static final float MIN_PROPORTION = 0.3f;
@@ -42,8 +43,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private final Project project;
     @Getter
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
-    @Getter
-    private final JPanel contentPanel = new JPanel();
     @Getter
     private LlmProviderPanel llmProviderPanel;
     @Getter
@@ -65,6 +64,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
+        super(true , false);
         project = toolWindow.getProject();
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
@@ -73,7 +73,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
         setupMessageBusConnection(toolWindow);
 
-        animatedBorder = new AnimatedGlowingBorder(contentPanel);
+        animatedBorder = new AnimatedGlowingBorder(this);
     }
 
     private void onStateLoaded() {
@@ -101,9 +101,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     }
 
     private void setupLayout() {
-        contentPanel.setLayout(new BorderLayout());
-        contentPanel.add(createTopPanel(), BorderLayout.NORTH);
-        contentPanel.add(createSplitter(), BorderLayout.CENTER);
+        setLayout(new BorderLayout());
+        add(createTopPanel(), BorderLayout.NORTH);
+        add(createSplitter(), BorderLayout.CENTER);
     }
 
     private void setupListeners() {

@@ -7,7 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
-import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.component.input.AbstractPromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -24,7 +24,7 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
 
     private final Project project;
     private final EditorFileButtonManager editorFileButtonManager;
-    private final PromptInputArea promptInputArea;
+    private final AbstractPromptInputArea promptInputArea;
     private final ComboBox<ModelProvider> modelProviderComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final ChatModelProvider chatModelProvider = new ChatModelProvider();
@@ -34,7 +34,7 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
     private final TokenCalculationController tokenCalculationController;
 
     public ActionButtonsPanelController(Project project,
-                                        PromptInputArea promptInputArea,
+                                        AbstractPromptInputArea promptInputArea,
                                         PromptOutputPanel promptOutputPanel,
                                         ComboBox<ModelProvider> modelProviderComboBox,
                                         ComboBox<LanguageModel> modelNameComboBox,
