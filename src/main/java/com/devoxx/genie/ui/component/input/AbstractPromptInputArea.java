@@ -13,6 +13,7 @@ public abstract class AbstractPromptInputArea extends JPanel {
     protected final CommandAutoCompleteTextField inputField;
     protected final transient Project project;
     protected final transient ResourceBundle resourceBundle;
+    protected JPanel inputAreaPanel;
 
     public AbstractPromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
         super(new BorderLayout());
@@ -20,7 +21,7 @@ public abstract class AbstractPromptInputArea extends JPanel {
         this.resourceBundle = resourceBundle;
 
         // Create main input area panel
-        JPanel inputAreaPanel = new JPanel(new BorderLayout());
+        inputAreaPanel = new JPanel(new BorderLayout());
         inputField = new CommandAutoCompleteTextField(project);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);

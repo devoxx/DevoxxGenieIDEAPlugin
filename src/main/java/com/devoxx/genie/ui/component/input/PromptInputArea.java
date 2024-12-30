@@ -2,12 +2,14 @@
 package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.ui.listener.RAGStateListener;
+import com.devoxx.genie.ui.panel.SearchOptionsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.ResourceBundle;
 
 public class PromptInputArea extends AbstractPromptInputArea {
@@ -25,6 +27,13 @@ public class PromptInputArea extends AbstractPromptInputArea {
             inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
         }
         inputField.setRows(3);
+        // Add components to main panel
+        inputAreaPanel.add(new SearchOptionsPanel(project), BorderLayout.NORTH);
+        inputAreaPanel.add(inputField, BorderLayout.CENTER);
+
+        add(inputAreaPanel, BorderLayout.CENTER);
+
+        this.subscribeToRagStateChanges();
     }
 
 

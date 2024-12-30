@@ -30,8 +30,6 @@ public class ResponseDocumentPanel extends JPanel {
 
         String markDownResponse = chatMessageContext.getAiMessage().text();
 
-        System.out.println(markDownResponse);
-
         Node document = Parser.builder().build().parse(markDownResponse);
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
