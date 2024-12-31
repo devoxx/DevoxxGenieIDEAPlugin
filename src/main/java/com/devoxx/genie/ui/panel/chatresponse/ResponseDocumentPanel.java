@@ -68,7 +68,6 @@ public class ResponseDocumentPanel extends JPanel {
         }
     }
 
-
     /**
      * Add document nodes to the panel.
      *
