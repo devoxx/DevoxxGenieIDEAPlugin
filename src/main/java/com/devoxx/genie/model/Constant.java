@@ -5,6 +5,7 @@ public class Constant {
     private Constant() {
     }
 
+    public static final String TOOL_WINDOW_ID = "DevoxxGenie";
     // The fixed command prompts
     public static final String SYSTEM_PROMPT = """
         You are a software developer IDEA plugin with expert knowledge in any programming language.

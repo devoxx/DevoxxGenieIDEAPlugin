@@ -18,7 +18,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
     public void createToolWindowContent(@NotNull Project project,
                                         @NotNull ToolWindow toolWindow) {
         DevoxxGenieToolWindowContent toolWindowContent = new DevoxxGenieToolWindowContent(toolWindow);
-        Content content = ContentFactory.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
+        Content content = ContentFactory.getInstance().createContent(toolWindowContent, "", false);
         toolWindow.getContentManager().addContent(content);
 
         // Subscribe to settings changes

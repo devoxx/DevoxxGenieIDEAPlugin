@@ -200,7 +200,7 @@ public class ActionButtonsPanel extends JPanel
         if (addFileBtn.isShowing()) {
             new ContextPopupMenu().show(submitBtn,
                     popup,
-                    devoxxGenieToolWindowContent.getContentPanel().getSize().width,
+                    devoxxGenieToolWindowContent.getSize().width,
                     promptInputArea.getLocationOnScreen().y);
         }
     }
