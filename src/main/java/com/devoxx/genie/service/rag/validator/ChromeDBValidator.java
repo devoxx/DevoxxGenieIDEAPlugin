@@ -1,10 +1,10 @@
 package com.devoxx.genie.service.rag.validator;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.core.DockerClientBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -21,7 +21,7 @@ public class ChromeDBValidator implements Validator {
 
     @Override
     public boolean isValid() {
-        try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
+        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
             // First check if Docker is running and we can connect
             if (!isDockerRunning(dockerClient)) {
                 this.message = "Docker is not running. Please start Docker first.";
