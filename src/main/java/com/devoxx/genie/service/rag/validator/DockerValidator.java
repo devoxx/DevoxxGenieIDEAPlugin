@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.rag.validator;
 
+import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DockerClientBuilder;
 
 public class DockerValidator implements Validator {
 
@@ -9,7 +9,7 @@ public class DockerValidator implements Validator {
 
     @Override
     public boolean isValid() {
-        try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
+        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
            return true;
         } catch (Exception e) {
             this.message = "Docker is not installed";

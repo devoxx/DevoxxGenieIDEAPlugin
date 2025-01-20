@@ -55,6 +55,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 
     implementation("com.github.docker-java:docker-java:3.4.0")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.0")
 
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
