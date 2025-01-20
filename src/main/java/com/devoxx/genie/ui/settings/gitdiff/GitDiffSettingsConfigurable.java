@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.settings.gitdiff;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,8 +12,10 @@ import javax.swing.*;
 public class GitDiffSettingsConfigurable implements Configurable {
 
     private final GitDiffSettingsComponent diffSettingsComponent;
+    private final Project project;
 
-    public GitDiffSettingsConfigurable() {
+    public GitDiffSettingsConfigurable(Project project) {
+        this.project = project;
         diffSettingsComponent = new GitDiffSettingsComponent();
     }
 
@@ -55,7 +57,7 @@ public class GitDiffSettingsConfigurable implements Configurable {
         stateService.setGitDiffEnabled(diffSettingsComponent.getEnableGitDiffCheckBox().isSelected());
 
         if (oldValue != newValue) {
-            ApplicationManager.getApplication().getMessageBus()
+            project.getMessageBus()
                     .syncPublisher(AppTopics.GITDIFF_STATE_TOPIC)
                     .onGitDiffStateChange(newValue);
         }

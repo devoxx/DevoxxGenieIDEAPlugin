@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.settings.websearch;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,9 +13,11 @@ import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class WebSearchProvidersConfigurable implements Configurable {
 
+    private final Project project;
     private final WebSearchProvidersComponent webSearchProvidersComponent;
 
-    public WebSearchProvidersConfigurable() {
+    public WebSearchProvidersConfigurable(Project project) {
+        this.project = project;
         webSearchProvidersComponent = new WebSearchProvidersComponent();
     }
 
@@ -70,7 +72,7 @@ public class WebSearchProvidersConfigurable implements Configurable {
         isModified |= webSearchProvidersComponent.getMaxSearchResults().getNumber() != stateService.getMaxSearchResults();
 
         if (oldValue != newValue) {
-            ApplicationManager.getApplication().getMessageBus()
+            project.getMessageBus()
                     .syncPublisher(AppTopics.WEB_SEARCH_STATE_TOPIC)
                     .onWebSearchStateChange(newValue);
         }

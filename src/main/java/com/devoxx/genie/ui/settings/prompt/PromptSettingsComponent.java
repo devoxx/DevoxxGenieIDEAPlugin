@@ -5,7 +5,6 @@ import com.devoxx.genie.ui.dialog.CustomPromptDialog;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
@@ -145,7 +144,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
             customPromptsTable.setRowSelectionInterval(newRowIndex, newRowIndex);
             customPromptsTable.scrollRectToVisible(customPromptsTable.getCellRect(newRowIndex, 0, true));
 
-            ApplicationManager.getApplication()
+            project
                 .getMessageBus()
                 .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
                 .onCustomPromptsChanged();
@@ -156,8 +155,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         int selectedRow = customPromptsTable.getSelectedRow();
         if (selectedRow != -1) {
             customPromptsTableModel.removeRow(selectedRow);
-            ApplicationManager
-                .getApplication()
+            project
                 .getMessageBus()
                 .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
                 .onCustomPromptsChanged();

@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.data.message.AiMessage;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -36,6 +37,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     private final transient ResourceBundle resourceBundle;
 
     private final JPanel container = new JPanel();
+    @Getter
     private final WelcomePanel welcomePanel;
     private final HelpPanel helpPanel;
     private final WaitingPanel waitingPanel = new WaitingPanel();

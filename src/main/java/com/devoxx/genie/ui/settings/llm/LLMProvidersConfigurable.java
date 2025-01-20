@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,8 +14,10 @@ import static com.intellij.openapi.options.Configurable.isFieldModified;
 public class LLMProvidersConfigurable implements Configurable {
 
     private final LLMProvidersComponent llmSettingsComponent;
+    private final Project project;
 
-    public LLMProvidersConfigurable() {
+    public LLMProvidersConfigurable(Project project) {
+        this.project = project;
         llmSettingsComponent = new LLMProvidersComponent();
     }
 
@@ -164,7 +166,7 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
                     (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
 
-            ApplicationManager.getApplication().getMessageBus()
+            project.getMessageBus()
                     .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
                     .settingsChanged(hasKey);
         }

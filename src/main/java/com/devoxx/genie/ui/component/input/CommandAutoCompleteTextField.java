@@ -39,8 +39,8 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         addKeyListener(new CommandKeyListener());
 
         project.getMessageBus()
-            .connect()
-            .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
+                .connect()
+                .subscribe(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, this);
 
         initializeCommands();
     }
@@ -59,6 +59,25 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         }
     }
 
+    public void setPlaceholder(String placeholder) {
+        this.placeholder = placeholder;
+        repaint();
+    }
+
+    @Override
+    public void onCustomPromptsChanged() {
+        initializeCommands();
+    }
+
+    @Override
+    protected void paintComponent(java.awt.Graphics g) {
+        super.paintComponent(g);
+        if (getText().isEmpty() && !placeholder.isEmpty()) {
+            g.setColor(JBColor.GRAY);
+            g.drawString(placeholder, getInsets().left, g.getFontMetrics().getMaxAscent() + getInsets().top);
+        }
+    }
+
     private class CommandKeyListener extends KeyAdapter {
         @Override
         public void keyPressed(@NotNull KeyEvent e) {
@@ -74,7 +93,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         private void sendPrompt() {
             String text = getText().trim();
             if (!text.isEmpty()) {
-                ApplicationManager.getApplication().getMessageBus()
+                project.getMessageBus()
                         .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
                         .onPromptSubmitted(project, text);
             }
@@ -161,25 +180,6 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             setCaretPosition(getLength());
             moveCaretPosition(getLength() - completion.length());
             isAutoCompleting = false;
-        }
-    }
-
-    public void setPlaceholder(String placeholder) {
-        this.placeholder = placeholder;
-        repaint();
-    }
-
-    @Override
-    public void onCustomPromptsChanged() {
-        initializeCommands();
-    }
-
-    @Override
-    protected void paintComponent(java.awt.Graphics g) {
-        super.paintComponent(g);
-        if (getText().isEmpty() && !placeholder.isEmpty()) {
-            g.setColor(JBColor.GRAY);
-            g.drawString(placeholder, getInsets().left, g.getFontMetrics().getMaxAscent() + getInsets().top);
         }
     }
 }

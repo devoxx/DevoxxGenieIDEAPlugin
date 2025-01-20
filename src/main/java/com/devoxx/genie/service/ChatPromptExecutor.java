@@ -41,7 +41,7 @@ public class ChatPromptExecutor {
     public ChatPromptExecutor(AbstractPromptInputArea promptInputArea) {
         this.promptInputArea = promptInputArea;
         this.streamingPromptExecutor = new StreamingPromptExecutor();
-        this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor();
+        this.nonStreamingPromptExecutor = new NonStreamingPromptExecutor(project);
     }
 
     /**
@@ -182,7 +182,7 @@ public class ChatPromptExecutor {
      * @return the command
      */
     public Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
-                                                  PromptOutputPanel promptOutputPanel) {
+                                                 PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
 
         // Early exit if not a command

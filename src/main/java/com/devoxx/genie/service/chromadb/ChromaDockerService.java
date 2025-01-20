@@ -3,11 +3,11 @@ package com.devoxx.genie.service.chromadb;
 import com.devoxx.genie.service.chromadb.exception.ChromaDBException;
 import com.devoxx.genie.service.chromadb.exception.DockerException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.DockerClientBuilder;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.Service;
@@ -94,7 +94,7 @@ public final class ChromaDockerService {
      * @throws DockerException if an error occurs while pulling the image
      */
     public void pullChromaDockerImage(ChromaDBStatusCallback callback) throws DockerException {
-        try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
+        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
             dockerClient.pullImageCmd(CHROMA_IMAGE).start().awaitCompletion();
         } catch (IOException e) {
             callback.onError(FAILED_TO_PULL_CHROMA_DB_IMAGE + e.getMessage());
@@ -112,7 +112,7 @@ public final class ChromaDockerService {
      * @throws IOException if an I/O error occurs
      */
     private boolean isChromaDBRunning() throws IOException {
-        try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
+        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
 
             return dockerClient.listContainersCmd()
                     .withShowAll(true)
@@ -131,7 +131,7 @@ public final class ChromaDockerService {
      * @throws ChromaDBException if an error occurs while starting the container
      */
     private void startChromaContainer(String volumePath, ChromaDBStatusCallback callback) throws ChromaDBException {
-        try (DockerClient dockerClient = DockerClientBuilder.getInstance().build()) {
+        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
 
             // First, check if container exists
             List<Container> existingContainers = dockerClient.listContainersCmd()

@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.settings.rag;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
@@ -13,8 +12,10 @@ import javax.swing.*;
 public class RAGSettingsConfigurable implements Configurable {
 
     private final RAGSettingsComponent ragSettingsComponent;
+    private final Project project;
 
     public RAGSettingsConfigurable(Project project) {
+        this.project = project;
         ragSettingsComponent = new RAGSettingsComponent(project);
     }
 
@@ -73,7 +74,7 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
 
         if (oldValue != newValue) {
-            ApplicationManager.getApplication().getMessageBus()
+            project.getMessageBus()
                     .syncPublisher(AppTopics.RAG_STATE_TOPIC)
                     .onRAGStateChanged(newValue);
         }
