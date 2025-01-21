@@ -55,6 +55,7 @@ public class PromptContextFileListPanel extends JPanel
         FileEntryComponent fileLabel = new FileEntryComponent(project, file, this);
         filesPanel.add(fileLabel);
         updateUIState();
+        scrollToBottom();
     }
 
     @Override
@@ -65,6 +66,7 @@ public class PromptContextFileListPanel extends JPanel
         }
         updateFilesPanelVisibility();
         updateUIState();
+        scrollToBottom();
     }
 
     @Override
@@ -82,7 +84,7 @@ public class PromptContextFileListPanel extends JPanel
             filesScrollPane.setVisible(true);
             int MAX_VISIBLE_FILES = 3;
             int fileCount = Math.min(fileListManager.size(project), MAX_VISIBLE_FILES);
-            int heightPerFile = 30;
+            int heightPerFile = 35; // Increased height per file to accommodate path
             int prefHeight = fileCount * heightPerFile;
             filesScrollPane.setPreferredSize(new Dimension(getPreferredSize().width, prefHeight));
         }
@@ -111,5 +113,12 @@ public class PromptContextFileListPanel extends JPanel
     private void updateUIState() {
         revalidate();
         repaint();
+    }
+
+    private void scrollToBottom() {
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar vertical = filesScrollPane.getVerticalScrollBar();
+            vertical.setValue(vertical.getMaximum());
+        });
     }
 }

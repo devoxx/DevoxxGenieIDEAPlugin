@@ -35,6 +35,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.8</h2>
+        <UL>
+            <LI>Feat #426: Show package/path in files list by @stephanj</LI>
+            <LI>Feat #430: Update until build to 251 by @mydeveloperplanet</LI>
+            <LI>Fix #429: Fix connection to docker daemon on Windows by @ThomasCluzel</LI>
+            <LI>Fix #422: Chat memory is not cleared when opening new project by @samkerr4coding</LI>
+            <LI>Feat #403: Make sure to use project message bus instead of application message bus by @samkerr4coding</LI>
+            <LI>Feat #410: Adding streaming ability with gemini models by @samkerr4coding</LI>
+            <LI>Fix #409: Make ChatResponsePanel more modular by @samkerr4coding</LI>
+        </UL>
         <h2>V0.4.7</h2>
         <UL>
             <LI>Feat #411: Add more preview (experimental) Gemini and Open AI models</LI>
