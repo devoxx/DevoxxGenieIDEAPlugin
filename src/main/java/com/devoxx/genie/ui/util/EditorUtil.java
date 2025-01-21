@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.util;
 
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.util.FileTypeUtil;
+import com.devoxx.genie.util.FileUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -43,7 +43,7 @@ public class EditorUtil {
                     editorInfo.setSelectedFiles(List.of(virtualFile));
                 }
 
-                editorInfo.setLanguage(FileTypeUtil.getFileType(virtualFile));
+                editorInfo.setLanguage(FileUtil.getFileType(virtualFile));
             }
         });
 

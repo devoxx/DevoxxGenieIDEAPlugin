@@ -10,7 +10,7 @@ import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.util.FileTypeUtil;
+import com.devoxx.genie.util.FileUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
@@ -155,7 +155,7 @@ public class ChatPromptExecutor {
                     editorInfo.setSelectedFiles(Arrays.asList(openFiles));
                 }
             }
-            editorInfo.setLanguage(FileTypeUtil.getFileType(fileEditorManager.getSelectedFiles()[0]));
+            editorInfo.setLanguage(FileUtil.getFileType(fileEditorManager.getSelectedFiles()[0]));
         }
 
         return editorInfo;

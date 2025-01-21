@@ -26,13 +26,13 @@ public class FileListManager {
         return instance;
     }
 
-    public void addFile(Project project, VirtualFile file) {
+    public void addFile(@NotNull Project project, VirtualFile file) {
         List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         currentFiles.add(file);
         notifyObservers(project, file);
     }
 
-    public void addFiles(Project project, @NotNull List<VirtualFile> newFiles) {
+    public void addFiles(@NotNull Project project, @NotNull List<VirtualFile> newFiles) {
         List<VirtualFile> actuallyAddedFiles = new ArrayList<>();
         List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         Set<VirtualFile> currentFilesSet = new HashSet<>(currentFiles);

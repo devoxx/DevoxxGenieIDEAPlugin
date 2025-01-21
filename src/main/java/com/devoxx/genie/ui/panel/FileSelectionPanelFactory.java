@@ -61,30 +61,16 @@ public class FileSelectionPanelFactory implements DumbAware {
         return mainPanel;
     }
 
-    /**
-     * Create the result list
-     *
-     * @param project
-     * @param listModel the list model
-     * @return the list
-     */
     private static @NotNull JBList<VirtualFile> createResultList(Project project, DefaultListModel<VirtualFile> listModel) {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
-        resultList.setCellRenderer(new FileListCellRenderer());
+        resultList.setCellRenderer(new FileListCellRenderer(project));
         resultList.setVisibleRowCount(10); // Show 10 rows by default
 
         addMouseListenerToResultList(project, resultList);
         return resultList;
     }
 
-    /**
-     * Create the filter file field
-     *
-     * @param project    the project
-     * @param listModel  the list model
-     * @param resultList the result list
-     * @return the filter field
-     */
+
     private static @NotNull JBTextField createFilterField(Project project,
                                                           DefaultListModel<VirtualFile> listModel,
                                                           JBList<VirtualFile> resultList,
@@ -115,15 +101,6 @@ public class FileSelectionPanelFactory implements DumbAware {
         return filterField;
     }
 
-    /**
-     * Debounce the search, only search after a DEBOUNCE_DELAY
-     *
-     * @param project       the project
-     * @param filterField   the filter field
-     * @param listModel     the list model
-     * @param resultList    the result list
-     * @param debounceTimer the debounce timer
-     */
     private static void debounceSearch(Project project,
                                        JBTextField filterField,
                                        DefaultListModel<VirtualFile> listModel,
@@ -132,25 +109,17 @@ public class FileSelectionPanelFactory implements DumbAware {
                                        List<VirtualFile> openFiles) {
         debounceTimer.get().stop();
         debounceTimer.set(new Timer(DEBOUNCE_DELAY, e ->
-            searchFiles(project, filterField.getText(), listModel, resultList, openFiles)));
+                searchFiles(project, filterField.getText(), listModel, resultList, openFiles)));
         debounceTimer.get().setRepeats(false);
         debounceTimer.get().start();
     }
 
-    /**
-     * Search for files
-     *
-     * @param project    the project
-     * @param searchText the search text
-     * @param listModel  the list model
-     * @param resultList the result list
-     */
     private static void searchFiles(Project project,
                                     String searchText,
                                     DefaultListModel<VirtualFile> listModel,
                                     JBList<VirtualFile> resultList,
                                     List<VirtualFile> openFiles) {
-        new Task.Backgroundable(project, "Searching Files", true) {
+        new Task.Backgroundable(project, "Searching files", true) {
             private final List<VirtualFile> foundFiles = new ArrayList<>();
 
             @Override
@@ -199,12 +168,6 @@ public class FileSelectionPanelFactory implements DumbAware {
         }.queue();
     }
 
-    /**
-     * Add a mouse listener to the result list
-     *
-     * @param project
-     * @param resultList the result list
-     */
     private static void addMouseListenerToResultList(Project project, @NotNull JBList<VirtualFile> resultList) {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
@@ -216,31 +179,10 @@ public class FileSelectionPanelFactory implements DumbAware {
         });
     }
 
-    /**
-     * Add the selected file to the file list
-     *
-     * @param project
-     * @param resultList the result list
-     */
     private static void addSelectedFile(Project project, @NotNull JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
             FileListManager.getInstance().addFile(project, selectedFile);
-        }
-    }
-
-    private static class FileListCellRenderer extends DefaultListCellRenderer {
-
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
-            if (value instanceof VirtualFile file) {
-                label.setIcon(FileTypeIconUtil.getFileTypeIcon(file));
-                label.setText(file.getName());
-            }
-
-            return label;
         }
     }
 }
