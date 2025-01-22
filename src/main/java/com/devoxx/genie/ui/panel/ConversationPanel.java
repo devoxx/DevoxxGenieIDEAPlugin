@@ -10,6 +10,7 @@ import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
+import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -50,7 +51,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      *
      * @param toolWindowContent the tool window content
      */
-    public ConversationPanel(DevoxxGenieToolWindowContent toolWindowContent) {
+    public ConversationPanel(@NotNull DevoxxGenieToolWindowContent toolWindowContent) {
         super(new BorderLayout());
 
         this.toolWindowContent = toolWindowContent;

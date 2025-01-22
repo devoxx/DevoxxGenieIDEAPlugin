@@ -3,7 +3,7 @@ package com.devoxx.genie.ui;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.ConversationStorageService;
+import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
 import com.devoxx.genie.ui.listener.GlowingListener;

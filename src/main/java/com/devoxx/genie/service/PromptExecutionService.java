@@ -8,6 +8,7 @@ import com.devoxx.genie.service.exception.ModelNotActiveException;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.ClipboardUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
@@ -116,6 +117,9 @@ public class PromptExecutionService {
         try {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             List<ChatMessage> messages = ChatMemoryService.getInstance().messages(chatMessageContext.getProject());
+
+            ClipboardUtil.copyToClipboard(messages.toString());
+
             Response<AiMessage> response = chatLanguageModel.generate(messages);
             ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
             return response;

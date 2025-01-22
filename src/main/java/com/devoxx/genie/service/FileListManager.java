@@ -51,53 +51,53 @@ public class FileListManager {
     }
 
 
-    private void notifyObserversOfBatchAdd(Project project, @NotNull List<VirtualFile> addedFiles) {
+    private void notifyObserversOfBatchAdd(@NotNull Project project, @NotNull List<VirtualFile> addedFiles) {
         List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.filesAdded(addedFiles);
         }
     }
 
-    public void removeFile(Project project, VirtualFile file) {
+    public void removeFile(@NotNull Project project, VirtualFile file) {
         List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         currentFiles.remove(file);
     }
 
-    public List<VirtualFile> getFiles(Project project) {
+    public List<VirtualFile> getFiles(@NotNull Project project) {
         return Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
 
-    public boolean isEmpty(Project project) {
+    public boolean isEmpty(@NotNull Project project) {
         return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).isEmpty();
     }
 
-    public int size(Project project) {
+    public int size(@NotNull Project project) {
         return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).size();
     }
 
-    public boolean contains(Project project, VirtualFile file) {
+    public boolean contains(@NotNull Project project, VirtualFile file) {
         return filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).contains(file);
     }
 
-    public void addObserver(Project project, FileListObserver observer) {
+    public void addObserver(@NotNull Project project, FileListObserver observer) {
         observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).add(observer);
     }
 
-    public void clear(Project project) {
+    public void clear(@NotNull Project project) {
         List<VirtualFile> files = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         files.clear();
         totalFileCount = 0;
         notifyAllObservers(project);
     }
 
-    private void notifyObservers(Project project, VirtualFile file) {
+    private void notifyObservers(@NotNull Project project, VirtualFile file) {
         List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.fileAdded(file);
         }
     }
 
-    private void notifyAllObservers(Project project) {
+    private void notifyAllObservers(@NotNull Project project) {
         List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.allFilesRemoved();
