@@ -37,6 +37,7 @@
     <change-notes><![CDATA[
         <h2>V0.4.8</h2>
         <UL>
+            <LI>Fix #433:  Allow conversation context to be updated in follow-up chat messages by @stephanj</LI>
             <LI>Fix #428: Show more of the history title item when more on available vertical space by @stephanj</LI>
             <LI>Feat #426: Show package/path in files list by @stephanj</LI>
             <LI>Feat #430: Update until build to 251 by @mydeveloperplanet</LI>
