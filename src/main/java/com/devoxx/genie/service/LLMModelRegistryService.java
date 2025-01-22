@@ -471,16 +471,16 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String geminiFlashThinking = "gemini-2.0-flash-thinking-exp-1219";
+        String geminiFlashThinking = "gemini-2.0-flash-thinking-exp-01-21";
         models.put(ModelProvider.Google.getName() + ":" + geminiFlashThinking,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(geminiFlashThinking)
-                        .displayName("Gemini 2.0 Flash Thinking Exp.")
+                        .displayName("Gemini 2.0 Flash Thinking Exp. 01-21")
                         .inputCost(0)
                         .outputCost(0)
-                        .inputMaxTokens(32_000)
-                        .outputMaxTokens(8_000)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
     }
