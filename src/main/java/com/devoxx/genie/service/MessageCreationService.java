@@ -230,13 +230,10 @@ public class MessageCreationService {
             stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
         }
 
-        // Check if this is the first message in the conversation, if so add the context
-        if (ChatMemoryService.getInstance().messages(chatMessageContext.getProject()).size() == 1) {
-            stringBuilder.append("<Context>");
-            stringBuilder.append(context);
-            stringBuilder.append("</Context>\n\n");
-            stringBuilder.append("=========================================\n\n");
-        }
+        stringBuilder.append("<Context>");
+        stringBuilder.append(context);
+        stringBuilder.append("</Context>\n\n");
+        stringBuilder.append("=========================================\n\n");
 
         stringBuilder.append("<UserPrompt>");
         stringBuilder.append("User Question: ");
@@ -254,33 +251,30 @@ public class MessageCreationService {
      * @param files      the files
      * @return the user prompt with context
      */
-    public @NotNull CompletableFuture<String> createUserPromptWithContextAsync(Project project,
-                                                                               String userPrompt,
-                                                                               @NotNull List<VirtualFile> files) {
-        return CompletableFuture.supplyAsync(() -> {
-            StringBuilder userPromptContext = new StringBuilder();
-            FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+    public @NotNull String createUserPromptWithContext(Project project,
+                                                       String userPrompt,
+                                                       @NotNull List<VirtualFile> files) {
+        StringBuilder userPromptContext = new StringBuilder(userPrompt);
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
-            for (VirtualFile file : files) {
-                ApplicationManager.getApplication().runReadAction(() -> {
-                    if (file.getFileType().getName().equals("UNKNOWN")) {
+        for (VirtualFile file : files) {
+            ApplicationManager.getApplication().runReadAction(() -> {
+                if (file.getFileType().getName().equals("UNKNOWN")) {
+                    userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                    userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
+                } else {
+                    Document document = fileDocumentManager.getDocument(file);
+                    if (document != null) {
                         userPromptContext.append("Filename: ").append(file.getName()).append("\n");
-                        userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
+                        String content = document.getText();
+                        userPromptContext.append(content).append("\n");
                     } else {
-                        Document document = fileDocumentManager.getDocument(file);
-                        if (document != null) {
-                            userPromptContext.append("Filename: ").append(file.getName()).append("\n");
-                            String content = document.getText();
-                            userPromptContext.append(content).append("\n");
-                        } else {
-                            NotificationUtil.sendNotification(project, "Error reading file: " + file.getName());
-                        }
+                        NotificationUtil.sendNotification(project, "File type not supported: " + file.getName());
                     }
-                });
-            }
+                }
+            });
+        }
 
-            userPromptContext.append(userPrompt);
-            return userPromptContext.toString();
-        });
+        return userPromptContext.toString();
     }
 }
