@@ -38,29 +38,29 @@ public class ChatMessageContextUtil {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        ChatMessageContext context = ChatMessageContext.builder()
-            .project(project)
-            .id(String.valueOf(System.currentTimeMillis()))
-            .userPrompt(userPromptText)
-            .languageModel(languageModel)
-            .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
-            .totalFileCount(FileListManager.getInstance().size(project))
-            .executionTimeMs(0)
-            .cost(0)
-            .build();
+        ChatMessageContext chatMessageContext = ChatMessageContext.builder()
+                .project(project)
+                .id(String.valueOf(System.currentTimeMillis()))
+                .userPrompt(userPromptText)
+                .languageModel(languageModel)
+                .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
+                .totalFileCount(FileListManager.getInstance().size(project))
+                .executionTimeMs(0)
+                .cost(0)
+                .build();
 
         boolean isStreamMode = stateService.getStreamMode() && actionCommand.equals(Constant.SUBMIT_ACTION);
         if (isStreamMode) {
-            context.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(context));
+            chatMessageContext.setStreamingChatLanguageModel(chatModelProvider.getStreamingChatLanguageModel(chatMessageContext));
         } else {
-            context.setChatLanguageModel(chatModelProvider.getChatLanguageModel(context));
+            chatMessageContext.setChatLanguageModel(chatModelProvider.getChatLanguageModel(chatMessageContext));
         }
 
-        context.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());
+        chatMessageContext.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());
 
-        setWindowContext(context, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded);
+        setWindowContext(chatMessageContext, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded);
 
-        return context;
+        return chatMessageContext;
     }
 
     /**
@@ -78,41 +78,35 @@ public class ChatMessageContextUtil {
                                          String projectContext,
                                          boolean isProjectContextAdded) {
 
+        // First handle any existing project context
         if (projectContext != null && isProjectContextAdded) {
+            // If the full project is added as context, set it and ignore any attached files
             chatMessageContext.setContext(projectContext);
         } else {
+            // We don't include separate added files to the context if the full project is already included
+            processAttachedFiles(chatMessageContext, userPrompt);
+
+            // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-
-            // Add files to the context
-            List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
-            if (!files.isEmpty()) {
-                addSelectedFiles(chatMessageContext, userPrompt, files);
-            }
-
-            // Set the context based on the selected code snippet or the complete file
             if (selectedTextEditor != null) {
                 addEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
         }
     }
 
-    /**
-     * Add the user selected files to chat message context.
-     * @param chatMessageContext the chat message context
-     * @param userPrompt the user prompt
-     * @param files the add files
-     */
-    private static void addSelectedFiles(@NotNull ChatMessageContext chatMessageContext,
-                                         String userPrompt,
-                                         List<VirtualFile> files) {
-        chatMessageContext.setEditorInfo(new EditorInfo(files));
+    private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext, String userPrompt) {
+        List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
+        if (!files.isEmpty()) {
+            try {
+                String newContext = MessageCreationService
+                        .getInstance()
+                        .createUserPromptWithContext(chatMessageContext.getProject(), userPrompt, files);
 
-        MessageCreationService.getInstance().createUserPromptWithContextAsync(chatMessageContext.getProject(), userPrompt, files)
-            .thenAccept(chatMessageContext::setContext)
-            .exceptionally(ex -> {
+                chatMessageContext.setContext(newContext);
+            } catch (Exception ex) {
                 ErrorHandler.handleError(chatMessageContext.getProject(), ex);
-                return null;
-            });
+            }
+        }
     }
 
     private static void addEditorInfoToMessageContext(Editor editor,
@@ -123,6 +117,7 @@ public class ChatMessageContextUtil {
 
     /**
      * Check if the language model is an OpenAI O1 model because that doesn't support system prompts.
+     *
      * @param languageModel the language model
      * @return true if the language model is an OpenAI O1 model
      */
