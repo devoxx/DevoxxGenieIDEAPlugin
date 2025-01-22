@@ -18,6 +18,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
+import static com.devoxx.genie.util.ClipboardUtil.copyToClipboard;
 
 public class CodeSnippetAction {
 
@@ -35,7 +36,10 @@ public class CodeSnippetAction {
 
         JHoverButton copyButton = new JHoverButton(CopyIcon, true);
         copyButton.setToolTipText("Copy to clipboard");
-        copyButton.addActionListener(e -> copyToClipboard(fencedCodeBlock.getLiteral()));
+        copyButton.addActionListener(e -> {
+            copyToClipboard(fencedCodeBlock.getLiteral());
+            NotificationUtil.sendNotification(chatMessageContext.getProject(), "Code copied to clipboard");
+        });
         buttonPanel.add(copyButton);
 
         JHoverButton insertButton = new JHoverButton(InsertCodeIcon, true);
@@ -52,16 +56,6 @@ public class CodeSnippetAction {
         }
 
         return buttonPanel;
-    }
-
-    /**
-     * Copy the given code snippet to the clipboard.
-     * @param codeSnippet The code snippet to copy
-     */
-    private void copyToClipboard(String codeSnippet) {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(new StringSelection(codeSnippet), null);
-        NotificationUtil.sendNotification(chatMessageContext.getProject(), "Code copied to clipboard");
     }
 
     /**

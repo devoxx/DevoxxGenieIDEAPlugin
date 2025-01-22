@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
@@ -39,7 +40,7 @@ public class ChatService implements ConversationEventListener {
         }
         Conversation conversation = new Conversation();
         conversation.setId(UUID.randomUUID().toString());
-        conversation.setTitle(generateTitle(userPrompt));
+        conversation.setTitle(userPrompt);
         conversation.setTimestamp(LocalDateTime.now().toString());
         conversation.setModelName(chatMessageContext.getLanguageModel().getModelName());
         conversation.setExecutionTimeMs(chatMessageContext.getExecutionTimeMs());
@@ -50,10 +51,6 @@ public class ChatService implements ConversationEventListener {
         conversation.getMessages().add(new ChatMessage(false, chatMessageContext.getAiMessage().text(), LocalDateTime.now().toString()));
 
         storageService.addConversation(project, conversation);
-    }
-
-    private String generateTitle(@NotNull String userPrompt) {
-        return userPrompt.length() > 30 ? userPrompt.substring(0, 30) + "..." : userPrompt;
     }
 
     public void startNewConversation(String title) {

@@ -1,6 +1,5 @@
 package com.devoxx.genie.model.conversation;
 
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -54,6 +54,8 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 
+    implementation("org.xerial:sqlite-jdbc:3.48.0.0")
+
     implementation("com.github.docker-java:docker-java:3.4.0")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.0")
 
