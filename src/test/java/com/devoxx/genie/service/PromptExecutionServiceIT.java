@@ -156,7 +156,6 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .chatLanguageModel(chatModel)
             .languageModel(languageModel)
             .project(getProject())
-            .totalFileCount(1)
             .executionTimeMs(0)
             .cost(0).build();
 

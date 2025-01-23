@@ -44,7 +44,6 @@ public class ChatMessageContextUtil {
                 .userPrompt(userPromptText)
                 .languageModel(languageModel)
                 .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
-                .totalFileCount(FileListManager.getInstance().size(project))
                 .executionTimeMs(0)
                 .cost(0)
                 .build();
@@ -58,7 +57,7 @@ public class ChatMessageContextUtil {
 
         chatMessageContext.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());
 
-        setWindowContext(chatMessageContext, userPromptText, editorFileButtonManager, projectContext, isProjectContextAdded);
+        setWindowContext(chatMessageContext, editorFileButtonManager, projectContext, isProjectContextAdded);
 
         return chatMessageContext;
     }
@@ -67,13 +66,11 @@ public class ChatMessageContextUtil {
      * Set the window context.
      *
      * @param chatMessageContext      the chat message context
-     * @param userPrompt              the user prompt
      * @param editorFileButtonManager the editor file button manager
      * @param projectContext          the project context
      * @param isProjectContextAdded   the is project context added
      */
     private static void setWindowContext(@NotNull ChatMessageContext chatMessageContext,
-                                         String userPrompt,
                                          EditorFileButtonManager editorFileButtonManager,
                                          String projectContext,
                                          boolean isProjectContextAdded) {
@@ -81,10 +78,10 @@ public class ChatMessageContextUtil {
         // First handle any existing project context
         if (projectContext != null && isProjectContextAdded) {
             // If the full project is added as context, set it and ignore any attached files
-            chatMessageContext.setContext(projectContext);
+            chatMessageContext.setFilesContext(projectContext);
         } else {
             // We don't include separate added files to the context if the full project is already included
-            processAttachedFiles(chatMessageContext, userPrompt);
+            processAttachedFiles(chatMessageContext);
 
             // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
@@ -94,15 +91,15 @@ public class ChatMessageContextUtil {
         }
     }
 
-    private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext, String userPrompt) {
+    private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext) {
         List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
         if (!files.isEmpty()) {
             try {
                 String newContext = MessageCreationService
                         .getInstance()
-                        .createUserPromptWithContext(chatMessageContext.getProject(), userPrompt, files);
+                        .createAttachedFilesContext(chatMessageContext.getProject(), files);
 
-                chatMessageContext.setContext(newContext);
+                chatMessageContext.setFilesContext(newContext);
             } catch (Exception ex) {
                 ErrorHandler.handleError(chatMessageContext.getProject(), ex);
             }

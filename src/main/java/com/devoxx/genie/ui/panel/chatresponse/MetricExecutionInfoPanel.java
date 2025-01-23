@@ -7,6 +7,7 @@ import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.ui.JBColor;
 import com.knuddels.jtokkit.api.Encoding;
 import dev.langchain4j.model.output.TokenUsage;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,12 +45,12 @@ public class MetricExecutionInfoPanel extends JPanel {
         add(tokenLabel);
     }
 
-    private static TokenUsage calcOllamaInputTokenCount(ChatMessageContext chatMessageContext, TokenUsage tokenUsage) {
+    private static TokenUsage calcOllamaInputTokenCount(@NotNull ChatMessageContext chatMessageContext, TokenUsage tokenUsage) {
         if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Ollama)) {
             int inputContextTokens = 0;
-            if (chatMessageContext.getContext() != null) {
+            if (chatMessageContext.getFilesContext() != null) {
                 Encoding encodingForProvider = ProjectContentService.getEncodingForProvider(chatMessageContext.getLanguageModel().getProvider());
-                inputContextTokens = encodingForProvider.encode(chatMessageContext.getContext()).size();
+                inputContextTokens = encodingForProvider.encode(chatMessageContext.getFilesContext()).size();
             }
             tokenUsage = new TokenUsage(tokenUsage.inputTokenCount() + inputContextTokens, tokenUsage.outputTokenCount());
         }

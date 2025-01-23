@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -62,7 +61,7 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
-        String context = chatMessageContext.getContext();
+        String context = chatMessageContext.getFilesContext();
         if (context != null && !context.isEmpty()) {
             constructUserMessageWithFullContext(chatMessageContext, context);
         } else {
@@ -96,7 +95,7 @@ public class MessageCreationService {
         }
 
         // Add the user's prompt
-        stringBuilder.append("<UserPrompt>").append(chatMessageContext.getUserPrompt()).append("</UserPrompt>\n\n");
+        stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");
 
         // Add editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
@@ -188,7 +187,7 @@ public class MessageCreationService {
         if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
             contentBuilder.append("<SelectedText>\n")
                 .append(editorInfo.getSelectedText())
-                .append("</SelectedText>\n\n");
+                .append("\n</SelectedText>\n\n");
         }
 
         // Add content of selected files
@@ -233,10 +232,8 @@ public class MessageCreationService {
         stringBuilder.append("<Context>");
         stringBuilder.append(context);
         stringBuilder.append("</Context>\n\n");
-        stringBuilder.append("=========================================\n\n");
 
         stringBuilder.append("<UserPrompt>");
-        stringBuilder.append("User Question: ");
         stringBuilder.append(chatMessageContext.getUserPrompt());
         stringBuilder.append("</UserPrompt>");
 
@@ -244,17 +241,15 @@ public class MessageCreationService {
     }
 
     /**
-     * Create user prompt with context.
+     * Create attached files context.
      *
      * @param project    the project
-     * @param userPrompt the user prompt
      * @param files      the files
      * @return the user prompt with context
      */
-    public @NotNull String createUserPromptWithContext(Project project,
-                                                       String userPrompt,
-                                                       @NotNull List<VirtualFile> files) {
-        StringBuilder userPromptContext = new StringBuilder(userPrompt);
+    public @NotNull String createAttachedFilesContext(Project project,
+                                                      @NotNull List<VirtualFile> files) {
+        StringBuilder userPromptContext = new StringBuilder();
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
         for (VirtualFile file : files) {
