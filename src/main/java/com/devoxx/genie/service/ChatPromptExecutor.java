@@ -185,8 +185,9 @@ public class ChatPromptExecutor {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         List<CustomPrompt> customPrompts = settings.getCustomPrompts();
 
+        // Must be startsWith and not equalsIgnoreCase !
         Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
-                .filter(customPrompt -> prompt.equalsIgnoreCase(COMMAND_PREFIX + customPrompt.getName()))
+                .filter(customPrompt -> prompt.startsWith(COMMAND_PREFIX + customPrompt.getName()))
                 .findFirst();
 
         // if OK
