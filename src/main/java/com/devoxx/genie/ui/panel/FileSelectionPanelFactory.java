@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.intellij.ide.util.gotoByName.GotoFileModel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
@@ -150,40 +149,53 @@ public class FileSelectionPanelFactory implements DumbAware {
                                     DefaultListModel<VirtualFile> listModel,
                                     JBList<VirtualFile> resultList,
                                     List<VirtualFile> openFiles) {
+
         new Task.Backgroundable(project, "Searching files", true) {
             private final List<VirtualFile> foundFiles = new ArrayList<>();
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                ReadAction.run(() -> {
-                    // Search through open files
-                    for (VirtualFile file : openFiles) {
-                        if (indicator.isCanceled()) return;
-                        if (file.getName().toLowerCase().contains(searchText.toLowerCase())) {
-                            foundFiles.add(file);
-                        }
-                    }
+                ReadAction.run(() -> searchVirtualFiles(indicator));
+            }
 
-                    // Search through project files
-                    GotoFileModel model = new GotoFileModel(project);
-                    String[] names = model.getNames(false);
-                    for (String name : names) {
-                        if (indicator.isCanceled()) return;
-                        if (name.toLowerCase().contains(searchText.toLowerCase())) {
-                            Object[] objects = model.getElementsByName(name, false, name);
-                            for (Object obj : objects) {
-                                if (obj instanceof PsiFile) {
-                                    VirtualFile virtualFile = ((PsiFile) obj).getVirtualFile();
-                                    if (virtualFile != null && !foundFiles.contains(virtualFile)) {
-                                        foundFiles.add(virtualFile);
-                                    }
+            private void searchVirtualFiles(@NotNull ProgressIndicator indicator) {
+                if (searchOpenFiles(indicator)) return;
+
+                // Search through project files
+                if (searchProjectFiles(indicator)) return;
+
+                foundFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
+            }
+
+            private boolean searchProjectFiles(@NotNull ProgressIndicator indicator) {
+                GotoFileModel model = new GotoFileModel(project);
+                String[] names = model.getNames(false);
+                for (String name : names) {
+                    if (indicator.isCanceled()) return true;
+                    if (name.toLowerCase().contains(searchText.toLowerCase())) {
+                        Object[] objects = model.getElementsByName(name, false, name);
+                        for (Object obj : objects) {
+                            if (obj instanceof PsiFile psiFile) {
+                                VirtualFile virtualFile = psiFile.getVirtualFile();
+                                if (virtualFile != null && !foundFiles.contains(virtualFile)) {
+                                    foundFiles.add(virtualFile);
                                 }
                             }
                         }
                     }
+                }
+                return false;
+            }
 
-                    foundFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
-                });
+            private boolean searchOpenFiles(@NotNull ProgressIndicator indicator) {
+                // Search through open files
+                for (VirtualFile file : openFiles) {
+                    if (indicator.isCanceled()) return true;
+                    if (file.getName().toLowerCase().contains(searchText.toLowerCase())) {
+                        foundFiles.add(file);
+                    }
+                }
+                return false;
             }
 
             @Override
@@ -209,9 +221,9 @@ public class FileSelectionPanelFactory implements DumbAware {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == DOUBLE_CLICK) {
-                    addSelectedFile(project, resultList);
-                }
+            if (e.getClickCount() == DOUBLE_CLICK) {
+                addSelectedFile(project, resultList);
+            }
             }
         });
     }

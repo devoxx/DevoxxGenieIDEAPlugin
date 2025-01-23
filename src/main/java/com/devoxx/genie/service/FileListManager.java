@@ -2,17 +2,15 @@ package com.devoxx.genie.service;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public class FileListManager {
 
+    private final Map<String, List<VirtualFile>> previouslyAddedFiles = new HashMap<>();
     private final Map<String, List<VirtualFile>> filesMap = new HashMap<>();
     private final Map<String, List<FileListObserver>> observersMap = new HashMap<>();
-    @Getter
-    private int totalFileCount = 0;
 
     private static FileListManager instance = null;
 
@@ -24,6 +22,18 @@ public class FileListManager {
             instance = new FileListManager();
         }
         return instance;
+    }
+
+    public void storeAddedFiles(@NotNull Project project) {
+        filesMap.forEach((key, value) -> {
+            if (key.equals(project.getLocationHash())) {
+                previouslyAddedFiles.put(key, new ArrayList<>(value));
+            }
+        });
+    }
+
+    public List<VirtualFile> getPreviouslyAddedFiles(@NotNull Project project) {
+        return Collections.unmodifiableList(previouslyAddedFiles.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
 
     public void addFile(@NotNull Project project, VirtualFile file) {
@@ -49,7 +59,6 @@ public class FileListManager {
             notifyObserversOfBatchAdd(project, actuallyAddedFiles);
         }
     }
-
 
     private void notifyObserversOfBatchAdd(@NotNull Project project, @NotNull List<VirtualFile> addedFiles) {
         List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
@@ -84,9 +93,8 @@ public class FileListManager {
     }
 
     public void clear(@NotNull Project project) {
-        List<VirtualFile> files = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
-        files.clear();
-        totalFileCount = 0;
+        filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+        previouslyAddedFiles.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         notifyAllObservers(project);
     }
 

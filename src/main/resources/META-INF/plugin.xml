@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.9</h2>
+        <UL>
+            <LI>Fix #436: Only add new files to chat memory by @stephanj</LI>
+        </UL>
         <h2>V0.4.8</h2>
         <UL>
             <LI>Fix #433:  Allow conversation context to be updated in follow-up chat messages by @stephanj</LI>

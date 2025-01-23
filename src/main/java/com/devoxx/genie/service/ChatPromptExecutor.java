@@ -19,8 +19,10 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.apache.tools.ant.types.FileList;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -67,32 +69,14 @@ public class ChatPromptExecutor {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 if (chatMessageContext.isWebSearchRequested()) {
-                    new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunningMap.put(project, false);
-                        enableButtons.run();
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            promptInputArea.clear();
-                            promptInputArea.requestInputFocus();
-                        });
-                    });
+                    new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () ->
+                            ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-                    streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunningMap.put(project, false);
-                        enableButtons.run();
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            promptInputArea.clear();
-                            promptInputArea.requestInputFocus();
-                        });
-                    });
+                    streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () ->
+                        ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 } else {
-                    nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () -> {
-                        isRunningMap.put(project, false);
-                        enableButtons.run();
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            promptInputArea.clear();
-                            promptInputArea.requestInputFocus();
-                        });
-                    });
+                    nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () ->
+                        ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 }
             }
 
@@ -113,6 +97,14 @@ public class ChatPromptExecutor {
                 }
             }
         }.queue();
+    }
+
+    private void cleanChat(Project project, @NotNull Runnable enableButtons) {
+        isRunningMap.put(project, false);
+        enableButtons.run();
+        FileListManager.getInstance().storeAddedFiles(project);
+        promptInputArea.clear();
+        promptInputArea.requestInputFocus();
     }
 
     /**

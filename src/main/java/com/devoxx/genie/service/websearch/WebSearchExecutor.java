@@ -6,9 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class WebSearchExecutor {
 
-    public WebSearchExecutor() {
-    }
-
     public void execute(ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
