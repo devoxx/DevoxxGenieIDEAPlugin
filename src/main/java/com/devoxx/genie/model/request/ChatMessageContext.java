@@ -26,12 +26,11 @@ public class ChatMessageContext {
     private String userPrompt;          // The user prompt
     private UserMessage userMessage;    // The user message
     private AiMessage aiMessage;        // The LLM response message
-    private String context;             // The context of the prompt
+    private String filesContext;             // The context of the prompt
     private EditorInfo editorInfo;      // The editor info
     private LanguageModel languageModel;
     private ChatLanguageModel chatLanguageModel;
     private StreamingChatLanguageModel streamingChatLanguageModel;
-    private int totalFileCount;
     private long executionTimeMs;
     private TokenUsage tokenUsage;
     private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
@@ -46,10 +45,6 @@ public class ChatMessageContext {
     @Getter
     @Setter
     private List<SemanticFile> semanticReferences;
-
-    public boolean hasFiles() {
-        return totalFileCount > 0;
-    }
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;

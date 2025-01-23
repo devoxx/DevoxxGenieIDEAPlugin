@@ -242,7 +242,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
                 .project(project)
                 .userPrompt(message.isUser() ? message.getContent() : "")
                 .aiMessage(message.isUser() ? null : AiMessage.aiMessage(message.getContent()))
-                .totalFileCount(0)
                 .executionTimeMs(conversation.getExecutionTimeMs())
                 .languageModel(LanguageModel.builder()
                         .provider(ModelProvider.valueOf(conversation.getLlmProvider()))

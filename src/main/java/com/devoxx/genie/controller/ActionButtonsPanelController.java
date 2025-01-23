@@ -2,6 +2,7 @@ package com.devoxx.genie.controller;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.controller.listener.PromptExecutionListener;
+import com.devoxx.genie.model.ChatContextParameters;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
@@ -65,15 +66,18 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
             return false;
         }
 
-        ChatMessageContext currentChatMessageContext =
-                ChatMessageContextUtil.createContext(project,
+        ChatMessageContext currentChatMessageContext = ChatMessageContextUtil.createContext(
+                new ChatContextParameters(
+                        project,
                         userPromptText,
                         getSelectedLanguageModel(),
                         chatModelProvider,
                         actionCommand,
                         editorFileButtonManager,
                         projectContext,
-                        isProjectContextAdded);
+                        isProjectContextAdded
+                )
+        );
 
         return promptExecutionController.handlePromptSubmission(currentChatMessageContext);
     }

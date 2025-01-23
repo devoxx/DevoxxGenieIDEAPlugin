@@ -39,7 +39,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
 
         setMaxWidth();
 
-        if (chatMessageContext.hasFiles()) {
+        if (!FileListManager.getInstance().isEmpty(chatMessageContext.getProject())) {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);

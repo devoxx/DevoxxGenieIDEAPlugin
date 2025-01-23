@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
@@ -24,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -38,11 +38,11 @@ public class MessageCreationService {
     private static final Logger LOG = Logger.getInstance(MessageCreationService.class.getName());
 
     private static final String GIT_DIFF_INSTRUCTIONS = """
-        Please analyze the code and provide ONLY the modified code in your response.
-        Do not include any explanations or comments.
-        The response should contain just the modified code wrapped in a code block using the appropriate language identifier.
-        If multiple files need to be modified, provide each file's content in a separate code block.
-        """;
+            Please analyze the code and provide ONLY the modified code in your response.
+            Do not include any explanations or comments.
+            The response should contain just the modified code wrapped in a code block using the appropriate language identifier.
+            If multiple files need to be modified, provide each file's content in a separate code block.
+            """;
 
     public static final String SEMANTIC_RESULT = """
             File: %s
@@ -59,15 +59,43 @@ public class MessageCreationService {
 
     /**
      * Create user message.
+     *
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
-        String context = chatMessageContext.getContext();
+        String context = chatMessageContext.getFilesContext();
         if (context != null && !context.isEmpty()) {
             constructUserMessageWithFullContext(chatMessageContext, context);
         } else {
             constructUserMessageWithCombinedContext(chatMessageContext);
         }
+    }
+
+    /**
+     * Construct a user message with full context.
+     *
+     * @param chatMessageContext the chat message context
+     * @param context            the context
+     */
+    private void constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
+                                                     String context) {
+        LOG.debug("Constructing user message with full context");
+        StringBuilder stringBuilder = new StringBuilder();
+
+        // If git diff is enabled, add special instructions at the beginning
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
+            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
+        }
+
+        stringBuilder.append("<Context>");
+        stringBuilder.append(context);
+        stringBuilder.append("</Context>\n\n");
+
+        stringBuilder.append("<UserPrompt>");
+        stringBuilder.append(chatMessageContext.getUserPrompt());
+        stringBuilder.append("</UserPrompt>");
+
+        chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
     }
 
     private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
@@ -96,7 +124,7 @@ public class MessageCreationService {
         }
 
         // Add the user's prompt
-        stringBuilder.append("<UserPrompt>").append(chatMessageContext.getUserPrompt()).append("</UserPrompt>\n\n");
+        stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");
 
         // Add editor content or selected text
         String editorContent = getEditorContentOrSelectedText(chatMessageContext);
@@ -109,6 +137,7 @@ public class MessageCreationService {
 
     /**
      * Create user message with project content based on semantic search results.
+     *
      * @param chatMessageContext the chat message context
      * @return the user message
      */
@@ -173,6 +202,7 @@ public class MessageCreationService {
 
     /**
      * Get the editor content or selected text.
+     *
      * @param chatMessageContext the chat message context
      * @return the editor content or selected text
      */
@@ -187,8 +217,8 @@ public class MessageCreationService {
         // Add selected text if present
         if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
             contentBuilder.append("<SelectedText>\n")
-                .append(editorInfo.getSelectedText())
-                .append("</SelectedText>\n\n");
+                    .append(editorInfo.getSelectedText())
+                    .append("\n</SelectedText>\n\n");
         }
 
         // Add content of selected files
@@ -197,8 +227,8 @@ public class MessageCreationService {
             contentBuilder.append("<FileContents>\n");
             for (VirtualFile file : selectedFiles) {
                 contentBuilder.append("File: ").append(file.getName()).append("\n")
-                    .append(readFileContent(file))
-                    .append("\n\n");
+                        .append(readFileContent(file))
+                        .append("\n\n");
             }
             contentBuilder.append("\n</FileContents>\n");
         }
@@ -215,46 +245,15 @@ public class MessageCreationService {
     }
 
     /**
-     * Construct a user message with full context.
+     * Create attached files context.
      *
-     * @param chatMessageContext the chat message context
-     * @param context            the context
-     */
-    private void constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
-                                                     String context) {
-        LOG.debug("Constructing user message with full context");
-        StringBuilder stringBuilder = new StringBuilder();
-
-        // If git diff is enabled, add special instructions at the beginning
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
-            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
-        }
-
-        stringBuilder.append("<Context>");
-        stringBuilder.append(context);
-        stringBuilder.append("</Context>\n\n");
-        stringBuilder.append("=========================================\n\n");
-
-        stringBuilder.append("<UserPrompt>");
-        stringBuilder.append("User Question: ");
-        stringBuilder.append(chatMessageContext.getUserPrompt());
-        stringBuilder.append("</UserPrompt>");
-
-        chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
-    }
-
-    /**
-     * Create user prompt with context.
-     *
-     * @param project    the project
-     * @param userPrompt the user prompt
-     * @param files      the files
+     * @param project the project
+     * @param files   the files
      * @return the user prompt with context
      */
-    public @NotNull String createUserPromptWithContext(Project project,
-                                                       String userPrompt,
-                                                       @NotNull List<VirtualFile> files) {
-        StringBuilder userPromptContext = new StringBuilder(userPrompt);
+    public @NotNull String createAttachedFilesContext(Project project,
+                                                      @NotNull List<VirtualFile> files) {
+        StringBuilder userPromptContext = new StringBuilder();
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
 
         for (VirtualFile file : files) {
@@ -278,3 +277,5 @@ public class MessageCreationService {
         return userPromptContext.toString();
     }
 }
+
+

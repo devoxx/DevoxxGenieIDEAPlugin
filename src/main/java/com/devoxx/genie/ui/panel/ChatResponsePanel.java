@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.panel.chatresponse.*;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,7 @@ public class ChatResponsePanel extends BackgroundPanel {
         add(new ResponseHeaderPanel(chatMessageContext));
         add(new ResponseDocumentPanel(chatMessageContext));
 
-        if (chatMessageContext.hasFiles()) {
+        if (!FileListManager.getInstance().isEmpty(chatMessageContext.getProject())) {
             add(new FileListPanel(chatMessageContext));
         }
 
