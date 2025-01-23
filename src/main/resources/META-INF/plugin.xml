@@ -38,6 +38,7 @@
         <h2>V0.4.9</h2>
         <UL>
             <LI>Fix #436: Only add new files to chat memory by @stephanj</LI>
+            <LI>Fix #438: Regression fix for /find command check by @stephanj</LI>
         </UL>
         <h2>V0.4.8</h2>
         <UL>
