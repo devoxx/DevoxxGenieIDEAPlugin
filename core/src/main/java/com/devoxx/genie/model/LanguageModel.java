@@ -20,36 +20,6 @@ public class LanguageModel implements Comparable<LanguageModel> {
     private int inputMaxTokens;
     private int outputMaxTokens;
 
-    public LanguageModel() {
-
-        this(ModelProvider.OpenAI,
-                "",
-                "",
-                false,
-                0.0,
-                0.0,
-                0,
-                0);
-    }
-
-    public LanguageModel(ModelProvider provider,
-                         String modelName,
-                         String displayName,
-                         boolean apiKeyUsed,
-                         double inputCost,
-                         double outputCost,
-                         int inputMaxTokens,
-                         int outputMaxTokens) {
-        this.provider = provider;
-        this.modelName = modelName;
-        this.displayName = displayName;
-        this.apiKeyUsed = apiKeyUsed;
-        this.inputCost = inputCost;
-        this.outputCost = outputCost;
-        this.inputMaxTokens = inputMaxTokens;
-        this.outputMaxTokens = outputMaxTokens;
-    }
-
     @Override
     public String toString() {
         return displayName;

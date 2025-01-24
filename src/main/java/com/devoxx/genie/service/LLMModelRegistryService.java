@@ -1,10 +1,13 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import com.jgoodies.common.base.Strings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -125,9 +128,35 @@ public final class LLMModelRegistryService {
 
     private void addOpenAiModels() {
 
-        // TODO Add o3 and o3-mini when available in Feb 2025
+        // TODO Add o3 and o3-mini when available in around Feb 2025
 
-        String o1Model = "o1";
+//        String o3Model = OpenAIChatModelName.O3.toString();
+//        models.put(ModelProvider.OpenAI.getName() + ":" + o3Model,
+//                LanguageModel.builder()
+//                        .provider(ModelProvider.OpenAI)
+//                        .modelName(o3Model)
+//                        .displayName("o3")
+//                        .inputCost(5)
+//                        .outputCost(15)
+//                        .inputMaxTokens(200_000)
+//                        .outputMaxTokens(100_000)
+//                        .apiKeyUsed(true)
+//                        .build());
+//
+//        String o3MiniModel = OpenAIChatModelName.O3_MINI.toString();
+//        models.put(ModelProvider.OpenAI.getName() + ":" + o3Model,
+//                LanguageModel.builder()
+//                        .provider(ModelProvider.OpenAI)
+//                        .modelName(o3Model)
+//                        .displayName("o3-mini")
+//                        .inputCost(5)
+//                        .outputCost(15)
+//                        .inputMaxTokens(200_000)
+//                        .outputMaxTokens(100_000)
+//                        .apiKeyUsed(true)
+//                        .build());
+
+        String o1Model = OpenAIChatModelName.O1.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Model,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -140,7 +169,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Mini = "o1-mini";
+        String o1Mini = OpenAIChatModelName.O1_MINI.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Mini,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -153,7 +182,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Preview = "o1-preview";
+        String o1Preview = OpenAIChatModelName.O1_PREVIEW.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Preview,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -166,7 +195,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gpt4 = GPT_4.toString();
+        String gpt4 = OpenAIChatModelName.GPT_4.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt4,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -229,18 +258,6 @@ public final class LLMModelRegistryService {
                         .outputMaxTokens(4_096)
                         .apiKeyUsed(true)
                         .build());
-
-        String custom = "custom";
-        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4oMini,
-              LanguageModel.builder()
-                    .provider(ModelProvider.OpenAI)
-                    .modelName(custom)
-                    .displayName("Custom Model")
-                    .inputCost(0.15)
-                    .outputCost(0.6)
-                    .inputMaxTokens(128_000)
-                    .apiKeyUsed(true)
-                    .build());
     }
 
     private void addDeepInfraModels() {
