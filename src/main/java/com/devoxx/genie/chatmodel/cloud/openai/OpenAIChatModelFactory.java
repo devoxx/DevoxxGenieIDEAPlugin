@@ -15,9 +15,11 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.List;
 
+import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
+
 public class OpenAIChatModelFactory implements ChatModelFactory {
 
-    private final ModelProvider MODEL_PROVIDER = ModelProvider.OpenAI;
+    private static final ModelProvider MODEL_PROVIDER = ModelProvider.OpenAI;
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
@@ -31,14 +33,6 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
                 .topP(isO1 ? 1.0 : chatModel.getTopP());
 
-        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl())) {
-            builder.baseUrl(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl());
-        }
-
-        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIModelName())) {
-            builder.modelName(DevoxxGenieStateService.getInstance().getCustomOpenAIModelName());
-        }
-
         return builder.build();
     }
 
@@ -51,14 +45,6 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
                 .temperature(isO1 ? 1.0 : chatModel.getTemperature())
                 .topP(isO1 ? 1.0 : chatModel.getTopP())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()));
-
-        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl())) {
-            builder.baseUrl(DevoxxGenieStateService.getInstance().getCustomOpenAIUrl());
-        }
-
-        if (Strings.isNotBlank(DevoxxGenieStateService.getInstance().getCustomOpenAIModelName())) {
-            builder.modelName(DevoxxGenieStateService.getInstance().getCustomOpenAIModelName());
-        }
 
         return builder.build();
     }
