@@ -59,6 +59,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
+    private final JPasswordField awsAccessKeyField = new JPasswordField(stateService.getAwsAccessKey());
+    @Getter
+    private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
+    @Getter
+    private final JTextField awsRegion = new JTextField(stateService.getAwsRegion());
+    @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
 
     @Getter
@@ -93,8 +99,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isOpenRouterEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
+    @Getter
+    private final JCheckBox enableAWSCheckBox = new JCheckBox("", stateService.getShowAwsFields());
 
     private final List<JComponent> azureComponents = new ArrayList<>();
+
+    private final List<JComponent> awsComponents = new ArrayList<>();
 
     public LLMProvidersComponent() {
         addListeners();
@@ -149,6 +159,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
 
         addAzureOpenAIPanel(panel, gbc);
+        addAWSPanel(panel, gbc);
 
         addSection(panel, gbc, "Plugin version");
         addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
@@ -166,6 +177,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         // Keep existing listeners
         enableAzureOpenAICheckBox.addItemListener(event -> {
             setNestedComponentsVisibility(azureComponents, event.getStateChange() == ItemEvent.SELECTED, true);
+        });
+        enableAWSCheckBox.addItemListener(event -> {
+            setNestedComponentsVisibility(awsComponents, event.getStateChange() == ItemEvent.SELECTED, true);
         });
 
         // Add new listeners for enable/disable checkboxes
@@ -209,6 +223,21 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         // Set initial visibility
         setNestedComponentsVisibility(azureComponents, enableAzureOpenAICheckBox.isSelected(), false);
+    }
+
+    private void addAWSPanel(JPanel panel, GridBagConstraints gbc) {
+        final String bedrockURL = "https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html";
+        addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
+
+        addNestedSettingsRow(panel, gbc, "AWS Access Key ID",
+                createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key",
+                createTextWithLinkButton(awsAccessKeyField, bedrockURL), awsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS region",
+                createTextWithPasswordButton(awsRegion, bedrockURL), awsComponents);
+
+        // Set initial visibility
+        setNestedComponentsVisibility(awsComponents, enableAWSCheckBox.isSelected(), false);
     }
 
     /**

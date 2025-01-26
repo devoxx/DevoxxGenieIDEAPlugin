@@ -37,6 +37,7 @@ public final class LLMModelRegistryService {
         addGeminiModels();
         addMistralModels();
         addDeepSeekModels();
+        addBedrockModels();
     }
 
     private void addAnthropicModels() {
@@ -698,6 +699,19 @@ public final class LLMModelRegistryService {
                         .outputCost(0.28)
                         .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
+                        .build());
+    }
+
+    private void addBedrockModels() {
+        String claude3dot5 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot5)
+                        .displayName("Claude 3.5 Sonnet")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
                         .build());
     }
 

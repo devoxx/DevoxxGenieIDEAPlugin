@@ -28,6 +28,12 @@ public interface DevoxxGenieSettingsService {
 
     String getAzureOpenAIKey();
 
+    String getAwsAccessKey();
+
+    String getAwsAccessKeyId();
+
+    String getAwsRegion();
+
     String getMistralKey();
 
     String getAnthropicKey();
@@ -109,6 +115,12 @@ public interface DevoxxGenieSettingsService {
     void setAzureOpenAIDeployment(String deployment);
 
     void setAzureOpenAIKey(String key);
+
+    void setAwsAccessKey(String key);
+
+    void setAwsAccessKeyId(String accessKeyId);
+
+    void setAwsRegion(String region);
 
     void setMistralKey(String key);
 

@@ -2,6 +2,7 @@ package com.devoxx.genie.chatmodel;
 
 import com.devoxx.genie.chatmodel.cloud.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.azureopenai.AzureOpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.bedrock.BedrockModelFactory;
 import com.devoxx.genie.chatmodel.cloud.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.google.GoogleChatModelFactory;
@@ -44,6 +45,7 @@ public class ChatModelFactoryProvider {
         return switch (modelProvider) {
             case "Anthropic" -> new AnthropicChatModelFactory();
             case "AzureOpenAI" -> new AzureOpenAIChatModelFactory();
+            case "Bedrock" -> new BedrockModelFactory();
             case "CustomOpenAI" -> new CustomOpenAIChatModelFactory();
             case "DeepInfra" -> new DeepInfraChatModelFactory();
             case "DeepSeek" -> new DeepSeekChatModelFactory();

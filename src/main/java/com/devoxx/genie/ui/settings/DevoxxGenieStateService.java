@@ -101,6 +101,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGoogleEnabled = false;
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
+    private boolean isAWSEnabled = false;
 
     // LLM API Keys
     private String openAIKey = "";
@@ -114,6 +115,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     private String azureOpenAIKey = "";
+    private String awsAccessKeyId = "";
+    private String awsAccessKey = "";
+    private String awsRegion = "";
 
     // Search API Keys
     private Boolean isWebSearchEnabled = ENABLE_WEB_SEARCH;
@@ -150,6 +154,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean excludeJavaDoc = false;
 
     private Boolean showAzureOpenAIFields = false;
+    private Boolean showAwsFields = false;
 
     @Setter
     private Boolean useGitIgnore = true;
@@ -265,6 +270,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                 !azureOpenAIKey.isEmpty() &&
                 !azureOpenAIEndpoint.isEmpty() &&
                 !azureOpenAIDeployment.isEmpty();
+    }
+
+    public boolean isAwsEnabled() {
+        return showAwsFields &&
+                !awsAccessKey.isEmpty() &&
+                !awsAccessKeyId.isEmpty() &&
+                !awsRegion.isEmpty();
     }
 
     public @Nullable String getConfigValue(@NotNull String key) {
