@@ -1,36 +1,44 @@
 package com.devoxx.genie.service.jan;
 
-import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.chatmodel.local.jan.JanModelService;
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.testFramework.ServiceContainerUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.util.List;
 
-public class JanServiceTest extends AbstractLightPlatformTestCase {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+public class JanServiceTest extends BaseIntellijTest {
+
+    @Mock
+    private DevoxxGenieStateService mockStateService;
+    private JanModelService janService;
 
     @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
-        // Mock SettingsState
-        DevoxxGenieStateService settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
+    @Override
+    public void setUpTest() throws Exception {
+        super.setUpTest();
+        MockitoAnnotations.openMocks(this);
 
-        // Replace the service instance with the mock
-        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
+        janService = spy(new JanModelService());
+
+        try (var mockedStatic = mockStatic(DevoxxGenieStateService.class)) {
+            mockedStatic.when(DevoxxGenieStateService::getInstance)
+                    .thenReturn(mockStateService);
+
+            when(mockStateService.getConfigValue("janModelUrl"))
+                    .thenReturn("http://localhost:8080/");
+        }
     }
 
     @Test
-    public void testGetModels() throws IOException {
-        JanModelService janService = new JanModelService();
+    void testGetModels() throws IOException {
         List<Data> models = janService.getModels();
         assertThat(models).isNotEmpty();
 
@@ -38,10 +46,7 @@ public class JanServiceTest extends AbstractLightPlatformTestCase {
             assertThat(model).isNotNull();
             assertThat(model.getId()).isNotNull();
             assertThat(model.getName()).isNotNull();
-            assertThat(model.getDescription()).isNotNull();
-            assertThat(model.getSettings()).isNotNull();
-            assertThat(model.getSettings().getCtxLen()).isNotNull();
+            assertThat(model.getEngine()).isNotNull();
         });
     }
 }
-

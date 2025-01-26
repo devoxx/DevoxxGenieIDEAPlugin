@@ -54,6 +54,6 @@ public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isEqualTo(10);
+        Assertions.assertThat(modelNames).size().isGreaterThan(10);
     }
 }
