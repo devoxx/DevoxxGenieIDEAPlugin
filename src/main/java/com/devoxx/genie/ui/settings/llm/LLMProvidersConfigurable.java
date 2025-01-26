@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+import java.util.Arrays;
+
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class LLMProvidersConfigurable implements Configurable {
@@ -79,6 +81,11 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIDeploymentField(), stateService.getAzureOpenAIDeployment());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), stateService.getAzureOpenAIKey());
 
+        isModified |= !stateService.getShowAwsFields().equals(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyField(), stateService.getAwsAccessKey());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
+
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
         isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
@@ -135,6 +142,11 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAzureOpenAIDeployment(llmSettingsComponent.getAzureOpenAIDeploymentField().getText());
         settings.setAzureOpenAIKey(new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()));
 
+        settings.setShowAwsFields(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
+        settings.setAwsAccessKey(new String(llmSettingsComponent.getAwsAccessKeyField().getPassword()));
+        settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
+        settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
+
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
         settings.setGpt4AllEnabled(llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected());
@@ -164,6 +176,9 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getGeminiKey().isBlank() && settings.isGoogleEnabled()) ||
                     (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
+                    (!settings.getAwsAccessKey().isBlank() && settings.getShowAwsFields()) ||
+                    (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
+                    (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
 
             project.getMessageBus()

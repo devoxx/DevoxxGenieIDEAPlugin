@@ -24,7 +24,8 @@ public enum ModelProvider {
     OpenRouter("OpenRouter", Type.CLOUD),
     DeepSeek("DeepSeek", Type.CLOUD),
 
-    AzureOpenAI("AzureOpenAI", Type.OPTIONAL);
+    AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
+    Bedrock("Bedrock", Type.OPTIONAL);
 
     public enum Type {
         LOCAL, // Local Providers

@@ -29,6 +29,7 @@ public class LLMProviderService {
         providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
         providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
         providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
+        providerKeyMap.put(Bedrock, stateService::getAwsAccessKey);
     }
 
     @NotNull
@@ -73,6 +74,11 @@ public class LLMProviderService {
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowAzureOpenAIFields())) {
             optionalModelProviders.add(AzureOpenAI);
         }
+
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowAwsFields())) {
+            optionalModelProviders.add(Bedrock);
+        }
+
 
         return optionalModelProviders;
     }
