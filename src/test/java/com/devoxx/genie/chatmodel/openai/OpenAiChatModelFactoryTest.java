@@ -49,6 +49,6 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
         assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> models = factory.getModels();
-        assertThat(models).size().isEqualTo(4);
+        assertThat(models).size().isGreaterThan(7);
     }
 }

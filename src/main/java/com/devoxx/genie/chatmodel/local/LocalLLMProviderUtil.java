@@ -20,7 +20,13 @@ public class LocalLLMProviderUtil {
     private static final Gson gson = new Gson();
 
     public static <T> T getModels(String baseUrlConfigKey, String endpoint, Class<T> responseType) throws IOException {
-        String configValue = DevoxxGenieStateService.getInstance().getConfigValue(baseUrlConfigKey);
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        String configValue = stateService.getConfigValue(baseUrlConfigKey);
+
+        if (configValue == null || configValue.trim().isEmpty()) {
+            throw new IllegalStateException("Configuration value for " + baseUrlConfigKey + " is not set");
+        }
+
         String baseUrl = ensureEndsWithSlash(Objects.requireNonNull(configValue));
 
         Request request = new Request.Builder()

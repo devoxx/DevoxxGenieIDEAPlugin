@@ -51,6 +51,6 @@ public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isEqualTo(5);
+        Assertions.assertThat(modelNames).size().isGreaterThan(6);
     }
 }

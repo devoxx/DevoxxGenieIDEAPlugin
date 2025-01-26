@@ -79,6 +79,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.3")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.15.2")
     testImplementation("org.assertj:assertj-core:3.26.0")
     testImplementation("io.github.cdimascio:dotenv-java:3.0.0")
 
@@ -116,6 +117,7 @@ tasks {
 
     test {
         useJUnitPlatform()
+        testLogging { events("passed", "skipped", "failed") }
     }
 
     signPlugin {
