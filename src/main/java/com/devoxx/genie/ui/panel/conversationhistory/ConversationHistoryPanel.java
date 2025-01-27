@@ -199,7 +199,7 @@ public class ConversationHistoryPanel extends JPanel {
     private static class ButtonRenderer extends JHoverButton implements TableCellRenderer {
         public ButtonRenderer(Icon icon, String tooltip) {
             super(icon, true);
-            setToolTipText(tooltip);
+            // setToolTipText(tooltip);
         }
 
         @Override
@@ -235,7 +235,7 @@ public class ConversationHistoryPanel extends JPanel {
         @Override
         public void setText(String text) {
             super.setText(text);
-            setToolTipText(text); // Shows full text on hover
+            // setToolTipText(text); // Shows full text on hover
         }
 
         // Override these methods to ensure proper text display

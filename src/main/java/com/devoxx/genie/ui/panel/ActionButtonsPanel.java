@@ -237,7 +237,7 @@ public class ActionButtonsPanel extends JPanel
     public void disableSubmitBtn() {
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
+            // submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
     }
 
@@ -263,7 +263,7 @@ public class ActionButtonsPanel extends JPanel
     private void setAddProjectButton(Icon addFileIcon, String addProjectToContext, String addEntireProjectToPromptContext) {
         addProjectBtn.setIcon(addFileIcon);
         addProjectBtn.setText(addProjectToContext);
-        addProjectBtn.setToolTipText(addEntireProjectToPromptContext);
+        // addProjectBtn.setToolTipText(addEntireProjectToPromptContext);
     }
 
     public void setAddProjectButtonEnabled(boolean enabled) {

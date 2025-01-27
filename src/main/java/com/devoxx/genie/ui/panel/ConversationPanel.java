@@ -107,13 +107,13 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      */
     private void setupConversationButtons() {
 
-        historyButton.setToolTipText("View conversation history");
+        // historyButton.setToolTipText("View conversation history");
         historyButton.addActionListener(e -> showConversationHistory());
 
-        settingsBtn.setToolTipText("Plugin settings");
+        // settingsBtn.setToolTipText("Plugin settings");
         settingsBtn.addActionListener(e -> SettingsDialogUtil.showSettingsDialog(project));
 
-        newConversationBtn.setToolTipText("Start a new conversation");
+        // newConversationBtn.setToolTipText("Start a new conversation");
         newConversationBtn.addActionListener(e -> startNewConversation());
 
         updateFontSize();

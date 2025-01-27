@@ -35,7 +35,7 @@ public class CodeSnippetAction {
         buttonPanel.setOpaque(true);
 
         JHoverButton copyButton = new JHoverButton(CopyIcon, true);
-        copyButton.setToolTipText("Copy to clipboard");
+        // copyButton.setToolTipText("Copy to clipboard");
         copyButton.addActionListener(e -> {
             copyToClipboard(fencedCodeBlock.getLiteral());
             NotificationUtil.sendNotification(chatMessageContext.getProject(), "Code copied to clipboard");
@@ -43,14 +43,14 @@ public class CodeSnippetAction {
         buttonPanel.add(copyButton);
 
         JHoverButton insertButton = new JHoverButton(InsertCodeIcon, true);
-        insertButton.setToolTipText("Insert code");
+        // insertButton.setToolTipText("Insert code");
         insertButton.addActionListener(e -> insertCode(fencedCodeBlock.getLiteral()));
         buttonPanel.add(insertButton);
 
         String commandName = chatMessageContext.getCommandName();
         if (commandName != null && commandName.equalsIgnoreCase("tdg")) {
             JHoverButton createButton = new JHoverButton(CreateIcon, true);
-            createButton.setToolTipText("Create class");
+            // createButton.setToolTipText("Create class");
             createButton.addActionListener(e -> createClass(fencedCodeBlock.getLiteral()));
             buttonPanel.add(createButton);
         }

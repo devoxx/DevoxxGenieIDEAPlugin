@@ -67,7 +67,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      */
     private @NotNull JButton createCopyButton(ChatMessageContext chatMessageContext) {
         JButton deleteButton = new JHoverButton(CopyIcon, true);
-        deleteButton.setToolTipText("Copy prompt response");
+        // deleteButton.setToolTipText("Copy prompt response");
         deleteButton.addActionListener(e -> copyPrompt(chatMessageContext));
         return deleteButton;
     }
