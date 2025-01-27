@@ -9,7 +9,6 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
@@ -35,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class ActionButtonsPanel extends JPanel
@@ -54,10 +54,6 @@ public class ActionButtonsPanel extends JPanel
 
     private final JPanel calcProjectPanel = createCalcProjectPanel();
 
-    // Set minimum size for buttons to prevent them from becoming too small
-    private final Dimension minSize = new Dimension(100, 30);
-    private final Dimension maxSize = new Dimension(200, 30);
-
     private final PromptInputArea promptInputArea;
     private final TokenUsageBar tokenUsageBar = createTokenUsageBar();
 
@@ -74,7 +70,6 @@ public class ActionButtonsPanel extends JPanel
                               ComboBox<LanguageModel> modelNameComboBox,
                               DevoxxGenieToolWindowContent devoxxGenieToolWindowContent) {
         setLayout(new BorderLayout());
-        // setBorder(JBUI.Borders.empty(10));
 
         // Initialize fields and components
         this.project = project;
@@ -106,10 +101,10 @@ public class ActionButtonsPanel extends JPanel
     }
 
     private void createButtons() {
-        submitBtn = createSubmitButton();
-        addFileBtn = createAddFileButton();
-        addProjectBtn = createAddProjectButton();
-        calcTokenCostBtn = createCalcTokenCostButton();
+        submitBtn = createActionButton(SubmitIcon, this::onSubmitPrompt);
+        addFileBtn = createActionButton(AddFileIcon, this::selectFilesForPromptContext);
+        addProjectBtn = createActionButton(ADD_PROJECT_TO_CONTEXT, AddFileIcon, this::handleProjectContext);
+        calcTokenCostBtn = createActionButton(CALC_TOKENS_COST, CalculateIcon, e -> controller.calculateTokensAndCost());
     }
 
     private @NotNull JPanel createButtonPanel() {
@@ -138,45 +133,12 @@ public class ActionButtonsPanel extends JPanel
         return progressPanel;
     }
 
-    private @NotNull JButton createCalcTokenCostButton() {
-        JButton button = new JHoverButton(CALC_TOKENS_COST, CalculateIcon, true);
-        button.addActionListener(e -> controller.calculateTokensAndCost());
-        button.setMinimumSize(minSize);
-        button.setMaximumSize(maxSize);
-        return button;
-    }
-
-    private @NotNull JButton createAddProjectButton() {
-        JButton button = new JHoverButton(ADD_PROJECT_TO_CONTEXT, AddFileIcon, true);
-        button.addActionListener(this::handleProjectContext);
-        button.setMinimumSize(minSize);
-        button.setMaximumSize(maxSize);
-        return button;
-    }
-
     private void handleProjectContext(ActionEvent e) {
         if (projectContextController.isProjectContextAdded()) {
             confirmProjectContextRemoval();
         } else {
             projectContextController.addProjectContext();
         }
-    }
-
-    private @NotNull JButton createAddFileButton() {
-        JButton button = new JHoverButton(AddFileIcon, false);
-        button.addActionListener(this::selectFilesForPromptContext);
-        button.setMinimumSize(minSize);
-        button.setMaximumSize(maxSize);
-        return button;
-    }
-
-    private @NotNull JButton createSubmitButton() {
-        JButton button = new JHoverButton(SubmitIcon, false);
-        button.setActionCommand(Constant.SUBMIT_ACTION);
-        button.addActionListener(this::onSubmitPrompt);
-        button.setMinimumSize(minSize);
-        button.setMaximumSize(maxSize);
-        return button;
     }
 
     /**
@@ -237,7 +199,7 @@ public class ActionButtonsPanel extends JPanel
     public void disableSubmitBtn() {
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(StopIcon);
-            // submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
+            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
         });
     }
 
@@ -263,7 +225,7 @@ public class ActionButtonsPanel extends JPanel
     private void setAddProjectButton(Icon addFileIcon, String addProjectToContext, String addEntireProjectToPromptContext) {
         addProjectBtn.setIcon(addFileIcon);
         addProjectBtn.setText(addProjectToContext);
-        // addProjectBtn.setToolTipText(addEntireProjectToPromptContext);
+        addProjectBtn.setToolTipText(addEntireProjectToPromptContext);
     }
 
     public void setAddProjectButtonEnabled(boolean enabled) {

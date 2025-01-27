@@ -54,8 +54,8 @@ public class FileListCellRenderer extends DefaultListCellRenderer {
                     file.getPath().replace("<", "&lt;").replace(">", "&gt;"));
 
             // Set tooltip on both labels
-            // fileNameLabel.setToolTipText(tooltipText);
-            // pathLabel.setToolTipText(tooltipText);
+            fileNameLabel.setToolTipText(tooltipText);
+            pathLabel.setToolTipText(tooltipText);
 
             panel.add(fileNameLabel);
             panel.add(Box.createHorizontalStrut(5));
@@ -70,7 +70,7 @@ public class FileListCellRenderer extends DefaultListCellRenderer {
             wrapperPanel.setOpaque(true);
             wrapperPanel.setBackground(panel.getBackground());
             wrapperPanel.add(panel, BorderLayout.CENTER);
-            // wrapperPanel.setToolTipText(tooltipText);
+            wrapperPanel.setToolTipText(tooltipText);
 
             return wrapperPanel;
         }

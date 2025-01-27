@@ -83,7 +83,7 @@ public class FileEntryComponent extends JPanel {
         add(removeButton, BorderLayout.EAST);
 
         // Set tooltip for the entire component
-        // setToolTipText(tooltipText);
+        setToolTipText(tooltipText);
 
         // Set preferred size
         setPreferredSize(new Dimension(0, 25));

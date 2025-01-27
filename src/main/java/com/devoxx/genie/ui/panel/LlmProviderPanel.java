@@ -6,7 +6,6 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -28,6 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
 public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {
@@ -43,7 +43,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     @Getter
     private final ComboBox<LanguageModel> modelNameComboBox = new ComboBox<>();
 
-    private final JButton refreshButton = new JHoverButton(RefreshIcon, true);
+    private JButton refreshButton;
 
     private String lastSelectedProvider = null;
     private String lastSelectedLanguageModel = null;
@@ -97,12 +97,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * @return the provider panel
      */
     private @NotNull JPanel createProviderPanel() {
+        refreshButton = createActionButton(RefreshIcon, "Refresh models", e-> refreshModels());
         JPanel providerPanel = new JPanel(new BorderLayout());
         providerPanel.add(modelProviderComboBox, BorderLayout.CENTER);
-
-        // refreshButton.setToolTipText("Refresh models");
-        refreshButton.addActionListener(e -> refreshModels());
-
         providerPanel.add(refreshButton, BorderLayout.EAST);
         return providerPanel;
     }

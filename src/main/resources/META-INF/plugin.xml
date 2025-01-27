@@ -39,6 +39,7 @@
         <UL>
             <LI>Fix #440 : Fix for the custom OpenAI chat memory issue</LI>
             <LI>Feat #443 : Add initial support for AWS Bedrock by @pavel-rodionov</LI>
+            <LI>Fix #447 : Broken UI elements on Windows/Linux fixed</LI>
         </UL>
         <h2>V0.4.9</h2>
         <UL>

@@ -173,7 +173,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                         return;
                     }
                     addFileBtn.setEnabled(true);
-                    // addFileBtn.setToolTipText("Select file(s) for prompt context");
+                    addFileBtn.setToolTipText("Select file(s) for prompt context");
                 }
             });
 
