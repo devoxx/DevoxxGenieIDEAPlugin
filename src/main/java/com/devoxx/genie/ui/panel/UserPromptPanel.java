@@ -66,7 +66,7 @@ public class UserPromptPanel extends BackgroundPanel {
      */
     private @NotNull JButton createDeleteButton(ChatMessageContext chatMessageContext) {
         JButton deleteButton = new JHoverButton(TrashIcon, true);
-        deleteButton.setToolTipText("Remove the prompt & response");
+        // deleteButton.setToolTipText("Remove the prompt & response");
         deleteButton.addActionListener(e -> removeChat(chatMessageContext));
         return deleteButton;
     }

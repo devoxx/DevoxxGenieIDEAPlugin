@@ -71,7 +71,7 @@ public class AbstractSettingsComponent implements SettingsComponent {
         jPanel.add(jComponent, BorderLayout.CENTER);
 
         JButton btnApiKey = new JButton(AbstractSettingsComponent.PASSWORD_EMOJI);
-        btnApiKey.setToolTipText("Get your API Key from " + " " + url);
+        // btnApiKey.setToolTipText("Get your API Key from " + " " + url);
         btnApiKey.addActionListener(e -> {
             try {
                 BrowserUtil.open(url);

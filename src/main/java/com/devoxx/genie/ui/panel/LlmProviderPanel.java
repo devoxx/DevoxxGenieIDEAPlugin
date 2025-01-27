@@ -100,7 +100,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         JPanel providerPanel = new JPanel(new BorderLayout());
         providerPanel.add(modelProviderComboBox, BorderLayout.CENTER);
 
-        refreshButton.setToolTipText("Refresh models");
+        // refreshButton.setToolTipText("Refresh models");
         refreshButton.addActionListener(e -> refreshModels());
 
         providerPanel.add(refreshButton, BorderLayout.EAST);

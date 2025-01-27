@@ -41,8 +41,8 @@ public class InputSwitch extends JBPanel<InputSwitch> {
         textLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
 
         // Set tooltip for both components
-        textLabel.setToolTipText(tooltip);
-        switchButton.setToolTipText(tooltip);
+        // textLabel.setToolTipText(tooltip);
+        // switchButton.setToolTipText(tooltip);
 
         // Initialize timer
         timer = new Timer(0, new MyActionListener());
@@ -161,12 +161,12 @@ public class InputSwitch extends JBPanel<InputSwitch> {
         runEvent();
     }
 
-    @Override
-    public void setToolTipText(String text) {
-        super.setToolTipText(text);
-        textLabel.setToolTipText(text);
-        switchButton.setToolTipText(text);
-    }
+//    @Override
+//    public void setToolTipText(String text) {
+//        super.setToolTipText(text);
+//        textLabel.setToolTipText(text);
+//        switchButton.setToolTipText(text);
+//    }
 
     private class MyActionListener implements ActionListener {
         @Override
