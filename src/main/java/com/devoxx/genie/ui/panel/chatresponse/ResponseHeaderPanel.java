@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.panel.chatresponse;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +15,7 @@ import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
@@ -26,7 +27,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      */
     public ResponseHeaderPanel(@NotNull ChatMessageContext chatMessageContext) {
         super(new BorderLayout());
-        setBackground(Color.BLUE);
+        setBackground(JBColor.BLUE);
         andTransparent()
             .withMaximumHeight(30)
             .withPreferredHeight(30);
@@ -66,10 +67,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
      * @return the Delete button
      */
     private @NotNull JButton createCopyButton(ChatMessageContext chatMessageContext) {
-        JButton deleteButton = new JHoverButton(CopyIcon, true);
-        // deleteButton.setToolTipText("Copy prompt response");
-        deleteButton.addActionListener(e -> copyPrompt(chatMessageContext));
-        return deleteButton;
+        return createActionButton( CopyIcon, "Copy to clipboard", e -> copyPrompt(chatMessageContext));
     }
 
     /**

@@ -13,11 +13,14 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 
 public class PromptSettingsComponent extends AbstractSettingsComponent {
 
@@ -81,17 +84,18 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
             gbc);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addCustomPromptBtn = new JButton("Add Custom Prompt");
-        addCustomPromptBtn.addActionListener(e -> addCustomPrompt());
-        buttonPanel.add(addCustomPromptBtn);
 
-        JButton removeCustomPromptBtn = new JButton("Remove Custom Prompt");
-        removeCustomPromptBtn.addActionListener(e -> removeCustomPrompt());
-        buttonPanel.add(removeCustomPromptBtn);
+        JButton addCustomPrompt = createActionButton("Add Custom Prompt", e -> addCustomPrompt());
+        addCustomPrompt.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
+        buttonPanel.add(addCustomPrompt);
 
-        JButton restoreDefaultCustomPromptBtn = new JButton("Restore Default Prompt");
-        restoreDefaultCustomPromptBtn.addActionListener(e -> restoreDefaultPrompts());
-        buttonPanel.add(restoreDefaultCustomPromptBtn);
+        JButton removePromptButton = createActionButton("Remove Custom Prompt", e -> removeCustomPrompt());
+        removePromptButton.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
+        buttonPanel.add(removePromptButton);
+
+        JButton restoreButton = createActionButton("Restore Default Prompt", e -> restoreDefaultPrompts());
+        restoreButton.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
+        buttonPanel.add(restoreButton);
 
         gbc.gridy++;
         gbc.weighty = 0.0;

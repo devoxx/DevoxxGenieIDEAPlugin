@@ -3,9 +3,7 @@ package com.devoxx.genie.ui.panel.conversationhistory;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
-import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
@@ -28,6 +26,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
 public class ConversationHistoryPanel extends JPanel {
     private final ConversationStorageService storageService;
@@ -53,6 +54,7 @@ public class ConversationHistoryPanel extends JPanel {
         table.setTableHeader(null); // Hide header since we don't need it
         table.setFillsViewportHeight(true);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+
         // Ensure the table uses all available width
         table.setFillsViewportHeight(true);
 
@@ -68,7 +70,8 @@ public class ConversationHistoryPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int row = table.rowAtPoint(e.getPoint());
-                if (row >= 0) {
+                int column = table.columnAtPoint(e.getPoint());
+                if (row >= 0 && column != 0) {
                     // Get the conversation from the model
                     Conversation conversation = tableModel.getConversationAt(row);
                     // Update chat memory
@@ -82,42 +85,40 @@ public class ConversationHistoryPanel extends JPanel {
         // Configure columns
         TableColumnModel columnModel = table.getColumnModel();
 
-        // View button column
-        TableColumn viewColumn = columnModel.getColumn(0);
-        viewColumn.setMinWidth(40);
-        viewColumn.setMaxWidth(40);
-        viewColumn.setCellRenderer(new ButtonRenderer(DevoxxGenieIconsUtil.EyeIcon, "View"));
-        viewColumn.setCellEditor(new ButtonEditor(project, new JHoverButton(DevoxxGenieIconsUtil.EyeIcon, true), conversation -> {
-            conversationSelectionListener.onConversationSelected(conversation);
-            return true;
-        }));
-
         // Title column
         TableColumn titleColumn = columnModel.getColumn(1);
         titleColumn.setCellRenderer(new TitleRenderer());
-        // Set a very large preferred width to encourage expansion
 
+        // Set a very large preferred width to encourage expansion
         titleColumn.setPreferredWidth(Integer.MAX_VALUE);
         titleColumn.setWidth(Integer.MAX_VALUE);
 
         // Ensure this column gets any extra space
-        table.getColumnModel().getColumn(1).setResizable(false);
+        table.getColumnModel().getColumn(2).setResizable(false);
 
-        // Time column
+        // Delete button column 0
+        TableColumn deleteColumn = columnModel.getColumn(0);
+        deleteColumn.setMinWidth(40);
+        deleteColumn.setMaxWidth(40);
+        deleteColumn.setCellRenderer(new ButtonRenderer(AllIcons.Actions.GC));
+
+        JButton deleteButton = new JButton(AllIcons.Actions.GC);
+        deleteButton.setBorder(BorderFactory.createEmptyBorder());
+        deleteButton.setPreferredSize(new Dimension(40, 40));
+        deleteButton.setMaximumSize(new Dimension(40, 40));
+
+        ButtonEditor buttonEditor = new ButtonEditor(deleteButton, conversation -> {
+            removeConversation(conversation);
+            return true;
+        });
+
+        deleteColumn.setCellEditor(buttonEditor);
+
+        // Time column 2
         TableColumn timeColumn = columnModel.getColumn(2);
         timeColumn.setMinWidth(100);
         timeColumn.setMaxWidth(100);
         timeColumn.setCellRenderer(new TimeRenderer());
-
-        // Delete button column
-        TableColumn deleteColumn = columnModel.getColumn(3);
-        deleteColumn.setMinWidth(40);
-        deleteColumn.setMaxWidth(40);
-        deleteColumn.setCellRenderer(new ButtonRenderer(AllIcons.Actions.GC, "Delete"));
-        deleteColumn.setCellEditor(new ButtonEditor(project, new JHoverButton(AllIcons.Actions.GC, true), conversation -> {
-            removeConversation(conversation);
-            return true;
-        }));
 
         // Add table to scroll pane
         JBScrollPane scrollPane = new JBScrollPane(table);
@@ -125,9 +126,7 @@ public class ConversationHistoryPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Add delete all button
-        JButton deleteAll = new JButton("Delete all");
-        deleteAll.addActionListener(e -> showDeleteAllConfirmationDialog());
-        add(deleteAll, BorderLayout.SOUTH);
+        add(createActionButton("Delete All", TrashIcon, e -> showDeleteAllConfirmationDialog()), BorderLayout.SOUTH);
 
         loadConversations();
     }
@@ -142,7 +141,7 @@ public class ConversationHistoryPanel extends JPanel {
     // Table model class
     private static class ConversationTableModel extends AbstractTableModel {
         private List<Conversation> conversations = new ArrayList<>();
-        private final String[] columnNames = {"View", "Title", "Time", "Delete"};
+        private final String[] columnNames = {"Delete", "Title", "Time"};
 
         public void setConversations(List<Conversation> conversations) {
             // Create new list to ensure clean state
@@ -173,7 +172,7 @@ public class ConversationHistoryPanel extends JPanel {
         public Object getValueAt(int row, int column) {
             Conversation conversation = conversations.get(row);
 
-            if (column == 0 || column == 3) {
+            if (column == 0) {
                 // For button columns, create a defensive copy to ensure ID consistency
                 Conversation copy = new Conversation();
                 copy.setId(conversation.getId());
@@ -181,7 +180,7 @@ public class ConversationHistoryPanel extends JPanel {
                 // Copy other necessary fields
                 return copy;
             }
-            
+
             return switch (column) {
                 case 1 -> conversation.getTitle();
                 case 2 -> formatTimeSince(conversation.getTimestamp());
@@ -191,15 +190,16 @@ public class ConversationHistoryPanel extends JPanel {
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 0 || column == 3; // Only view and delete buttons are editable
+            return column == 0; // Only delete buttons are editable
         }
     }
 
     // Custom renderers
-    private static class ButtonRenderer extends JHoverButton implements TableCellRenderer {
-        public ButtonRenderer(Icon icon, String tooltip) {
-            super(icon, true);
-            // setToolTipText(tooltip);
+    private static class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer(Icon icon) {
+            super(icon);
+            setPreferredSize(new Dimension(40, 40));
+            setMaximumSize(new Dimension(40, 40));
         }
 
         @Override
@@ -217,16 +217,9 @@ public class ConversationHistoryPanel extends JPanel {
                                                        int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-            // Remove ellipsis behavior
             setHorizontalAlignment(SwingConstants.LEADING);
-
-            // Don't truncate the text
             setText(String.valueOf(value));
-
-            // Set minimum width to 0 to allow full expansion
             setMinimumSize(new Dimension(0, getHeight()));
-
-            // Add proper padding
             setBorder(JBUI.Borders.empty(0, 8));
 
             return this;
@@ -235,7 +228,7 @@ public class ConversationHistoryPanel extends JPanel {
         @Override
         public void setText(String text) {
             super.setText(text);
-            // setToolTipText(text); // Shows full text on hover
+             setToolTipText(text);
         }
 
         // Override these methods to ensure proper text display
@@ -272,10 +265,8 @@ public class ConversationHistoryPanel extends JPanel {
         private final JButton button;
         private final Function<Conversation, Boolean> action;
         private Conversation currentConversation;
-        private Project project;
 
-        public ButtonEditor(Project project,
-                            @NotNull JButton button,
+        public ButtonEditor(@NotNull JButton button,
                             Function<Conversation, Boolean> action) {
             super(new JCheckBox());
             this.button = button;

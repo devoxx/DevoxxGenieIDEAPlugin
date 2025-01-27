@@ -1,5 +1,8 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import lombok.Getter;
+
+@Getter
 public enum ActionButtonState {
     PULL_CHROMA_DB("Pull ChromaDB Image"),
     START_CHROMA_DB("Start ChromaDB"),
@@ -11,7 +14,4 @@ public enum ActionButtonState {
         this.text = text;
     }
 
-    public String getText() {
-        return text;
-    }
 }
