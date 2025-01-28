@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.11</h2>
+        <UL>
+            <LI>Fix #168 : Preserve new line when copying code from response by @stephanj</LI>
+        </UL>
         <h2>V0.4.10</h2>
         <UL>
             <LI>Fix #440 : Fix for the custom OpenAI chat memory issue by @stephanj</LI>
