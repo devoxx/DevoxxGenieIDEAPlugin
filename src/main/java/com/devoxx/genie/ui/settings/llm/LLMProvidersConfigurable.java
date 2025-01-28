@@ -9,8 +9,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-import java.util.Arrays;
-
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
 public class LLMProvidersConfigurable implements Configurable {
@@ -73,8 +71,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
 
+        isModified |= stateService.isCustomOpenAIApiKeyEnabled() != llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIModelNameField(), stateService.getCustomOpenAIModelName());
+        isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIApiKeyField(), stateService.getCustomOpenAIApiKey());
 
         isModified |= !stateService.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), stateService.getAzureOpenAIEndpoint());
@@ -127,6 +127,8 @@ public class LLMProvidersConfigurable implements Configurable {
 
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
+        settings.setCustomOpenAIApiKey(new String(llmSettingsComponent.getCustomOpenAIApiKeyField().getPassword()));
+        settings.setCustomOpenAIApiKeyEnabled(llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -170,6 +172,7 @@ public class LLMProvidersConfigurable implements Configurable {
         if (isModified) {
             boolean hasKey = (!settings.getAnthropicKey().isBlank() && settings.isAnthropicEnabled()) ||
                     (!settings.getOpenAIKey().isBlank() && settings.isOpenAIEnabled()) ||
+                    (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled()) ||
                     (!settings.getOpenRouterKey().isBlank() && settings.isOpenRouterEnabled()) ||
                     (!settings.getDeepSeekKey().isBlank() && settings.isDeepSeekEnabled()) ||
                     (!settings.getDeepInfraKey().isBlank() && settings.isDeepInfraEnabled()) ||
@@ -204,6 +207,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
         llmSettingsComponent.getCustomOpenAIModelNameField().setText(settings.getCustomOpenAIModelName());
+        llmSettingsComponent.getCustomOpenAIApiKeyField().setText(settings.getCustomOpenAIApiKey());
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());

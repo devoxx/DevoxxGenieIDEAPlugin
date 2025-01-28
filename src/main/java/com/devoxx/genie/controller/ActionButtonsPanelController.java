@@ -142,6 +142,15 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                     .outputCost(0)
                     .inputMaxTokens(4096)
                     .build();
+        } else if (selectedProvider != null && selectedProvider.getName().equals("CustomOpenAI")) {
+            return LanguageModel.builder()
+                    .provider(selectedProvider)
+                    .apiKeyUsed(true)
+                    .modelName(!stateService.getCustomOpenAIModelName().isBlank() ? stateService.getCustomOpenAIModelName() : "na")
+                    .inputCost(0)
+                    .outputCost(0)
+                    .inputMaxTokens(4096)
+                    .build();
         } else {
             String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
             return LanguageModel.builder()
