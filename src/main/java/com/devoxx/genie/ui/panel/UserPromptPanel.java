@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.ui.component.JEditorPaneUtils;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.intellij.ui.components.JBLabel;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
@@ -65,10 +65,7 @@ public class UserPromptPanel extends BackgroundPanel {
      * @return the panel with Delete button
      */
     private @NotNull JButton createDeleteButton(ChatMessageContext chatMessageContext) {
-        JButton deleteButton = new JHoverButton(TrashIcon, true);
-        // deleteButton.setToolTipText("Remove the prompt & response");
-        deleteButton.addActionListener(e -> removeChat(chatMessageContext));
-        return deleteButton;
+        return createActionButton(TrashIcon, "Remove the prompt * response", e -> removeChat(chatMessageContext));
     }
 
     /**

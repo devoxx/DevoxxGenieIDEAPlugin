@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.util;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.tdg.CodeGeneratorService;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
@@ -14,9 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static com.devoxx.genie.util.ClipboardUtil.copyToClipboard;
 
@@ -34,25 +32,28 @@ public class CodeSnippetAction {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
         buttonPanel.setOpaque(true);
 
-        JHoverButton copyButton = new JHoverButton(CopyIcon, true);
-        // copyButton.setToolTipText("Copy to clipboard");
-        copyButton.addActionListener(e -> {
-            copyToClipboard(fencedCodeBlock.getLiteral());
-            NotificationUtil.sendNotification(chatMessageContext.getProject(), "Code copied to clipboard");
-        });
-        buttonPanel.add(copyButton);
+        buttonPanel.add(
+                createActionButton(CopyIcon,
+                        "Copy to clipboard",
+                        e -> {
+                            copyToClipboard(fencedCodeBlock.getLiteral());
+                            NotificationUtil.sendNotification(chatMessageContext.getProject(), "Code copied to clipboard");
+                        })
+        );
 
-        JHoverButton insertButton = new JHoverButton(InsertCodeIcon, true);
-        // insertButton.setToolTipText("Insert code");
-        insertButton.addActionListener(e -> insertCode(fencedCodeBlock.getLiteral()));
-        buttonPanel.add(insertButton);
+        buttonPanel.add(
+                createActionButton(InsertCodeIcon,
+                        "Insert code",
+                        e -> insertCode(fencedCodeBlock.getLiteral()))
+        );
 
         String commandName = chatMessageContext.getCommandName();
         if (commandName != null && commandName.equalsIgnoreCase("tdg")) {
-            JHoverButton createButton = new JHoverButton(CreateIcon, true);
-            // createButton.setToolTipText("Create class");
-            createButton.addActionListener(e -> createClass(fencedCodeBlock.getLiteral()));
-            buttonPanel.add(createButton);
+            buttonPanel.add(
+                    createActionButton(CreateIcon,
+                            "Create class",
+                            e -> createClass(fencedCodeBlock.getLiteral()))
+            );
         }
 
         return buttonPanel;

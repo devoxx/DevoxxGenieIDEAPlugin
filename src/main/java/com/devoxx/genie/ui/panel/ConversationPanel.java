@@ -7,7 +7,6 @@ import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
-import com.devoxx.genie.ui.component.JHoverButton;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
@@ -25,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 
@@ -32,10 +32,6 @@ import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 public class ConversationPanel extends JPanel implements ConversationSelectionListener, ConversationEventListener, ConversationStarter {
 
     private final DevoxxGenieToolWindowContent toolWindowContent;
-
-    private final JButton newConversationBtn = new JHoverButton(PlusIcon, true);
-    private final JButton settingsBtn = new JHoverButton(CogIcon, true);
-    private final JButton historyButton = new JHoverButton(ClockIcon, true);
 
     private final Project project;
     private final JLabel newConversationLabel;
@@ -45,6 +41,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     private final JPanel conversationButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
     private final ChatService chatService;
     private JBPopup historyPopup;
+    private JButton settingsBtn;
 
     /**
      * The conversation panel constructor.
@@ -66,7 +63,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
         historyPanel = new ConversationHistoryPanel(toolWindowContent.getStorageService(), this, project);
 
-        setupConversationButtons();
+        updateFontSize();
 
         add(newConversationLabel, BorderLayout.CENTER);
         add(createButtonPanel(), BorderLayout.EAST);
@@ -78,9 +75,6 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
     public void updateFontSize() {
         int fontSize = (int) JBUIScale.scale(14f) + 6;
-        settingsBtn.setPreferredSize(new Dimension(fontSize, 30));
-        historyButton.setPreferredSize(new Dimension(fontSize, 30));
-        newConversationBtn.setPreferredSize(new Dimension(fontSize, 30));
 
         setMaximumSize(new Dimension(fontSize * 3, 30));
 
@@ -103,30 +97,15 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     }
 
     /**
-     * Set up the conversation buttons.
-     */
-    private void setupConversationButtons() {
-
-        // historyButton.setToolTipText("View conversation history");
-        historyButton.addActionListener(e -> showConversationHistory());
-
-        // settingsBtn.setToolTipText("Plugin settings");
-        settingsBtn.addActionListener(e -> SettingsDialogUtil.showSettingsDialog(project));
-
-        // newConversationBtn.setToolTipText("Start a new conversation");
-        newConversationBtn.addActionListener(e -> startNewConversation());
-
-        updateFontSize();
-    }
-
-    /**
      * Create the button panel.
      *
      * @return the button panel
      */
     private @NotNull JPanel createButtonPanel() {
-        conversationButtonPanel.add(newConversationBtn);
-        conversationButtonPanel.add(historyButton);
+        conversationButtonPanel.add(createActionButton(PlusIcon, e -> startNewConversation()));
+        conversationButtonPanel.add(createActionButton(ClockIcon, e -> showConversationHistory()));
+
+        settingsBtn = createActionButton(CogIcon, e -> SettingsDialogUtil.showSettingsDialog(project));
         conversationButtonPanel.add(settingsBtn);
         return conversationButtonPanel;
     }
