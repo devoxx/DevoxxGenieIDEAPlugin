@@ -36,10 +36,12 @@ public class UserPromptPanel extends BackgroundPanel {
         headerPanel.add(createHeaderLabel(), BorderLayout.WEST);
         headerPanel.add(createDeleteButton(chatMessageContext), BorderLayout.EAST);
 
+        String userPrompt = chatMessageContext.getUserPrompt().replace("\n", "<br>");
+
         // User prompt setup
         JEditorPane htmlJEditorPane =
             JEditorPaneUtils.createHtmlJEditorPane(
-                chatMessageContext.getUserPrompt(),
+                userPrompt,
                 null,
                 StyleSheetsFactory.createParagraphStyleSheet()
             );

@@ -37,8 +37,9 @@
     <change-notes><![CDATA[
         <h2>V0.4.12</h2>
         <UL>
-            <LI>Feature #451 : Support API Key for custom OpenAI endpoint by @stephanj</LI>
+            <LI>Feat #451 : Support API Key for custom OpenAI endpoint by @stephanj</LI>
             <LI>Fix #457 : (Regression) clean files when new conversation is started by @stephanj</LI>
+            <LI>Feat #458 : Keep the newlines of the user prompt by @stephanj</LI>
         </UL>
         <h2>V0.4.11</h2>
         <UL>
