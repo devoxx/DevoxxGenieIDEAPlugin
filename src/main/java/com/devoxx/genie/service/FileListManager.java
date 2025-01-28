@@ -93,8 +93,12 @@ public class FileListManager {
     }
 
     public void clear(@NotNull Project project) {
-        filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
-        previouslyAddedFiles.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+        String projectHash = project.getLocationHash();
+
+        // Remove the entries for this project
+        filesMap.remove(projectHash);
+        previouslyAddedFiles.remove(projectHash);
+
         notifyAllObservers(project);
     }
 
