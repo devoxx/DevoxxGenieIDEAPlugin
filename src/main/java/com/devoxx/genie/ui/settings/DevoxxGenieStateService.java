@@ -80,6 +80,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Local custom OpenAI-compliant LLM fields
     private String customOpenAIUrl = "";
     private String customOpenAIModelName = "";
+    private String customOpenAIApiKey = "";
 
     // Local LLM Providers
     private boolean isOllamaEnabled = true;
@@ -91,6 +92,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Local custom OpenAI-compliant LLM fields
     private boolean isCustomOpenAIUrlEnabled = false;
     private boolean isCustomOpenAIModelNameEnabled = false;
+    private boolean isCustomOpenAIApiKeyEnabled = false;
 
     // Remote LLM Providers
     private boolean isOpenAIEnabled = false;

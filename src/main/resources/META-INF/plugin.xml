@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.12</h2>
+        <UL>
+            <LI>Feature #451 : Support API Key for custom OpenAI endpoint by @stephanj</LI>
+        </UL>
         <h2>V0.4.11</h2>
         <UL>
             <LI>Fix #168 : Preserve new line when copying code from response by @stephanj</LI>

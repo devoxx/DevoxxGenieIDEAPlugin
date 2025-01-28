@@ -4,10 +4,8 @@ import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.jgoodies.common.base.Strings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -504,18 +502,6 @@ public final class LLMModelRegistryService {
     }
 
     private void addGroqModels() {
-
-        String gemma7b = "gemma-7b-it";
-        models.put(ModelProvider.Groq.getName() + ":" + gemma7b,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Groq)
-                        .modelName(gemma7b)
-                        .displayName("Gemma 7B it")
-                        .inputCost(0.07)
-                        .outputCost(0.07)
-                        .inputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
 
         String gemma2 = "gemma2-9b-it";
         models.put(ModelProvider.Groq.getName() + ":" + gemma2,
