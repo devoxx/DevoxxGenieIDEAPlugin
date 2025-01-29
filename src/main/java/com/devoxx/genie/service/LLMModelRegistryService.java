@@ -40,84 +40,52 @@ public final class LLMModelRegistryService {
 
     private void addAnthropicModels() {
 
-        String claude2 = CLAUDE_2.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude2,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claude2)
-                        .displayName("Claude 2.0")
-                        .inputCost(8)
-                        .outputCost(24)
-                        .inputMaxTokens(100_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String claude21 = CLAUDE_2_1.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude21,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claude21)
-                        .displayName("Claude 2.1")
-                        .inputCost(8)
-                        .outputCost(24)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
+        // Available until March 2025
         String claudeHaiku3 = CLAUDE_3_HAIKU_20240307.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku3,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claudeHaiku3)
-                        .displayName("Claude 3 Haiku")
+                        .displayName("Claude 3 Haiku (20240307)")
                         .inputCost(0.25)
                         .outputCost(1.25)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
-        String claudeSonnet3 = CLAUDE_3_SONNET_20240229.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet3,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claudeSonnet3)
-                        .displayName("Claude 3 Sonnet")
-                        .inputCost(3)
-                        .outputCost(15)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
+        // Available until March 2025
         String claudeOpus3 = CLAUDE_3_OPUS_20240229.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeOpus3,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claudeOpus3)
-                        .displayName("Claude 3 Opus")
+                        .displayName("Claude 3 Opus (20240229)")
                         .inputCost(15)
                         .outputCost(75)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
+        // Available until October 2025
         String claudeSonnet35 = CLAUDE_3_5_SONNET_20241022.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet35,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claudeSonnet35)
-                        .displayName("Claude 3.5 Sonnet")
+                        .displayName("Claude 3.5 Sonnet (20241022)")
                         .inputCost(3)
                         .outputCost(15)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
+        // Available until October 2025
         String claudeHaiku35 = CLAUDE_3_5_HAIKU_20241022.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku35,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claudeHaiku35)
-                        .displayName("Claude 3.5 Haiku")
+                        .displayName("Claude 3.5 Haiku (20241022)")
                         .inputCost(1)
                         .outputCost(5)
                         .inputMaxTokens(200_000)

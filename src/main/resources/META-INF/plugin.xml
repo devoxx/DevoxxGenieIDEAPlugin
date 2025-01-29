@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.14</h2>
+        <UL>
+            <LI>Fix #462 : Remove deprecated Anthropics models</LI>
+        </UL>
         <h2>V0.4.13</h2>
         <UL>
             <LI>Feat #455 : Windows/Linux UI on-select issues (regression) by @stephanj</LI>
