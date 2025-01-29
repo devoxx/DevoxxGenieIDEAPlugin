@@ -163,7 +163,7 @@ This allows for incredibly nuanced interactions – we're talking advanced queri
 ## Support for JLama & LLama3.java
 DevoxxGenie now also supports the 100% Modern Java LLM inference engines: [JLama](https://github.com/tjake/Jlama).
 
-JLama offers a REST API compatible with the widely-used OpenAI API.
+JLama offers a REST API compatible with the widely-used OpenAI API. Use the Custom OpenAI URL to connect.
 
 ![image](https://github.com/user-attachments/assets/65096be3-2b34-4fea-8295-d63e04066390)
 
@@ -171,9 +171,16 @@ You can also integrate it seamlessly with [Llama3.java](https://github.com/steph
 
 ## Local LLM Cluster with Exo
 
-V0.2.7 also supports Exo, a local LLM cluster for Apple Silicon which allows you to run Llama 3.1 8b, 70b and 405b on your own Apple computers 🤩
+Use the custom OpenAI URL to connect to Exo, a local LLM cluster for Apple Silicon which allows you to run Llama 3.1 8b, 70b and 405b on your own Apple computers 🤩
 
 ![image](https://github.com/user-attachments/assets/a79033ff-d9dd-442d-aa92-0fc70cc37747)
+
+## Test Driven Generation (TDG) - Experimental
+
+Write a unit test and let DevoxxGenie generated the implementation for that unit test. 
+This approach was explained by Bouke Nijhuis in his [Devoxx Belgium presentation](https://youtu.be/YRFpyGbp6h4?si=mYzJuVRMnclZJMIM)
+
+An demo on how to accomplish this can be seen in this 𝕏 [post](https://x.com/Stephan007/status/1854949507710198209).
 
 
 ### Installation:
