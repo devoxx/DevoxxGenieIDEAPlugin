@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.net.Socket;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,20 +40,30 @@ public class JanChatModelFactoryTest {
 
     @Test
     void testHelloChat() {
-        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
-            // Setup the mock for SettingsState
-            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
-            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
-            when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
+        if (isJanRunning()) {
+            try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+                // Setup the mock for SettingsState
+                DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+                when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+                when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
 
-            // Instance of the class containing the method to be tested
-            JanChatModelFactory factory = new JanChatModelFactory();
+                // Instance of the class containing the method to be tested
+                JanChatModelFactory factory = new JanChatModelFactory();
 
-            ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("mistral-ins-7b-q4");
-            ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
-            String hello = chatLanguageModel.generate("Hello");
-            assertThat(hello).isNotNull();
+                ChatModel chatModel = new ChatModel();
+                chatModel.setModelName("mistral-ins-7b-q4");
+                ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
+                String hello = chatLanguageModel.generate("Hello");
+                assertThat(hello).isNotNull();
+            }
+        }
+    }
+
+    private boolean isJanRunning() {
+        try (Socket socket = new Socket("localhost", 1337)) {
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

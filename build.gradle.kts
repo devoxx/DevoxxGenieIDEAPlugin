@@ -116,8 +116,16 @@ tasks {
     }
 
     test {
+        systemProperty("java.io.tmpdir", "/tmp/test")
+        // Add these to help with platform tests
+        systemProperty("idea.home.path", file("build/idea-sandbox"))
+
         useJUnitPlatform()
         testLogging { events("passed", "skipped", "failed") }
+
+        maxHeapSize = "1g"
+
+        forkEvery = 1
     }
 
     signPlugin {

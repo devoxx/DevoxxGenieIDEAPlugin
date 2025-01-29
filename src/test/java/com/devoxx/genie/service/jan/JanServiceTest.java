@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +39,10 @@ public class JanServiceTest extends BaseIntellijTest {
     }
 
     @Test
-    void testGetModels() throws IOException {
+    public void testGetModels() throws IOException {
+        if (!isJanRunning()) {
+            return;
+        }
         List<Data> models = janService.getModels();
         assertThat(models).isNotEmpty();
 
@@ -48,5 +52,13 @@ public class JanServiceTest extends BaseIntellijTest {
             assertThat(model.getName()).isNotNull();
             assertThat(model.getEngine()).isNotNull();
         });
+    }
+
+    private boolean isJanRunning() {
+        try (var socket = new Socket("localhost", 1337)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
