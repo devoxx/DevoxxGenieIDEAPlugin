@@ -24,7 +24,6 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
     public ValidatorStatusPanel(@NotNull ValidatorStatus validatorStatus, ActionListener actionListener) {
         super(new BorderLayout(HORIZONTAL_PADDING, 0));
 
-        setOpaque(false);
         setBorder(BorderFactory.createEmptyBorder(VERTICAL_PADDING, HORIZONTAL_PADDING, VERTICAL_PADDING, HORIZONTAL_PADDING));
 
         // Left panel with icon and name
@@ -40,7 +39,6 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
         JPanel leftPanel = new JPanel();
         // Using BoxLayout for better control over component spacing
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
-        leftPanel.setOpaque(false);
 
         // Status icon
         JBLabel statusIconLabel = new JBLabel(validatorStatus.isValid() ? "✓" : "✗");
@@ -60,10 +58,9 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
         return leftPanel;
     }
 
-    private JPanel createRightPanel(ValidatorStatus validatorStatus, ActionListener actionListener) {
+    private @NotNull JPanel createRightPanel(ValidatorStatus validatorStatus, ActionListener actionListener) {
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS));
-        rightPanel.setOpaque(false);
 
         // Message label with proper vertical alignment
         JBLabel messageLabel = new JBLabel(validatorStatus.message());
@@ -84,7 +81,7 @@ public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
         return rightPanel;
     }
 
-    private JButton createActionButton(ValidatorStatus validatorStatus, ActionListener actionListener) {
+    private @NotNull JButton createActionButton(@NotNull ValidatorStatus validatorStatus, ActionListener actionListener) {
         JButton actionButton = new JButton(getActionButtonText(validatorStatus.action()));
         actionButton.addActionListener(actionListener);
         actionButton.putClientProperty("validatorType", validatorStatus.validatorType());

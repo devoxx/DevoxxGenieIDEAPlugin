@@ -34,7 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class ActionButtonsPanel extends JPanel

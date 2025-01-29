@@ -29,10 +29,8 @@ public class BlockProcessor implements NodeProcessor {
         String htmlOutput = htmlRenderer.render(block);
 
         JEditorPane editorPane = createEditorPane(htmlOutput, StyleSheetsFactory.createParagraphStyleSheet());
-        editorPane.setOpaque(false);
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
         panel.add(editorPane, BorderLayout.CENTER);
         return panel;
     }

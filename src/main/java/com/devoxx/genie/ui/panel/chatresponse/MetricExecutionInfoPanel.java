@@ -16,9 +16,8 @@ import java.util.Locale;
 
 public class MetricExecutionInfoPanel extends JPanel {
 
-    public MetricExecutionInfoPanel(ChatMessageContext chatMessageContext) {
+    public MetricExecutionInfoPanel(@NotNull ChatMessageContext chatMessageContext) {
         setLayout(new FlowLayout(FlowLayout.LEFT));
-        setOpaque(false);
 
         String metricInfoLabel = String.format("ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0);
         TokenUsage tokenUsage = chatMessageContext.getTokenUsage();

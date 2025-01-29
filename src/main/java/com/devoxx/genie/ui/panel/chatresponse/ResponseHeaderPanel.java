@@ -15,7 +15,7 @@ import java.awt.datatransfer.Transferable;
 import java.time.format.DateTimeFormatter;
 
 import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {

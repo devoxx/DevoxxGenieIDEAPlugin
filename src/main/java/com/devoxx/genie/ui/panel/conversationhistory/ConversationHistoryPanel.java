@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
 public class ConversationHistoryPanel extends JPanel {

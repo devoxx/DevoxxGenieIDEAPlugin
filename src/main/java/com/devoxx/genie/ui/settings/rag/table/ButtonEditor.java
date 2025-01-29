@@ -38,7 +38,6 @@ public class ButtonEditor extends DefaultCellEditor {
         this.dockerService = ApplicationManager.getApplication().getService(ChromaDockerService.class);
 
         button = new JButton();
-        button.setOpaque(true);
         button.addActionListener(e -> {
             isPushed = true;
             fireEditingStopped();

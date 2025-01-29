@@ -20,7 +20,6 @@ import java.util.List;
 
 public class ResponseDocumentPanel extends JPanel {
 
-
     private final transient ChatMessageContext chatMessageContext;
 
     public ResponseDocumentPanel(@NotNull ChatMessageContext chatMessageContext) {
@@ -29,11 +28,7 @@ public class ResponseDocumentPanel extends JPanel {
         this.chatMessageContext = chatMessageContext;
 
         String markDownResponse = chatMessageContext.getAiMessage().text();
-
-        System.out.println(markDownResponse);
-
         Node document = Parser.builder().build().parse(markDownResponse);
-
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         if (Boolean.TRUE.equals(stateService.getGitDiffActivated())) {
@@ -108,7 +103,6 @@ public class ResponseDocumentPanel extends JPanel {
     private @NotNull JPanel createPanel() {
         JPanel jPanel = new JPanel();
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
-        jPanel.setOpaque(false);
         return jPanel;
     }
 

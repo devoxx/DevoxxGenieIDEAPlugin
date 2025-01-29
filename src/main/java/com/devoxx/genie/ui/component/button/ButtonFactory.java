@@ -6,14 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.HOVER_BG_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.TRANSPARENT_COLOR;
-
-public class ButtonUtil {
+public class ButtonFactory {
 
     // Set minimum size for buttons to prevent them from becoming too small
     private final static Dimension minSize = new Dimension(100, 30);
@@ -45,18 +40,18 @@ public class ButtonUtil {
                                                 Icon icon,
                                                 String tooltipText,
                                                 @NotNull Consumer<ActionEvent> actionListener) {
-        JButton button = new JButton(label);
+        JButton button = new CustomButton(label);
         if (icon != null) {
             button.setIcon(icon);
         }
         button.setToolTipText(tooltipText);
-        button.setBorder(BorderFactory.createEmptyBorder());
-        button.addMouseListener(new ButtonHoverEffect(button));
         button.addActionListener(actionListener::accept);
         button.setMinimumSize(minSize);
         button.setMaximumSize(maxSize);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
+        button.setPreferredSize(minSize);
+        button.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         if (label == null || label.isEmpty()) {
             int fontSize = (int) JBUIScale.scale(14f) + 6;
@@ -65,26 +60,4 @@ public class ButtonUtil {
         
         return button;
     }
-
-    static class ButtonHoverEffect extends MouseAdapter {
-        private final JButton button;
-        private final Color originalColor;
-
-        public ButtonHoverEffect(@NotNull JButton button) {
-            this.button = button;
-            this.originalColor = button.getBackground();
-            this.button.setBackground(TRANSPARENT_COLOR);
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent e) {
-            button.setBackground(HOVER_BG_COLOR);
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e) {
-            button.setBackground(originalColor);
-        }
-    }
-
 }

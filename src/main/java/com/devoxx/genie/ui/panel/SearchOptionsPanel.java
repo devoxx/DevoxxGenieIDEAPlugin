@@ -20,8 +20,6 @@ public class SearchOptionsPanel extends JPanel {
 
     public SearchOptionsPanel(Project project) {
         super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
-        setOpaque(false);
-
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         // Create switches

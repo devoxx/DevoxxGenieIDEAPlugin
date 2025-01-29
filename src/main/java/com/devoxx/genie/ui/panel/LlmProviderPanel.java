@@ -27,7 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
 public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {

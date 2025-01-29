@@ -13,20 +13,18 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class PromptSettingsComponent extends AbstractSettingsComponent {
 
-    private static final int NAME_COLUMN = 0;
     private static final int PROMPT_COLUMN = 1;
-
 
     private final DevoxxGenieStateService settings;
     @Getter
@@ -84,18 +82,9 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
             gbc);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
-        JButton addCustomPrompt = createActionButton("Add Custom Prompt", e -> addCustomPrompt());
-        addCustomPrompt.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
-        buttonPanel.add(addCustomPrompt);
-
-        JButton removePromptButton = createActionButton("Remove Custom Prompt", e -> removeCustomPrompt());
-        removePromptButton.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
-        buttonPanel.add(removePromptButton);
-
-        JButton restoreButton = createActionButton("Restore Default Prompt", e -> restoreDefaultPrompts());
-        restoreButton.setBorder(BorderFactory.createBevelBorder(BevelBorder. RAISED));
-        buttonPanel.add(restoreButton);
+        buttonPanel.add(createActionButton("Add", PlusIcon, "Add custom prompt", e -> addCustomPrompt()));
+        buttonPanel.add(createActionButton("Remove", TrashIcon, "Remove custom prompt", e -> removeCustomPrompt()));
+        buttonPanel.add(createActionButton("Restore", RefreshIcon, "Restore custom prompts", e -> restoreDefaultPrompts()));
 
         gbc.gridy++;
         gbc.weighty = 0.0;
@@ -124,7 +113,6 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
                 JTextArea textArea = new JTextArea((String) value);
                 textArea.setWrapStyleWord(true);
                 textArea.setLineWrap(true);
-                textArea.setOpaque(true);
                 if (isSelected) {
                     textArea.setBackground(table.getSelectionBackground());
                     textArea.setForeground(table.getSelectionForeground());
