@@ -15,14 +15,10 @@ public class HelpPanel extends BackgroundPanel {
 
         helpPane = new JEditorPane("text/html", "");
         helpPane.setEditable(false);
-        helpPane.setOpaque(false);
         helpPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 
         JBScrollPane scrollPane = new JBScrollPane(helpPane);
         scrollPane.setBorder(null);
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setOpaque(false);
-
         add(scrollPane, BorderLayout.CENTER);
         updateHelpText(helpMsg);
     }

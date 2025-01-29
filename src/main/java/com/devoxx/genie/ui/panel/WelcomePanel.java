@@ -14,6 +14,8 @@ import java.awt.*;
 import java.net.URI;
 import java.util.ResourceBundle;
 
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+
 public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptChangeListener {
 
     public static final float DEFAULT_FONT_SIZE = 20f;
@@ -29,7 +31,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
 
         jEditorPane = new JEditorPane("text/html", "");
         jEditorPane.setEditable(false);
-        jEditorPane.setOpaque(false);
+        jEditorPane.setBackground(PROMPT_BG_COLOR);
         jEditorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         jEditorPane.addHyperlinkListener(e -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {

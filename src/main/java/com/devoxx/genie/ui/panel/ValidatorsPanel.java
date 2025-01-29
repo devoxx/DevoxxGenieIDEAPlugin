@@ -15,12 +15,10 @@ public class ValidatorsPanel extends JBPanel<ValidatorsPanel> {
     public ValidatorsPanel(@NotNull List<ValidatorStatus> validatorStatuses,
                            ActionListener actionListener) {
         super(new BorderLayout());
-        setOpaque(false);
 
         // Create panel to hold validator rows
         JPanel validatorsContainer = new JPanel();
         validatorsContainer.setLayout(new BoxLayout(validatorsContainer, BoxLayout.Y_AXIS));
-        validatorsContainer.setOpaque(false);
 
         // Add each validator status panel to the container
         for (ValidatorStatus status : validatorStatuses) {
@@ -29,7 +27,6 @@ public class ValidatorsPanel extends JBPanel<ValidatorsPanel> {
         }
 
         JBScrollPane scrollPane = getScrollPane(validatorsContainer);
-        scrollPane.getViewport().setOpaque(false);
 
         add(scrollPane, BorderLayout.CENTER);
     }
@@ -39,7 +36,6 @@ public class ValidatorsPanel extends JBPanel<ValidatorsPanel> {
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.setOpaque(false);
         return scrollPane;
     }
 }

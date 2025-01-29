@@ -8,12 +8,15 @@ import com.intellij.ui.JBColor;
 import com.intellij.util.ui.HTMLEditorKitBuilder;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import java.util.List;
+
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 
 public class JEditorPaneUtils {
 
@@ -24,9 +27,9 @@ public class JEditorPaneUtils {
      * Creates a JEditorPane tailored for HTML content, utilizing IntelliJ API to enhance display and interaction.
      * Features include word wrapping, icons, and support for Base64 images.
      */
-    public static JEditorPane createHtmlJEditorPane(CharSequence content,
-                                                    HyperlinkListener hyperlinkListener,
-                                                    StyleSheet styleSheet) {
+    public static @NotNull JEditorPane createHtmlJEditorPane(@NotNull CharSequence content,
+                                                             HyperlinkListener hyperlinkListener,
+                                                             StyleSheet styleSheet) {
         JEditorPane editorPane = new JEditorPane();
         editorPane.addHyperlinkListener(hyperlinkListener != null ? hyperlinkListener : BrowserHyperlinkListener.INSTANCE);
         editorPane.setContentType("text/html");
@@ -42,8 +45,9 @@ public class JEditorPaneUtils {
 
         editorPane.setEditable(false);
         editorPane.setForeground(JBColor.foreground());
-        editorPane.setOpaque(false);
+        editorPane.setBackground(PROMPT_BG_COLOR);
         editorPane.setText(colorizeSeparators(content.toString()));
+
         UIUtil.doNotScrollToCaret(editorPane);
         UIUtil.invokeLaterIfNeeded(() -> {
             editorPane.revalidate();

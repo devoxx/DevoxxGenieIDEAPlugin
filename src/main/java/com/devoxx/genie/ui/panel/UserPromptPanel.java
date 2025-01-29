@@ -11,7 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.DevoxxIcon;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
@@ -32,7 +32,6 @@ public class UserPromptPanel extends BackgroundPanel {
         setLayout(new BorderLayout());
 
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setOpaque(false);
         headerPanel.add(createHeaderLabel(), BorderLayout.WEST);
         headerPanel.add(createDeleteButton(chatMessageContext), BorderLayout.EAST);
 

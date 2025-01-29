@@ -54,7 +54,6 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
         setEnabled(list.isEnabled());
         setFont(list.getFont());
-        setOpaque(true);
 
         return this;
     }

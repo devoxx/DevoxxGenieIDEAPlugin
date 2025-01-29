@@ -25,7 +25,6 @@ public class FileListCellRenderer extends DefaultListCellRenderer {
 
         if (value instanceof VirtualFile file) {
             Box panel = Box.createHorizontalBox();
-            panel.setOpaque(true);
 
             if (isSelected) {
                 panel.setBackground(list.getSelectionBackground());
@@ -66,7 +65,6 @@ public class FileListCellRenderer extends DefaultListCellRenderer {
 
             // Make the panel itself show the tooltip
             JPanel wrapperPanel = new JPanel(new BorderLayout());
-            wrapperPanel.setOpaque(true);
             wrapperPanel.setBackground(panel.getBackground());
             wrapperPanel.add(panel, BorderLayout.CENTER);
             wrapperPanel.setToolTipText(tooltipText);

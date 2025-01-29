@@ -39,7 +39,6 @@ public class FileEntryComponent extends JPanel {
     public FileEntryComponent(Project project, @NotNull VirtualFile file, FileRemoveListener removeListener) {
         this.virtualFile = file;
         setLayout(new BorderLayout());
-        setOpaque(true);
 
         // Create main content panel
         Box contentPanel = Box.createHorizontalBox();
@@ -166,7 +165,6 @@ public class FileEntryComponent extends JPanel {
         private @NotNull JButton createButton (@NotNull JButton button){
             button.setBorderPainted(false);
             button.setContentAreaFilled(false);
-            button.setOpaque(true);
             button.setCursor(new Cursor(Cursor.HAND_CURSOR));
             button.setMargin(JBUI.emptyInsets());
             return button;

@@ -9,6 +9,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+
 public class IndentedCodeBlockProcessor implements NodeProcessor {
 
     private final ChatMessageContext chatMessageContext;
@@ -30,11 +32,9 @@ public class IndentedCodeBlockProcessor implements NodeProcessor {
         String htmlOutput = htmlRenderer.render(indentedCodeBlock);
 
         JEditorPane editorPane = createEditorPane(htmlOutput, StyleSheetsFactory.createCodeStyleSheet());
-        editorPane.setOpaque(false);
         editorPane.setBackground(JBColor.BLACK);
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
         panel.setBackground(JBColor.BLACK);
 
         panel.add(editorPane, BorderLayout.CENTER);

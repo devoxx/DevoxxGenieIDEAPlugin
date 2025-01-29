@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
+
 public class AbstractSettingsComponent implements SettingsComponent {
 
     protected final JPanel panel = new JPanel(new BorderLayout());
@@ -69,10 +71,10 @@ public class AbstractSettingsComponent implements SettingsComponent {
                                                          String url) {
         JPanel jPanel = new JPanel(new BorderLayout());
         jPanel.add(jComponent, BorderLayout.CENTER);
-
-        JButton btnApiKey = new JButton(AbstractSettingsComponent.PASSWORD_EMOJI);
-        btnApiKey.setToolTipText("Get your API Key from " + " " + url);
-        btnApiKey.addActionListener(e -> {
+        JButton btnApiKey = createActionButton(
+                AbstractSettingsComponent.PASSWORD_EMOJI,
+                null, "Get your API Key from " + " " + url,
+                e -> {
             try {
                 BrowserUtil.open(url);
             } catch (Exception ex) {
@@ -80,6 +82,7 @@ public class AbstractSettingsComponent implements SettingsComponent {
                 NotificationUtil.sendNotification(project, "Error: Unable to open the link");
             }
         });
+
         jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
     }

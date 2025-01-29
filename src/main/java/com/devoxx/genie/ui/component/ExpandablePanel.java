@@ -12,6 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpand;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.ArrowExpanded;
@@ -29,11 +30,9 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
         withBackground(PROMPT_BG_COLOR);
         withBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
-        toggleButton = new JButton("File references", ArrowExpand);
-        toggleButton.addActionListener(e -> toggleContent());
+        toggleButton = createActionButton("File references", ArrowExpand, e -> toggleContent());
         toggleButton.setHorizontalAlignment(SwingConstants.LEFT);
         toggleButton.setBorder(BorderFactory.createEmptyBorder());
-        toggleButton.setOpaque(false);
         toggleButton.setContentAreaFilled(false);
         toggleButton.setBorderPainted(false);
         add(toggleButton, BorderLayout.NORTH);
@@ -47,8 +46,6 @@ public class ExpandablePanel extends JBPanel<ExpandablePanel> {
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
-        scrollPane.getViewport().setOpaque(false);
-        scrollPane.setOpaque(false);
 
         add(scrollPane, BorderLayout.CENTER);
     }

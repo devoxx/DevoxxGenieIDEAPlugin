@@ -91,7 +91,6 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         JEditorPane editorPane = new JEditorPane();
         editorPane.setContentType("text/html");
         editorPane.setEditable(false);
-        editorPane.setOpaque(false);
         editorPane.setFont(SourceCodeProFontPlan14);
         return editorPane;
     }

@@ -39,7 +39,6 @@ public class FencedCodeBlockProcessor implements NodeProcessor {
         // Initialize the overlay panel and set the OverlayLayout correctly
         JPanel overlayPanel = new JPanel(new BorderLayout());
         overlayPanel.setBackground(CODE_BG_COLOR);
-        overlayPanel.setOpaque(true);
 
         // Add components to the overlay panel in the correct order
         overlayPanel.add(editorPane, BorderLayout.CENTER);

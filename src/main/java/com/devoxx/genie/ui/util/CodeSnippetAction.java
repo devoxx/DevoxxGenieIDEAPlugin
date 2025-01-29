@@ -14,7 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.component.button.ButtonUtil.createActionButton;
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static com.devoxx.genie.util.ClipboardUtil.copyToClipboard;
 
@@ -30,8 +31,7 @@ public class CodeSnippetAction {
                                              FencedCodeBlock fencedCodeBlock) {
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
-        buttonPanel.setOpaque(true);
-
+        buttonPanel.setBackground(PROMPT_BG_COLOR);
         buttonPanel.add(
                 createActionButton(CopyIcon,
                         "Copy to clipboard",

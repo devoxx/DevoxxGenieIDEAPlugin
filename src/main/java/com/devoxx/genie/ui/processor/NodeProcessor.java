@@ -30,7 +30,6 @@ public interface NodeProcessor {
             JEditorPaneUtils.createHtmlJEditorPane(htmlResponse.subSequence(0, htmlResponse.length()),
                 BrowserHyperlinkListener.INSTANCE,
                 styleSheet);
-        jEditorPane.setOpaque(false);
         jEditorPane.setEditable(false);
         return jEditorPane;
     }
