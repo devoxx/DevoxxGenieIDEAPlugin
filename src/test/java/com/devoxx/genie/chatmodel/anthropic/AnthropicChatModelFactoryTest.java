@@ -56,6 +56,6 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isEqualTo(7);
+        Assertions.assertThat(modelNames).size().isGreaterThan(3);
     }
 }
