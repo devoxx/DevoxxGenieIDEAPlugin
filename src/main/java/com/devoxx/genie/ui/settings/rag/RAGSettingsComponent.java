@@ -96,7 +96,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         JPanel progressPanel = new JPanel(new BorderLayout(5, 5));
         progressPanel.add(progressLabel, BorderLayout.NORTH);
         progressPanel.add(progressBar, BorderLayout.CENTER);
-        // Reset gridwidth to span across all columns
+        // Reset grid width to span across all columns
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         // Allow the panel to expand horizontally
         gbc.fill = GridBagConstraints.HORIZONTAL;

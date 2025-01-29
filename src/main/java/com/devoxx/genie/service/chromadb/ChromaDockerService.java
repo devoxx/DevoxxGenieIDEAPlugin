@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public final class ChromaDockerService {
     private static final Logger LOG = Logger.getInstance(ChromaDockerService.class);
 
-    private static final String CHROMA_IMAGE = "chromadb/chroma:latest";
+    private static final String CHROMA_IMAGE = "chromadb/chroma:0.6.2";
     private static final String CONTAINER_NAME = "devoxx-genie-chromadb";
 
     public static final String FAILED_TO_PULL_CHROMA_DB_IMAGE = "Failed to pull ChromaDB image: ";
