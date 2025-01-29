@@ -79,7 +79,7 @@ With RAG, you can:
 * Explore related concepts and ideas in the codebase
 
 We currently use Ollama and Nomic Text embedding to generates vector representations of your project files.
-These embedding vectors are then stored in a Chroma DB running locally within Docker. 
+These embedding vectors are then stored in a Chroma DB (v0.6.2) running locally within Docker. 
 The vectors are used to compute similarity scores between search queries and your code all running locally.
 
 The RAG feature is a significant enhancement to Devoxx Genie's code search capabilities, enabling developers to quickly find relevant code examples and accelerate their coding workflow.
