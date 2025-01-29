@@ -38,6 +38,7 @@
         <h2>V0.4.13</h2>
         <UL>
             <LI>Feat #455 : Windows/Linux UI on-select issues (regression) by @stephanj</LI>
+            <LI>Fix #463 : Use ChromaDB v0.6.2 instead of latest by @stephanj</LI>
         </UL>
         <h2>V0.4.12</h2>
         <UL>

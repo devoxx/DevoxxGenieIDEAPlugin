@@ -63,7 +63,7 @@ public class ChromeDBValidator implements Validator {
                 return false;
             }
 
-            this.message = "ChromaDB is running";
+            this.message = "ChromaDB v0.6.2 is running";
             return true;
 
         } catch (Exception e) {
