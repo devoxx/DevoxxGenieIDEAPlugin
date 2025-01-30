@@ -33,8 +33,8 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
-- **📸 DnD images**: You can now DnD images with multimodal LLM's.
-- **🧐 RAG Support (🔥 NEW)**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
+- **📸 DnD images (🔥 NEW)**: You can now DnD images with multimodal LLM's.
+- **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
 - **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
