@@ -41,6 +41,7 @@ public class WelcomeUtil {
             <h2>New features 🚀</h2>
             Configure features in the settings page.<br>
             <ul>
+                 <LI><strong>📸 DnD images</strong>: You can now DnD images with multimodal LLM's.</li>
                  <li><strong>🧐RAG Support</strong>: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>
                  <li><strong>💪🏻Git Diff</strong>: Show Git Diff dialog to commit LLM suggestions</li>
                  <li><strong>❌.gitignore</strong>: Exclude files and directories based on .gitignore file</li>

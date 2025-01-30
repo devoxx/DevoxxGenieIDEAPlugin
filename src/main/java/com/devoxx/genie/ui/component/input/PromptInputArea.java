@@ -12,10 +12,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
+@Getter
 public class PromptInputArea extends JPanel {
-    @Getter
     private final CommandAutoCompleteTextField inputField;
-    @Getter
     private final SearchOptionsPanel searchOptionsPanel;
 
     public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
@@ -34,6 +33,9 @@ public class PromptInputArea extends JPanel {
         } else {
             inputField.setPlaceholder(resourceBundle.getString("prompt.placeholder"));
         }
+
+        // Support DnD for images in input text area
+        new ImagePreviewHandler(project, inputField);
 
         inputField.setRows(3);
 

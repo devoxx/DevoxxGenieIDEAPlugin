@@ -19,6 +19,11 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         Content content = ContentFactory.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
         toolWindow.getContentManager().addContent(content);
 
+//        ImageDropPanel imageDropPanel = new ImageDropPanel();
+//        new ImagePreviewHandler(imageDropPanel);
+//        Content content = ContentFactory.getInstance().createContent(imageDropPanel, "DnD Image", false);
+//        toolWindow.getContentManager().addContent(content);
+//
         // Subscribe to settings changes
         MessageBusConnection connection = project.getMessageBus().connect();
         connection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC, toolWindowContent);
