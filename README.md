@@ -96,7 +96,7 @@ The RAG feature is a significant enhancement to Devoxx Genie's code search capab
 
 See also [Demo](https://www.youtube.com/watch?v=VVU8x45jIt4)
 
-Expecing to add also [GraphRAG](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/474) in the near future.
+Expecting to add also [GraphRAG](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/474) in the near future.
 
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
