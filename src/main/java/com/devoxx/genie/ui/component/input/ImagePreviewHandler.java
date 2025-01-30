@@ -1,13 +1,13 @@
 package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.service.FileListManager;
-import com.intellij.openapi.application.ApplicationManager;
+import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
-import com.intellij.ui.components.JBTextArea;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -28,9 +28,6 @@ public class ImagePreviewHandler implements DropTargetListener {
     private static final Color HOVER_BACKGROUND = new JBColor(new Color(0, 122, 255, 30), new Color(0, 122, 255, 30));
     private static final Color DEFAULT_BACKGROUND = new JBColor(JBColor.background(), JBColor.background());
 
-    private String originalText;
-    private String originalPlaceholder;
-
     public ImagePreviewHandler(Project project, @NotNull CommandAutoCompleteTextField dropTextArea) {
         this.project = project;
         this.dropTextArea = dropTextArea;
@@ -47,13 +44,6 @@ public class ImagePreviewHandler implements DropTargetListener {
         if (canAcceptDrop(dtde)) {
             dtde.acceptDrag(DnDConstants.ACTION_COPY);
             dropTextArea.setBackground(HOVER_BACKGROUND);
-            originalText = dropTextArea.getText();
-            originalPlaceholder = dropTextArea.getPlaceholder();
-            ApplicationManager.getApplication().invokeLater(() -> {
-                dropTextArea.setPlaceholder("");
-                dropTextArea.setText("Drop image here, works only with multimodal LLMs");
-                dropTextArea.repaint();
-            });
         } else {
             dtde.rejectDrag();
         }
@@ -80,15 +70,6 @@ public class ImagePreviewHandler implements DropTargetListener {
     @Override
     public void dragExit(DropTargetEvent dte) {
         hidePreview();
-        restoreOriginalText();
-    }
-
-    private void restoreOriginalText() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            dropTextArea.setPlaceholder(originalPlaceholder);
-            dropTextArea.setText(originalText);
-            dropTextArea.repaint();
-        });
     }
 
     @Override
@@ -105,10 +86,10 @@ public class ImagePreviewHandler implements DropTargetListener {
                     protected Void doInBackground() {
                         for (File file : files) {
                             VirtualFile fileByIoFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
-                            if (fileByIoFile != null && isImageFile(fileByIoFile)) {
+                            if (fileByIoFile != null) {
                                 FileListManager.getInstance().addFile(project, fileByIoFile);
                             } else {
-                                System.out.println("Not an image file: " + file.getName());
+                                NotificationUtil.sendNotification(project, "File type not supported: " + file.getName());
                             }
                         }
                         return null;
@@ -117,7 +98,6 @@ public class ImagePreviewHandler implements DropTargetListener {
                     @Override
                     protected void done() {
                         dtde.dropComplete(true);
-                        restoreOriginalText();
                     }
                 }.execute();
             } else {
