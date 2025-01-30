@@ -41,7 +41,6 @@ public class FileListManager {
 
     public void addFile(@NotNull Project project, VirtualFile file) {
         List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
-        // Check if file is image file
         if (isImageFile(file)) {
             List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
             imageFiles.add(file);
