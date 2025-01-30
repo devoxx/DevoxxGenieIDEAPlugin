@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
+import static dev.langchain4j.model.bedrock.BedrockAnthropicMessageChatModel.Types.AnthropicClaude3_5SonnetV1;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
@@ -657,7 +658,29 @@ public final class LLMModelRegistryService {
     }
 
     private void addBedrockModels() {
-        String claude3dot5 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
+        String claude3dot2haiku = "anthropic.claude-3-5-haiku-20241022-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot2haiku,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot2haiku)
+                        .displayName("Claude 3.5 Haiku")
+                        .inputCost(1)
+                        .outputCost(5)
+                        .inputMaxTokens(200_000)
+                        .build());
+
+        String claude3dot5v2 = "anthropic.claude-3-5-sonnet-20241022-v2:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5v2,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot5v2)
+                        .displayName("Claude 3.5 Sonnet v2")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .build());
+
+        String claude3dot5 = AnthropicClaude3_5SonnetV1.toString();
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5,
                 LanguageModel.builder()
                         .provider(ModelProvider.Bedrock)
