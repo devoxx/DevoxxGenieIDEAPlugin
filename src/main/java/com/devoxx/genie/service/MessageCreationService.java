@@ -64,42 +64,34 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
-        String userPrompt = chatMessageContext.getUserPrompt();
+        String context = chatMessageContext.getFilesContext();
+        if (context != null && !context.isEmpty()) {
+            constructUserMessageWithFullContext(chatMessageContext, context);
+        } else {
+            constructUserMessageWithCombinedContext(chatMessageContext);
+        }
+        addImages(chatMessageContext);
+    }
+
+    private void addImages(@NotNull ChatMessageContext chatMessageContext) {
         List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject());
-
         if (imageFiles != null && !imageFiles.isEmpty()) {
-            // Create a multimodal message with both text and images
-            List<Content> contents = new ArrayList<>();
-            contents.add(TextContent.from(userPrompt));
-
             // Add each image as content
             for (VirtualFile imageFile: imageFiles) {
                 try {
                     byte[] imageData = imageFile.contentsToByteArray();
                     String base64Image = Base64.getEncoder().encodeToString(imageData);
+
+                    UserMessage userMessage = UserMessage.from(
+                            TextContent.from(chatMessageContext.getUserMessage().singleText()),
+                            ImageContent.from(base64Image, ImageUtil.getImageMimeType(imageFile))
+                    );
+
+                    chatMessageContext.setUserMessage(userMessage);
                 } catch (IOException e) {
-                    LOG.error("Failed to read image file: " + imageFile.getName(), e);
+                    LOG.error("Failed to read image file");
                 }
             }
-
-            try {
-                VirtualFile firstImage = imageFiles.getFirst();
-                byte[] imageData = firstImage.contentsToByteArray();
-                String base64Image = Base64.getEncoder().encodeToString(imageData);
-
-                UserMessage userMessage = UserMessage.from(
-                        TextContent.from(chatMessageContext.getUserPrompt()),
-                        ImageContent.from(base64Image, ImageUtil.getImageMimeType(firstImage))
-                );
-
-                chatMessageContext.setUserMessage(userMessage);
-            } catch (IOException e) {
-                LOG.error("Failed to read image file");
-            }
-
-        } else {
-            // Create regular text-only message
-            chatMessageContext.setUserMessage(UserMessage.from(userPrompt));
         }
     }
 
