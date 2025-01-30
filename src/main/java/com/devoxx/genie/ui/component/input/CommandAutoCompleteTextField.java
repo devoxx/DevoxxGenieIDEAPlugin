@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.text.AttributeSet;
@@ -30,6 +31,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private final transient Project project;
 
     private boolean isAutoCompleting = false;
+    @Getter
     private String placeholder = "";
 
     public CommandAutoCompleteTextField(@NotNull Project project) {

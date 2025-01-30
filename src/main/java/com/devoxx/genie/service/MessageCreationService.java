@@ -8,12 +8,16 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.ImageUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,9 +25,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -62,11 +64,42 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
-        String context = chatMessageContext.getFilesContext();
-        if (context != null && !context.isEmpty()) {
-            constructUserMessageWithFullContext(chatMessageContext, context);
+        String userPrompt = chatMessageContext.getUserPrompt();
+        List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject());
+
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            // Create a multimodal message with both text and images
+            List<Content> contents = new ArrayList<>();
+            contents.add(TextContent.from(userPrompt));
+
+            // Add each image as content
+            for (VirtualFile imageFile: imageFiles) {
+                try {
+                    byte[] imageData = imageFile.contentsToByteArray();
+                    String base64Image = Base64.getEncoder().encodeToString(imageData);
+                } catch (IOException e) {
+                    LOG.error("Failed to read image file: " + imageFile.getName(), e);
+                }
+            }
+
+            try {
+                VirtualFile firstImage = imageFiles.getFirst();
+                byte[] imageData = firstImage.contentsToByteArray();
+                String base64Image = Base64.getEncoder().encodeToString(imageData);
+
+                UserMessage userMessage = UserMessage.from(
+                        TextContent.from(chatMessageContext.getUserPrompt()),
+                        ImageContent.from(base64Image, ImageUtil.getImageMimeType(firstImage))
+                );
+
+                chatMessageContext.setUserMessage(userMessage);
+            } catch (IOException e) {
+                LOG.error("Failed to read image file");
+            }
+
         } else {
-            constructUserMessageWithCombinedContext(chatMessageContext);
+            // Create regular text-only message
+            chatMessageContext.setUserMessage(UserMessage.from(userPrompt));
         }
     }
 
@@ -266,7 +299,7 @@ public class MessageCreationService {
                         userPromptContext.append("Filename: ").append(file.getName()).append("\n");
                         String content = document.getText();
                         userPromptContext.append(content).append("\n");
-                    } else {
+                    } else if (!ImageUtil.isImageFile(file)){
                         NotificationUtil.sendNotification(project, "File type not supported: " + file.getName());
                     }
                 }

@@ -5,10 +5,15 @@ import com.devoxx.genie.ui.listener.FileRemoveListener;
 import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.devoxx.genie.ui.util.FileTypeIconUtil;
 import com.devoxx.genie.util.FileUtil;
+import com.devoxx.genie.util.ImageUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.Gray;
@@ -22,6 +27,7 @@ import java.awt.*;
 import java.io.File;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
+import static com.devoxx.genie.util.ImageUtil.isImageFile;
 
 /**
  * Class uses to display a file entry in the list of files with label and remove button.
@@ -126,18 +132,25 @@ public class FileEntryComponent extends JPanel {
          * @param project     the project
          * @param virtualFile the virtual file
          */
-        private static void openFileWithSelectedCode(Project project, @NotNull VirtualFile virtualFile){
-            VirtualFile originalFile = virtualFile.getUserData(ORIGINAL_FILE_KEY);
-            if (originalFile != null) {
-                FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
-                fileEditorManager.openFile(originalFile, true);
-                Editor editor = fileEditorManager.getSelectedTextEditor();
-                if (editor != null) {
-                    highlightSelectedText(virtualFile, editor);
+        private void openFileWithSelectedCode(@NotNull Project project, @NotNull VirtualFile virtualFile) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                try {
+                    // Check if the file is an image
+                    if (isImageFile(virtualFile)) {
+                        String filePath = virtualFile.getCanonicalPath();
+                        VirtualFile freshVirtualFile = VirtualFileManager.getInstance().findFileByNioPath(new File(filePath).toPath());
+                        if (freshVirtualFile != null && freshVirtualFile.exists()) {
+                            FileEditorManagerEx.getInstance(project).openFile(freshVirtualFile, true, true);
+                        }
+                    } else {
+                        // Handle non-image files
+                        OpenFileDescriptor descriptor = new OpenFileDescriptor(project, virtualFile);
+                        FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+                    }
+                } catch (Exception e) {
+                    Messages.showErrorDialog("Error opening file: " + e.getMessage(), "Error");
                 }
-            } else {
-                FileEditorManager.getInstance(project).openFile(virtualFile, true);
-            }
+            });
         }
 
         /**
