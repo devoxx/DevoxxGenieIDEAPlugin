@@ -30,6 +30,7 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 - [DevoxxGenie: Your AI Assistant for IDEA](https://mydeveloperplanet.com/2024/10/08/devoxxgenie-your-ai-assistant-for-idea/)
 - [The Devoxx Genie IntelliJ Plugin Provides Access to Local or Cloud Based LLM Models](https://www.infoq.com/news/2024/05/devoxx-genie-intellij-plugin/)
+- [10K+ Downloads Milestone for DevoxxGenie!](https://www.linkedin.com/pulse/10k-downloads-milestone-devoxxgenie-stephan-janssen-hokce/)
 
 ### Key Features:
 
