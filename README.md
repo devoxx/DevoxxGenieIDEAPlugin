@@ -196,6 +196,12 @@ This approach was explained by Bouke Nijhuis in his [Devoxx Belgium presentation
 
 An demo on how to accomplish this can be seen in this 𝕏 [post](https://x.com/Stephan007/status/1854949507710198209).
 
+## DeepSeek & DevoxxGenie 🔥
+
+As of today (February 2, 2025), alongside the DeepSeek API Key, you can access the full 671B model for FREE using either [Nvidia](https://build.nvidia.com/deepseek-ai/deepseek-r1) or [Chutes](https://chutes.ai)!
+Simply update the Custom OpenAI URL, Model and API Key on the Settings page as follows:
+
+<img width="1199" alt="Screenshot 2025-02-01 at 14 09 02" src="https://github.com/user-attachments/assets/dfdf0b14-b6af-4e01-ab37-5ff2a92035c9" />
 
 ### Installation:
 
