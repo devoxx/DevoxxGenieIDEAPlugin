@@ -1,14 +1,20 @@
 package com.devoxx.genie.model;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LanguageModel implements Comparable<LanguageModel> {
 
     private ModelProvider provider;
