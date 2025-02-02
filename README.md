@@ -203,6 +203,10 @@ Simply update the Custom OpenAI URL, Model and API Key on the Settings page as f
 
 <img width="1199" alt="Screenshot 2025-02-01 at 14 09 02" src="https://github.com/user-attachments/assets/dfdf0b14-b6af-4e01-ab37-5ff2a92035c9" />
 
+Chutes URL : https://chutes-deepseek-ai-deepseek-r1.chutes.ai/v1/
+
+Nvidia URL : https://integrate.api.nvidia.com/v1
+
 ### Installation:
 
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
