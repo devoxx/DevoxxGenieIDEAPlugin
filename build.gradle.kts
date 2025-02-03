@@ -19,13 +19,24 @@ tasks.register("updateProperties") {
         val propertiesFile = file("src/main/resources/application.properties")
 
         if (propertiesFile.exists()) {
-            val properties = Properties().apply {
-                load(propertiesFile.inputStream())
-            }
+            val properties = Properties()
 
+            // Read existing properties while removing comments
+            val filteredLines = propertiesFile.readLines()
+                .filterNot { it.trim().startsWith("#") } // Remove comments
+
+            properties.load(filteredLines.joinToString("\n").byteInputStream())
+
+            // Keep only the version property
+            properties.clear()
             properties.setProperty("version", projectVersion.toString())
 
-            properties.store(propertiesFile.outputStream(), null)
+            // Manually write the properties file without the timestamp
+            propertiesFile.printWriter().use { writer ->
+                properties.forEach { key, value ->
+                    writer.println("$key=$value")
+                }
+            }
         } else {
             println("application.properties file not found!")
         }
