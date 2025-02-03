@@ -41,6 +41,7 @@
             <LI>Feat #361 : Support for DnD of images using multi modal LLM's</LI>
             <LI>Feat #477 : Allow DnD of any file, improving UI/UX</LI>
             <LI>Fix #470 : Forget settings changes in IDEA by @mydeveloperplanet</LI>
+            <LI>Fix #484 : Fix for Enable streaming mode</LI>
         </UL>
         <h2>V0.4.13</h2>
         <UL>

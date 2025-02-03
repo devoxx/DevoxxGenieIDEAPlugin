@@ -40,8 +40,7 @@ public class ChatMessageContextUtil {
                 .cost(0)
                 .build();
 
-        boolean isStreamMode = stateService.getStreamMode() && chatContextParameters.actionCommand().equals(Constant.SUBMIT_ACTION);
-        if (isStreamMode) {
+        if (stateService.getStreamMode()) {
             chatMessageContext.setStreamingChatLanguageModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
         } else {
             chatMessageContext.setChatLanguageModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
