@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.richcopy.HtmlSyntaxInfoUtil;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.text.StringUtil;
 import org.commonmark.node.Code;
 import org.commonmark.node.FencedCodeBlock;
@@ -73,37 +74,22 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
         htmlOutputWriter.tag("code", codeStyle);
 
         HighlightingMode highlightingMode = determineHighlightingMode(block);
-        Language language = LanguageGuesser.guessLanguage(info);
+        Language language = LanguageGuesser.guessLanguage(info != null ? info.trim().toLowerCase() : "");
         if (language == null) {
             language = PlainTextLanguage.INSTANCE;
         }
 
         // Get highlighted code
-        StringBuilder highlightedCode = new StringBuilder();
-        Language finalLanguage = language;
-        ApplicationManager.getApplication().runReadAction(() -> {
-            if (highlightingMode == HighlightingMode.SEMANTIC_HIGHLIGHTING) {
-                HtmlSyntaxInfoUtil.appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
-                        highlightedCode,
-                        project,
-                        finalLanguage,
-                        codeSnippet,
-                        false,
-                        DocumentationSettings.getHighlightingSaturation(true)
-                );
-            } else {
-                highlightedCode.append(StringUtil.escapeXmlEntities(codeSnippet));
-            }
-        });
+        String highlightedCode = getHighlightedCode(codeSnippet, language, highlightingMode);
 
         // Process the code to ensure proper line breaks
-        String processedCode = highlightedCode.toString()
-                .replace("&#32;", " ")                              // Convert space entities to spaces
-                .replaceAll("</span><span[^>]*><br></span>", "\n") // Convert br tags to newlines
-                .replaceAll("<br>\\s*", "\n")                      // Handle any remaining br tags
-                .replaceAll("\\n", "</span>\n<span>");             // Ensure spans wrap around newlines
+        String processedCode = highlightedCode
+                .replace("&#32;", " ")                                  // Convert space entities to spaces
+                .replaceAll("</span><span[^>]*><br></span>", "\n")      // Convert br tags to newlines
+                .replace("<br>", "\n")                                  // Handle any remaining br tags
+                .replace("\n", "</span>\n<span>");                      // Ensure spans wrap around newlines
 
-        htmlOutputWriter.raw(processedCode);
+        htmlOutputWriter.raw("<span>" + processedCode + "</span>");
 
         htmlOutputWriter.tag("/code");
 
@@ -120,6 +106,25 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
 
     private enum HighlightingMode {
         SEMANTIC_HIGHLIGHTING, NO_HIGHLIGHTING, INLINE_HIGHLIGHTING
+    }
+
+    private @NotNull String getHighlightedCode(String codeSnippet, Language language, HighlightingMode mode) {
+        StringBuilder highlightedCode = new StringBuilder();
+        if (mode == HighlightingMode.SEMANTIC_HIGHLIGHTING) {
+            ApplicationManager.getApplication().runReadAction((Computable<StringBuilder>) () ->
+                    HtmlSyntaxInfoUtil.appendHighlightedByLexerAndEncodedAsHtmlCodeSnippet(
+                            highlightedCode,
+                            project,
+                            language,
+                            codeSnippet,
+                            false,
+                            DocumentationSettings.getHighlightingSaturation(true)
+                    )
+            );
+        } else {
+            highlightedCode.append(StringUtil.escapeXmlEntities(codeSnippet));
+        }
+        return highlightedCode.toString();
     }
 
     private HighlightingMode determineHighlightingMode(boolean block) {

@@ -2,7 +2,6 @@ package com.devoxx.genie.util;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.ChatContextParameters;
-import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;

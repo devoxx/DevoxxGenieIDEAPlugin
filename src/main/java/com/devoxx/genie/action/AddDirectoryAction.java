@@ -29,7 +29,6 @@ public class AddDirectoryAction extends DumbAwareAction {
 
     private static final String ADD_TO_CONTEXT = "AddDirectoryToContextWindow";
     private static final String COPY_TO_CLIPBOARD = "CopyDirectoryToClipboard";
-
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
