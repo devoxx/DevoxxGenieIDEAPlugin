@@ -240,4 +240,66 @@ It is recommended to use the publishPlugin task for releasing the plugin
 2) Select some code 
 4) Enter shortcode command review, explain, generate unit tests of the selected code or enter a custom prompt.
 
-Enjoy! 
+## Contribute
+
+### Understanding the Prompt Flow
+
+The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
+
+### 1️⃣ User Inputs a Prompt
+- `UserPromptPanel` → Captures the prompt from the UI.
+- `PromptSubmissionListener.onPromptSubmitted()` → Listens for the submission event.
+- `PromptExecutionController.submitPrompt()` → Starts execution.
+
+### 2️⃣ Processing the Prompt
+- `PromptExecutionService.executePrompt()` → Handles token usage calculations and checks RAG/GitDiff settings.
+- `ChatPromptExecutor.sendPromptToLLM()` → Dispatches the prompt to the selected **LLM provider**.
+- `LLMProviderService.getChatModel()` → Retrieves the appropriate model from `ChatModelFactory`.
+
+### 3️⃣ LLM Model Inference
+- `ChatModelFactory.getModel()` → Loads the correct provider factory.
+- **Cloud-based LLMs:**  
+  - `OpenAIChatModelFactory.sendRequest()`, `AnthropicChatModelFactory.sendRequest()`
+- **Local models:**  
+  - `OllamaChatModelFactory.invokeModel()`, `GPT4AllChatModelFactory.invokeModel()`
+- Response is generated.
+
+### 4️⃣ Response Handling
+- **If streaming is enabled:**
+  - `StreamingPromptExecutor.startStreaming()` → Begins token-by-token streaming.
+  - `ChatStreamingResponsePanel.insertToken()` → Updates UI in real time.
+
+- **If non-streaming:**
+  - `PromptExecutionService.processResponse()` → Formats the full response.
+  - `ChatResponsePanel.displayResponse()` → Renders the text and code blocks.
+
+### 5️⃣ Enhancements (RAG & Git Diff)
+- **RAG (Retrieval-Augmented Generation)**
+  - `SemanticSearchService.findRelevantFiles()` → Fetches related code from ChromaDB.
+  - `SemanticSearchReferencesPanel.displayReferences()` → Shows retrieved context.
+
+- **Git Diff Integration**
+  - `GitMergeService.showDiffView()` → Displays AI-generated code diffs.
+
+### 6️⃣ Final Display
+- The response is rendered in `ChatResponsePanel` with:
+  - `ResponseHeaderPanel` → Shows metadata (LLM name, execution time).
+  - `ResponseDocumentPanel` → Formats text & code snippets.
+  - `MetricExecutionInfoPanel` → Displays token usage and cost.
+
+### Understanding the Flow
+
+Below is a diagram illustrating this workflow:
+
+![DevoxxGenie Prompt Flow](docs/prompt_flow.png)
+
+---
+
+### How to Get Started
+
+- Start by **exploring `PromptExecutionController.java`** to see how prompts are routed.
+- Modify `ChatResponsePanel.java` if you want to **enhance response rendering**.
+- To **add a new LLM provider**, create a factory under `chatmodel/cloud/` or `chatmodel/local/`.
+
+Want to contribute? **Submit a PR!**
+
