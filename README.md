@@ -278,9 +278,15 @@ The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
   - [`ChatResponsePanel.displayResponse()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/ChatResponsePanel.java) → Renders the text and code blocks.
 
 ### 5️⃣ Enhancements (RAG & Git Diff)
-- **RAG (Retrieval-Augmented Generation)**
-  - [`SemanticSearchService.findRelevantFiles()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/SemanticSearchService.java) → Fetches related code from ChromaDB.
-  - [`SemanticSearchReferencesPanel.displayReferences()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/chatresponse/SemanticSearchReferencesPanel.java) → Shows retrieved context.
+#### **RAG (Retrieval-Augmented Generation)**
+- **Indexing Source Code for Retrieval**
+  - [`OllamaEmbedService.generateEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/OllamaEmbedService.java) → Uses the **Ollama Nomic embed model** to generate embeddings.
+  - [`ChromaDBIndexService.storeEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ChromaDBIndexService.java) → Stores embeddings in **ChromaDB**.
+
+- **Retrieval & Augmentation**
+  - [`SemanticSearchService.findRelevantFiles()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/SemanticSearchService.java) → Fetches relevant indexed code.
+  - [`ChromaDBSearchService.queryEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ChromaDBSearchService.java) → Searches embeddings for contextual code.
+  - [`SemanticSearchReferencesPanel.displayReferences()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/chatresponse/SemanticSearchReferencesPanel.java) → Displays retrieved results.
 
 - **Git Diff Integration**
   - [`GitMergeService.showDiffView()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/gitdiff/GitMergeService.java) → Displays AI-generated code diffs.
