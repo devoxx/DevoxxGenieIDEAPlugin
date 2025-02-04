@@ -252,44 +252,43 @@ The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
 ### 1️⃣ User Inputs a Prompt
 - [`UserPromptPanel`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/UserPromptPanel.java) → Captures the prompt from the UI.
 - [`PromptSubmissionListener.onPromptSubmitted()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/listener/PromptSubmissionListener.java) → Listens for the submission event.
-- [`PromptExecutionController.submitPrompt()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/controller/PromptExecutionController.java) → Starts execution.
+- [`PromptExecutionController.handlePromptSubmission()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/controller/PromptExecutionController.java) → Starts execution.
 
 ### 2️⃣ Processing the Prompt
-- [`PromptExecutionService.executePrompt()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/PromptExecutionService.java) → Handles token usage calculations and checks RAG/GitDiff settings.
-- [`ChatPromptExecutor.sendPromptToLLM()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/ChatPromptExecutor.java) → Dispatches the prompt to the selected **LLM provider**.
-- [`LLMProviderService.getChatModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/LLMProviderService.java) → Retrieves the appropriate model from `ChatModelFactory`.
+- [`PromptExecutionService.executeQuery()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/PromptExecutionService.java) → Handles token usage calculations and checks RAG/GitDiff settings.
+- [`ChatPromptExecutor.executePrompt()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/ChatPromptExecutor.java) → Dispatches the prompt to the selected **LLM provider**.
+- [`LLMProviderService.getAvailableModelProviders()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/LLMProviderService.java) → Retrieves the appropriate model from `ChatModelFactory`.
 
 ### 3️⃣ LLM Model Inference
-- [`ChatModelFactory.getModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/ChatModelFactory.java) → Loads the correct provider factory.
+- [`ChatModelFactory.getModels()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/ChatModelFactory.java) → Gets the models for the select LLM provider
 - **Cloud-based LLMs:**
-  - [`OpenAIChatModelFactory.sendRequest()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/openai/OpenAIChatModelFactory.java)
-  - [`AnthropicChatModelFactory.sendRequest()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/anthropic/AnthropicChatModelFactory.java)
+  - [`OpenAIChatModelFactory.createChatModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/openai/OpenAIChatModelFactory.java)
+  - [`AnthropicChatModelFactory.createChatModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/anthropic/AnthropicChatModelFactory.java)
   - ...
     
 - **Local models:**
-  - [`OllamaChatModelFactory.invokeModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/ollama/OllamaChatModelFactory.java)
-  - [`GPT4AllChatModelFactory.invokeModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/gpt4all/GPT4AllChatModelFactory.java)
+  - [`OllamaChatModelFactory.createChatModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/ollama/OllamaChatModelFactory.java)
+  - [`GPT4AllChatModelFactory.createChatModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/gpt4all/GPT4AllChatModelFactory.java)
   - ...
 
 ### 4️⃣ Response Handling
 - **If streaming is enabled:**
-  - [`StreamingPromptExecutor.startStreaming()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/streaming/StreamingPromptExecutor.java) → Begins token-by-token streaming.
-  - [`ChatStreamingResponsePanel.insertToken()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/ChatStreamingResponsePanel.java) → Updates UI in real time.
+  - [`StreamingPromptExecutor.execute()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/streaming/StreamingPromptExecutor.java) → Begins token-by-token streaming.
+  - [`ChatStreamingResponsePanel.createHTMLRenderer()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/ChatStreamingResponsePanel.java) → Updates UI in real time.
 
 - **If non-streaming:**
-  - [`PromptExecutionService.processResponse()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/PromptExecutionService.java) → Formats the full response.
+  - [`PromptExecutionService.executeQuery()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/PromptExecutionService.java) → Formats the full response.
   - [`ChatResponsePanel.displayResponse()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/ChatResponsePanel.java) → Renders the text and code blocks.
 
 ### 5️⃣ Enhancements (RAG & Git Diff)
 #### **RAG (Retrieval-Augmented Generation)**
 - **Indexing Source Code for Retrieval**
-  - [`OllamaEmbedService.generateEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/OllamaEmbedService.java) → Uses the **Ollama Nomic embed model** to generate embeddings.
-  - [`ChromaDBIndexService.storeEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ChromaDBIndexService.java) → Stores embeddings in **ChromaDB**.
+  - [`ProjectIndexerService.indexFiles()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ProjectIndexerService.java) → Indexes project files
+  - [`ChromaDBIndexService.storeEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/chromadb/ChromaEmbeddingService.java) → Stores embeddings in **ChromaDB**.
 
 - **Retrieval & Augmentation**
-  - [`SemanticSearchService.findRelevantFiles()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/SemanticSearchService.java) → Fetches relevant indexed code.
-  - [`ChromaDBSearchService.queryEmbeddings()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ChromaDBSearchService.java) → Searches embeddings for contextual code.
-  - [`SemanticSearchReferencesPanel.displayReferences()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/chatresponse/SemanticSearchReferencesPanel.java) → Displays retrieved results.
+  - [`SemanticSearchService.search()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/SemanticSearchService.java) → Fetches relevant indexed code.
+  - [`SemanticSearchReferencesPanel`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/chatresponse/SemanticSearchReferencesPanel.java) → Displays retrieved results.
 
 - **Git Diff Integration**
   - [`GitMergeService.showDiffView()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/gitdiff/GitMergeService.java) → Displays AI-generated code diffs.
