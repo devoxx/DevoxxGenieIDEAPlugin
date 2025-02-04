@@ -264,9 +264,12 @@ The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
 - **Cloud-based LLMs:**
   - [`OpenAIChatModelFactory.sendRequest()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/openai/OpenAIChatModelFactory.java)
   - [`AnthropicChatModelFactory.sendRequest()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/cloud/anthropic/AnthropicChatModelFactory.java)
+  - ...
+    
 - **Local models:**
   - [`OllamaChatModelFactory.invokeModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/ollama/OllamaChatModelFactory.java)
   - [`GPT4AllChatModelFactory.invokeModel()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/chatmodel/local/gpt4all/GPT4AllChatModelFactory.java)
+  - ...
 
 ### 4️⃣ Response Handling
 - **If streaming is enabled:**
