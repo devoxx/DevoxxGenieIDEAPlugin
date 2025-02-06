@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.chatmodel.cloud.bedrock.BedrockModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
@@ -683,29 +684,7 @@ public final class LLMModelRegistryService {
     }
 
     private void addBedrockModels() {
-        String claude3dot2haiku = "anthropic.claude-3-5-haiku-20241022-v1:0";
-        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot2haiku,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Bedrock)
-                        .modelName(claude3dot2haiku)
-                        .displayName("Claude 3.5 Haiku")
-                        .inputCost(1)
-                        .outputCost(5)
-                        .inputMaxTokens(200_000)
-                        .build());
-
-        String claude3dot5v2 = "anthropic.claude-3-5-sonnet-20241022-v2:0";
-        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5v2,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Bedrock)
-                        .modelName(claude3dot5v2)
-                        .displayName("Claude 3.5 Sonnet v2")
-                        .inputCost(3)
-                        .outputCost(15)
-                        .inputMaxTokens(200_000)
-                        .build());
-
-        String claude3dot5 = AnthropicClaude3_5SonnetV1.toString();
+        String claude3dot5 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5,
                 LanguageModel.builder()
                         .provider(ModelProvider.Bedrock)
@@ -719,20 +698,30 @@ public final class LLMModelRegistryService {
 
     @NotNull
     public List<LanguageModel> getModels() {
-        ModelProvider OPEN_ROUTER_PROVIDER = ModelProvider.OpenRouter;
 
         // Create a copy of the current models
         Map<String, LanguageModel> modelsCopy = new HashMap<>(models);
 
-        // Add OpenRouter models if API key exists
-        OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
-        String apiKey = openRouterChatModelFactory.getApiKey(OPEN_ROUTER_PROVIDER);
-        if (apiKey != null && !apiKey.isEmpty()) {
-            openRouterChatModelFactory.getModels().forEach(model ->
-                modelsCopy.put(OPEN_ROUTER_PROVIDER.getName() + ":" + model.getModelName(), model));
-        }
+        getOpenRouterModels(modelsCopy);
+
+        getAWSBedrockModels(modelsCopy);
 
         return new ArrayList<>(modelsCopy.values());
+    }
+
+    private static void getAWSBedrockModels(Map<String, LanguageModel> modelsCopy) {
+        // Add Bedrock models if API key exists
+        BedrockModelFactory bedrockModelFactory = new BedrockModelFactory();
+    }
+
+    private static void getOpenRouterModels(Map<String, LanguageModel> modelsCopy) {
+        // Add OpenRouter models if API key exists
+        OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
+        String apiKey = openRouterChatModelFactory.getApiKey(ModelProvider.OpenRouter);
+        if (apiKey != null && !apiKey.isEmpty()) {
+            openRouterChatModelFactory.getModels().forEach(model ->
+                modelsCopy.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
+        }
     }
 
     public void setModels(Map<String, LanguageModel> models) {

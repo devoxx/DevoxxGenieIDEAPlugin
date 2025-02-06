@@ -55,7 +55,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
-    private final JPasswordField awsAccessKeyField = new JPasswordField(stateService.getAwsAccessKey());
+    private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
     @Getter
@@ -231,7 +231,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addNestedSettingsRow(panel, gbc, "AWS Access Key ID",
                 createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsComponents);
         addNestedSettingsRow(panel, gbc, "AWS Secret Access Key",
-                createTextWithLinkButton(awsAccessKeyField, bedrockURL), awsComponents);
+                createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsComponents);
         addNestedSettingsRow(panel, gbc, "AWS region",
                 createTextWithPasswordButton(awsRegion, bedrockURL), awsComponents);
 

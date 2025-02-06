@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.openrouter;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;

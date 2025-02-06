@@ -82,7 +82,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), stateService.getAzureOpenAIKey());
 
         isModified |= !stateService.getShowAwsFields().equals(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
-        isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyField(), stateService.getAwsAccessKey());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
         isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
         isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
 
@@ -145,8 +145,8 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAzureOpenAIKey(new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()));
 
         settings.setShowAwsFields(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
-        settings.setAwsAccessKey(new String(llmSettingsComponent.getAwsAccessKeyField().getPassword()));
         settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
+        settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
         settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
@@ -179,7 +179,7 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getGeminiKey().isBlank() && settings.isGoogleEnabled()) ||
                     (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
-                    (!settings.getAwsAccessKey().isBlank() && settings.getShowAwsFields()) ||
+                    (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
                     (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());

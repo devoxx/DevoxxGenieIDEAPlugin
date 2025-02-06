@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.16</h2>
+        <UL>
+            <LI>Fix #495 : Fix AWS Bedrock models</LI>
+        </UL>
         <h2>V0.4.15</h2>
         <UL>
             <LI>Feat #488 : Increase timeout maximum value enhancement</LI>
@@ -561,7 +565,8 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.openrouter.OpenRouterService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
