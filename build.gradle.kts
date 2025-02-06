@@ -48,7 +48,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "0.36.2"
+    val lg4j_version = "1.0.0-beta1"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
@@ -56,7 +56,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-local-ai:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-open-ai:1.0.0-alpha2-SNAPSHOT")
     implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-bedrock:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-mistral-ai:$lg4j_version")
@@ -66,6 +66,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("org.xerial:sqlite-jdbc:3.48.0.0")
 
     implementation("com.github.docker-java:docker-java:3.4.0")

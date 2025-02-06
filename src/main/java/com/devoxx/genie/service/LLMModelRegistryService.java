@@ -96,8 +96,7 @@ public final class LLMModelRegistryService {
 
     private void addOpenAiModels() {
 
-        // TODO Add o3 and o3-mini when available in around Feb 2025
-
+        // Not yet available via API
 //        String o3Model = OpenAIChatModelName.O3.toString();
 //        models.put(ModelProvider.OpenAI.getName() + ":" + o3Model,
 //                LanguageModel.builder()
@@ -110,19 +109,19 @@ public final class LLMModelRegistryService {
 //                        .outputMaxTokens(100_000)
 //                        .apiKeyUsed(true)
 //                        .build());
-//
-//        String o3MiniModel = OpenAIChatModelName.O3_MINI.toString();
-//        models.put(ModelProvider.OpenAI.getName() + ":" + o3Model,
-//                LanguageModel.builder()
-//                        .provider(ModelProvider.OpenAI)
-//                        .modelName(o3Model)
-//                        .displayName("o3-mini")
-//                        .inputCost(5)
-//                        .outputCost(15)
-//                        .inputMaxTokens(200_000)
-//                        .outputMaxTokens(100_000)
-//                        .apiKeyUsed(true)
-//                        .build());
+
+        String o3MiniModel = OpenAIChatModelName.O3_MINI.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + o3MiniModel,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(o3MiniModel)
+                        .displayName("o3-mini")
+                        .inputCost(5)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .outputMaxTokens(100_000)
+                        .apiKeyUsed(true)
+                        .build());
 
         String o1Model = OpenAIChatModelName.O1.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Model,
@@ -142,7 +141,7 @@ public final class LLMModelRegistryService {
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
                         .modelName(o1Mini)
-                        .displayName("o1 mini")
+                        .displayName("o1-mini")
                         .inputCost(5)
                         .outputCost(15)
                         .inputMaxTokens(128_000)
