@@ -41,6 +41,7 @@
             <LI>Feat #420 : Migrate to Langchain4J 1.0.0-alpha1 enhancement</LI>
             <LI>Feat #442 : OpenAi O1 doesn't support temperature, waiting for LangChain4J upgrade enhancement</LI>
             <LI>Feat #489 : Right click to exclude directories</LI>
+            <LI>Feat #493 : Added new Gemini 2.0 models</LI>
         </UL>
         <h2>V0.4.14</h2>
         <UL>
