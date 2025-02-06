@@ -1,7 +1,6 @@
-package com.devoxx.genie.chatmodel.anthropic;
+package com.devoxx.genie.chatmodel.cloud.deepinfra;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.chatmodel.cloud.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -14,27 +13,26 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
+public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
         // Mock SettingsState
         DevoxxGenieStateService settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getAnthropicKey()).thenReturn("dummy-api-key");
+        when(settingsStateMock.getDeepInfraKey()).thenReturn("dummy-api-key");
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
     }
 
     @Test
-    public void testCreateChatModel() {
+    public void createChatModel() {
         // Instance of the class containing the method to be tested
-        var factory = new AnthropicChatModelFactory();
+        var factory = new DeepInfraChatModelFactory();
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();
@@ -46,16 +44,15 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
 
         // Call the method
         ChatLanguageModel result = factory.createChatModel(chatModel);
-        assertThat(result).isNotNull();
+        Assertions.assertThat(result).isNotNull();
     }
-
 
     @Test
     public void testModelNames() {
-        AnthropicChatModelFactory factory = new AnthropicChatModelFactory();
+        DeepInfraChatModelFactory factory = new DeepInfraChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isGreaterThan(3);
+        Assertions.assertThat(modelNames).size().isGreaterThan(10);
     }
 }

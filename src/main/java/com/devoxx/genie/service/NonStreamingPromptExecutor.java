@@ -70,7 +70,7 @@ public class NonStreamingPromptExecutor {
                 .thenAccept(response -> {
                     if (!isCancelled && response != null) {
                         LOG.debug(">>>> Adding AI message to prompt output panel");
-                        chatMessageContext.setAiMessage(response.content());
+                        chatMessageContext.setAiMessage(response.aiMessage());
 
                         // Set token usage and cost
                         chatMessageContext.setTokenUsageAndCost(response.tokenUsage());

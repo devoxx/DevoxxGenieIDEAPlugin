@@ -1,6 +1,5 @@
-package com.devoxx.genie.chatmodel.gpt4all;
+package com.devoxx.genie.chatmodel.local.ollama;
 
-import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -12,7 +11,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class GPT4AllChatModelFactoryTest {
+public class OllamaChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
@@ -20,14 +19,15 @@ public class GPT4AllChatModelFactoryTest {
             // Setup the mock for SettingsState
             DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
             when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
-            when(mockSettingsState.getGpt4allModelUrl()).thenReturn("http://localhost:8080");
+            when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
 
             // Instance of the class containing the method to be tested
-            GPT4AllChatModelFactory factory = new GPT4AllChatModelFactory();
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
 
             // Create a dummy ChatModel
             ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("gtp4all");
+            chatModel.setModelName("ollama");
+            chatModel.setBaseUrl("http://localhost:8080");
 
             // Call the method
             ChatLanguageModel result = factory.createChatModel(chatModel);

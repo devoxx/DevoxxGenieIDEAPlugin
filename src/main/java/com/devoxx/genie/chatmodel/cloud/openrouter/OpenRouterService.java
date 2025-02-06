@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.openrouter;
+package com.devoxx.genie.chatmodel.cloud.openrouter;
 
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.model.openrouter.ResponseDTO;

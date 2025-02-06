@@ -10,6 +10,7 @@ import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -185,13 +186,13 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
             .executionTimeMs(0)
             .cost(0).build();
 
-        CompletableFuture<Response<AiMessage>> response = promptExecutionService.executeQuery(context);
-        assertNotNull(response);
+        CompletableFuture<ChatResponse> chatResponse = promptExecutionService.executeQuery(context);
+        assertNotNull(chatResponse);
 
-        var aiMessage = response.join().content();
-        assertNotNull(aiMessage);
-        assertNotNull(aiMessage.text());
-        assertFalse(aiMessage.text().isEmpty());
-        assertTrue(aiMessage.text().toLowerCase().contains("brussels"));
+        var response = chatResponse.join();
+        assertNotNull(response);
+        assertNotNull(response);
+        assertFalse(response.aiMessage().text().isEmpty());
+        assertTrue(response.aiMessage().text().toLowerCase().contains("brussels"));
     }
 }

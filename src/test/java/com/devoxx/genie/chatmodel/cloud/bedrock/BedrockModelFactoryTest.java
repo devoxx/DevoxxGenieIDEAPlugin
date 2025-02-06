@@ -16,8 +16,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
-    private static final String DUMMY_AWS_API_KEY = "dummy-aws-api-key";
-    private static final String DUMMY_AWS_API_KEY_ID = "dummy-aws-api-key-id";
+    private static final String DUMMY_AWS_ACCESS_KEY = "dummy-aws-api-key";
+    private static final String DUMMY_AWS_SECRET_KEY = "dummy-aws-secret-key";
     private static final String US_EAST_1 = "us-east-1";
     private static final String US_WEST_2 = "us-west-2";
 
@@ -28,8 +28,8 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         super.setUp();
         // Mock SettingsState
         settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_API_KEY_ID);
-        when(settingsStateMock.getAwsAccessKey()).thenReturn(DUMMY_AWS_API_KEY);
+        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
+        when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
         when(settingsStateMock.getAwsRegion()).thenReturn(US_EAST_1);
 
         // Replace the service instance with the mock
@@ -59,7 +59,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         BedrockModelFactory factory = new BedrockModelFactory();
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
 
-        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_API_KEY);
-        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_API_KEY_ID);
+        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
+        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
     }
 }

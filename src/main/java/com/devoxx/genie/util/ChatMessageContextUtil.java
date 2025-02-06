@@ -131,6 +131,6 @@ public class ChatMessageContextUtil {
         return languageModel != null &&
                 languageModel.getProvider() == ModelProvider.OpenAI &&
                 languageModel.getModelName() != null &&
-                languageModel.getModelName().toLowerCase().startsWith("o1-");
+                languageModel.getModelName().toLowerCase().startsWith("o1");
     }
 }
