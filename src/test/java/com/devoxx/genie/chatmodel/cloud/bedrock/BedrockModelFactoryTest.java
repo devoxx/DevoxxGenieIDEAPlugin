@@ -42,7 +42,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> models = factory.getModels();
-        assertThat(models).size().isEqualTo(1);
+        assertThat(models).size().isGreaterThan(2);
     }
 
     @Test
