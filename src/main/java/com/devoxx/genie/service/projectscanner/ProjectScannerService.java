@@ -290,7 +290,9 @@ public class ProjectScannerService {
     private boolean shouldExcludeDirectory(@NotNull VirtualFile file) {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         return file.isDirectory() &&
-                (settings.getExcludedDirectories().contains(file.getName()) || shouldExcludeFile(file));
+                (settings.getExcludedDirectories().contains(file.getName()) ||
+                 settings.getExcludedDirectories().contains(file.getPath()) ||
+                 shouldExcludeFile(file));
     }
 
     private boolean shouldExcludeFile(@NotNull VirtualFile file) {

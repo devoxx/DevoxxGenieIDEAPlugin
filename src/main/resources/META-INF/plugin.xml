@@ -35,6 +35,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.15</h2>
+        <UL>
+            <LI>Feat #488 : Increase timeout maximum value enhancement</LI>
+            <LI>Feat #420 : Migrate to Langchain4J 1.0.0-alpha1 enhancement</LI>
+            <LI>Feat #442 : OpenAi O1 doesn't support temperature, waiting for LangChain4J upgrade enhancement</LI>
+            <LI>Feat #489 : Right click to exclude directories</LI>
+        </UL>
         <h2>V0.4.14</h2>
         <UL>
             <LI>Fix #462 : Remove deprecated Anthropics models</LI>
@@ -588,7 +595,15 @@
                 text="Add Directory to Prompt Context"
                 icon="/icons/pluginIcon.svg"
                 description="Add the selected directory to the context window">
-            <add-to-group group-id="ProjectViewPopupMenu"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <action id="ExcludeDirectory"
+                class="com.devoxx.genie.action.ExcludeDirectoryAction"
+                text="Exclude Directory from Add Project"
+                icon="/icons/pluginIcon.svg"
+                description="Exclude selected directory from Add Project">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
 
         <action id="CopyDirectoryToClipboard"
