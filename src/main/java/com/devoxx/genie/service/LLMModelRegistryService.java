@@ -683,16 +683,255 @@ public final class LLMModelRegistryService {
                         .build());
     }
 
+    /**
+     * The Bedrock models.
+     * @link <a href="https://ai21.com/docs/bedrock">Pricing</a>
+     */
     private void addBedrockModels() {
-        String claude3dot5 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
+
+        // AI21 Labs @ https://www.ai21.com/jamba
+
+        String ai12JambaInstruct = "ai21.jamba-instruct-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + ai12JambaInstruct,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(ai12JambaInstruct)
+                        .displayName("AI21 Labs - Jamba Instruct")
+                        .inputCost(0.5)
+                        .outputCost(0.7)
+                        .inputMaxTokens(8_192)
+                        .build());
+
+        String ai12J2MidV1 = "ai21.ai21.j2-mid-v1";
+        models.put(ModelProvider.Bedrock.getName() + ":" + ai12J2MidV1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(ai12J2MidV1)
+                        .displayName("AI21 Labs - Jurassic-2 Mid v1")
+                        .inputCost(12.5)
+                        .outputCost(12.5)
+                        .inputMaxTokens(8_192)
+                        .build());
+
+        String ai12J2UltraV1 = "ai21.ai21.j2-ultra-v1";
+        models.put(ModelProvider.Bedrock.getName() + ":" + ai12J2UltraV1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(ai12J2UltraV1)
+                        .displayName("AI21 Labs - Jurassic-2 ultra v1")
+                        .inputCost(18.8)
+                        .outputCost(18.8)
+                        .inputMaxTokens(8_192)
+                        .build());
+
+        String ai12Jamba15LargeV1 = "ai21.jamba-1-5-large-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + ai12Jamba15LargeV1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(ai12Jamba15LargeV1)
+                        .displayName("AI21 Labs - Jamba 1.5 Large")
+                        .inputCost(2)
+                        .outputCost(8)
+                        .inputMaxTokens(256_000)
+                        .build());
+
+        String ai12Jamba15MiniV1 = "ai21.jamba-1-5-mini-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + ai12Jamba15MiniV1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(ai12Jamba15MiniV1)
+                        .displayName("AI21 Labs - Jamba 1.5 Mini")
+                        .inputCost(0.2)
+                        .outputCost(.4)
+                        .inputMaxTokens(256_000)
+                        .build());
+
+        // Excluded from list
+        // Anthropic - Claude Instant - anthropic.claude-instant-v1
+        // Anthropic - Claude - anthropic.claude-v2:1
+        // Anthropic - Claude - anthropic.claude-v2
+
+        // Anthropic - Claude 3 Sonnet - anthropic.claude-3-sonnet-20240229-v1:0
+        String claude3v1 = "anthropic.claude-3-sonnet-20240229-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3v1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3v1)
+                        .displayName("Claude 3 Sonnet v1")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .build());
+
+        // Claude 3 Haiku - anthropic.claude-3-haiku-20240307-v1:0
+        String claude3dot2haiku = "anthropic.claude-3-haiku-20240307-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot2haiku,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot2haiku)
+                        .displayName("Claude 3.5 Haiku")
+                        .inputCost(0.8)
+                        .outputCost(4)
+                        .inputMaxTokens(200_000)
+                        .build());
+
+        // Anthropic - Claude 3.5 Sonnet - anthropic.claude-3-5-sonnet-20240620-v1:0
+        String claude3dot5v1 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5v1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot5v1)
+                        .displayName("Claude 3.5 Sonnet v1")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .build());
+
+        String claude3dot5 = "anthropic.claude-3-sonnet-20240229-v1:0";
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5,
                 LanguageModel.builder()
                         .provider(ModelProvider.Bedrock)
                         .modelName(claude3dot5)
-                        .displayName("Claude 3.5 Sonnet")
+                        .displayName("Claude 3 Sonnet")
                         .inputCost(3)
                         .outputCost(15)
                         .inputMaxTokens(200_000)
+                        .build());
+
+        // Excluded because it's for images
+        // Stability AI - SDXL 1.0 - stability.stable-diffusion-xl-v1
+
+        // https://docs.cohere.com/v2/docs/command-r
+        // Cohere - Command R - cohere.command-r-v1:0
+        // Cohere - Command - cohere.command-text-v14
+        // Cohere - Command Light - cohere.command-light-text-v14
+        // Cohere - Command R+ - cohere.command-r-plus-v1:0
+
+        // Embedding model, not supported by DevoxxGenie
+        // Cohere - Embed English - cohere.embed-english-v3
+        // Cohere - Embed Multilingual - cohere.embed-multilingual-v3
+
+        // Cohere - Command R - cohere.command-r-v1:0
+        String cohereCommandR = "cohere.command-r-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + cohereCommandR,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(cohereCommandR)
+                        .displayName("Cohere - Command R")
+                        .inputCost(0.5)
+                        .outputCost(1.5)
+                        .inputMaxTokens(128_000)
+                        .build());
+
+        // Cohere - Command - cohere.command-text-v14
+        String cohereCommand = "cohere.command-text-v14";
+        models.put(ModelProvider.Bedrock.getName() + ":" + cohereCommand,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(cohereCommand)
+                        .displayName("Cohere - Command")
+                        .inputCost(1.5)
+                        .outputCost(2)
+                        .inputMaxTokens(4_000)
+                        .build());
+
+        // Cohere - Command Light - cohere.command-light-text-v14
+        String cohereCommandLight = "cohere.command-light-text-v14";
+        models.put(ModelProvider.Bedrock.getName() + ":" + cohereCommandLight,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(cohereCommandLight)
+                        .displayName("Cohere - Command Light")
+                        .inputCost(0.3)
+                        .outputCost(0.6)
+                        .inputMaxTokens(4_000)
+                        .build());
+
+        // Cohere - Command R+ - cohere.command-r-plus-v1:0
+        String cohereCommandRPlus = "cohere.command-r-plus-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + cohereCommandRPlus,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(cohereCommandRPlus)
+                        .displayName("Cohere - Command R+")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(128_000)
+                        .build());
+
+        // META @ https://ai.meta.com/blog/meta-llama-3/
+        // Meta - Llama 3 70B Instruct - meta.llama3-70b-instruct-v1:0
+        String metaLlama3_70BInstruct = "meta.llama3-70b-instruct-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + metaLlama3_70BInstruct,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(metaLlama3_70BInstruct)
+                        .displayName("Meta - Llama 3 70B Instruct")
+                        .inputCost(2.65)
+                        .outputCost(3.5)
+                        .inputMaxTokens(128_000)
+                        .build());
+
+        // Meta - Llama 3 8B Instruct - meta.llama3-8b-instruct-v1:0
+        String metaLlama3_8BInstruct = "meta.llama3-8b-instruct-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + metaLlama3_8BInstruct,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(metaLlama3_8BInstruct)
+                        .displayName("Meta - Llama 3 8B Instruct")
+                        .inputCost(0.3)
+                        .outputCost(0.6)
+                        .inputMaxTokens(128_000)
+                        .build());
+
+        // Mistral @ https://docs.mistral.ai/getting-started/models/models_overview/
+
+        // Mistral AI - Mistral Large (24.02) - mistral.mistral-large-2402-v1:0
+        String mistralLargeV1 = "mistral.mistral-large-2402-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + mistralLargeV1,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(mistralLargeV1)
+                        .displayName("Mistral AI - Mistral Large (24.02)")
+                        .inputCost(4)
+                        .outputCost(12)
+                        .inputMaxTokens(131_000)
+                        .build());
+
+        // Mistral AI - Mistral Small (24.02) - mistral.mistral-small-2402-v1:0
+        String mistralSmall = "mistral.mistral-small-2402-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + mistralSmall,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(mistralSmall)
+                        .displayName("Mistral AI - Mistral Small (24.02)")
+                        .inputCost(1)
+                        .outputCost(3)
+                        .inputMaxTokens(131_000)
+                        .build());
+
+        // Mistral AI - Mixtral 8x7B Instruct - mistral.mixtral-8x7b-instruct-v0:1
+        String mistralMixtral8x7b = "mistral.mixtral-8x7b-instruct-v0:1";
+        models.put(ModelProvider.Bedrock.getName() + ":" + mistralMixtral8x7b,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(mistralMixtral8x7b)
+                        .displayName("Mistral AI - Mixtral 8x7B Instruct")
+                        .inputCost(0.45)
+                        .outputCost(0.7)
+                        .inputMaxTokens(32_000)
+                        .build());
+
+        // Mistral AI - Mistral 7B Instruct - mistral.mistral-7b-instruct-v0:2
+        String mistralMixtral7b = "mistral.mistral-7b-instruct-v0:2";
+        models.put(ModelProvider.Bedrock.getName() + ":" + mistralMixtral7b,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(mistralMixtral7b)
+                        .displayName("Mistral AI - Mistral 7B Instruct")
+                        .inputCost(0.15)
+                        .outputCost(0.2)
+                        .inputMaxTokens(32_000)
                         .build());
     }
 
@@ -704,14 +943,7 @@ public final class LLMModelRegistryService {
 
         getOpenRouterModels(modelsCopy);
 
-        getAWSBedrockModels(modelsCopy);
-
         return new ArrayList<>(modelsCopy.values());
-    }
-
-    private static void getAWSBedrockModels(Map<String, LanguageModel> modelsCopy) {
-        // Add Bedrock models if API key exists
-        BedrockModelFactory bedrockModelFactory = new BedrockModelFactory();
     }
 
     private static void getOpenRouterModels(Map<String, LanguageModel> modelsCopy) {

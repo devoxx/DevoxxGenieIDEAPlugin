@@ -141,38 +141,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
-        if (cachedModels != null) {
-            return cachedModels;
-        }
-
-        List<LanguageModel> modelNames = new ArrayList<>();
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-
-        List<FoundationModelSummary> models = BedrockService.getInstance().getModels();
-        for (FoundationModelSummary foundationModelSummary : models) {
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                // Currently, Langchain4J doesn't support Amazon models
-                if (foundationModelSummary.providerName().equalsIgnoreCase(MODEL_PREFIX_AMAZON)) {
-                    return;
-                }
-                LanguageModel languageModel = LanguageModel.builder()
-                        .provider(ModelProvider.Bedrock)
-                        .modelName(foundationModelSummary.modelId())
-                        .displayName(foundationModelSummary.providerName() + " : " + foundationModelSummary.modelName())
-                        .outputMaxTokens(0)
-                        .inputMaxTokens(0)
-                        .apiKeyUsed(true)
-                        .build();
-                synchronized (modelNames) {
-                    modelNames.add(languageModel);
-                }
-            }, executorService);
-            futures.add(future);
-        }
-
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        cachedModels = modelNames;
-        return modelNames;
+        return getModels(ModelProvider.Bedrock);
     }
 
     /**
