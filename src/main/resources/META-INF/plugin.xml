@@ -38,6 +38,7 @@
         <h2>V0.4.16</h2>
         <UL>
             <LI>Fix #495 : Fix and added more AWS Bedrock models</LI>
+            <LI>Feat #479 : Defined submit shortcut keys for user prompt</LI>
         </UL>
         <h2>V0.4.15</h2>
         <UL>

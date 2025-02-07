@@ -8,11 +8,13 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -83,7 +85,20 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private class CommandKeyListener extends KeyAdapter {
         @Override
         public void keyPressed(@NotNull KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isShiftDown()) {
+            KeyStroke currentKeyStroke = KeyStroke.getKeyStrokeForEvent(e);
+            DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+
+            String shortcutString;
+            if (SystemInfo.isMac) {
+                shortcutString = stateService.getSubmitShortcutMac();
+            } else if (SystemInfo.isLinux) {
+                shortcutString = stateService.getSubmitShortcutLinux();
+            } else {
+                shortcutString = stateService.getSubmitShortcutWindows();
+            }
+
+            KeyStroke submitKeyStroke = KeyStroke.getKeyStroke(shortcutString);
+            if (submitKeyStroke != null && submitKeyStroke.equals(currentKeyStroke)) {
                 sendPrompt();
                 e.consume();
             } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {

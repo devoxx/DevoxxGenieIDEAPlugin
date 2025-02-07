@@ -41,8 +41,6 @@ public class Constant {
 
     // ActionCommands
     public static final String SUBMIT_ACTION = "submit";
-    public static final String TAVILY_SEARCH_ACTION = "tavilySearch";
-    public static final String GOOGLE_SEARCH_ACTION = "googleSearch";
     public static final String COMBO_BOX_CHANGED = "comboBoxChanged";
 
     // I18N file name
@@ -69,10 +67,6 @@ public class Constant {
     public static final String REMOVE_CONTEXT = "Remove context";
 
     // Button tooltip texts
-    public static final String SHIFT_ENTER = " (Shift+Enter)";
-    public static final String ADD_FILE_S_TO_PROMPT_CONTEXT = "Add file(s) to prompt context";
-    public static final String SUBMIT_THE_PROMPT = "Submit the prompt";
-    public static final String CALCULATE_TOKENS_COST = "Calculate tokens cost";
     public static final String ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT = "Add entire project to prompt context";
     public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
     public static final String REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT = "Remove entire project from prompt context";
