@@ -13,13 +13,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This factory supports creating models from different providers available on AWS Bedrock.
@@ -31,11 +25,9 @@ public class BedrockModelFactory implements ChatModelFactory {
     private static final String MODEL_PREFIX_COHERE = "cohere";
     private static final String MODEL_PREFIX_AI21 = "ai21";
     private static final String MODEL_PREFIX_STABILITY = "stability";
-    private static final String MODEL_PREFIX_AMAZON = "amazon";     // Langchain4J doesn't support this yet
 
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
-
-    private List<LanguageModel> cachedModels = null;
+    // Langchain4J doesn't support this yet
+    private static final String MODEL_PREFIX_AMAZON = "amazon";
 
     /**
      * Creates a {@link ChatLanguageModel} based on the provided {@link ChatModel}.
