@@ -37,7 +37,7 @@
     <change-notes><![CDATA[
         <h2>V0.4.16</h2>
         <UL>
-            <LI>Fix #495 : Fix AWS Bedrock models</LI>
+            <LI>Fix #495 : Fix and added more AWS Bedrock models</LI>
         </UL>
         <h2>V0.4.15</h2>
         <UL>
