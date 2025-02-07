@@ -4,6 +4,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +55,11 @@ public class PromptSettingsConfigurable implements Configurable {
 
         isModified |= !settings.getCustomPrompts().equals(promptSettingsComponent.getCustomPrompts());
 
+        // Check shortcuts
+        isModified |= !settings.getSubmitShortcutWindows().equals(promptSettingsComponent.getSubmitShortcutWindows());
+        isModified |= !settings.getSubmitShortcutMac().equals(promptSettingsComponent.getSubmitShortcutMac());
+        isModified |= !settings.getSubmitShortcutLinux().equals(promptSettingsComponent.getSubmitShortcutLinux());
+
         return isModified;
     }
 
@@ -67,10 +73,29 @@ public class PromptSettingsConfigurable implements Configurable {
 
         settings.setCustomPrompts(promptSettingsComponent.getCustomPrompts());
 
-        project
-            .getMessageBus()
-            .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
-            .onCustomPromptsChanged();
+        // Apply shortcuts and notify changes
+        String newShortcut = null;
+        if (SystemInfo.isWindows) {
+            settings.setSubmitShortcutWindows(promptSettingsComponent.getSubmitShortcutWindows());
+            newShortcut = promptSettingsComponent.getSubmitShortcutWindows();
+        } else if (SystemInfo.isMac) {
+            settings.setSubmitShortcutMac(promptSettingsComponent.getSubmitShortcutMac());
+            newShortcut = promptSettingsComponent.getSubmitShortcutMac();
+        } else {
+            settings.setSubmitShortcutLinux(promptSettingsComponent.getSubmitShortcutLinux());
+            newShortcut = promptSettingsComponent.getSubmitShortcutLinux();
+        }
+
+        // Notify shortcut change
+        if (newShortcut != null) {
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.SHORTCUT_CHANGED_TOPIC)
+                    .onShortcutChanged(newShortcut);
+        }
+
+        project.getMessageBus()
+                .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
+                .onCustomPromptsChanged();
     }
 
     /**
@@ -82,6 +107,10 @@ public class PromptSettingsConfigurable implements Configurable {
         promptSettingsComponent.getSystemPromptField().setText(settings.getSystemPrompt());
 
         promptSettingsComponent.setCustomPrompts(settings.getCustomPrompts());
+
+        promptSettingsComponent.setSubmitShortcutWindows(settings.getSubmitShortcutWindows());
+        promptSettingsComponent.setSubmitShortcutMac(settings.getSubmitShortcutMac());
+        promptSettingsComponent.setSubmitShortcutLinux(settings.getSubmitShortcutLinux());
     }
 
     /**

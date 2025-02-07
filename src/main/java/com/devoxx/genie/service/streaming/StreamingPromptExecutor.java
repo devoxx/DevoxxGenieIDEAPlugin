@@ -6,9 +6,12 @@ import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class StreamingPromptExecutor {
 
@@ -43,7 +46,9 @@ public class StreamingPromptExecutor {
         promptOutputPanel.addUserPrompt(chatMessageContext);
 
         currentStreamingHandler = new StreamingResponseHandler(chatMessageContext, promptOutputPanel, enableButtons);
-        streamingChatLanguageModel.generate(chatMemoryService.messages(chatMessageContext.getProject()), currentStreamingHandler);
+
+        List<ChatMessage> messages = chatMemoryService.messages(chatMessageContext.getProject());
+        streamingChatLanguageModel.chat(messages, currentStreamingHandler);
     }
 
     /**

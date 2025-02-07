@@ -10,11 +10,10 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class StreamingResponseHandler implements dev.langchain4j.model.StreamingResponseHandler<AiMessage> {
+public class StreamingResponseHandler implements  dev.langchain4j.model.chat.response.StreamingChatResponseHandler {
     private final ChatMessageContext chatMessageContext;
     private final Runnable enableButtons;
     private final ChatStreamingResponsePanel streamingChatResponsePanel;
@@ -35,34 +34,34 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
         promptOutputPanel.addStreamResponse(streamingChatResponsePanel);
         startTime = System.currentTimeMillis();
     }
+//
+//    @Override
+//    public void onNext(String token) {
+//        if (!isStopped) {
+//            streamingChatResponsePanel.insertToken(token);
+//        }
+//    }
+//
+//    @Override
+//    public void onComplete(@NotNull Response<AiMessage> response) {
+//        if (isStopped) {
+//            return;
+//        }
+//        long endTime = System.currentTimeMillis();
+//        chatMessageContext.setExecutionTimeMs(endTime - startTime);
+//        finalizeResponse(response);
+//        addExpandablePanelIfNeeded();
+//    }
 
-    @Override
-    public void onNext(String token) {
-        if (!isStopped) {
-            streamingChatResponsePanel.insertToken(token);
-        }
-    }
+    private void finalizeResponse(@NotNull ChatResponse response) {
 
-    @Override
-    public void onComplete(@NotNull Response<AiMessage> response) {
-        if (isStopped) {
-            return;
-        }
-        long endTime = System.currentTimeMillis();
-        chatMessageContext.setExecutionTimeMs(endTime - startTime);
-        finalizeResponse(response);
-        addExpandablePanelIfNeeded();
-    }
-
-    private void finalizeResponse(@NotNull Response<AiMessage> response) {
-
-        chatMessageContext.setAiMessage(response.content());
+        chatMessageContext.setAiMessage(response.aiMessage());
 
         project.getMessageBus()
             .syncPublisher(AppTopics.CONVERSATION_TOPIC)
             .onNewConversation(chatMessageContext);
 
-        ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.content());
+        ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.aiMessage());
         enableButtons.run();
     }
 
@@ -80,6 +79,24 @@ public class StreamingResponseHandler implements dev.langchain4j.model.Streaming
     public void stop() {
         isStopped = true;
         enableButtons.run();
+    }
+
+    @Override
+    public void onPartialResponse(String partialResponse) {
+        if (!isStopped) {
+            streamingChatResponsePanel.insertToken(partialResponse);
+        }
+    }
+
+    @Override
+    public void onCompleteResponse(ChatResponse completeResponse) {
+        if (isStopped) {
+            return;
+        }
+        long endTime = System.currentTimeMillis();
+        chatMessageContext.setExecutionTimeMs(endTime - startTime);
+        finalizeResponse(completeResponse);
+        addExpandablePanelIfNeeded();
     }
 
     @Override

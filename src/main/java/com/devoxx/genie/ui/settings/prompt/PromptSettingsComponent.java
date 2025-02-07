@@ -6,10 +6,12 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -27,6 +29,19 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     private static final int PROMPT_COLUMN = 1;
 
     private final DevoxxGenieStateService settings;
+
+    @Getter
+    @Setter
+    private String submitShortcutWindows;
+
+    @Getter
+    @Setter
+    private String submitShortcutMac;
+
+    @Getter
+    @Setter
+    private String submitShortcutLinux;
+
     @Getter
     private final JTextArea systemPromptField = new JTextArea(stateService.getSystemPrompt());
     @Getter
@@ -98,7 +113,47 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(tableScrollPane, gbc);
 
+        // Add keyboard shortcuts section
+        addSection(panel, gbc, "Configure keyboard submit shortcut");
+
+        gbc.gridy++;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+
+        if (SystemInfo.isWindows) {
+            panel.add(createShortcutPanel("Windows", stateService.getSubmitShortcutWindows()), gbc);
+        } else if (SystemInfo.isMac) {
+            panel.add(createShortcutPanel("Mac", stateService.getSubmitShortcutMac()), gbc);
+        } else {
+            panel.add(createShortcutPanel("Linux", stateService.getSubmitShortcutLinux()), gbc);
+        }
+
         return panel;
+    }
+
+    private @NotNull JPanel createShortcutPanel(String os, String initialShortcut) {
+        KeyboardShortcutPanel shortcutPanel = new KeyboardShortcutPanel(project, os, initialShortcut, shortcut -> {
+            // Update the appropriate shortcut based on OS
+            if ("Mac".equalsIgnoreCase(os)) {
+                setSubmitShortcutMac(shortcut);
+            } else if ("Windows".equalsIgnoreCase(os)) {
+                setSubmitShortcutWindows(shortcut);
+            } else {
+                setSubmitShortcutLinux(shortcut);
+            }
+            notifyShortcutChanged(shortcut);
+        });
+
+        // Set initial values from state service
+        if ("Mac".equalsIgnoreCase(os)) {
+            submitShortcutMac = shortcutPanel.getCurrentShortcut();
+        } else if ("Windows".equalsIgnoreCase(os)) {
+            submitShortcutWindows = shortcutPanel.getCurrentShortcut();
+        } else {
+            submitShortcutLinux = shortcutPanel.getCurrentShortcut();
+        }
+
+        return shortcutPanel;
     }
 
     private void setupCustomPromptsTable() {
@@ -189,5 +244,11 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         JBScrollPane scrollPane = new JBScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(-1, 100));
         panel.add(scrollPane, gbc);
+    }
+
+    private void notifyShortcutChanged(String shortcut) {
+        project.getMessageBus()
+                .syncPublisher(AppTopics.SHORTCUT_CHANGED_TOPIC)
+                .onShortcutChanged(shortcut);
     }
 }

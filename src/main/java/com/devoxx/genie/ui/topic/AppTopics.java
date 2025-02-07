@@ -36,4 +36,8 @@ public class AppTopics {
 
     public static final Topic<RAGStateListener> RAG_ACTIVATED_CHANGED_TOPIC =
             Topic.create("RagStateActivated", RAGStateListener.class);
+
+    public static final Topic<ShortcutChangeListener> SHORTCUT_CHANGED_TOPIC =
+            Topic.create("shortcutChanged", ShortcutChangeListener.class);
+
 }

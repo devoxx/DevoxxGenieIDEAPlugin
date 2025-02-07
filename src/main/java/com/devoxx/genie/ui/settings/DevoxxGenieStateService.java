@@ -33,6 +33,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         return ApplicationManager.getApplication().getService(DevoxxGenieStateService.class);
     }
 
+    private String submitShortcutWindows = "shift ENTER";
+    private String submitShortcutMac = "shift ENTER";
+    private String submitShortcutLinux = "shift ENTER";
+
     // Default excluded files for scan project
     private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
             "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"

@@ -6,7 +6,6 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
-import com.devoxx.genie.ui.component.input.ImagePreviewHandler;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.ConversationPanel;
@@ -180,11 +179,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
             MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel.getWelcomePanel());
             MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> promptOutputPanel.getWelcomePanel().updateFontSize());
-
-            MessageBusUtil.subscribe(connection, AppTopics.RAG_ACTIVATED_CHANGED_TOPIC, isEnabled ->
-                    submitPanel.getPromptInputArea().getInputField().setPlaceholder(isEnabled ?
-                            resourceBundle.getString("rag.prompt.placeholder") : resourceBundle.getString("prompt.placeholder")));
-
+            MessageBusUtil.subscribe(connection, AppTopics.SHORTCUT_CHANGED_TOPIC, submitPanel.getPromptInputArea());
 
             // Search options panel : Set up message bus listeners for visibility changes
             MessageBusUtil.subscribe(connection, AppTopics.RAG_STATE_TOPIC, enabled -> {
