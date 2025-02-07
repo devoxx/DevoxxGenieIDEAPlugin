@@ -15,6 +15,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.*;
 import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
 public class ChatStreamingResponsePanel extends BackgroundPanel {
@@ -35,6 +36,10 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(new ResponseHeaderPanel(chatMessageContext));
+
+        editorPane.setBackground(PROMPT_BG_COLOR);
+        editorPane.setForeground(PROMPT_TEXT_COLOR);
+
         add(editorPane);
 
         setMaxWidth();

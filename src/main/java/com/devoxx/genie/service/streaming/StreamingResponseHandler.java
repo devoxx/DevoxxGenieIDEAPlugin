@@ -19,7 +19,6 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
     private final ChatStreamingResponsePanel streamingChatResponsePanel;
     private final PromptOutputPanel promptOutputPanel;
     private final long startTime;
-    private final StringBuilder responseBuilder = new StringBuilder();
     private final Project project;
     private volatile boolean isStopped = false;
 
@@ -34,24 +33,6 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
         promptOutputPanel.addStreamResponse(streamingChatResponsePanel);
         startTime = System.currentTimeMillis();
     }
-//
-//    @Override
-//    public void onNext(String token) {
-//        if (!isStopped) {
-//            streamingChatResponsePanel.insertToken(token);
-//        }
-//    }
-//
-//    @Override
-//    public void onComplete(@NotNull Response<AiMessage> response) {
-//        if (isStopped) {
-//            return;
-//        }
-//        long endTime = System.currentTimeMillis();
-//        chatMessageContext.setExecutionTimeMs(endTime - startTime);
-//        finalizeResponse(response);
-//        addExpandablePanelIfNeeded();
-//    }
 
     private void finalizeResponse(@NotNull ChatResponse response) {
 

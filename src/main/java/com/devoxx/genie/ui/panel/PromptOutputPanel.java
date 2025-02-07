@@ -34,7 +34,6 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
 
     private final transient Project project;
-    private final transient ResourceBundle resourceBundle;
 
     private final JPanel container = new JPanel();
     @Getter
@@ -53,7 +52,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         super();
 
         this.project = project;
-        this.resourceBundle = resourceBundle;
+
         welcomePanel = new WelcomePanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage());
 
