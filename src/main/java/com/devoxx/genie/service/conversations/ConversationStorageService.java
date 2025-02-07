@@ -7,11 +7,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Instead of using the IntelliJ State API, we use a separate database to store conversations.
@@ -24,6 +26,8 @@ public class ConversationStorageService {
     private static final Logger LOG = Logger.getInstance(ConversationStorageService.class);
 
     private final String dbPath;
+    private static final long MAX_DB_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB threshold
+    private static final int DELETE_COUNT = 10; // Delete 10 oldest conversations
 
     public ConversationStorageService() {
         try {
@@ -89,8 +93,20 @@ public class ConversationStorageService {
     }
 
     public void addConversation(@NotNull Project project, @NotNull Conversation conversation) {
+        // Cleanup old conversations asynchronously if the DB size exceeds the threshold
+        CompletableFuture.runAsync(() -> {
+            try {
+                Path dbFile = Path.of(dbPath);
+                if (Files.size(dbFile) > MAX_DB_SIZE_BYTES) {
+                    cleanupOldConversations();
+                }
+            } catch (IOException e) {
+                LOG.error("Error checking DB size asynchronously", e);
+            }
+        });
+
+        // Add the conversation
         try (Connection connection = getConnection()) {
-            // Start transaction
             connection.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = connection.prepareStatement(
@@ -245,6 +261,35 @@ public class ConversationStorageService {
                 connection.commit();
             } catch (SQLException e) {
                 LOG.error("Error clearing conversations", e);
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error clearing conversations", e);
+        }
+    }
+
+    private void cleanupOldConversations() {
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                // Delete the oldest DELETE_COUNT conversations based on the timestamp
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM conversations WHERE id IN (" +
+                                "SELECT id FROM conversations ORDER BY timestamp ASC LIMIT ?)")) {
+                    ps.setInt(1, DELETE_COUNT);
+                    int deleted = ps.executeUpdate();
+                    LOG.info("Deleted " + deleted + " old conversations to free up space.");
+                }
+                // Also delete associated messages
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM chat_messages WHERE conversationId NOT IN (SELECT id FROM conversations)")) {
+                    int msgDeleted = ps.executeUpdate();
+                    LOG.info("Deleted " + msgDeleted + " orphaned chat messages.");
+                }
+            } catch (SQLException e) {
                 connection.rollback();
                 throw e;
             } finally {
