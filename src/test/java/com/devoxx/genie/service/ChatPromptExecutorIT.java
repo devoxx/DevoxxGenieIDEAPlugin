@@ -49,6 +49,9 @@ class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
 
         DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
         when(applicationEx.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
+        when(stateService.getSubmitShortcutWindows()).thenReturn("shift");
+        when(stateService.getSubmitShortcutLinux()).thenReturn("shift");
+        when(stateService.getSubmitShortcutMac()).thenReturn("shift");
 
         MessageCreationService messageCreationService = mock(MessageCreationService.class);
         when(applicationEx.getService(MessageCreationService.class)).thenReturn(messageCreationService);
