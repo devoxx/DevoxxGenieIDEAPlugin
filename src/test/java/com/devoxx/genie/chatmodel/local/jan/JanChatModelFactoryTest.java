@@ -18,8 +18,9 @@ import static org.mockito.Mockito.when;
  * Unit tests for {@link JanChatModelFactory}.
  *
  * <p>Note: The {@link #testHelloChat()} test requires Jan to be running before execution.
- * Ensure that Jan is running on localhost:1337 with downloaded model "Mistral 7B Instruct Q4"
- * (mistral-ins-7b-q4) before running this test, otherwise it will be skipped.</p>
+ * Ensure that Jan is running on localhost:1337 before running this test, otherwise it
+ * will be skipped. Ensure Jan is running with downloaded model "Mistral 7B Instruct Q4"
+ * (mistral-ins-7b-q4).</p>
  */
 class JanChatModelFactoryTest {
 
