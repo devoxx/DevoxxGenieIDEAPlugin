@@ -13,6 +13,18 @@ import software.amazon.awssdk.services.bedrock.BedrockClient;
 import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary;
 import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsResponse;
 
+/**
+ * Integration tests for {@link BedrockServiceIT}.
+ *
+ * <p>Note: These tests require specific environment variables to be set before execution.
+ * If the required environment variables are not set, the test execution will be skipped.</p>
+ *
+ * <ul>
+ *     <li>{@code AWS_ACCESS_KEY_ID}</li>
+ *     <li>{@code AWS_SECRET_ACCESS_KEY}</li>
+ *     <li>{@code AWS_REGION}</li>
+ * </ul>
+ */
 @EnabledIfEnvironmentVariable(named = "AWS_ACCESS_KEY_ID", matches = ".+")
 @EnabledIfEnvironmentVariable(named = "AWS_SECRET_ACCESS_KEY", matches = ".+")
 @EnabledIfEnvironmentVariable(named = "AWS_REGION", matches = ".+")
