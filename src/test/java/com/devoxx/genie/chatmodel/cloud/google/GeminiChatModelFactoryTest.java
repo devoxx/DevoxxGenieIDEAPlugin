@@ -16,8 +16,9 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -35,7 +36,7 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void createChatModel() {
+    void createChatModel() {
         // Instance of the class containing the method to be tested
         var factory = new GoogleChatModelFactory();
 
@@ -53,7 +54,7 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testModelNames() {
+    void testModelNames() {
         GoogleChatModelFactory factory = new GoogleChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 

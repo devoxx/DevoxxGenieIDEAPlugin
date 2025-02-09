@@ -13,8 +13,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-public class OpenRouterChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class OpenRouterChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -27,7 +28,7 @@ public class OpenRouterChatModelFactoryTest extends AbstractLightPlatformTestCas
     }
 
     @Test
-    public void getModels() {
+    void getModels() {
         List<LanguageModel> models = new OpenRouterChatModelFactory().getModels();
         assertThat(models).size().isNotZero();
     }

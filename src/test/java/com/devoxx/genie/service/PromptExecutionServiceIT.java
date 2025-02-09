@@ -4,72 +4,38 @@ import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.testFramework.ServiceContainerUtil;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.output.Response;
-import io.github.cdimascio.dotenv.Dotenv;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 
 import java.util.concurrent.CompletableFuture;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
+class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
-    private static Dotenv dotenv;
     private PromptExecutionService promptExecutionService;
 
-    @BeforeAll
-    static void loadEnvironment() {
-        dotenv = Dotenv.load();
-    }
-
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        mockSettingsState();
         promptExecutionService = new PromptExecutionService();
     }
 
-    private void mockSettingsState() {
-        DevoxxGenieStateService settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getOpenAIKey()).thenReturn(dotenv.get("OPENAI_API_KEY"));
-        when(settingsStateMock.getAnthropicKey()).thenReturn(dotenv.get("ANTHROPIC_API_KEY"));
-        when(settingsStateMock.getGeminiKey()).thenReturn(dotenv.get("GEMINI_API_KEY"));
-        when(settingsStateMock.getMistralKey()).thenReturn(dotenv.get("MISTRAL_API_KEY"));
-        when(settingsStateMock.getDeepInfraKey()).thenReturn(dotenv.get("DEEPINFRA_API_KEY"));
-
-        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
-    }
-
-    private boolean isApiKeySet(String keyValue) {
-        String apiKey = dotenv.get(keyValue);
-        if (apiKey != null && !apiKey.isEmpty()) {
-            return true;
-        } else {
-            System.out.println(keyValue + " is not set. Skipping test.");
-            return false;
-        }
-    }
-
     @Test
-    public void testExecuteQueryOpenAI() {
-        if (!isApiKeySet("OPENAI_API_KEY")) {
-            return;
-        }
+    @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
+    void testExecuteQueryOpenAI() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName("gpt-3.5-turbo")
@@ -83,10 +49,8 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testExecuteQueryAnthropic() {
-        if (!isApiKeySet("ANTHROPIC_API_KEY")) {
-            return;
-        }
+    @EnabledIfEnvironmentVariable(named = "ANTHROPIC_API_KEY", matches = ".+")
+    void testExecuteQueryAnthropic() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName("claude-3-5-sonnet-20240620")
@@ -100,10 +64,8 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testExecuteQueryGemini() {
-        if (!isApiKeySet("GEMINI_API_KEY")) {
-            return;
-        }
+    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
+    void testExecuteQueryGemini() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash")
@@ -117,10 +79,8 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testExecuteQueryMistral() {
-        if (!isApiKeySet("MISTRAL_API_KEY")) {
-            return;
-        }
+    @EnabledIfEnvironmentVariable(named = "MISTRAL_API_KEY", matches = ".+")
+    void testExecuteQueryMistral() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName("mistral-medium")
@@ -134,10 +94,8 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testExecuteQueryDeepInfra() {
-        if (!isApiKeySet("DEEPINFRA_API_KEY")) {
-            return;
-        }
+    @EnabledIfEnvironmentVariable(named = "DEEPINFRA_API_KEY", matches = ".+")
+    void testExecuteQueryDeepInfra() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mixtral-8x7B-Instruct-v0.1")
@@ -153,24 +111,24 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     private ChatLanguageModel createChatModel(@NotNull LanguageModel languageModel) {
         return switch (languageModel.getProvider()) {
             case OpenAI -> OpenAiChatModel.builder()
-                .apiKey(dotenv.get("OPENAI_API_KEY"))
+                .apiKey(System.getenv("OPENAI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             case Anthropic -> AnthropicChatModel.builder()
-                .apiKey(dotenv.get("ANTHROPIC_API_KEY"))
+                .apiKey(System.getenv("ANTHROPIC_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             case Google -> GoogleAiGeminiChatModel.builder()
-                .apiKey(dotenv.get("GEMINI_API_KEY"))
+                .apiKey(System.getenv("GEMINI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             case Mistral -> MistralAiChatModel.builder()
-                .apiKey(dotenv.get("MISTRAL_API_KEY"))
+                .apiKey(System.getenv("MISTRAL_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             case DeepInfra -> OpenAiChatModel.builder()
                 .baseUrl("https://api.deepinfra.com/v1/openai")
-                .apiKey(dotenv.get("DEEPINFRA_API_KEY"))
+                .apiKey(System.getenv("DEEPINFRA_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             default -> throw new IllegalArgumentException("Unsupported model provider");
@@ -190,7 +148,6 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
         assertNotNull(chatResponse);
 
         var response = chatResponse.join();
-        assertNotNull(response);
         assertNotNull(response);
         assertFalse(response.aiMessage().text().isEmpty());
         assertTrue(response.aiMessage().text().toLowerCase().contains("brussels"));

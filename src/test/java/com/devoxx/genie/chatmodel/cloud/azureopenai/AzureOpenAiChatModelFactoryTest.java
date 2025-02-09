@@ -16,8 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -33,7 +34,7 @@ public class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCa
     }
 
     @Test
-    public void createChatModel() {
+    void createChatModel() {
         AzureOpenAIChatModelFactory factory = new AzureOpenAIChatModelFactory();
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName("gpt-3.5-turbo");
@@ -46,7 +47,7 @@ public class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCa
     }
 
     @Test
-    public void getModels() {
+    void getModels() {
         AzureOpenAIChatModelFactory factory = new AzureOpenAIChatModelFactory();
         assertThat(factory.getModels()).isNotEmpty();
 

@@ -93,7 +93,6 @@ dependencies {
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.15.2")
     testImplementation("org.assertj:assertj-core:3.26.0")
-    testImplementation("io.github.cdimascio:dotenv-java:3.0.0")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.0-M2")

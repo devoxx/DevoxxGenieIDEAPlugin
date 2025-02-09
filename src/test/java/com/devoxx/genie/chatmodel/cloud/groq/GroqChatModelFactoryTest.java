@@ -17,8 +17,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class GroqChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class GroqChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -45,7 +46,7 @@ public class GroqChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testModelNames() {
+    void testModelNames() {
         GroqChatModelFactory factory = new GroqChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 

@@ -1,7 +1,11 @@
 package com.devoxx.genie.chatmodel.cloud.bedrock;
 
-import io.github.cdimascio.dotenv.Dotenv;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -9,32 +13,23 @@ import software.amazon.awssdk.services.bedrock.BedrockClient;
 import software.amazon.awssdk.services.bedrock.model.FoundationModelSummary;
 import software.amazon.awssdk.services.bedrock.model.ListFoundationModelsResponse;
 
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
-public class BedrockServiceIT {
+@EnabledIfEnvironmentVariable(named = "AWS_ACCESS_KEY_ID", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AWS_SECRET_ACCESS_KEY", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AWS_REGION", matches = ".+")
+class BedrockServiceIT {
 
     @Test
-    public void test_getActiveAWSModels() {
-
-        Dotenv dotenv = Dotenv.load();
-        String accessKeyId = dotenv.get("AWS_ACCESS_KEY_ID");
-        String secretAccessKey = dotenv.get("AWS_SECRET_ACCESS_KEY");
-        String region = dotenv.get("AWS_REGION");
-
-        if (accessKeyId == null || secretAccessKey == null || region == null) {
-            throw new IllegalArgumentException("AWS credentials not found in .env file");
-        }
-
+    void test_getActiveAWSModels() {
         // Given
         StaticCredentialsProvider credentialsProvider =
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(secretAccessKey, accessKeyId));
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        System.getenv("AWS_SECRET_ACCESS_KEY"),
+                        System.getenv("AWS_ACCESS_KEY_ID")));
 
         try (BedrockClient bedrockClient = BedrockClient.builder()
-                                                   .region(Region.US_EAST_1)
-                                                   .credentialsProvider(credentialsProvider)
-                                                   .build()) {
+                .region(Region.US_EAST_1)
+                .credentialsProvider(credentialsProvider)
+                .build()) {
 
             ListFoundationModelsResponse response = bedrockClient.listFoundationModels(request ->
                     request.byInferenceType("ON_DEMAND")

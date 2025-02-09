@@ -17,8 +17,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -45,7 +46,7 @@ public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testModelNames() {
+    void testModelNames() {
         MistralChatModelFactory factory = new MistralChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 

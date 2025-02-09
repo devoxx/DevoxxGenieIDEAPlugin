@@ -19,10 +19,12 @@ import org.mockito.Mockito;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
+class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
 
     ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
     PromptInputArea promptInputArea;
@@ -68,7 +70,7 @@ public class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void test_GetCommandFromPrompt_validInput() {
+    void test_GetCommandFromPrompt_validInput() {
         String command = "/review";
         var chatMessageContext = ChatMessageContext
                 .builder()

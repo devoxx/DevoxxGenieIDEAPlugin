@@ -16,8 +16,9 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -30,7 +31,7 @@ public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase
     }
 
     @Test
-    public void createChatModel() {
+    void createChatModel() {
         // Instance of the class containing the method to be tested
         var factory = new DeepInfraChatModelFactory();
 
@@ -48,7 +49,7 @@ public class DeepInfraChatModelFactoryTest extends AbstractLightPlatformTestCase
     }
 
     @Test
-    public void testModelNames() {
+    void testModelNames() {
         DeepInfraChatModelFactory factory = new DeepInfraChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
