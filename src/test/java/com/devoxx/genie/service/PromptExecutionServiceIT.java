@@ -22,6 +22,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Integration tests for {@link PromptExecutionService}.
+ *
+ * <p>Note: These tests require specific environment variables to be set before execution.
+ * If the required environment variable isn't set, the execution of related test will be skipped.</p>
+ *
+ * <ul>
+ *     <li>{@link #testExecuteQueryOpenAI()} requires `OPENAI_API_KEY`</li>
+ *     <li>{@link #testExecuteQueryAnthropic()} requires `ANTHROPIC_API_KEY`</li>
+ *     <li>{@link #testExecuteQueryGemini()} requires `GEMINI_API_KEY`</li>
+ *     <li>{@link #testExecuteQueryMistral()} requires `MISTRAL_API_KEY`</li>
+ *     <li>{@link #testExecuteQueryDeepInfra()} requires `DEEPINFRA_API_KEY`</li>
+ * </ul>
+ */
 class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     private PromptExecutionService promptExecutionService;
