@@ -14,6 +14,13 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for {@link JanChatModelFactory}.
+ *
+ * <p>Note: The {@link #testHelloChat()} test requires Jan to be running before execution.
+ * Ensure that Jan is running on localhost:1337 with downloaded model "Mistral 7B Instruct Q4"
+ * (mistral-ins-7b-q4) before running this test, otherwise it will be skipped.</p>
+ */
 class JanChatModelFactoryTest {
 
     @Test

@@ -16,6 +16,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link JanModelService}.
+ *
+ * <p>Note: The {@link #testGetModels()} test requires Jan to be running before execution.
+ * Ensure that Jan is running on localhost:1337 before running this test, otherwise it
+ * will be skipped.</p>
+ */
 class JanServiceTest extends BaseIntellijTest {
 
     @Mock
