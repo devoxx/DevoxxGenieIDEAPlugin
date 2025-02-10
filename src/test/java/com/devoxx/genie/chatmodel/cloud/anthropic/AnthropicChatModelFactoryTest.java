@@ -17,8 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
+class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -31,7 +32,7 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
     }
 
     @Test
-    public void testCreateChatModel() {
+    void testCreateChatModel() {
         // Instance of the class containing the method to be tested
         var factory = new AnthropicChatModelFactory();
 
@@ -50,7 +51,7 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
 
 
     @Test
-    public void testModelNames() {
+    void testModelNames() {
         AnthropicChatModelFactory factory = new AnthropicChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 

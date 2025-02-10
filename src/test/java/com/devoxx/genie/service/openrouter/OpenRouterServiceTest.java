@@ -15,8 +15,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.List;
 
-public class OpenRouterServiceTest extends AbstractLightPlatformTestCase {
+class OpenRouterServiceTest extends AbstractLightPlatformTestCase {
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -29,7 +30,7 @@ public class OpenRouterServiceTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void testGetModels() throws IOException {
+    void testGetModels() throws IOException {
         OpenRouterService openRouterService = new OpenRouterService();
         List<Data> models = openRouterService.getModels();
         assertThat(models).isNotEmpty();

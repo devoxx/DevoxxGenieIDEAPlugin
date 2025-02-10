@@ -4,6 +4,7 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -13,7 +14,15 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class JanChatModelFactoryTest {
+/**
+ * Unit tests for {@link JanChatModelFactory}.
+ *
+ * <p>Note: The {@link #testHelloChat()} test requires Jan to be running before execution.
+ * Ensure that Jan is running on localhost:1337 before running this test, otherwise it
+ * will be skipped. Ensure Jan is running with downloaded model "Mistral 7B Instruct Q4"
+ * (mistral-ins-7b-q4).</p>
+ */
+class JanChatModelFactoryTest {
 
     @Test
     void testCreateChatModel() {
@@ -38,23 +47,22 @@ public class JanChatModelFactoryTest {
     }
 
     @Test
+    @EnabledIf("isJanRunning")
     void testHelloChat() {
-        if (isJanRunning()) {
-            try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
-                // Setup the mock for SettingsState
-                DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
-                when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
-                when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            // Setup the mock for SettingsState
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getJanModelUrl()).thenReturn("http://localhost:1337/v1/");
 
-                // Instance of the class containing the method to be tested
-                JanChatModelFactory factory = new JanChatModelFactory();
+            // Instance of the class containing the method to be tested
+            JanChatModelFactory factory = new JanChatModelFactory();
 
-                ChatModel chatModel = new ChatModel();
-                chatModel.setModelName("mistral-ins-7b-q4");
-                ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
-                String hello = chatLanguageModel.generate("Hello");
-                assertThat(hello).isNotNull();
-            }
+            ChatModel chatModel = new ChatModel();
+            chatModel.setModelName("mistral-ins-7b-q4");
+            ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
+            String hello = chatLanguageModel.chat("Hello");
+            assertThat(hello).isNotNull();
         }
     }
 

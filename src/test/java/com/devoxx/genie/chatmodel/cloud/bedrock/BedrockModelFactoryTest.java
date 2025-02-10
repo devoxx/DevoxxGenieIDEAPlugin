@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
+class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     private static final String DUMMY_AWS_ACCESS_KEY = "dummy-aws-api-key";
     private static final String DUMMY_AWS_SECRET_KEY = "dummy-aws-secret-key";
     private static final String US_EAST_1 = "us-east-1";
@@ -23,6 +23,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
 
     private DevoxxGenieStateService settingsStateMock;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -37,7 +38,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void getModels() {
+    void getModels() {
         BedrockModelFactory factory = new BedrockModelFactory();
         assertThat(factory.getModels()).isNotEmpty();
 
@@ -46,7 +47,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void getRegion() {
+    void getRegion() {
         BedrockModelFactory factory = new BedrockModelFactory();
         assertThat(factory.getRegion().toString()).isEqualTo(US_EAST_1);
 
@@ -55,7 +56,7 @@ public class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    public void getCredentialsProvider() {
+    void getCredentialsProvider() {
         BedrockModelFactory factory = new BedrockModelFactory();
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
 
