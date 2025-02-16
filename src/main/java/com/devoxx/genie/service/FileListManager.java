@@ -40,6 +40,10 @@ public class FileListManager {
     }
 
     public void addFile(@NotNull Project project, VirtualFile file) {
+        addFile(project, file, true);
+    }
+
+    private void addFile(@NotNull Project project, VirtualFile file, boolean notify) {
         List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
         if (isImageFile(file)) {
             List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
@@ -47,7 +51,9 @@ public class FileListManager {
         } else {
             currentFiles.add(file);
         }
-        notifyObservers(project, file);
+        if (notify) {
+            notifyObservers(project, file);
+        }
     }
 
     public void addFiles(@NotNull Project project, @NotNull List<VirtualFile> newFiles) {
@@ -56,7 +62,7 @@ public class FileListManager {
 
         for (VirtualFile file : newFiles) {
             if (!currentFilesSet.contains(file)) {
-                addFile(project, file);
+                addFile(project, file, false);
                 actuallyAddedFiles.add(file);
                 currentFilesSet.add(file);
             }
