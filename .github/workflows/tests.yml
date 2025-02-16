@@ -1,0 +1,33 @@
+name: Gradle Tests
+
+on:
+  workflow_dispatch: # This makes the workflow manually triggerable
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # You can choose other runners like windows-latest or macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x ./gradlew
+
+      - name: Run Gradle tests
+        run: ./gradlew test
+
+      - name: Publish Test Results (Optional)
+        uses: actions/upload-artifact@v4
+        if: always() # Ensure this step runs even if tests fail
+        with:
+          name: test-results
+          path: build/test-results/test/ # Adjust path if needed
+          retention-days: 7 # Keep artifacts for 7 days (optional)
