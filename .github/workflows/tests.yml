@@ -18,16 +18,16 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant execute permission to gradlew
-        run: chmod +x ./gradlew
+#      - name: Grant execute permission to gradlew
+#        run: chmod +x ./gradlew
 
       - name: Run Gradle tests
-        run: ./gradlew test
+        run: ./gradlew test --info
 
-      - name: Publish Test Results (Optional)
-        uses: actions/upload-artifact@v4
-        if: always() # Ensure this step runs even if tests fail
-        with:
-          name: test-results
-          path: build/test-results/test/ # Adjust path if needed
-          retention-days: 7 # Keep artifacts for 7 days (optional)
+#      - name: Publish Test Results (Optional)
+#        uses: actions/upload-artifact@v4
+#        if: always() # Ensure this step runs even if tests fail
+#        with:
+#          name: test-results
+#          path: build/test-results/test/ # Adjust path if needed
+#          retention-days: 7 # Keep artifacts for 7 days (optional)
