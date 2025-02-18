@@ -14,7 +14,7 @@ In addition to Git Dif viewer and LLM-driven web search with [Google](https://de
 With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a glimpse into the future of software engineering. One thing is clear: we're witnessing a paradigm shift in Ai Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-11K+ Downloads
+12K+ Downloads
 
 ### Hands-on with DevoxxGenie
 
@@ -206,6 +206,13 @@ Simply update the Custom OpenAI URL, Model and API Key on the Settings page as f
 Chutes URL : https://chutes-deepseek-ai-deepseek-r1.chutes.ai/v1/
 
 Nvidia URL : https://integrate.api.nvidia.com/v1
+
+## Grok & DevoxxGenie
+
+Create an account on [Grok](https://console.x.ai/) and generated an API Key.  Now open the DevoxxGenie settings and enter the OpenAI compliant URL for Grok, the model you want to use and your API Key.
+
+<img width="932" alt="Screenshot 2025-02-18 at 08 52 27" src="https://github.com/user-attachments/assets/1b1dfc7b-25b1-4be8-8687-fe042f6043a8" />
+
 
 ### Installation:
 
