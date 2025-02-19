@@ -45,9 +45,10 @@ public class FileTypeIconUtil {
     }
 
     private static @Nullable Icon getIcon(VirtualFile virtualFile) {
-        if (virtualFile != null && virtualFile.getExtension() != null) {
+        String fileExtension = virtualFile.getExtension();
+        if (virtualFile != null && fileExtension != null) {
             try {
-                if (virtualFile.getExtension().equalsIgnoreCase("java")) {
+                if (fileExtension.equalsIgnoreCase("java")) {
                     String content = new String(virtualFile.contentsToByteArray());
                     if (content.contains(" interface ")) {
                         return InterfaceIcon;
@@ -56,6 +57,8 @@ public class FileTypeIconUtil {
                     } else if (content.contains(" class ")) {
                         return ClassIcon;
                     }
+                } else if (fileExtension.equalsIgnoreCase("png" ) || fileExtension.equalsIgnoreCase("jpg")) {
+                    return ImageIcon;
                 }
             } catch (IOException e) {
                 LOG.error("Error reading file content: " + virtualFile.getPath(), e);
