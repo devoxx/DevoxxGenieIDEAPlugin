@@ -30,7 +30,6 @@ jobs:
       - name: Run Gradle tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           Xvfb :99 & export DISPLAY=:99
           ./gradlew test
