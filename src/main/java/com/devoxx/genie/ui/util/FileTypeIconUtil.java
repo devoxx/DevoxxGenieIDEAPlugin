@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.concurrency.AppExecutorUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -25,16 +26,8 @@ public class FileTypeIconUtil {
 
     public static Icon getFileTypeIcon(VirtualFile virtualFile) {
         Future<Icon> iconFuture = AppExecutorUtil.getAppExecutorService().submit(() ->
-                ApplicationManager.getApplication().runReadAction((Computable<Icon>) () -> {
-                    Icon interfaceIcon = getIcon(virtualFile);
-                    if (interfaceIcon != null) {
-                        LOG.debug("Found icon for file: " + virtualFile.getPath());
-                        return interfaceIcon;
-                    }
-                    String fileTypeName = virtualFile.getFileType().getName();
-                    LOG.debug("Using default icon for file type: " + fileTypeName);
-                    return fileTypeName.equals("UNKNOWN") ? CodeSnippetIcon : ClassIcon;
-                }));
+                ApplicationManager.getApplication().runReadAction(
+                        (Computable<Icon>) () -> getIconForFile(virtualFile)));
 
         try {
             return iconFuture.get(100, TimeUnit.MILLISECONDS);
@@ -44,26 +37,42 @@ public class FileTypeIconUtil {
         }
     }
 
+    private static Icon getIconForFile(VirtualFile virtualFile) {
+        Icon interfaceIcon = getIcon(virtualFile);
+        if (interfaceIcon != null) {
+            return interfaceIcon;
+        }
+        String fileTypeName = virtualFile.getFileType().getName();
+        return fileTypeName.equals("UNKNOWN") ? CodeSnippetIcon : ClassIcon;
+    }
+
     private static @Nullable Icon getIcon(VirtualFile virtualFile) {
+        if (virtualFile == null) {
+            return null;
+        }
         String fileExtension = virtualFile.getExtension();
-        if (virtualFile != null && fileExtension != null) {
-            try {
-                if (fileExtension.equalsIgnoreCase("java")) {
-                    String content = new String(virtualFile.contentsToByteArray());
-                    if (content.contains(" interface ")) {
-                        return InterfaceIcon;
-                    } else if (content.contains(" enum ")) {
-                        return EnumIcon;
-                    } else if (content.contains(" class ")) {
-                        return ClassIcon;
-                    }
-                } else if (fileExtension.equalsIgnoreCase("png" ) || fileExtension.equalsIgnoreCase("jpg")) {
-                    return ImageIcon;
-                }
-            } catch (IOException e) {
-                LOG.error("Error reading file content: " + virtualFile.getPath(), e);
-                throw new RuntimeException(e);
-            }
+        if (fileExtension == null) {
+            return null;
+        } try {
+            return switch (fileExtension.toLowerCase()) {
+                case "java" -> getJavaFileIcon(virtualFile);
+                case "png", "jpg" -> ImageIcon;
+                default -> null;
+            };
+        } catch (IOException e) {
+            LOG.error("Error reading file content: " + virtualFile.getPath(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static @Nullable Icon getJavaFileIcon(@NotNull VirtualFile virtualFile) throws IOException {
+        String content = new String(virtualFile.contentsToByteArray());
+        if (content.contains(" interface ")) {
+            return InterfaceIcon;
+        } else if (content.contains(" enum ")) {
+            return EnumIcon;
+        } else if (content.contains(" class ")) {
+            return ClassIcon;
         }
         return null;
     }

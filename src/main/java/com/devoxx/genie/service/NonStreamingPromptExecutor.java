@@ -44,10 +44,13 @@ public class NonStreamingPromptExecutor {
     public void execute(ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
+        LOG.debug(">>>> Executing prompt: " + chatMessageContext.getCommandName());
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 
-        if (FIND_COMMAND.equals(chatMessageContext.getCommandName())) {
+        if (FIND_COMMAND.equalsIgnoreCase(chatMessageContext.getCommandName())) {
+            LOG.debug(">>>> Executing find prompt");
+
             semanticSearch(chatMessageContext, promptOutputPanel);
             enableButtons.run();
             return;
