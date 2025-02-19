@@ -137,11 +137,6 @@ tasks {
         maxHeapSize = "1g"
 
         forkEvery = 1
-
-        reports {
-            junitXml.required.set(true)
-            html.required.set(true)
-        }
     }
 
     signPlugin {
