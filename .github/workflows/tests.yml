@@ -1,11 +1,11 @@
 name: Gradle Tests
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # This makes the workflow manually triggerable
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # You can choose other runners like windows-latest or macos-latest
 
     steps:
       - name: Checkout code
@@ -18,16 +18,16 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Install Xvfb
-        run: sudo apt-get install -y xvfb
-
-      - name: Start Xvfb
-        run: Xvfb :99 & export DISPLAY=:99
-
-      - name: Grant execute permission to gradlew
-        run: chmod +x ./gradlew
+#      - name: Grant execute permission to gradlew
+#        run: chmod +x ./gradlew
 
       - name: Run Gradle tests
-        run: |
-          Xvfb :99 & export DISPLAY=:99
-          ./gradlew test
+        run: ./gradlew test --info
+
+#      - name: Publish Test Results (Optional)
+#        uses: actions/upload-artifact@v4
+#        if: always() # Ensure this step runs even if tests fail
+#        with:
+#          name: test-results
+#          path: build/test-results/test/ # Adjust path if needed
+#          retention-days: 7 # Keep artifacts for 7 days (optional)
