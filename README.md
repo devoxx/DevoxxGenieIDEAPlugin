@@ -70,12 +70,13 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### 📸 "I can see" DnD images
 
-This feature will be introduced in v0.4.14. You’ll be able to drag and drop images (and project files) directly into the input field when working with multimodal LLMs like Google Gemini, Anthropic Claude, ChatGPT 4.x, 
+You can now drag and drop images (and project files) directly into the input field when working with multimodal LLMs like Google Gemini, Anthropic Claude, ChatGPT 4.x, 
 or even local models such as [LLaVA](https://ollama.com/library/llava)
 
 <img width="1689" alt="Screenshot 2025-01-30 at 13 26 57" src="https://github.com/user-attachments/assets/313ab609-abf1-4b3a-b4d3-3802362a713b" />
 <img width="957" alt="Screenshot 2025-01-30 at 13 35 35" src="https://github.com/user-attachments/assets/abf67d20-524a-4f64-9d3c-cab2b0a3ebe6" />
 
+You can even combine screenshots together with some code and then ask related questions! 🔥
 
 ### 🔥 RAG Feature 
 
