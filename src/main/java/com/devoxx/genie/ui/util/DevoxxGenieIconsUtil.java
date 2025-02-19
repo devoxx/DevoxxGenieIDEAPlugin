@@ -8,7 +8,6 @@ public final class DevoxxGenieIconsUtil {
 
     public static final Icon CogIcon = load("/icons/cog.svg");
     public static final Icon ClockIcon = load("/icons/clock.svg");
-    public static final Icon EyeIcon = load("/icons/inspectionsEye.svg");
     public static final Icon PlusIcon = load("/icons/plus.svg");
     public static final Icon AddFileIcon = load("/icons/addNewFile.svg");
     public static final Icon CalculateIcon = load("/icons/calculator.svg");
@@ -20,6 +19,7 @@ public final class DevoxxGenieIconsUtil {
     public static final Icon InterfaceIcon = load("/icons/interface.svg");
     public static final Icon EnumIcon = load("/icons/enum.svg");
     public static final Icon ClassIcon = load("/icons/class.svg");
+    public static final Icon ImageIcon = load("/icons/image.svg");
     public static final Icon TrashIcon = load("/icons/trash.svg");
     public static final Icon DevoxxIcon = load("/icons/pluginIcon.svg");
     public static final Icon CodeSnippetIcon = load("/icons/codeSnippet.svg");
