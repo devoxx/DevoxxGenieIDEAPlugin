@@ -18,9 +18,9 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Install Xvfb
-        run: sudo apt-get install -y xvfb
-
+#      - name: Install Xvfb
+#        run: sudo apt-get install -y xvfb
+#
 #      - name: Start Xvfb
 #        run: Xvfb :99 & export DISPLAY=:99
 #
