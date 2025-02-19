@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
+import com.devoxx.genie.ui.listener.RAGStateListener;
 import com.devoxx.genie.ui.listener.ShortcutChangeListener;
 import com.devoxx.genie.ui.panel.SearchOptionsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -23,11 +24,12 @@ import java.util.ResourceBundle;
 import static com.devoxx.genie.ui.util.WindowPluginUtil.TOOL_WINDOW_ID;
 
 @Getter
-public class PromptInputArea extends JPanel implements ShortcutChangeListener, ToolWindowManagerListener {
+public class PromptInputArea extends JPanel implements ShortcutChangeListener, ToolWindowManagerListener, RAGStateListener {
     private final CommandAutoCompleteTextField inputField;
     private final SearchOptionsPanel searchOptionsPanel;
     private final ResourceBundle resourceBundle;
     private final Project project;
+    private String submitShortcut;
     private String lastActiveId = null;
 
     public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
@@ -43,7 +45,6 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
         inputField.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         inputField.addFocusListener(new PromptInputFocusListener(inputField));
 
-        String submitShortcut;
         if (SystemInfo.isWindows) {
             submitShortcut = DevoxxGenieStateService.getInstance().getSubmitShortcutWindows();
         } else if (SystemInfo.isLinux) {
@@ -71,10 +72,17 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
         MessageBusUtil.subscribe(project.getMessageBus().connect(),
                 AppTopics.SHORTCUT_CHANGED_TOPIC, this);
 
+        MessageBusUtil.subscribe(project.getMessageBus().connect(),
+                AppTopics.RAG_ACTIVATED_CHANGED_TOPIC, this);
+
         // Request focus when tool window is activated or switched from another plugin window
         project.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, this);
     }
 
+    /**
+     * Request input field focus when tool window is activated or switched from another plugin window
+     * @param toolWindowManager the tool window manager
+     */
     @Override
     public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
         String currentActiveId = null;
@@ -133,17 +141,11 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
 
         // Format the shortcut text
         String[] parts = shortcut.split(" ");
-        String formattedShortcut = String.join(" + ", parts)
+        submitShortcut = String.join(" + ", parts)
                 .substring(0, 1).toUpperCase()
                 + shortcut.substring(1);
 
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
-            inputField.setPlaceholder(formattedShortcut + " " +
-                    resourceBundle.getString("rag.prompt.placeholder"));
-        } else {
-            inputField.setPlaceholder(formattedShortcut + " " +
-                    resourceBundle.getString("prompt.placeholder"));
-        }
+        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
     }
 
     @Override
@@ -151,7 +153,21 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
         if (shortcut == null || shortcut.isEmpty()) {
             return;
         }
-
         setPlaceholderWithKeyboardShortcut(shortcut);
+    }
+
+    private void updatePlaceHolder(boolean ragEnabled) {
+        if (ragEnabled) {
+            inputField.setPlaceholder(submitShortcut + " " +
+                    resourceBundle.getString("rag.prompt.placeholder"));
+        } else {
+            inputField.setPlaceholder(submitShortcut + " " +
+                    resourceBundle.getString("prompt.placeholder"));
+        }
+    }
+
+    @Override
+    public void onRAGStateChanged(boolean enabled) {
+        updatePlaceHolder(enabled);
     }
 }

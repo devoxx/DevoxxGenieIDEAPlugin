@@ -171,46 +171,71 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @return the command
      */
-    public Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
-                                                 PromptOutputPanel promptOutputPanel) {
+    private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
+                                                  PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
 
-        // Early exit if not a command
-        if (!prompt.startsWith(COMMAND_PREFIX)) {
+        if (!isCommand(prompt)) {
             return Optional.of(prompt);
         }
 
+        if (isFindCommand(prompt)) {
+            return handleFindCommand(chatMessageContext, prompt);
+        }
+
+        return handleCustomCommand(chatMessageContext, promptOutputPanel, prompt);
+    }
+
+    private boolean isCommand(@NotNull String prompt) {
+        return prompt.startsWith(COMMAND_PREFIX);
+    }
+
+    private boolean isFindCommand(@NotNull String prompt) {
+        return prompt.startsWith(COMMAND_PREFIX + FIND_COMMAND);
+    }
+
+    private Optional<String> handleFindCommand(@NotNull ChatMessageContext chatMessageContext, String prompt) {
+        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                    "The /find command requires RAG to be enabled in settings");
+            return Optional.empty();
+        }
+
+        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
+            NotificationUtil.sendNotification(chatMessageContext.getProject(),
+                    "The /find command requires RAG to be turned on");
+            return Optional.empty();
+        }
+
+        chatMessageContext.setCommandName(FIND_COMMAND);
+        return Optional.of(prompt.substring(6).trim());
+    }
+
+    private Optional<String> handleCustomCommand(@NotNull ChatMessageContext chatMessageContext,
+                                                 PromptOutputPanel promptOutputPanel,
+                                                 String prompt) {
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         List<CustomPrompt> customPrompts = settings.getCustomPrompts();
 
-        // Must be startsWith and not equalsIgnoreCase !
         Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
                 .filter(customPrompt -> prompt.startsWith(COMMAND_PREFIX + customPrompt.getName()))
                 .findFirst();
 
-        // if OK
         if (matchingPrompt.isPresent()) {
-            // Check if the prompt is "/help" --> we display the help
-            if (matchingPrompt.get().getName().equalsIgnoreCase(HELP_COMMAND)) {
-                promptOutputPanel.showHelpText();
-                return Optional.empty(); // Return empty since we handled the help case
-            }
-
-            // Check for the /find command
-            if (matchingPrompt.get().getName().equalsIgnoreCase(FIND_COMMAND)) {
-                if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
-                    NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                            "The /find command requires RAG to be enabled in settings");
-                    return Optional.empty();
-                }
-                chatMessageContext.setCommandName(FIND_COMMAND);
-                return Optional.of(prompt.substring(6).trim());
-            }
-
-            // Set the command name and return the prompt
-            chatMessageContext.setCommandName(matchingPrompt.get().getName());
-            return Optional.of(matchingPrompt.get().getPrompt());
+            return processMatchingPrompt(chatMessageContext, promptOutputPanel, matchingPrompt.get());
+        } else {
+            LOG.debug("No matching command prompt found");
+            return Optional.of(prompt);
         }
-        return Optional.of(prompt);
+    }
+
+    private Optional<String> processMatchingPrompt(@NotNull ChatMessageContext chatMessageContext,
+                                                   PromptOutputPanel promptOutputPanel, @NotNull CustomPrompt matchingPrompt) {
+        if (matchingPrompt.getName().equalsIgnoreCase(HELP_COMMAND)) {
+            promptOutputPanel.showHelpText();
+            return Optional.empty();
+        }
+        chatMessageContext.setCommandName(matchingPrompt.getName());
+        return Optional.of(matchingPrompt.getPrompt());
     }
 }
