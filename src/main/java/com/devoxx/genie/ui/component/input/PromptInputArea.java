@@ -7,9 +7,12 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,15 +20,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
+import static com.devoxx.genie.ui.util.WindowPluginUtil.TOOL_WINDOW_ID;
+
 @Getter
-public class PromptInputArea extends JPanel implements ShortcutChangeListener {
+public class PromptInputArea extends JPanel implements ShortcutChangeListener, ToolWindowManagerListener {
     private final CommandAutoCompleteTextField inputField;
     private final SearchOptionsPanel searchOptionsPanel;
     private final ResourceBundle resourceBundle;
+    private final Project project;
+    private String lastActiveId = null;
 
     public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
         super(new BorderLayout());
-
+        this.project = project;
         this.resourceBundle = resourceBundle;
 
         // Create main input area panel
@@ -59,8 +66,34 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener {
 
         add(inputAreaPanel, BorderLayout.CENTER);
 
+        ApplicationManager.getApplication().invokeLater(inputField::requestFocusInWindow);
+
         MessageBusUtil.subscribe(project.getMessageBus().connect(),
                 AppTopics.SHORTCUT_CHANGED_TOPIC, this);
+
+        // Request focus when tool window is activated or switched from another plugin window
+        project.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, this);
+    }
+
+    @Override
+    public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
+        String currentActiveId = null;
+        var activeToolWindowId = toolWindowManager.getActiveToolWindowId();
+
+        if (activeToolWindowId != null) {
+            currentActiveId = activeToolWindowId;
+        }
+
+        // Only focus when our window becomes active from another window
+        if (TOOL_WINDOW_ID.equals(currentActiveId) && !TOOL_WINDOW_ID.equals(lastActiveId)) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (inputField != null && inputField.isDisplayable()) {
+                    inputField.requestFocusInWindow();
+                }
+            }, ModalityState.nonModal());
+        }
+
+        lastActiveId = currentActiveId;
     }
 
     public String getText() {

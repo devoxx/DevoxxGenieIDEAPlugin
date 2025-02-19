@@ -40,6 +40,7 @@
             <LI>Feat #515 : Supports LMStudio BETA /api/v0/ endpoint, collecting window context by @stephanj</LI>
             <LI>Fix #512: Files appear to be added multiple times by @mydeveloperplanet</LI>
             <LI>Feat #514 : Show image icon in file list when images are used by @stephanj</LI>
+            <LI>Feat #508 : Always focus input field when chat window is opened by @stephanj</LI>
         </UL>
         <h2>V0.4.16</h2>
         <UL>
