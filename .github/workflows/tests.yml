@@ -21,9 +21,9 @@ jobs:
       - name: Install Xvfb
         run: sudo apt-get install -y xvfb
 
-      - name: Start Xvfb
-        run: Xvfb :99 & export DISPLAY=:99
-
+#      - name: Start Xvfb
+#        run: Xvfb :99 & export DISPLAY=:99
+#
 #      - name: Grant execute permission to gradlew
 #        run: chmod +x ./gradlew
 
