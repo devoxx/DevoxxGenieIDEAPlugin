@@ -14,7 +14,7 @@ In addition to Git Dif viewer and LLM-driven web search with [Google](https://de
 With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a glimpse into the future of software engineering. One thing is clear: we're witnessing a paradigm shift in Ai Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-11K+ Downloads
+12K+ Downloads
 
 ### Hands-on with DevoxxGenie
 
@@ -70,12 +70,13 @@ With Claude 3.5 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### 📸 "I can see" DnD images
 
-This feature will be introduced in v0.4.14. You’ll be able to drag and drop images (and project files) directly into the input field when working with multimodal LLMs like Google Gemini, Anthropic Claude, ChatGPT 4.x, 
+You can now drag and drop images (and project files) directly into the input field when working with multimodal LLMs like Google Gemini, Anthropic Claude, ChatGPT 4.x, 
 or even local models such as [LLaVA](https://ollama.com/library/llava)
 
 <img width="1689" alt="Screenshot 2025-01-30 at 13 26 57" src="https://github.com/user-attachments/assets/313ab609-abf1-4b3a-b4d3-3802362a713b" />
 <img width="957" alt="Screenshot 2025-01-30 at 13 35 35" src="https://github.com/user-attachments/assets/abf67d20-524a-4f64-9d3c-cab2b0a3ebe6" />
 
+You can even combine screenshots together with some code and then ask related questions! 🔥
 
 ### 🔥 RAG Feature 
 
@@ -206,6 +207,13 @@ Simply update the Custom OpenAI URL, Model and API Key on the Settings page as f
 Chutes URL : https://chutes-deepseek-ai-deepseek-r1.chutes.ai/v1/
 
 Nvidia URL : https://integrate.api.nvidia.com/v1
+
+## Grok & DevoxxGenie
+
+Create an account on [Grok](https://console.x.ai/) and generated an API Key.  Now open the DevoxxGenie settings and enter the OpenAI compliant URL for Grok, the model you want to use and your API Key.
+
+<img width="932" alt="Screenshot 2025-02-18 at 08 52 27" src="https://github.com/user-attachments/assets/1b1dfc7b-25b1-4be8-8687-fe042f6043a8" />
+
 
 ### Installation:
 
