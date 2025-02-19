@@ -16,6 +16,8 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.Gray;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
@@ -25,6 +27,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
 import static com.devoxx.genie.util.ImageUtil.isImageFile;
@@ -49,18 +54,24 @@ public class FileEntryComponent extends JPanel {
         // Create main content panel
         Box contentPanel = Box.createHorizontalBox();
 
-        // File name with icon
-        JButton fileNameButton = new JButton(file.getName(), FileTypeIconUtil.getFileTypeIcon(file));
+        JButton fileNameButton;
+        if (file.getUserData(SELECTED_TEXT_KEY) != null) {
+            fileNameButton = new JButton(file.getName(), DevoxxGenieIconsUtil.CodeSnippetIcon);
+        } else {
+            fileNameButton = new JButton(file.getName(), FileTypeIconUtil.getFileTypeIcon(file));
+        }
+
         fileNameButton.setBorder(JBUI.Borders.empty());
         fileNameButton.addActionListener(e -> openFileWithSelectedCode(project, virtualFile));
         fileNameButton.setFont(MONO_FONT);
+        contentPanel.add(fileNameButton);
 
         // Path label
         JLabel pathLabel = new JLabel();
         String fullPath = FileUtil.getRelativePath(project, file);
+
         if (!fullPath.equals(file.getName())) {
-            String path = fullPath.substring(0, fullPath.lastIndexOf(file.getName()));
-            pathLabel.setText(path);
+            pathLabel.setText(fullPath);
             pathLabel.setFont(MONO_FONT);
             pathLabel.setForeground(PATH_COLOR);
         }
@@ -68,8 +79,16 @@ public class FileEntryComponent extends JPanel {
         // Create tooltip with full path
         String tooltipText = String.format("<html><body style='width: 300px'><pre>%s</pre></body></html>", file.getPath().replace("<", "&lt;").replace(">", "&gt;"));
 
-        // Add components to content panel
-        contentPanel.add(fileNameButton);
+        // Add start and end line information if available
+        Integer startLine = file.getUserData(SELECTION_START_LINE_KEY);
+        Integer endLine = file.getUserData(SELECTION_END_LINE_KEY);
+        if (startLine != null && endLine != null) {
+            JLabel lineInfoLabel = new JLabel(String.format(" (%d-%d)", startLine + 1, endLine + 1));
+            lineInfoLabel.setFont(MONO_FONT);
+            lineInfoLabel.setForeground(PATH_COLOR);
+            contentPanel.add(lineInfoLabel);
+        }
+
         contentPanel.add(Box.createHorizontalStrut(5));
         contentPanel.add(pathLabel);
         contentPanel.add(Box.createHorizontalGlue());
@@ -143,9 +162,17 @@ public class FileEntryComponent extends JPanel {
                             FileEditorManagerEx.getInstance(project).openFile(freshVirtualFile, true, true);
                         }
                     } else {
-                        // Handle non-image files
-                        OpenFileDescriptor descriptor = new OpenFileDescriptor(project, virtualFile);
-                        FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+                        VirtualFile originalFile = virtualFile.getUserData(ORIGINAL_FILE_KEY);
+                        if (originalFile != null) {
+                            FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
+                            fileEditorManager.openFile(originalFile, true);
+                            Editor editor = fileEditorManager.getSelectedTextEditor();
+                            if (editor != null) {
+                                highlightSelectedText(virtualFile, editor);
+                            }
+                        } else {
+                            FileEditorManager.getInstance(project).openFile(virtualFile, true);
+                        }
                     }
                 } catch (Exception e) {
                     Messages.showErrorDialog("Error opening file: " + e.getMessage(), "Error");
@@ -159,7 +186,7 @@ public class FileEntryComponent extends JPanel {
          * @param virtualFile the virtual file
          * @param editor      the editor
          */
-        private static void highlightSelectedText (@NotNull VirtualFile virtualFile, Editor editor){
+        private static void highlightSelectedText(@NotNull VirtualFile virtualFile, Editor editor){
             String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
             Integer selectionStart = virtualFile.getUserData(SELECTION_START_KEY);
             Integer selectionEnd = virtualFile.getUserData(SELECTION_END_KEY);

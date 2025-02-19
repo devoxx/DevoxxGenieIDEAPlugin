@@ -15,6 +15,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class FileTypeIconUtil {
@@ -42,8 +43,8 @@ public class FileTypeIconUtil {
         if (interfaceIcon != null) {
             return interfaceIcon;
         }
-        String fileTypeName = virtualFile.getFileType().getName();
-        return fileTypeName.equals("UNKNOWN") ? CodeSnippetIcon : ClassIcon;
+        String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
+        return (selectedText != null) ? CodeSnippetIcon : ClassIcon;
     }
 
     private static @Nullable Icon getIcon(VirtualFile virtualFile) {
@@ -66,13 +67,15 @@ public class FileTypeIconUtil {
     }
 
     private static @Nullable Icon getJavaFileIcon(@NotNull VirtualFile virtualFile) throws IOException {
-        String content = new String(virtualFile.contentsToByteArray());
+        String content = new String(virtualFile.contentsToByteArray()).toLowerCase();
         if (content.contains(" interface ")) {
             return InterfaceIcon;
         } else if (content.contains(" enum ")) {
             return EnumIcon;
         } else if (content.contains(" class ")) {
             return ClassIcon;
+        } else if (content.contains(" record ")) {
+            return RecordIcon;
         }
         return null;
     }
