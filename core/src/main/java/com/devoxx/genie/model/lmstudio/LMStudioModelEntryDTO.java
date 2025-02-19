@@ -9,4 +9,5 @@ public class LMStudioModelEntryDTO {
     private String id;
     private String object;
     private String owned_by;
+    private Integer max_context_length;
 }

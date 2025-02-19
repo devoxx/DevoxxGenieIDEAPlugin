@@ -11,3 +11,4 @@ gradle/**
 /.vscode/
 /core/bin/
 .DS_Store
+src/.DS_Store
