@@ -42,6 +42,7 @@
             <LI>Feat #514 : Show image icon in file list when images are used by @stephanj</LI>
             <LI>Feat #508 : Always focus input field when chat window is opened by @stephanj</LI>
             <LI>Fix #506 : Show /find place holder text when RAG is enabled by @stephanj</LI>
+            <LI>Feat #503 : Showing lines of code in chat context by @stephanj</LI>
         </UL>
         <h2>V0.4.16</h2>
         <UL>
