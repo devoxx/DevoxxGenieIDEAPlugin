@@ -171,7 +171,7 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @return the command
      */
-    private Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
+    public Optional<String> getCommandFromPrompt(@NotNull ChatMessageContext chatMessageContext,
                                                   PromptOutputPanel promptOutputPanel) {
         String prompt = chatMessageContext.getUserPrompt().trim();
 
