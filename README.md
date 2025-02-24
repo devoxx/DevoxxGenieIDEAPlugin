@@ -74,7 +74,7 @@ You can now drag and drop images (and project files) directly into the input fie
 or even local models such as [LLaVA](https://ollama.com/library/llava)
 
 <img width="1689" alt="Screenshot 2025-01-30 at 13 26 57" src="https://github.com/user-attachments/assets/313ab609-abf1-4b3a-b4d3-3802362a713b" />
-<img width="957" alt="Screenshot 2025-01-30 at 13 35 35" src="https://github.com/user-attachments/assets/abf67d20-524a-4f64-9d3c-cab2b0a3ebe6" />
+<img width="859" alt="DnDImagesExample" src="https://github.com/user-attachments/assets/b99ed4e6-091e-484f-87cf-12c879c661a5" />
 
 You can even combine screenshots together with some code and then ask related questions! 🔥
 
