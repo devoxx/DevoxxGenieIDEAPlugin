@@ -44,7 +44,7 @@ public class FileTypeIconUtil {
             return interfaceIcon;
         }
         String selectedText = virtualFile.getUserData(SELECTED_TEXT_KEY);
-        return (selectedText != null) ? CodeSnippetIcon : ClassIcon;
+        return (selectedText != null && !selectedText.isEmpty()) ? CodeSnippetIcon : ClassIcon;
     }
 
     private static @Nullable Icon getIcon(VirtualFile virtualFile) {

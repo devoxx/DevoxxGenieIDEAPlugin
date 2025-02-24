@@ -43,6 +43,7 @@
             <LI>Feat #508 : Always focus input field when chat window is opened by @stephanj</LI>
             <LI>Fix #506 : Show /find place holder text when RAG is enabled by @stephanj</LI>
             <LI>Feat #503 : Showing lines of code in chat context by @stephanj</LI>
+            <LI>Feat #524 : Show default file used in references by @stephanj</LI>
         </UL>
         <h2>V0.4.16</h2>
         <UL>

@@ -54,9 +54,12 @@ public class FileEntryComponent extends JPanel {
         // Create main content panel
         Box contentPanel = Box.createHorizontalBox();
 
+        boolean isCodeSnippet = false;
+        String selectedText = file.getUserData(SELECTED_TEXT_KEY);
         JButton fileNameButton;
-        if (file.getUserData(SELECTED_TEXT_KEY) != null) {
+        if (selectedText != null && !selectedText.isEmpty()) {
             fileNameButton = new JButton(file.getName(), DevoxxGenieIconsUtil.CodeSnippetIcon);
+            isCodeSnippet = true;
         } else {
             fileNameButton = new JButton(file.getName(), FileTypeIconUtil.getFileTypeIcon(file));
         }
@@ -77,16 +80,19 @@ public class FileEntryComponent extends JPanel {
         }
 
         // Create tooltip with full path
-        String tooltipText = String.format("<html><body style='width: 300px'><pre>%s</pre></body></html>", file.getPath().replace("<", "&lt;").replace(">", "&gt;"));
+        String tooltipText = String.format("<html><body style='width: 300px'><pre>%s</pre></body></html>",
+                file.getPath().replace("<", "&lt;").replace(">", "&gt;"));
 
-        // Add start and end line information if available
-        Integer startLine = file.getUserData(SELECTION_START_LINE_KEY);
-        Integer endLine = file.getUserData(SELECTION_END_LINE_KEY);
-        if (startLine != null && endLine != null) {
-            JLabel lineInfoLabel = new JLabel(String.format(" (%d-%d)", startLine + 1, endLine + 1));
-            lineInfoLabel.setFont(MONO_FONT);
-            lineInfoLabel.setForeground(PATH_COLOR);
-            contentPanel.add(lineInfoLabel);
+        if (isCodeSnippet) {
+            // Add start and end line information if available
+            Integer startLine = file.getUserData(SELECTION_START_LINE_KEY);
+            Integer endLine = file.getUserData(SELECTION_END_LINE_KEY);
+            if (startLine != null && endLine != null) {
+                JLabel lineInfoLabel = new JLabel(String.format(" (%d-%d)", startLine + 1, endLine + 1));
+                lineInfoLabel.setFont(MONO_FONT);
+                lineInfoLabel.setForeground(PATH_COLOR);
+                contentPanel.add(lineInfoLabel);
+            }
         }
 
         contentPanel.add(Box.createHorizontalStrut(5));
