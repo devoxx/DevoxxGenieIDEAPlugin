@@ -11,11 +11,15 @@ import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+
+import static com.devoxx.genie.action.AddSnippetAction.*;
 
 public class ChatMessageContextUtil {
 
@@ -79,7 +83,7 @@ public class ChatMessageContextUtil {
             // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
             if (selectedTextEditor != null) {
-                addEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
+                addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
         }
     }
@@ -115,10 +119,36 @@ public class ChatMessageContextUtil {
         }
     }
 
-    private static void addEditorInfoToMessageContext(Editor editor,
-                                                      @NotNull ChatMessageContext chatMessageContext) {
+    private static void addDefaultEditorInfoToMessageContext(Editor editor,
+                                                             @NotNull ChatMessageContext chatMessageContext) {
+
+        FileListManager.getInstance().clear(chatMessageContext.getProject());
+
         EditorInfo editorInfo = EditorUtil.getEditorInfo(editor);
         chatMessageContext.setEditorInfo(editorInfo);
+
+        Document document = editor.getDocument();
+
+        VirtualFile originalFile = editor.getVirtualFile();
+
+        SelectionModel selectionModel = editor.getSelectionModel();
+        String selectedText = selectionModel.getSelectedText();
+        if (selectedText != null && !selectedText.isEmpty()) {
+            int startOffset = selectionModel.getSelectionStart();
+            int endOffset = selectionModel.getSelectionEnd();
+            int startLine = document.getLineNumber(startOffset);
+            int endLine = document.getLineNumber(endOffset);
+            originalFile.putUserData(ORIGINAL_FILE_KEY, originalFile);
+            originalFile.putUserData(SELECTED_TEXT_KEY, selectedText);
+            originalFile.putUserData(SELECTION_START_KEY, startOffset);
+            originalFile.putUserData(SELECTION_END_KEY, endOffset);
+            originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
+            originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
+        } else {
+            originalFile.putUserData(SELECTED_TEXT_KEY, "");
+        }
+
+        FileListManager.getInstance().addFile(chatMessageContext.getProject(), editor.getVirtualFile());
     }
 
     /**

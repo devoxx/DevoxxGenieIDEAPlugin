@@ -41,7 +41,7 @@ public class NonStreamingPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the enable buttons
      */
-    public void execute(ChatMessageContext chatMessageContext,
+    public void execute(@NotNull ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
         LOG.debug(">>>> Executing prompt: " + chatMessageContext.getCommandName());
