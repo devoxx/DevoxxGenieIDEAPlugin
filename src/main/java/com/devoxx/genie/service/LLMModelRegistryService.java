@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
-import static dev.langchain4j.model.bedrock.BedrockAnthropicMessageChatModel.Types.AnthropicClaude3_5SonnetV1;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
@@ -90,6 +89,19 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 3.5 Haiku (20241022)")
                         .inputCost(1)
                         .outputCost(5)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        // Available from February 2025
+        String claudeSonnet37 = "claude-3-7-sonnet-20250219";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet37,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claudeSonnet37)
+                        .displayName("Claude 3.7 Sonnet")
+                        .inputCost(3)
+                        .outputCost(15)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
@@ -751,6 +763,18 @@ public final class LLMModelRegistryService {
         // Anthropic - Claude - anthropic.claude-v2:1
         // Anthropic - Claude - anthropic.claude-v2
 
+        // Anthropic - Claude 3.7 Sonnet - anthropic.claude-3-7-sonnet-20250219-v1:0
+        String claude3dot7 = "anthropic.claude-3-7-sonnet-20250219-v1:0";
+        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot7,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Bedrock)
+                        .modelName(claude3dot7)
+                        .displayName("Claude 3.7 Sonnet")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .build());
+
         // Anthropic - Claude 3 Sonnet - anthropic.claude-3-sonnet-20240229-v1:0
         String claude3v1 = "anthropic.claude-3-sonnet-20240229-v1:0";
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3v1,
@@ -797,6 +821,7 @@ public final class LLMModelRegistryService {
                         .outputCost(15)
                         .inputMaxTokens(200_000)
                         .build());
+
 
         // Excluded because it's for images
         // Stability AI - SDXL 1.0 - stability.stable-diffusion-xl-v1
