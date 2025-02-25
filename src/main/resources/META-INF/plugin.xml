@@ -38,6 +38,7 @@
         <h2>V0.4.18</h2>
         <UL>
             <LI>Feat #526 : Support for Claude Sonnet 3.7 by @stephanj</LI>
+        </UL>
         <h2>V0.4.17</h2>
         <UL>
             <LI>Feat #515 : Supports LMStudio BETA /api/v0/ endpoint, collecting window context by @stephanj</LI>
