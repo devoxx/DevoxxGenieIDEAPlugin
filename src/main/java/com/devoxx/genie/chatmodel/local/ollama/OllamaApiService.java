@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -12,7 +13,7 @@ import java.io.IOException;
 import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class OllamaApiService {
-    private static final OkHttpClient client = new OkHttpClient();
+
     private static final Gson gson = new Gson();
     public static final int DEFAULT_CONTEXT_LENGTH = 4096;
 
@@ -34,7 +35,7 @@ public class OllamaApiService {
             .post(body)
             .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
 
             JsonObject jsonObject = gson.fromJson(response.body().string(), JsonObject.class);

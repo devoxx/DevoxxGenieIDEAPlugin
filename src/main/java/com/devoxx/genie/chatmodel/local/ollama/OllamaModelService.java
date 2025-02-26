@@ -5,6 +5,7 @@ import com.devoxx.genie.chatmodel.local.LocalLLMProviderUtil;
 import com.devoxx.genie.model.ollama.OllamaModelDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
@@ -20,7 +21,7 @@ import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class OllamaModelService implements LocalLLMProvider {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient client = HttpClientProvider.getClient();
     private final Gson gson = new Gson();
     private final MediaType JSON = MediaType.parse("application/json");
 
