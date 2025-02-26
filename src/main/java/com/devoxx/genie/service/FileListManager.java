@@ -1,5 +1,7 @@
 package com.devoxx.genie.service;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -8,23 +10,20 @@ import java.util.*;
 
 import static com.devoxx.genie.util.ImageUtil.isImageFile;
 
-public class FileListManager {
+@Service
+public final class FileListManager {
 
     private final Map<String, List<VirtualFile>> previouslyAddedFiles = new HashMap<>();
     private final Map<String, List<VirtualFile>> filesMap = new HashMap<>();
     private final Map<String, List<FileListObserver>> observersMap = new HashMap<>();
     private final Map<String, List<VirtualFile>> imageFilesMap = new HashMap<>();
 
-    private static FileListManager instance = null;
-
-    private FileListManager() {
+    FileListManager() {
     }
 
+    @NotNull
     public static FileListManager getInstance() {
-        if (instance == null) {
-            instance = new FileListManager();
-        }
-        return instance;
+        return ApplicationManager.getApplication().getService(FileListManager.class);
     }
 
     public void storeAddedFiles(@NotNull Project project) {
@@ -35,7 +34,7 @@ public class FileListManager {
         });
     }
 
-    public List<VirtualFile> getPreviouslyAddedFiles(@NotNull Project project) {
+    public @NotNull List<VirtualFile> getPreviouslyAddedFiles(@NotNull Project project) {
         return Collections.unmodifiableList(previouslyAddedFiles.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
 
