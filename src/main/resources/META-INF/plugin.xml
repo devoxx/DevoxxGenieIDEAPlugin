@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.19</h2>
+        <UL>
+            <LI>Fix #528 : Service Management singleton fix by @stephanj</LI>
+        </UL>
         <h2>V0.4.18</h2>
         <UL>
             <LI>Feat #526 : Support for Claude Sonnet 3.7 by @stephanj</LI>
