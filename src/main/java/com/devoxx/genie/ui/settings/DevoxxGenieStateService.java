@@ -39,7 +39,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // Default excluded files for scan project
     private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
-            "package-lock.json", "yarn.lock", "pom.xml", "build.gradle", "settings.gradle"
+            "package-lock.json", "yarn.lock", ".env", "build.gradle", "settings.gradle"
     ));
 
     private List<CustomPrompt> customPrompts = new ArrayList<>();
