@@ -6,6 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.localai.LocalAiChatModel;
@@ -17,17 +18,15 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public abstract class LocalChatModelFactory implements ChatModelFactory {
 
     protected final ModelProvider modelProvider;
-    protected List<LanguageModel> cachedModels = null;
-    protected static final ExecutorService executorService = Executors.newFixedThreadPool(5);
+    public List<LanguageModel> cachedModels = null;
+
     protected static boolean warningShown = false;
-    protected boolean providerRunning = false;
-    protected boolean providerChecked = false;
+    public boolean providerRunning = false;
+    public boolean providerChecked = false;
 
     protected LocalChatModelFactory(ModelProvider modelProvider) {
         this.modelProvider = modelProvider;
@@ -91,7 +90,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
                     } catch (IOException e) {
                         handleModelFetchError(e);
                     }
-                }, executorService);
+                }, AppExecutorUtil.getAppExecutorService());
                 futures.add(future);
             }
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
