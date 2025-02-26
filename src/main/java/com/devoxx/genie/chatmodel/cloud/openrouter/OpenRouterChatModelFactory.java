@@ -7,6 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -20,14 +21,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class OpenRouterChatModelFactory implements ChatModelFactory {
 
     private final ModelProvider MODEL_PROVIDER = ModelProvider.OpenRouter;
 
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private List<LanguageModel> cachedModels = null;
     private static final int PRICE_SCALING_FACTOR = 1_000_000; // To convert to per million tokens
 
@@ -92,18 +90,22 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
                     synchronized (modelNames) {
                         modelNames.add(languageModel);
                     }
-                }, executorService);
+                }, AppExecutorUtil.getAppExecutorService());
                 futures.add(future);
             }
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             cachedModels = modelNames;
         } catch (IOException e) {
-            NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                "Unable to reach OpenRouter, please try again later.");
+            handleModelFetchError(e);
             cachedModels = List.of();
         }
         return cachedModels;
+    }
+
+    protected void handleModelFetchError(IOException e) {
+        NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                "Unable to reach OpenRouter, please try again later.");
     }
 
     private double convertAndScalePrice(double price) {
