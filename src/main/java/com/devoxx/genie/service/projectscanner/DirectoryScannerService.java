@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 @Getter
-public class UniqueDirectoryScannerService {
+public class DirectoryScannerService {
 
     private final Map<String, VirtualFile> uniqueDirectories = new HashMap<>();
 

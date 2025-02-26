@@ -31,7 +31,7 @@ public class FileTypeIconUtil {
                         (Computable<Icon>) () -> getIconForFile(virtualFile)));
 
         try {
-            return iconFuture.get(100, TimeUnit.MILLISECONDS);
+            return iconFuture.get(250, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             LOG.error("Error getting icon for file: " + virtualFile.getPath(), e);
             return ClassIcon;

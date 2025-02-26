@@ -128,7 +128,7 @@ public final class ProjectIndexerService {
         }
 
         // Use synchronous project scanning
-        ScanContentResult scanResult = projectScannerService.scanProjectSynchronously(project, baseDir, Integer.MAX_VALUE, false);
+        ScanContentResult scanResult = projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false);
         List<Path> filesToProcess = new ArrayList<>(scanResult.getFiles());
         int totalFiles = filesToProcess.size();
 

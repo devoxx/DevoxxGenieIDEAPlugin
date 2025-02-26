@@ -40,12 +40,11 @@ public class TokenCalculationService {
         if (showCost) {
             showCostAndScanInfo(project, selectedProvider, selectedLanguageModel, contentFuture, listener);
         } else {
-            showOnlyScanInfo(project, directory, selectedProvider, contentFuture, listener);
+            showOnlyScanInfo(directory, selectedProvider, contentFuture, listener);
         }
     }
 
-    private static void showOnlyScanInfo(@NotNull Project project,
-                                         VirtualFile directory,
+    private static void showOnlyScanInfo(VirtualFile directory,
                                          @NotNull ModelProvider selectedProvider,
                                          @NotNull CompletableFuture<ScanContentResult> contentFuture,
                                          TokenCalculationListener listener) {

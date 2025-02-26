@@ -75,6 +75,9 @@ dependencies {
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
 
+    // GitIgnore Reader
+    implementation("nl.basjes.gitignore:gitignore-reader:1.6.0")
+
     // TDG : Add Log4j dependencies
     implementation("org.apache.logging.log4j:log4j-api:2.22.1")
     implementation("org.apache.logging.log4j:log4j-core:2.22.1")

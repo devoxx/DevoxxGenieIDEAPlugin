@@ -40,14 +40,18 @@ public class ProjectContentService {
     public CompletableFuture<ScanContentResult> getProjectContent(Project project,
                                                                   int windowContextMaxTokens,
                                                                   boolean isTokenCalculation) {
-        return ProjectScannerService.getInstance()
-            .scanProject(project, null, windowContextMaxTokens, isTokenCalculation)
-            .thenApply(content -> {
-                if (!isTokenCalculation) {
-                    copyToClipboard(content);
-                }
-                return content;
-            });
+        ProjectScannerService instance = ProjectScannerService.getInstance();
+        ScanContentResult scanContentResult = instance.scanProject(project, null, windowContextMaxTokens, isTokenCalculation);
+        return CompletableFuture.completedFuture(scanContentResult)
+            .thenApply(content ->
+                    getScanContentResult(isTokenCalculation, content));
+    }
+
+    private ScanContentResult getScanContentResult(boolean isTokenCalculation, ScanContentResult content) {
+        if (!isTokenCalculation) {
+            copyToClipboard(content);
+        }
+        return content;
     }
 
     /**
@@ -65,16 +69,18 @@ public class ProjectContentService {
                                                                     VirtualFile directory,
                                                                     int tokenLimit,
                                                                     boolean isTokenCalculation) {
-        return ProjectScannerService.getInstance()
-            .scanProject(project, directory, tokenLimit, isTokenCalculation)
-            .thenApply(content -> {
-                if (!isTokenCalculation) {
-                    copyToClipboard(content);
-                }
-                return content;
-            });
+        ProjectScannerService instance = ProjectScannerService.getInstance();
+        ScanContentResult scanContentResult = instance.scanProject(project, directory, tokenLimit, isTokenCalculation);
+        return CompletableFuture.completedFuture(scanContentResult)
+            .thenApply(content ->
+                    getScanContentResult(isTokenCalculation, content));
     }
 
+    /**
+     * Retrieves and processes the content of a specified file within a Project.
+     * @param provider ModelProvider enum value representing the model provider to use
+     * @return Encoding object representing the encoding to use for the specified provider
+     */
     public static Encoding getEncodingForProvider(@NotNull ModelProvider provider) {
         return switch (provider) {
             case OpenAI, Anthropic, Google, AzureOpenAI ->
@@ -88,6 +94,10 @@ public class ProjectContentService {
         };
     }
 
+    /**
+     * Copies the content of a ScanContentResult object to the system clipboard.
+     * @param contentResult ScanContentResult object containing the content to copy
+     */
     private void copyToClipboard(@NotNull ScanContentResult contentResult) {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(new StringSelection(contentResult.getContent()), null);
