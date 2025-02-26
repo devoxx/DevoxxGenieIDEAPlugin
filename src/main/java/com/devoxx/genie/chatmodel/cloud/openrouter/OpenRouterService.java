@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel.cloud.openrouter;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.model.openrouter.ResponseDTO;
 import com.devoxx.genie.service.exception.UnsuccessfulRequestException;
+import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,7 +17,8 @@ import java.io.IOException;
 import java.util.List;
 
 public class OpenRouterService {
-    private final OkHttpClient client = new OkHttpClient();
+
+    private final OkHttpClient client = HttpClientProvider.getClient();
 
     @NotNull
     public static OpenRouterService getInstance() {

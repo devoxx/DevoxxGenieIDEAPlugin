@@ -3,6 +3,7 @@ package com.devoxx.genie.service.chromadb;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.service.rag.validator.ChromeDBValidator;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.HttpClientProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
@@ -34,7 +35,7 @@ public final class ChromaDBManager {
 
         String url = "http://localhost:" + DevoxxGenieStateService.getInstance().getIndexerPort();
 
-        OkHttpClient client = new OkHttpClient.Builder().build();
+        OkHttpClient client = HttpClientProvider.getClient();
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(url)
                 .client(client)

@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel.local;
 import com.devoxx.genie.model.lmstudio.LMStudioModelEntryDTO;
 import com.devoxx.genie.service.exception.UnsuccessfulRequestException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import okhttp3.OkHttpClient;
@@ -16,7 +17,6 @@ import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
 public class LocalLLMProviderUtil {
 
-    private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
 
     public static <T> T getModels(String baseUrlConfigKey, String endpoint, Class<T> responseType) throws IOException {
@@ -33,7 +33,7 @@ public class LocalLLMProviderUtil {
                 .url(baseUrl + endpoint)
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new UnsuccessfulRequestException("Unexpected code " + response);
             }
