@@ -41,6 +41,7 @@
             <LI>FIX #531 : Add .env in the list of ignored files by @stephanj</LI>
             <LI>Fix #532 : HTTP Client Optimisation by @stephanj</LI>
             <LI>Fix #529 : Concurrency improvement by @stephanj</LI>
+            <LI>Fix #534 : Refactoring ProjectScannerService by @stephanj</LI>
         </UL>
         <h2>V0.4.18</h2>
         <UL>
