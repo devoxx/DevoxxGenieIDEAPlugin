@@ -37,11 +37,13 @@
     <change-notes><![CDATA[
         <h2>V0.4.19</h2>
         <UL>
+            <LI>Fix #529 : Concurrency improvement by @stephanj</LI>
             <LI>Fix #528 : Service Management singleton fix by @stephanj</LI>
             <LI>FIX #531 : Add .env in the list of ignored files by @stephanj</LI>
             <LI>Fix #532 : HTTP Client Optimisation by @stephanj</LI>
-            <LI>Fix #529 : Concurrency improvement by @stephanj</LI>
+            <LI>Fix #533 : Added prompt files list is replaced with current open file by @stephanj</LI>
             <LI>Fix #534 : Refactoring ProjectScannerService by @stephanj</LI>
+            <LI>Fix #540 : User can add/attach the same files multiple times by @stephanj</LI>
         </UL>
         <h2>V0.4.18</h2>
         <UL>
