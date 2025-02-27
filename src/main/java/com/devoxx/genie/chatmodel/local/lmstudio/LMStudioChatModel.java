@@ -5,10 +5,8 @@ import dev.ai4j.openai4j.chat.ChatCompletionRequest;
 import dev.ai4j.openai4j.chat.ChatCompletionResponse;
 import dev.ai4j.openai4j.shared.Usage;
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.TokenUsage;
 import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +24,7 @@ import static java.util.Collections.singletonList;
  * Based on <a href="https://localai.io/features/text-generation/">LocalAI documentation</a>.
  * But the token usage from the response is now used.
  */
-public class LMStudioChatModel implements ChatLanguageModel {
+public class LMStudioChatModel extends AbstractChatLanguageModel {
 
     private final OpenAiClient client;
     private final String modelName;
@@ -67,24 +65,17 @@ public class LMStudioChatModel implements ChatLanguageModel {
         this.maxRetries = maxRetries;
     }
 
-    @Override
-    public Response<AiMessage> generate(List<ChatMessage> messages) {
-        return generate(messages, null, null);
+    public ChatResponse chat(List<ChatMessage> messages, List<ToolSpecification> toolSpecifications) {
+        return chat(messages, toolSpecifications, null);
     }
 
-    @Override
-    public Response<AiMessage> generate(List<ChatMessage> messages, List<ToolSpecification> toolSpecifications) {
-        return generate(messages, toolSpecifications, null);
+    public ChatResponse chat(List<ChatMessage> messages, ToolSpecification toolSpecification) {
+        return chat(messages, singletonList(toolSpecification), toolSpecification);
     }
 
-    @Override
-    public Response<AiMessage> generate(List<ChatMessage> messages, ToolSpecification toolSpecification) {
-        return generate(messages, singletonList(toolSpecification), toolSpecification);
-    }
-
-    private @NotNull Response<AiMessage> generate(List<ChatMessage> messages,
-                                                  List<ToolSpecification> toolSpecifications,
-                                                  ToolSpecification toolThatMustBeExecuted
+    private @NotNull ChatResponse chat(List<ChatMessage> messages,
+                                       List<ToolSpecification> toolSpecifications,
+                                       ToolSpecification toolThatMustBeExecuted
     ) {
         ChatCompletionRequest.Builder requestBuilder = ChatCompletionRequest.builder()
             .model(modelName)
@@ -106,10 +97,10 @@ public class LMStudioChatModel implements ChatLanguageModel {
 
         Usage usage = response.usage();
 
-        return Response.from(
-            aiMessageFrom(response),
-            new TokenUsage(usage.promptTokens(), usage.completionTokens()),
-            finishReasonFrom(response.choices().get(0).finishReason())
-        );
+        return ChatResponse.builder()
+                .aiMessage(aiMessageFrom(response))
+                .tokenUsage(new TokenUsage(usage.promptTokens(), usage.completionTokens()))
+                .finishReason(finishReasonFrom(response.choices().get(0).finishReason()))
+                .build();
     }
 }
