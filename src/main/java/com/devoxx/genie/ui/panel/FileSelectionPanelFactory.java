@@ -237,7 +237,13 @@ public class FileSelectionPanelFactory implements DumbAware {
     private static void addSelectedFile(Project project, @NotNull JBList<VirtualFile> resultList) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
-            FileListManager.getInstance().addFile(project, selectedFile);
+            FileListManager fileListManager = FileListManager.getInstance();
+
+            // Check if the file is already added
+            if (!fileListManager.contains(project, selectedFile)) {
+                // Add the file only if it is not already added
+                fileListManager.addFile(project, selectedFile);
+            }
         }
     }
 }
