@@ -53,6 +53,7 @@ dependencies {
     // Add the dependencies for the core module
     implementation(project(":core"))
 
+    // Langchain4J dependencies
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-local-ai:$lg4j_version")
@@ -66,21 +67,23 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 
+    // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("org.xerial:sqlite-jdbc:3.48.0.0")
 
+    // Docker dependencies
     implementation("com.github.docker-java:docker-java:3.4.0")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.0")
 
+    // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
 
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.4.12")
+
     // GitIgnore Reader
     implementation("nl.basjes.gitignore:gitignore-reader:1.6.0")
-
-    // TDG : Add Log4j dependencies
-    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
-    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
 
     // TDG : Add other TDG dependencies
     implementation("org.junit.jupiter:junit-jupiter-api:5.11.3")

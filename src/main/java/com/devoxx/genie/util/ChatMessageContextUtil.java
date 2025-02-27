@@ -82,7 +82,7 @@ public class ChatMessageContextUtil {
 
             // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-            if (selectedTextEditor != null) {
+            if (chatMessageContext.getFilesContext().isEmpty() && selectedTextEditor != null) {
                 addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
         }
