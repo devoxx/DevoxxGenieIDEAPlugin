@@ -1,6 +1,5 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.chatmodel.cloud.bedrock.BedrockModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
@@ -172,6 +171,19 @@ public final class LLMModelRegistryService {
                         .outputCost(30)
                         .inputMaxTokens(128_000)
                         .outputMaxTokens(32_768)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt4dot5 = OpenAIChatModelName.GPT_4_5.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4dot5,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt4dot5)
+                        .displayName("GPT 4.5 Preview")
+                        .inputCost(75)
+                        .outputCost(150)
+                        .inputMaxTokens(128_000)
+                        .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
                         .build());
 
