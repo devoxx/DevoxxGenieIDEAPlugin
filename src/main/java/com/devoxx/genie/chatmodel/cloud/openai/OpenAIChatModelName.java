@@ -6,6 +6,7 @@ public enum OpenAIChatModelName {
     GPT_4_32K("gpt-4-32k"),
     GPT_4_O("gpt-4o"),
     GPT_4_O_MINI("gpt-4o-mini"),
+    GPT_4_5("gpt-4.5-preview"),
     O1_PREVIEW("o1-preview"),
     O1_MINI("o1-mini"),
     O1("o1"),

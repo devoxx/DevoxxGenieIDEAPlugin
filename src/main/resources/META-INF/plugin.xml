@@ -38,6 +38,7 @@
         <h2>V0.4.20</h2>
         <UL>
             <LI>Fix #546 : NPE on chatMessageContext.getFilesContext().isEmpty() by @stephanj</LI>
+            <LI>Feat #544 : Support for OpenAI GPT-4.5 Preview by @stephanj</LI>
         </UL>
         <h2>V0.4.19</h2>
         <UL>
