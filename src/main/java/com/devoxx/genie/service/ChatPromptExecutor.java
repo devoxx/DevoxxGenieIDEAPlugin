@@ -222,7 +222,7 @@ public class ChatPromptExecutor {
                 .findFirst();
 
         if (matchingPrompt.isPresent()) {
-            return processMatchingPrompt(chatMessageContext, promptOutputPanel, matchingPrompt.get());
+            return processMatchingPrompt(chatMessageContext, promptOutputPanel, prompt, matchingPrompt.get());
         } else {
             LOG.debug("No matching command prompt found");
             return Optional.of(prompt);
@@ -230,12 +230,13 @@ public class ChatPromptExecutor {
     }
 
     private Optional<String> processMatchingPrompt(@NotNull ChatMessageContext chatMessageContext,
-                                                   PromptOutputPanel promptOutputPanel, @NotNull CustomPrompt matchingPrompt) {
+                                                   PromptOutputPanel promptOutputPanel, @NotNull String prompt, @NotNull CustomPrompt matchingPrompt) {
         if (matchingPrompt.getName().equalsIgnoreCase(HELP_COMMAND)) {
             promptOutputPanel.showHelpText();
             return Optional.empty();
         }
         chatMessageContext.setCommandName(matchingPrompt.getName());
-        return Optional.of(matchingPrompt.getPrompt());
+        String customPrompt = matchingPrompt.getPrompt() + " " + prompt.replaceFirst(COMMAND_PREFIX + matchingPrompt.getName(), "");
+        return Optional.of(customPrompt);
     }
 }
