@@ -11,7 +11,6 @@ import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.time.Duration;
 
 public class LMStudioChatModelFactory extends LocalChatModelFactory {
 
@@ -23,15 +22,7 @@ public class LMStudioChatModelFactory extends LocalChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return LMStudioChatModel.builder()
-                .baseUrl(getModelUrl())
-                .modelName(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .topP(chatModel.getTopP())
-                .maxTokens(chatModel.getMaxTokens())
-                .maxRetries(chatModel.getMaxRetries())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .build();
+        return createLocalAiChatModel(chatModel);
     }
 
     @Override
