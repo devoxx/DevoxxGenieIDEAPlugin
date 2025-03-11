@@ -50,7 +50,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT),
             new CustomPrompt(TDG_COMMAND, TDG_PROMPT),
             new CustomPrompt(FIND_COMMAND, FIND_PROMPT),
-            new CustomPrompt(HELP_COMMAND, HELP_PROMPT)
+            new CustomPrompt(HELP_COMMAND, HELP_PROMPT),
+            new CustomPrompt(INIT_COMMAND, INIT_PROMPT)
     );
 
     private List<LanguageModel> languageModels = new ArrayList<>();

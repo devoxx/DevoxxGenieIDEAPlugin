@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -131,6 +132,17 @@ public class MessageCreationService {
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
             String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
+        }
+        
+        // Check if DEVOXXGENIE.md should be included in the prompt
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
+            // Try to read DEVOXXGENIE.md from project root
+            String devoxxGenieMdContent = readDevoxxGenieMdFile(chatMessageContext.getProject());
+            if (devoxxGenieMdContent != null && !devoxxGenieMdContent.isEmpty()) {
+                stringBuilder.append("<ProjectContext>\n");
+                stringBuilder.append(devoxxGenieMdContent);
+                stringBuilder.append("\n</ProjectContext>\n\n");
+            }
         }
 
         // If git diff is enabled, add special instructions
@@ -265,6 +277,32 @@ public class MessageCreationService {
             return new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             return "Error reading file: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * Read the content of DEVOXXGENIE.md file from the project root directory.
+     *
+     * @param project the project
+     * @return the content of DEVOXXGENIE.md file or null if file not found or can't be read
+     */
+    private String readDevoxxGenieMdFile(Project project) {
+        try {
+            if (project == null || project.getBasePath() == null) {
+                LOG.warn("Project or base path is null");
+                return null;
+            }
+            
+            Path devoxxGenieMdPath = Paths.get(project.getBasePath(), "DEVOXXGENIE.md");
+            if (!Files.exists(devoxxGenieMdPath)) {
+                LOG.debug("DEVOXXGENIE.md file not found in project root: " + devoxxGenieMdPath);
+                return null;
+            }
+            
+            return Files.readString(devoxxGenieMdPath, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOG.warn("Failed to read DEVOXXGENIE.md file: " + e.getMessage());
+            return null;
         }
     }
 

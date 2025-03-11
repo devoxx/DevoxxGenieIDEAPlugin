@@ -56,6 +56,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         commands.add(COMMAND_PREFIX + REVIEW_COMMAND);
         commands.add(COMMAND_PREFIX + TDG_COMMAND);
         commands.add(COMMAND_PREFIX + HELP_COMMAND);
+        commands.add(COMMAND_PREFIX + INIT_COMMAND);
 
         DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
         for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {

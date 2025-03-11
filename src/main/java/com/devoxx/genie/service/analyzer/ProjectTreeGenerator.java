@@ -267,16 +267,15 @@ public class ProjectTreeGenerator {
 
             // Using invokeAndWait to ensure we switch to the EDT thread
             try {
-                ApplicationManager.getApplication().invokeAndWait(() -> {
-                    ApplicationManager.getApplication().runWriteAction(() -> {
-                        try {
-                            VfsUtil.saveText(devoxxGenieMdFile, finalContent);
-                            LOG.info("Project tree appended to DEVOXXGENIE.md successfully");
-                        } catch (IOException e) {
-                            LOG.error("Error updating DEVOXXGENIE.md with project tree", e);
-                        }
-                    });
-                });
+                ApplicationManager.getApplication().invokeAndWait(() ->
+                        ApplicationManager.getApplication().runWriteAction(() -> {
+                            try {
+                                VfsUtil.saveText(devoxxGenieMdFile, finalContent);
+                                LOG.info("Project tree appended to DEVOXXGENIE.md successfully");
+                            } catch (IOException e) {
+                                LOG.error("Error updating DEVOXXGENIE.md with project tree", e);
+                            }
+                        }));
             } catch (Exception e) {
                 LOG.error("Error while waiting for EDT to save DEVOXXGENIE.md", e);
             }

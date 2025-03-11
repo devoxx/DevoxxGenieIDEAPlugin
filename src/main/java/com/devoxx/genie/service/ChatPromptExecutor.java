@@ -8,6 +8,7 @@ import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
 import com.devoxx.genie.service.websearch.WebSearchExecutor;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.FileUtil;
@@ -235,6 +236,7 @@ public class ChatPromptExecutor {
             promptOutputPanel.showHelpText();
             return Optional.empty();
         }
+
         chatMessageContext.setCommandName(matchingPrompt.getName());
         String customPrompt = matchingPrompt.getPrompt() + " " + prompt.replaceFirst(COMMAND_PREFIX + matchingPrompt.getName(), "");
         return Optional.of(customPrompt);

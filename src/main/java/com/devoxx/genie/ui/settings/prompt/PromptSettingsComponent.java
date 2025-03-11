@@ -167,8 +167,8 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy++;
         JEditorPane explanationPane = new JEditorPane(
                 "text/html",
-                "<html><body style='margin: 5px'><i>When enabled, the content of DEVOXXGENIE.md will be included in the prompt sent to the AI, "
-                + "providing it with context about your project structure and important files.</i></body></html>"
+                "<html><body style='margin: 5px'>When enabled, the content of DEVOXXGENIE.md will be included in the prompt sent to the AI, "
+                + "providing it with context about your project structure and important files.</body></html>"
         );
         explanationPane.setEditable(false);
         explanationPane.setBackground(null);
