@@ -159,6 +159,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean excludeJavaDoc = false;
 
+    // DEVOXXGENIE.md generation options
+    private Boolean createDevoxxGenieMd = false;
+    private Boolean includeProjectTree = false;
+    private Integer projectTreeDepth = 3;
+    private Boolean useDevoxxGenieMdInPrompt = false;
+
     private Boolean showAzureOpenAIFields = false;
     private Boolean showAwsFields = false;
 

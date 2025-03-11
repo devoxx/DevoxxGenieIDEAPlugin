@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for C/C++ projects in CLion or other C/C++-capable IDEs -->
+    <depends>com.intellij.modules.clion</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.cpp.CppProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>

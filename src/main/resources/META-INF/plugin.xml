@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.22</h2>
+        <UL>
+            <LI>Feature: Create DEVOXXGENIE.md file for extra system prompt info</LI>
+        </UL>
         <h2>V0.4.21</h2>
         <UL>
             <LI>Fix #553 integration with LMStudio by @mydeveloperplanet</LI>
@@ -609,6 +613,21 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
     </extensions>
+
+    <extensionPoints>
+        <extensionPoint name="projectScannerExtension"
+                        interface="com.devoxx.genie.service.analyzer.ProjectAnalyzerExtension"/>
+    </extensionPoints>
+
+    <!-- Optional dependencies for enhanced functionality in specific IDEs -->
+    <depends optional="true" config-file="java-features.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="php-features.xml">com.jetbrains.php</depends>
+    <depends optional="true" config-file="python-features.xml">com.intellij.modules.python</depends>
+    <depends optional="true" config-file="clion-features.xml">com.intellij.modules.clion</depends>
+    <depends optional="true" config-file="rust-features.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="webstorm-features.xml">JavaScript</depends>
+    <depends optional="true" config-file="kotlin-features.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="goland-features.xml">org.jetbrains.plugins.go</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />

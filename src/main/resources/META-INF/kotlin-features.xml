@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for Kotlin projects in IntelliJ IDEA or other Kotlin-capable IDEs -->
+    <depends>org.jetbrains.kotlin</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.kotlin.KotlinProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>

@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for Python projects in PyCharm or other Python-capable IDEs -->
+    <depends>com.intellij.modules.python</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.python.PythonProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>
