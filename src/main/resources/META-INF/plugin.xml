@@ -35,6 +35,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.21</h2>
+        <UL>
+            <LI>Fix #553 integration with LMStudio by @mydeveloperplanet</LI>
+            <LI>Feat ##550 Allow extra text to be added after custom prompts by @mydeveloperplanet</LI>
+        </UL>
         <h2>V0.4.20</h2>
         <UL>
             <LI>Fix #546 : NPE on chatMessageContext.getFilesContext().isEmpty() by @stephanj</LI>
