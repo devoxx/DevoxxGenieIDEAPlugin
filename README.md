@@ -20,7 +20,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 [![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
 
-### More Video Tutorials:
+### 🗂️ Video Tutorials:
 
 - [DevoxxGenie in action (Devoxx Belgium 2024)](https://www.youtube.com/watch?v=c5EyVLAXaGQ)
 - [How ChatMemory works](https://www.youtube.com/watch?v=NRAe4d7n6_4)
@@ -35,6 +35,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
+- **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images (🔥 NEW)**: You can now DnD images with multimodal LLM's.
 - **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
 - **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
@@ -68,6 +69,19 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
 
+### 🗂️ DEVOXXGENIE.md 
+
+You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page.
+
+<img width="998" alt="Screenshot 2025-03-14 at 17 26 43" src="https://github.com/user-attachments/assets/95f7fc0e-3764-48f9-9d3c-dc19ee4ae258" />
+
+By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
+This is a first step toward enabling agentic AI features for DevoxxGenie 🔥
+
+Once generated, you can edit the DEVOXXGENIE.md file and add more details about your project as needed.
+
+<img width="1101" alt="Screenshot 2025-03-14 at 17 27 54" src="https://github.com/user-attachments/assets/740a1a16-33b9-4fda-898f-bc6506f9b027" />
+
 ### 📸 "I can see" DnD images
 
 You can now drag and drop images (and project files) directly into the input field when working with multimodal LLMs like Google Gemini, Anthropic Claude, ChatGPT 4.x, 
@@ -76,7 +90,7 @@ or even local models such as [LLaVA](https://ollama.com/library/llava)
 <img width="1689" alt="Screenshot 2025-01-30 at 13 26 57" src="https://github.com/user-attachments/assets/313ab609-abf1-4b3a-b4d3-3802362a713b" />
 <img width="859" alt="DnDImagesExample" src="https://github.com/user-attachments/assets/b99ed4e6-091e-484f-87cf-12c879c661a5" />
 
-You can even combine screenshots together with some code and then ask related questions! 🔥
+You can even combine screenshots together with some code and then ask related questions!
 
 ### 🔥 RAG Feature 
 
