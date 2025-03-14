@@ -38,6 +38,7 @@
         <h2>V0.4.22</h2>
         <UL>
             <LI>Feat #555 : Improve "Calc Tokens... " and "Copy directory... " user messages by @stephanj</LI>
+            <LI>Fix #554 : Exception thrown in PHPStorm with 'Use .gitignore' enabled by @stephanj</LI>
         </UL>
         <h2>V0.4.21</h2>
         <UL>
