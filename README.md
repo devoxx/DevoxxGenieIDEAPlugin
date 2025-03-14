@@ -69,7 +69,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
 
-### 🗂️ DEVOXXGENIE.md 
+### 🗂️ DEVOXXGENIE.md (Draft release for v0.5.0)
 
 You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page.
 
