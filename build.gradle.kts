@@ -7,10 +7,12 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.4.22"
+version = "0.5.0"
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
+    maven { url = uri("https://cache-redirector.jetbrains.com/intellij-dependencies") }
 }
 
 tasks.register("updateProperties") {
@@ -110,6 +112,7 @@ dependencies {
 intellij {
     version.set("2023.3.4")
     type.set("IC")
+    plugins.set(listOf("com.intellij.java"))
 }
 
 tasks {

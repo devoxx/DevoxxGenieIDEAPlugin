@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for Go projects in GoLand or other Go-capable IDEs -->
+    <depends>org.jetbrains.plugins.go</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.go.GoProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>

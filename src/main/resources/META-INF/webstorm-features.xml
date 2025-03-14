@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for JavaScript/TypeScript projects in WebStorm or other JS/TS-capable IDEs -->
+    <depends>JavaScript</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.javascript.JavaScriptProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>

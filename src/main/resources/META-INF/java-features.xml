@@ -1,0 +1,6 @@
+<!-- java-features.xml -->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.java.JavaProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>
