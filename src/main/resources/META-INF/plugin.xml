@@ -35,10 +35,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>V0.4.22</h2>
+        <UL>
+            <LI>Feat #555 : Improve "Calc Tokens... " and "Copy directory... " user messages by @stephanj</LI>
+        </UL>
         <h2>V0.4.21</h2>
         <UL>
-            <LI>Fix #553 integration with LMStudio by @mydeveloperplanet</LI>
-            <LI>Feat ##550 Allow extra text to be added after custom prompts by @mydeveloperplanet</LI>
+            <LI>Fix #553 : integration with LMStudio by @mydeveloperplanet</LI>
+            <LI>Feat ##550 : Allow extra text to be added after custom prompts by @mydeveloperplanet</LI>
         </UL>
         <h2>V0.4.20</h2>
         <UL>
@@ -196,7 +200,7 @@
         <UL>
             <LI>Feature #327: Test Driven Generation integration</LI>
             <LI>Fix #324: Replace invocations of SwingUtilities.invokeLater()</LI>
-            <LI>Fix #236: Refactoring large class ActionButtonsPanel<LI>
+            <LI>Fix #236: Refactoring large class ActionButtonsPanel</LI>
             <LI>Fix #329: Refactored the calc token cost</LI>
             <LI>Fix #333: Use LangChain4j new model names</LI>
             <LI>Fix #336: Cost Calculation is consistent now between calculation from directory and calculation from DevoxxGenie panel</LI>
@@ -428,7 +432,7 @@
         <UL>
             <LI>Feat #63: Support for Gemini Pro 1.5 & Flash using API Keys</LI>
             <LI>Fix for incorrect LLM selection</LI>
-            <LI>Fix for chat response styling issue<LI>
+            <LI>Fix for chat response styling issue</LI>
             <LI>Fix prompt context issue</LI>
         </UL>
         <h2>v0.1.7</h2>
