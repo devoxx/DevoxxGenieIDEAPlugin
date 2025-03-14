@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.projectscanner;
 
+import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.diagnostic.Logger;
@@ -114,9 +115,12 @@ public class FileScanner {
      *
      * @param fileIndex the project file index
      * @param directory the directory to scan
+     * @param scanContentResult the result object to populate
      * @return list of files that should be included
      */
-    public List<VirtualFile> scanDirectory(ProjectFileIndex fileIndex, VirtualFile directory) {
+    public List<VirtualFile> scanDirectory(ProjectFileIndex fileIndex,
+                                           VirtualFile directory,
+                                           ScanContentResult scanContentResult) {
         List<VirtualFile> relevantFiles = new ArrayList<>();
 
         VfsUtilCore.visitChildrenRecursively(directory, new VirtualFileVisitor<Void>() {
@@ -134,7 +138,9 @@ public class FileScanner {
                         includedFiles.add(Paths.get(file.getPath()));
                     } else {
                         skippedFileCount++;
-                        LOG.debug("Skipping file: " + file.getPath() + " (not in content, excluded by settings, or .gitignore)");
+                        String reason = determineSkipReason(file, fileIndex);
+                        LOG.debug("Skipping file: " + file.getPath() + " (" + reason + ")");
+                        scanContentResult.addSkippedFile(file.getPath(), reason);
                     }
                 }
                 return true;
@@ -142,6 +148,35 @@ public class FileScanner {
         });
 
         return relevantFiles;
+    }
+    
+    /**
+     * Determines the reason why a file was skipped.
+     *
+     * @param file the file that was skipped
+     * @param fileIndex the project file index
+     * @return the reason for skipping the file
+     */
+    private String determineSkipReason(VirtualFile file, ProjectFileIndex fileIndex) {
+        if (!fileIndex.isInContent(file)) {
+            return "not in project content";
+        }
+        if (shouldExcludeFile(file)) {
+            return "excluded by settings or .gitignore";
+        }
+        
+        String extension = file.getExtension();
+        if (extension == null) {
+            return "no file extension";
+        }
+        
+        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
+        List<String> includedExtensions = settings.getIncludedFileExtensions();
+        if (includedExtensions == null || includedExtensions.isEmpty()) {
+            return "no file extensions configured for inclusion";
+        }
+        
+        return "extension '" + extension.toLowerCase() + "' not in included list";
     }
 
     /**
@@ -219,7 +254,15 @@ public class FileScanner {
 
         // Check gitignore if enabled
         if (Boolean.TRUE.equals(settings.getUseGitIgnore()) && gitIgnoreFileSet != null) {
-            return gitIgnoreFileSet.ignoreFile(file.getPath());
+            try {
+                // Try to use the gitignore check and catch the specific IllegalArgumentException
+                return gitIgnoreFileSet.ignoreFile(file.getPath());
+            } catch (IllegalArgumentException e) {
+                // If the file is not within the project directory, just ignore the error
+                // and don't apply gitignore rules to this file
+                LOG.debug("File outside project directory, skipping gitignore check: " + file.getPath());
+                return false;
+            }
         }
         return false;
     }
@@ -240,7 +283,9 @@ public class FileScanner {
         }
 
         List<String> includedExtensions = settings.getIncludedFileExtensions();
+
         boolean includeFile = includedExtensions != null &&
+                !includedExtensions.isEmpty() &&
                 includedExtensions.contains(extension.toLowerCase());
 
         LOG.debug("File: " + file.getPath() + ", Include: " + includeFile + ", Extension: " + extension);
