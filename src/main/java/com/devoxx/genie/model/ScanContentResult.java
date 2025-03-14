@@ -8,6 +8,8 @@ import lombok.Setter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,7 +22,9 @@ public class ScanContentResult {
     private int skippedFileCount;
     private int skippedDirectoryCount;
     @Getter
-    private List<Path> files = new ArrayList<>();  // Add this field
+    private List<Path> files = new ArrayList<>();
+    @Getter
+    private Map<String, String> skippedFiles = new HashMap<>();
 
     public void incrementFileCount() {
         fileCount++;
@@ -40,5 +44,15 @@ public class ScanContentResult {
 
     public void addFile(Path file) {
         files.add(file);
+    }
+    
+    /**
+     * Add a skipped file with the reason why it was skipped
+     * 
+     * @param path The path of the skipped file
+     * @param reason The reason why the file was skipped
+     */
+    public void addSkippedFile(String path, String reason) {
+        skippedFiles.put(path, reason);
     }
 }

@@ -103,10 +103,29 @@ public class AddDirectoryAction extends DumbAwareAction {
     private void copyDirectoryToClipboard(Project project, VirtualFile directory) {
         // Because we copy the content to the clipboard, we can set the limit to a high number
         CompletableFuture<ScanContentResult> contentFuture = ProjectContentService.getInstance()
-            .getDirectoryContent(project, directory, 1_000_000, false);
+            .getDirectoryContent(project, directory, 2_000_000, false);
 
-        contentFuture.thenAccept(content ->
-            NotificationUtil.sendNotification(project, "Directory content added to clipboard: " + directory.getName()));
+        contentFuture.thenAccept(content -> {
+            StringBuilder notificationMessage = new StringBuilder("Directory content added to clipboard: ")
+                    .append(directory.getName())
+                    .append("\n");
+
+            if (content.getSkippedFileCount() > 0 || content.getSkippedDirectoryCount() > 0) {
+                notificationMessage.append("(");
+                if (content.getSkippedFileCount() > 0) {
+                    notificationMessage.append("Skipped: ").append(content.getSkippedFileCount()).append(" files");
+                }
+                if (content.getSkippedDirectoryCount() > 0) {
+                    if (content.getSkippedFileCount() > 0) {
+                        notificationMessage.append(" ");
+                    }
+                    notificationMessage.append("Skipped: ").append(content.getSkippedDirectoryCount()).append(" directories");
+                }
+                notificationMessage.append(")");
+            }
+
+            NotificationUtil.sendNotification(project, notificationMessage.toString());
+        });
     }
 
     private boolean shouldIncludeFile(@NotNull VirtualFile file, @NotNull DevoxxGenieSettingsService settings) {
