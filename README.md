@@ -71,7 +71,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### 🗂️ DEVOXXGENIE.md (Draft feature for v0.5.0)
 
-You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page.
+You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page or just use /init in the prompt input field.
 
 <img width="998" alt="Screenshot 2025-03-14 at 17 26 43" src="https://github.com/user-attachments/assets/95f7fc0e-3764-48f9-9d3c-dc19ee4ae258" />
 
