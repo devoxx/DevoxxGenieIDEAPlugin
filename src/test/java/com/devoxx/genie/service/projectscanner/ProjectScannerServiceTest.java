@@ -134,16 +134,16 @@ public class ProjectScannerServiceTest  {
         // Setup
         List<VirtualFile> fileList = new ArrayList<>();
         fileList.add(mockFile);
-        when(mockFileScanner.scanDirectory(mockProjectFileIndex, mockRootDirectory)).thenReturn(fileList);
+        when(mockFileScanner.scanDirectory(eq(mockProjectFileIndex), eq(mockRootDirectory), any(ScanContentResult.class))).thenReturn(fileList);
 
         // Test - now we can directly call the public method
-        String result = projectScannerService.scanContent(mockProject, null, 100, false);
+        String result = projectScannerService.scanContent(mockProject, null, 100, false, new ScanContentResult());
 
         // Verify
         assertNotNull(result);
         verify(mockFileScanner).scanProjectModules(mockProject);
         verify(mockFileScanner).generateSourceTreeRecursive(mockRootDirectory, 0);
-        verify(mockFileScanner).scanDirectory(mockProjectFileIndex, mockRootDirectory);
+        verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockRootDirectory), any(ScanContentResult.class));
         verify(mockContentExtractor).extractFileContent(mockFile);
         verify(mockContentExtractor).combineContent(anyString(), anyString());
         verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
@@ -154,16 +154,16 @@ public class ProjectScannerServiceTest  {
         // Setup
         List<VirtualFile> fileList = new ArrayList<>();
         fileList.add(mockFile);
-        when(mockFileScanner.scanDirectory(mockProjectFileIndex, mockDirectory)).thenReturn(fileList);
+        when(mockFileScanner.scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class))).thenReturn(fileList);
 
         // Test
-        String result = projectScannerService.scanContent(mockProject, mockDirectory, 100, false);
+        String result = projectScannerService.scanContent(mockProject, mockDirectory, 100, false, new ScanContentResult());
 
         // Verify
         assertNotNull(result);
         verify(mockFileScanner, never()).scanProjectModules(mockProject); // Should not be called with directory
         verify(mockFileScanner).generateSourceTreeRecursive(mockDirectory, 0);
-        verify(mockFileScanner).scanDirectory(mockProjectFileIndex, mockDirectory);
+        verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class));
         verify(mockContentExtractor).extractFileContent(mockFile);
         verify(mockContentExtractor).combineContent(anyString(), anyString());
         verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
@@ -172,7 +172,7 @@ public class ProjectScannerServiceTest  {
     @Test
     void testScanContent_WithSingleFile() {
         // Test - direct method call
-        String result = projectScannerService.scanContent(mockProject, mockFile, 100, false);
+        String result = projectScannerService.scanContent(mockProject, mockFile, 100, false, new ScanContentResult());
 
         // Verify
         assertNotNull(result);
@@ -181,7 +181,7 @@ public class ProjectScannerServiceTest  {
         verify(mockFileScanner).shouldIncludeFile(mockFile);
         verify(mockContentExtractor).extractFileContent(mockFile);
         verify(mockFileScanner, never()).generateSourceTreeRecursive(any(), anyInt());
-        verify(mockFileScanner, never()).scanDirectory(any(), any());
+        verify(mockFileScanner, never()).scanDirectory(any(), any(), any());
         verify(mockContentExtractor, never()).combineContent(anyString(), anyString());
     }
 
@@ -276,15 +276,15 @@ public class ProjectScannerServiceTest  {
 
             // Configure mock behaviors
             when(mockFileScanner.generateSourceTreeRecursive(mockDirectory, 0)).thenReturn("testDir/\n");
-            when(mockFileScanner.scanDirectory(mockProjectFileIndex, mockDirectory)).thenReturn(emptyFileList);
+            when(mockFileScanner.scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class))).thenReturn(emptyFileList);
             when(mockContentExtractor.combineContent(anyString(), eq(""))).thenReturn("Directory Structure:\ntestDir/\n\nFile Contents:\n");
 
             // Test
-            String result = projectScannerService.scanContent(mockProject, mockDirectory, 100, false);
+            String result = projectScannerService.scanContent(mockProject, mockDirectory, 100, false, new ScanContentResult());
 
             // Verify
             assertNotNull(result);
-            verify(mockFileScanner).scanDirectory(mockProjectFileIndex, mockDirectory);
+            verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class));
             verify(mockContentExtractor, never()).extractFileContent(any());
             verify(mockContentExtractor).combineContent("testDir/\n", "");
         }
@@ -306,7 +306,7 @@ public class ProjectScannerServiceTest  {
                     // Direct implementation without ReadAction
                     getFileScanner().reset();
                     getFileScanner().initGitignoreParser(project, startDirectory);
-                    String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation);
+                    String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult);
 
                     scanContentResult.setTokenCount(getTokenCalculator().calculateTokens(content));
                     scanContentResult.setContent(content);
@@ -329,7 +329,7 @@ public class ProjectScannerServiceTest  {
             List<VirtualFile> fileList = new ArrayList<>();
             fileList.add(mockFile);
 
-            when(mockFileScanner.scanDirectory(mockProjectFileIndex, mockDirectory)).thenReturn(fileList);
+            when(mockFileScanner.scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class))).thenReturn(fileList);
             when(mockFileScanner.getFileCount()).thenReturn(1);
             when(mockFileScanner.getSkippedFileCount()).thenReturn(0);
             when(mockFileScanner.getSkippedDirectoryCount()).thenReturn(0);
@@ -348,7 +348,7 @@ public class ProjectScannerServiceTest  {
             verify(mockFileScanner).reset();
             verify(mockFileScanner).initGitignoreParser(mockProject, mockDirectory);
             verify(mockFileScanner).generateSourceTreeRecursive(mockDirectory, 0);
-            verify(mockFileScanner).scanDirectory(mockProjectFileIndex, mockDirectory);
+            verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class));
             verify(mockContentExtractor).extractFileContent(mockFile);
             verify(mockContentExtractor).combineContent(anyString(), anyString());
             verify(mockTokenCalculator, atLeastOnce()).calculateTokens(anyString());
@@ -372,7 +372,7 @@ public class ProjectScannerServiceTest  {
                     // Direct implementation without ReadAction
                     getFileScanner().reset();
                     getFileScanner().initGitignoreParser(project, startDirectory);
-                    String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation);
+                    String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult);
 
                     scanContentResult.setTokenCount(getTokenCalculator().calculateTokens(content));
                     scanContentResult.setContent(content);
@@ -395,7 +395,7 @@ public class ProjectScannerServiceTest  {
             List<VirtualFile> fileList = new ArrayList<>();
             fileList.add(mockFile);
 
-            when(mockFileScanner.scanDirectory(mockProjectFileIndex, mockDirectory)).thenReturn(fileList);
+            when(mockFileScanner.scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class))).thenReturn(fileList);
             when(mockFileScanner.getFileCount()).thenReturn(1);
             when(mockFileScanner.getSkippedFileCount()).thenReturn(0);
             when(mockFileScanner.getSkippedDirectoryCount()).thenReturn(0);

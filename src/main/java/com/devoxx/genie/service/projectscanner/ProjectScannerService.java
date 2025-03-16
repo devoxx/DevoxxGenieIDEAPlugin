@@ -51,7 +51,7 @@ public class ProjectScannerService {
             fileScanner.reset();
             fileScanner.initGitignoreParser(project, startDirectory);
 
-            String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation);
+            String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult);
             fileScanner.getIncludedFiles().forEach(scanContentResult::addFile);
 
             scanContentResult.setTokenCount(tokenCalculator.calculateTokens(content));
@@ -67,7 +67,8 @@ public class ProjectScannerService {
     public @NotNull String scanContent(Project project,
                                        VirtualFile startDirectory,
                                        int windowContextMaxTokens,
-                                       boolean isTokenCalculation) {
+                                       boolean isTokenCalculation,
+                                       ScanContentResult scanContentResult) {
         // Initialize projectFileIndex if it's null
         if (this.projectFileIndex == null) {
             this.projectFileIndex = ProjectFileIndex.getInstance(project);
@@ -81,13 +82,13 @@ public class ProjectScannerService {
             VirtualFile rootDirectory = fileScanner.scanProjectModules(project);
             directoryStructure.append(fileScanner.generateSourceTreeRecursive(rootDirectory, 0));
             // Use the stored projectFileIndex instead of getting it again
-            List<VirtualFile> files = fileScanner.scanDirectory(projectFileIndex, rootDirectory);
+            List<VirtualFile> files = fileScanner.scanDirectory(projectFileIndex, rootDirectory, scanContentResult);
             fileContents = extractAllFileContents(files);
         } else if (startDirectory.isDirectory()) {
             // Case 2: Directory provided
             directoryStructure.append(fileScanner.generateSourceTreeRecursive(startDirectory, 0));
             // Use the stored projectFileIndex instead of getting it again
-            List<VirtualFile> files = fileScanner.scanDirectory(projectFileIndex, startDirectory);
+            List<VirtualFile> files = fileScanner.scanDirectory(projectFileIndex, startDirectory, scanContentResult);
             fileContents = extractAllFileContents(files);
         } else {
             // Case 3: Single file provided

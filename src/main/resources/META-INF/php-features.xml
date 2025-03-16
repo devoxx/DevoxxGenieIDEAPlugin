@@ -1,0 +1,8 @@
+<idea-plugin>
+    <!-- Specific features for PHP projects in PhpStorm or other PHP-capable IDEs -->
+    <depends>com.jetbrains.php</depends>
+    
+    <extensions defaultExtensionNs="com.intellij">
+        <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.php.PhpProjectScannerExtension"/>
+    </extensions>
+</idea-plugin>

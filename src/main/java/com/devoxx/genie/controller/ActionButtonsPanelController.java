@@ -11,6 +11,7 @@ import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.processor.CommandProcessor;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
@@ -63,6 +64,13 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
         String userPromptText = getUserPromptText();
 
         if (userPromptText == null) {
+            return false;
+        }
+
+        // Check if this is the special /init command that should be handled locally
+        if (CommandProcessor.processCommand(project, userPromptText)) {
+            // Command was processed, clear the input field
+            promptInputArea.clear();
             return false;
         }
 
