@@ -50,9 +50,9 @@ public class ProjectScannerService {
         ReadAction.run(() -> {
             fileScanner.reset();
             fileScanner.initGitignoreParser(project, startDirectory);
-            fileScanner.getIncludedFiles().forEach(scanContentResult::addFile);
 
             String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation);
+            fileScanner.getIncludedFiles().forEach(scanContentResult::addFile);
 
             scanContentResult.setTokenCount(tokenCalculator.calculateTokens(content));
             scanContentResult.setContent(content);
