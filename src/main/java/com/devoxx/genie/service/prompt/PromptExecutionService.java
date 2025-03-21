@@ -5,12 +5,16 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategy;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory;
+import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +25,7 @@ import java.util.concurrent.CancellationException;
 
 /**
  * Unified service for executing prompts with various strategies.
+ * Manages execution flow, strategy selection, and command processing.
  */
 @Slf4j
 public class PromptExecutionService {
@@ -44,65 +49,68 @@ public class PromptExecutionService {
     /**
      * Execute a prompt using the appropriate strategy.
      *
-     * @param chatMessageContext The context for the prompt
-     * @param promptOutputPanel The panel for displaying output
+     * @param context The context for the prompt
+     * @param panel The panel for displaying output
      * @param enableButtons Callback to run when execution completes
      */
-    public void executePrompt(@NotNull ChatMessageContext chatMessageContext,
-                             @NotNull PromptOutputPanel promptOutputPanel,
+    public void executePrompt(@NotNull ChatMessageContext context,
+                             @NotNull PromptOutputPanel panel,
                              @NotNull Runnable enableButtons) {
                              
-        Project project = chatMessageContext.getProject();
+        Project project = context.getProject();
         
         // Cancel any running executions for this project
         if (taskTracker.cancelAllTasks(project) > 0) {
             log.debug("Cancelled all existing tasks for project");
+            enableButtons.run();
             return;
         }
 
         // Process commands
-        Optional<String> processedPrompt = commandProcessor.processCommands(chatMessageContext, promptOutputPanel);
+        Optional<String> processedPrompt = commandProcessor.processCommands(context, panel);
         if (processedPrompt.isEmpty()) {
             // Command processing indicated we should stop
             enableButtons.run();
             return;
         }
 
-        // Run in background task
-        new Task.Backgroundable(project, "Working...", true) {
-            @Override
-            public void run(@NotNull ProgressIndicator progressIndicator) {
-                // Create appropriate strategy
-                PromptExecutionStrategy strategy = strategyFactory.createStrategy(chatMessageContext);
-                
-                // Execute the prompt
-                strategy.execute(chatMessageContext, promptOutputPanel)
-                    .whenComplete((result, error) -> 
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            cleanupAfterExecution(project, enableButtons);
-                        }));
-            }
-
-            @Override
-            public void onCancel() {
-                super.onCancel();
-                log.info("Prompt execution was cancelled.");
-                taskTracker.cancelAllTasks(project);
-            }
-
-            @Override
-            public void onThrowable(@NotNull Throwable error) {
-                super.onThrowable(error);
-                if (!(error instanceof CancellationException)) {
-                    // Create a specific execution exception and handle it with our standardized handler
-                    ExecutionException executionError = new ExecutionException(
-                        "Error occurred during prompt execution", error, 
-                        com.devoxx.genie.service.prompt.error.PromptException.ErrorSeverity.ERROR, true);
-                    PromptErrorHandler.handleException(project, executionError, chatMessageContext);
+        // Start a background progress indicator
+        ProgressManager.getInstance().run(
+            new Task.Backgroundable(project, "Working...", true) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    indicator.setIndeterminate(true);
                 }
-                cleanupAfterExecution(project, enableButtons);
+                
+                @Override
+                public void onCancel() {
+                    super.onCancel();
+                    log.info("Prompt execution was cancelled by user.");
+                    taskTracker.cancelAllTasks(project);
+                }
             }
-        }.queue();
+        );
+
+        // Create appropriate strategy
+        PromptExecutionStrategy strategy = strategyFactory.createStrategy(context);
+        
+        // Execute the prompt and handle completion
+        PromptTask<PromptResult> task = strategy.execute(context, panel);
+        
+        // Store context with the task for cancellation handling
+        task.putUserData(PromptTask.CONTEXT_KEY, context);
+        
+        task.whenComplete((result, error) -> {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (error != null) {
+                    handleExecutionError(error, context);
+                } else if (result != null) {
+                    log.debug("Prompt execution completed with result: {}", result);
+                }
+                
+                cleanupAfterExecution(project, enableButtons);
+            });
+        });
     }
 
     /**
@@ -111,14 +119,42 @@ public class PromptExecutionService {
      * @param project The project to stop execution for
      */
     public void stopExecution(Project project) {
-        taskTracker.cancelAllTasks(project);
+        int count = taskTracker.cancelAllTasks(project);
+        log.debug("Cancelled {} tasks for project {}", count, project.getName());
+    }
+    
+    /**
+     * Centralized method to handle cancellation of a prompt.
+     * Ensures memory cleanup and UI updates in a consistent way.
+     *
+     * @param context The context of the prompt being cancelled
+     * @param panel The UI panel to update
+     */
+    public void handleCancellation(@NotNull ChatMessageContext context, @NotNull PromptOutputPanel panel) {
+        // Remove last user message from memory
+        ChatMemoryManager.getInstance().removeLastUserMessage(context);
+        
+        // Update UI if needed
+        panel.removeLastUserPrompt(context);
+        
+        log.debug("Handled cancellation for context {}", context.getId());
+    }
+    
+    /**
+     * Handle errors during execution.
+     */
+    private void handleExecutionError(Throwable error, ChatMessageContext context) {
+        if (!(error instanceof CancellationException)) {
+            // Create a specific execution exception and handle it
+            ExecutionException executionError = new ExecutionException(
+                "Error occurred during prompt execution", error, 
+                com.devoxx.genie.service.prompt.error.PromptException.ErrorSeverity.ERROR, true);
+            PromptErrorHandler.handleException(project, executionError, context);
+        }
     }
 
     /**
      * Clean up after execution completes.
-     *
-     * @param project The project that finished execution
-     * @param enableButtons Callback to enable UI elements
      */
     private void cleanupAfterExecution(Project project, @NotNull Runnable enableButtons) {
         enableButtons.run();

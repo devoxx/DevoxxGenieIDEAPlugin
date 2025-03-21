@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.component.JEditorPaneUtils;
 import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.intellij.ui.components.JBLabel;
@@ -75,25 +74,45 @@ public class UserPromptPanel extends BackgroundPanel {
      * @param chatMessageContext the chat message context
      */
     private void removeChat(@NotNull ChatMessageContext chatMessageContext) {
-        String nameToRemove = chatMessageContext.getId();
-        java.util.List<Component> componentsToRemove = new ArrayList<>();
+        // Use the new PromptOutputPanel method which handles both UI and memory cleanup
+        PromptOutputPanel outputPanel = findPromptOutputPanel();
+        if (outputPanel != null) {
+            outputPanel.removeConversationItem(chatMessageContext, true);
+        } else {
+            // Fallback to manual removal if we can't find the output panel
+            String nameToRemove = chatMessageContext.getId();
+            java.util.List<Component> componentsToRemove = new ArrayList<>();
 
-        for (Component c : container.getComponents()) {
-            if (c.getName() != null && c.getName().equals(nameToRemove)) {
-                componentsToRemove.add(c);
+            for (Component c : container.getComponents()) {
+                if (c.getName() != null && c.getName().equals(nameToRemove)) {
+                    componentsToRemove.add(c);
+                }
             }
+
+            for (Component c : componentsToRemove) {
+                container.remove(c);
+            }
+
+            // Repaint the container
+            container.revalidate();
+            container.repaint();
         }
-
-        for (Component c : componentsToRemove) {
-            container.remove(c);
+    }
+    
+    /**
+     * Find the parent PromptOutputPanel in the component hierarchy
+     * 
+     * @return the PromptOutputPanel or null if not found
+     */
+    private PromptOutputPanel findPromptOutputPanel() {
+        Container parent = getParent();
+        while (parent != null) {
+            if (parent instanceof PromptOutputPanel) {
+                return (PromptOutputPanel) parent;
+            }
+            parent = parent.getParent();
         }
-
-        // Repaint the container
-        container.revalidate();
-        container.repaint();
-
-        // Remove the chat from memory
-        // TODO Possible? ChatMemoryService.getInstance().remove(chatMessageContext);
+        return null;
     }
 }
 

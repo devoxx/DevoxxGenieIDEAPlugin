@@ -121,6 +121,42 @@ public class ChatMemoryManager {
     }
 
     /**
+     * Remove only the last user message from memory.
+     * Used when a user cancels a prompt before receiving an AI response.
+     *
+     * @param chatMessageContext The context containing the user message to remove
+     */
+    public void removeLastUserMessage(@NotNull ChatMessageContext chatMessageContext) {
+        Project project = chatMessageContext.getProject();
+        List<ChatMessage> messagesToRemove = new ArrayList<>();
+        
+        if (chatMessageContext.getUserMessage() != null) {
+            messagesToRemove.add(chatMessageContext.getUserMessage());
+        }
+        
+        chatMemoryService.removeMessages(project, messagesToRemove);
+        log.debug("Removed last user message from memory");
+    }
+
+    /**
+     * Remove only the last AI message from memory.
+     * Used when a user removes an AI response from the conversation.
+     *
+     * @param chatMessageContext The context containing the AI message to remove
+     */
+    public void removeLastAIMessage(@NotNull ChatMessageContext chatMessageContext) {
+        Project project = chatMessageContext.getProject();
+        List<ChatMessage> messagesToRemove = new ArrayList<>();
+        
+        if (chatMessageContext.getAiMessage() != null) {
+            messagesToRemove.add(chatMessageContext.getAiMessage());
+        }
+        
+        chatMemoryService.removeMessages(project, messagesToRemove);
+        log.debug("Removed last AI message from memory");
+    }
+
+    /**
      * Remove the last message from memory.
      *
      * @param project The project to remove the message from

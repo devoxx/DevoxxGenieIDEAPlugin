@@ -2,14 +2,16 @@ package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
+import com.devoxx.genie.service.prompt.error.PromptException;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
+import com.devoxx.genie.service.prompt.result.PromptResult;
+import com.devoxx.genie.service.prompt.threading.PromptTask;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
-import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
-import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -20,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
@@ -36,102 +37,98 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
     private final NonStreamingPromptExecutionService promptExecutionService;
     private final ChatMemoryManager chatMemoryManager;
     private final ThreadPoolManager threadPoolManager;
-    private final PromptTaskTracker taskTracker;
-    private final String taskId;
 
     public NonStreamingPromptStrategy(Project project) {
         this.project = project;
         this.promptExecutionService = NonStreamingPromptExecutionService.getInstance();
         this.chatMemoryManager = ChatMemoryManager.getInstance();
         this.threadPoolManager = ThreadPoolManager.getInstance();
-        this.taskTracker = PromptTaskTracker.getInstance();
-        this.taskId = project.getLocationHash() + "-" + System.currentTimeMillis();
     }
 
     /**
      * Execute the prompt using the non-streaming approach.
      */
     @Override
-    public CompletableFuture<Void> execute(@NotNull ChatMessageContext chatMessageContext,
-                                          @NotNull PromptOutputPanel promptOutputPanel) {
-        log.debug("Executing non-streaming prompt, command name: " + chatMessageContext.getCommandName());
-        promptOutputPanel.addUserPrompt(chatMessageContext);
+    public PromptTask<PromptResult> execute(@NotNull ChatMessageContext context,
+                                          @NotNull PromptOutputPanel panel) {
+        log.debug("Executing non-streaming prompt, command name: {}", context.getCommandName());
+        panel.addUserPrompt(context);
 
-        if (FIND_COMMAND.equalsIgnoreCase(chatMessageContext.getCommandName())) {
+        // Create a self-managed prompt task
+        PromptTask<PromptResult> resultTask = new PromptTask<>(project);
+
+        // Handle FIND command separately
+        if (FIND_COMMAND.equalsIgnoreCase(context.getCommandName())) {
             log.debug("Executing find prompt");
-            semanticSearch(chatMessageContext, promptOutputPanel);
-            return CompletableFuture.completedFuture(null);
+            executeSemanticSearch(context, panel, resultTask);
+            return resultTask;
         }
 
-        CompletableFuture<Void> resultFuture = new CompletableFuture<>();
-        
         // Prepare the memory with system message if needed
-        chatMemoryManager.prepareMemory(chatMessageContext);
+        chatMemoryManager.prepareMemory(context);
         
         // Add user message to context and memory
-        chatMemoryManager.addUserMessage(chatMessageContext);
-
-        // Create the task that will handle cancellation
-        PromptTaskTracker.CancellableTask task = () -> {
-            // Cancel any running query in the execution service
-            promptExecutionService.cancelExecutingQuery();
-            
-            // Remove the user prompt from the UI if needed
-            promptOutputPanel.removeLastUserPrompt(chatMessageContext);
-            
-            // Mark the future as cancelled
-            if (!resultFuture.isDone()) {
-                resultFuture.cancel(true);
-            }
-        };
-        
-        // Register the task for tracking
-        taskTracker.registerTask(project, taskId, task);
+        chatMemoryManager.addUserMessage(context);
 
         // Execute the prompt using the centralized thread pool
-        CompletableFuture.supplyAsync(() -> {
+        threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
-                return promptExecutionService.executeQuery(chatMessageContext).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new CompletionException(e);
-            } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-                }, threadPoolManager.getPromptExecutionPool())
-        .thenAcceptAsync(response -> {
-            if (response != null) {
-                log.debug("Adding AI message to prompt output panel");
-                chatMessageContext.setAiMessage(response.aiMessage());
+                // Record start time
+                long startTime = System.currentTimeMillis();
+                
+                // Execute the query
+                var response = promptExecutionService.executeQuery(context).get();
+                
+                if (response == null) {
+                    resultTask.complete(PromptResult.failure(context, 
+                        new ExecutionException("Null response received")));
+                    return;
+                }
+                
+                log.debug("Adding AI message to prompt output panel for context {}", context.getId());
+                context.setAiMessage(response.aiMessage());
+                context.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
                 // Set token usage and cost
-                chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
+                context.setTokenUsageAndCost(response.tokenUsage());
                 
                 // Add AI response to memory
-                chatMemoryManager.addAiResponse(chatMessageContext);
+                chatMemoryManager.addAiResponse(context);
 
                 // Add the conversation to the chat service
                 project.getMessageBus()
                         .syncPublisher(AppTopics.CONVERSATION_TOPIC)
-                        .onNewConversation(chatMessageContext);
+                        .onNewConversation(context);
 
-                promptOutputPanel.addChatResponse(chatMessageContext);
-                resultFuture.complete(null);
+                panel.addChatResponse(context);
+                resultTask.complete(PromptResult.success(context));
+            } catch (Exception e) {
+                if (e instanceof CancellationException || 
+                    e.getCause() instanceof CancellationException || 
+                    Thread.currentThread().isInterrupted()) {
+                    log.info("Prompt execution cancelled for context {}", context.getId());
+                    resultTask.cancel(true);
+                } else {
+                    log.error("Error in non-streaming prompt execution", e);
+                    // Create a specific execution exception and handle it
+                    ExecutionException executionError = new ExecutionException(
+                        "Error occurred while processing chat message", e);
+                    PromptErrorHandler.handleException(context.getProject(), executionError, context);
+                    resultTask.complete(PromptResult.failure(context, executionError));
+                }
             }
-            // Task is completed either way
-            taskTracker.taskCompleted(project, taskId);
-        }, threadPoolManager.getPromptExecutionPool())
-        .exceptionally(throwable -> {
-            if (!(throwable instanceof CompletionException && throwable.getCause() instanceof CancellationException)) {
-                // Create a specific execution exception and handle it with our standardized handler
-                ExecutionException executionError = new ExecutionException("Error occurred while processing chat message", throwable);
-                PromptErrorHandler.handleException(chatMessageContext.getProject(), executionError, chatMessageContext);
+        });
+        
+        // Handle cancellation by cancelling the underlying execution
+        resultTask.whenComplete((result, error) -> {
+            if (resultTask.isCancelled()) {
+                log.debug("Task cancelled, cancelling prompt execution");
+                promptExecutionService.cancelExecutingQuery();
+                panel.removeLastUserPrompt(context);
             }
-            resultFuture.completeExceptionally(throwable);
-            taskTracker.taskCompleted(project, taskId);
-            return null;
         });
                 
-        return resultFuture;
+        return resultTask;
     }
 
     /**
@@ -139,34 +136,44 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
      */
     @Override
     public void cancel() {
-        taskTracker.cancelTask(project, taskId);
+        promptExecutionService.cancelExecutingQuery();
     }
 
     /**
      * Perform semantic search for the FIND command.
      */
-    private static void semanticSearch(ChatMessageContext chatMessageContext,
-                                       @NotNull PromptOutputPanel promptOutputPanel) {
-        try {
-            SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-            Map<String, SearchResult> searchResults = semanticSearchService.search(
-                    chatMessageContext.getProject(),
-                    chatMessageContext.getUserPrompt()
-            );
+    private void executeSemanticSearch(
+            @NotNull ChatMessageContext context,
+            @NotNull PromptOutputPanel panel,
+            @NotNull PromptTask<PromptResult> resultTask) {
+        
+        threadPoolManager.getPromptExecutionPool().execute(() -> {
+            try {
+                SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
+                Map<String, SearchResult> searchResults = semanticSearchService.search(
+                        context.getProject(),
+                        context.getUserPrompt()
+                );
 
-            if (!searchResults.isEmpty()) {
-                List<SemanticFile> fileReferences = extractFileReferences(searchResults);
-                chatMessageContext.setSemanticReferences(fileReferences);
-                promptOutputPanel.addChatResponse(chatMessageContext);
-            } else {
-                NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                        "No relevant files found for your search query.");
+                if (!searchResults.isEmpty()) {
+                    List<SemanticFile> fileReferences = extractFileReferences(searchResults);
+                    context.setSemanticReferences(fileReferences);
+                    panel.addChatResponse(context);
+                    resultTask.complete(PromptResult.success(context));
+                } else {
+                    NotificationUtil.sendNotification(context.getProject(),
+                            "No relevant files found for your search query.");
+                    resultTask.complete(PromptResult.failure(context, 
+                        new ExecutionException("No relevant files found")));
+                }
+            } catch (Exception e) {
+                // Create a specific execution exception for semantic search errors
+                ExecutionException searchError = new ExecutionException(
+                    "Error performing semantic search", e, 
+                    PromptException.ErrorSeverity.WARNING, true);
+                PromptErrorHandler.handleException(context.getProject(), searchError, context);
+                resultTask.complete(PromptResult.failure(context, searchError));
             }
-        } catch (Exception e) {
-            // Create a specific execution exception for semantic search errors
-            ExecutionException searchError = new ExecutionException("Error performing semantic search", e, 
-                    com.devoxx.genie.service.prompt.error.PromptException.ErrorSeverity.WARNING, true);
-            PromptErrorHandler.handleException(chatMessageContext.getProject(), searchError, chatMessageContext);
-        }
+        });
     }
 }

@@ -20,15 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 public class ThreadPoolManager {
 
-    /**
-     * -- GETTER --
-     *  Returns the thread pool for prompt execution tasks.
-     */
     private final ExecutorService promptExecutionPool;
-    /**
-     * -- GETTER --
-     *  Returns the thread pool for scheduled tasks.
-     */
+
     private final ScheduledExecutorService scheduledTaskPool;
     
     public static ThreadPoolManager getInstance() {

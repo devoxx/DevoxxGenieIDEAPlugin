@@ -1,10 +1,10 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.prompt.result.PromptResult;
+import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Strategy interface for different prompt execution approaches.
@@ -16,13 +16,16 @@ public interface PromptExecutionStrategy {
      *
      * @param chatMessageContext the context containing all prompt information
      * @param promptOutputPanel the panel where output should be displayed
-     * @return a CompletableFuture that completes when execution is done
+     * @return a PromptTask that completes with a PromptResult when execution is done
      */
-    CompletableFuture<Void> execute(@NotNull ChatMessageContext chatMessageContext, 
-                                  @NotNull PromptOutputPanel promptOutputPanel);
+    PromptTask<PromptResult> execute(@NotNull ChatMessageContext chatMessageContext, 
+                                     @NotNull PromptOutputPanel promptOutputPanel);
     
     /**
      * Cancel the current execution if possible.
+     * Default implementation is a no-op, strategy implementations should override if needed.
      */
-    void cancel();
+    default void cancel() {
+        // Default no-op implementation
+    }
 }
