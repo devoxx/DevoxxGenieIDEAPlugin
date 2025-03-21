@@ -9,8 +9,10 @@ import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.ClipboardUtil;
+
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
@@ -23,6 +25,7 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -32,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+@Slf4j
 public class PromptExecutionService {
 
     private static final Logger LOG = Logger.getInstance(PromptExecutionService.class);
@@ -150,6 +154,8 @@ public class PromptExecutionService {
                 mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider();
                 if (mcpToolProvider != null) {
                     MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
+                } else {
+                    NotificationUtil.sendNotification(chatMessageContext.getProject(), "MCP is enabled, but no MCP tool provider could be created");
                 }
             }
 
@@ -162,6 +168,7 @@ public class PromptExecutionService {
             // Build the AI service with or without MCP
             Bot bot;
             if (mcpToolProvider != null) {
+                MCPService.logDebug( "Using MCP tool provider");
                 // With MCP tool provider
                 bot = AiServices.builder(Bot.class)
                         .chatLanguageModel(chatLanguageModel)
@@ -169,6 +176,7 @@ public class PromptExecutionService {
                         .toolProvider(mcpToolProvider)
                         .build();
             } else {
+                log.debug("NOT USING MCP!");
                 // Without MCP tool provider
                 bot = AiServices.builder(Bot.class)
                         .chatLanguageModel(chatLanguageModel)
@@ -184,6 +192,7 @@ public class PromptExecutionService {
                     .build();
 
         } catch (Exception e) {
+            log.error(e.getMessage());
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
                 throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");
             }

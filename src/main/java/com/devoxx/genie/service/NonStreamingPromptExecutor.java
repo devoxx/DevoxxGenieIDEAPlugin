@@ -45,7 +45,7 @@ public class NonStreamingPromptExecutor {
     public void execute(@NotNull ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
-        LOG.debug(">>>> Executing prompt: " + chatMessageContext.getCommandName());
+        LOG.debug(">>>> Executing prompt, command name: " + chatMessageContext.getCommandName());
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 

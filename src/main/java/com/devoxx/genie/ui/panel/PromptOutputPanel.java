@@ -17,6 +17,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.data.message.AiMessage;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -33,6 +34,7 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  * It manages the user interface components related to displaying conversation history,
  * help messages, and user prompts.
  */
+@Slf4j
 public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener, MCPLoggingMessage {
 
     private final transient Project project;
@@ -274,6 +276,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Override
     public void onMCPLoggingMessage(String message) {
         ApplicationManager.getApplication().invokeLater(() -> {
+            log.debug(message);
             JLabel jLabel = new JLabel(message);
             jLabel.setToolTipText(message);
             container.add(jLabel);

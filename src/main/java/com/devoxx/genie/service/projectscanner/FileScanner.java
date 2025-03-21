@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFileVisitor;
 import lombok.Getter;
 import nl.basjes.gitignore.GitIgnoreFileSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -58,15 +59,56 @@ public class FileScanner {
      * @param project        the current project
      * @param startDirectory the starting directory for scanning
      */
+    /**
+     * Initializes the GitignoreParser for the specified project and directory.
+     *
+     * @param project        the current project
+     * @param startDirectory the starting directory for scanning
+     */
     public void initGitignoreParser(Project project, VirtualFile startDirectory) {
-        if (startDirectory != null && startDirectory.isDirectory()) {
-            collectGitignoreFiles(startDirectory);
-        } else if (project != null) {
-            VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
-            if (projectDir != null) {
-                collectGitignoreFiles(projectDir);
-            }
+        String projectBasePath = determineCorrectProjectBaseDir(project, startDirectory);
+        if (projectBasePath == null) {
+            LOG.error("Project base directory could not be determined. GitIgnore parsing was not initialized.");
+            return;
         }
+
+        LOG.info("Initializing GitIgnore parser with resolved project base directory: " + projectBasePath);
+        this.gitIgnoreFileSet = new GitIgnoreFileSet(new File(projectBasePath), false);
+
+        collectGitignoreFiles(startDirectory);
+    }
+
+    /**
+     * Determines the most appropriate base directory, considering project modules (workspaces).
+     */
+    private @Nullable String determineCorrectProjectBaseDir(@NotNull Project project, @NotNull VirtualFile startDirectory) {
+        // First check if startDirectory belongs to an explicit module's content root
+        ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+
+        VirtualFile contentRoot = fileIndex.getContentRootForFile(startDirectory);
+        if (contentRoot != null) {
+            LOG.info("Content root determined from workspace (module): " + contentRoot.getPath());
+            return contentRoot.getPath();
+        }
+
+        // Fall back to project's general base directory if module determination fails
+        String generalProjectBase = project.getBasePath();
+
+        if (generalProjectBase != null) {
+            LOG.info("Using project's general base directory as fallback: " + generalProjectBase);
+            return generalProjectBase;
+        }
+
+        // Attempt to guess directory using IntelliJ ProjectUtil as the final fallback
+        VirtualFile guessedProjectDir = ProjectUtil.guessProjectDir(project);
+        if (guessedProjectDir != null && guessedProjectDir.exists()) {
+            LOG.warn("Fallback: Guessed project dir used: " + guessedProjectDir.getPath());
+            return guessedProjectDir.getPath();
+        }
+
+        // Could not determine correct project base dir
+        LOG.error("Failed to determine a valid projectBaseDir from module and project settings.");
+        return null;
     }
 
     private void collectGitignoreFiles(@NotNull VirtualFile directory) {

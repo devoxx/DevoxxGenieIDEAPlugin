@@ -4,27 +4,29 @@ import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Service for creating and managing MCP clients based on user configuration
  */
+@Slf4j
 public class MCPExecutionService {
-    private static final Logger LOG = Logger.getInstance(MCPExecutionService.class);
-    
+
     public static MCPExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(MCPExecutionService.class);
     }
@@ -35,6 +37,7 @@ public class MCPExecutionService {
      * @return A ToolProvider that includes all enabled MCP tools, or null if MCP is disabled or no servers are configured
      */
     public ToolProvider createMCPToolProvider() {
+        log.debug("Creating MCP Tool Provider");
 
         // Get all configured MCP servers
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
@@ -94,7 +97,7 @@ public class MCPExecutionService {
             // Create the client using the helper method
             return initStdioClient(commandList, mcpServer.getEnv());
         } catch (Exception e) {
-            LOG.error("Failed to create MCP client for: " + mcpServer.getName(), e);
+            log.error("Failed to create MCP client for: " + mcpServer.getName(), e);
             return null;
         }
     }
@@ -108,24 +111,33 @@ public class MCPExecutionService {
      */
     @Nullable
     private static McpClient initStdioClient(List<String> command, Map<String, String> customEnv) {
+
         try {
             // Create environment map
             Map<String, String> env = new HashMap<>(System.getenv());
+
+            // env.put("PATH", "/Users/stephan/.nvm/versions/node/v22.14.0/bin:" + env.getOrDefault("PATH", ""));)
+            String firstCommand = command.get(0);
+            int lastSeparatorIndex = firstCommand.lastIndexOf(File.separator);
+            String directoryPath = firstCommand.substring(0, lastSeparatorIndex);
+
+            // We add the path of the command to the environment PATH
+            env.put("PATH", directoryPath + File.pathSeparator + env.getOrDefault("PATH", ""));
             if (customEnv != null) {
                 env.putAll(customEnv);
                 MCPService.logDebug("Added " + customEnv.size() + " environment variables");
             }
-            
-            // Get timeout from settings or use default
-            int timeoutSeconds = DevoxxGenieStateService.getInstance().getTimeout();
-            if (timeoutSeconds <= 0) {
-                timeoutSeconds = 60; // Default timeout
-            }
 
-            List<String> mcpCommand = List.of(
-                    "/bin/bash",
-                    "-c",
-                    command.get(0));
+            MCPService.logDebug("MCP environment : " + env);
+
+            List<String> mcpCommand = new ArrayList<>();
+            mcpCommand.add("/bin/bash");
+            mcpCommand.add("-c");
+            String cmdString = command.stream()
+                    .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                    .collect(Collectors.joining(" "));
+            mcpCommand.add(cmdString);
+            log.debug("MCP command : {}", mcpCommand);
 
             // Create the transport
             StdioMcpTransport transport = new StdioMcpTransport.Builder()
@@ -134,33 +146,15 @@ public class MCPExecutionService {
                     .logEvents(MCPService.isDebugLogsEnabled())
                     .build();
 
-//            List<String> fileSystemCommand = List.of(
-//                    "/bin/bash",
-//                    "-c",
-//                    "/Users/stephan/.nvm/versions/node/v22.14.0/bin/npx -y @modelcontextprotocol/server-filesystem " + chatMessageContext.getProject().getBasePath());
-//
-//            McpClient mcpFileSystemClient = initStdioClient(fileSystemCommand);
-//
-//            List<String> thinkingCommand = List.of(
-//                    "/bin/bash",
-//                    "-c",
-//                    "/Users/stephan/.nvm/versions/node/v22.14.0/bin/npx -y @modelcontextprotocol/server-sequential-thinking");
-//
-//            McpClient mcpThinkingSystem = initStdioClient(thinkingCommand);
-//
-//            ToolProvider fileSystemToolProvider = McpToolProvider.builder()
-//                    .mcpClients(List.of(mcpFileSystemClient, mcpThinkingSystem))
-//                    .build();
-
             // Create and return the client
             return new DefaultMcpClient.Builder()
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
-                    .toolExecutionTimeout(Duration.ofSeconds(timeoutSeconds))
                     .transport(transport)
                     .build();
         } catch (Exception e) {
-            LOG.error("Failed to initialize stdio client with command: " + command, e);
+            log.error("Failed to initialize stdio client with command: {}", command, e);
+            MCPService.logDebug("Failed to initialize stdio client with command: " + command + " - " + e.getMessage());
             return null;
         }
     }

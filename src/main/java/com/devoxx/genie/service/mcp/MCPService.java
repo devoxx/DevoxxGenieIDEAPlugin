@@ -1,14 +1,14 @@
 package com.devoxx.genie.service.mcp;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.diagnostic.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service for working with MCP servers
  */
+@Slf4j
 public class MCPService {
-    private static final Logger LOG = Logger.getInstance(MCPService.class);
-    
+
     /**
      * Check if MCP is enabled in the settings
      * 
@@ -35,7 +35,7 @@ public class MCPService {
      */
     public static void logDebug(String message) {
         if (isDebugLogsEnabled()) {
-            LOG.info("[MCP Debug] " + message);
+            log.info("[MCP Debug] {}", message);
         }
     }
 }
