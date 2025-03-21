@@ -28,7 +28,7 @@ public class ProjectScannerService {
     protected TokenCalculator tokenCalculator;
 
     // Use a Map to store ProjectFileIndex instances per project
-private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<String, ProjectFileIndex>();
+    private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<String, ProjectFileIndex>();
 
     public ProjectScannerService() {
         this.fileScanner = new FileScanner();
@@ -43,19 +43,28 @@ private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<St
     /**
      * Get the ProjectFileIndex for a specific project
      * This ensures we always use the correct context for each project
-     * 
+     *
      * @param project The project to get the file index for
      * @return The ProjectFileIndex for the specified project
      */
     private ProjectFileIndex getProjectFileIndex(@NotNull Project project) {
-        String projectLocationHash = project.getLocationHash();
-        LOG.debug("Getting ProjectFileIndex for project: " + project.getName() + 
-                  " with location hash: " + projectLocationHash);
+    String projectLocationHash = project.getLocationHash();
+    LOG.info("Getting ProjectFileIndex for project: " + project.getName() + 
+    " with location hash: " + projectLocationHash);
+    
+    ProjectFileIndex fileIndex = projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
+    LOG.info("Creating new ProjectFileIndex for project: " + project.getName());
+    return ProjectFileIndex.getInstance(project);
+    });
         
-        return projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
-            LOG.info("Creating new ProjectFileIndex for project: " + project.getName());
-            return ProjectFileIndex.getInstance(project);
-        });
+        // Validate that the ProjectFileIndex is correctly initialized
+        if (fileIndex == null) {
+            LOG.error("Failed to create ProjectFileIndex for project: " + project.getName());
+        } else {
+            LOG.info("Successfully retrieved ProjectFileIndex for project: " + project.getName());
+        }
+        
+        return fileIndex;
     }
 
     public ScanContentResult scanProject(Project project,
@@ -65,22 +74,38 @@ private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<St
 
         // Always get the correct ProjectFileIndex for this project
         ProjectFileIndex projectFileIndex = getProjectFileIndex(project);
-        LOG.debug("Scanning project: " + project.getName() + " with directory: " + 
-                 (startDirectory != null ? startDirectory.getPath() : "null"));
+        LOG.debug("Scanning project: " + project.getName() + " with directory: " +
+                (startDirectory != null ? startDirectory.getPath() : "null"));
 
         ScanContentResult scanContentResult = new ScanContentResult();
         ReadAction.run(() -> {
             fileScanner.reset();
             fileScanner.initGitignoreParser(project, startDirectory);
-
+            
+            LOG.info("Starting content scan for " + (startDirectory != null ? startDirectory.getPath() : "entire project"));
             String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult, projectFileIndex);
-            fileScanner.getIncludedFiles().forEach(scanContentResult::addFile);
+            
+            // Log included files for debugging
+            LOG.info("Files included after scan: " + fileScanner.getIncludedFiles().size());
+            fileScanner.getIncludedFiles().forEach(file -> {
+                LOG.info("Including file in result: " + file);
+                scanContentResult.addFile(file);
+            });
 
-            scanContentResult.setTokenCount(tokenCalculator.calculateTokens(content));
+            int tokenCount = tokenCalculator.calculateTokens(content);
+            LOG.info("FINAL TOKEN COUNT: " + tokenCount + " tokens");
+            LOG.info("Content length: " + content.length() + " characters");
+            LOG.info("First 100 chars: " + content.substring(0, Math.min(100, content.length())));
+            LOG.info("Last 100 chars: " + content.substring(Math.max(0, content.length() - 100)));
+            scanContentResult.setTokenCount(tokenCount);
             scanContentResult.setContent(content);
             scanContentResult.setFileCount(fileScanner.getFileCount());
             scanContentResult.setSkippedFileCount(fileScanner.getSkippedFileCount());
             scanContentResult.setSkippedDirectoryCount(fileScanner.getSkippedDirectoryCount());
+            
+            LOG.info("Scan complete. Files: " + fileScanner.getFileCount() + 
+                     ", Skipped files: " + fileScanner.getSkippedFileCount() + 
+                     ", Skipped directories: " + fileScanner.getSkippedDirectoryCount());
         });
         return scanContentResult;
     }
@@ -117,8 +142,16 @@ private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<St
 
         String fullContent = contentExtractor.combineContent(directoryStructure.toString(), fileContents);
 
-        // Truncate if necessary
-        return tokenCalculator.truncateToTokens(fullContent, windowContextMaxTokens, isTokenCalculation);
+        // For token calculation (Calc tokens for directory), we want the ACTUAL token count
+        // For content to be used in prompts, we need to truncate
+        if (isTokenCalculation) {
+            LOG.info("Not truncating content for token calculation only");
+            return fullContent;
+        } else {
+            // Only truncate if the content will be used (not for token calculation only)
+            LOG.info("Truncating content to " + windowContextMaxTokens + " tokens for usage in prompt");
+            return tokenCalculator.truncateToTokens(fullContent, windowContextMaxTokens, isTokenCalculation);
+        }
     }
 
     // Changed from private to public for better testability

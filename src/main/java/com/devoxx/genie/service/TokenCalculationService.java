@@ -51,14 +51,21 @@ public class TokenCalculationService {
                                          @NotNull CompletableFuture<ScanContentResult> contentFuture,
                                          TokenCalculationListener listener) {
         contentFuture.thenAccept(result -> {
-            // Format tokens with K suffix (e.g., 8K)
-            String formattedTokens = String.format("%.0f", result.getTokenCount() / 1000.0);
+            // Format tokens with appropriate precision
+            String formattedTokens;
+            if (result.getTokenCount() < 1000) {
+                // Show exact number for small token counts
+                formattedTokens = String.valueOf(result.getTokenCount());
+            } else {
+                // For larger token counts, show with one decimal place in K format
+                formattedTokens = String.format("%.1fK", result.getTokenCount() / 1000.0);
+            }
             
             // Main message with the requested format
             StringBuilder message = new StringBuilder();
             if (result.getSkippedDirectoryCount() > 0) {
                 message.append(String.format(
-                    "'%s' directory contains %sK tokens using the %s tokenizer.\n" +
+                    "'%s' directory contains %s tokens using the %s tokenizer.\n" +
                     "It includes %d files, skipped %d files and %d directories.",
                     directory != null ? directory.getName() : "Project",
                     formattedTokens,
@@ -68,7 +75,7 @@ public class TokenCalculationService {
                     result.getSkippedDirectoryCount()));
             } else {
                 message.append(String.format(
-                    "'%s' directory contains %sK tokens using the %s tokenizer.\n" +
+                    "'%s' directory contains %s tokens using the %s tokenizer.\n" +
                     "It includes %d files, skipped %d files.",
                     directory != null ? directory.getName() : "Project",
                     formattedTokens,
@@ -89,7 +96,11 @@ public class TokenCalculationService {
                     // Collect skipped extensions
                     if (path.contains(".")) {
                         String extension = path.substring(path.lastIndexOf('.') + 1).toLowerCase();
-                        skippedExtensions.add(extension);
+                        // Only add to skipped extensions if it was skipped because of the extension
+                        // not because it was in an excluded directory or other reason
+                        if (reason.contains("extension") || reason.contains("not in included list")) {
+                            skippedExtensions.add(extension);
+                        }
                     }
                     
                     // Collect skipped directories
