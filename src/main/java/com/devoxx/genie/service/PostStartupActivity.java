@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.service.mcp.MCPService;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
@@ -20,6 +21,10 @@ public class PostStartupActivity implements ProjectActivity {
         } else {
             LOG.error("ChatMemoryService is null");
         }
+        
+        // Initialize default MCP server if needed
+        MCPService.initializeDefaultMCPServer();
+        
         return continuation;
     }
 }

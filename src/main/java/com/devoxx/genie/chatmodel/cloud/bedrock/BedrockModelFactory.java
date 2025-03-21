@@ -64,6 +64,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An instance of {@link ChatLanguageModel} configured for Anthropic models.
      */
     private ChatLanguageModel createAnthropicChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockAnthropicMessageChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
@@ -74,6 +75,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     private ChatLanguageModel createMistralChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockMistralAiChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
@@ -84,6 +86,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     private ChatLanguageModel createCohereChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockCohereChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
@@ -94,6 +97,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     private ChatLanguageModel createLamaChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockLlamaChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
@@ -104,6 +108,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     private ChatLanguageModel createAI21ChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockAI21LabsChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
@@ -114,6 +119,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     private ChatLanguageModel createStabilityChatModel(@NotNull ChatModel chatModel) {
+        // TODO Refactor the deprecated class and use the new one
         return BedrockStabilityAIChatModel.builder()
                 .model(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())

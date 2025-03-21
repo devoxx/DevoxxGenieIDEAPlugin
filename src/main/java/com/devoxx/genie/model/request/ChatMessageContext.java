@@ -4,6 +4,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.mcp.client.logging.McpLogMessageHandler;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.output.TokenUsage;
@@ -35,6 +36,7 @@ public class ChatMessageContext {
     private TokenUsage tokenUsage;
     private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
     private double cost;
+    private boolean mcpActivated;
     private boolean ragActivated;
     private boolean gitDiffActivated;
     private boolean webSearchActivated;

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.topic;
 
+import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.listener.*;
 import com.intellij.util.messages.Topic;
 
@@ -39,5 +40,8 @@ public class AppTopics {
 
     public static final Topic<ShortcutChangeListener> SHORTCUT_CHANGED_TOPIC =
             Topic.create("shortcutChanged", ShortcutChangeListener.class);
+
+    public static final Topic<MCPLoggingMessage> MCP_LOGGING_MSG =
+            Topic.create("mcpLoggingMessage", MCPLoggingMessage.class);
 
 }

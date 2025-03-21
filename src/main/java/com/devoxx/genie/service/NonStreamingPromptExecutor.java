@@ -8,6 +8,7 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -66,9 +67,10 @@ public class NonStreamingPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the enable buttons
      */
-    private void prompt(ChatMessageContext chatMessageContext,
+    private void prompt(@NotNull ChatMessageContext chatMessageContext,
                         @NotNull PromptOutputPanel promptOutputPanel,
                         Runnable enableButtons) {
+
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
                 .thenAccept(response -> {
                     if (!isCancelled && response != null) {

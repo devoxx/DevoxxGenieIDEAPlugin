@@ -3,6 +3,8 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -185,6 +187,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
+    
+    // MCP settings
+    private MCPSettings mcpSettings = new MCPSettings();
 
     @Setter(AccessLevel.NONE)
     private List<Runnable> loadListeners = new ArrayList<>();
@@ -300,5 +305,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             case "ollamaModelUrl" -> getOllamaModelUrl();
             default -> null;
         };
+    }
+    
+    public MCPSettings getMcpSettings() {
+        return mcpSettings;
+    }
+    
+    public void setMcpSettings(MCPSettings mcpSettings) {
+        this.mcpSettings = mcpSettings;
     }
 }

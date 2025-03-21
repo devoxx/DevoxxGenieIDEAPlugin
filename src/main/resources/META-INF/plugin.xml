@@ -592,6 +592,11 @@
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
                              displayName="Token Cost &amp; Context Window"/>
 
+        <projectConfigurable id="com.devoxx.genie.mcpsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
+                             displayName="MCP Settings"/>
+
         <toolWindow id="DevoxxGenie"
                     anchor="right"
                     icon="/icons/pluginIcon.svg"

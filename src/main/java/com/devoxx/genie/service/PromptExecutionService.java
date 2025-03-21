@@ -14,12 +14,21 @@ import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.model.bedrock.BedrockMistralAiChatModel;
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -64,13 +73,19 @@ public class PromptExecutionService {
 
                 if (includeSystemMessage(chatMessageContext)) {
                     String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN;
+
+                    // TODO Check if MCP is enabled and add this to the system prompt
+                    systemPrompt += "<MCP_INSTRUCTION>The project base directory is " + chatMessageContext.getProject().getBasePath() +
+                            "\nMake sure to use this info for your MCP tooling calls\n" +
+                            "</MCP_INSTRUCTION>";
+
                     chatMemoryService.add(chatMessageContext.getProject(), SystemMessage.from(systemPrompt));
                 }
             }
 
             // Add User message to context
             MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
-            chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
+            // chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
 
             long startTime = System.currentTimeMillis();
 
@@ -100,8 +115,9 @@ public class PromptExecutionService {
         }
 
         // If Bedrock Mistral AI model is selected, do not include system message
-        if (chatMessageContext.getChatLanguageModel() instanceof BedrockMistralAiChatModel bedrockMistralAiChatModel) {
-            return bedrockMistralAiChatModel.getModel().startsWith("mistral.");
+        if (chatMessageContext.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
+            // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
+            return bedrockChatModel.provider().name().startsWith("mistral.");
         }
 
         return true;
@@ -122,6 +138,23 @@ public class PromptExecutionService {
         return false;
     }
 
+    private static McpClient initStdioClient(List<String> command) {
+        HashMap<String, String> env = new HashMap<>(System.getenv());
+
+        StdioMcpTransport transport = new StdioMcpTransport.Builder()
+                .command(command)
+                .environment(env)
+                .logEvents(true)
+                .build();
+
+        return new DefaultMcpClient.Builder()
+                .clientName("DevoxxGenie")
+                .protocolVersion("2024-11-05")
+                .toolExecutionTimeout(Duration.ofSeconds(60))
+                .transport(transport)
+                .build();
+    }
+
     /**
      * Process the chat message.
      *
@@ -133,12 +166,48 @@ public class PromptExecutionService {
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
             List<ChatMessage> messages = ChatMemoryService.getInstance().messages(chatMessageContext.getProject());
 
+            // TODO Only setup MCP when defined by user !!!
+
+            // TODO We need to find a way to check if npx is installed and working
+            List<String> fileSystemCommand = List.of(
+                    "/bin/bash",
+                    "-c",
+                    "/Users/stephan/.nvm/versions/node/v22.14.0/bin/npx -y @modelcontextprotocol/server-filesystem " + chatMessageContext.getProject().getBasePath());
+
+            McpClient mcpFileSystemClient = initStdioClient(fileSystemCommand);
+
+            List<String> thinkingCommand = List.of(
+                    "/bin/bash",
+                    "-c",
+                    "/Users/stephan/.nvm/versions/node/v22.14.0/bin/npx -y @modelcontextprotocol/server-sequential-thinking");
+
+            McpClient mcpThinkingSystem = initStdioClient(thinkingCommand);
+
+            ToolProvider fileSystemToolProvider = McpToolProvider.builder()
+                    .mcpClients(List.of(mcpThinkingSystem, mcpFileSystemClient))
+                    .build();
+
             ClipboardUtil.copyToClipboard(messages.toString());
 
-            ChatResponse chatResponse = chatLanguageModel.chat(messages);
-            ChatMemoryService.getInstance().add(chatMessageContext.getProject(), chatResponse.aiMessage());
+         // ChatResponse chatResponse = chatLanguageModel.chat(messages);
+            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
 
-            return chatResponse;
+            ChatMemory chatMemoryProvider = chatMemoryService.get(chatMessageContext.getProject().getLocationHash());
+
+            Bot bot = AiServices.builder(Bot.class)
+                    .chatLanguageModel(chatLanguageModel)
+                    .toolProvider(fileSystemToolProvider)
+                    .chatMemory(chatMemoryProvider)
+                    .build();
+
+            String query = chatMessageContext.getUserMessage().singleText();
+            String queryResponse = bot.chat(query);
+
+            // chatMemoryService.add(chatMessageContext.getProject(), AiMessage.aiMessage(chatResponse));
+
+            return ChatResponse.builder()
+                    .aiMessage(AiMessage.aiMessage(queryResponse))
+                    .build();
 
         } catch (Exception e) {
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
@@ -147,5 +216,9 @@ public class PromptExecutionService {
             ChatMemoryService.getInstance().removeLast(chatMessageContext.getProject());
             throw new ProviderUnavailableException(e.getMessage());
         }
+    }
+
+    interface Bot {
+        String chat(String message);
     }
 }

@@ -50,7 +50,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "1.0.0-beta1"
+    val lg4j_version = "1.0.0-beta2"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
@@ -68,6 +68,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")

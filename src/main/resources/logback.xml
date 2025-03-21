@@ -10,4 +10,14 @@
     </root>
 
     <logger name="com.devoxx.genie" level="DEBUG"/>
+    <logger name="dev.langchain4j.mcp" level="DEBUG"/>
+
+    <appender name="CALLBACK" class="com.devoxx.genie.service.mcp.MCPCallbackLogger">
+
+    </appender>
+
+    <logger name="dev.langchain4j.mcp.client.transport.stdio" level="DEBUG">
+        <appender-ref ref="CALLBACK" />
+    </logger>
+
 </configuration>

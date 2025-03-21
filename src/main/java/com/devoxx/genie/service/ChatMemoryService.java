@@ -3,9 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.listener.ChatMemorySizeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -13,6 +11,8 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import org.jetbrains.annotations.NotNull;
@@ -21,11 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChatMemoryService implements ChatMemorySizeListener {
+public class ChatMemoryService implements ChatMemoryProvider {
 
     private final Map<String, MessageWindowChatMemory> projectMemories = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
-    private Project project;
     private LanguageModel currentLanguageModel;
 
     public static ChatMemoryService getInstance() {
@@ -33,17 +32,7 @@ public class ChatMemoryService implements ChatMemorySizeListener {
     }
 
     public void init(@NotNull Project project) {
-        this.project = project;
         createChatMemory(project.getLocationHash(), DevoxxGenieStateService.getInstance().getChatMemorySize());
-        createChangeListener();
-    }
-
-    // TODO - This method is currently not used anywhere in the codebase
-    // TODO - Should be triggered when user changes the chat memory size in the settings
-    private void createChangeListener() {
-        project.getMessageBus()
-                .connect()
-                .subscribe(AppTopics.CHAT_MEMORY_SIZE_TOPIC, this);
     }
 
     public void clear(@NotNull Project project) {
@@ -88,11 +77,6 @@ public class ChatMemoryService implements ChatMemorySizeListener {
         return projectMemories.get(project.getLocationHash()).messages().isEmpty();
     }
 
-    @Override
-    public void onChatMemorySizeChanged(int chatMemorySize) {
-        projectMemories.forEach((project, memory) -> createChatMemory(project, chatMemorySize));
-    }
-
     private void createChatMemory(@NotNull String projectHash, int chatMemorySize) {
         MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .id("devoxxgenie-" + projectHash)
@@ -111,5 +95,10 @@ public class ChatMemoryService implements ChatMemorySizeListener {
                 add(project, AiMessage.from(message.getContent()));
             }
         }
+    }
+
+    @Override
+    public ChatMemory get(Object projectHash) {
+        return projectMemories.get((String) projectHash);
     }
 }
