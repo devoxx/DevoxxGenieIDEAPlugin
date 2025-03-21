@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * Represents an MCP server configuration.
@@ -29,4 +30,12 @@ public class MCPServer {
     
     @Builder.Default
     private boolean enabled = true;
+    
+    @Builder.Default
+    private List<String> availableTools = new ArrayList<>();
+    
+    @Builder.Default
+    private Map<String, String> toolDescriptions = new HashMap<>();
+    
+    private String toolsDescription;
 }
