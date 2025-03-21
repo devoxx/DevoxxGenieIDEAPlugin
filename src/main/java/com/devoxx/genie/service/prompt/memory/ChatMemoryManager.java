@@ -5,12 +5,15 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +25,9 @@ import java.util.List;
 import static com.devoxx.genie.model.Constant.MARKDOWN;
 
 /**
- * Central orchestrator for all chat memory operations.
- * Coordinates memory initialization, maintenance, and interactions with the chat memory store.
+ * Manages high-level chat memory operations and coordinates memory lifecycle.
+ * This class is responsible for business logic around memory operations,
+ * including system prompt handling, context preparation, and conversation management.
  */
 @Slf4j
 public class ChatMemoryManager {
@@ -41,198 +45,236 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Initialize the chat memory for a project.
-     * Should be called when starting a new conversation or session.
-     *
+     * Initializes memory for a project with the configured size
      * @param project The project to initialize memory for
      */
     public void initializeMemory(@NotNull Project project) {
-        int chatMemorySize = DevoxxGenieStateService.getInstance().getChatMemorySize();
-        chatMemoryService.initialize(project, chatMemorySize);
-        log.debug("Chat memory initialized for project: " + project.getLocationHash());
+        try {
+            int chatMemorySize = DevoxxGenieStateService.getInstance().getChatMemorySize();
+            chatMemoryService.initialize(project, chatMemorySize);
+            log.debug("Chat memory initialized for project: {}", project.getLocationHash());
+        } catch (Exception e) {
+            throw new MemoryException("Failed to initialize chat memory", e);
+        }
     }
 
     /**
-     * Prepare the memory for a new conversation.
-     * Adds system message if needed based on the language model.
-     *
-     * @param chatMessageContext The context for the chat message
+     * Prepares memory for a conversation context, adding system message if needed
+     * @param context The chat message context to prepare memory for
      */
-    public void prepareMemory(@NotNull ChatMessageContext chatMessageContext) {
-        Project project = chatMessageContext.getProject();
-        
-        // If memory isn't initialized yet, do it now
-        if (chatMemoryService.isEmpty(project)) {
-            log.debug("Preparing memory with initial system message if needed");
+    public void prepareMemory(@NotNull ChatMessageContext context) {
+        try {
+            Project project = context.getProject();
 
-            if (shouldIncludeSystemMessage(chatMessageContext)) {
-                String systemPrompt = buildSystemPrompt(chatMessageContext);
-                chatMemoryService.add(project, SystemMessage.from(systemPrompt));
-                log.debug("Added system message to memory");
+            // If memory isn't initialized yet, do it now
+            if (chatMemoryService.isEmpty(project)) {
+                log.debug("Preparing memory with initial system message if needed");
+
+                if (shouldIncludeSystemMessage(context)) {
+                    String systemPrompt = buildSystemPrompt(context);
+                    chatMemoryService.addMessage(project, SystemMessage.from(systemPrompt));
+                    log.debug("Added system message to memory");
+                }
             }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to prepare memory", e);
         }
     }
 
     /**
-     * Add a user message to the chat memory.
-     *
-     * @param chatMessageContext The context containing the user message
+     * Adds user message to memory from the provided context
+     * @param context The chat message context containing the user message
      */
-    public void addUserMessage(@NotNull ChatMessageContext chatMessageContext) {
-        messageCreationService.addUserMessageToContext(chatMessageContext);
-        Project project = chatMessageContext.getProject();
-        chatMemoryService.add(project, chatMessageContext.getUserMessage());
-        log.debug("Added user message to memory");
+    public void addUserMessage(@NotNull ChatMessageContext context) {
+        try {
+            messageCreationService.addUserMessageToContext(context);
+            chatMemoryService.addMessage(context.getProject(), context.getUserMessage());
+            log.debug("Added user message to memory");
+        } catch (Exception e) {
+            throw new MemoryException("Failed to add user message to memory", e);
+        }
     }
 
     /**
-     * Add an AI response to the chat memory.
-     *
-     * @param chatMessageContext The context containing the AI response
+     * Adds AI response to memory from the provided context
+     * @param context The chat message context containing the AI message
      */
-    public void addAiResponse(@NotNull ChatMessageContext chatMessageContext) {
-        if (chatMessageContext.getAiMessage() != null) {
-            Project project = chatMessageContext.getProject();
-            chatMemoryService.add(project, chatMessageContext.getAiMessage());
-            log.debug("Added AI response to memory");
+    public void addAiResponse(@NotNull ChatMessageContext context) {
+        try {
+            if (context.getAiMessage() != null) {
+                chatMemoryService.addMessage(context.getProject(), context.getAiMessage());
+                log.debug("Added AI response to memory");
+            }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to add AI response to memory", e);
         }
     }
 
     /**
-     * Remove the last exchange (user question and AI response) from memory.
-     * Useful in case of errors or cancellations.
-     *
-     * @param chatMessageContext The context containing the exchange to remove
+     * Removes the most recent conversation exchange (user and AI messages) from memory
+     * @param context The chat message context for the exchange to remove
      */
-    public void removeLastExchange(@NotNull ChatMessageContext chatMessageContext) {
-        Project project = chatMessageContext.getProject();
-        List<ChatMessage> messagesToRemove = new ArrayList<>();
-        
-        if (chatMessageContext.getAiMessage() != null) {
-            messagesToRemove.add(chatMessageContext.getAiMessage());
+    public void removeLastExchange(@NotNull ChatMessageContext context) {
+        try {
+            List<ChatMessage> messagesToRemove = new ArrayList<>();
+
+            if (context.getAiMessage() != null) {
+                messagesToRemove.add(context.getAiMessage());
+            }
+
+            if (context.getUserMessage() != null) {
+                messagesToRemove.add(context.getUserMessage());
+            }
+
+            if (!messagesToRemove.isEmpty()) {
+                chatMemoryService.removeMessages(context.getProject(), messagesToRemove);
+                log.debug("Removed last exchange from memory");
+            }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to remove last exchange from memory", e);
         }
-        
-        if (chatMessageContext.getUserMessage() != null) {
-            messagesToRemove.add(chatMessageContext.getUserMessage());
-        }
-        
-        chatMemoryService.removeMessages(project, messagesToRemove);
-        log.debug("Removed last exchange from memory");
     }
 
     /**
-     * Remove only the last user message from memory.
-     * Used when a user cancels a prompt before receiving an AI response.
-     *
-     * @param chatMessageContext The context containing the user message to remove
+     * Removes only the last user message from memory
+     * @param context The chat message context containing the user message to remove
      */
-    public void removeLastUserMessage(@NotNull ChatMessageContext chatMessageContext) {
-        Project project = chatMessageContext.getProject();
-        List<ChatMessage> messagesToRemove = new ArrayList<>();
-        
-        if (chatMessageContext.getUserMessage() != null) {
-            messagesToRemove.add(chatMessageContext.getUserMessage());
+    public void removeLastUserMessage(@NotNull ChatMessageContext context) {
+        try {
+            if (context.getUserMessage() != null) {
+                chatMemoryService.removeMessages(
+                        context.getProject(),
+                        List.of(context.getUserMessage())
+                );
+                log.debug("Removed last user message from memory");
+            }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to remove last user message from memory", e);
         }
-        
-        chatMemoryService.removeMessages(project, messagesToRemove);
-        log.debug("Removed last user message from memory");
     }
 
     /**
-     * Remove only the last AI message from memory.
-     * Used when a user removes an AI response from the conversation.
-     *
-     * @param chatMessageContext The context containing the AI message to remove
+     * Removes only the last AI message from memory
+     * @param context The chat message context containing the AI message to remove
      */
-    public void removeLastAIMessage(@NotNull ChatMessageContext chatMessageContext) {
-        Project project = chatMessageContext.getProject();
-        List<ChatMessage> messagesToRemove = new ArrayList<>();
-        
-        if (chatMessageContext.getAiMessage() != null) {
-            messagesToRemove.add(chatMessageContext.getAiMessage());
+    public void removeLastAIMessage(@NotNull ChatMessageContext context) {
+        try {
+            if (context.getAiMessage() != null) {
+                chatMemoryService.removeMessages(
+                        context.getProject(),
+                        List.of(context.getAiMessage())
+                );
+                log.debug("Removed last AI message from memory");
+            }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to remove last AI message from memory", e);
         }
-        
-        chatMemoryService.removeMessages(project, messagesToRemove);
-        log.debug("Removed last AI message from memory");
     }
 
     /**
-     * Remove the last message from memory.
-     *
-     * @param project The project to remove the message from
+     * Removes the last message from memory regardless of type
+     * @param project The project to remove the last message from
      */
     public void removeLastMessage(@NotNull Project project) {
-        chatMemoryService.removeLastMessage(project);
-        log.debug("Removed last message from memory");
+        try {
+            chatMemoryService.removeLastMessage(project);
+            log.debug("Removed last message from memory");
+        } catch (Exception e) {
+            throw new MemoryException("Failed to remove last message from memory", e);
+        }
     }
 
     /**
-     * Clear all messages from memory for a project.
-     *
+     * Clears all messages from memory for a project
      * @param project The project to clear memory for
      */
     public void clearMemory(@NotNull Project project) {
-        chatMemoryService.clear(project);
-        log.debug("Cleared all messages from memory for project: " + project.getLocationHash());
+        try {
+            chatMemoryService.clearMemory(project);
+            log.debug("Cleared all messages from memory for project: {}", project.getLocationHash());
+        } catch (Exception e) {
+            throw new MemoryException("Failed to clear memory", e);
+        }
     }
 
     /**
-     * Get all messages from memory for a project.
-     *
+     * Gets all messages from memory for a project
      * @param project The project to get messages for
      * @return List of chat messages
      */
     public List<ChatMessage> getMessages(@NotNull Project project) {
-        return chatMemoryService.getMessages(project);
+        try {
+            return chatMemoryService.getMessages(project);
+        } catch (Exception e) {
+            throw new MemoryException("Failed to get messages from memory", e);
+        }
     }
 
     /**
-     * Check if memory is empty for a project.
-     *
+     * Checks if memory is empty for a project
      * @param project The project to check
-     * @return True if memory is empty
+     * @return true if memory is empty, false otherwise
      */
     public boolean isMemoryEmpty(@NotNull Project project) {
-        return chatMemoryService.isEmpty(project);
+        try {
+            return chatMemoryService.isEmpty(project);
+        } catch (Exception e) {
+            throw new MemoryException("Failed to check if memory is empty", e);
+        }
     }
 
     /**
-     * Get the ChatMemory object for a project.
-     *
-     * @param projectHash The project hash to get memory for
-     * @return The ChatMemory object
+     * Gets the chat memory instance for a project
+     * @param projectHash The hash of the project to get memory for
+     * @return ChatMemory instance
      */
     public ChatMemory getChatMemory(String projectHash) {
-        return chatMemoryService.get(projectHash);
+        try {
+            return chatMemoryService.get(projectHash);
+        } catch (Exception e) {
+            throw new MemoryException("Failed to get chat memory", e);
+        }
     }
 
     /**
-     * Restore a conversation from a saved model.
-     *
+     * Restores a conversation from a saved model
      * @param project The project to restore the conversation for
      * @param conversation The conversation to restore
      */
     public void restoreConversation(@NotNull Project project, @NotNull Conversation conversation) {
-        chatMemoryService.restoreConversation(project, conversation);
-        log.debug("Restored conversation from saved model");
+        try {
+            // First clear existing memory
+            chatMemoryService.clearMemory(project);
+
+            // Convert and add each message
+            for (com.devoxx.genie.model.conversation.ChatMessage message : conversation.getMessages()) {
+                if (message.isUser()) {
+                    chatMemoryService.addMessage(project, UserMessage.from(message.getContent()));
+                } else {
+                    chatMemoryService.addMessage(project, AiMessage.from(message.getContent()));
+                }
+            }
+            log.debug("Restored conversation from saved model");
+        } catch (Exception e) {
+            throw new MemoryException("Failed to restore conversation", e);
+        }
     }
 
     /**
-     * Determine if a system message should be included based on the model.
-     *
-     * @param chatMessageContext The chat message context
-     * @return True if a system message should be included
+     * Determines if a system message should be included based on model type
+     * @param context The context containing model information
+     * @return true if system message should be included, false otherwise
      */
-    private boolean shouldIncludeSystemMessage(@NotNull ChatMessageContext chatMessageContext) {
-        LanguageModel model = chatMessageContext.getLanguageModel();
-        
+    private boolean shouldIncludeSystemMessage(@NotNull ChatMessageContext context) {
+        LanguageModel model = context.getLanguageModel();
+
         // If the language model is OpenAI o1 model, do not include system message
         if (ChatMessageContextUtil.isOpenAIo1Model(model)) {
             return false;
         }
 
         // Check for Bedrock Mistral AI model
-        if (chatMessageContext.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
+        if (context.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
             // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
             return bedrockChatModel.provider().name().startsWith("mistral.");
         }
@@ -241,23 +283,22 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Build the system prompt with appropriate instructions.
-     *
-     * @param chatMessageContext The chat message context
+     * Builds system prompt with optional MCP instructions
+     * @param context The context for building the system prompt
      * @return The complete system prompt
      */
-    private String buildSystemPrompt(@NotNull ChatMessageContext chatMessageContext) {
+    private String buildSystemPrompt(@NotNull ChatMessageContext context) {
         String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + MARKDOWN;
 
         // Add MCP instructions to system prompt if MCP is enabled
         if (MCPService.isMCPEnabled()) {
-            systemPrompt += "<MCP_INSTRUCTION>The project base directory is " + 
-                            chatMessageContext.getProject().getBasePath() +
-                            "\nMake sure to use this information for your MCP tooling calls\n" +
-                            "</MCP_INSTRUCTION>";
+            systemPrompt += "<MCP_INSTRUCTION>The project base directory is " +
+                    context.getProject().getBasePath() +
+                    "\nMake sure to use this information for your MCP tooling calls\n" +
+                    "</MCP_INSTRUCTION>";
             MCPService.logDebug("Added MCP instructions to system prompt");
         }
-        
+
         return systemPrompt;
     }
 }

@@ -60,7 +60,15 @@ public class FileScanner {
      * @param startDirectory the starting directory for scanning
      */
     public void initGitignoreParser(Project project, VirtualFile startDirectory) {
-        String projectBasePath = determineCorrectProjectBaseDir(project, startDirectory);
+        String projectBasePath;
+        if (startDirectory == null) {
+            // Use project base path when no specific directory is provided
+            projectBasePath = project.getBasePath();
+            log.info("Using project base path as startDirectory is null: " + projectBasePath);
+        } else {
+            projectBasePath = determineCorrectProjectBaseDir(project, startDirectory);
+        }
+        
         if (projectBasePath == null) {
             log.error("Project base directory could not be determined. GitIgnore parsing was not initialized.");
             return;

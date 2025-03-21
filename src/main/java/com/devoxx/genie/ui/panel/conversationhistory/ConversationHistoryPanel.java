@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel.conversationhistory;
 
 import com.devoxx.genie.model.conversation.Conversation;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -291,7 +291,7 @@ public class ConversationHistoryPanel extends JPanel {
     }
 
     private void updateChatMemory(Conversation conversation) {
-        ChatMemoryService.getInstance().restoreConversation(project, conversation);
+        ChatMemoryManager.getInstance().restoreConversation(project, conversation);
     }
 
     private static @NotNull String formatTimeSince(String timestamp) {

@@ -48,22 +48,15 @@ public class ProjectScannerService {
      * @return The ProjectFileIndex for the specified project
      */
     private ProjectFileIndex getProjectFileIndex(@NotNull Project project) {
-    String projectLocationHash = project.getLocationHash();
-    LOG.info("Getting ProjectFileIndex for project: " + project.getName() + 
-    " with location hash: " + projectLocationHash);
-    
-    ProjectFileIndex fileIndex = projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
-    LOG.info("Creating new ProjectFileIndex for project: " + project.getName());
-    return ProjectFileIndex.getInstance(project);
-    });
-        
-        // Validate that the ProjectFileIndex is correctly initialized
-        if (fileIndex == null) {
-            LOG.error("Failed to create ProjectFileIndex for project: " + project.getName());
-        } else {
-            LOG.info("Successfully retrieved ProjectFileIndex for project: " + project.getName());
-        }
-        
+        String projectLocationHash = project.getLocationHash();
+        LOG.info("Getting ProjectFileIndex for project: " + project.getName() +
+                " with location hash: " + projectLocationHash);
+
+        ProjectFileIndex fileIndex = projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
+            LOG.info("Creating new ProjectFileIndex for project: " + project.getName());
+            return ProjectFileIndex.getInstance(project);
+        });
+
         return fileIndex;
     }
 
@@ -80,11 +73,21 @@ public class ProjectScannerService {
         ScanContentResult scanContentResult = new ScanContentResult();
         ReadAction.run(() -> {
             fileScanner.reset();
-            fileScanner.initGitignoreParser(project, startDirectory);
-            
+
+            // Get a valid startDirectory if null
+            VirtualFile resolvedDirectory = startDirectory;
+            if (resolvedDirectory == null) {
+                // Find the project root directory
+                resolvedDirectory = fileScanner.scanProjectModules(project);
+                LOG.info("Resolved null startDirectory to project root: " +
+                        (resolvedDirectory != null ? resolvedDirectory.getPath() : "null"));
+            }
+
+            fileScanner.initGitignoreParser(project, resolvedDirectory);
+
             LOG.info("Starting content scan for " + (startDirectory != null ? startDirectory.getPath() : "entire project"));
             String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult, projectFileIndex);
-            
+
             // Log included files for debugging
             LOG.info("Files included after scan: " + fileScanner.getIncludedFiles().size());
             fileScanner.getIncludedFiles().forEach(file -> {
@@ -102,10 +105,10 @@ public class ProjectScannerService {
             scanContentResult.setFileCount(fileScanner.getFileCount());
             scanContentResult.setSkippedFileCount(fileScanner.getSkippedFileCount());
             scanContentResult.setSkippedDirectoryCount(fileScanner.getSkippedDirectoryCount());
-            
-            LOG.info("Scan complete. Files: " + fileScanner.getFileCount() + 
-                     ", Skipped files: " + fileScanner.getSkippedFileCount() + 
-                     ", Skipped directories: " + fileScanner.getSkippedDirectoryCount());
+
+            LOG.info("Scan complete. Files: " + fileScanner.getFileCount() +
+                    ", Skipped files: " + fileScanner.getSkippedFileCount() +
+                    ", Skipped directories: " + fileScanner.getSkippedDirectoryCount());
         });
         return scanContentResult;
     }

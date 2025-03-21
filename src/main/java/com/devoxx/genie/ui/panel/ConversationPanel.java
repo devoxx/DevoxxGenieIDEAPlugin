@@ -150,7 +150,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     @Override
     public void startNewConversation() {
         FileListManager.getInstance().clear(project);
-        ChatMemoryService.getInstance().clear(project);
+        ChatMemoryService.getInstance().clearMemory(project);
 
         chatService.startNewConversation("");
 

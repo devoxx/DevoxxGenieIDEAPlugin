@@ -3,6 +3,7 @@ package com.devoxx.genie.service.prompt.streaming;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
@@ -79,8 +80,8 @@ public class StreamingResponseHandler implements dev.langchain4j.model.chat.resp
             project.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                 .onNewConversation(context);
-            
-            ChatMemoryService.getInstance().add(context.getProject(), response.aiMessage());
+
+            ChatMemoryManager.getInstance().addAiResponse(context);
             
             // Add file references if any
             if (!FileListManager.getInstance().isEmpty(context.getProject())) {
