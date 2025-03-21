@@ -4,13 +4,13 @@ import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.prompt.cancellation.PromptCancellationService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategy;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
-import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -32,7 +32,7 @@ public class PromptExecutionService {
 
     private final PromptCommandProcessor commandProcessor;
     private final PromptExecutionStrategyFactory strategyFactory;
-    private final PromptTaskTracker taskTracker;
+    private final PromptCancellationService cancellationService;
     private final Project project;
 
     public static PromptExecutionService getInstance(@NotNull Project project) {
@@ -43,7 +43,7 @@ public class PromptExecutionService {
         this.project = project;
         this.commandProcessor = PromptCommandProcessor.getInstance();
         this.strategyFactory = PromptExecutionStrategyFactory.getInstance();
-        this.taskTracker = PromptTaskTracker.getInstance();
+        this.cancellationService = PromptCancellationService.getInstance();
     }
 
     /**
@@ -60,8 +60,8 @@ public class PromptExecutionService {
         Project project = context.getProject();
         
         // Cancel any running executions for this project
-        if (taskTracker.cancelAllTasks(project) > 0) {
-            log.debug("Cancelled all existing tasks for project");
+        if (cancellationService.cancelAllExecutions(project) > 0) {
+            log.debug("Cancelled all existing executions for project");
             enableButtons.run();
             return;
         }
@@ -86,13 +86,16 @@ public class PromptExecutionService {
                 public void onCancel() {
                     super.onCancel();
                     log.info("Prompt execution was cancelled by user.");
-                    taskTracker.cancelAllTasks(project);
+                    cancellationService.cancelAllExecutions(project);
                 }
             }
         );
 
         // Create appropriate strategy
         PromptExecutionStrategy strategy = strategyFactory.createStrategy(context);
+        
+        // Register the strategy and panel with cancellation service
+        cancellationService.registerExecution(project, context.getId(), strategy, panel);
         
         // Execute the prompt and handle completion
         PromptTask<PromptResult> task = strategy.execute(context, panel);
@@ -108,6 +111,9 @@ public class PromptExecutionService {
                     log.debug("Prompt execution completed with result: {}", result);
                 }
                 
+                // Unregister from cancellation service upon completion
+                cancellationService.unregisterExecution(project, context.getId());
+                
                 cleanupAfterExecution(project, enableButtons);
             });
         });
@@ -119,8 +125,16 @@ public class PromptExecutionService {
      * @param project The project to stop execution for
      */
     public void stopExecution(Project project) {
-        int count = taskTracker.cancelAllTasks(project);
-        log.debug("Cancelled {} tasks for project {}", count, project.getName());
+        int count = cancellationService.cancelAllExecutions(project);
+        log.debug("Cancelled {} executions for project {}", count, project.getName());
+    }
+    
+    /**
+     * Cancel a specific execution by context ID
+     */
+    public void cancelExecution(@NotNull String contextId) {
+        cancellationService.cancelExecution(project, contextId);
+        log.debug("Cancelled execution for context {}", contextId);
     }
     
     /**

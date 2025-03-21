@@ -2,12 +2,10 @@ package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.error.ModelException;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.streaming.StreamingResponseHandler;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
-import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
@@ -24,29 +22,24 @@ import java.util.concurrent.atomic.AtomicReference;
  * Strategy for executing streaming prompts.
  */
 @Slf4j
-public class StreamingPromptStrategy implements PromptExecutionStrategy {
+public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
-    private final ChatMemoryManager chatMemoryManager;
-    private final ThreadPoolManager threadPoolManager;
-    private final Project project;
     private final AtomicReference<StreamingResponseHandler> currentHandler = new AtomicReference<>();
 
     public StreamingPromptStrategy(Project project) {
-        this.project = project;
-        this.chatMemoryManager = ChatMemoryManager.getInstance();
-        this.threadPoolManager = ThreadPoolManager.getInstance();
+        super(project);
     }
 
-    /**
-     * Execute the prompt using streaming approach.
-     */
     @Override
-    public PromptTask<PromptResult> execute(@NotNull ChatMessageContext context,
-                                          @NotNull PromptOutputPanel panel) {
-        log.debug("Executing streaming prompt for context: {}", context.getId());
-        
-        // Create a self-managed prompt task
-        PromptTask<PromptResult> resultTask = new PromptTask<>(project);
+    protected String getStrategyName() {
+        return "streaming prompt";
+    }
+    
+    @Override
+    protected void executeStrategySpecific(
+            @NotNull ChatMessageContext context,
+            @NotNull PromptOutputPanel panel,
+            @NotNull PromptTask<PromptResult> resultTask) {
         
         StreamingChatLanguageModel streamingModel = context.getStreamingChatLanguageModel();
         if (streamingModel == null) {
@@ -55,16 +48,12 @@ public class StreamingPromptStrategy implements PromptExecutionStrategy {
             
             ModelException error = new ModelException("Streaming model not available");
             resultTask.complete(PromptResult.failure(context, error));
-            return resultTask;
+            return;
         }
 
         // Prepare memory and add user prompt
-        chatMemoryManager.prepareMemory(context);
-        chatMemoryManager.addUserMessage(context);
+        prepareMemory(context);
         
-        // Display the user prompt
-        panel.addUserPrompt(context);
-
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(
             context, 
@@ -87,7 +76,7 @@ public class StreamingPromptStrategy implements PromptExecutionStrategy {
         // Check for early cancellation
         if (resultTask.isCancelled()) {
             handler.stop();
-            return resultTask;
+            return;
         }
 
         // Execute streaming using thread pool
@@ -104,7 +93,7 @@ public class StreamingPromptStrategy implements PromptExecutionStrategy {
             }
         });
         
-        // Handle cancellation
+        // Add additional cancellation handling
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {
                 StreamingResponseHandler h = currentHandler.getAndSet(null);
@@ -113,8 +102,6 @@ public class StreamingPromptStrategy implements PromptExecutionStrategy {
                 }
             }
         });
-        
-        return resultTask;
     }
 
     /**

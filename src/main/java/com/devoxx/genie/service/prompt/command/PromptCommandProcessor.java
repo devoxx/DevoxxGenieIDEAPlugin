@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.command;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.util.FileUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -45,8 +46,8 @@ public class PromptCommandProcessor {
      */
     public Optional<String> processCommands(@NotNull ChatMessageContext chatMessageContext,
                                           @NotNull PromptOutputPanel promptOutputPanel) {
-        // Ensure editor info is populated
-        if (chatMessageContext.getEditorInfo() == null) {
+        // Ensure editor info is populated, but check if MCP is enabled first
+        if (chatMessageContext.getEditorInfo() == null && !MCPService.isMCPEnabled()) {
             chatMessageContext.setEditorInfo(getEditorInfo(chatMessageContext.getProject()));
         }
         

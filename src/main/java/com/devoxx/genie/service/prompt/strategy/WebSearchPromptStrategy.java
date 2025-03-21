@@ -3,10 +3,8 @@ package com.devoxx.genie.service.prompt.strategy;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.WebSearchException;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
-import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
@@ -17,35 +15,27 @@ import org.jetbrains.annotations.NotNull;
  * Strategy for executing web search based prompts.
  */
 @Slf4j
-public class WebSearchPromptStrategy implements PromptExecutionStrategy {
-
-    private final ChatMemoryManager chatMemoryManager;
-    private final ThreadPoolManager threadPoolManager;
-    private final Project project;
+public class WebSearchPromptStrategy extends AbstractPromptExecutionStrategy {
 
     public WebSearchPromptStrategy(@NotNull Project project) {
-        this.project = project;
-        this.chatMemoryManager = ChatMemoryManager.getInstance();
-        this.threadPoolManager = ThreadPoolManager.getInstance();
+        super(project);
     }
 
-    /**
-     * Execute a prompt using web search.
-     */
     @Override
-    public PromptTask<PromptResult> execute(@NotNull ChatMessageContext context,
-                                          @NotNull PromptOutputPanel panel) {
+    protected String getStrategyName() {
+        return "web search prompt";
+    }
 
+    @Override
+    protected void executeStrategySpecific(
+            @NotNull ChatMessageContext context, 
+            @NotNull PromptOutputPanel panel,
+            @NotNull PromptTask<PromptResult> resultTask) {
+        
         log.debug("Web search with query: {}", context.getUserMessage().singleText());
 
-        // Create a self-managed prompt task
-        PromptTask<PromptResult> resultTask = new PromptTask<>(project);
-        
-        panel.addUserPrompt(context);
-
         // Add user message to context and memory
-        chatMemoryManager.prepareMemory(context);
-        chatMemoryManager.addUserMessage(context);
+        prepareMemory(context);
 
         // Track execution time
         long startTime = System.currentTimeMillis();
@@ -79,22 +69,14 @@ public class WebSearchPromptStrategy implements PromptExecutionStrategy {
                 resultTask.complete(PromptResult.failure(context, webSearchError));
             }
         });
-        
-        // Handle cancellation
-        resultTask.whenComplete((result, error) -> {
-            if (resultTask.isCancelled()) {
-                panel.removeLastUserPrompt(context);
-            }
-        });
-        
-        return resultTask;
     }
 
     /**
      * Cancel the current execution.
+     * This strategy doesn't need specific cancellation logic - the task is self-cancelling.
      */
     @Override
     public void cancel() {
-        // No specific cancellation logic needed - the task is self-cancelling
+        // No specific cancellation logic needed
     }
 }

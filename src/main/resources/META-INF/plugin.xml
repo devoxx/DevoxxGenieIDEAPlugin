@@ -615,6 +615,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryManager"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.command.PromptCommandProcessor"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
