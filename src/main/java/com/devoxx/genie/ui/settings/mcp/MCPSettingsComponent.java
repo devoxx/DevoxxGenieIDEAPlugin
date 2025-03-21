@@ -116,15 +116,23 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     }
 
     private void setupTable() {
-        mcpTable.getColumnModel().getColumn(0).setPreferredWidth(100); // Name
-        mcpTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Command
-        mcpTable.getColumnModel().getColumn(2).setPreferredWidth(400); // Arguments
-        mcpTable.getColumnModel().getColumn(3).setPreferredWidth(100); // Env Count
+        mcpTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // Enabled
+        mcpTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Name
+        mcpTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Command
+        mcpTable.getColumnModel().getColumn(3).setPreferredWidth(400); // Arguments
+        mcpTable.getColumnModel().getColumn(4).setPreferredWidth(100); // Env Count
         
         // Center align the environment count column
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        mcpTable.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
+        mcpTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+        
+        // Add listener for checkbox changes
+        tableModel.addTableModelListener(e -> {
+            if (e.getColumn() == 0) { // Enabled column
+                isModified = true;
+            }
+        });
     }
 
     private void loadCurrentSettings() {
@@ -229,7 +237,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
      * Table model for displaying MCP servers
      */
     private static class MCPServerTableModel extends AbstractTableModel {
-        private final String[] COLUMN_NAMES = {"Name", "Command", "Arguments", "Env Variables"};
+        private final String[] COLUMN_NAMES = {"Enabled", "Name", "Command", "Arguments", "Env Variables"};
         @Getter
         private List<MCPServer> mcpServers = new ArrayList<>();
 
@@ -283,10 +291,11 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         public Object getValueAt(int rowIndex, int columnIndex) {
             MCPServer server = mcpServers.get(rowIndex);
             return switch (columnIndex) {
-                case 0 -> server.getName();
-                case 1 -> server.getCommand();
-                case 2 -> server.getArgs() != null ? String.join(" ", server.getArgs()) : "";
-                case 3 -> server.getEnv() != null ? server.getEnv().size() : 0;
+                case 0 -> server.isEnabled();
+                case 1 -> server.getName();
+                case 2 -> server.getCommand();
+                case 3 -> server.getArgs() != null ? String.join(" ", server.getArgs()) : "";
+                case 4 -> server.getEnv() != null ? server.getEnv().size() : 0;
                 default -> null;
             };
         }
@@ -294,10 +303,26 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         @Override
         public Class<?> getColumnClass(int columnIndex) {
             return switch (columnIndex) {
-                case 0, 1, 2 -> String.class;
-                case 3 -> Integer.class;
+                case 0 -> Boolean.class;
+                case 1, 2, 3 -> String.class;
+                case 4 -> Integer.class;
                 default -> Object.class;
             };
+        }
+        
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            // Only make the 'Enabled' column (index 0) editable
+            return columnIndex == 0;
+        }
+        
+        @Override
+        public void setValueAt(Object value, int rowIndex, int columnIndex) {
+            if (columnIndex == 0 && value instanceof Boolean enabled) {
+                MCPServer server = mcpServers.get(rowIndex);
+                server.setEnabled(enabled);
+                fireTableCellUpdated(rowIndex, columnIndex);
+            }
         }
     }
 }

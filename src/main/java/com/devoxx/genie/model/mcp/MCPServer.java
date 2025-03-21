@@ -26,4 +26,7 @@ public class MCPServer {
     
     @Builder.Default
     private List<String> environment = new java.util.ArrayList<>();
+    
+    @Builder.Default
+    private boolean enabled = true;
 }

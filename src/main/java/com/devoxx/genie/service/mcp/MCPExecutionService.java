@@ -3,7 +3,6 @@ package com.devoxx.genie.service.mcp;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -14,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,10 +46,16 @@ public class MCPExecutionService {
             return null;
         }
         
-        // Create MCP clients for each server
+        // Create MCP clients for each enabled server
         List<McpClient> mcpClients = new ArrayList<>();
         
         for (MCPServer mcpServer : mcpServers.values()) {
+            // Skip disabled servers
+            if (!mcpServer.isEnabled()) {
+                MCPService.logDebug("Skipping disabled MCP server: " + mcpServer.getName());
+                continue;
+            }
+            
             McpClient mcpClient = createMcpClient(mcpServer);
             if (mcpClient != null) {
                 mcpClients.add(mcpClient);
