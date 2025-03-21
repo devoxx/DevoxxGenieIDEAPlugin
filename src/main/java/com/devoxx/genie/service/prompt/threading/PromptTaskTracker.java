@@ -21,7 +21,7 @@ public class PromptTaskTracker {
     private final Map<String, Set<PromptTask<?>>> projectTasks = new ConcurrentHashMap<>();
     
     // Backward compatibility: Map of project hash -> task ID -> task
-    private final Map<String, Map<String, CancellableTask>> legacyTasks = new ConcurrentHashMap<>();
+    // private final Map<String, Map<String, CancellableTask>> legacyTasks = new ConcurrentHashMap<>();
     
     public static PromptTaskTracker getInstance() {
         return ApplicationManager.getApplication().getService(PromptTaskTracker.class);
@@ -79,87 +79,87 @@ public class PromptTaskTracker {
             new HashSet<>(tasks).forEach(task -> task.cancel(true));
         }
         
-        // Handle legacy tasks
-        Map<String, CancellableTask> oldTasks = legacyTasks.get(projectHash);
-        if (oldTasks != null && !oldTasks.isEmpty()) {
-            count += oldTasks.size();
-            log.debug("Cancelling {} legacy tasks for project {}", oldTasks.size(), projectHash);
-            
-            // Cancel all tasks
-            oldTasks.values().forEach(CancellableTask::cancel);
-            oldTasks.clear();
-        }
+//        // Handle legacy tasks
+//        Map<String, CancellableTask> oldTasks = legacyTasks.get(projectHash);
+//        if (oldTasks != null && !oldTasks.isEmpty()) {
+//            count += oldTasks.size();
+//            log.debug("Cancelling {} legacy tasks for project {}", oldTasks.size(), projectHash);
+//
+//            // Cancel all tasks
+//            oldTasks.values().forEach(CancellableTask::cancel);
+//            oldTasks.clear();
+//        }
         
         return count;
     }
-    
-    // === LEGACY SUPPORT METHODS ===
-    
-    /**
-     * Registers a new task for the specified project.
-     * @deprecated Use {@link #registerTask(PromptTask)} instead
-     */
-    @Deprecated
-    public void registerTask(@NotNull Project project, @NotNull String taskId, @NotNull CancellableTask task) {
-        String projectHash = project.getLocationHash();
-        
-        legacyTasks.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
-                   .put(taskId, task);
-        
-        log.debug("Registered legacy task {} for project {}", taskId, projectHash);
-    }
-    
-    /**
-     * Cancels a specific task for the given project.
-     * @deprecated Use {@link PromptTask#cancel(boolean)} instead
-     */
-    @Deprecated
-    public void cancelTask(@NotNull Project project, @NotNull String taskId) {
-        String projectHash = project.getLocationHash();
-        Map<String, CancellableTask> tasks = legacyTasks.get(projectHash);
-        
-        if (tasks == null) {
-            log.debug("No legacy tasks found for project {}", projectHash);
-            return;
-        }
-        
-        CancellableTask task = tasks.remove(taskId);
-        if (task != null) {
-            log.debug("Cancelling legacy task {} for project {}", taskId, projectHash);
-            task.cancel();
-            return;
-        }
 
-        log.debug("Legacy task {} not found for project {}", taskId, projectHash);
-    }
-    
-    /**
-     * Marks a task as completed and removes it from tracking.
-     * @deprecated Use {@link #taskCompleted(PromptTask)} instead
-     */
-    @Deprecated
-    public void taskCompleted(@NotNull Project project, @NotNull String taskId) {
-        String projectHash = project.getLocationHash();
-        Map<String, CancellableTask> tasks = legacyTasks.get(projectHash);
-        
-        if (tasks != null) {
-            tasks.remove(taskId);
-            log.debug("Legacy task {} completed for project {}", taskId, projectHash);
-            
-            // Clean up the project map if empty
-            if (tasks.isEmpty()) {
-                legacyTasks.remove(projectHash);
-            }
-        }
-    }
-    
-    /**
-     * Interface for tasks that can be cancelled.
-     */
-    public interface CancellableTask {
-        /**
-         * Cancels this task.
-         */
-        void cancel();
-    }
+//    // === LEGACY SUPPORT METHODS ===
+//
+//    /**
+//     * Registers a new task for the specified project.
+//     * @deprecated Use {@link #registerTask(PromptTask)} instead
+//     */
+//    @Deprecated
+//    public void registerTask(@NotNull Project project, @NotNull String taskId, @NotNull CancellableTask task) {
+//        String projectHash = project.getLocationHash();
+//
+//        legacyTasks.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
+//                   .put(taskId, task);
+//
+//        log.debug("Registered legacy task {} for project {}", taskId, projectHash);
+//    }
+//
+//    /**
+//     * Cancels a specific task for the given project.
+//     * @deprecated Use {@link PromptTask#cancel(boolean)} instead
+//     */
+//    @Deprecated
+//    public void cancelTask(@NotNull Project project, @NotNull String taskId) {
+//        String projectHash = project.getLocationHash();
+//        Map<String, CancellableTask> tasks = legacyTasks.get(projectHash);
+//
+//        if (tasks == null) {
+//            log.debug("No legacy tasks found for project {}", projectHash);
+//            return;
+//        }
+//
+//        CancellableTask task = tasks.remove(taskId);
+//        if (task != null) {
+//            log.debug("Cancelling legacy task {} for project {}", taskId, projectHash);
+//            task.cancel();
+//            return;
+//        }
+//
+//        log.debug("Legacy task {} not found for project {}", taskId, projectHash);
+//    }
+//
+//    /**
+//     * Marks a task as completed and removes it from tracking.
+//     * @deprecated Use {@link #taskCompleted(PromptTask)} instead
+//     */
+//    @Deprecated
+//    public void taskCompleted(@NotNull Project project, @NotNull String taskId) {
+//        String projectHash = project.getLocationHash();
+//        Map<String, CancellableTask> tasks = legacyTasks.get(projectHash);
+//
+//        if (tasks != null) {
+//            tasks.remove(taskId);
+//            log.debug("Legacy task {} completed for project {}", taskId, projectHash);
+//
+//            // Clean up the project map if empty
+//            if (tasks.isEmpty()) {
+//                legacyTasks.remove(projectHash);
+//            }
+//        }
+//    }
+//
+//    /**
+//     * Interface for tasks that can be cancelled.
+//     */
+//    public interface CancellableTask {
+//        /**
+//         * Cancels this task.
+//         */
+//        void cancel();
+//    }
 }

@@ -18,20 +18,14 @@ import java.util.concurrent.CompletableFuture;
  */
 @Slf4j
 public class PromptTask<T> extends CompletableFuture<T> {
+
     // Key for storing context in user data
     public static final String CONTEXT_KEY = "CHAT_MESSAGE_CONTEXT";
     
-    /**
-     * -- GETTER --
-     *  Get the unique identifier for this task
-     */
     @Getter
     private final String id;
     private final Project project;
-    /**
-     * -- GETTER --
-     *  Check if this task has been cancelled
-     */
+
     @Getter
     private volatile boolean cancelled = false;
     
@@ -80,8 +74,10 @@ public class PromptTask<T> extends CompletableFuture<T> {
         // If this is a prompt task with a context, clean up memory
         if (getUserData(CONTEXT_KEY) != null) {
             ChatMessageContext context = (ChatMessageContext) getUserData(CONTEXT_KEY);
-            ChatMemoryManager.getInstance().removeLastUserMessage(context);
-            log.debug("Cleaned up memory for cancelled task {}", id);
+            if (context != null) {
+                ChatMemoryManager.getInstance().removeLastUserMessage(context);
+                log.debug("Cleaned up memory for cancelled task {}", id);
+            }
         }
         
         PromptTaskTracker.getInstance().taskCompleted(this);

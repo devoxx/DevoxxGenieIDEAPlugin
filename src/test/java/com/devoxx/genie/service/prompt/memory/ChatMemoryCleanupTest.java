@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -113,12 +114,13 @@ public class ChatMemoryCleanupTest {
     @Test
     public void testStreamingCancellation() {
         // Create a streaming response handler
-        Consumer<Object> mockConsumer = mock(Consumer.class);
+        Consumer<ChatResponse> mockResponse = mock(Consumer.class);
+        Consumer<Throwable> mockThrowable = mock(Consumer.class);
         StreamingResponseHandler handler = new StreamingResponseHandler(
             testContext, 
             outputPanel,
-            mockConsumer,
-            mockConsumer
+            mockResponse,
+            mockThrowable
         );
         
         // Add a partial response
