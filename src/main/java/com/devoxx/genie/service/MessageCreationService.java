@@ -15,11 +15,12 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,9 +36,8 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
  * The message creation service for user and system messages.
  * Here's where also the basic prompt "engineering" is happening, including calling the AST magic.
  */
+@Slf4j
 public class MessageCreationService {
-
-    private static final Logger LOG = Logger.getInstance(MessageCreationService.class.getName());
 
     private static final String GIT_DIFF_INSTRUCTIONS = """
             Please analyze the code and provide ONLY the modified code in your response.
@@ -90,7 +90,7 @@ public class MessageCreationService {
 
                     chatMessageContext.setUserMessage(userMessage);
                 } catch (IOException e) {
-                    LOG.error("Failed to read image file");
+                    log.error("Failed to read image file");
                 }
             }
         }
@@ -104,7 +104,7 @@ public class MessageCreationService {
      */
     private void constructUserMessageWithFullContext(@NotNull ChatMessageContext chatMessageContext,
                                                      String context) {
-        LOG.debug("Constructing user message with full context");
+        log.debug("Constructing user message with full context");
         StringBuilder stringBuilder = new StringBuilder();
 
         // If git diff is enabled, add special instructions at the beginning
@@ -124,7 +124,7 @@ public class MessageCreationService {
     }
 
     private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
-        LOG.debug("Constructing user message with combined context");
+        log.debug("Constructing user message with combined context");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -178,7 +178,7 @@ public class MessageCreationService {
      * @return the user message
      */
     private @NotNull String addSemanticSearchResults(@NotNull ChatMessageContext chatMessageContext) {
-        LOG.debug("Adding semantic search results to user message");
+        log.debug("Adding semantic search results to user message");
 
         StringBuilder contextBuilder = new StringBuilder();
 
@@ -214,7 +214,7 @@ public class MessageCreationService {
                 );
             }
         } catch (Exception e) {
-            LOG.warn("Failed to get semantic search results: " + e.getMessage());
+            log.warn("Failed to get semantic search results: " + e.getMessage());
         }
 
         return contextBuilder.toString();
@@ -286,22 +286,22 @@ public class MessageCreationService {
      * @param project the project
      * @return the content of DEVOXXGENIE.md file or null if file not found or can't be read
      */
-    private String readDevoxxGenieMdFile(Project project) {
+    private @Nullable String readDevoxxGenieMdFile(Project project) {
         try {
             if (project == null || project.getBasePath() == null) {
-                LOG.warn("Project or base path is null");
+                log.warn("Project or base path is null");
                 return null;
             }
             
             Path devoxxGenieMdPath = Paths.get(project.getBasePath(), "DEVOXXGENIE.md");
             if (!Files.exists(devoxxGenieMdPath)) {
-                LOG.debug("DEVOXXGENIE.md file not found in project root: " + devoxxGenieMdPath);
+                log.debug("DEVOXXGENIE.md file not found in project root: " + devoxxGenieMdPath);
                 return null;
             }
             
             return Files.readString(devoxxGenieMdPath, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.warn("Failed to read DEVOXXGENIE.md file: " + e.getMessage());
+            log.warn("Failed to read DEVOXXGENIE.md file: " + e.getMessage());
             return null;
         }
     }

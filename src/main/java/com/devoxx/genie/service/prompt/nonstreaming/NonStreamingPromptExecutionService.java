@@ -1,27 +1,25 @@
 package com.devoxx.genie.service.prompt.nonstreaming;
 
-import com.devoxx.genie.error.ErrorHandler;
-import com.devoxx.genie.model.Constant;
+import com.devoxx.genie.service.prompt.error.ExecutionException;
+import com.devoxx.genie.service.prompt.error.MemoryException;
+import com.devoxx.genie.service.prompt.error.ModelException;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.exception.ModelNotActiveException;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
-import com.devoxx.genie.service.prompt.ChatMemoryService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.ClipboardUtil;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
@@ -48,6 +46,11 @@ public class NonStreamingPromptExecutionService {
     private boolean running = false;
 
     private final ReentrantLock queryLock = new ReentrantLock();
+    private final ChatMemoryManager chatMemoryManager;
+
+    public NonStreamingPromptExecutionService() {
+        this.chatMemoryManager = ChatMemoryManager.getInstance();
+    }
 
     @NotNull
     public static NonStreamingPromptExecutionService getInstance() {
@@ -67,29 +70,13 @@ public class NonStreamingPromptExecutionService {
         try {
             if (isCanceled()) return CompletableFuture.completedFuture(null);
 
-            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
-
-            // Add System Message if ChatMemoryService is empty
-            if (ChatMemoryService.getInstance().isEmpty(chatMessageContext.getProject())) {
-                LOG.debug("ChatMemoryService is empty, adding a new SystemMessage");
-
-                if (includeSystemMessage(chatMessageContext)) {
-                    String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + Constant.MARKDOWN;
-
-                    // Add MCP instructions to system prompt if MCP is enabled
-                    if (MCPService.isMCPEnabled()) {
-                        systemPrompt += "<MCP_INSTRUCTION>The project base directory is " + chatMessageContext.getProject().getBasePath() +
-                                "\nMake sure to use this information for your MCP tooling calls\n" +
-                                "</MCP_INSTRUCTION>";
-                        MCPService.logDebug("Added MCP instructions to system prompt");
-                    }
-
-                    chatMemoryService.add(chatMessageContext.getProject(), SystemMessage.from(systemPrompt));
-                }
-            }
-
-            // Add User message to context
-            MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
+            Project project = chatMessageContext.getProject();
+            
+            // Let the ChatMemoryManager handle memory preparation
+            chatMemoryManager.prepareMemory(chatMessageContext);
+            
+            // Let the ChatMemoryManager handle adding the user message
+            chatMemoryManager.addUserMessage(chatMessageContext);
 
             long startTime = System.currentTimeMillis();
 
@@ -102,29 +89,17 @@ public class NonStreamingPromptExecutionService {
                     return result;
                 })
                 .exceptionally(throwable -> {
-                    LOG.error("Error occurred while processing chat message", throwable);
-                    ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                    // Create a specific execution exception and handle it with our standardized handler
+                    ExecutionException executionError = new ExecutionException(
+                        "Error occurred while processing chat message", throwable);
+                    PromptErrorHandler.handleException(project, executionError, chatMessageContext);
+                    // The PromptErrorHandler will handle appropriate recovery like removing failed exchanges
                     return null;
                 });
         } finally {
             queryLock.unlock();
         }
         return queryFuture;
-    }
-
-    private boolean includeSystemMessage(@NotNull ChatMessageContext chatMessageContext) {
-        // If the language model is OpenAI o1 model, do not include system message
-        if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-            return false;
-        }
-
-        // If Bedrock Mistral AI model is selected, do not include system message
-        if (chatMessageContext.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
-            // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
-            return bedrockChatModel.provider().name().startsWith("mistral.");
-        }
-
-        return true;
     }
 
     /**
@@ -142,10 +117,11 @@ public class NonStreamingPromptExecutionService {
         return false;
     }
 
-    private static @NotNull ChatResponse processChatMessage(ChatMessageContext chatMessageContext) {
+    private @NotNull ChatResponse processChatMessage(ChatMessageContext chatMessageContext) {
         try {
+            Project project = chatMessageContext.getProject();
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-            List<ChatMessage> messages = ChatMemoryService.getInstance().messages(chatMessageContext.getProject());
+            List<ChatMessage> messages = chatMemoryManager.getMessages(project);
 
             // Get MCP tool provider if enabled
             ToolProvider mcpToolProvider = null;
@@ -156,24 +132,23 @@ public class NonStreamingPromptExecutionService {
                 if (mcpToolProvider != null) {
                     MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
                 } else {
-                    NotificationUtil.sendNotification(chatMessageContext.getProject(), "MCP is enabled, but no MCP tool provider could be created");
+                    NotificationUtil.sendNotification(project, "MCP is enabled, but no MCP tool provider could be created");
                 }
             }
 
             ClipboardUtil.copyToClipboard(messages.toString());
 
-            // ChatResponse chatResponse = chatLanguageModel.chat(messages);
-            ChatMemoryService chatMemoryService = ChatMemoryService.getInstance();
-            ChatMemory chatMemoryProvider = chatMemoryService.get(chatMessageContext.getProject().getLocationHash());
+            // Get the ChatMemory from the ChatMemoryManager
+            ChatMemory chatMemory = chatMemoryManager.getChatMemory(project.getLocationHash());
 
             // Build the AI service with or without MCP
             Assistant assistant;
             if (mcpToolProvider != null) {
-                MCPService.logDebug( "Using MCP tool provider");
+                MCPService.logDebug("Using MCP tool provider");
                 // With MCP tool provider
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
-                        .chatMemory(chatMemoryProvider)
+                        .chatMemory(chatMemory)
                         .toolProvider(mcpToolProvider)
                         .build();
             } else {
@@ -181,7 +156,7 @@ public class NonStreamingPromptExecutionService {
                 // Without MCP tool provider
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
-                        .chatMemory(chatMemoryProvider)
+                        .chatMemory(chatMemory)
                         .build();
             }
 
@@ -195,10 +170,14 @@ public class NonStreamingPromptExecutionService {
         } catch (Exception e) {
             log.error(e.getMessage());
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
-                throw new ModelNotActiveException("Selected Jan model is not active. Download and make it active or add API Key in Jan settings.");
+                // Use our own ModelException instead of the generic ModelNotActiveException
+                throw new ModelException(
+                    "Selected Jan model is not active. Download and make it active or add API Key in Jan settings.", e);
             }
-            ChatMemoryService.getInstance().removeLast(chatMessageContext.getProject());
-            throw new ProviderUnavailableException(e.getMessage());
+            // Let the ChatMemoryManager handle removing the last message on error
+            chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
+            // Use our own ModelException instead of the generic ProviderUnavailableException
+            throw new ModelException("Provider unavailable: " + e.getMessage(), e);
         }
     }
 

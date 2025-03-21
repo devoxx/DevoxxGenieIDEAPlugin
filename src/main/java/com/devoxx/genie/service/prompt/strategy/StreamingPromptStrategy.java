@@ -1,8 +1,8 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.ChatMemoryManager;
-import com.devoxx.genie.service.prompt.ChatMemoryService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.streaming.StreamingResponseHandler;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -62,7 +62,7 @@ public class StreamingPromptStrategy implements PromptExecutionStrategy {
 
         try {
             // Get all messages from memory
-            List<ChatMessage> messages = ChatMemoryService.getInstance().messages(chatMessageContext.getProject());
+            List<ChatMessage> messages = ChatMemoryService.getInstance().getMessages(chatMessageContext.getProject());
             
             // Start streaming the response
             streamingModel.chat(messages, currentStreamingHandler);

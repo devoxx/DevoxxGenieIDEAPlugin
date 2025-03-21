@@ -60,11 +60,9 @@ public class PromptCommandProcessor {
             if (command.matches(prompt)) {
                 // Process the command and return its result
                 Optional<String> result = command.process(chatMessageContext, promptOutputPanel);
-                
-                if (result.isPresent()) {
-                    // Update the user prompt with the processed version
-                    chatMessageContext.setUserPrompt(result.get());
-                }
+
+                // Update the user prompt with the processed version
+                result.ifPresent(chatMessageContext::setUserPrompt);
                 
                 return result;
             }

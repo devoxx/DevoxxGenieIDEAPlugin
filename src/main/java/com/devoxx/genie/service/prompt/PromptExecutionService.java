@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.prompt;
 
-import com.devoxx.genie.error.ErrorHandler;
+import com.devoxx.genie.service.prompt.error.ExecutionException;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
@@ -90,8 +91,11 @@ public class PromptExecutionService {
             public void onThrowable(@NotNull Throwable error) {
                 super.onThrowable(error);
                 if (!(error instanceof CancellationException)) {
-                    log.error("Error occurred while processing chat message", error);
-                    ErrorHandler.handleError(project, error);
+                    // Create a specific execution exception and handle it with our standardized handler
+                    ExecutionException executionError = new ExecutionException(
+                        "Error occurred during prompt execution", error, 
+                        com.devoxx.genie.service.prompt.error.PromptException.ErrorSeverity.ERROR, true);
+                    PromptErrorHandler.handleException(project, executionError, chatMessageContext);
                 }
                 cleanupAfterExecution(project, enableButtons);
             }

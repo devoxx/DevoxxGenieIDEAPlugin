@@ -1,9 +1,10 @@
 package com.devoxx.genie.service.prompt.strategy;
 
-import com.devoxx.genie.error.ErrorHandler;
+import com.devoxx.genie.service.prompt.error.ExecutionException;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.SemanticFile;
-import com.devoxx.genie.service.prompt.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
@@ -95,8 +96,9 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
                 })
                 .exceptionally(throwable -> {
                     if (!(throwable.getCause() instanceof CancellationException)) {
-                        log.error("Error occurred while processing chat message", throwable);
-                        ErrorHandler.handleError(chatMessageContext.getProject(), throwable);
+                        // Create a specific execution exception and handle it with our standardized handler
+                        ExecutionException executionError = new ExecutionException("Error occurred while processing chat message", throwable);
+                        PromptErrorHandler.handleException(chatMessageContext.getProject(), executionError, chatMessageContext);
                     }
                     resultFuture.completeExceptionally(throwable);
                     return null;
@@ -138,8 +140,10 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
                         "No relevant files found for your search query.");
             }
         } catch (Exception e) {
-            log.error("Error performing semantic search", e);
-            ErrorHandler.handleError(chatMessageContext.getProject(), e);
+            // Create a specific execution exception for semantic search errors
+            ExecutionException searchError = new ExecutionException("Error performing semantic search", e, 
+                    com.devoxx.genie.service.prompt.error.PromptException.ErrorSeverity.WARNING, true);
+            PromptErrorHandler.handleException(chatMessageContext.getProject(), searchError, chatMessageContext);
         }
     }
 }

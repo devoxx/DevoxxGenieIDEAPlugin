@@ -85,16 +85,6 @@ private final Map<String, ProjectFileIndex> projectFileIndexMap = new HashMap<St
         return scanContentResult;
     }
 
-    // For backward compatibility, keep the old method signature and delegate to the new one
-    private @NotNull String scanContent(Project project,
-                                       VirtualFile startDirectory,
-                                       int windowContextMaxTokens,
-                                       boolean isTokenCalculation,
-                                       ScanContentResult scanContentResult) {
-        return scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, 
-                         scanContentResult, getProjectFileIndex(project));
-    }
-
     // Changed from private to public for better testability
     public @NotNull String scanContent(Project project,
                                        VirtualFile startDirectory,

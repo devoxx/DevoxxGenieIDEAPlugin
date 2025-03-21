@@ -1,8 +1,9 @@
 package com.devoxx.genie.service.prompt.streaming;
 
-import com.devoxx.genie.error.ErrorHandler;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
+import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.ChatMemoryService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
@@ -83,6 +84,8 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
     @Override
     public void onError(Throwable error) {
         enableButtons.run();
-        ErrorHandler.handleError(chatMessageContext.getProject(), error);
+        // Convert to a streaming exception and handle with our standardized handler
+        StreamingException streamingError = new StreamingException("Error during streaming response", error);
+        PromptErrorHandler.handleException(chatMessageContext.getProject(), streamingError, chatMessageContext);
     }
 }

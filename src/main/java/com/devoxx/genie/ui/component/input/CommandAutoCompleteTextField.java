@@ -6,12 +6,12 @@ import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextArea;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -25,9 +25,8 @@ import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
 
+@Slf4j
 public class CommandAutoCompleteTextField extends JBTextArea implements CustomPromptChangeListener {
-
-    private static final Logger LOG = Logger.getInstance(CommandAutoCompleteTextField.class);
 
     private final List<String> commands = new ArrayList<>();
     private final transient Project project;
@@ -130,7 +129,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
                             getDocument().remove(start, currentLine.length());
                             getDocument().insertString(start, command, null);
                         } catch (BadLocationException ex) {
-                            LOG.error("Error while auto-completing command", ex);
+                            log.error("Error while auto-completing command", ex);
                         }
                         setCaretPosition(text.length() - currentLine.length() + command.length());
                         isAutoCompleting = false;
@@ -158,7 +157,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
                 try {
                     handleAutoComplete();
                 } catch (BadLocationException e) {
-                    LOG.error("Error while auto-completing command", e);
+                    log.error("Error while auto-completing command", e);
                 }
             });
         }

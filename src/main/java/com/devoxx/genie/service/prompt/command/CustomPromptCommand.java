@@ -57,7 +57,7 @@ public class CustomPromptCommand implements PromptCommand {
                 .filter(customPrompt -> prompt.startsWith(COMMAND_PREFIX + customPrompt.getName()))
                 .findFirst();
                 
-        if (!matchingPrompt.isPresent()) {
+        if (matchingPrompt.isEmpty()) {
             LOG.debug("No matching custom command found");
             return Optional.of(prompt);
         }

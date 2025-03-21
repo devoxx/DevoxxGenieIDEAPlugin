@@ -1,8 +1,9 @@
 package com.devoxx.genie.service.prompt.strategy;
 
-import com.devoxx.genie.error.ErrorHandler;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
+import com.devoxx.genie.service.prompt.error.WebSearchException;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.diagnostic.Logger;
@@ -58,9 +59,10 @@ public class WebSearchPromptStrategy implements PromptExecutionStrategy {
                     }
                 });
         } catch (Exception e) {
-            LOG.error("Error in web search prompt execution", e);
-            ErrorHandler.handleError(chatMessageContext.getProject(), e);
-            resultFuture.completeExceptionally(e);
+            // Create a specific web search exception and handle it with our standardized handler
+            WebSearchException webSearchError = new WebSearchException("Error in web search prompt execution", e);
+            PromptErrorHandler.handleException(chatMessageContext.getProject(), webSearchError, chatMessageContext);
+            resultFuture.completeExceptionally(webSearchError);
         } finally {
             onComplete.run();
         }

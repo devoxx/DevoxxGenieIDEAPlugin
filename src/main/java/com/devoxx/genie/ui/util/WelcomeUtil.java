@@ -38,9 +38,11 @@ public class WelcomeUtil {
             <p>%s</p>
             <p>%s</p>
 
-            <h2>New features 🚀</h2>
+            <h2>Features 🚀</h2>
             Configure features in the settings page.<br>
             <ul>
+                 <LI><strong>🔥MCP Support</strong>: You can now add MCP servers!</LI>
+                 <LI><strong>🗄️DEVOXXGENIE.md</strong>: Generate project info for extra system instructions</LI>
                  <LI><strong>🎹Define submit shortcode</strong>: You can now define the keyboard shortcode to submit a prompt in settings.</li>
                  <LI><strong>📸DnD images</strong>: You can now DnD images with multimodal LLM's.</li>
                  <li><strong>🧐RAG Support</strong>: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>
@@ -51,7 +53,6 @@ public class WelcomeUtil {
                  <li><strong>💰Token Cost Calculator</strong>: Calculate the cost when using Cloud LLM providers.  Input/Output token prices can be viewed in the Settings page.</li>
                  <li><strong>🔍Web Search</strong>: Search the web for a given query using Google or Tavily</li>
                  <li><strong>🏎️Streaming responses</strong>: See each token as it's received from the LLM in real-time</li>
-                 <li><strong>💬Chat Memory Size</strong>: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs)</li>
             </ul>
             <h2>Utility Commands:</h2>
             You can update the prompts for each utility commands or add custom ones in the settings page.<br>
