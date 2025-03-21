@@ -7,8 +7,10 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@Slf4j
 @Service
 public final class ChromaEmbeddingService {
     
