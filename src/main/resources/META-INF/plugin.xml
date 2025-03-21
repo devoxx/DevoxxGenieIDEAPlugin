@@ -38,6 +38,9 @@
         <h2>v0.5.0</h2>
         <UL>
           <LI>Feature: Create DEVOXXGENIE.md file for extra system prompt info</LI>
+          <LI>Feature: Model Context Protocol (MCP) Support by @stephanj</LI>
+          <LI>Fix #554 : Exception thrown in PHPStorm with 'Use .gitignore' enabled</LI>
+          <LI>Fix #560 : SemanticSearchService must use stateService.getIndexerMaxResults()</LI>
         </UL>
         <h2>V0.4.22</h2>
         <UL>
