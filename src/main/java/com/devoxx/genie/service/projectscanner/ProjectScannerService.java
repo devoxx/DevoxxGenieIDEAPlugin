@@ -9,6 +9,7 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -16,10 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Setter
 @Getter
 public class ProjectScannerService {
-    private static final Logger LOG = Logger.getInstance(ProjectScannerService.class.getName());
 
     protected FileScanner fileScanner;
 
@@ -49,15 +50,13 @@ public class ProjectScannerService {
      */
     private ProjectFileIndex getProjectFileIndex(@NotNull Project project) {
         String projectLocationHash = project.getLocationHash();
-        LOG.info("Getting ProjectFileIndex for project: " + project.getName() +
+        log.info("Getting ProjectFileIndex for project: " + project.getName() +
                 " with location hash: " + projectLocationHash);
 
-        ProjectFileIndex fileIndex = projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
-            LOG.info("Creating new ProjectFileIndex for project: " + project.getName());
+        return projectFileIndexMap.computeIfAbsent(projectLocationHash, hash -> {
+            log.info("Creating new ProjectFileIndex for project: " + project.getName());
             return ProjectFileIndex.getInstance(project);
         });
-
-        return fileIndex;
     }
 
     public ScanContentResult scanProject(Project project,
@@ -67,7 +66,7 @@ public class ProjectScannerService {
 
         // Always get the correct ProjectFileIndex for this project
         ProjectFileIndex projectFileIndex = getProjectFileIndex(project);
-        LOG.debug("Scanning project: " + project.getName() + " with directory: " +
+        log.debug("Scanning project: " + project.getName() + " with directory: " +
                 (startDirectory != null ? startDirectory.getPath() : "null"));
 
         ScanContentResult scanContentResult = new ScanContentResult();
@@ -79,34 +78,34 @@ public class ProjectScannerService {
             if (resolvedDirectory == null) {
                 // Find the project root directory
                 resolvedDirectory = fileScanner.scanProjectModules(project);
-                LOG.info("Resolved null startDirectory to project root: " +
+                log.info("Resolved null startDirectory to project root: " +
                         (resolvedDirectory != null ? resolvedDirectory.getPath() : "null"));
             }
 
             fileScanner.initGitignoreParser(project, resolvedDirectory);
 
-            LOG.info("Starting content scan for " + (startDirectory != null ? startDirectory.getPath() : "entire project"));
+            log.info("Starting content scan for " + (startDirectory != null ? startDirectory.getPath() : "entire project"));
             String content = scanContent(project, startDirectory, windowContextMaxTokens, isTokenCalculation, scanContentResult, projectFileIndex);
 
             // Log included files for debugging
-            LOG.info("Files included after scan: " + fileScanner.getIncludedFiles().size());
+            log.info("Files included after scan: " + fileScanner.getIncludedFiles().size());
             fileScanner.getIncludedFiles().forEach(file -> {
-                LOG.info("Including file in result: " + file);
+                log.info("Including file in result: " + file);
                 scanContentResult.addFile(file);
             });
 
             int tokenCount = tokenCalculator.calculateTokens(content);
-            LOG.info("FINAL TOKEN COUNT: " + tokenCount + " tokens");
-            LOG.info("Content length: " + content.length() + " characters");
-            LOG.info("First 100 chars: " + content.substring(0, Math.min(100, content.length())));
-            LOG.info("Last 100 chars: " + content.substring(Math.max(0, content.length() - 100)));
+            log.info("FINAL TOKEN COUNT: " + tokenCount + " tokens");
+            log.info("Content length: " + content.length() + " characters");
+            log.info("First 100 chars: " + content.substring(0, Math.min(100, content.length())));
+            log.info("Last 100 chars: " + content.substring(Math.max(0, content.length() - 100)));
             scanContentResult.setTokenCount(tokenCount);
             scanContentResult.setContent(content);
             scanContentResult.setFileCount(fileScanner.getFileCount());
             scanContentResult.setSkippedFileCount(fileScanner.getSkippedFileCount());
             scanContentResult.setSkippedDirectoryCount(fileScanner.getSkippedDirectoryCount());
 
-            LOG.info("Scan complete. Files: " + fileScanner.getFileCount() +
+            log.info("Scan complete. Files: " + fileScanner.getFileCount() +
                     ", Skipped files: " + fileScanner.getSkippedFileCount() +
                     ", Skipped directories: " + fileScanner.getSkippedDirectoryCount());
         });
@@ -148,11 +147,11 @@ public class ProjectScannerService {
         // For token calculation (Calc tokens for directory), we want the ACTUAL token count
         // For content to be used in prompts, we need to truncate
         if (isTokenCalculation) {
-            LOG.info("Not truncating content for token calculation only");
+            log.info("Not truncating content for token calculation only");
             return fullContent;
         } else {
             // Only truncate if the content will be used (not for token calculation only)
-            LOG.info("Truncating content to " + windowContextMaxTokens + " tokens for usage in prompt");
+            log.info("Truncating content to " + windowContextMaxTokens + " tokens for usage in prompt");
             return tokenCalculator.truncateToTokens(fullContent, windowContextMaxTokens, isTokenCalculation);
         }
     }
@@ -165,7 +164,7 @@ public class ProjectScannerService {
         if (fileScanner.shouldIncludeFile(file)) {
             result.append(contentExtractor.extractFileContent(file));
         } else {
-            LOG.debug("Skipping file: " + file.getPath() + " (excluded by settings or .gitignore)");
+            log.debug("Skipping file: " + file.getPath() + " (excluded by settings or .gitignore)");
         }
 
         return result.toString();

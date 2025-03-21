@@ -1,10 +1,10 @@
 package com.devoxx.genie.ui.util;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.concurrency.AppExecutorUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,9 +18,8 @@ import java.util.concurrent.TimeoutException;
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
+@Slf4j
 public class FileTypeIconUtil {
-
-    private static final Logger LOG = Logger.getInstance(FileTypeIconUtil.class);
 
     private FileTypeIconUtil() {
     }
@@ -33,7 +32,7 @@ public class FileTypeIconUtil {
         try {
             return iconFuture.get(250, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LOG.error("Error getting icon for file: " + virtualFile.getPath(), e);
+            log.error("Error getting icon for file: " + virtualFile.getPath(), e);
             return ClassIcon;
         }
     }
@@ -61,7 +60,7 @@ public class FileTypeIconUtil {
                 default -> null;
             };
         } catch (IOException e) {
-            LOG.error("Error reading file content: " + virtualFile.getPath(), e);
+            log.error("Error reading file content: " + virtualFile.getPath(), e);
             throw new RuntimeException(e);
         }
     }

@@ -1,14 +1,12 @@
 package com.devoxx.genie.service.analyzer;
 
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.notification.NotificationGroupManager;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -16,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class DevoxxGenieGenerator {
-    private static final Logger LOG = Logger.getInstance(DevoxxGenieGenerator.class);
 
     private final Project project;
     private final VirtualFile baseDir;
@@ -423,7 +421,7 @@ public class DevoxxGenieGenerator {
                 });
             }
         } catch (Exception e) {
-            LOG.error("Error in write action for DEVOXXGENIE.md", e);
+            log.error("Error in write action for DEVOXXGENIE.md", e);
             throw new RuntimeException(e);
         }
     }
@@ -440,7 +438,7 @@ public class DevoxxGenieGenerator {
                     VfsUtil.saveText(devoxxGenieMdFile, content);
                 }
             } catch (IOException e) {
-                LOG.error("Error writing DEVOXXGENIE.md", e);
+                log.error("Error writing DEVOXXGENIE.md", e);
                 throw new RuntimeException(e);
             }
         });

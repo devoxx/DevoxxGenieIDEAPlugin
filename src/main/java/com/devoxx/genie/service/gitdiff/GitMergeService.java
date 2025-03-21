@@ -7,7 +7,6 @@ import com.intellij.diff.contents.DocumentContentImpl;
 import com.intellij.diff.requests.DiffRequest;
 import com.intellij.diff.requests.SimpleDiffRequest;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.impl.DocumentImpl;
 import com.intellij.openapi.project.Project;
@@ -17,8 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class GitMergeService {
-
-    private static final Logger LOG = Logger.getInstance(GitMergeService.class);
 
     @NotNull
     public static GitMergeService getInstance() {

@@ -6,11 +6,11 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.HttpClientProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Retrofit;
@@ -20,10 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 public final class ChromaDBManager {
-    private static final Logger LOG = Logger.getInstance(ChromaDBManager.class);
-
+    
     private final ChromaDBService service;
 
     @NotNull
@@ -111,7 +111,7 @@ public final class ChromaDBManager {
                 }
             });
         } catch (Exception e) {
-            LOG.error("Failed to start ChromaDB", e);
+            log.error("Failed to start ChromaDB", e);
             callback.onError("Failed to start ChromaDB: " + e.getMessage());
         }
     }
@@ -129,7 +129,7 @@ public final class ChromaDBManager {
                     dockerService.pullChromaDockerImage(callback);
                     callback.onSuccess();
                 } catch (Exception e) {
-                    LOG.error("Error pulling ChromaDB image", e);
+                    log.error("Error pulling ChromaDB image", e);
                     callback.onError("Error pulling ChromaDB image: " + e.getMessage());
                 }
             }

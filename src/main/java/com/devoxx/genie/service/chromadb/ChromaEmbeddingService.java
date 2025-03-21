@@ -3,7 +3,6 @@ package com.devoxx.genie.service.chromadb;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
@@ -12,8 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Service
 public final class ChromaEmbeddingService {
-    private static final Logger LOG = Logger.getInstance(ChromaEmbeddingService.class);
-
+    
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     @Getter
@@ -39,7 +37,7 @@ public final class ChromaEmbeddingService {
 
             initEmbeddingModel();
         } catch (Exception e) {
-            LOG.error("Failed to initialize ChromaDB: " + e.getMessage());
+            log.error("Failed to initialize ChromaDB: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

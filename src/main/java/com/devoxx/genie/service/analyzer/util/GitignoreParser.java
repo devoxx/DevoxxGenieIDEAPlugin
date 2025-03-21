@@ -5,6 +5,7 @@ import com.esotericsoftware.kryo.kryo5.minlog.Log;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,9 +17,9 @@ import java.util.regex.Pattern;
  * Parses and handles .gitignore files for determining which files and directories should be excluded from scanning.
  * Supports both root .gitignore files and nested .gitignore files in subdirectories.
  */
+@Slf4j
 public class GitignoreParser {
-    private static final Logger LOG = Logger.getInstance(GitignoreParser.class);
-
+    
     // Root patterns that apply to the entire project
     private final List<Pattern> rootExcludePatterns = new ArrayList<>();
     private final List<Pattern> rootIncludePatterns = new ArrayList<>();
@@ -49,7 +50,7 @@ public class GitignoreParser {
         VirtualFile gitignoreFile = baseDir.findChild(".gitignore");
 
         if (gitignoreFile == null) {
-            LOG.info("No root .gitignore file found");
+            log.info("No root .gitignore file found");
             return;
         }
 
@@ -57,7 +58,7 @@ public class GitignoreParser {
             String content = VfsUtil.loadText(gitignoreFile);
             parseGitignoreContent(content, rootExcludePatterns, rootIncludePatterns, "");
         } catch (IOException e) {
-            Log.error("Error reading root .gitignore file: " + e.getMessage());
+            log.error("Error reading root .gitignore file: " + e.getMessage());
         }
     }
 
@@ -91,7 +92,7 @@ public class GitignoreParser {
                             );
                         }
                     } catch (IOException e) {
-                        LOG.error("Error reading nested .gitignore file: " + e.getMessage());
+                        log.error("Error reading nested .gitignore file: " + e.getMessage());
                     }
                 }
                 return true;

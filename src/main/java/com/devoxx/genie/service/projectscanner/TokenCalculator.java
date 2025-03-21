@@ -1,17 +1,17 @@
 package com.devoxx.genie.service.projectscanner;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingType;
 import com.knuddels.jtokkit.api.IntArrayList;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Handles token calculations and truncation.
  */
+@Slf4j
 public class TokenCalculator {
-    private static final Logger LOG = Logger.getInstance(TokenCalculator.class.getName());
     private final Encoding encoding;
 
     // Constructor injection
@@ -32,9 +32,9 @@ public class TokenCalculator {
      */
     public int calculateTokens(@NotNull String text) {
         // Make sure we're getting the accurate token count
-        LOG.info("Calculating tokens for text of length: " + text.length());
+        log.info("Calculating tokens for text of length: " + text.length());
         int tokenCount = encoding.countTokensOrdinary(text);
-        LOG.info("Token count calculated: " + tokenCount);
+        log.info("Token count calculated: " + tokenCount);
         return tokenCount;
     }
 
