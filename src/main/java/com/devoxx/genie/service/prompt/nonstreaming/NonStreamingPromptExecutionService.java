@@ -50,7 +50,7 @@ public class NonStreamingPromptExecutionService {
     private final ReentrantLock queryLock = new ReentrantLock();
 
     @NotNull
-    static NonStreamingPromptExecutionService getInstance() {
+    public static NonStreamingPromptExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(NonStreamingPromptExecutionService.class);
     }
 

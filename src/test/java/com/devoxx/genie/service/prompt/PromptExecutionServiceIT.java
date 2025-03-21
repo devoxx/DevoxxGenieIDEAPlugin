@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.prompt;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *     <li>{@link #testExecuteQueryDeepInfra()} requires `DEEPINFRA_API_KEY`</li>
  * </ul>
  */
-class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
+public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     private NonStreamingPromptExecutionService promptExecutionService;
 

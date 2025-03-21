@@ -606,6 +606,10 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.ChatMemoryService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.ChatMemoryManager"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.command.PromptCommandProcessor"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
