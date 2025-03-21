@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.prompt;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.Conversation;

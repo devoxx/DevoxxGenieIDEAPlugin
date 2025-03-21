@@ -2,6 +2,8 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.prompt.nonstreaming.ChatPromptExecutor;
+import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -54,8 +56,8 @@ class ChatPromptExecutorIT extends AbstractLightPlatformTestCase {
         MessageCreationService messageCreationService = mock(MessageCreationService.class);
         when(applicationEx.getService(MessageCreationService.class)).thenReturn(messageCreationService);
 
-        PromptExecutionService promptExecutionService = mock(PromptExecutionService.class);
-        when(applicationEx.getService(PromptExecutionService.class)).thenReturn(promptExecutionService);
+        NonStreamingPromptExecutionService promptExecutionService = mock(NonStreamingPromptExecutionService.class);
+        when(applicationEx.getService(NonStreamingPromptExecutionService.class)).thenReturn(promptExecutionService);
 
         setApplication(applicationEx);
 

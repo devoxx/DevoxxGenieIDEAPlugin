@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.devoxx.genie.ui.component.JEditorPaneUtils;
 import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.intellij.ui.components.JBLabel;

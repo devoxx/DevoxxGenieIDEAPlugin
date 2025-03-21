@@ -1,13 +1,15 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.prompt.nonstreaming;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.exception.ModelNotActiveException;
 import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
@@ -36,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
-public class PromptExecutionService {
+public class NonStreamingPromptExecutionService {
 
-    private static final Logger LOG = Logger.getInstance(PromptExecutionService.class);
+    private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutionService.class);
     private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
     private CompletableFuture<ChatResponse> queryFuture = null;
 
@@ -48,8 +50,8 @@ public class PromptExecutionService {
     private final ReentrantLock queryLock = new ReentrantLock();
 
     @NotNull
-    static PromptExecutionService getInstance() {
-        return ApplicationManager.getApplication().getService(PromptExecutionService.class);
+    static NonStreamingPromptExecutionService getInstance() {
+        return ApplicationManager.getApplication().getService(NonStreamingPromptExecutionService.class);
     }
 
     /**
@@ -88,7 +90,6 @@ public class PromptExecutionService {
 
             // Add User message to context
             MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
-            // chatMemoryService.add(chatMessageContext.getProject(), chatMessageContext.getUserMessage());
 
             long startTime = System.currentTimeMillis();
 
@@ -166,11 +167,11 @@ public class PromptExecutionService {
             ChatMemory chatMemoryProvider = chatMemoryService.get(chatMessageContext.getProject().getLocationHash());
 
             // Build the AI service with or without MCP
-            Bot bot;
+            Assistant assistant;
             if (mcpToolProvider != null) {
                 MCPService.logDebug( "Using MCP tool provider");
                 // With MCP tool provider
-                bot = AiServices.builder(Bot.class)
+                assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
                         .chatMemory(chatMemoryProvider)
                         .toolProvider(mcpToolProvider)
@@ -178,14 +179,14 @@ public class PromptExecutionService {
             } else {
                 log.debug("NOT USING MCP!");
                 // Without MCP tool provider
-                bot = AiServices.builder(Bot.class)
+                assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
                         .chatMemory(chatMemoryProvider)
                         .build();
             }
 
             String query = chatMessageContext.getUserMessage().singleText();
-            String queryResponse = bot.chat(query);
+            String queryResponse = assistant.chat(query);
 
             return ChatResponse.builder()
                     .aiMessage(AiMessage.aiMessage(queryResponse))
@@ -201,7 +202,7 @@ public class PromptExecutionService {
         }
     }
 
-    interface Bot {
+    interface Assistant {
         String chat(String message);
     }
 }

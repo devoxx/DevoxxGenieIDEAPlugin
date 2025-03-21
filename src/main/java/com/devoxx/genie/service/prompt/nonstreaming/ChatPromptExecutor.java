@@ -1,11 +1,14 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.prompt.nonstreaming;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
-import com.devoxx.genie.service.streaming.StreamingPromptExecutor;
-import com.devoxx.genie.service.websearch.WebSearchExecutor;
+import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.prompt.PromptExecutor;
+import com.devoxx.genie.service.prompt.streaming.StreamingPromptExecutor;
+import com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutor;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 
@@ -30,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.devoxx.genie.model.Constant.*;
 
-public class ChatPromptExecutor {
+public class ChatPromptExecutor implements PromptExecutor {
 
     private static final Logger LOG = Logger.getInstance(ChatPromptExecutor.class);
 
@@ -52,6 +55,7 @@ public class ChatPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the Enable buttons
      */
+    @Override
     public void executePrompt(@NotNull ChatMessageContext chatMessageContext,
                               PromptOutputPanel promptOutputPanel,
                               Runnable enableButtons) {
@@ -68,13 +72,13 @@ public class ChatPromptExecutor {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 if (chatMessageContext.isWebSearchRequested()) {
-                    new WebSearchExecutor().execute(chatMessageContext, promptOutputPanel, () ->
+                    new WebSearchPromptExecutor().execute(chatMessageContext, promptOutputPanel, () ->
                             ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-                    streamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () ->
+                    streamingPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, () ->
                         ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 } else {
-                    nonStreamingPromptExecutor.execute(chatMessageContext, promptOutputPanel, () ->
+                    nonStreamingPromptExecutor.executePrompt(chatMessageContext, promptOutputPanel, () ->
                         ApplicationManager.getApplication().invokeLater(() -> cleanChat(project, enableButtons)));
                 }
             }

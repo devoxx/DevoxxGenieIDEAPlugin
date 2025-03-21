@@ -1,8 +1,9 @@
-package com.devoxx.genie.service.streaming;
+package com.devoxx.genie.service.prompt.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.prompt.PromptExecutor;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class StreamingPromptExecutor {
+public class StreamingPromptExecutor implements PromptExecutor {
 
     private final ChatMemoryService chatMemoryService;
     private final MessageCreationService messageCreationService;
@@ -31,9 +32,9 @@ public class StreamingPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the enable buttons
      */
-    public void execute(@NotNull ChatMessageContext chatMessageContext,
-                        PromptOutputPanel promptOutputPanel,
-                        Runnable enableButtons) {
+    public void executePrompt(@NotNull ChatMessageContext chatMessageContext,
+                              @NotNull  PromptOutputPanel promptOutputPanel,
+                              Runnable enableButtons) {
         StreamingChatLanguageModel streamingChatLanguageModel = chatMessageContext.getStreamingChatLanguageModel();
         if (streamingChatLanguageModel == null) {
             NotificationUtil.sendNotification(chatMessageContext.getProject(),

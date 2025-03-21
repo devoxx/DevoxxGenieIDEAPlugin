@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -18,7 +19,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Integration tests for {@link PromptExecutionService}.
+ * Integration tests for {@link NonStreamingPromptExecutionService}.
  *
  * <p>Note: These tests require specific environment variables to be set before execution.
  * If the required environment variable isn't set, the execution of related test will be skipped.</p>
@@ -33,13 +34,13 @@ import java.util.concurrent.CompletableFuture;
  */
 class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
-    private PromptExecutionService promptExecutionService;
+    private NonStreamingPromptExecutionService promptExecutionService;
 
     @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        promptExecutionService = new PromptExecutionService();
+        promptExecutionService = new NonStreamingPromptExecutionService();
     }
 
     @Test

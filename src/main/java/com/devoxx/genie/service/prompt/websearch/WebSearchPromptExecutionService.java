@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.websearch;
+package com.devoxx.genie.service.prompt.websearch;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -17,12 +17,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class WebSearchService {
+public class WebSearchPromptExecutionService {
 
-    private static final Logger LOG = Logger.getInstance(WebSearchService.class);
+    private static final Logger LOG = Logger.getInstance(WebSearchPromptExecutionService.class);
 
-    public static WebSearchService getInstance() {
-        return ApplicationManager.getApplication().getService(WebSearchService.class);
+    public static WebSearchPromptExecutionService getInstance() {
+        return ApplicationManager.getApplication().getService(WebSearchPromptExecutionService.class);
     }
 
     interface SearchWebsite {

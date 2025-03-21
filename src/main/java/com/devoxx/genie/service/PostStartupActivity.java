@@ -1,6 +1,6 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;

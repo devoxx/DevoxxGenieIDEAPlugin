@@ -2,7 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.ConversationStarter;

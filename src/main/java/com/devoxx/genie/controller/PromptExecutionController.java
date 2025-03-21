@@ -2,7 +2,7 @@ package com.devoxx.genie.controller;
 
 import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatPromptExecutor;
+import com.devoxx.genie.service.prompt.nonstreaming.ChatPromptExecutor;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;

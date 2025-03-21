@@ -1,14 +1,14 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.prompt.nonstreaming;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.SemanticFile;
+import com.devoxx.genie.service.prompt.PromptExecutor;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -21,18 +21,18 @@ import java.util.concurrent.Future;
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
 
-public class NonStreamingPromptExecutor {
+public class NonStreamingPromptExecutor implements PromptExecutor {
 
     private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutor.class);
 
     private final Project project;
-    private final PromptExecutionService promptExecutionService;
+    private final NonStreamingPromptExecutionService promptExecutionService;
     private volatile Future<?> currentTask;
     private volatile boolean isCancelled;
 
     public NonStreamingPromptExecutor(Project project) {
         this.project = project;
-        this.promptExecutionService = PromptExecutionService.getInstance();
+        this.promptExecutionService = NonStreamingPromptExecutionService.getInstance();
     }
 
     /**
@@ -42,15 +42,16 @@ public class NonStreamingPromptExecutor {
      * @param promptOutputPanel  the prompt output panel
      * @param enableButtons      the enable buttons
      */
-    public void execute(@NotNull ChatMessageContext chatMessageContext,
-                        @NotNull PromptOutputPanel promptOutputPanel,
-                        Runnable enableButtons) {
-        LOG.debug(">>>> Executing prompt, command name: " + chatMessageContext.getCommandName());
+    @Override
+    public void executePrompt(@NotNull ChatMessageContext chatMessageContext,
+                              @NotNull PromptOutputPanel promptOutputPanel,
+                              Runnable enableButtons) {
+        LOG.debug("Executing prompt, command name: " + chatMessageContext.getCommandName());
         promptOutputPanel.addUserPrompt(chatMessageContext);
         isCancelled = false;
 
         if (FIND_COMMAND.equalsIgnoreCase(chatMessageContext.getCommandName())) {
-            LOG.debug(">>>> Executing find prompt");
+            LOG.debug("Executing find prompt");
 
             semanticSearch(chatMessageContext, promptOutputPanel);
             enableButtons.run();
@@ -74,7 +75,7 @@ public class NonStreamingPromptExecutor {
         currentTask = promptExecutionService.executeQuery(chatMessageContext)
                 .thenAccept(response -> {
                     if (!isCancelled && response != null) {
-                        LOG.debug(">>>> Adding AI message to prompt output panel");
+                        LOG.debug("Adding AI message to prompt output panel");
                         chatMessageContext.setAiMessage(response.aiMessage());
 
                         // Set token usage and cost

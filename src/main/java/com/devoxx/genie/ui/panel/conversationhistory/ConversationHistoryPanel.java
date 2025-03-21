@@ -1,7 +1,7 @@
 package com.devoxx.genie.ui.panel.conversationhistory;
 
 import com.devoxx.genie.model.conversation.Conversation;
-import com.devoxx.genie.service.ChatMemoryService;
+import com.devoxx.genie.service.prompt.ChatMemoryService;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.util.NotificationUtil;
