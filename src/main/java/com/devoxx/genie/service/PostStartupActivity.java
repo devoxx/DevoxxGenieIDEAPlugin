@@ -21,10 +21,7 @@ public class PostStartupActivity implements ProjectActivity {
         } else {
             LOG.error("ChatMemoryService is null");
         }
-        
-        // Initialize default MCP server if needed
-        MCPService.initializeDefaultMCPServer();
-        
+
         return continuation;
     }
 }

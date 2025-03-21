@@ -190,6 +190,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     
     // MCP settings
     private MCPSettings mcpSettings = new MCPSettings();
+    private Boolean mcpEnabled = false;
+    private Boolean mcpDebugLogsEnabled = false;
 
     @Setter(AccessLevel.NONE)
     private List<Runnable> loadListeners = new ArrayList<>();
@@ -313,5 +315,21 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     
     public void setMcpSettings(MCPSettings mcpSettings) {
         this.mcpSettings = mcpSettings;
+    }
+    
+    public Boolean getMcpEnabled() {
+        return mcpEnabled;
+    }
+    
+    public void setMcpEnabled(Boolean mcpEnabled) {
+        this.mcpEnabled = mcpEnabled;
+    }
+    
+    public Boolean getMcpDebugLogsEnabled() {
+        return mcpDebugLogsEnabled;
+    }
+    
+    public void setMcpDebugLogsEnabled(Boolean mcpDebugLogsEnabled) {
+        this.mcpDebugLogsEnabled = mcpDebugLogsEnabled;
     }
 }

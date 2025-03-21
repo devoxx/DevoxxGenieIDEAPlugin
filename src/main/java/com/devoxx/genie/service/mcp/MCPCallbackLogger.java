@@ -27,9 +27,13 @@ public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(@NotNull ILoggingEvent eventObject) {
+        // Check if MCP and debug logs are enabled
+        if (!MCPService.isDebugLogsEnabled()) {
+            return;
+        }
+        
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
         messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
                   .onMCPLoggingMessage(eventObject.getFormattedMessage());
-
     }
 }

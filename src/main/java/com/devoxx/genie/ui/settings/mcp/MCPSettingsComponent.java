@@ -28,11 +28,22 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     private final MCPServerTableModel tableModel;
     private final JTable mcpTable;
     private boolean isModified = false;
+    private final JCheckBox enableMcpCheckbox;
+    private final JCheckBox enableDebugLogsCheckbox;
 
     public MCPSettingsComponent() {
         super();
         tableModel = new MCPServerTableModel();
         mcpTable = new JBTable(tableModel);
+        
+        // Initialize checkboxes
+        enableMcpCheckbox = new JCheckBox("Enable MCP Support");
+        enableMcpCheckbox.setSelected(DevoxxGenieStateService.getInstance().getMcpEnabled());
+        enableMcpCheckbox.addActionListener(e -> isModified = true);
+        
+        enableDebugLogsCheckbox = new JCheckBox("Enable MCP Debug Logs");
+        enableDebugLogsCheckbox.setSelected(DevoxxGenieStateService.getInstance().getMcpDebugLogsEnabled());
+        enableDebugLogsCheckbox.addActionListener(e -> isModified = true);
         
         setupTable();
         loadCurrentSettings();
@@ -55,13 +66,25 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 
         JPanel decoratedTablePanel = toolbarDecorator.createPanel();
         
+        // Create the description panel
         JPanel infoPanel = new JPanel(new BorderLayout());
         infoPanel.add(new JLabel("<html>Configure MCP (Multi-Agent Communications Protocol) servers.<br>" +
                                  "Each MCP requires a name, command, and arguments.<br>" +
                                  "Environment variables are optional.</html>"), BorderLayout.CENTER);
         
+        // Create the checkbox panel
+        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        checkboxPanel.add(enableMcpCheckbox);
+        checkboxPanel.add(enableDebugLogsCheckbox);
+        
+        // Create the top panel that combines both
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(infoPanel, BorderLayout.NORTH);
+        topPanel.add(checkboxPanel, BorderLayout.CENTER);
+        
+        // Build the main panel
         panel.setLayout(new BorderLayout());
-        panel.add(infoPanel, BorderLayout.NORTH);
+        panel.add(topPanel, BorderLayout.NORTH);
         panel.add(decoratedTablePanel, BorderLayout.CENTER);
     }
 
@@ -146,6 +169,10 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             stateService.getMcpSettings().getMcpServers().clear();
             stateService.getMcpSettings().getMcpServers().putAll(serverMap);
             
+            // Save checkbox settings
+            stateService.setMcpEnabled(enableMcpCheckbox.isSelected());
+            stateService.setMcpDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
+            
             isModified = false;
         }
     }
@@ -154,14 +181,20 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
      * Check if the settings have been modified
      */
     public boolean isModified() {
-        return isModified;
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        return isModified || 
+               enableMcpCheckbox.isSelected() != stateService.getMcpEnabled() ||
+               enableDebugLogsCheckbox.isSelected() != stateService.getMcpDebugLogsEnabled();
     }
 
     /**
      * Reset the settings to the current ones from DevoxxGenieStateService
      */
     public void reset() {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         loadCurrentSettings();
+        enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
+        enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
         isModified = false;
     }
 
@@ -439,7 +472,6 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
 
             public EnvVarDialog(String key, String value) {
                 super(true);
-                // this.originalKey = key;
                 setTitle(key == null ? "Add Environment Variable" : "Edit Environment Variable");
                 init();
                 
