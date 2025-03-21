@@ -16,12 +16,10 @@ public interface PromptExecutionStrategy {
      *
      * @param chatMessageContext the context containing all prompt information
      * @param promptOutputPanel the panel where output should be displayed
-     * @param onComplete callback to run when execution is complete
      * @return a CompletableFuture that completes when execution is done
      */
     CompletableFuture<Void> execute(@NotNull ChatMessageContext chatMessageContext, 
-                                  @NotNull PromptOutputPanel promptOutputPanel, 
-                                  @NotNull Runnable onComplete);
+                                  @NotNull PromptOutputPanel promptOutputPanel);
     
     /**
      * Cancel the current execution if possible.

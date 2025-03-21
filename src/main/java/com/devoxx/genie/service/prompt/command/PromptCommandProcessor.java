@@ -5,7 +5,6 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.util.FileUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
@@ -21,8 +20,6 @@ import java.util.Optional;
  */
 public class PromptCommandProcessor {
 
-    private static final Logger LOG = Logger.getInstance(PromptCommandProcessor.class);
-    
     private final List<PromptCommand> commands;
 
     public static PromptCommandProcessor getInstance() {

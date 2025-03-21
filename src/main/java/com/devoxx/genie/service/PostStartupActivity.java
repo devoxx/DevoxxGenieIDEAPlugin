@@ -1,6 +1,8 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
 import kotlin.Unit;
@@ -20,6 +22,22 @@ public class PostStartupActivity implements ProjectActivity {
             chatMemoryManager.initializeMemory(project);
         } else {
             log.error("chatMemoryManager is null");
+        }
+        
+        // Initialize thread pool manager and shutdown handler
+        ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+        if (threadPoolManager != null) {
+            log.debug("Thread pool manager initialized");
+            
+            // Force class loading of shutdown manager to register listeners
+            try {
+                Class.forName(ThreadPoolShutdownManager.class.getName());
+                log.debug("Thread pool shutdown manager registered");
+            } catch (ClassNotFoundException e) {
+                log.error("Failed to load ThreadPoolShutdownManager", e);
+            }
+        } else {
+            log.error("threadPoolManager is null");
         }
 
         return continuation;

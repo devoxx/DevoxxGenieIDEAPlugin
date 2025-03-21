@@ -1,21 +1,18 @@
 package com.devoxx.genie.service.prompt.nonstreaming;
 
 import com.devoxx.genie.service.prompt.error.ExecutionException;
-import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.exception.ModelNotActiveException;
-import com.devoxx.genie.service.exception.ProviderUnavailableException;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ClipboardUtil;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -29,27 +26,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class NonStreamingPromptExecutionService {
 
-    private static final Logger LOG = Logger.getInstance(NonStreamingPromptExecutionService.class);
-    private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
-    private CompletableFuture<ChatResponse> queryFuture = null;
-
     @Getter
-    private boolean running = false;
-
-    private final ReentrantLock queryLock = new ReentrantLock();
+    private volatile boolean running = false;
+    
     private final ChatMemoryManager chatMemoryManager;
+    private final ThreadPoolManager threadPoolManager;
+    private final AtomicReference<CompletableFuture<ChatResponse>> currentQueryFuture = new AtomicReference<>();
 
     public NonStreamingPromptExecutionService() {
         this.chatMemoryManager = ChatMemoryManager.getInstance();
+        this.threadPoolManager = ThreadPoolManager.getInstance();
     }
 
     @NotNull
@@ -61,62 +55,78 @@ public class NonStreamingPromptExecutionService {
      * Execute the query with the given language text pair and chat language model.
      *
      * @param chatMessageContext the chat message context
-     * @return the response
+     * @return the response future
      */
     public @NotNull CompletableFuture<ChatResponse> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
-        LOG.debug("Execute query : " + chatMessageContext);
+        log.debug("Execute query : " + chatMessageContext);
 
-        queryLock.lock();
-        try {
-            if (isCanceled()) return CompletableFuture.completedFuture(null);
+        // Cancel any existing query
+        cancelExecutingQuery();
+        
+        Project project = chatMessageContext.getProject();
+        
+        // Let the ChatMemoryManager handle memory preparation
+        chatMemoryManager.prepareMemory(chatMessageContext);
+        
+        // Let the ChatMemoryManager handle adding the user message
+        chatMemoryManager.addUserMessage(chatMessageContext);
 
-            Project project = chatMessageContext.getProject();
-            
-            // Let the ChatMemoryManager handle memory preparation
-            chatMemoryManager.prepareMemory(chatMessageContext);
-            
-            // Let the ChatMemoryManager handle adding the user message
-            chatMemoryManager.addUserMessage(chatMessageContext);
+        long startTime = System.currentTimeMillis();
+        running = true;
 
-            long startTime = System.currentTimeMillis();
-
-            queryFuture = CompletableFuture
-                .supplyAsync(() -> processChatMessage(chatMessageContext), queryExecutor)
-                .orTimeout(
-                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), TimeUnit.SECONDS)
-                .thenApply(result -> {
-                    chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
-                    return result;
-                })
-                .exceptionally(throwable -> {
+        // Create new future for the current query
+        CompletableFuture<ChatResponse> queryFuture = CompletableFuture
+            .supplyAsync(
+                () -> processChatMessage(chatMessageContext), 
+                threadPoolManager.getPromptExecutionPool()
+            )
+            .orTimeout(
+                chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), 
+                TimeUnit.SECONDS
+            )
+            .thenApply(result -> {
+                chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+                return result;
+            })
+            .exceptionally(throwable -> {
+                // Ignore cancellation exceptions
+                if (!(throwable instanceof CancellationException) &&
+                    !(throwable.getCause() instanceof CancellationException)) {
                     // Create a specific execution exception and handle it with our standardized handler
                     ExecutionException executionError = new ExecutionException(
                         "Error occurred while processing chat message", throwable);
                     PromptErrorHandler.handleException(project, executionError, chatMessageContext);
-                    // The PromptErrorHandler will handle appropriate recovery like removing failed exchanges
-                    return null;
-                });
-        } finally {
-            queryLock.unlock();
-        }
+                }
+                // The PromptErrorHandler will handle appropriate recovery like removing failed exchanges
+                return null;
+            })
+            .whenComplete((response, throwable) -> {
+                // Always clear the current future reference when done
+                currentQueryFuture.set(null);
+                running = false;
+            });
+        
+        // Store the future for potential cancellation
+        currentQueryFuture.set(queryFuture);
+        
         return queryFuture;
     }
 
     /**
-     * If the future task is not null this means we need to cancel it
-     *
-     * @return true if the task is canceled
+     * Cancel the currently executing query if one exists.
      */
-    private boolean isCanceled() {
-        if (queryFuture != null && !queryFuture.isDone()) {
-            queryFuture.cancel(true);
+    public void cancelExecutingQuery() {
+        CompletableFuture<ChatResponse> future = currentQueryFuture.get();
+        if (future != null && !future.isDone()) {
+            future.cancel(true);
+            currentQueryFuture.set(null);
             running = false;
-            return true;
         }
-        running = true;
-        return false;
     }
 
+    /**
+     * Process the chat message and generate a response.
+     */
     private @NotNull ChatResponse processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             Project project = chatMessageContext.getProject();
@@ -168,6 +178,12 @@ public class NonStreamingPromptExecutionService {
                     .build();
 
         } catch (Exception e) {
+            // Thread interruption is likely from cancellation, so we handle it specially
+            if (e instanceof InterruptedException || 
+                Thread.currentThread().isInterrupted()) {
+                throw new CancellationException("Query was cancelled");
+            }
+            
             log.error(e.getMessage());
             if (chatMessageContext.getLanguageModel().getProvider().equals(ModelProvider.Jan)) {
                 // Use our own ModelException instead of the generic ModelNotActiveException

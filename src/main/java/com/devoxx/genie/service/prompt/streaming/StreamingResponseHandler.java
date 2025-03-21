@@ -14,25 +14,30 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CompletableFuture;
+
 public class StreamingResponseHandler implements  dev.langchain4j.model.chat.response.StreamingChatResponseHandler {
     private final ChatMessageContext chatMessageContext;
-    private final Runnable enableButtons;
     private final ChatStreamingResponsePanel streamingChatResponsePanel;
     private final PromptOutputPanel promptOutputPanel;
     private final long startTime;
     private final Project project;
+    private final CompletableFuture<Void> completionFuture;
     private volatile boolean isStopped = false;
 
     public StreamingResponseHandler(ChatMessageContext chatMessageContext,
                                     @NotNull PromptOutputPanel promptOutputPanel,
-                                    Runnable enableButtons) {
+                                    Runnable onComplete) {
         this.chatMessageContext = chatMessageContext;
-        this.enableButtons = enableButtons;
         this.promptOutputPanel = promptOutputPanel;
         this.streamingChatResponsePanel = new ChatStreamingResponsePanel(chatMessageContext);
-        project = chatMessageContext.getProject();
+        this.completionFuture = new CompletableFuture<>();
+        this.project = chatMessageContext.getProject();
         promptOutputPanel.addStreamResponse(streamingChatResponsePanel);
         startTime = System.currentTimeMillis();
+        
+        // Set up the completion handler
+        completionFuture.thenRun(onComplete);
     }
 
     private void finalizeResponse(@NotNull ChatResponse response) {
@@ -44,7 +49,7 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
             .onNewConversation(chatMessageContext);
 
         ChatMemoryService.getInstance().add(chatMessageContext.getProject(), response.aiMessage());
-        enableButtons.run();
+        completionFuture.complete(null);
     }
 
     private void addExpandablePanelIfNeeded() {
@@ -60,7 +65,7 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
 
     public void stop() {
         isStopped = true;
-        enableButtons.run();
+        completionFuture.complete(null);
     }
 
     @Override
@@ -83,9 +88,9 @@ public class StreamingResponseHandler implements  dev.langchain4j.model.chat.res
 
     @Override
     public void onError(Throwable error) {
-        enableButtons.run();
         // Convert to a streaming exception and handle with our standardized handler
         StreamingException streamingError = new StreamingException("Error during streaming response", error);
         PromptErrorHandler.handleException(chatMessageContext.getProject(), streamingError, chatMessageContext);
+        completionFuture.completeExceptionally(streamingError);
     }
 }

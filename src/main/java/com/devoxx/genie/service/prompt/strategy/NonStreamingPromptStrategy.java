@@ -8,6 +8,8 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
+import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletionException;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
@@ -33,13 +35,17 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
     private final Project project;
     private final NonStreamingPromptExecutionService promptExecutionService;
     private final ChatMemoryManager chatMemoryManager;
-    private volatile Future<?> currentTask;
-    private volatile boolean isCancelled;
+    private final ThreadPoolManager threadPoolManager;
+    private final PromptTaskTracker taskTracker;
+    private final String taskId;
 
     public NonStreamingPromptStrategy(Project project) {
         this.project = project;
         this.promptExecutionService = NonStreamingPromptExecutionService.getInstance();
         this.chatMemoryManager = ChatMemoryManager.getInstance();
+        this.threadPoolManager = ThreadPoolManager.getInstance();
+        this.taskTracker = PromptTaskTracker.getInstance();
+        this.taskId = project.getLocationHash() + "-" + System.currentTimeMillis();
     }
 
     /**
@@ -47,16 +53,13 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
      */
     @Override
     public CompletableFuture<Void> execute(@NotNull ChatMessageContext chatMessageContext,
-                                          @NotNull PromptOutputPanel promptOutputPanel,
-                                          @NotNull Runnable onComplete) {
+                                          @NotNull PromptOutputPanel promptOutputPanel) {
         log.debug("Executing non-streaming prompt, command name: " + chatMessageContext.getCommandName());
         promptOutputPanel.addUserPrompt(chatMessageContext);
-        isCancelled = false;
 
         if (FIND_COMMAND.equalsIgnoreCase(chatMessageContext.getCommandName())) {
             log.debug("Executing find prompt");
             semanticSearch(chatMessageContext, promptOutputPanel);
-            onComplete.run();
             return CompletableFuture.completedFuture(null);
         }
 
@@ -68,42 +71,65 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
         // Add user message to context and memory
         chatMemoryManager.addUserMessage(chatMessageContext);
 
-        // Execute the prompt
-        currentTask = promptExecutionService.executeQuery(chatMessageContext)
-                .thenAccept(response -> {
-                    if (!isCancelled && response != null) {
-                        log.debug("Adding AI message to prompt output panel");
-                        chatMessageContext.setAiMessage(response.aiMessage());
+        // Create the task that will handle cancellation
+        PromptTaskTracker.CancellableTask task = () -> {
+            // Cancel any running query in the execution service
+            promptExecutionService.cancelExecutingQuery();
+            
+            // Remove the user prompt from the UI if needed
+            promptOutputPanel.removeLastUserPrompt(chatMessageContext);
+            
+            // Mark the future as cancelled
+            if (!resultFuture.isDone()) {
+                resultFuture.cancel(true);
+            }
+        };
+        
+        // Register the task for tracking
+        taskTracker.registerTask(project, taskId, task);
 
-                        // Set token usage and cost
-                        chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
-                        
-                        // Add AI response to memory
-                        chatMemoryManager.addAiResponse(chatMessageContext);
+        // Execute the prompt using the centralized thread pool
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return promptExecutionService.executeQuery(chatMessageContext).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new CompletionException(e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+                }, threadPoolManager.getPromptExecutionPool())
+        .thenAcceptAsync(response -> {
+            if (response != null) {
+                log.debug("Adding AI message to prompt output panel");
+                chatMessageContext.setAiMessage(response.aiMessage());
 
-                        // Add the conversation to the chat service
-                        project.getMessageBus()
-                                .syncPublisher(AppTopics.CONVERSATION_TOPIC)
-                                .onNewConversation(chatMessageContext);
+                // Set token usage and cost
+                chatMessageContext.setTokenUsageAndCost(response.tokenUsage());
+                
+                // Add AI response to memory
+                chatMemoryManager.addAiResponse(chatMessageContext);
 
-                        promptOutputPanel.addChatResponse(chatMessageContext);
-                        resultFuture.complete(null);
-                    } else if (isCancelled) {
-                        log.debug(">>>> Prompt execution cancelled");
-                        promptOutputPanel.removeLastUserPrompt(chatMessageContext);
-                        resultFuture.cancel(true);
-                    }
-                })
-                .exceptionally(throwable -> {
-                    if (!(throwable.getCause() instanceof CancellationException)) {
-                        // Create a specific execution exception and handle it with our standardized handler
-                        ExecutionException executionError = new ExecutionException("Error occurred while processing chat message", throwable);
-                        PromptErrorHandler.handleException(chatMessageContext.getProject(), executionError, chatMessageContext);
-                    }
-                    resultFuture.completeExceptionally(throwable);
-                    return null;
-                })
-                .whenComplete((result, throwable) -> onComplete.run());
+                // Add the conversation to the chat service
+                project.getMessageBus()
+                        .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                        .onNewConversation(chatMessageContext);
+
+                promptOutputPanel.addChatResponse(chatMessageContext);
+                resultFuture.complete(null);
+            }
+            // Task is completed either way
+            taskTracker.taskCompleted(project, taskId);
+        }, threadPoolManager.getPromptExecutionPool())
+        .exceptionally(throwable -> {
+            if (!(throwable instanceof CompletionException && throwable.getCause() instanceof CancellationException)) {
+                // Create a specific execution exception and handle it with our standardized handler
+                ExecutionException executionError = new ExecutionException("Error occurred while processing chat message", throwable);
+                PromptErrorHandler.handleException(chatMessageContext.getProject(), executionError, chatMessageContext);
+            }
+            resultFuture.completeExceptionally(throwable);
+            taskTracker.taskCompleted(project, taskId);
+            return null;
+        });
                 
         return resultFuture;
     }
@@ -113,10 +139,7 @@ public class NonStreamingPromptStrategy implements PromptExecutionStrategy {
      */
     @Override
     public void cancel() {
-        if (currentTask != null && !currentTask.isDone()) {
-            isCancelled = true;
-            currentTask.cancel(true);
-        }
+        taskTracker.cancelTask(project, taskId);
     }
 
     /**

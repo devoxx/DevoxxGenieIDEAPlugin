@@ -4,8 +4,8 @@ import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,8 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * Centralized error handler for all prompt-related errors.
  * Provides consistent logging, notification, and recovery strategies.
  */
+@Slf4j
 public class PromptErrorHandler {
-    private static final Logger LOG = Logger.getInstance(PromptErrorHandler.class);
 
     /**
      * Handle a prompt exception with context information.
@@ -39,7 +39,7 @@ public class PromptErrorHandler {
         ErrorHandler.handleError(project, promptException);
         
         // Perform any necessary recovery based on exception type
-        performRecovery(project, promptException, chatMessageContext);
+        performRecovery(promptException, chatMessageContext);
     }
     
     /**
@@ -74,20 +74,20 @@ public class PromptErrorHandler {
     /**
      * Log the exception with appropriate severity
      */
-    private static void logException(PromptException exception) {
+    private static void logException(@NotNull PromptException exception) {
         String message = exception.getMessage();
         Throwable cause = exception.getCause();
         
         switch (exception.getSeverity()) {
             case INFO:
-                LOG.info(message, cause);
+                log.info(message, cause);
                 break;
             case WARNING:
-                LOG.warn(message, cause);
+                log.warn(message, cause);
                 break;
             case ERROR:
             case CRITICAL:
-                LOG.error(message, cause);
+                log.error(message, cause);
                 break;
         }
     }
@@ -104,7 +104,7 @@ public class PromptErrorHandler {
     /**
      * Perform recovery actions based on exception type
      */
-    private static void performRecovery(Project project, PromptException exception, @Nullable ChatMessageContext chatMessageContext) {
+    private static void performRecovery(PromptException exception, @Nullable ChatMessageContext chatMessageContext) {
         // Skip recovery if context is null
         if (chatMessageContext == null) {
             return;
@@ -118,12 +118,9 @@ public class PromptErrorHandler {
                     com.devoxx.genie.service.prompt.memory.ChatMemoryManager.getInstance()
                         .removeLastExchange(chatMessageContext);
                 } catch (Exception e) {
-                    LOG.warn("Error during memory recovery", e);
+                    log.warn("Error during memory recovery", e);
                 }
             });
-        } else if (exception instanceof ModelException) {
-            // For model exceptions, we might want to suggest a different model
-            // This would depend on the application's capabilities
         }
     }
 }

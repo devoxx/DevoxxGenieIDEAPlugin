@@ -5,7 +5,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.diagnostic.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -17,9 +17,8 @@ import static com.devoxx.genie.model.Constant.HELP_COMMAND;
 /**
  * Command processor for custom prompt commands.
  */
+@Slf4j
 public class CustomPromptCommand implements PromptCommand {
-
-    private static final Logger LOG = Logger.getInstance(CustomPromptCommand.class);
 
     @Override
     public boolean matches(@NotNull String prompt) {
@@ -58,7 +57,7 @@ public class CustomPromptCommand implements PromptCommand {
                 .findFirst();
                 
         if (matchingPrompt.isEmpty()) {
-            LOG.debug("No matching custom command found");
+            log.debug("No matching custom command found");
             return Optional.of(prompt);
         }
         

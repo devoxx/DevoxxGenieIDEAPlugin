@@ -3,16 +3,15 @@ package com.devoxx.genie.service.prompt.strategy;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Factory for creating appropriate prompt execution strategies based on context.
  */
+@Slf4j
 public class PromptExecutionStrategyFactory {
-
-    private static final Logger LOG = Logger.getInstance(PromptExecutionStrategyFactory.class);
 
     public static PromptExecutionStrategyFactory getInstance() {
         return ApplicationManager.getApplication().getService(PromptExecutionStrategyFactory.class);
@@ -29,18 +28,18 @@ public class PromptExecutionStrategyFactory {
         
         // Check if web search is requested
         if (chatMessageContext.isWebSearchRequested()) {
-            LOG.debug("Creating WebSearchPromptStrategy");
-            return new WebSearchPromptStrategy();
+            log.debug("Creating WebSearchPromptStrategy");
+            return new WebSearchPromptStrategy(project);
         }
         
         // Check if streaming mode is enabled in settings
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-            LOG.debug("Creating StreamingPromptStrategy");
-            return new StreamingPromptStrategy();
+            log.debug("Creating StreamingPromptStrategy");
+            return new StreamingPromptStrategy(project);
         }
         
         // Default to non-streaming
-        LOG.debug("Creating NonStreamingPromptStrategy");
+        log.debug("Creating NonStreamingPromptStrategy");
         return new NonStreamingPromptStrategy(project);
     }
 }

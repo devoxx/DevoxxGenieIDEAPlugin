@@ -7,6 +7,7 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategy;
 import com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory;
+import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -17,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Unified service for executing prompts with various strategies.
@@ -27,15 +27,18 @@ public class PromptExecutionService {
 
     private final PromptCommandProcessor commandProcessor;
     private final PromptExecutionStrategyFactory strategyFactory;
-    private final ConcurrentHashMap<Project, PromptExecutionStrategy> activeStrategies = new ConcurrentHashMap<>();
+    private final PromptTaskTracker taskTracker;
+    private final Project project;
 
     public static PromptExecutionService getInstance(@NotNull Project project) {
         return project.getService(PromptExecutionService.class);
     }
 
     public PromptExecutionService(Project project) {
+        this.project = project;
         this.commandProcessor = PromptCommandProcessor.getInstance();
         this.strategyFactory = PromptExecutionStrategyFactory.getInstance();
+        this.taskTracker = PromptTaskTracker.getInstance();
     }
 
     /**
@@ -51,9 +54,9 @@ public class PromptExecutionService {
                              
         Project project = chatMessageContext.getProject();
         
-        // Cancel any running execution for this project
-        if (activeStrategies.containsKey(project)) {
-            stopExecution(project);
+        // Cancel any running executions for this project
+        if (taskTracker.cancelAllTasks(project) > 0) {
+            log.debug("Cancelled all existing tasks for project");
             return;
         }
 
@@ -71,20 +74,20 @@ public class PromptExecutionService {
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 // Create appropriate strategy
                 PromptExecutionStrategy strategy = strategyFactory.createStrategy(chatMessageContext);
-                activeStrategies.put(project, strategy);
                 
                 // Execute the prompt
-                strategy.execute(chatMessageContext, promptOutputPanel, () ->
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        cleanupAfterExecution(project, enableButtons);
-                    }));
+                strategy.execute(chatMessageContext, promptOutputPanel)
+                    .whenComplete((result, error) -> 
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            cleanupAfterExecution(project, enableButtons);
+                        }));
             }
 
             @Override
             public void onCancel() {
                 super.onCancel();
                 log.info("Prompt execution was cancelled.");
-                stopExecution(project);
+                taskTracker.cancelAllTasks(project);
             }
 
             @Override
@@ -108,11 +111,7 @@ public class PromptExecutionService {
      * @param project The project to stop execution for
      */
     public void stopExecution(Project project) {
-        PromptExecutionStrategy strategy = activeStrategies.get(project);
-        if (strategy != null) {
-            strategy.cancel();
-            activeStrategies.remove(project);
-        }
+        taskTracker.cancelAllTasks(project);
     }
 
     /**
@@ -122,7 +121,6 @@ public class PromptExecutionService {
      * @param enableButtons Callback to enable UI elements
      */
     private void cleanupAfterExecution(Project project, @NotNull Runnable enableButtons) {
-        activeStrategies.remove(project);
         enableButtons.run();
         FileListManager.getInstance().storeAddedFiles(project);
     }

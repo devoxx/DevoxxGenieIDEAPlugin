@@ -2,7 +2,6 @@ package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.conversation.Conversation;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -11,6 +10,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -21,9 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Service responsible for persistence of chat memory.
  * Handles only data storage and retrieval operations.
  */
+@Slf4j
 public class ChatMemoryService implements ChatMemoryProvider {
-    private static final Logger LOG = Logger.getInstance(ChatMemoryService.class);
-    
+
     private final Map<String, MessageWindowChatMemory> projectConversations = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
 
@@ -39,7 +39,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public void initialize(@NotNull Project project, int chatMemorySize) {
         String projectHash = project.getLocationHash();
-        LOG.debug("Initializing chat memory for project: " + projectHash + " with size: " + chatMemorySize);
+        log.debug("Initializing chat memory for project: " + projectHash + " with size: " + chatMemorySize);
         createChatMemory(projectHash, chatMemorySize);
     }
 

@@ -8,12 +8,12 @@ import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -25,8 +25,8 @@ import static com.devoxx.genie.model.Constant.MARKDOWN;
  * Central orchestrator for all chat memory operations.
  * Coordinates memory initialization, maintenance, and interactions with the chat memory store.
  */
+@Slf4j
 public class ChatMemoryManager {
-    private static final Logger LOG = Logger.getInstance(ChatMemoryManager.class);
 
     private final ChatMemoryService chatMemoryService;
     private final MessageCreationService messageCreationService;
@@ -49,7 +49,7 @@ public class ChatMemoryManager {
     public void initializeMemory(@NotNull Project project) {
         int chatMemorySize = DevoxxGenieStateService.getInstance().getChatMemorySize();
         chatMemoryService.initialize(project, chatMemorySize);
-        LOG.debug("Chat memory initialized for project: " + project.getLocationHash());
+        log.debug("Chat memory initialized for project: " + project.getLocationHash());
     }
 
     /**
@@ -63,12 +63,12 @@ public class ChatMemoryManager {
         
         // If memory isn't initialized yet, do it now
         if (chatMemoryService.isEmpty(project)) {
-            LOG.debug("Preparing memory with initial system message if needed");
+            log.debug("Preparing memory with initial system message if needed");
 
             if (shouldIncludeSystemMessage(chatMessageContext)) {
                 String systemPrompt = buildSystemPrompt(chatMessageContext);
                 chatMemoryService.add(project, SystemMessage.from(systemPrompt));
-                LOG.debug("Added system message to memory");
+                log.debug("Added system message to memory");
             }
         }
     }
@@ -82,7 +82,7 @@ public class ChatMemoryManager {
         messageCreationService.addUserMessageToContext(chatMessageContext);
         Project project = chatMessageContext.getProject();
         chatMemoryService.add(project, chatMessageContext.getUserMessage());
-        LOG.debug("Added user message to memory");
+        log.debug("Added user message to memory");
     }
 
     /**
@@ -94,7 +94,7 @@ public class ChatMemoryManager {
         if (chatMessageContext.getAiMessage() != null) {
             Project project = chatMessageContext.getProject();
             chatMemoryService.add(project, chatMessageContext.getAiMessage());
-            LOG.debug("Added AI response to memory");
+            log.debug("Added AI response to memory");
         }
     }
 
@@ -117,7 +117,7 @@ public class ChatMemoryManager {
         }
         
         chatMemoryService.removeMessages(project, messagesToRemove);
-        LOG.debug("Removed last exchange from memory");
+        log.debug("Removed last exchange from memory");
     }
 
     /**
@@ -127,7 +127,7 @@ public class ChatMemoryManager {
      */
     public void removeLastMessage(@NotNull Project project) {
         chatMemoryService.removeLastMessage(project);
-        LOG.debug("Removed last message from memory");
+        log.debug("Removed last message from memory");
     }
 
     /**
@@ -137,7 +137,7 @@ public class ChatMemoryManager {
      */
     public void clearMemory(@NotNull Project project) {
         chatMemoryService.clear(project);
-        LOG.debug("Cleared all messages from memory for project: " + project.getLocationHash());
+        log.debug("Cleared all messages from memory for project: " + project.getLocationHash());
     }
 
     /**
@@ -178,7 +178,7 @@ public class ChatMemoryManager {
      */
     public void restoreConversation(@NotNull Project project, @NotNull Conversation conversation) {
         chatMemoryService.restoreConversation(project, conversation);
-        LOG.debug("Restored conversation from saved model");
+        log.debug("Restored conversation from saved model");
     }
 
     /**

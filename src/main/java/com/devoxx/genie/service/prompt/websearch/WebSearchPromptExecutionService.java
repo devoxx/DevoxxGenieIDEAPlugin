@@ -3,7 +3,6 @@ package com.devoxx.genie.service.prompt.websearch;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
@@ -12,14 +11,14 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.web.search.WebSearchEngine;
 import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
 import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
+@Slf4j
 public class WebSearchPromptExecutionService {
-
-    private static final Logger LOG = Logger.getInstance(WebSearchPromptExecutionService.class);
 
     public static WebSearchPromptExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(WebSearchPromptExecutionService.class);
@@ -40,7 +39,7 @@ public class WebSearchPromptExecutionService {
      * @return the AI message
      */
     public @NotNull Optional<AiMessage> searchWeb(@NotNull ChatMessageContext chatMessageContext) {
-        LOG.debug("Searching the web for: " + chatMessageContext.getUserPrompt());
+        log.debug("Searching the web for: " + chatMessageContext.getUserPrompt());
 
         WebSearchEngine engine = createWebSearchEngine();
 
@@ -57,7 +56,7 @@ public class WebSearchPromptExecutionService {
      */
     private @NotNull Optional<AiMessage> executeSearchCommand(WebSearchEngine webSearchEngine,
                                                               @NotNull ChatMessageContext chatMessageContext) {
-        LOG.debug("Executing search command for: " + chatMessageContext.getUserPrompt());
+        log.debug("Executing search command for: " + chatMessageContext.getUserPrompt());
 
         ContentRetriever contentRetriever = WebSearchContentRetriever.builder()
             .webSearchEngine(webSearchEngine)
@@ -77,7 +76,7 @@ public class WebSearchPromptExecutionService {
      * @return the web search engine
      */
     private @Nullable WebSearchEngine createWebSearchEngine() {
-        LOG.debug("Creating web search engine");
+        log.debug("Creating web search engine");
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         if (stateService.isTavilySearchEnabled()) {
@@ -92,7 +91,7 @@ public class WebSearchPromptExecutionService {
                 .csi(stateService.getGoogleCSIKey())
                 .build();
         }
-        LOG.debug("Web search engine not found or all disabled");
+        log.debug("Web search engine not found or all disabled");
         return null;
     }
 }
