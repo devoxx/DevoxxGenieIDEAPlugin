@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.analyzer;
 
 import com.devoxx.genie.service.analyzer.util.CachedProjectScanner;
+import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +13,12 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * A utility class to generate a project tree using CachedProjectScanner and append it to the DEVOXXGENIE.md file.
+ * A utility class to generate a project tree and append it to the DEVOXXGENIE.md file.
+ * 
+ * @deprecated Use the FileScanner-based implementation in DevoxxGenieGenerator.appendProjectTreeUsingFileScanner
+ * for better performance and consistency with file scanning logic.
  */
+@Deprecated
 @Slf4j
 public class ProjectTreeGenerator {
     
@@ -29,10 +35,11 @@ public class ProjectTreeGenerator {
      *
      * @param baseDir The base directory of the project
      * @param treeDepth The maximum depth of the tree
+     * @deprecated Use FileScanner-based implementation instead
      */
+    @Deprecated
     public static void appendProjectTreeToDevoxxGenie(@NotNull VirtualFile baseDir,
                                                       Integer treeDepth) {
-
         long startTime = System.currentTimeMillis();
         log.info("Starting project tree generation for: " + baseDir.getPath());
         
@@ -51,6 +58,43 @@ public class ProjectTreeGenerator {
             appendToGenieMd(baseDir, treeContent);
         } catch (Exception e) {
             log.error("Error in appendProjectTreeToDevoxxGenie", e);
+        }
+    }
+    
+    /**
+     * Generates a project tree and appends it to the DEVOXXGENIE.md file using FileScanner.
+     * This method provides an alternative implementation to the original using FileScanner.
+     *
+     * @param project The project
+     * @param baseDir The base directory of the project
+     * @param treeDepth The maximum depth of the tree
+     */
+    public static void appendProjectTreeUsingFileScanner(@NotNull Project project,
+                                                       @NotNull VirtualFile baseDir,
+                                                       int treeDepth) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting project tree generation using FileScanner for: " + baseDir.getPath());
+        
+        try {
+            // Initialize a FileScanner instance
+            FileScanner fileScanner = new FileScanner();
+            
+            // Initialize the gitignore parser
+            fileScanner.initGitignoreParser(project, baseDir);
+            
+            // Generate tree content using FileScanner
+            String treeContent = fileScanner.generateSourceTreeRecursive(baseDir, 0);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info(String.format("Generated tree content in %d ms, length: %d", duration, treeContent.length()));
+            
+            // Format the content with markdown code block
+            String formattedContent = TREE_PREFIX + treeContent + TREE_SUFFIX;
+            
+            // Append to DEVOXXGENIE.md
+            appendToGenieMd(baseDir, formattedContent);
+        } catch (Exception e) {
+            log.error("Error in appendProjectTreeUsingFileScanner", e);
         }
     }
 

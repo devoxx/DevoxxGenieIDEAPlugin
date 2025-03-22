@@ -1,10 +1,13 @@
 package com.devoxx.genie.service.analyzer;
 
+import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,8 @@ public class DevoxxGenieGenerator {
     private final Boolean includeTree;
     private final Integer treeDepth;
     private final ProgressIndicator indicator;
+    // Add FileScanner as a dependency
+    private final FileScanner fileScanner;
 
     public DevoxxGenieGenerator(@NotNull Project project,
                                 boolean includeTree,
@@ -32,18 +37,92 @@ public class DevoxxGenieGenerator {
         this.includeTree = includeTree;
         this.treeDepth = treeDepth;
 
-// TODO
-//        if you need to find a root directory for a file use getContentRootForFile;
-//        if you have a Module instance in the context, use one of its content roots;
-//        if you just need to get a directory somewhere near project files, use guessProjectDir;
-//        if you really need to locate .idea directory or .ipr file, use IProjectStore.
         this.baseDir = project.getBaseDir();
         this.indicator = indicator;
+        // Initialize FileScanner
+        this.fileScanner = new FileScanner();
+    }
+    
+    /**
+     * Generates and appends a project tree using FileScanner.
+     *
+     * @param baseDir   The base directory
+     * @param treeDepth The maximum tree depth
+     */
+    private void appendProjectTreeUsingFileScanner(VirtualFile baseDir, Integer treeDepth) {
+        try {
+            // Use FileScanner's tree generation capability
+            String treeContent = fileScanner.generateSourceTreeRecursive(baseDir, 0);
+            
+            // Format the tree content for inclusion in the MD file
+            StringBuilder formattedTree = new StringBuilder();
+            formattedTree.append("\n\n### Project Tree\n\n");
+            formattedTree.append("```\n");
+            formattedTree.append(treeContent);
+            formattedTree.append("\n```\n");
+            
+            // Append to the DEVOXXGENIE.md file
+            VirtualFile devoxxGenieMdFile = baseDir.findChild("DEVOXXGENIE.md");
+            
+            if (devoxxGenieMdFile != null) {
+                String currentContent = VfsUtil.loadText(devoxxGenieMdFile);
+                
+                // Check if it already has a project tree section
+                if (currentContent.contains("### Project Tree")) {
+                    // Remove existing project tree section
+                    int sectionStart = currentContent.indexOf("### Project Tree");
+                    int sectionEnd = currentContent.indexOf("```\n", sectionStart);
+                    sectionEnd = currentContent.indexOf("\n```", sectionEnd + 4);
+                    
+                    if (sectionEnd > sectionStart) {
+                        // Replace the existing section
+                        String beforeSection = currentContent.substring(0, sectionStart - 2); // Account for newlines
+                        String afterSection = sectionEnd + 4 < currentContent.length() ? 
+                                               currentContent.substring(sectionEnd + 4) : "";
+                        
+                        currentContent = beforeSection + formattedTree.toString() + afterSection;
+                    } else {
+                        // If section is malformed, just append
+                        currentContent += formattedTree.toString();
+                    }
+                } else {
+                    // Append new section
+                    currentContent += formattedTree.toString();
+                }
+                
+                // Update the file with tree content appended
+                final String updatedContent = currentContent;
+                
+                // Execute file write in a write action
+                ApplicationManager.getApplication().invokeAndWait(() ->
+                    ApplicationManager.getApplication().runWriteAction(() -> {
+                        try {
+                            VfsUtil.saveText(devoxxGenieMdFile, updatedContent);
+                            log.info("Project tree appended to DEVOXXGENIE.md");
+                        } catch (IOException e) {
+                            log.error("Error appending project tree to DEVOXXGENIE.md", e);
+                        }
+                    })
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error generating project tree", e);
+        }
     }
 
     public void generate() {
         indicator.setText("Scanning project structure...");
         indicator.setIndeterminate(true);
+
+        // Initialize FileScanner's gitignore parser
+        fileScanner.initGitignoreParser(project, baseDir);
+
+        // Get ProjectFileIndex for file traversal
+        ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+
+        // Use FileScanner to scan the project structure
+        ScanContentResult scanResult = new ScanContentResult();
+        List<VirtualFile> relevantFiles = fileScanner.scanDirectory(fileIndex, baseDir, scanResult);
 
         // Analyze the project using platform APIs
         ProjectAnalyzer scanner = new ProjectAnalyzer(project, baseDir);
@@ -64,9 +143,9 @@ public class DevoxxGenieGenerator {
         writeDevoxxGenieMd(generatedContent);
 
         if (includeTree) {
-            // Generate and append project tree to DEVOXXGENIE.md
+            // Generate and append project tree to DEVOXXGENIE.md using FileScanner
             indicator.setText("Generating project tree...");
-            ProjectTreeGenerator.appendProjectTreeToDevoxxGenie(baseDir, treeDepth);
+            appendProjectTreeUsingFileScanner(baseDir, treeDepth);
         }
 
         // Notify user
