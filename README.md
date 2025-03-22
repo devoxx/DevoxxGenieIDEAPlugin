@@ -72,7 +72,23 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
 
-Initial support for Model Context Protocol (MCP) server tools.
+Initial support for Model Context Protocol (MCP) server tools including debugging of MCP requests & responses!
+
+<img width="1399" alt="Screenshot 2025-03-22 at 17 29 33" src="https://github.com/user-attachments/assets/0f8f75c9-ce85-43e8-a244-aa796c85681a" />
+
+
+Example of the Filesystem-server MCP which allows you to interact with the given directory.
+
+
+<img width="1399" alt="Screenshot 2025-03-22 at 17 29 48" src="https://github.com/user-attachments/assets/db27a7c3-622a-4d9a-9635-5561836d28c7" />
+
+Go to the DevoxxGenie settings to enable and add your MCP servers.
+
+<img width="1038" alt="Screenshot 2025-03-22 at 17 30 12" src="https://github.com/user-attachments/assets/40752703-fb8c-4098-a046-38c33ff16031" />
+
+When configured correctly you can see the tools that the MCP brings to your LLM conversations
+
+<img width="1038" alt="Screenshot 2025-03-22 at 17 30 40" src="https://github.com/user-attachments/assets/347bcf2c-feb3-41bc-b410-7fbee2ef2f85" />
 
 
 ### 🗂️ DEVOXXGENIE.md (from v0.5.0 onwards)
