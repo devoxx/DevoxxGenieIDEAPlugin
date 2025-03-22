@@ -3,10 +3,13 @@ package com.devoxx.genie.service.projectscanner;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
@@ -64,7 +67,7 @@ public class FileScanner {
         if (startDirectory == null) {
             // Use project base path when no specific directory is provided
             projectBasePath = project.getBasePath();
-            log.info("Using project base path as startDirectory is null: " + projectBasePath);
+            log.info("Using project base path as startDirectory is null: {}", projectBasePath);
         } else {
             projectBasePath = determineCorrectProjectBaseDir(project, startDirectory);
         }
@@ -74,10 +77,15 @@ public class FileScanner {
             return;
         }
 
-        log.info("Initializing GitIgnore parser with resolved project base directory: " + projectBasePath);
+        log.info("Initializing GitIgnore parser with resolved project base directory: {}", projectBasePath);
         this.gitIgnoreFileSet = new GitIgnoreFileSet(new File(projectBasePath), false);
 
-        collectGitignoreFiles(startDirectory);
+        if (startDirectory == null) {
+            log.error("The start directory for the file scanner is null");
+            NotificationUtil.sendNotification(project, "The start directory for the file scanner is null");
+        } else {
+            collectGitignoreFiles(startDirectory);
+        }
     }
 
     /**
@@ -85,9 +93,12 @@ public class FileScanner {
      */
     private @Nullable String determineCorrectProjectBaseDir(@NotNull Project project, @NotNull VirtualFile startDirectory) {
         // First check if startDirectory belongs to an explicit module's content root
-        ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-
-        VirtualFile contentRoot = fileIndex.getContentRootForFile(startDirectory);
+        // Wrap file index access in a read action to prevent threading issues
+        VirtualFile contentRoot = ApplicationManager.getApplication().runReadAction((Computable<VirtualFile>) () -> {
+            ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+            return fileIndex.getContentRootForFile(startDirectory);
+        });
+        
         if (contentRoot != null) {
             log.info("Content root determined from workspace (module): " + contentRoot.getPath());
             return contentRoot.getPath();
@@ -180,7 +191,8 @@ public class FileScanner {
                     }
                 } else {
                     log.info("Checking file: " + file.getPath());
-                    boolean isInContent = fileIndex.isInContent(file);
+                    // Wrap file index access in a read action to prevent threading issues
+                    boolean isInContent = ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> fileIndex.isInContent(file));
                     boolean shouldNotExclude = !shouldExcludeFile(file);
                     boolean shouldInclude = shouldIncludeFile(file);
                     log.info("File checks: isInContent=" + isInContent + ", shouldNotExclude=" + shouldNotExclude + ", shouldInclude=" + shouldInclude);
@@ -213,7 +225,9 @@ public class FileScanner {
      * @return the reason for skipping the file
      */
     private String determineSkipReason(VirtualFile file, ProjectFileIndex fileIndex) {
-        if (!fileIndex.isInContent(file)) {
+        // Wrap file index access in a read action to prevent threading issues
+        boolean isInContent = ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> fileIndex.isInContent(file));
+        if (!isInContent) {
             return "not in project content";
         }
         

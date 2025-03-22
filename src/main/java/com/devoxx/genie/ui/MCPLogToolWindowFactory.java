@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui;
 
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.panel.mcp.MCPLogPanel;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -31,7 +32,7 @@ public class MCPLogToolWindowFactory implements ToolWindowFactory {
     public boolean shouldBeAvailable(@NotNull Project project) {
         // Only show this tool window when MCP is enabled
         // When enabled the user can turn on/off MCP logging
-        return com.devoxx.genie.service.mcp.MCPService.isMCPEnabled();
+        return MCPService.isMCPEnabled();
     }
     
     @Override

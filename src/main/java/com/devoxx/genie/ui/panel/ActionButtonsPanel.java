@@ -26,15 +26,17 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBList;
-import com.intellij.ui.components.JBScrollPane;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
+import com.intellij.ui.components.JBList;
+import com.intellij.ui.components.JBScrollPane;
 import java.awt.event.ActionEvent;
+import javax.swing.event.MouseInputAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -120,7 +122,7 @@ public class ActionButtonsPanel extends JPanel
         mcpToolsCountLabel.setIconTextGap(4);
         mcpToolsCountLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
-        // Add click listener for showing the tool list popup
+        // Add click listener for showing the tool list popup or opening the MCP logs panel
         mcpToolsCountLabel.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {

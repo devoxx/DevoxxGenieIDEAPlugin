@@ -609,8 +609,10 @@
         <toolWindow id="DevoxxGenieMCPLogs"
                     anchor="bottom"
                     icon="/icons/logIcon.svg"
-                    factoryClass="com.devoxx.genie.ui.MCPLogToolWindowFactory"
-                    canCloseContents="true"/>
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    canCloseContents="true"
+                    factoryClass="com.devoxx.genie.ui.MCPLogToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>

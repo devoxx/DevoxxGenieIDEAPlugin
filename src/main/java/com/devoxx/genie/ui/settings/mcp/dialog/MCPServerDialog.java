@@ -63,7 +63,7 @@ public class MCPServerDialog extends DialogWrapper {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
 
-        // Reset gridwidth for remaining components
+        // Reset grid width for remaining components
         gbc.gridwidth = 1;
 
         // Name field
@@ -197,7 +197,7 @@ public class MCPServerDialog extends DialogWrapper {
             StdioMcpTransport transport = new StdioMcpTransport.Builder()
                     .command(mcpCommand)
                     .environment(env)
-                    .logEvents(true)
+                    .logEvents(false)
                     .build();
             
             McpClient mcpClient = new DefaultMcpClient.Builder()

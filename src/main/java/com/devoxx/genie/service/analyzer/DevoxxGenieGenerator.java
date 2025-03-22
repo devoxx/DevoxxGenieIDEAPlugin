@@ -114,7 +114,7 @@ public class DevoxxGenieGenerator {
         indicator.setText("Scanning project structure...");
         indicator.setIndeterminate(true);
 
-        // Initialize FileScanner's gitignore parser
+        // Initialize FileScanner's gitignore parser - runs in read action internally now
         fileScanner.initGitignoreParser(project, baseDir);
 
         // Get ProjectFileIndex for file traversal
