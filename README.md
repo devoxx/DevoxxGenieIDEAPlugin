@@ -72,6 +72,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
 
+Initial support for Model Context Protocol (MCP) server tools.
 
 
 ### 🗂️ DEVOXXGENIE.md (from v0.5.0 onwards)

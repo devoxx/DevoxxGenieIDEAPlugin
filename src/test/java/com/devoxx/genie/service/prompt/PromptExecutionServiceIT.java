@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *     <li>{@link #testExecuteQueryDeepInfra()} requires `DEEPINFRA_API_KEY`</li>
  * </ul>
  */
-public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
+class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     private NonStreamingPromptExecutionService promptExecutionService;
 
