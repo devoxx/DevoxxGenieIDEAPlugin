@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.analyzer;
 
+import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;

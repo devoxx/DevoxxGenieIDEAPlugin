@@ -120,7 +120,6 @@ public class MCPExecutionService {
             // Create environment map
             Map<String, String> env = new HashMap<>(System.getenv());
 
-            // env.put("PATH", "/Users/stephan/.nvm/versions/node/v22.14.0/bin:" + env.getOrDefault("PATH", ""));)
             String firstCommand = command.get(0);
             int lastSeparatorIndex = firstCommand.lastIndexOf(File.separator);
             String directoryPath = firstCommand.substring(0, lastSeparatorIndex);

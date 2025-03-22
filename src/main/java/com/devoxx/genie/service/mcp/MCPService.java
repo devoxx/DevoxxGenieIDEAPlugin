@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MCPService {
 
+    // Static flag to prevent duplicate notifications
+    private static boolean notificationShown = false;
+
     /**
      * Check if MCP is enabled in the settings
      * 
@@ -61,10 +64,7 @@ public class MCPService {
             .syncPublisher(com.devoxx.genie.ui.topic.AppTopics.SETTINGS_CHANGED_TOPIC)
             .settingsChanged(true);
     }
-    
-    // Static flag to prevent duplicate notifications
-    private static boolean notificationShown = false;
-    
+
     /**
      * Reset the notification flag (usually when MCP is disabled)
      */

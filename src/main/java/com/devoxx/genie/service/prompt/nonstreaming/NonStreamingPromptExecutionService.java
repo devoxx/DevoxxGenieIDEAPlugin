@@ -57,7 +57,7 @@ public class NonStreamingPromptExecutionService {
      * @return the response future
      */
     public @NotNull CompletableFuture<ChatResponse> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
-        log.debug("Execute query : " + chatMessageContext);
+        log.debug("Execute query : {}", chatMessageContext);
 
         // Cancel any existing query
         cancelExecutingQuery();
