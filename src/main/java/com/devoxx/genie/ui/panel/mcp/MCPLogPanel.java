@@ -141,6 +141,11 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 stateService.setMcpEnabled(state);
                 stateService.setMcpDebugLogsEnabled(state);
                 
+                // Reset notification flag when MCP is disabled
+                if (!state) {
+                    com.devoxx.genie.service.mcp.MCPService.resetNotificationFlag();
+                }
+                
                 // Update log display with appropriate message
                 ApplicationManager.getApplication().invokeLater(() -> {
                     clearLogs();
@@ -157,9 +162,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 ApplicationManager.getApplication().getMessageBus().syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
                         .settingsChanged(true);
                 
-                // Notify the user of the change
-                String message = state ? "MCP and MCP logs enabled" : "MCP and MCP logs disabled";
-                com.devoxx.genie.ui.util.NotificationUtil.sendNotification(project, message);
+                // Notify the user of the change - notification is triggered via application bus listener
             }
             
             @Override

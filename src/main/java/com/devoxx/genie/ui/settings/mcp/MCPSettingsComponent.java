@@ -222,6 +222,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         if (isModified) {
             DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
             
+            // Get the old MCP enabled state for comparison
+            boolean oldMcpEnabled = stateService.getMcpEnabled();
+            
             // Convert the list to a map by name
             Map<String, MCPServer> serverMap = tableModel.getMcpServers().stream()
                     .collect(Collectors.toMap(MCPServer::getName, server -> server));
@@ -232,6 +235,17 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             // Save checkbox settings
             stateService.setMcpEnabled(enableMcpCheckbox.isSelected());
             stateService.setMcpDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
+            
+            // Refresh the tool window visibility if MCP enabled state changed
+            if (oldMcpEnabled != enableMcpCheckbox.isSelected()) {
+                // Reset notification flag if MCP was disabled
+                if (!enableMcpCheckbox.isSelected()) {
+                    MCPService.resetNotificationFlag();
+                }
+                
+                // Update tool window visibility
+                MCPService.refreshToolWindowVisibility();
+            }
             
             isModified = false;
         }

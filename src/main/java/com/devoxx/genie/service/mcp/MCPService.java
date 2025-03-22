@@ -40,9 +40,36 @@ public class MCPService {
                     com.intellij.openapi.wm.ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenieMCPLogs");
                 if (toolWindow != null && !toolWindow.isVisible()) {
                     toolWindow.show();
+                    
+                    // Show a single notification when logs are first shown
+                    if (!notificationShown) {
+                        com.devoxx.genie.ui.util.NotificationUtil.sendNotification(
+                            project, "MCP logs are enabled - check the MCP Logs panel for details");
+                        notificationShown = true;
+                    }
                 }
             });
         }
+    }
+    
+    /**
+     * Refresh the MCP tool window visibility for all open projects
+     * This should be called when MCP settings are changed
+     */
+    public static void refreshToolWindowVisibility() {
+        com.intellij.openapi.application.ApplicationManager.getApplication().getMessageBus()
+            .syncPublisher(com.devoxx.genie.ui.topic.AppTopics.SETTINGS_CHANGED_TOPIC)
+            .settingsChanged(true);
+    }
+    
+    // Static flag to prevent duplicate notifications
+    private static boolean notificationShown = false;
+    
+    /**
+     * Reset the notification flag (usually when MCP is disabled)
+     */
+    public static void resetNotificationFlag() {
+        notificationShown = false;
     }
     
     /**
