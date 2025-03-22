@@ -606,6 +606,12 @@
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
 
+        <toolWindow id="DevoxxGenieMCPLogs"
+                    anchor="bottom"
+                    icon="/icons/logIcon.svg"
+                    factoryClass="com.devoxx.genie.ui.MCPLogToolWindowFactory"
+                    canCloseContents="true"/>
+
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService"/>

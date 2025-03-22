@@ -179,8 +179,7 @@ public class NonStreamingPromptExecutionService {
 
         } catch (Exception e) {
             // Thread interruption is likely from cancellation, so we handle it specially
-            if (e instanceof InterruptedException || 
-                Thread.currentThread().isInterrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
                 throw new CancellationException("Query was cancelled");
             }
             

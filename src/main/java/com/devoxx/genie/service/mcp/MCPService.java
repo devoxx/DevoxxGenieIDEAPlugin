@@ -29,6 +29,23 @@ public class MCPService {
     }
     
     /**
+     * Show the MCP log panel tool window
+     * 
+     * @param project The current project
+     */
+    public static void showMCPLogPanel(com.intellij.openapi.project.Project project) {
+        if (isDebugLogsEnabled() && project != null) {
+            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
+                com.intellij.openapi.wm.ToolWindow toolWindow = 
+                    com.intellij.openapi.wm.ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenieMCPLogs");
+                if (toolWindow != null && !toolWindow.isVisible()) {
+                    toolWindow.show();
+                }
+            });
+        }
+    }
+    
+    /**
      * Log a debug message if debug logs are enabled
      * 
      * @param message The message to log

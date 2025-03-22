@@ -5,12 +5,10 @@ import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -36,7 +34,7 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  * help messages, and user prompts.
  */
 @Slf4j
-public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener, MCPLoggingMessage {
+public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
 
     private final transient Project project;
 
@@ -72,10 +70,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         setMinimumSize(new Dimension(200, 200));
         showWelcomeText();
-
-        project.getMessageBus()
-                .connect()
-                .subscribe(AppTopics.MCP_LOGGING_MSG, this);
     }
 
     /**
@@ -307,16 +301,5 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Override
     public void onCustomPromptsChanged() {
         ApplicationManager.getApplication().invokeLater(this::updateHelpText);
-    }
-
-    @Override
-    public void onMCPLoggingMessage(String message) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            log.debug(message);
-            JLabel jLabel = new JLabel(message);
-            jLabel.setToolTipText(message);
-            container.add(jLabel);
-            scrollToBottom();
-        });
     }
 }

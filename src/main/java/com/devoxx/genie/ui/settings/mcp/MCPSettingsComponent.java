@@ -30,6 +30,9 @@ import java.net.URI;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.devoxx.genie.service.mcp.MCPService;
 
 @Slf4j
 public class MCPSettingsComponent extends AbstractSettingsComponent {
@@ -109,10 +112,20 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 log.error(ex.getMessage());
             }
         });
+        
+        JButton openLogPanelButton = new JButton("Open MCP Log Panel", AllIcons.General.OpenDisk);
+        openLogPanelButton.addActionListener(e -> {
+            Project[] projects = ProjectManager.getInstance().getOpenProjects();
+            if (projects.length > 0) {
+                Project currentProject = projects[0];
+                MCPService.showMCPLogPanel(currentProject);
+            }
+        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.add(infoButton);
         buttonPanel.add(availableMCPButtons);
+        buttonPanel.add(openLogPanelButton);
 
         // Build the main panel
         panel.setLayout(new BorderLayout());

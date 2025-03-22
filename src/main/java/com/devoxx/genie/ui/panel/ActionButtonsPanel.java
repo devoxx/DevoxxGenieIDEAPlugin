@@ -23,6 +23,8 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -131,7 +133,7 @@ public class ActionButtonsPanel extends JPanel
         
         updateMCPToolsCounter();
     }
-    
+
     /**
      * Shows a popup with the list of all MCP tools and their descriptions.
      */
@@ -252,7 +254,8 @@ public class ActionButtonsPanel extends JPanel
                         }
                     });
             
-            toolTip.append("</html>");
+            toolTip.append("<br>Click to open MCP logs panel<br>");
+            toolTip.append("Shift+Click to see tools list</html>");
             mcpToolsCountLabel.setToolTipText(toolTip.toString());
         } else {
             mcpToolsCountLabel.setVisible(false);

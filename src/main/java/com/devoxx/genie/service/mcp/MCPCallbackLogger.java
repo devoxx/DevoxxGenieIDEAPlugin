@@ -6,6 +6,8 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,6 +34,26 @@ public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
             return;
         }
         
+        // Show MCP Log panel if not already visible
+        Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+        if (openProjects.length > 0) {
+            // Only handle the first message as a trigger to show the panel
+            eventObject.getFormattedMessage();
+            if (eventObject.getFormattedMessage().startsWith(">") && eventObject.getFormattedMessage().contains("initialize")) {
+                
+                // Show the MCP log panel and notify user
+                Project project = openProjects[0];
+                MCPService.showMCPLogPanel(project);
+                
+                // Notify user via a notification
+                com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() ->
+                        com.devoxx.genie.ui.util.NotificationUtil.sendNotification(
+                            project,
+                    "MCP logs are enabled - check the MCP Logs panel for details"));
+            }
+        }
+        
+        // Publish the log message to the log panel
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
         messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
                   .onMCPLoggingMessage(eventObject.getFormattedMessage());
