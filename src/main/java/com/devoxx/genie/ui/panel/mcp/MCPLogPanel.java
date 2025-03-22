@@ -25,6 +25,8 @@ import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -40,6 +42,7 @@ import java.util.List;
  * Panel for displaying MCP logs with double-click functionality
  * to open complete logs in a new editor tab.
  */
+@Slf4j
 public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMessage, Disposable {
     
     private static final String WELCOME_MESSAGE = "MCP Log panel is now active. All MCP communication logs will appear here.";
@@ -93,8 +96,9 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int index = logList.locationToIndex(e.getPoint());
-                    if (index >= 0 && index < fullLogs.size()) {
-                        openLogInEditor(fullLogs.get(index));
+                    if (index >= 0 && index < logListModel.size()) {
+                        openLogInEditor(logListModel.getElementAt(index));
+                        log.debug("Opening log entry at index: " + index);
                     }
                 }
             }
@@ -279,7 +283,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         
         ApplicationManager.getApplication().invokeLater(() -> {
             // Clear placeholder messages if this is the first real log
-            if (!fullLogs.isEmpty() && fullLogs.size() == 1) {
+            if (fullLogs.size() == 1) {
                 String firstLogMessage = fullLogs.get(0).getLogMessage();
                 if (firstLogMessage.equals(MCP_DISABLED_MESSAGE) || firstLogMessage.equals(MCP_EMPTY_LOGS_MESSAGE)) {
                     fullLogs.clear();
@@ -292,7 +296,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 // Remove oldest entries if we're going to exceed capacity
                 for (int i = 0; i < excess && !fullLogs.isEmpty(); i++) {
                     fullLogs.remove(0);
-                    if (logListModel.size() > 0) {
+                    if (!logListModel.isEmpty()) {
                         logListModel.remove(0);
                     }
                 }
@@ -342,7 +346,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     }
     
     /**
-     * Open the log entry in a new editor tab
+     * Open the log entry in a new editor tab without custom JSON formatting
      *
      * @param logEntry The log entry to open
      */
@@ -351,30 +355,40 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             return;
         }
         
-        String content = logEntry.getLogMessage();
-        
-        // Remove the first character (< or >) to make the JSON valid
-        if (content.startsWith("<") || content.startsWith(">")) {
-            content = content.substring(1).trim();
-        }
-        
-        // Format the content for better readability if it looks like JSON
-        if ((content.startsWith("{") && content.endsWith("}")) || 
-            (content.startsWith("[") && content.endsWith("]"))) {
-            try {
-                // Use our JSON formatter for better readability
-                content = JsonFormatter.format(content);
-            } catch (Exception e) {
-                // Not valid JSON or error formatting, use as-is
+        try {
+            // Get original content
+            String content = logEntry.getLogMessage();
+            
+            // Log to help with debugging
+            log.debug("Opening log entry: {} ... ", content.substring(0, Math.min(50, content.length())));
+
+                    // Remove the first character (< or >) to make the JSON valid
+            if (content.startsWith("<") || content.startsWith(">")) {
+                content = content.substring(1).trim();
             }
+            
+            // Create a filename based on the timestamp
+            String fileName = "MCPLog_" + logEntry.getTimestamp().replace(":", "").replace(".", "_") + ".json";
+            
+            // Create a virtual file and open it in the editor using invokeLater to avoid threading issues
+            String finalContent = content;
+            ApplicationManager.getApplication().invokeLater(() -> {
+                // Create virtual file
+                LightVirtualFile virtualFile = new LightVirtualFile(fileName, JsonFileType.INSTANCE, finalContent);
+                
+                // Open the file in the editor
+                FileEditorManager.getInstance(project).openFile(virtualFile, true);
+            });
+        } catch (Exception e) {
+            // Log any exceptions to help diagnose issues
+            log.error("Error opening MCP log entry: " + e.getMessage());
+            
+            // Notify the user about the error
+            com.devoxx.genie.ui.util.NotificationUtil.sendNotification(
+                project, 
+                "Error opening MCP log: " + e.getMessage()
+            );
         }
-        
-        // Create a filename based on the timestamp
-        String fileName = "MCPLog_" + logEntry.getTimestamp().replace(":", "").replace(".", "_") + ".json";
-        
-        // Create a virtual file and open it in the editor
-        LightVirtualFile virtualFile = new LightVirtualFile(fileName, JsonFileType.INSTANCE, content);
-        FileEditorManager.getInstance(project).openFile(virtualFile, true);
     }
     
     /**
@@ -406,6 +420,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     /**
      * Log entry data class
      */
+    @Getter
     private static class LogEntry {
         private final String timestamp;
         private final String logMessage;
@@ -414,15 +429,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             this.timestamp = timestamp;
             this.logMessage = logMessage;
         }
-        
-        public String getTimestamp() {
-            return timestamp;
-        }
-        
-        public String getLogMessage() {
-            return logMessage;
-        }
-        
+
         @Override
         public String toString() {
             return timestamp + " " + logMessage;
@@ -448,10 +455,8 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 // For simple cases, we'll just set the text directly with colors
                 if (!isSelected) {
                     String message = logEntry.getLogMessage();
-                    StringBuilder plainText = new StringBuilder();
-                    plainText.append(logEntry.getTimestamp()).append(" ").append(message);
-                    
-                    label.setText(plainText.toString());
+
+                    label.setText(logEntry.getTimestamp() + " " + message);
                     
                     // Set text color based on message type
                     if (message.startsWith("<")) {
