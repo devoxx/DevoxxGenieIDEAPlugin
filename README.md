@@ -35,8 +35,9 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
+- **🔥️ MCP Support **: You can now add MCP servers!</LI>
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
-- **📸 DnD images (🔥 NEW)**: You can now DnD images with multimodal LLM's.
+- **📸 DnD images**: You can now DnD images with multimodal LLM's.
 - **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
 - **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
@@ -69,7 +70,12 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
 
-### 🗂️ DEVOXXGENIE.md (Draft feature for v0.5.0)
+### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
+
+Initial support for Model Context Protocol (MCP) server tools.
+
+
+### 🗂️ DEVOXXGENIE.md (from v0.5.0 onwards)
 
 You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page or just use /init in the prompt input field.
 

@@ -5,7 +5,9 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.bedrock.*;
+import dev.langchain4j.model.bedrock.BedrockChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +15,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+
 import java.util.List;
 
 /**
@@ -64,62 +67,86 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An instance of {@link ChatLanguageModel} configured for Anthropic models.
      */
     private ChatLanguageModel createAnthropicChatModel(@NotNull ChatModel chatModel) {
-        return BedrockAnthropicMessageChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 
     private ChatLanguageModel createMistralChatModel(@NotNull ChatModel chatModel) {
-        return BedrockMistralAiChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 
     private ChatLanguageModel createCohereChatModel(@NotNull ChatModel chatModel) {
-        return BedrockCohereChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 
     private ChatLanguageModel createLamaChatModel(@NotNull ChatModel chatModel) {
-        return BedrockLlamaChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 
     private ChatLanguageModel createAI21ChatModel(@NotNull ChatModel chatModel) {
-        return BedrockAI21LabsChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 
     private ChatLanguageModel createStabilityChatModel(@NotNull ChatModel chatModel) {
-        return BedrockStabilityAIChatModel.builder()
-                .model(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .credentialsProvider(getCredentialsProvider())
-                .region(getRegion())
+        return BedrockChatModel.builder()
+                .modelId(chatModel.getModelName())
+                .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
                 .build();
     }
 

@@ -2,9 +2,7 @@ package com.devoxx.genie.service.analyzer.languages.java;
 
 import com.devoxx.genie.service.analyzer.ProjectAnalyzerExtension;
 import com.intellij.openapi.project.Project;
-
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.model.java.LanguageLevel;
 
 import java.util.Map;
 

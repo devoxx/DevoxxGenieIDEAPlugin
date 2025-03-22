@@ -27,163 +27,489 @@ See build.gradle.kts or pom.xml for the complete dependency list.
 
 ```
 DevoxxGenieIDEAPlugin/
-├── core/
-│   ├── src/
-│   │   └── main/
-│   │       └── java/
-│   │           └── com/
-│   │               └── devoxx/
-│   │                   └── genie/
-│   │                       └── ... (20 more items)
-│   └── build.gradle.kts
-├── docs/
-│   └── prompt_flow.png
-└── src/
-    ├── main/
-    │   ├── java/
-    │   │   └── com/
-    │   │       └── devoxx/
-    │   │           └── genie/
-    │   │               ├── action/
-    │   │               │   ├── AddDirectoryAction.java
-    │   │               │   ├── AddFileAction.java
-    │   │               │   ├── AddSnippetAction.java
-    │   │               │   ├── CalcTokensForDirectoryAction.java
-    │   │               │   └── ExcludeDirectoryAction.java
-    │   │               ├── chatmodel/
-    │   │               │   ├── ChatModelFactory.java
-    │   │               │   ├── ChatModelFactoryProvider.java
-    │   │               │   └── ChatModelProvider.java
-    │   │               ├── controller/
-    │   │               │   ├── ActionButtonsPanelController.java
-    │   │               │   ├── ProjectContextController.java
-    │   │               │   ├── PromptExecutionController.java
-    │   │               │   └── TokenCalculationController.java
-    │   │               ├── error/
-    │   │               │   └── ErrorHandler.java
-    │   │               ├── model/
-    │   │               │   ├── ChatContextParameters.java
-    │   │               │   ├── ChatModel.java
-    │   │               │   ├── Constant.java
-    │   │               │   ├── GenericOpenAIProvider.java
-    │   │               │   └── ScanContentResult.java
-    │   │               ├── service/
-    │   │               │   ├── ChatMemoryService.java
-    │   │               │   ├── ChatPromptExecutor.java
-    │   │               │   ├── ChatService.java
-    │   │               │   ├── FileListManager.java
-    │   │               │   ├── FileListObserver.java
-    │   │               │   ├── LLMModelRegistryService.java
-    │   │               │   ├── LLMProviderService.java
-    │   │               │   ├── MessageCreationService.java
-    │   │               │   ├── NoOpProgressIndicator.java
-    │   │               │   ├── NonStreamingPromptExecutor.java
-    │   │               │   ├── PostStartupActivity.java
-    │   │               │   ├── ProjectContentService.java
-    │   │               │   ├── PromptExecutionService.java
-    │   │               │   ├── PropertiesService.java
-    │   │               │   └── TokenCalculationService.java
-    │   │               ├── ui/
-    │   │               │   ├── ConversationStarter.java
-    │   │               │   ├── DevoxxGenieToolWindowContent.java
-    │   │               │   ├── DevoxxGenieToolWindowFactory.java
-    │   │               │   └── EditorFileButtonManager.java
-    │   │               └── util/
-    │   │                   ├── ChatMessageContextUtil.java
-    │   │                   ├── ClipboardUtil.java
-    │   │                   ├── DefaultLLMSettingsUtil.java
-    │   │                   ├── DockerUtil.java
-    │   │                   ├── FileUtil.java
-    │   │                   ├── HttpClientProvider.java
-    │   │                   ├── HttpUtil.java
-    │   │                   ├── ImageUtil.java
-    │   │                   ├── LocalDateTimeConverter.java
-    │   │                   └── MessageBusUtil.java
-    │   └── resources/
-    │       ├── META-INF/
-    │       │   ├── clion-features.xml
-    │       │   ├── goland-features.xml
-    │       │   ├── java-features.xml
-    │       │   ├── kotlin-features.xml
-    │       │   ├── php-features.xml
-    │       │   ├── plugin.xml
-    │       │   ├── pluginIcon.svg
-    │       │   ├── python-features.xml
-    │       │   ├── rust-features.xml
-    │       │   └── webstorm-features.xml
-    │       ├── icons/
-    │       │   ├── addNewFile.svg
-    │       │   ├── addNewFile_dark.svg
-    │       │   ├── arrowExpand.svg
-    │       │   ├── arrowExpand_dark.svg
-    │       │   ├── arrowExpanded.svg
-    │       │   ├── arrowExpanded_dark.svg
-    │       │   ├── calculator.svg
-    │       │   ├── calculator_dark.svg
-    │       │   ├── class.svg
-    │       │   ├── clock.svg
-    │       │   ├── clock_dark.svg
-    │       │   ├── closeSmall_dark.svg
-    │       │   ├── codeSnippet.svg
-    │       │   ├── codeSnippet_dark.svg
-    │       │   ├── cog.svg
-    │       │   ├── cog_dark.svg
-    │       │   ├── copy.svg
-    │       │   ├── copy_dark.svg
-    │       │   ├── delete.svg
-    │       │   ├── delete_dark.svg
-    │       │   ├── devoxxHead.png
-    │       │   ├── devoxxHead_dark.png
-    │       │   ├── enum.svg
-    │       │   ├── event.svg
-    │       │   ├── event_dark.svg
-    │       │   ├── google-small.svg
-    │       │   ├── image.svg
-    │       │   ├── image_dark.svg
-    │       │   ├── insertCode.svg
-    │       │   ├── insertCode_dark.svg
-    │       │   ├── inspectionsEye.svg
-    │       │   ├── inspectionsEye_dark.svg
-    │       │   ├── interface.svg
-    │       │   ├── paperPlane.svg
-    │       │   ├── paperPlane_dark.svg
-    │       │   ├── pluginIcon.svg
-    │       │   ├── pluginIcon_dark.svg
-    │       │   ├── plus.svg
-    │       │   ├── plus_dark.svg
-    │       │   ├── record.svg
-    │       │   ├── record_dark.svg
-    │       │   ├── refresh.svg
-    │       │   ├── refresh_dark.svg
-    │       │   ├── stop.svg
-    │       │   ├── trash.svg
-    │       │   ├── trash_dark.svg
-    │       │   ├── web.svg
-    │       │   └── web_dark.svg
-    │       ├── images/
-    │       │   ├── diff_merge.jpg
-    │       │   └── simple_diff.jpg
-    │       ├── application.properties
-    │       ├── logback.xml
-    │       ├── messages.properties
-    │       └── messages_fr_FR.properties
-    └── test/
-        ├── java/
-        │   └── com/
-        │       └── devoxx/
-        │           └── genie/
-        │               ├── chatmodel/
-        │               │   └── AbstractLightPlatformTestCase.java
-        │               ├── service/
-        │               │   ├── ChatPromptExecutorIT.java
-        │               │   ├── FileListManagerTest.java
-        │               │   ├── MessageCreationServiceTest.java
-        │               │   └── PromptExecutionServiceIT.java
-        │               ├── ui/
-        │               │   └── ... (1 more items)
-        │               └── util/
-        │                   └── HttpClientProviderTest.java
-        └── resources/
-            └── test-log.properties
+  src/
+    main/
+      java/
+        com/
+          devoxx/
+            genie/
+              ui/
+                util/
+                  HelpUtil.java
+                  EditorUtil.java
+                  WelcomeUtil.java
+                  TimestampUtil.java
+                  LanguageGuesser.java
+                  FileTypeIconUtil.java
+                  NotificationUtil.java
+                  WindowPluginUtil.java
+                  CodeSnippetAction.java
+                  SettingsDialogUtil.java
+                  WorkingMessageUtil.java
+                  DoubleConverterUtil.java
+                  DevoxxGenieFontsUtil.java
+                  DevoxxGenieIconsUtil.java
+                  DevoxxGenieColorsUtil.java
+                  WindowContextFormatterUtil.java
+                panel/
+                  mcp/
+                    MCPLogPanel.java
+                  chatresponse/
+                    FileListPanel.java
+                    ResponseHeaderPanel.java
+                    ResponseDocumentPanel.java
+                    MetricExecutionInfoPanel.java
+                    SemanticSearchReferencesPanel.java
+                  HelpPanel.java
+                  FillerPanel.java
+                  SubmitPanel.java
+                  WaitingPanel.java
+                  WelcomePanel.java
+                  conversationhistory/
+                    ConversationHistoryPanel.java
+                  BackgroundPanel.java
+                  UserPromptPanel.java
+                  ValidatorsPanel.java
+                  FindResultsPanel.java
+                  LlmProviderPanel.java
+                  ChatResponsePanel.java
+                  ConversationPanel.java
+                  PromptOutputPanel.java
+                  ActionButtonsPanel.java
+                  SearchOptionsPanel.java
+                  FileListCellRenderer.java
+                  ValidatorStatusPanel.java
+                  FileSelectionPanelFactory.java
+                  ChatStreamingResponsePanel.java
+                  PromptContextFileListPanel.java
+                topic/
+                  AppTopics.java
+                dialog/
+                  CustomPromptDialog.java
+                listener/
+                  GlowingListener.java
+                  RAGStateListener.java
+                  FileRemoveListener.java
+                  GitDiffStateListener.java
+                  ChatMemorySizeListener.java
+                  SettingsChangeListener.java
+                  ShortcutChangeListener.java
+                  WebSearchStateListener.java
+                  AbstractDocumentListener.java
+                  PromptInputFocusListener.java
+                  PromptSubmissionListener.java
+                  ConversationEventListener.java
+                  LLMSettingsChangeListener.java
+                  CustomPromptChangeListener.java
+                  ConversationSelectionListener.java
+                renderer/
+                  ModelInfoRenderer.java
+                  CodeBlockNodeRenderer.java
+                settings/
+                  llm/
+                    LLMProvidersComponent.java
+                    LLMProvidersConfigurable.java
+                  mcp/
+                    dialog/
+                      MCPServerDialog.java
+                      MCPEnvironmentVariablesDialog.java
+                    MCPSettingsComponent.java
+                    MCPSettingsConfigurable.java
+                  rag/
+                    table/
+                      ButtonEditor.java
+                      ButtonRenderer.java
+                    ActionButtonState.java
+                    RAGSettingsHandler.java
+                    RAGSettingsComponent.java
+                    RAGSettingsConfigurable.java
+                  prompt/
+                    KeyboardShortcutPanel.java
+                    PromptSettingsComponent.java
+                    PromptSettingsConfigurable.java
+                  gitdiff/
+                    GitDiffMode.java
+                    GitDiffSettingsComponent.java
+                    GitDiffSettingsConfigurable.java
+                  gitmerge/
+                    GitDiffMode.java
+                    GitMergeSettingsComponent.java
+                    GitMergeSettingsConfigurable.java
+                  llmconfig/
+                    LLMConfigSettingsComponent.java
+                    LLMConfigSettingsConfigurable.java
+                  websearch/
+                    WebSearchProvidersComponent.java
+                    WebSearchProvidersConfigurable.java
+                  copyproject/
+                    CopyProjectSettingsComponent.java
+                    CopyProjectSettingsConfigurable.java
+                  costsettings/
+                    LanguageModelCostSettingsComponent.java
+                    LanguageModelCostSettingsConfigurable.java
+                  SettingsComponent.java
+                  DevoxxGenieStateService.java
+                  AbstractSettingsComponent.java
+                component/
+                  input/
+                    PromptInputArea.java
+                    ImagePreviewHandler.java
+                    CommandAutoCompleteTextField.java
+                  border/
+                    GlowingBorder.java
+                    AnimatedGlowingBorder.java
+                  button/
+                    CustomButton.java
+                    ButtonFactory.java
+                  InputSwitch.java
+                  RoundBorder.java
+                  TokenUsageBar.java
+                  ExpandablePanel.java
+                  ContextPopupMenu.java
+                  JEditorPaneUtils.java
+                  FileEntryComponent.java
+                  StyleSheetsFactory.java
+                  EventSwitchSelected.java
+                processor/
+                  NodeProcessor.java
+                  BlockProcessor.java
+                  CommandProcessor.java
+                  NodeProcessorFactory.java
+                  FencedCodeBlockProcessor.java
+                  IndentedCodeBlockProcessor.java
+                ConversationStarter.java
+                EditorFileButtonManager.java
+                MCPLogToolWindowFactory.java
+                DevoxxGenieToolWindowContent.java
+                DevoxxGenieToolWindowFactory.java
+              util/
+                FileUtil.java
+                HttpUtil.java
+                ImageUtil.java
+                DockerUtil.java
+                ClipboardUtil.java
+                MessageBusUtil.java
+                HttpClientProvider.java
+                ChatMessageContextUtil.java
+                DefaultLLMSettingsUtil.java
+                LocalDateTimeConverter.java
+              error/
+                ErrorHandler.java
+              model/
+                mcp/
+                  MCPServer.java
+                  MCPSettings.java
+                request/
+                  EditorInfo.java
+                  SemanticFile.java
+                  ChatMessageContext.java
+                conversation/
+                  ChatMessage.java
+                  Conversation.java
+                Constant.java
+                ChatModel.java
+                ScanContentResult.java
+                ChatContextParameters.java
+                GenericOpenAIProvider.java
+              action/
+                AddFileAction.java
+                AddSnippetAction.java
+                AddDirectoryAction.java
+                ExcludeDirectoryAction.java
+                CalcTokensForDirectoryAction.java
+              service/
+                mcp/
+                  MCPService.java
+                  MCPCallbackLogger.java
+                  MCPLoggingMessage.java
+                  MCPExecutionService.java
+                rag/
+                  validator/
+                    Validator.java
+                    ValidatorType.java
+                    DockerValidator.java
+                    OllamaValidator.java
+                    ValidatorStatus.java
+                    ValidationResult.java
+                    ChromeDBValidator.java
+                    ValidationActionType.java
+                    NomicEmbedTextValidator.java
+                  SearchResult.java
+                  IndexerConstants.java
+                  RagValidatorService.java
+                  ProjectIndexerService.java
+                  SemanticSearchService.java
+                tdg/
+                  CodeContainer.java
+                  CodeGeneratorService.java
+                  ClassNameNotFoundException.java
+                prompt/
+                  error/
+                    README.md
+                    ModelException.java
+                    MemoryException.java
+                    PromptException.java
+                    ExecutionException.java
+                    PromptErrorHandler.java
+                    StreamingException.java
+                    WebSearchException.java
+                  memory/
+                    ChatMemoryManager.java
+                    ChatMemoryService.java
+                  result/
+                    PromptResult.java
+                  command/
+                    FindCommand.java
+                    HelpCommand.java
+                    PromptCommand.java
+                    CustomPromptCommand.java
+                    PromptCommandProcessor.java
+                  strategy/
+                    PromptExecutionStrategy.java
+                    StreamingPromptStrategy.java
+                    WebSearchPromptStrategy.java
+                    NonStreamingPromptStrategy.java
+                    PromptExecutionStrategyFactory.java
+                    AbstractPromptExecutionStrategy.java
+                  streaming/
+                    StreamingResponseHandler.java
+                  threading/
+                    PromptTask.java
+                    PromptTaskTracker.java
+                    ThreadPoolManager.java
+                    ThreadPoolShutdownManager.java
+                  websearch/
+                    WebSearchPromptExecutionService.java
+                  cancellation/
+                    PromptCancellationService.java
+                  nonstreaming/
+                    NonStreamingPromptExecutionService.java
+                  PromptExecutionService.java
+                gitdiff/
+                  GitMergeService.java
+                analyzer/
+                  util/
+                    GitignoreParser.java
+                    CachedProjectScanner.java
+                  tools/
+                    GlobTool.java
+                  languages/
+                    go/
+                      GoProjectScannerExtension.java
+                    cpp/
+                      CppProjectScannerExtension.java
+                    php/
+                      PhpProjectScannerExtension.java
+                    java/
+                      JavaProjectScannerExtension.java
+                    rust/
+                      RustProjectScannerExtension.java
+                    kotlin/
+                      KotlinProjectScannerExtension.java
+                    python/
+                      PythonProjectScannerExtension.java
+                    javascript/
+                      JavaScriptProjectScannerExtension.java
+                  ProjectAnalyzer.java
+                  DevoxxGenieGenerator.java
+                  ProjectTreeGenerator.java
+                  ProjectAnalyzerExtension.java
+                chromadb/
+                  model/
+                    ChromaCollection.java
+                  exception/
+                    DockerException.java
+                    ChromaDBException.java
+                  ChromaDBManager.java
+                  ChromaDBService.java
+                  ChromaDockerService.java
+                  ChromaDBStatusCallback.java
+                  ChromaEmbeddingService.java
+                exception/
+                  ModelNotActiveException.java
+                  ProviderUnavailableException.java
+                  UnsuccessfulRequestException.java
+                conversations/
+                  ConversationStorageService.java
+                projectscanner/
+                  FileScanner.java
+                  TokenCalculator.java
+                  ContentExtractor.java
+                  ProjectScannerService.java
+                  DirectoryScannerService.java
+                ChatService.java
+                FileListManager.java
+                FileListObserver.java
+                PropertiesService.java
+                LLMProviderService.java
+                PostStartupActivity.java
+                NoOpProgressIndicator.java
+                ProjectContentService.java
+                MessageCreationService.java
+                LLMModelRegistryService.java
+                TokenCalculationService.java
+              chatmodel/
+                cloud/
+                  groq/
+                    GroqChatModelFactory.java
+                  google/
+                    GoogleChatModelFactory.java
+                  openai/
+                    OpenAIChatModelName.java
+                    OpenAIChatModelFactory.java
+                  bedrock/
+                    BedrockService.java
+                    BedrockModelFactory.java
+                  mistral/
+                    MistralChatModelFactory.java
+                  deepseek/
+                    DeepSeekChatModelFactory.java
+                  anthropic/
+                    AnthropicChatModelFactory.java
+                  deepinfra/
+                    DeepInfraChatModelFactory.java
+                  openrouter/
+                    OpenRouterService.java
+                    OpenRouterChatModelFactory.java
+                  azureopenai/
+                    AzureOpenAIChatModelFactory.java
+                local/
+                  jan/
+                    JanModelService.java
+                    JanChatModelFactory.java
+                  ollama/
+                    OllamaApiService.java
+                    OllamaModelService.java
+                    OllamaChatModelFactory.java
+                  gpt4all/
+                    GPT4AllModelService.java
+                    GPT4AllChatModelFactory.java
+                  llamaCPP/
+                    LlamaChatModelFactory.java
+                  lmstudio/
+                    LMStudioModelService.java
+                    LMStudioChatModelFactory.java
+                  customopenai/
+                    CustomOpenAIChatModelFactory.java
+                  LocalLLMProvider.java
+                  LocalLLMProviderUtil.java
+                  LocalChatModelFactory.java
+                ChatModelFactory.java
+                ChatModelProvider.java
+                ChatModelFactoryProvider.java
+              controller/
+                listener/
+                  PromptExecutionListener.java
+                  TokenCalculationListener.java
+                ProjectContextController.java
+                PromptExecutionController.java
+                TokenCalculationController.java
+                ActionButtonsPanelController.java
+      resources/
+        icons/
+        images/
+        META-INF/
+          plugin.xml
+          php-features.xml
+          java-features.xml
+          rust-features.xml
+          clion-features.xml
+          goland-features.xml
+          kotlin-features.xml
+          python-features.xml
+          webstorm-features.xml
+        logback.xml
+        messages.properties
+        application.properties
+        messages_fr_FR.properties
+    test/
+      java/
+        com/
+          devoxx/
+            genie/
+              ui/
+                util/
+                  DoubleConverterTest.java
+              util/
+                HttpClientProviderTest.java
+              service/
+                jan/
+                  JanServiceTest.java
+                  BaseIntellijTest.java
+                prompt/
+                  memory/
+                    ChatMemoryCleanupTest.java
+                  ChatPromptExecutorIT.java
+                  PromptExecutionServiceIT.java
+                openrouter/
+                  OpenRouterServiceTest.java
+                projectscanner/
+                  FileScannerTest.java
+                  TokenCalculatorTest.java
+                  ContentExtractorTest.java
+                  ProjectScannerServiceTest.java
+                  DirectoryScannerServiceTest.java
+                FileListManagerTest.java
+                MessageCreationServiceTest.java
+              chatmodel/
+                cloud/
+                  groq/
+                    GroqChatModelFactoryTest.java
+                  google/
+                    GeminiChatModelFactoryTest.java
+                  openai/
+                    OpenAiChatModelFactoryTest.java
+                  bedrock/
+                    BedrockServiceIT.java
+                    BedrockModelFactoryTest.java
+                  mistral/
+                    MistralChatModelFactoryTest.java
+                  anthropic/
+                    AnthropicChatModelFactoryTest.java
+                  deepinfra/
+                    DeepInfraChatModelFactoryTest.java
+                  openrouter/
+                    OpenRouterChatModelFactoryTest.java
+                  azureopenai/
+                    AzureOpenAiChatModelFactoryTest.java
+                local/
+                  jan/
+                    JanChatModelFactoryTest.java
+                  ollama/
+                    OllamaChatModelFactoryTest.java
+                  gpt4all/
+                    GPT4AllChatModelFactoryTest.java
+                  lmstudio/
+                    LMStudioChatModelFactoryTest.java
+                  LocalChatModelFactoryTest.java
+                AbstractLightPlatformTestCase.java
+      resources/
+        test-log.properties
+  docs/
+    prompt_structure_refactoring.md
+  .venv/
+  gradle/
+    wrapper/
+      gradle-wrapper.properties
+  .github/
+    workflows/
+      tests.yml
+      gradle.yml
+  .gradle/
+    vcs-1/
+      gc.properties
+    8.11.1/
+      expanded/
+      checksums/
+      fileHashes/
+      fileChanges/
+      vcsMetadata/
+      gc.properties
+      executionHistory/
+    buildOutputCleanup/
+      cache.properties
+  README.md
+  DEVOXXGENIE.md
+  gradle.properties
 
 ```

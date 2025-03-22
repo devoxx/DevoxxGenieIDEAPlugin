@@ -37,7 +37,11 @@
     <change-notes><![CDATA[
         <h2>v0.5.0</h2>
         <UL>
-          <LI>Feature: Create DEVOXXGENIE.md file for extra system prompt info</LI>
+          <LI>Feature: Auto create DEVOXXGENIE.md file for extra system prompt info</LI>
+          <LI>Feature: Model Context Protocol (MCP) Support by @stephanj</LI>
+          <LI>Fix #554 : Exception thrown in PHPStorm with 'Use .gitignore' enabled</LI>
+          <LI>Fix #560 : SemanticSearchService must use stateService.getIndexerMaxResults()</LI>
+          <LI>Feat #557 : Upgrade Langchain4j to v1.0.0-beta2 by @stephanj</LI>
         </UL>
         <h2>V0.4.22</h2>
         <UL>
@@ -567,6 +571,11 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
 
+        <projectConfigurable id="com.devoxx.genie.mcpsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
+                             displayName="MCP Settings"/>
+
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"
@@ -597,14 +606,29 @@
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
 
+        <toolWindow id="DevoxxGenieMCPLogs"
+                    anchor="bottom"
+                    icon="/icons/logIcon.svg"
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    canCloseContents="true"
+                    factoryClass="com.devoxx.genie.ui.MCPLogToolWindowFactory"/>
+
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.PromptExecutionService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.ChatMemoryService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.ThreadPoolManager"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.PromptTaskTracker"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryManager"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.command.PromptCommandProcessor"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.websearch.WebSearchService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.projectscanner.ProjectScannerService"/>
@@ -614,6 +638,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>

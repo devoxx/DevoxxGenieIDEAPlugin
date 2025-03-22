@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +11,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class ValidatorStatusPanel extends JBPanel<ValidatorStatusPanel> {
-    private static final Logger LOG = Logger.getInstance(ValidatorStatusPanel.class);
 
     private static final Color SUCCESS_COLOR = new Color(0, 153, 51);  // Green
     private static final Color ERROR_COLOR = new Color(204, 0, 0);     // Red

@@ -1,8 +1,8 @@
 package com.devoxx.genie.service.analyzer.util;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Scans project directories while respecting .gitignore rules and using caching.
  * Uses a controlled thread pool and timeout mechanisms to prevent hangs.
  */
+@Slf4j
 public class CachedProjectScanner {
-    private static final Logger LOG = Logger.getInstance(CachedProjectScanner.class);
     
     // Scanner constraints
     private static final int MAX_DEPTH = 50; // Reduced max depth to prevent excessive recursion
@@ -106,14 +106,14 @@ public class CachedProjectScanner {
         } catch (TimeoutException e) {
             // Scan timed out - mark as cancelled and return partial results
             scanCancelled.set(true);
-            LOG.warn("Scan timed out after " + SCAN_TIMEOUT_MS/1000 + " seconds");
+            log.warn("Scan timed out after " + SCAN_TIMEOUT_MS/1000 + " seconds");
             
             // Get whatever results we have so far (don't cache them)
             return Collections.emptyList();
         } catch (Exception e) {
             // Some other error occurred
             // ProjectScannerLogPanel.log("Error during scan: " + e.getMessage());
-            LOG.error("Error during scan", e);
+            log.error("Error during scan", e);
             return Collections.emptyList();
         }
     }
@@ -168,20 +168,20 @@ public class CachedProjectScanner {
         
         // Check depth limit to prevent infinite recursion
         if (depth > MAX_DEPTH) {
-            LOG.warn("Max depth reached at: " + directory.getPath());
+            log.warn("Max depth reached at: " + directory.getPath());
             return;
         }
         
         // Check file count limit
         if (fileCount.get() > MAX_FILES) {
-            LOG.warn("Max file count reached (" + MAX_FILES + "), stopping scan");
+            log.warn("Max file count reached (" + MAX_FILES + "), stopping scan");
             scanCancelled.set(true);
             return;
         }
         
         // Check directory count limit
         if (dirCount.get() > MAX_DIRECTORIES) {
-            LOG.warn("Max directory count reached (" + MAX_DIRECTORIES + "), stopping scan");
+            log.warn("Max directory count reached (" + MAX_DIRECTORIES + "), stopping scan");
             scanCancelled.set(true);
             return;
         }
@@ -247,7 +247,7 @@ public class CachedProjectScanner {
             try {
                 if (!latch.await(15, TimeUnit.SECONDS)) {
                     // Timeout waiting for children to be processed
-                    LOG.warn("Timeout waiting for directory children to be processed: " + directory.getPath());
+                    log.warn("Timeout waiting for directory children to be processed: " + directory.getPath());
                     scanCancelled.set(true);
                 }
             } catch (InterruptedException e) {
@@ -329,7 +329,7 @@ public class CachedProjectScanner {
                 try {
                     ApplicationManager.getApplication().invokeAndWait(CachedProjectScanner::performShutdown);
                 } catch (Exception e) {
-                    LOG.error("Error during scanner shutdown", e);
+                    log.error("Error during scanner shutdown", e);
                     // Fallback to direct shutdown if EDT access fails
                     performShutdown();
                 }
@@ -337,7 +337,7 @@ public class CachedProjectScanner {
                 performShutdown();
             }
         } catch (Exception e) {
-            LOG.error("Unexpected error during scanner shutdown", e);
+            log.error("Unexpected error during scanner shutdown", e);
             // Last resort emergency shutdown
             SCAN_EXECUTOR.shutdownNow();
         }

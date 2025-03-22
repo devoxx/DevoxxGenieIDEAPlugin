@@ -5,20 +5,19 @@ import com.devoxx.genie.service.analyzer.DevoxxGenieGenerator;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Command processor that handles special commands entered in the input area
  * that don't need to be sent to the LLM service.
  */
+@Slf4j
 public class CommandProcessor {
-    private static final Logger LOG = Logger.getInstance(CommandProcessor.class);
 
     /**
      * Process the command and return true if the command was processed and handled here,
@@ -48,7 +47,7 @@ public class CommandProcessor {
     }
     
     private static void handleInitCommand(@NotNull Project project) {
-        LOG.info("Processing /init command to generate DEVOXXGENIE.md file");
+        log.info("Processing /init command to generate DEVOXXGENIE.md file");
         
         // Ensure the setting is temporarily enabled to generate the file
         boolean wasEnabled = DevoxxGenieStateService.getInstance().getCreateDevoxxGenieMd();
@@ -67,7 +66,7 @@ public class CommandProcessor {
                             new DevoxxGenieGenerator(project, includeProjectTree, treeDepth, indicator);
                     devoxxGenieGenerator.generate();
                 } catch (Exception e) {
-                    LOG.error("Error generating DEVOXXGENIE.md file", e);
+                    log.error("Error generating DEVOXXGENIE.md file", e);
                     
                     // Show error notification
                     ApplicationManager.getApplication().invokeLater(() -> {

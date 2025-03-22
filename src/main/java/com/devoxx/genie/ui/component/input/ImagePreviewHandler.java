@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -17,8 +16,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.dnd.*;
 import java.io.File;
 import java.util.List;
-
-import static com.devoxx.genie.util.ImageUtil.isImageFile;
 
 public class ImagePreviewHandler implements DropTargetListener {
 

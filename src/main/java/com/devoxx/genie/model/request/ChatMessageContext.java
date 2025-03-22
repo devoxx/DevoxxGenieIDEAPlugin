@@ -35,6 +35,7 @@ public class ChatMessageContext {
     private TokenUsage tokenUsage;
     private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
     private double cost;
+    private boolean mcpActivated;
     private boolean ragActivated;
     private boolean gitDiffActivated;
     private boolean webSearchActivated;

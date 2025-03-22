@@ -4,7 +4,6 @@ import com.devoxx.genie.service.FileListManager;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
@@ -14,14 +13,14 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static com.devoxx.genie.ui.util.WindowPluginUtil.ensureToolWindowVisible;
 
+@Slf4j
 public class AddSnippetAction extends DumbAwareAction {
-
-    private static final Logger LOG = Logger.getInstance(AddSnippetAction.class);
 
     public static final String CODE_SNIPPET = "codeSnippet";
     public static final Key<VirtualFile> ORIGINAL_FILE_KEY = Key.create("ORIGINAL_FILE");
@@ -86,7 +85,7 @@ public class AddSnippetAction extends DumbAwareAction {
                                          @NotNull Editor editor,
                                          String selectedText) {
         if (project == null) {
-            LOG.error("Project is null");
+            log.error("Project is null");
             return;
         }
         SelectionModel selectionModel = editor.getSelectionModel();

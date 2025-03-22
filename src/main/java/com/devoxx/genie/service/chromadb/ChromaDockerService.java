@@ -11,8 +11,8 @@ import com.github.dockerjava.api.model.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -23,10 +23,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 public final class ChromaDockerService {
-    private static final Logger LOG = Logger.getInstance(ChromaDockerService.class);
-
+    
     private static final String CHROMA_IMAGE = "chromadb/chroma:0.6.2";
     private static final String CONTAINER_NAME = "devoxx-genie-chromadb";
 
@@ -45,7 +45,7 @@ public final class ChromaDockerService {
         try {
             // We assume Docker is already installed and running
             if (isChromaDBRunning()) {
-                LOG.debug("ChromaDB is already running");
+                log.debug("ChromaDB is already running");
                 callback.onSuccess();
                 return;
             }
@@ -55,13 +55,13 @@ public final class ChromaDockerService {
             startChromaContainer(volumePath, callback);
 
         } catch (ChromaDBException e) {
-            LOG.error(FAILED_TO_START_CHROMA_DB + e.getMessage());
+            log.error(FAILED_TO_START_CHROMA_DB + e.getMessage());
             callback.onError(FAILED_TO_START_CHROMA_DB + e.getMessage());
         } catch (DockerException e) {
-            LOG.error(FAILED_TO_PULL_CHROMA_DB_IMAGE + e.getMessage());
+            log.error(FAILED_TO_PULL_CHROMA_DB_IMAGE + e.getMessage());
             callback.onError(FAILED_TO_PULL_CHROMA_DB_IMAGE + e.getMessage());
         } catch (IOException e) {
-            LOG.error(FAILED_TO_CREATE_VOLUME_DIRECTORY + e.getMessage());
+            log.error(FAILED_TO_CREATE_VOLUME_DIRECTORY + e.getMessage());
             callback.onError(FAILED_TO_CREATE_VOLUME_DIRECTORY + e.getMessage());
         }
     }
@@ -182,7 +182,7 @@ public final class ChromaDockerService {
         Path collectionPath = volumePath.resolve(collectionName);
 
         if (!Files.exists(collectionPath)) {
-            LOG.debug("Collection directory does not exist: " + collectionPath);
+            log.debug("Collection directory does not exist: " + collectionPath);
             return;
         }
 
@@ -197,13 +197,13 @@ public final class ChromaDockerService {
                     .forEach(path -> {
                         try {
                             Files.delete(path);
-                            LOG.debug("Deleted: " + path);
+                            log.debug("Deleted: " + path);
                         } catch (IOException e) {
-                            LOG.warn("Failed to delete: " + path, e);
+                            log.warn("Failed to delete: " + path, e);
                         }
                     });
         } catch (IOException e) {
-            LOG.error("Failed to delete collection data for: " + collectionName, e);
+            log.error("Failed to delete collection data for: " + collectionName, e);
         }
     }
 }

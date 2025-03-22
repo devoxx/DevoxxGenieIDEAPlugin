@@ -1,7 +1,6 @@
 package com.devoxx.genie.error;
 
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,8 +8,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
 public class ErrorHandler {
-
-    private static final Logger LOG = Logger.getInstance(ErrorHandler.class);
 
     public enum ErrorType {
         TIMEOUT,
@@ -23,9 +20,6 @@ public class ErrorHandler {
         ErrorType errorType = categorizeError(error);
         String message = getErrorMessage(errorType, error);
         NotificationUtil.sendNotification(project, message);
-
-        // Log the full stack trace
-        LOG.error("Detailed error: ", error);
     }
 
     private static ErrorType categorizeError(Throwable error) {

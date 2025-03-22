@@ -3,8 +3,8 @@ package com.devoxx.genie.service.conversations;
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -22,9 +22,9 @@ import java.util.concurrent.CompletableFuture;
  * /Users/[username]/Library/Caches/JetBrains/IntelliJIdea2024.3/DevoxxGenie/conversations.db
  * You can connect to the SQLite db using IDEA's Database tool window.
  */
+@Slf4j
 public class ConversationStorageService {
-    private static final Logger LOG = Logger.getInstance(ConversationStorageService.class);
-
+    
     private final String dbPath;
     private static final long MAX_DB_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB threshold
     private static final int DELETE_COUNT = 10; // Delete 10 oldest conversations
@@ -39,7 +39,7 @@ public class ConversationStorageService {
         this.dbPath = Path.of(PathManager.getSystemPath(), "DevoxxGenie", "conversations.db").toString();
         try {
             Files.createDirectories(Path.of(dbPath).getParent());
-            LOG.info("Database directory created at " + dbPath);
+            log.info("Database directory created at " + dbPath);
         } catch (Exception e) {
             throw new RuntimeException("Failed to create database directory", e);
         }
@@ -87,7 +87,7 @@ public class ConversationStorageService {
             statement.execute("CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(projectHash)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_messages_conversation ON chat_messages(conversationId)");
         } catch (SQLException e) {
-            LOG.error("Error creating table", e);
+            log.error("Error creating table", e);
             throw new RuntimeException("Error creating table", e);
         }
     }
@@ -101,7 +101,7 @@ public class ConversationStorageService {
                     cleanupOldConversations();
                 }
             } catch (IOException e) {
-                LOG.error("Error checking DB size asynchronously", e);
+                log.error("Error checking DB size asynchronously", e);
             }
         });
 
@@ -141,7 +141,7 @@ public class ConversationStorageService {
                 }
                 connection.commit();
             } catch (SQLException e) {
-                LOG.error("Error adding conversation", e);
+                log.error("Error adding conversation", e);
                 connection.rollback();
                 throw e;
             } finally {
@@ -191,7 +191,7 @@ public class ConversationStorageService {
                 }
             }
         } catch (SQLException e) {
-            LOG.error("Error getting conversations", e);
+            log.error("Error getting conversations", e);
             throw new RuntimeException("Error getting conversations", e);
         }
         return conversations;
@@ -206,9 +206,9 @@ public class ConversationStorageService {
                         "DELETE FROM chat_messages WHERE conversationId = ?")) {
                     ps.setString(1, conversation.getId());
                     int messagesDeleted = ps.executeUpdate();
-                    LOG.info("Deleted " + messagesDeleted + " messages for conversation " + conversation.getId());
+                    log.info("Deleted " + messagesDeleted + " messages for conversation " + conversation.getId());
                     if (messagesDeleted == 0) {
-                        LOG.warn("No messages found for conversation " + conversation.getId());
+                        log.warn("No messages found for conversation " + conversation.getId());
                     }
                 }
 
@@ -218,14 +218,14 @@ public class ConversationStorageService {
                     ps.setString(1, conversation.getId());
                     ps.setString(2, project.getLocationHash());
                     int conversationsDeleted = ps.executeUpdate();
-                    LOG.info("Deleted " + conversationsDeleted + " conversations with ID " + conversation.getId());
+                    log.info("Deleted " + conversationsDeleted + " conversations with ID " + conversation.getId());
                     if (conversationsDeleted == 0) {
-                        LOG.warn("No conversation found with ID " + conversation.getId() + " and project hash " + project.getLocationHash());
+                        log.warn("No conversation found with ID " + conversation.getId() + " and project hash " + project.getLocationHash());
                     }
                 }
                 connection.commit();
             } catch (SQLException e) {
-                LOG.error("Error removing conversation", e);
+                log.error("Error removing conversation", e);
                 connection.rollback();
                 throw e;
             } finally {
@@ -260,7 +260,7 @@ public class ConversationStorageService {
                 }
                 connection.commit();
             } catch (SQLException e) {
-                LOG.error("Error clearing conversations", e);
+                log.error("Error clearing conversations", e);
                 connection.rollback();
                 throw e;
             } finally {
@@ -281,13 +281,13 @@ public class ConversationStorageService {
                                 "SELECT id FROM conversations ORDER BY timestamp ASC LIMIT ?)")) {
                     ps.setInt(1, DELETE_COUNT);
                     int deleted = ps.executeUpdate();
-                    LOG.info("Deleted " + deleted + " old conversations to free up space.");
+                    log.info("Deleted " + deleted + " old conversations to free up space.");
                 }
                 // Also delete associated messages
                 try (PreparedStatement ps = connection.prepareStatement(
                         "DELETE FROM chat_messages WHERE conversationId NOT IN (SELECT id FROM conversations)")) {
                     int msgDeleted = ps.executeUpdate();
-                    LOG.info("Deleted " + msgDeleted + " orphaned chat messages.");
+                    log.info("Deleted " + msgDeleted + " orphaned chat messages.");
                 }
             } catch (SQLException e) {
                 connection.rollback();

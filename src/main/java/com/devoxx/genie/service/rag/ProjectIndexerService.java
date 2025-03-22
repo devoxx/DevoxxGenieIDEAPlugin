@@ -5,7 +5,6 @@ import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -17,6 +16,7 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -29,11 +29,10 @@ import java.util.List;
 
 import static com.devoxx.genie.service.rag.IndexerConstants.*;
 
+@Slf4j
 @Service
 public final class ProjectIndexerService {
-
-    private static final Logger LOG = Logger.getInstance(ProjectIndexerService.class.getName());
-
+    
     private final ChromaEmbeddingService embeddingService;
     private final ProjectScannerService projectScannerService;
 
@@ -70,7 +69,7 @@ public final class ProjectIndexerService {
 
             return !results.matches().isEmpty();
         } catch (Exception e) {
-            LOG.warn("Error checking project index status: " + e.getMessage());
+            log.warn("Error checking project index status: " + e.getMessage());
             return false;
         }
     }
@@ -98,7 +97,7 @@ public final class ProjectIndexerService {
             TextSegment storedSegment = matches.get(0).embedded();
             return !hasFileChanged(filePath, storedSegment.metadata());
         } catch (Exception e) {
-            LOG.warn("Error checking file index status: " + e.getMessage());
+            log.warn("Error checking file index status: " + e.getMessage());
             return false;
         }
     }
@@ -112,18 +111,18 @@ public final class ProjectIndexerService {
 
         String basePath = project.getBasePath();
         if (basePath == null) {
-            LOG.warn("Project base path is null");
+            log.warn("Project base path is null");
             return;
         }
 
         if (!forceReindex && isProjectIndexed(basePath)) {
-            LOG.warn("Project is already indexed, skipping indexing process");
+            log.warn("Project is already indexed, skipping indexing process");
             return;
         }
 
         VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
         if (baseDir == null) {
-            LOG.debug("Could not find base directory: " + basePath);
+            log.debug("Could not find base directory: " + basePath);
             return;
         }
 
@@ -151,17 +150,17 @@ public final class ProjectIndexerService {
      * @param filePath Path to the file to index
      */
     private void indexSingleFile(Path filePath) {
-        LOG.debug("Indexing file: " + filePath);
+        log.debug("Indexing file: " + filePath);
         try {
             if (isFileIndexed(filePath)) {
-                LOG.debug("File already indexed: " + filePath);
+                log.debug("File already indexed: " + filePath);
                 return;
             }
 
             processPath(filePath);
-            LOG.debug("File successfully indexed: " + filePath);
+            log.debug("File successfully indexed: " + filePath);
         } catch (Exception e) {
-            LOG.warn("Error indexing file: " + filePath + " - " + e.getMessage());
+            log.warn("Error indexing file: " + filePath + " - " + e.getMessage());
         }
     }
 
@@ -202,13 +201,13 @@ public final class ProjectIndexerService {
             Embedding embedding = embeddingService.getEmbeddingModel().embed(fileIdentifier).content();
             embeddingService.getEmbeddingStore().add(embedding, segment);
         } catch (Exception e) {
-            LOG.warn("Error marking file as indexed: " + e.getMessage());
+            log.warn("Error marking file as indexed: " + e.getMessage());
         }
     }
 
     private void processPath(Path path) {
         try {
-            LOG.debug("Processing file: " + path);
+            log.debug("Processing file: " + path);
 
             String content = Files.readString(path);
             if (content.isBlank()) {
@@ -227,7 +226,7 @@ public final class ProjectIndexerService {
             }
 
         } catch (IOException e) {
-            LOG.warn("Error processing file: " + path);
+            log.warn("Error processing file: " + path);
         }
     }
 }

@@ -38,7 +38,12 @@ class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
         // Create a dummy ChatModel
         ChatModel chatModel = new ChatModel();
-        chatModel.setBaseUrl("http://localhost:8080");
+        chatModel.setModelName("mistral-small-latest");
+        chatModel.setMaxRetries(3);
+        chatModel.setTemperature(0.7f);
+        chatModel.setMaxTokens(1000);
+        chatModel.setTimeout(60);
+        chatModel.setTopP(0.8f);
 
         // Call the method
         ChatLanguageModel result = factory.createChatModel(chatModel);

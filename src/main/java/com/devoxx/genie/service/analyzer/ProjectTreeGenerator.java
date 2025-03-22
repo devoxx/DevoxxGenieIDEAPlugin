@@ -1,20 +1,27 @@
 package com.devoxx.genie.service.analyzer;
 
 import com.devoxx.genie.service.analyzer.util.CachedProjectScanner;
+import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
 
 /**
- * A utility class to generate a project tree using CachedProjectScanner and append it to the DEVOXXGENIE.md file.
+ * A utility class to generate a project tree and append it to the DEVOXXGENIE.md file.
+ * 
+ * @deprecated Use the FileScanner-based implementation in DevoxxGenieGenerator.appendProjectTreeUsingFileScanner
+ * for better performance and consistency with file scanning logic.
  */
+@Deprecated
+@Slf4j
 public class ProjectTreeGenerator {
-    private static final Logger LOG = Logger.getInstance(ProjectTreeGenerator.class);
+    
     private static final String SECTION_HEADER = "\n\n### Project Tree\n\n";
     private static final String TREE_PREFIX = "```\n";
     private static final String TREE_SUFFIX = "\n```\n";
@@ -28,28 +35,66 @@ public class ProjectTreeGenerator {
      *
      * @param baseDir The base directory of the project
      * @param treeDepth The maximum depth of the tree
+     * @deprecated Use FileScanner-based implementation instead
      */
+    @Deprecated
     public static void appendProjectTreeToDevoxxGenie(@NotNull VirtualFile baseDir,
                                                       Integer treeDepth) {
-
         long startTime = System.currentTimeMillis();
-        LOG.info("Starting project tree generation for: " + baseDir.getPath());
+        log.info("Starting project tree generation for: " + baseDir.getPath());
         
         try {
             CachedProjectScanner scanner = new CachedProjectScanner(baseDir);
             List<VirtualFile> files = scanner.scanDirectoryWithCache();
             
             long scanDuration = System.currentTimeMillis() - startTime;
-            LOG.info(String.format("Found %d files in project structure (scan took %d ms)", files.size(), scanDuration));
+            log.info(String.format("Found %d files in project structure (scan took %d ms)", files.size(), scanDuration));
 
             String treeContent = generateTreeContent(baseDir, files, treeDepth);
             
-            LOG.info("Generated tree content with length: " + treeContent.length());
+            log.info("Generated tree content with length: " + treeContent.length());
             
             // Append to DEVOXXGENIE.md
             appendToGenieMd(baseDir, treeContent);
         } catch (Exception e) {
-            LOG.error("Error in appendProjectTreeToDevoxxGenie", e);
+            log.error("Error in appendProjectTreeToDevoxxGenie", e);
+        }
+    }
+    
+    /**
+     * Generates a project tree and appends it to the DEVOXXGENIE.md file using FileScanner.
+     * This method provides an alternative implementation to the original using FileScanner.
+     *
+     * @param project The project
+     * @param baseDir The base directory of the project
+     * @param treeDepth The maximum depth of the tree
+     */
+    public static void appendProjectTreeUsingFileScanner(@NotNull Project project,
+                                                       @NotNull VirtualFile baseDir,
+                                                       int treeDepth) {
+        long startTime = System.currentTimeMillis();
+        log.info("Starting project tree generation using FileScanner for: " + baseDir.getPath());
+        
+        try {
+            // Initialize a FileScanner instance
+            FileScanner fileScanner = new FileScanner();
+            
+            // Initialize the gitignore parser
+            fileScanner.initGitignoreParser(project, baseDir);
+            
+            // Generate tree content using FileScanner
+            String treeContent = fileScanner.generateSourceTreeRecursive(baseDir, 0);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info(String.format("Generated tree content in %d ms, length: %d", duration, treeContent.length()));
+            
+            // Format the content with markdown code block
+            String formattedContent = TREE_PREFIX + treeContent + TREE_SUFFIX;
+            
+            // Append to DEVOXXGENIE.md
+            appendToGenieMd(baseDir, formattedContent);
+        } catch (Exception e) {
+            log.error("Error in appendProjectTreeUsingFileScanner", e);
         }
     }
 
@@ -69,7 +114,7 @@ public class ProjectTreeGenerator {
         TreeNode root = new TreeNode(baseDir.getName(), true);
         String basePath = baseDir.getPath();
         
-        LOG.info("Base path for tree generation: " + basePath);
+        log.info("Base path for tree generation: " + basePath);
         
         // Sort files for consistent output
         files.sort(Comparator.comparing(VirtualFile::getPath));
@@ -106,7 +151,7 @@ public class ProjectTreeGenerator {
         printTree(root, "", sb);
         sb.append(TREE_SUFFIX);
         
-        LOG.info("Tree content generated, sample: " + (sb.length() > 100 ? sb.substring(0, 100) + "..." : sb.toString()));
+        log.info("Tree content generated, sample: " + (sb.length() > 100 ? sb.substring(0, 100) + "..." : sb.toString()));
         
         return sb.toString();
     }
@@ -121,7 +166,7 @@ public class ProjectTreeGenerator {
     private static void addFileToTree(TreeNode root, @NotNull String path, boolean isDirectory, Integer treeDepth) {
         // Skip paths that are too long to avoid processing issues
         if (path.length() > 500) {
-            LOG.warn("Skipping excessively long path: " + path.substring(0, 100) + "...");
+            log.warn("Skipping excessively long path: " + path.substring(0, 100) + "...");
             return;
         }
         String[] parts = path.split("/");
@@ -224,13 +269,13 @@ public class ProjectTreeGenerator {
             VirtualFile devoxxGenieMdFile = baseDir.findChild("DEVOXXGENIE.md");
             
             if (devoxxGenieMdFile == null) {
-                LOG.warn("DEVOXXGENIE.md file not found, cannot append project tree");
+                log.warn("DEVOXXGENIE.md file not found, cannot append project tree");
                 return;
             }
             
             // Read current content
             String currentContent = VfsUtil.loadText(devoxxGenieMdFile);
-            LOG.info("Read current DEVOXXGENIE.md content, length: " + currentContent.length());
+            log.info("Read current DEVOXXGENIE.md content, length: " + currentContent.length());
             
             // Check if it already has a project tree section
             if (currentContent.contains(SECTION_HEADER)) {
@@ -238,7 +283,7 @@ public class ProjectTreeGenerator {
                 int sectionStart = currentContent.indexOf(SECTION_HEADER);
                 int sectionEnd = currentContent.indexOf(TREE_SUFFIX, sectionStart);
                 
-                LOG.info("Found existing project tree section: start=" + sectionStart + ", end=" + sectionEnd);
+                log.info("Found existing project tree section: start=" + sectionStart + ", end=" + sectionEnd);
                 
                 if (sectionEnd > sectionStart) {
                     // Replace the existing section
@@ -247,23 +292,23 @@ public class ProjectTreeGenerator {
                                           currentContent.substring(sectionEnd + TREE_SUFFIX.length()) : "";
                     
                     currentContent = beforeSection + SECTION_HEADER + treeContent + afterSection;
-                    LOG.info("Replaced existing project tree section");
+                    log.info("Replaced existing project tree section");
                 } else {
                     // If section is malformed, just append
                     currentContent += SECTION_HEADER + treeContent;
-                    LOG.info("Existing project tree section appears malformed, appending new section");
+                    log.info("Existing project tree section appears malformed, appending new section");
                 }
             } else {
                 // Append new section
                 currentContent += SECTION_HEADER + treeContent;
-                LOG.info("Appending new project tree section");
+                log.info("Appending new project tree section");
             }
             
             // Update the file
             final String finalContent = currentContent;
             
             // Run in a write action on the EDT
-            LOG.info("Attempting to save updated content to DEVOXXGENIE.md");
+            log.info("Attempting to save updated content to DEVOXXGENIE.md");
 
             // Using invokeAndWait to ensure we switch to the EDT thread
             try {
@@ -271,16 +316,16 @@ public class ProjectTreeGenerator {
                         ApplicationManager.getApplication().runWriteAction(() -> {
                             try {
                                 VfsUtil.saveText(devoxxGenieMdFile, finalContent);
-                                LOG.info("Project tree appended to DEVOXXGENIE.md successfully");
+                                log.info("Project tree appended to DEVOXXGENIE.md successfully");
                             } catch (IOException e) {
-                                LOG.error("Error updating DEVOXXGENIE.md with project tree", e);
+                                log.error("Error updating DEVOXXGENIE.md with project tree", e);
                             }
                         }));
             } catch (Exception e) {
-                LOG.error("Error while waiting for EDT to save DEVOXXGENIE.md", e);
+                log.error("Error while waiting for EDT to save DEVOXXGENIE.md", e);
             }
         } catch (Exception e) {
-            LOG.error("Error appending project tree to DEVOXXGENIE.md", e);
+            log.error("Error appending project tree to DEVOXXGENIE.md", e);
         }
     }
     

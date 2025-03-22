@@ -11,12 +11,12 @@ import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.components.JBPanel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -30,9 +30,8 @@ import java.util.Optional;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
+@Slf4j
 public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {
-
-    private static final Logger LOG = Logger.getInstance(LlmProviderPanel.class);
 
     private final transient Project project;
 
@@ -192,7 +191,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                                 this::hideModelNameComboBox
                         );
             } catch (Exception e) {
-                LOG.error("Error updating model names", e);
+                log.error("Error updating model names", e);
                 Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
             }
         });

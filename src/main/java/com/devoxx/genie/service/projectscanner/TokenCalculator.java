@@ -4,11 +4,13 @@ import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingType;
 import com.knuddels.jtokkit.api.IntArrayList;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Handles token calculations and truncation.
  */
+@Slf4j
 public class TokenCalculator {
     private final Encoding encoding;
 
@@ -22,8 +24,18 @@ public class TokenCalculator {
         this(Encodings.newDefaultEncodingRegistry().getEncoding(EncodingType.CL100K_BASE));
     }
 
+    /**
+     * Calculates token count for any text.
+     * 
+     * @param text The text to count tokens for
+     * @return The token count
+     */
     public int calculateTokens(@NotNull String text) {
-        return encoding.countTokensOrdinary(text);
+        // Make sure we're getting the accurate token count
+        log.info("Calculating tokens for text of length: " + text.length());
+        int tokenCount = encoding.countTokensOrdinary(text);
+        log.info("Token count calculated: " + tokenCount);
+        return tokenCount;
     }
 
     public String truncateToTokens(@NotNull String text, int maxTokens, boolean isTokenCalculation) {

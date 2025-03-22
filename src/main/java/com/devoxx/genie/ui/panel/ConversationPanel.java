@@ -2,9 +2,9 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatMemoryService;
 import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.ConversationStarter;
 import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
@@ -150,7 +150,7 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
     @Override
     public void startNewConversation() {
         FileListManager.getInstance().clear(project);
-        ChatMemoryService.getInstance().clear(project);
+        ChatMemoryService.getInstance().clearMemory(project);
 
         chatService.startNewConversation("");
 

@@ -15,7 +15,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.*;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_TEXT_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
 
 public class ChatStreamingResponsePanel extends BackgroundPanel {

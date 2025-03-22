@@ -3,10 +3,10 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.util.WelcomeUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.scale.JBUIScale;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -16,10 +16,11 @@ import java.util.ResourceBundle;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 
+@Slf4j
 public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptChangeListener {
 
     public static final float DEFAULT_FONT_SIZE = 20f;
-    private static final Logger LOG = Logger.getInstance(WelcomePanel.class);
+
     private final JEditorPane jEditorPane;
     private final JBScrollPane scrollPane;
     private final ResourceBundle resourceBundle;
@@ -39,7 +40,7 @@ public class WelcomePanel extends JBPanel<WelcomePanel> implements CustomPromptC
                     try {
                         Desktop.getDesktop().browse(new URI(e.getURL().toString()));
                     } catch (Exception ex) {
-                        LOG.warn("Error opening browser link: " + e.getURL().toString(), ex);
+                        log.warn("Error opening browser link: " + e.getURL().toString(), ex);
                     }
                 }
             }

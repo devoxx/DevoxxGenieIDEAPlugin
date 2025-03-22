@@ -3,11 +3,11 @@ package com.devoxx.genie.ui.util;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.tdg.CodeGeneratorService;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import lombok.extern.slf4j.Slf4j;
 import org.commonmark.node.FencedCodeBlock;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +19,7 @@ import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 import static com.devoxx.genie.util.ClipboardUtil.copyToClipboard;
 
+@Slf4j
 public class CodeSnippetAction {
 
     private final ChatMessageContext chatMessageContext;
@@ -73,7 +74,7 @@ public class CodeSnippetAction {
                 try {
                     document.insertString(caretModel.getOffset(), codeSnippet);
                 } catch (Exception e) {
-                    Logger.getInstance(getClass()).error(e.getMessage());
+                    log.error(e.getMessage());
                 }
             });
         }

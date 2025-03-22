@@ -1,9 +1,6 @@
 package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +11,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class ContentExtractor {
-    private static final Logger LOG = Logger.getInstance(ContentExtractor.class.getName());
 
     /**
      * Extracts the content of a file and formats it for inclusion in the project scan.

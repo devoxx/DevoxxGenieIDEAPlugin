@@ -2,19 +2,21 @@ package com.devoxx.genie.controller;
 
 import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.ChatPromptExecutor;
+import com.devoxx.genie.service.prompt.PromptExecutionService;
+import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PromptExecutionController implements PromptExecutionListener {
 
     private final Project project;
-    private final ChatPromptExecutor chatPromptExecutor;
+    private final PromptExecutionService promptExecutionService;
+    private final PromptCommandProcessor commandProcessor;
     private final PromptInputArea promptInputArea;
     private final PromptOutputPanel promptOutputPanel;
     private final ActionButtonsPanel actionButtonsPanel;
@@ -28,7 +30,8 @@ public class PromptExecutionController implements PromptExecutionListener {
         this.project = project;
         this.promptInputArea = promptInputArea;
         this.promptOutputPanel = promptOutputPanel;
-        this.chatPromptExecutor = new ChatPromptExecutor(project, promptInputArea);
+        this.promptExecutionService = PromptExecutionService.getInstance(project);
+        this.commandProcessor = PromptCommandProcessor.getInstance();
         this.actionButtonsPanel = actionButtonsPanel;
     }
 
@@ -47,28 +50,34 @@ public class PromptExecutionController implements PromptExecutionListener {
         startPromptExecution();
 
         AtomicBoolean response = new AtomicBoolean(true);
-        chatPromptExecutor.updatePromptWithCommandIfPresent(currentChatMessageContext, promptOutputPanel)
-                .ifPresentOrElse(
-                        this::executePromptWithContext,
-                        () -> response.set(false) // TODO Throw exception instead of returning false
-                );
+        Optional<String> processedPrompt = commandProcessor.processCommands(currentChatMessageContext, promptOutputPanel);
+        
+        processedPrompt.ifPresentOrElse(
+                command -> executePromptWithContext(),
+                () -> {
+                    // Command handling indicated execution should stop
+                    response.set(false);
+                    endPromptExecution();
+                }
+        );
 
         return response.get();
     }
 
-    private void executePromptWithContext(String command) {
-        chatPromptExecutor.executePrompt(currentChatMessageContext, promptOutputPanel, () -> {
-            endPromptExecution();
-            ApplicationManager.getApplication().invokeLater(() -> {
-                promptInputArea.clear();
-                promptInputArea.requestInputFocus();
-            });
-        });
+    private void executePromptWithContext() {
+        promptExecutionService.executePrompt(
+                currentChatMessageContext, 
+                promptOutputPanel, 
+                () -> {
+                    endPromptExecution();
+                    promptInputArea.clear();
+                    promptInputArea.requestInputFocus();
+                });
     }
 
     @Override
     public void stopPromptExecution() {
-        chatPromptExecutor.stopPromptExecution(project);
+        promptExecutionService.stopExecution(project);
         endPromptExecution();
     }
 

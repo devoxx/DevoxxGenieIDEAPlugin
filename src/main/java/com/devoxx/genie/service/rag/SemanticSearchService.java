@@ -47,7 +47,7 @@ public final class SemanticSearchService {
         EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
                 .queryEmbedding(queryEmbedding)
                 .minScore(stateService.getIndexerMinScore())
-                .maxResults(stateService.getMaxSearchResults())
+                .maxResults(stateService.getIndexerMaxResults())
                 .build();
 
         embeddingService.getEmbeddingStore().search(request)
