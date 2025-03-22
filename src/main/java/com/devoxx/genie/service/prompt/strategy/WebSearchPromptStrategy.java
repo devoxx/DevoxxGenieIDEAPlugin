@@ -1,8 +1,8 @@
 package com.devoxx.genie.service.prompt.strategy;
 
+import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.WebSearchException;
-import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService;

@@ -6,7 +6,6 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 

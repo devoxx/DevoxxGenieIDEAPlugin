@@ -1,11 +1,11 @@
 package com.devoxx.genie.service.prompt.streaming;
 
+import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.StreamingException;
-import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
-import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;

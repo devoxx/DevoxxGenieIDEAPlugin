@@ -1,17 +1,16 @@
 package com.devoxx.genie.service.prompt.nonstreaming;
 
-import com.devoxx.genie.service.prompt.error.ExecutionException;
-import com.devoxx.genie.service.prompt.error.ModelException;
-import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.prompt.error.ExecutionException;
+import com.devoxx.genie.service.prompt.error.ModelException;
+import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ClipboardUtil;
-
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;

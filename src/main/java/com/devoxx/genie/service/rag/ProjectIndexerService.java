@@ -5,7 +5,6 @@ import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;

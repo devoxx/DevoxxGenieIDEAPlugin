@@ -2,7 +2,6 @@ package com.devoxx.genie.service.analyzer;
 
 import com.devoxx.genie.service.analyzer.util.CachedProjectScanner;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;

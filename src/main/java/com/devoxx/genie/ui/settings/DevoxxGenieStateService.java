@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;

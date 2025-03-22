@@ -1,8 +1,6 @@
 package com.devoxx.genie.service.analyzer.util;
 
 import com.devoxx.genie.service.analyzer.tools.GlobTool;
-import com.esotericsoftware.kryo.kryo5.minlog.Log;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;

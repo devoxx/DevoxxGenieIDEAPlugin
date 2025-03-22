@@ -1,12 +1,15 @@
 package com.devoxx.genie.ui.settings.mcp;
 
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPEnvironmentVariablesDialog;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.AnActionButton;
@@ -21,18 +24,13 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.devoxx.genie.service.mcp.MCPService;
 
 @Slf4j
 public class MCPSettingsComponent extends AbstractSettingsComponent {

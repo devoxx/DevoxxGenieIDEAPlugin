@@ -9,8 +9,6 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
-
 public class IndentedCodeBlockProcessor implements NodeProcessor {
 
     private final ChatMessageContext chatMessageContext;
