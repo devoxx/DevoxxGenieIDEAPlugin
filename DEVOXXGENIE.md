@@ -1,5 +1,7 @@
 # DEVOXXGENIE.md
 
+Auto-generated via Tools > DevoxxGenie > Prompts 
+
 ## Project Guidelines
 
 ### Build Commands
@@ -86,6 +88,7 @@ DevoxxGenieIDEAPlugin/
                   AppTopics.java
                 dialog/
                   CustomPromptDialog.java
+                window/
                 listener/
                   GlowingListener.java
                   RAGStateListener.java
@@ -196,18 +199,44 @@ DevoxxGenieIDEAPlugin/
               error/
                 ErrorHandler.java
               model/
+                jan/
+                  Data.java
+                  Metadata.java
+                  Settings.java
+                  Parameters.java
+                  ResponseDTO.java
                 mcp/
                   MCPServer.java
                   MCPSettings.java
+                ollama/
+                  OllamaModelDTO.java
+                  OllamaModelEntryDTO.java
+                gpt4all/
+                  Model.java
+                  ResponseDTO.java
+                  ModelPermission.java
                 request/
                   EditorInfo.java
                   SemanticFile.java
                   ChatMessageContext.java
+                lmstudio/
+                  LMStudioModelDTO.java
+                  LMStudioModelEntryDTO.java
+                registry/
+                openrouter/
+                  Data.java
+                  Pricing.java
+                  ResponseDTO.java
+                  TopProvider.java
                 conversation/
                   ChatMessage.java
                   Conversation.java
+                enumarations/
+                  ModelProvider.java
                 Constant.java
                 ChatModel.java
+                CustomPrompt.java
+                LanguageModel.java
                 ScanContentResult.java
                 ChatContextParameters.java
                 GenericOpenAIProvider.java
@@ -348,6 +377,7 @@ DevoxxGenieIDEAPlugin/
                 MessageCreationService.java
                 LLMModelRegistryService.java
                 TokenCalculationService.java
+                DevoxxGenieSettingsService.java
               chatmodel/
                 cloud/
                   groq/
@@ -437,10 +467,24 @@ DevoxxGenieIDEAPlugin/
                   JanServiceTest.java
                   BaseIntellijTest.java
                 prompt/
+                  error/
+                    PromptErrorHandlerTest.java
                   memory/
                     ChatMemoryCleanupTest.java
+                  result/
+                    PromptResultTest.java
+                  command/
+                    FindCommandTest.java
+                    CustomPromptCommandTest.java
+                    PromptCommandProcessorTest.java
+                  strategy/
+                    PromptExecutionStrategyFactoryTest.java
+                    AbstractPromptExecutionStrategyTest.java
+                  cancellation/
+                    PromptCancellationServiceTest.java
                   ChatPromptExecutorIT.java
                   PromptExecutionServiceIT.java
+                  PromptExecutionServiceTest.java
                 openrouter/
                   OpenRouterServiceTest.java
                 projectscanner/
@@ -487,7 +531,6 @@ DevoxxGenieIDEAPlugin/
         test-log.properties
   docs/
     prompt_structure_refactoring.md
-  .venv/
   gradle/
     wrapper/
       gradle-wrapper.properties
