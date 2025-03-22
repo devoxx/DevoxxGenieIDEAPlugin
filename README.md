@@ -35,7 +35,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 
 ### Key Features:
 
-- **🔥️ MCP Support **: You can now add MCP servers!</LI>
+- **🔥️ MCP Support**: You can now add MCP servers and use them in your conversations</LI>
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images**: You can now DnD images with multimodal LLM's.
 - **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
