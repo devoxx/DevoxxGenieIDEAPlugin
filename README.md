@@ -73,6 +73,8 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 ### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
 
 Initial support for Model Context Protocol (MCP) server tools including debugging of MCP requests & responses!
+MCP support is a crucial feature towards ful Agentic support within DevoxxGenie.
+Watch [short demo](https://www.youtube.com/watch?v=zOPhYvgJKJU) of MCP in action using DevoxxGenie 
 
 <img width="1399" alt="Screenshot 2025-03-22 at 17 29 33" src="https://github.com/user-attachments/assets/0f8f75c9-ce85-43e8-a244-aa796c85681a" />
 
