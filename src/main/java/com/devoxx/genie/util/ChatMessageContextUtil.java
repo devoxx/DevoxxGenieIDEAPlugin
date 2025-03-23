@@ -8,6 +8,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
@@ -43,7 +44,7 @@ public class ChatMessageContextUtil {
                 .cost(0)
                 .build();
 
-        if (stateService.getStreamMode()) {
+        if (Boolean.TRUE.equals(stateService.getStreamMode())) {
             chatMessageContext.setStreamingChatLanguageModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
         } else {
             chatMessageContext.setChatLanguageModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
@@ -82,8 +83,10 @@ public class ChatMessageContextUtil {
 
             // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
+            // Only include the editor file when MCP is disabled
             if ((chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty()) &&
-                selectedTextEditor != null) {
+                selectedTextEditor != null &&
+                !MCPService.isMCPEnabled()) {
                 addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
         }
