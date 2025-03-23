@@ -209,6 +209,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         });
         
         ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("MCPLogPanelToolbar", actionGroup, true);
+        toolbar.setTargetComponent(this);
         setToolbar(toolbar.getComponent());
     }
     

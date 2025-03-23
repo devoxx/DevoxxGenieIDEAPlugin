@@ -35,7 +35,7 @@ public class WebSearchPromptStrategy extends AbstractPromptExecutionStrategy {
         log.debug("Web search with query: {}", context.getUserMessage().singleText());
 
         // Add user message to context and memory
-        prepareMemory(context);
+        // prepareMemory(context);
 
         // Track execution time
         long startTime = System.currentTimeMillis();
@@ -50,7 +50,7 @@ public class WebSearchPromptStrategy extends AbstractPromptExecutionStrategy {
                     context.setExecutionTimeMs(System.currentTimeMillis() - startTime);
                     
                     // Add the AI response to memory
-                    chatMemoryManager.addAiResponse(context);
+                    // chatMemoryManager.addAiResponse(context);
                     
                     // Display the response
                     panel.addChatResponse(context);

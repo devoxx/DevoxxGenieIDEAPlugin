@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.panel.chatresponse;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
@@ -18,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
-import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
@@ -40,8 +38,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         buttonPanel.setOpaque(false);
         buttonPanel.add(createCopyButton(chatMessageContext));
-        buttonPanel.add(createDeleteButton(chatMessageContext));
-        
+
         add(buttonPanel, BorderLayout.EAST);
     }
 
@@ -80,16 +77,6 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
     }
 
     /**
-     * Create the Delete button to remove the AI response.
-     *
-     * @param chatMessageContext the chat message context
-     * @return the Delete button
-     */
-    private @NotNull JButton createDeleteButton(ChatMessageContext chatMessageContext) {
-        return createActionButton(TrashIcon, "Remove this AI response", e -> removeResponse(chatMessageContext));
-    }
-
-    /**
      * Copy the prompt response to the system clipboard.
      *
      * @param chatMessageContext the chat message context
@@ -99,37 +86,8 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         Transferable transferable = new StringSelection(response);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
         NotificationUtil.sendNotification(
-            chatMessageContext.getProject(),
-            "The prompt response has been copied to the clipboard"
+                chatMessageContext.getProject(),
+                "The prompt response has been copied to the clipboard"
         );
-    }
-    
-    /**
-     * Remove the AI response from the UI and memory.
-     *
-     * @param chatMessageContext the chat message context
-     */
-    private void removeResponse(@NotNull ChatMessageContext chatMessageContext) {
-        // Find the parent PromptOutputPanel in the component hierarchy
-        PromptOutputPanel outputPanel = findPromptOutputPanel();
-        if (outputPanel != null) {
-            outputPanel.removeConversationItem(chatMessageContext, false);
-        }
-    }
-    
-    /**
-     * Find the parent PromptOutputPanel in the component hierarchy
-     * 
-     * @return the PromptOutputPanel or null if not found
-     */
-    private PromptOutputPanel findPromptOutputPanel() {
-        Container parent = getParent();
-        while (parent != null) {
-            if (parent instanceof PromptOutputPanel) {
-                return (PromptOutputPanel) parent;
-            }
-            parent = parent.getParent();
-        }
-        return null;
     }
 }
