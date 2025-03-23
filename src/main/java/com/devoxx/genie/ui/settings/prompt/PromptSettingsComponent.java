@@ -23,6 +23,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,7 +75,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     private final JBTable customPromptsTable = new JBTable(customPromptsTableModel) {
         @Override
         public boolean isCellEditable(int row, int column) {
-            return true;
+            return false;
         }
     };
 
@@ -246,6 +248,16 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         customPromptsTable.getColumnModel().getColumn(0).setPreferredWidth(50);
         customPromptsTable.getColumnModel().getColumn(1).setPreferredWidth(550);
 
+        // Add double-click listener
+        customPromptsTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    editCustomPrompt();
+                }
+            }
+        });
+
         customPromptsTable.getColumnModel().getColumn(PROMPT_COLUMN).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -281,6 +293,29 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
                 .onCustomPromptsChanged();
         }
     }
+
+    private void editCustomPrompt() {
+        int selectedRow = customPromptsTable.getSelectedRow();
+        if (selectedRow != -1) {
+            String commandName = (String) customPromptsTableModel.getValueAt(selectedRow, 0);
+            String prompt = (String) customPromptsTableModel.getValueAt(selectedRow, PROMPT_COLUMN);
+
+            CustomPromptDialog dialog = new CustomPromptDialog(project, commandName, prompt);
+            if (dialog.showAndGet()) {
+                String newName = dialog.getCommandName();
+                String newPrompt = dialog.getPrompt();
+
+                customPromptsTableModel.setValueAt(newName, selectedRow, 0);
+                customPromptsTableModel.setValueAt(newPrompt, selectedRow, PROMPT_COLUMN);
+
+                project
+                        .getMessageBus()
+                        .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
+                        .onCustomPromptsChanged();
+            }
+        }
+    }
+
 
     private void removeCustomPrompt() {
         int selectedRow = customPromptsTable.getSelectedRow();
