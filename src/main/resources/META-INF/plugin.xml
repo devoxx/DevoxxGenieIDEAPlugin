@@ -39,6 +39,7 @@
         <UL>
             <LI>Fix #567 : At least one message is required by @stephanj</LI>
             <LI>Fix #569 : Fix to support again attached images by @stephanj</LI>
+            <LI>Fix #571 : Don't show default editor file when using MCP by @stephanj</LI>
         </UL>
         <h2>v0.5.0</h2>
         <UL>
@@ -579,7 +580,7 @@
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
-                             displayName="MCP Settings"/>
+                             displayName="MCP Settings (BETA)"/>
 
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
