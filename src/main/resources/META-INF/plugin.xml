@@ -37,7 +37,8 @@
     <change-notes><![CDATA[
         <h2>v0.5.1</h2>
         <UL>
-            <LI>Fix #567 : At least one message is required</LI>
+            <LI>Fix #567 : At least one message is required by @stephanj</LI>
+            <LI>Fix #569 : Fix to support again attached images by @stephanj</LI>
         </UL>
         <h2>v0.5.0</h2>
         <UL>

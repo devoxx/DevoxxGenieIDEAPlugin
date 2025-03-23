@@ -277,7 +277,6 @@ public class ActionButtonsPanel extends JPanel
         mainButtons.add(calcTokenCostBtn);
         mainButtons.add(addProjectBtn);
         mainButtons.add(addFileBtn);
-        
         buttonPanel.add(mainButtons, BorderLayout.CENTER);
         
         // MCP Tools counter on the right

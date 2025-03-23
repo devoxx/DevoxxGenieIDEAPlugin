@@ -12,6 +12,7 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.ClipboardUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
@@ -19,6 +20,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -139,6 +141,9 @@ public class NonStreamingPromptExecutionService {
             // Get the ChatMemory from the ChatMemoryManager
             ChatMemory chatMemory = chatMemoryManager.getChatMemory(project.getLocationHash());
 
+            // For debugging - copy message list to clipboard
+            ClipboardUtil.copyToClipboard(chatMemory.messages().toString());
+
             // Build the AI service with or without MCP
             Assistant assistant;
             if (mcpToolProvider != null) {
@@ -164,9 +169,7 @@ public class NonStreamingPromptExecutionService {
             // Add extra user message context
             MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
 
-            String userQuery = chatMessageContext.getUserMessage().singleText();
-
-            String queryResponse = assistant.chat(userQuery);
+            String queryResponse = assistant.chat(chatMessageContext.getUserMessage());
 
             return ChatResponse.builder()
                     .aiMessage(AiMessage.aiMessage(queryResponse))
@@ -197,6 +200,6 @@ public class NonStreamingPromptExecutionService {
      * The Code Assistant chat method
      */
     interface Assistant {
-        String chat(String message);
+        String chat(dev.langchain4j.data.message.UserMessage userMessage);
     }
 }
