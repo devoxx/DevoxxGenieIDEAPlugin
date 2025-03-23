@@ -13,6 +13,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,7 +24,7 @@ import java.util.function.Consumer;
  * Processes tokens as they arrive and manages completion.
  */
 @Slf4j
-public class StreamingResponseHandler implements dev.langchain4j.model.chat.response.StreamingChatResponseHandler {
+public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final ChatMessageContext context;
     private final ChatStreamingResponsePanel streamingPanel;
     private final PromptOutputPanel outputPanel;

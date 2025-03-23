@@ -86,68 +86,7 @@ public class ChatMemoryCleanupTest {
             verify(chatMemoryManager).removeLastUserMessage(testContext);
         }
     }
-    
-    /**
-     * Test scenario: User removes a message from the UI
-     */
-    @Test
-    public void testUserRemovesUserMessage() {
-        try (MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class)) {
-            
-            // Set up static mocks
-            mockedChatMemoryManager.when(ChatMemoryManager::getInstance).thenReturn(chatMemoryManager);
-            
-            // Since we're mocking PromptOutputPanel, create a subclass that calls the ChatMemoryManager directly
-            PromptOutputPanel mockOutputPanel = mock(PromptOutputPanel.class);
-            doAnswer(invocation -> {
-                ChatMessageContext ctx = invocation.getArgument(0);
-                Boolean isUserMessage = invocation.getArgument(1);
-                if (isUserMessage) {
-                    ChatMemoryManager.getInstance().removeLastExchange(ctx);
-                }
-                return null;
-            }).when(mockOutputPanel).removeConversationItem(any(ChatMessageContext.class), eq(true));
-            
-            // Call the method we want to test
-            mockOutputPanel.removeConversationItem(testContext, true);
-            
-            // Verify that the last exchange was removed from memory
-            verify(chatMemoryManager).removeLastExchange(testContext);
-        }
-    }
-    
-    /**
-     * Test scenario: User removes an AI response from the UI
-     */
-    @Test
-    public void testUserRemovesAIResponse() {
-        try (MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class)) {
-            
-            // Set up static mocks
-            mockedChatMemoryManager.when(ChatMemoryManager::getInstance).thenReturn(chatMemoryManager);
 
-            // Add an AI message to the context
-            testContext.setAiMessage(AiMessage.aiMessage("Test response"));
-            
-            // Since we're mocking PromptOutputPanel, create a subclass that calls the ChatMemoryManager directly
-            PromptOutputPanel mockOutputPanel = mock(PromptOutputPanel.class);
-            doAnswer(invocation -> {
-                ChatMessageContext ctx = invocation.getArgument(0);
-                Boolean isUserMessage = invocation.getArgument(1);
-                if (!isUserMessage) {
-                    ChatMemoryManager.getInstance().removeLastAIMessage(ctx);
-                }
-                return null;
-            }).when(mockOutputPanel).removeConversationItem(any(ChatMessageContext.class), eq(false));
-            
-            // Call the method we want to test
-            mockOutputPanel.removeConversationItem(testContext, false);
-            
-            // Verify that only the AI message was removed from memory
-            verify(chatMemoryManager).removeLastAIMessage(testContext);
-        }
-    }
-    
     /**
      * Test scenario: Streaming is stopped mid-response
      */

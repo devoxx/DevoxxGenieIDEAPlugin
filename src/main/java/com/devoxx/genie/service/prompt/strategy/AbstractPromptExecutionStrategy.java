@@ -80,15 +80,15 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      */
     protected abstract String getStrategyName();
     
-    /**
-     * Prepares memory with system message if needed and adds the user message.
-     *
-     * @param context The chat message context
-     */
-    protected void prepareMemory(@NotNull ChatMessageContext context) {
-        chatMemoryManager.prepareMemory(context);
-        chatMemoryManager.addUserMessage(context);
-    }
+//    /**
+//     * Prepares memory with system message if needed and adds the user message.
+//     *
+//     * @param context The chat message context
+//     */
+//    protected void prepareMemory(@NotNull ChatMessageContext context) {
+//        chatMemoryManager.prepareMemory(context);
+//        // chatMemoryManager.addUserMessage(context);
+//    }
     
     /**
      * Standardized error handling for execution exceptions.

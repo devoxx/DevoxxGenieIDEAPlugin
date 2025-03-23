@@ -56,7 +56,11 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         }
 
         // Prepare memory with system message if needed and add user message
-        prepareMemory(context);
+        log.debug("Before memory preparation - context ID: {}", context.getId());
+        chatMemoryManager.logMemoryState(context.getProject());
+        
+        log.debug("After memory preparation - context ID: {}", context.getId());
+        chatMemoryManager.logMemoryState(context.getProject());
 
         // Execute the prompt using the centralized thread pool
         threadPoolManager.getPromptExecutionPool().execute(() -> {
@@ -79,9 +83,6 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
 
                 // Set token usage and cost
                 context.setTokenUsageAndCost(response.tokenUsage());
-                
-                // Add AI response to memory
-                chatMemoryManager.addAiResponse(context);
 
                 // Add the conversation to the chat service
                 project.getMessageBus()

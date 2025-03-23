@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.nonstreaming;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -9,12 +10,11 @@ import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.util.ClipboardUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -23,8 +23,6 @@ import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -63,12 +61,6 @@ public class NonStreamingPromptExecutionService {
         cancelExecutingQuery();
         
         Project project = chatMessageContext.getProject();
-        
-        // Let the ChatMemoryManager handle memory preparation
-        chatMemoryManager.prepareMemory(chatMessageContext);
-        
-        // Let the ChatMemoryManager handle adding the user message
-        chatMemoryManager.addUserMessage(chatMessageContext);
 
         long startTime = System.currentTimeMillis();
         running = true;
@@ -130,7 +122,6 @@ public class NonStreamingPromptExecutionService {
         try {
             Project project = chatMessageContext.getProject();
             ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
-            List<ChatMessage> messages = chatMemoryManager.getMessages(project);
 
             // Get MCP tool provider if enabled
             ToolProvider mcpToolProvider = null;
@@ -145,8 +136,6 @@ public class NonStreamingPromptExecutionService {
                 }
             }
 
-            ClipboardUtil.copyToClipboard(messages.toString());
-
             // Get the ChatMemory from the ChatMemoryManager
             ChatMemory chatMemory = chatMemoryManager.getChatMemory(project.getLocationHash());
 
@@ -157,7 +146,8 @@ public class NonStreamingPromptExecutionService {
                 // With MCP tool provider
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
-                        .chatMemory(chatMemory)
+                        .chatMemoryProvider(memoryId -> chatMemory)
+                        .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
                         .toolProvider(mcpToolProvider)
                         .build();
             } else {
@@ -166,11 +156,17 @@ public class NonStreamingPromptExecutionService {
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
                         .chatMemory(chatMemory)
+                        .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
+                        .chatMemoryProvider(memoryId -> chatMemory)
                         .build();
             }
 
-            String query = chatMessageContext.getUserMessage().singleText();
-            String queryResponse = assistant.chat(query);
+            // Add extra user message context
+            MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
+
+            String userQuery = chatMessageContext.getUserMessage().singleText();
+
+            String queryResponse = assistant.chat(userQuery);
 
             return ChatResponse.builder()
                     .aiMessage(AiMessage.aiMessage(queryResponse))
@@ -188,13 +184,18 @@ public class NonStreamingPromptExecutionService {
                 throw new ModelException(
                     "Selected Jan model is not active. Download and make it active or add API Key in Jan settings.", e);
             }
+
             // Let the ChatMemoryManager handle removing the last message on error
-            chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
+            // chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
+
             // Use our own ModelException instead of the generic ProviderUnavailableException
             throw new ModelException("Provider unavailable: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * The Code Assistant chat method
+     */
     interface Assistant {
         String chat(String message);
     }

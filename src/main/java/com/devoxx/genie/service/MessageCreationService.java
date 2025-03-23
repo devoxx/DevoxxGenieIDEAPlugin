@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -63,10 +64,18 @@ public class MessageCreationService {
 
     /**
      * Create user message.
+     * IMPORTANT: This method should be called only once per user message to avoid duplicates
+     * in the chat memory. It is called by ChatMemoryManager.addUserMessage().
      *
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
+        // Check if user message already exists to prevent duplicates
+        if (chatMessageContext.getUserMessage() != null) {
+            // Message already exists, skip creating another one
+            return;
+        }
+
         String context = chatMessageContext.getFilesContext();
         if (context != null && !context.isEmpty()) {
             constructUserMessageWithFullContext(chatMessageContext, context);
@@ -78,7 +87,7 @@ public class MessageCreationService {
 
     private void addImages(@NotNull ChatMessageContext chatMessageContext) {
         List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject());
-        if (imageFiles != null && !imageFiles.isEmpty()) {
+        if (!imageFiles.isEmpty()) {
             // Add each image as content
             for (VirtualFile imageFile: imageFiles) {
                 try {
@@ -111,12 +120,19 @@ public class MessageCreationService {
 
         // If git diff is enabled, add special instructions at the beginning
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
-            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
+            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n");
         }
 
-        stringBuilder.append("<Context>");
-        stringBuilder.append(context);
-        stringBuilder.append("</Context>\n\n");
+        if (!context.isEmpty()) {
+            stringBuilder.append("<Context>");
+            stringBuilder.append(context);
+            stringBuilder.append("</Context>\n");
+        }
+
+        stringBuilder
+                .append("<ProjectPath>")
+                .append(chatMessageContext.getProject().getBasePath())
+                .append("</ProjectPath>\n");
 
         stringBuilder.append("<UserPrompt>");
         stringBuilder.append(chatMessageContext.getUserPrompt());
@@ -161,13 +177,21 @@ public class MessageCreationService {
             }
         }
 
+        stringBuilder
+                .append("<ProjectPath>\n")
+                .append(chatMessageContext.getProject().getBasePath())
+                .append("</ProjectPath>");
+
         // Add the user's prompt
         stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");
 
-        // Add editor content or selected text
-        String editorContent = getEditorContentOrSelectedText(chatMessageContext);
-        if (!editorContent.isEmpty()) {
-            stringBuilder.append(editorContent);
+        // Only include the currently open editor file when MCP is disabled
+        if (!MCPService.isMCPEnabled()) {
+            // Add editor content or selected text
+            String editorContent = getEditorContentOrSelectedText(chatMessageContext);
+            if (!editorContent.isEmpty()) {
+                stringBuilder.append(editorContent);
+            }
         }
 
         chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));

@@ -118,7 +118,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gbc.insets = JBUI.insets(5);
 
         addSection(panel, gbc, "Local Large Language Response");
-        addSettingRow(panel, gbc, "Enable Stream Mode (Beta)", streamModeCheckBox);
+        addSettingRow(panel, gbc, "Enable Stream Mode", streamModeCheckBox);
+        addSettingRow(panel, gbc, "⚠️Currently MCP is not enabled in streaming mode.");
 
         // Local LLM Providers section
         addSection(panel, gbc, "Local LLM Providers");

@@ -3,7 +3,6 @@ package com.devoxx.genie.service.prompt.memory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -33,7 +32,6 @@ import static com.devoxx.genie.model.Constant.MARKDOWN;
 public class ChatMemoryManager {
 
     private final ChatMemoryService chatMemoryService;
-    private final MessageCreationService messageCreationService;
 
     public static ChatMemoryManager getInstance() {
         return ApplicationManager.getApplication().getService(ChatMemoryManager.class);
@@ -41,7 +39,6 @@ public class ChatMemoryManager {
 
     public ChatMemoryManager() {
         this.chatMemoryService = ChatMemoryService.getInstance();
-        this.messageCreationService = MessageCreationService.getInstance();
     }
 
     /**
@@ -82,28 +79,17 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Adds user message to memory from the provided context
-     * @param context The chat message context containing the user message
-     */
-    public void addUserMessage(@NotNull ChatMessageContext context) {
-        try {
-            messageCreationService.addUserMessageToContext(context);
-            chatMemoryService.addMessage(context.getProject(), context.getUserMessage());
-            log.debug("Added user message to memory");
-        } catch (Exception e) {
-            throw new MemoryException("Failed to add user message to memory", e);
-        }
-    }
-
-    /**
      * Adds AI response to memory from the provided context
      * @param context The chat message context containing the AI message
      */
     public void addAiResponse(@NotNull ChatMessageContext context) {
         try {
             if (context.getAiMessage() != null) {
+                log.debug("Adding AI response to memory for context ID: {}", context.getId());
                 chatMemoryService.addMessage(context.getProject(), context.getAiMessage());
-                log.debug("Added AI response to memory");
+                log.debug("Successfully added AI response to memory");
+            } else {
+                log.warn("Attempted to add null AI message to memory for context ID: {}", context.getId());
             }
         } catch (Exception e) {
             throw new MemoryException("Failed to add AI response to memory", e);
@@ -185,19 +171,6 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Clears all messages from memory for a project
-     * @param project The project to clear memory for
-     */
-    public void clearMemory(@NotNull Project project) {
-        try {
-            chatMemoryService.clearMemory(project);
-            log.debug("Cleared all messages from memory for project: {}", project.getLocationHash());
-        } catch (Exception e) {
-            throw new MemoryException("Failed to clear memory", e);
-        }
-    }
-
-    /**
      * Gets all messages from memory for a project
      * @param project The project to get messages for
      * @return List of chat messages
@@ -211,19 +184,6 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Checks if memory is empty for a project
-     * @param project The project to check
-     * @return true if memory is empty, false otherwise
-     */
-    public boolean isMemoryEmpty(@NotNull Project project) {
-        try {
-            return chatMemoryService.isEmpty(project);
-        } catch (Exception e) {
-            throw new MemoryException("Failed to check if memory is empty", e);
-        }
-    }
-
-    /**
      * Gets the chat memory instance for a project
      * @param projectHash The hash of the project to get memory for
      * @return ChatMemory instance
@@ -233,6 +193,26 @@ public class ChatMemoryManager {
             return chatMemoryService.get(projectHash);
         } catch (Exception e) {
             throw new MemoryException("Failed to get chat memory", e);
+        }
+    }
+    
+    /**
+     * Logs the current state of the chat memory for debugging purposes
+     * @param project The project to log memory for
+     */
+    public void logMemoryState(@NotNull Project project) {
+        try {
+            List<ChatMessage> messages = getMessages(project);
+            log.debug("Current memory state for project {}, total messages: {}", project.getName(), messages.size());
+            
+            for (int i = 0; i < messages.size(); i++) {
+                ChatMessage message = messages.get(i);
+                String type = message.getClass().getSimpleName();
+                String content = message.toString();
+                log.debug("Message[{}] - Type: {} - Content: {}", i, type, content);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to log memory state: {}", e.getMessage());
         }
     }
 

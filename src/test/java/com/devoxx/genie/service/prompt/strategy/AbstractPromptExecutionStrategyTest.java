@@ -212,14 +212,4 @@ public class AbstractPromptExecutionStrategyTest extends LightPlatformTestCase {
         verify(panel).removeLastUserPrompt(context);
         verify(chatMemoryManager).removeLastUserMessage(context);
     }
-    
-    @Test
-    public void testPrepareMemory() {
-        // Call prepareMemory
-        strategy.prepareMemory(context);
-        
-        // Verify memory manager calls
-        verify(chatMemoryManager).prepareMemory(context);
-        verify(chatMemoryManager).addUserMessage(context);
-    }
 }

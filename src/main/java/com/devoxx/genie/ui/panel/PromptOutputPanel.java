@@ -5,7 +5,6 @@ import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -116,7 +115,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
         container.remove(welcomePanel);
 
-        UserPromptPanel userPromptPanel = new UserPromptPanel(container, chatMessageContext);
+        UserPromptPanel userPromptPanel = new UserPromptPanel(chatMessageContext);
 
         if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
             waitingPanel.showMsg();
@@ -185,45 +184,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         }
         revalidate();
         repaint();
-        scrollToBottom();
-    }
-    
-    /**
-     * Removes a conversation item (user message or AI response) from the panel and memory.
-     * 
-     * @param context The context of the chat message
-     * @param isUserMessage Whether this is a user message (true) or AI response (false)
-     */
-    public void removeConversationItem(ChatMessageContext context, boolean isUserMessage) {
-        // Remove from UI
-        Component componentToRemove = null;
-        for (Component component : container.getComponents()) {
-            if ((isUserMessage && component instanceof UserPromptPanel) || 
-                (!isUserMessage && component instanceof ChatResponsePanel)) {
-                if (component.getName() != null && component.getName().equals(context.getId())) {
-                    componentToRemove = component;
-                    break;
-                }
-            }
-        }
-        
-        if (componentToRemove != null) {
-            container.remove(componentToRemove);
-            revalidate();
-            repaint();
-        }
-        
-        // Then also remove from memory
-        if (isUserMessage) {
-            // Remove the last user message and its response
-            ChatMemoryManager.getInstance().removeLastExchange(context);
-        } else {
-            // Just remove the AI message
-            ChatMemoryManager.getInstance().removeLastAIMessage(context);
-        }
-        
-        log.debug("Removed conversation item from UI and memory: {}.", 
-                 isUserMessage ? "user message" : "AI response");
         scrollToBottom();
     }
 

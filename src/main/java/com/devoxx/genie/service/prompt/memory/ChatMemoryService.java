@@ -81,8 +81,25 @@ public class ChatMemoryService implements ChatMemoryProvider {
             String projectHash = project.getLocationHash();
             MessageWindowChatMemory memory = projectConversations.get(projectHash);
             if (memory != null) {
+                // Check for duplicate messages to prevent adding the same message multiple times
+                List<ChatMessage> currentMessages = memory.messages();
+                if (!currentMessages.isEmpty()) {
+                    ChatMessage lastMessage = currentMessages.get(currentMessages.size() - 1);
+                    
+                    // Check if the last message is of the same type and has the same content
+                    if (lastMessage.getClass().equals(chatMessage.getClass()) &&
+                        lastMessage.toString().equals(chatMessage.toString())) {
+                        log.warn("Prevented duplicate message addition for project: {}", projectHash);
+                        return; // Skip adding duplicate message
+                    }
+                }
+                
+                // Log the message content for debugging XML issues
+                log.debug("Adding message to memory - Type: {}, Content: {}", 
+                        chatMessage.getClass().getSimpleName(), chatMessage);
+                
                 memory.add(chatMessage);
-                log.debug("Added message to project: {}", projectHash);
+                log.debug("Successfully added message to project: {}, message type: {}", projectHash, chatMessage.getClass().getSimpleName());
             } else {
                 throw new MemoryException("Chat memory not initialized for project: " + projectHash);
             }
@@ -223,7 +240,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
     @Override
     public ChatMemory get(Object projectHash) {
         try {
-            return projectConversations.get((String) projectHash);
+            return projectConversations.get(projectHash.toString());
         } catch (Exception e) {
             throw new MemoryException("Failed to get chat memory for project hash: " + projectHash, e);
         }

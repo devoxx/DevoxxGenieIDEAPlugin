@@ -52,7 +52,13 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         }
 
         // Prepare memory and add user prompt
-        prepareMemory(context);
+        log.debug("Before memory preparation (streaming) - context ID: {}", context.getId());
+        chatMemoryManager.logMemoryState(context.getProject());
+        
+        // prepareMemory(context);
+        
+        log.debug("After memory preparation (streaming) - context ID: {}", context.getId());
+        chatMemoryManager.logMemoryState(context.getProject());
         
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(
