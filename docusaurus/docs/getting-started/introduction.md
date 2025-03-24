@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Introduction to DevoxxGenie
 
-![DevoxxGenie Logo](/img/logo.svg)
+![DevoxxGenie Logo](/img/genie.svg)
 
 ## What is DevoxxGenie?
 

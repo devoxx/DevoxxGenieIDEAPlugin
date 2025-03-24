@@ -6,7 +6,7 @@ IMG_DIR="./static/img"
 
 # List of all image names mentioned in the documentation
 image_names=(
-  "logo.svg"
+  "logo.png"
   "installation-marketplace.png"
   "ollama-setup.png"
   "openai-setup.png"

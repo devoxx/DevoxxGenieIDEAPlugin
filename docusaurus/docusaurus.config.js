@@ -69,7 +69,7 @@ const config = {
         title: 'DevoxxGenie',
         logo: {
           alt: 'DevoxxGenie Logo',
-          src: 'img/logo.svg',
+          src: 'img/genie.svg',
         },
         items: [
           {

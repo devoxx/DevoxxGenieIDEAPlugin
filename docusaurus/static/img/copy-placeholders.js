@@ -7,7 +7,7 @@ const placeholderSvg = path.join(imgDir, 'devoxxgenie-placeholder.svg');
 
 // List of all image names mentioned in the documentation
 const imageNames = [
-  'logo.svg',
+  'logo.png',
   'installation-marketplace.png',
   'ollama-setup.png',
   'openai-setup.png',

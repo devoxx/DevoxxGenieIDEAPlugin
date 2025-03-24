@@ -58,7 +58,7 @@ DevoxxGenie offers several configuration options for RAG:
 - **Similarity threshold**: Set the minimum relevance score for including a document
 - **File type filters**: Include or exclude specific file types from the RAG index
 
-![RAG Settings](/img/rag-settings.png)
+![RAG Settings](/img/rag-setup.png)
 
 ## Advanced RAG Features
 

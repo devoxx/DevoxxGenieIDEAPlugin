@@ -26,7 +26,7 @@ There are two ways to install the DevoxxGenie plugin:
 5. Click the `Install` button next to the DevoxxGenie plugin
 6. Restart IntelliJ IDEA when prompted
 
-![Installing from Marketplace](/img/installation-marketplace.png)
+![Installing from Marketplace](/img/provider-selection.png)
 
 ### Method 2: Manual Installation
 

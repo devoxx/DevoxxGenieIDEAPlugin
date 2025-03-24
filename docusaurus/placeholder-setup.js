@@ -55,7 +55,7 @@ const createPlaceholderICO = (filePath) => {
 
 // List of all image names mentioned in the documentation
 const imageNames = [
-  'logo.svg',
+  'logo.png',
   'favicon.ico',
   'installation-marketplace.png',
   'ollama-setup.png',

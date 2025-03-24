@@ -68,10 +68,10 @@ const FeatureList = [
     ),
   },
   {
-    title: '100% Java',
+    title: 'Naive RAG',
     description: (
       <>
-        Fully developed in Java using Langchain4J, providing a native experience within the JetBrains ecosystem.
+        Retrieval-Augmented Generation that automatically finds and incorporates relevant code from your project to enhance the LLM's understanding of your codebase.
       </>
     ),
   },

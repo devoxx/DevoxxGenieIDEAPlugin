@@ -12,6 +12,11 @@ function HomepageHeader() {
   return (
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
+        <img 
+          src="/img/genie.svg" 
+          alt="DevoxxGenie Logo" 
+          style={{width: '128px', height: '128px', marginBottom: '1rem'}} 
+        />
         <h1 className="hero__title">{siteConfig.title}</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
@@ -68,7 +73,7 @@ export default function Home() {
         <div className="container home-section">
           <div className="row">
             <div className="col col--6">
-              <img src="/img/mcp-logs.png" alt="MCP feature" className="feature-image" />
+              <img src="/img/mcp-logs.jpg" alt="MCP feature" className="feature-image" />
             </div>
             <div className="col col--6">
               <h2>Advanced MCP Support</h2>
