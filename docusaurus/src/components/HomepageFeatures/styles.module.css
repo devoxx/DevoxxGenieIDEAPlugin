@@ -8,3 +8,80 @@
 .feature {
   margin-bottom: 2rem;
 }
+
+.featureLink {
+  text-decoration: none !important;
+  color: inherit;
+  display: block;
+  height: 100%;
+}
+
+.featureLink:hover {
+  text-decoration: none !important;
+}
+
+.featureTitle {
+  text-decoration: none !important;
+}
+
+.featureLink:hover .featureTitle {
+  text-decoration: none !important;
+  color: var(--ifm-color-primary);
+}
+
+.featureCard {
+  height: 100%;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.featureLink:hover .featureCard {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  border-color: var(--ifm-color-emphasis-200);
+  background-color: var(--ifm-color-emphasis-0);
+}
+
+.iconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  color: var(--ifm-color-primary);
+  transition: transform 0.3s ease;
+}
+
+.featureLink:hover .featureIcon {
+  transform: scale(1.1);
+}
+
+.learnMore {
+  margin-top: 1rem;
+  font-weight: 500;
+  color: var(--ifm-color-primary);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  text-decoration: none !important;
+}
+
+.arrow {
+  display: inline-block;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.featureLink:hover .learnMore {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.featureLink:hover .arrow {
+  transform: translateX(4px);
+}

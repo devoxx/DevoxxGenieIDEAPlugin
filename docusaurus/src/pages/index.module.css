@@ -21,3 +21,17 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Video styles */
+.videoContainer {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.demoVideo {
+  width: 100%;
+  height: auto;
+  display: block;
+}

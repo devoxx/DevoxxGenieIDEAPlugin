@@ -1,5 +1,10 @@
 ---
 sidebar_position: 1
+title: Introduction to DevoxxGenie - AI Code Assistant for IntelliJ IDEA
+description: DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that integrates with both local and cloud-based LLM providers to enhance your development workflow.
+keywords: [devoxxgenie, intellij plugin, ai coding assistant, llm, java, code generation, cloud llm, local llm]
+image: /img/devoxxgenie-social-card.jpg
+slug: /getting-started/introduction-to-devoxxgenie
 ---
 
 # Introduction to DevoxxGenie

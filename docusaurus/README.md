@@ -1,30 +1,28 @@
-# DevoxxGenie Documentation
+# DevoxxGenie Documentation Site
 
-This directory contains the documentation website for the DevoxxGenie IntelliJ IDEA plugin, built with [Docusaurus](https://docusaurus.io/).
+This is the official documentation site for DevoxxGenie, a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA.
 
-## Local Development
+## Development
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/en/download/) version 18 or above
-- [npm](https://www.npmjs.com/) (comes with Node.js)
+- Node.js (v18 or higher)
+- npm or yarn
 
 ### Installation
 
 ```bash
+# Install dependencies
 npm install
+
+# Install SEO plugins
+bash install-seo-deps.sh
 ```
 
-### About Image Placeholders
-
-The documentation references many screenshots that need to be created. For development and testing, we use automatically generated placeholder images.
-
-The `npm start` and `npm run build` commands will automatically generate these placeholders for all missing images. You don't need to run any separate commands for this.
-
-### Local Development Server
+### Local Development
 
 ```bash
-npm run start
+npm start
 ```
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
@@ -35,46 +33,30 @@ This command starts a local development server and opens up a browser window. Mo
 npm run build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This command generates static content into the `build` directory and can be served using any static content hosting service.
 
-## Adding Screenshots
+## SEO Enhancements
 
-Replace the placeholder images in the `static/img` directory with actual screenshots of the plugin:
+This documentation site has been optimized for search engines with:
 
-1. Take screenshots of the relevant features in the plugin
-2. Save them with the same filenames as the placeholders
-3. Place them in the `static/img` directory
+- Comprehensive metadata for all main pages
+- Sitemap generation
+- Structured data using Schema.org
+- Optimized image handling
+- Proper heading hierarchies
 
-## Structure
+When adding new content, please follow these SEO guidelines:
 
-- `docs/`: Documentation content in Markdown
-- `src/`: React components for custom pages
-- `static/`: Static assets like images
-- `docusaurus.config.js`: Docusaurus configuration
-- `sidebars.js`: Sidebar structure for documentation
+1. Add proper front matter with title, description, and keywords
+2. Use descriptive image alt tags
+3. Follow a logical heading structure (H1 → H2 → H3)
+4. Include internal links to related content
+5. Optimize content for relevant search terms
 
-## Adding Content
+## Contributing
 
-### Adding Documentation Pages
+Feel free to contribute to this documentation by submitting pull requests or opening issues for any content improvements or corrections.
 
-1. Add Markdown files to the `docs` directory
-2. Update `sidebars.js` if you want to add the page to the sidebar
+## License
 
-### Adding Images
-
-1. Place image files in `static/img/`
-2. Reference them in Markdown using relative paths: `![Alt text](/img/example.png)`
-
-### Adding Components
-
-If you need custom React components, add them to the `src/components/` directory.
-
-## Deployment
-
-The documentation site can be deployed to GitHub Pages:
-
-```bash
-GIT_USER=<Your GitHub username> npm run deploy
-```
-
-This command is a convenient way to build the website and push to the `gh-pages` branch.
+This documentation is part of the DevoxxGenie project and is available under the same license.

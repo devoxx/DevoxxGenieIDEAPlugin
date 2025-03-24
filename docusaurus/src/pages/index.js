@@ -21,9 +21,9 @@ function HomepageHeader() {
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
-            className="button button--secondary button--lg"
-            to="/docs/getting-started/introduction">
-            Get Started with DevoxxGenie
+          className="button button--secondary button--lg"
+          to="/docs/getting-started/introduction">
+          Get Started with DevoxxGenie
           </Link>
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function Home() {
   return (
     <Layout
       title={`${siteConfig.title} - Java-based LLM Assistant for IntelliJ IDEA`}
-      description="A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers and cloud-based LLM services.">
+      description={siteConfig.customFields.description}>
       <HomepageHeader />
       <main>
         <div className="container home-section">
@@ -58,7 +58,21 @@ export default function Home() {
               </div>
             </div>
             <div className="col col--6">
-              <img src="/img/devoxxgenie-demo.gif" alt="DevoxxGenie in action" className="feature-image" />
+              <div className={styles.videoContainer}>
+                <video 
+                  className={styles.demoVideo}
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  controls={false}
+                >
+                  <source src="/videos/devoxxgenie-demo.mp4" type="video/mp4" />
+                  {/* Fallback to GIF if video fails to load */}
+                  Your browser does not support the video tag. 
+                  <img src="/img/devoxxgenie-demo.gif" alt="DevoxxGenie in action" className="feature-image" />
+                </video>
+              </div>
             </div>
           </div>
         </div>

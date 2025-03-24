@@ -44,17 +44,14 @@
   background-color: var(--ifm-color-emphasis-100);
 }
 
-.feature-card {
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 100%;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* Remove this class since we're now styling it with CSS modules */
+/* Feature Card Links - Ensure no underline on hover */
+.feature-card a,
+.feature-card a:hover,
+.feature-card a:focus,
+.feature-card a:active {
+  text-decoration: none !important;
+  outline: none;
 }
 
 .feature-icon {

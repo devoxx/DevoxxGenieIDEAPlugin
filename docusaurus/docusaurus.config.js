@@ -11,6 +11,10 @@ const config = {
   title: 'DevoxxGenie',
   tagline: 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA',
   favicon: 'img/favicon.ico',
+  customFields: {
+    description: 'Enhance your Java development with AI assistance. DevoxxGenie brings local and cloud LLM capabilities directly to your IntelliJ IDEA environment.',
+    noIndex: false  // Allows search engines to index your site
+  },
 
   // Set the production url of your site here
   url: 'https://devoxx.github.io',
@@ -34,6 +38,39 @@ const config = {
     locales: ['en'],
   },
 
+  plugins: [
+    // Remove standalone sitemap plugin as it's already included in the classic preset
+    // If you need custom sitemap settings, configure it in the preset options instead
+    [
+      // Using our custom schema plugin instead of the npm package
+      require.resolve('./src/plugins/schema-plugin'),
+      {
+        schemas: [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            'name': 'DevoxxGenie',
+            'applicationCategory': 'DeveloperApplication',
+            'operatingSystem': 'Windows, macOS, Linux',
+            'offers': {
+              '@type': 'Offer',
+              'price': '0',
+              'priceCurrency': 'USD'
+            },
+            'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
+            'screenshot': 'https://devoxx.github.io/img/devoxxgenie-demo.gif',
+            'softwareVersion': '1.0.0',
+            'author': {
+              '@type': 'Organization',
+              'name': 'Devoxx',
+              'url': 'https://devoxx.com'
+            }
+          }
+        ]
+      }
+    ],
+  ],
+
   presets: [
     [
       'classic',
@@ -52,9 +89,20 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/devoxx/DevoxxGenieIDEAPlugin/tree/master/docusaurus/',
+          feedOptions: {
+            type: 'all',
+            title: 'DevoxxGenie Blog',
+            description: 'Stay up to date with the latest DevoxxGenie news and features',
+            copyright: `Copyright © ${new Date().getFullYear()} Devoxx`,
+          },
         },
         theme: {
           customCss: './src/css/custom.css',
+        },
+        sitemap: {
+          changefreq: 'weekly',
+          priority: 0.5,
+          ignorePatterns: ['/tags/**'],
         },
       }),
     ],
@@ -63,8 +111,15 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
+      // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
+      metadata: [
+        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, rag, ai coding, local llm, cloud llm'},
+        {name: 'og:type', content: 'website'},
+        {name: 'twitter:card', content: 'summary_large_image'},
+        {name: 'twitter:creator', content: '@devoxx'},
+        {name: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
+      ],
       navbar: {
         title: 'DevoxxGenie',
         logo: {

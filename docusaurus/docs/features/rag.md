@@ -1,5 +1,10 @@
 ---
 sidebar_position: 3
+title: RAG Support - Retrieval-Augmented Generation for Code Understanding
+description: Learn how DevoxxGenie uses Retrieval-Augmented Generation (RAG) to improve AI assistance by automatically finding and incorporating relevant code from your project.
+keywords: [rag, retrieval augmented generation, context-aware coding, code search, intellij, ai coding, java]
+image: /img/rag-feature.png
+slug: /features/rag-retrieval-augmented-generation
 ---
 
 # RAG Support
