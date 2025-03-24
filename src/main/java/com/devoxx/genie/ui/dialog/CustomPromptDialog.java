@@ -16,13 +16,22 @@ public class CustomPromptDialog extends DialogWrapper {
     private final JBTextArea promptArea;
 
     public CustomPromptDialog(Project project) {
+        this(project, "", "");
+    }
+
+    // New constructor for editing existing prompts
+    public CustomPromptDialog(Project project, String initialCommand, String initialPrompt) {
         super(project);
-        setTitle("Add Custom Prompt");
+        setTitle(initialCommand.isEmpty() ? "Add Custom Prompt" : "Edit Custom Prompt");
 
         nameField = new JBTextField(20);
         promptArea = new JBTextArea(10, 40);
         promptArea.setLineWrap(true);
         promptArea.setWrapStyleWord(true);
+
+        // Set initial values for editing
+        nameField.setText(initialCommand);
+        promptArea.setText(initialPrompt);
 
         init();
     }
