@@ -254,10 +254,10 @@ public class ChatMemoryManager {
         }
 
         // Check for Bedrock Mistral AI model
-        if (context.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
-            // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
-            return bedrockChatModel.provider().name().startsWith("mistral.");
-        }
+        //        if (context.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
+        //            // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
+        //            return bedrockChatModel.provider().name().startsWith("mistral.");
+        //        }
 
         return true;
     }

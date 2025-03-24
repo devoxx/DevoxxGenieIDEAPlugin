@@ -9,8 +9,8 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.concurrency.AppExecutorUtil;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -40,9 +40,10 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
 
     protected abstract String getModelUrl();
 
-    protected ChatLanguageModel createLocalAiChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiChatModel.builder()
+    protected ChatLanguageModel createOpenAiChatModel(@NotNull ChatModel chatModel) {
+        return OpenAiChatModel.builder()
                 .baseUrl(getModelUrl())
+                .apiKey("na")
                 .modelName(chatModel.getModelName())
                 .maxRetries(chatModel.getMaxRetries())
                 .temperature(chatModel.getTemperature())
@@ -52,9 +53,10 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
                 .build();
     }
 
-    protected StreamingChatLanguageModel createLocalAiStreamingChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiStreamingChatModel.builder()
+    protected StreamingChatLanguageModel createOpenAiStreamingChatModel(@NotNull ChatModel chatModel) {
+        return OpenAiStreamingChatModel.builder()
                 .baseUrl(getModelUrl())
+                .apiKey("na")
                 .modelName(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
                 .topP(chatModel.getTopP())

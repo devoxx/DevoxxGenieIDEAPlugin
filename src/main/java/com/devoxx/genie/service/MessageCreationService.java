@@ -129,11 +129,6 @@ public class MessageCreationService {
             stringBuilder.append("</Context>\n");
         }
 
-        stringBuilder
-                .append("<ProjectPath>")
-                .append(chatMessageContext.getProject().getBasePath())
-                .append("</ProjectPath>\n");
-
         stringBuilder.append("<UserPrompt>");
         stringBuilder.append(chatMessageContext.getUserPrompt());
         stringBuilder.append("</UserPrompt>");
@@ -177,10 +172,13 @@ public class MessageCreationService {
             }
         }
 
-        stringBuilder
-                .append("<ProjectPath>\n")
-                .append(chatMessageContext.getProject().getBasePath())
-                .append("</ProjectPath>");
+        if (MCPService.isMCPEnabled()) {
+            // We'll add more info about the project path so tools can use this info.
+            stringBuilder
+                    .append("<ProjectPath>\n")
+                    .append(chatMessageContext.getProject().getBasePath())
+                    .append("</ProjectPath>");
+        }
 
         // Add the user's prompt
         stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");

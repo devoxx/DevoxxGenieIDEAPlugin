@@ -20,12 +20,12 @@ public class JanChatModelFactory extends LocalChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return createLocalAiChatModel(chatModel);
+        return createOpenAiChatModel(chatModel);
     }
 
     @Override
     public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        return createLocalAiStreamingChatModel(chatModel);
+        return createOpenAiStreamingChatModel(chatModel);
     }
 
     @Override

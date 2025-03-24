@@ -9,8 +9,8 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,12 +46,12 @@ class LocalChatModelFactoryTest extends BasePlatformTestCase {
 
         @Override
         public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-            return createLocalAiChatModel(chatModel);
+            return createOpenAiChatModel(chatModel);
         }
 
         @Override
         public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-            return createLocalAiStreamingChatModel(chatModel);
+            return createOpenAiStreamingChatModel(chatModel);
         }
 
         @Override
@@ -87,7 +87,7 @@ class LocalChatModelFactoryTest extends BasePlatformTestCase {
 
         // Overridden to avoid notification calls in tests
         @Override
-        protected void handleModelFetchError(IOException e) {
+        protected void handleModelFetchError(@NotNull IOException e) {
             // Do nothing in test
         }
 
@@ -140,7 +140,7 @@ class LocalChatModelFactoryTest extends BasePlatformTestCase {
         ChatLanguageModel model = factory.createChatModel(chatModel);
 
         assertNotNull(model);
-        assertTrue(model instanceof LocalAiChatModel);
+        assertTrue(model instanceof OpenAiChatModel);
     }
 
     @Test
@@ -148,7 +148,7 @@ class LocalChatModelFactoryTest extends BasePlatformTestCase {
         StreamingChatLanguageModel model = factory.createStreamingChatModel(chatModel);
 
         assertNotNull(model);
-        assertTrue(model instanceof LocalAiStreamingChatModel);
+        assertTrue(model instanceof OpenAiStreamingChatModel);
     }
 
     @Test
