@@ -1,5 +1,9 @@
 ---
 sidebar_position: 2
+title: Installation Guide - DevoxxGenie Documentation
+description: A comprehensive guide to installing the DevoxxGenie plugin in IntelliJ IDEA, including prerequisites, installation methods, and troubleshooting tips.
+keywords: [devoxxgenie, intellij plugin, installation, jetbrains marketplace, plugin installation, setup]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Installation Guide

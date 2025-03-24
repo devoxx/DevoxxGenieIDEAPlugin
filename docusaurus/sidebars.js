@@ -65,6 +65,7 @@ const sidebars = {
         'contributing/how-to-contribute',
         'contributing/prompt-structure',
         'contributing/development',
+        'contributing/documentation-standards',
       ],
     },
   ],

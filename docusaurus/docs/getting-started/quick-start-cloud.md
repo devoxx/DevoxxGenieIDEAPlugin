@@ -48,7 +48,7 @@ Here's how to set up DevoxxGenie with OpenAI:
 5. Select a model from the dropdown (e.g., gpt-4, gpt-3.5-turbo)
 6. Click "Apply" to save your settings
 
-![OpenAI Setup](/img/openai-setup.png)
+![OpenAI Setup](../../static/img/openai-setup.png)
 
 ### 3. Start Using DevoxxGenie
 
@@ -103,7 +103,7 @@ To configure cost settings:
 2. Navigate to "Token Cost & Context Window"
 3. Review and adjust settings as needed
 
-![Token Cost Settings](/img/token-cost-settings.png)
+![Token Cost Settings](../../static/img/token-cost-settings.png)
 
 ## Security Considerations
 
@@ -137,5 +137,5 @@ Now that you've set up DevoxxGenie with a cloud LLM provider, you can:
 
 - [Learn about different features](../features/overview.md)
 - [Configure prompt settings](../configuration/prompts.md)
-- [Try advanced features like RAG](../features/rag.md)
+- [Try advanced features like RAG](/docs/features/rag)
 - [Use web search with your queries](../features/web-search.md)

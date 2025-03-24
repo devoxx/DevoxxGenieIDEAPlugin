@@ -2,6 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 
@@ -13,8 +14,8 @@ function HomepageHeader() {
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
         <img 
-          src="/img/genie.svg" 
-          alt="DevoxxGenie Logo" 
+          src={useBaseUrl('/img/genie.svg')}
+          alt="DevoxxGenie Logo"
           style={{width: '128px', height: '128px', marginBottom: '1rem'}} 
         />
         <h1 className="hero__title">{siteConfig.title}</h1>
@@ -22,7 +23,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
           className="button button--secondary button--lg"
-          to="/docs/getting-started/introduction">
+          to={useBaseUrl('/docs/getting-started/introduction')}>
           Get Started with DevoxxGenie
           </Link>
         </div>
@@ -49,6 +50,9 @@ export default function Home() {
               <p>
                 With DevoxxGenie, developers can leverage the power of artificial intelligence to improve code quality, solve problems faster, and learn new concepts, all within their familiar IDE environment.
               </p>
+              <p>
+                <strong>100% Open Source and Free</strong> - DevoxxGenie is completely open source and free to use, following the BYOK (Bring Your Own Keys) model for LLM API keys.
+              </p>
               <div className={styles.buttons}>
                 <Link
                   className="button button--primary button--md"
@@ -67,10 +71,10 @@ export default function Home() {
                   playsInline
                   controls={false}
                 >
-                  <source src="/videos/devoxxgenie-demo.mp4" type="video/mp4" />
+                  <source src={useBaseUrl('/videos/devoxxgenie-demo.mp4')} type="video/mp4" />
                   {/* Fallback to GIF if video fails to load */}
                   Your browser does not support the video tag. 
-                  <img src="/img/devoxxgenie-demo.gif" alt="DevoxxGenie in action" className="feature-image" />
+                  <img src={useBaseUrl('/img/devoxxgenie-demo.gif')} alt="DevoxxGenie in action" className="feature-image" />
                 </video>
               </div>
             </div>
@@ -87,7 +91,7 @@ export default function Home() {
         <div className="container home-section">
           <div className="row">
             <div className="col col--6">
-              <img src="/img/mcp-logs.jpg" alt="MCP feature" className="feature-image" />
+              <img src={useBaseUrl('/img/mcp-logs.jpg')} alt="MCP feature" className="feature-image" />
             </div>
             <div className="col col--6">
               <h2>Advanced MCP Support</h2>
@@ -105,15 +109,16 @@ export default function Home() {
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>
               <p>Join thousands of developers who are already using DevoxxGenie to improve their productivity.</p>
+              <p><em>100% free and open source with no hidden costs - just bring your own API keys (BYOK)!</em></p>
               <div className={styles.buttons} style={{marginTop: '20px'}}>
                 <Link
                   className="button button--primary button--lg"
-                  to="/docs/getting-started/installation">
+                  to={useBaseUrl('/docs/getting-started/installation')}>
                   Installation Guide
                 </Link>
                 <Link
                   className="button button--secondary button--lg"
-                  to="/docs/features/overview"
+                  to={useBaseUrl('/docs/features/overview')}
                   style={{marginLeft: '10px'}}>
                   Explore Features
                 </Link>

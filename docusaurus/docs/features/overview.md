@@ -1,5 +1,9 @@
 ---
 sidebar_position: 1
+title: Features Overview - DevoxxGenie Documentation
+description: An overview of all features available in DevoxxGenie, including core features, LLM provider support, and advanced capabilities for IntelliJ IDEA.
+keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag, mcp, git diff]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Features Overview
@@ -67,7 +71,7 @@ DevoxxGenie also includes experimental features that are being developed and ref
 For detailed information about specific features, check out the dedicated pages:
 
 - [Chat Interface](chat-interface.md)
-- [RAG Support](rag.md)
+- [RAG Support](/docs/features/rag)
 - [MCP Support](mcp.md)
 - [Web Search](web-search.md)
 - [Git Diff](git-diff.md)

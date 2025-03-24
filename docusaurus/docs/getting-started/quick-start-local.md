@@ -55,7 +55,7 @@ ollama run codellama   # Optimized for code
 3. Select "Ollama" as the LLM provider
 4. Select your downloaded model from the model dropdown
 
-![Ollama Setup](/img/ollama-setup.png)
+![Ollama Setup](../../static/img/ollama-setup.png)
 
 ### 4. Start Using DevoxxGenie
 
@@ -117,4 +117,4 @@ Now that you've set up DevoxxGenie with a local LLM provider, you can:
 
 - [Learn about different features](../features/overview.md)
 - [Configure prompt settings](../configuration/prompts.md)
-- [Try more advanced features like RAG](../features/rag.md)
+- [Try more advanced features like RAG](/docs/features/rag)

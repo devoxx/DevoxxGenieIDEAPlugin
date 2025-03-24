@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
 // Import our custom icons
@@ -110,7 +111,7 @@ const FeatureList = [
 function Feature({icon: Icon, title, description, link}) {
   return (
     <div className={clsx('col col--4', styles.feature)}>
-      <Link to={link} className={styles.featureLink}>
+      <Link to={useBaseUrl(link)} className={styles.featureLink}>
         <div className={clsx('text--center feature-card', styles.featureCard)}>
           <div className={styles.iconContainer}>
             <Icon className={styles.featureIcon} />

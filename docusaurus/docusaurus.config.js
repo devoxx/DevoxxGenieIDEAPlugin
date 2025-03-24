@@ -12,7 +12,7 @@ const config = {
   tagline: 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA',
   favicon: 'img/favicon.ico',
   customFields: {
-    description: 'Enhance your Java development with AI assistance. DevoxxGenie brings local and cloud LLM capabilities directly to your IntelliJ IDEA environment.',
+    description: 'Enhance your Java development with AI assistance. DevoxxGenie is a free, open-source plugin that brings local and cloud LLM capabilities directly to your IntelliJ IDEA environment using your own API keys (BYOK).',
     noIndex: false  // Allows search engines to index your site
   },
 
@@ -20,7 +20,7 @@ const config = {
   url: 'https://devoxx.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/DevoxxGenieIDEAPlugin/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -117,7 +117,7 @@ const config = {
         {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, rag, ai coding, local llm, cloud llm'},
         {name: 'og:type', content: 'website'},
         {name: 'twitter:card', content: 'summary_large_image'},
-        {name: 'twitter:creator', content: '@devoxx'},
+        {name: 'twitter:creator', content: '@DevoxxGenie'},
         {name: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
       ],
       navbar: {
@@ -171,7 +171,7 @@ const config = {
             items: [
               {
                 label: 'X (Twitter)',
-                href: 'https://x.com/home',
+                href: 'https://x.com/DevoxxGenie',
               },
               {
                 label: 'BlueSky',

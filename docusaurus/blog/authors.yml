@@ -3,6 +3,8 @@ devoxx:
   title: DevoxxGenie Development Team
   url: https://github.com/devoxx
   image_url: https://github.com/devoxx.png
+  twitter: DevoxxGenie
+  bluesky: devoxxgenie.bsky.social
 
 stephanj:
   name: Stephan Janssen

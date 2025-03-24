@@ -14,9 +14,6 @@ This is the official documentation site for DevoxxGenie, a fully Java-based LLM 
 ```bash
 # Install dependencies
 npm install
-
-# Install SEO plugins
-bash install-seo-deps.sh
 ```
 
 ### Local Development

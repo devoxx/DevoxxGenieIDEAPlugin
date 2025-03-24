@@ -1,12 +1,14 @@
 ---
 slug: devoxxgenie-assistant-for-idea
-title: DevoxxGenie - Your AI Assistant for IDEA
+title: DevoxxGenie - Your AI Assistant for IntelliJ IDEA
 authors: [devoxx]
-tags: [announcements, AI, IntelliJ IDEA]
+tags: [announcements, AI, IntelliJ IDEA, code assistant, LLM, Java]
 date: 2025-03-24
+description: DevoxxGenie is a powerful AI-powered assistant for IntelliJ IDEA that helps developers be more productive by offering both local and cloud-based LLM integration.
+image: /img/devoxxgenie-social-card.jpg
 ---
 
-# DevoxxGenie: Your AI Assistant for IDEA
+# DevoxxGenie: Your AI Assistant for IntelliJ IDEA
 
 DevoxxGenie is a powerful AI-powered assistant for IntelliJ IDEA that helps developers be more productive by leveraging the capabilities of Large Language Models (LLMs). Unlike other code assistants, DevoxxGenie is built entirely in Java and offers unique flexibility by supporting both local and cloud-based LLM providers.
 
@@ -64,7 +66,6 @@ The DevoxxGenie team is actively working on enhancing the plugin with new featur
 
 - **Enhanced MCP Support**: More specialized tools for development tasks
 - **Agentic AI**: More sophisticated reasoning and planning capabilities
-- **Enhanced MCP Support**: More specialized tools for development tasks
 - **Improved Multimodal Support**: Better handling of visual elements
 
 ## Join the Community

@@ -1,5 +1,9 @@
 ---
 sidebar_position: 1
+title: LLM Providers Overview - DevoxxGenie Documentation
+description: A comprehensive guide to all LLM providers supported by DevoxxGenie, including local and cloud-based options, with comparison of features and capabilities.
+keywords: [devoxxgenie, intellij plugin, llm providers, openai, anthropic, local llm, cloud llm, mistral, ollama]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # LLM Providers Overview
