@@ -1,0 +1,11 @@
+devoxx:
+  name: Devoxx Team
+  title: DevoxxGenie Development Team
+  url: https://github.com/devoxx
+  image_url: https://github.com/devoxx.png
+
+stephanj:
+  name: Stephan Janssen
+  title: Creator of DevoxxGenie
+  url: https://github.com/stephanj
+  image_url: https://github.com/stephanj.png

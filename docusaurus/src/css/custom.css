@@ -1,0 +1,64 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #1565c0;
+  --ifm-color-primary-dark: #1359ad;
+  --ifm-color-primary-darker: #1254a3;
+  --ifm-color-primary-darkest: #0f4586;
+  --ifm-color-primary-light: #1771d3;
+  --ifm-color-primary-lighter: #1876dd;
+  --ifm-color-primary-lightest: #307fe5;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #42a5f5;
+  --ifm-color-primary-dark: #2597f4;
+  --ifm-color-primary-darker: #1690f3;
+  --ifm-color-primary-darkest: #0a76d1;
+  --ifm-color-primary-light: #5fb3f6;
+  --ifm-color-primary-lighter: #6ebaf7;
+  --ifm-color-primary-lightest: #9bd0f9;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.feature-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-section {
+  padding: 4rem 0;
+}
+
+.home-section-alternate {
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--ifm-color-primary);
+}

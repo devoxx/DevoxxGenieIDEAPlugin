@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Simple placeholder logo based on the original plugin icon -->
+  <rect width="128" height="128" fill="#1565c0" rx="20" ry="20"/>
+  <circle cx="64" cy="64" r="48" fill="#42a5f5"/>
+  <path d="M64 30 C45 30, 30 45, 30 64 C30 83, 45 98, 64 98 C83 98, 98 83, 98 64 C98 45, 83 30, 64 30 Z M64 85 C50 85, 43 73, 43 64 C43 55, 50 43, 64 43 C78 43, 85 55, 85 64 C85 73, 78 85, 64 85 Z" fill="#1565c0"/>
+  <circle cx="64" cy="64" r="15" fill="#ffffff"/>
+  <path d="M50 40 L78 40 L64 30 Z M50 88 L78 88 L64 98 Z M40 50 L40 78 L30 64 Z M88 50 L88 78 L98 64 Z" fill="#ffffff"/>
+</svg>

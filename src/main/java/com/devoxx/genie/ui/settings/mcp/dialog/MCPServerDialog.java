@@ -198,51 +198,21 @@ public class MCPServerDialog extends DialogWrapper {
             testConnectionButton.setEnabled(false);
             testConnectionButton.setText("Connecting...");
             
-            // Parse arguments from text area
-            List<String> args = Arrays.stream(
-                    argsArea.getText().trim().split("\\s+|\\n+"))
-                    .filter(arg -> !arg.isEmpty())
-                    .toList();
-            
-            // Create the command list
-            List<String> commandList = new ArrayList<>();
-            commandList.add(commandField.getText().trim());
-            commandList.addAll(args);
-            
-            // Create environment map
-            Map<String, String> env = new HashMap<>(System.getenv());
-            String firstCommand = commandList.get(0);
-            int lastSeparatorIndex = firstCommand.lastIndexOf(File.separator);
-            if (lastSeparatorIndex > 0) {
-                String directoryPath = firstCommand.substring(0, lastSeparatorIndex);
-                env.put("PATH", directoryPath + File.pathSeparator + env.getOrDefault("PATH", ""));
-            }
-            
-            // Build the bash command
-            List<String> mcpCommand = new ArrayList<>();
-            mcpCommand.add("/bin/bash");
-            mcpCommand.add("-c");
-            String cmdString = commandList.stream()
-                    .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                    .collect(Collectors.joining(" "));
-            mcpCommand.add(cmdString);
+            // Parse arguments and create command list
+            List<String> args = parseArguments();
+            List<String> mcpCommand = buildCommand(args);
             
             // Log the command for debugging
             log.debug("Executing command: {}", mcpCommand);
             
             // First, test if the command exists by running it directly
-            boolean commandExists = testIfCommandExists(commandField.getText().trim());
-            if (!commandExists) {
-                // Command doesn't exist, show error and return
-                String errorMessage = "Command not found: " + commandField.getText().trim() + 
-                                    "\nPlease check if the path is correct and the command exists.";
-                showErrorDialog("MCP Connection Failed", errorMessage, null);
-                toolsDescription = "Connection failed: Command not found";
-                testConnectionButton.setText("Connection Failed - Try Again");
+            if (!testIfCommandExists(commandField.getText().trim())) {
+                handleCommandNotFound();
                 return;
             }
             
-            // Create the transport and client with logging enabled
+            // Create the transport and connect to the server
+            Map<String, String> env = createEnvironmentMap();
             StdioMcpTransport transport = new StdioMcpTransport.Builder()
                     .command(mcpCommand)
                     .environment(env)
@@ -255,72 +225,150 @@ public class MCPServerDialog extends DialogWrapper {
                     .transport(transport)
                     .build();
             
-            // Get the list of tools
-            List<ToolSpecification> tools = mcpClient.listTools();
-            
-            // Update our fields with the tool information
-            availableTools = tools.stream()
-                    .map(ToolSpecification::name)
-                    .toList();
-            
-            // Store tool descriptions
-            Map<String, String> toolDescs = new HashMap<>();
-            for (ToolSpecification tool : tools) {
-                toolDescs.put(tool.name(), tool.description());
-            }
-            toolDescriptions = toolDescs;
-            
-            // Generate description string
-            StringBuilder description = new StringBuilder("Available tools: ");
-            if (tools.isEmpty()) {
-                description.append("None");
-            } else {
-                description.append(tools.size()).append(" - ");
-                description.append(String.join(", ", availableTools));
-            }
-            toolsDescription = description.toString();
-            
-            // Store tool descriptions for later use
-            server = MCPServer.builder()
-                    .name(nameField.getText().trim())
-                    .command(commandField.getText().trim())
-                    .args(args)
-                    .env(existingServer != null ? new HashMap<>(existingServer.getEnv()) : new HashMap<>())
-                    .availableTools(availableTools)
-                    .toolDescriptions(toolDescs)
-                    .toolsDescription(toolsDescription)
-                    .build();
+            // Get the list of tools and process them
+            processToolsList(mcpClient.listTools(), args, env);
             
             // Close the transport
             transport.close();
             
             // Update the button and show success message
-            testConnectionButton.setText("Connection Successful! " + tools.size() + " tools found");
+            testConnectionButton.setText("Connection Successful! " + availableTools.size() + " tools found");
             
         } catch (Exception ex) {
-            log.error("Failed to connect to MCP server", ex);
-            String errorMessage = ex.getMessage();
-            
-            // Check for common errors and provide more helpful messages
-            if (errorMessage != null) {
-                if (errorMessage.contains("No such file or directory") || 
-                    errorMessage.contains("not found") || 
-                    errorMessage.contains("cannot find")) {
-                    errorMessage = "Command not found or cannot be executed.\n" +
-                                  "Please check if the path is correct and the command exists.";
-                } else if (errorMessage.contains("timed out") || errorMessage.contains("timeout")) {
-                    errorMessage = "Connection timed out. The command may be hanging or not responding properly.";
-                }
-            }
-            
-            // Show error dialog with details
-            showErrorDialog("MCP Connection Failed", errorMessage, ex);
-            
-            toolsDescription = "Connection failed: " + errorMessage;
-            testConnectionButton.setText("Connection Failed - Try Again");
+            handleConnectionError(ex);
         } finally {
             testConnectionButton.setEnabled(true);
         }
+    }
+    
+    /**
+     * Parses arguments from the text area
+     * @return List of parsed arguments
+     */
+    private List<String> parseArguments() {
+        return Arrays.stream(
+                argsArea.getText().trim().split("\\s+|\\n+"))
+                .filter(arg -> !arg.isEmpty())
+                .toList();
+    }
+    
+    /**
+     * Builds the command to execute
+     * @param args Arguments to include in the command
+     * @return The complete command list
+     */
+    private @NotNull List<String> buildCommand(List<String> args) {
+        // Create the command list
+        List<String> commandList = new ArrayList<>();
+        commandList.add(commandField.getText().trim());
+        commandList.addAll(args);
+        
+        // Build the bash command
+        List<String> mcpCommand = new ArrayList<>();
+        mcpCommand.add("/bin/bash");
+        mcpCommand.add("-c");
+        String cmdString = commandList.stream()
+                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                .collect(Collectors.joining(" "));
+        mcpCommand.add(cmdString);
+        
+        return mcpCommand;
+    }
+    
+    /**
+     * Creates environment map with PATH updated to include command directory
+     * @return Environment variables map
+     */
+    private @NotNull Map<String, String> createEnvironmentMap() {
+        Map<String, String> env = new HashMap<>(System.getenv());
+        String command = commandField.getText().trim();
+        int lastSeparatorIndex = command.lastIndexOf(File.separator);
+        
+        if (lastSeparatorIndex > 0) {
+            String directoryPath = command.substring(0, lastSeparatorIndex);
+            env.put("PATH", directoryPath + File.pathSeparator + env.getOrDefault("PATH", ""));
+        }
+        
+        return env;
+    }
+    
+    /**
+     * Process the tools list returned from the MCP server
+     * @param tools List of tool specifications
+     * @param args Command arguments
+     * @param env Environment variables
+     */
+    private void processToolsList(@NotNull List<ToolSpecification> tools, List<String> args, Map<String, String> env) {
+        // Update our fields with the tool information
+        availableTools = tools.stream()
+                .map(ToolSpecification::name)
+                .toList();
+        
+        // Store tool descriptions
+        Map<String, String> toolDescs = new HashMap<>();
+        for (ToolSpecification tool : tools) {
+            toolDescs.put(tool.name(), tool.description());
+        }
+        toolDescriptions = toolDescs;
+        
+        // Generate description string
+        StringBuilder description = new StringBuilder("Available tools: ");
+        if (tools.isEmpty()) {
+            description.append("None");
+        } else {
+            description.append(tools.size()).append(" - ");
+            description.append(String.join(", ", availableTools));
+        }
+        toolsDescription = description.toString();
+        
+        // Store tool descriptions for later use
+        server = MCPServer.builder()
+                .name(nameField.getText().trim())
+                .command(commandField.getText().trim())
+                .args(args)
+                .env(existingServer != null ? new HashMap<>(existingServer.getEnv()) : env)
+                .availableTools(availableTools)
+                .toolDescriptions(toolDescs)
+                .toolsDescription(toolsDescription)
+                .build();
+    }
+    
+    /**
+     * Handles case when command is not found
+     */
+    private void handleCommandNotFound() {
+        String errorMessage = "Command not found: " + commandField.getText().trim() + 
+                            "\nPlease check if the path is correct and the command exists.";
+        showErrorDialog(errorMessage, null);
+        toolsDescription = "Connection failed: Command not found";
+        testConnectionButton.setText("Connection Failed - Try Again");
+    }
+    
+    /**
+     * Handles connection errors
+     * @param ex The exception that occurred
+     */
+    private void handleConnectionError(Exception ex) {
+        log.error("Failed to connect to MCP server", ex);
+        String errorMessage = ex.getMessage();
+        
+        // Check for common errors and provide more helpful messages
+        if (errorMessage != null) {
+            if (errorMessage.contains("No such file or directory") || 
+                errorMessage.contains("not found") || 
+                errorMessage.contains("cannot find")) {
+                errorMessage = "Command not found or cannot be executed.\n" +
+                              "Please check if the path is correct and the command exists.";
+            } else if (errorMessage.contains("timed out") || errorMessage.contains("timeout")) {
+                errorMessage = "Connection timed out. The command may be hanging or not responding properly.";
+            }
+        }
+        
+        // Show error dialog with details
+        showErrorDialog(errorMessage, ex);
+        
+        toolsDescription = "Connection failed: " + errorMessage;
+        testConnectionButton.setText("Connection Failed - Try Again");
     }
     
     /**
@@ -351,12 +399,11 @@ public class MCPServerDialog extends DialogWrapper {
     
     /**
      * Shows an error dialog with detailed information
-     * 
-     * @param title Dialog title
-     * @param message Error message
+     *
+     * @param message   Error message
      * @param exception The exception that occurred
      */
-    private void showErrorDialog(String title, String message, Exception exception) {
+    private void showErrorDialog(String message, Exception exception) {
         // Create a text area for the stack trace
         JTextArea textArea = new JTextArea(15, 50);
         textArea.setEditable(false);
@@ -401,7 +448,7 @@ public class MCPServerDialog extends DialogWrapper {
         JOptionPane.showMessageDialog(
                 this.getRootPane(),
                 scrollPane,
-                title,
+                "MCP Connection Failed",
                 JOptionPane.ERROR_MESSAGE
         );
     }
