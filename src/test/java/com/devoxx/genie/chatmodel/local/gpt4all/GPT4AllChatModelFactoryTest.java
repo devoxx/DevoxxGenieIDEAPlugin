@@ -8,8 +8,9 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
-import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -20,7 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
@@ -69,7 +69,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
         ChatLanguageModel model = factory.createChatModel(chatModel);
 
         assertNotNull(model);
-        assertTrue(model instanceof LocalAiChatModel);
+        assertTrue(model instanceof OpenAiChatModel);
     }
 
     @Test
@@ -77,7 +77,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
         StreamingChatLanguageModel model = factory.createStreamingChatModel(chatModel);
 
         assertNotNull(model);
-        assertTrue(model instanceof LocalAiStreamingChatModel);
+        assertTrue(model instanceof OpenAiStreamingChatModel);
     }
 
     @Test
@@ -132,7 +132,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
             // Override notification handling method to avoid platform issues in tests
             GPT4AllChatModelFactory testFactory = new GPT4AllChatModelFactory() {
                 @Override
-                protected void handleModelFetchError(IOException e) {
+                protected void handleModelFetchError(@NotNull IOException e) {
                     // No-op for testing
                 }
 
@@ -184,7 +184,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
             // Override notification handling method to avoid platform issues in tests
             GPT4AllChatModelFactory testFactory = new GPT4AllChatModelFactory() {
                 @Override
-                protected void handleModelFetchError(IOException e) {
+                protected void handleModelFetchError(@NotNull IOException e) {
                     // No-op for testing
                 }
 

@@ -13,7 +13,7 @@ import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
-import com.devoxx.genie.chatmodel.local.llamaCPP.LlamaChatModelFactory;
+import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
 import org.jetbrains.annotations.NotNull;

@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.local.llamaCPP;
+package com.devoxx.genie.chatmodel.local.llamacpp;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.model.ChatModel;
@@ -6,7 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.localai.LocalAiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -17,8 +17,9 @@ public class LlamaChatModelFactory implements ChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return LocalAiChatModel.builder()
+        return OpenAiChatModel.builder()
             .baseUrl(DevoxxGenieStateService.getInstance().getLlamaCPPUrl())
+            .apiKey("na")
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
@@ -29,7 +30,7 @@ public class LlamaChatModelFactory implements ChatModelFactory {
 
     @Override
     public List<LanguageModel> getModels() {
-        LanguageModel lmStudio = LanguageModel.builder()
+        LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.LLaMA)
             .modelName(TEST_MODEL)
             .displayName(TEST_MODEL)
@@ -40,7 +41,7 @@ public class LlamaChatModelFactory implements ChatModelFactory {
             .build();
 
         List<LanguageModel> modelNames = new ArrayList<>();
-        modelNames.add(lmStudio);
+        modelNames.add(model);
         return modelNames;
     }
 }

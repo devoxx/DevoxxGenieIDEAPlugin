@@ -20,7 +20,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.UserMessage;
+
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -169,11 +169,14 @@ public class NonStreamingPromptExecutionService {
             // Add extra user message context
             MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
 
-            String queryResponse = assistant.chat(chatMessageContext.getUserMessage());
-
-            return ChatResponse.builder()
-                    .aiMessage(AiMessage.aiMessage(queryResponse))
-                    .build();
+            if (chatMessageContext.getUserMessage().hasSingleText()) {
+                String queryResponse = assistant.chat(chatMessageContext.getUserMessage().singleText());
+                return ChatResponse.builder()
+                        .aiMessage(AiMessage.aiMessage(queryResponse))
+                        .build();
+            } else {
+                return chatLanguageModel.chat(chatMessageContext.getUserMessage());
+            }
 
         } catch (Exception e) {
             // Thread interruption is likely from cancellation, so we handle it specially
@@ -189,7 +192,7 @@ public class NonStreamingPromptExecutionService {
             }
 
             // Let the ChatMemoryManager handle removing the last message on error
-            // chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
+            chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
 
             // Use our own ModelException instead of the generic ProviderUnavailableException
             throw new ModelException("Provider unavailable: " + e.getMessage(), e);
@@ -200,6 +203,6 @@ public class NonStreamingPromptExecutionService {
      * The Code Assistant chat method
      */
     interface Assistant {
-        String chat(dev.langchain4j.data.message.UserMessage userMessage);
+        String chat(String userMessage);
     }
 }

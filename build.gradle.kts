@@ -50,7 +50,7 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "1.0.0-beta2"
+    val lg4j_version = "1.0.0-beta1"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
@@ -58,8 +58,7 @@ dependencies {
     // Langchain4J dependencies
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-local-ai:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-open-ai:1.0.0-alpha2-SNAPSHOT")
+    implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-bedrock:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-mistral-ai:$lg4j_version")
