@@ -5,7 +5,6 @@ import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.MessageBusUtil;
-import com.intellij.json.JsonFileType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
@@ -247,7 +246,9 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                     maxLogEntries = newValue;
                     pruneLogsToMaxSize();
                 }
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+                // Ignore
+            }
         }
     }
     
@@ -373,7 +374,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             String finalContent = content;
             ApplicationManager.getApplication().invokeLater(() -> {
                 // Create virtual file
-                LightVirtualFile virtualFile = new LightVirtualFile(fileName, JsonFileType.INSTANCE, finalContent);
+                LightVirtualFile virtualFile = new LightVirtualFile(fileName, finalContent);
                 
                 // Open the file in the editor
                 FileEditorManager.getInstance(project).openFile(virtualFile, true);
@@ -440,7 +441,6 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
      */
     private static class LogEntryRenderer extends DefaultListCellRenderer {
         // Colors for different types of messages
-        private static final Color TIMESTAMP_COLOR = new Color(127, 127, 127);
         private static final Color INCOMING_COLOR = new Color(76, 175, 80);  // Green
         private static final Color OUTGOING_COLOR = new Color(33, 150, 243); // Blue
         

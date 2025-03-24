@@ -40,6 +40,9 @@
             <LI>Fix #567 : At least one message is required by @stephanj</LI>
             <LI>Fix #569 : Fix to support again attached images by @stephanj</LI>
             <LI>Fix #571 : Don't show default editor file when using MCP by @stephanj</LI>
+            <LI>Fix #576 : LMStudio and Ollama do not return a response by @stephanj</LI>
+            <LI>Feat #574 : Edit custom prompt via a dialog by @mydeveloperplanet</LI>
+            <LI>Fix #580 : IDEA Compatibility problem Json dependency</LI>
         </UL>
         <h2>v0.5.0</h2>
         <UL>

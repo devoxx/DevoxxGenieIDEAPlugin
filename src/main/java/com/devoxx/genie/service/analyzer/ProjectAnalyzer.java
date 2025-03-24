@@ -25,6 +25,58 @@ import java.util.regex.Pattern;
  * </p>
  */
 public class ProjectAnalyzer {
+
+    public static final String POM_XML = "pom.xml";
+    public static final String BUILD = "build";
+    public static final String COMMANDS = "commands";
+    public static final String BUILD_GRADLE = "build.gradle";
+    public static final String BUILD_GRADLE_KTS = "build.gradle.kts";
+    public static final String PACKAGE_JSON = "package.json";
+    public static final String KOTLIN = "Kotlin";
+    public static final String JAVA = "Java";
+    public static final String JAVA_SCRIPT_TYPE_SCRIPT = "JavaScript/TypeScript";
+    public static final String CMAKE_LISTS_TXT = "CMakeLists.txt";
+    public static final String C_C_PLUS_PLUS = "C/C++";
+    public static final String PRETTIERRC = ".prettierrc";
+    public static final String ESLINTRC_JS = ".eslintrc.js";
+    public static final String CHECKSTYLE_XML = "checkstyle.xml";
+    public static final String PHPCS_XML = "phpcs.xml";
+    public static final String CLANG_FORMAT = ".clang-format";
+    public static final String RUST = "Rust";
+    public static final String CARGO_TOML = "Cargo.toml";
+    public static final String GO_MOD = "go.mod";
+    public static final String GO = "Go";
+    public static final String PYTHON = "Python";
+    public static final String PHP = "PHP";
+    public static final String ESLINT = "eslint";
+    public static final String PRETTIER = "prettier";
+    public static final String CHECKSTYLE = "checkstyle";
+    public static final String PHPCS = "phpcs";
+    public static final String CLANG_FORMAT1 = "clang-format";
+    public static final String TEST_JAVA_PATTERN = "**/*Test.java";
+    public static final String J_UNIT = "JUnit";
+    public static final String TEST_PHP_PATTERN = "**/*Test.php";
+    public static final String PHP_UNIT = "PHPUnit";
+    public static final String TEST_PY_PATTERN = "**/*_test.py";
+    public static final String PYTEST = "pytest";
+    public static final String TEST_GO_PATTERN = "**/*_test.go";
+    public static final String GO_TESTING = "Go testing";
+    public static final String SPEC_JS_PATTERN = "**/*spec.js";
+    public static final String JEST = "Jest";
+    public static final String TEST_RS_PATTERN = "**/test_*.rs";
+    public static final String RUST_TESTING = "Rust testing";
+    public static final String SPRING_BOOT_JAR = "**/spring-boot*.jar";
+    public static final String SPRING_BOOT = "Spring Boot";
+    public static final String LARAVEL_PHP = "**/laravel*.php";
+    public static final String LARAVEL = "Laravel";
+    public static final String DJANGO_PY = "**/django/*.py";
+    public static final String DJANGO = "Django";
+    public static final String REACT_JS = "**/react.js";
+    public static final String REACT = "React";
+    public static final String TESTING = "testing";
+    public static final String WEB = "web";
+    public static final String OTHER = "other";
+
     private final Project project;
     private final VirtualFile baseDir;
     private final GitignoreParser gitignoreParser;
@@ -34,9 +86,7 @@ public class ProjectAnalyzer {
         this.baseDir = baseDir;
 
         // Initialize the GitignoreParser with support for nested .gitignore files
-//        ProjectScannerLogPanel.log("Initializing GitignoreParser with support for nested .gitignore files...");
         this.gitignoreParser = new GitignoreParser(baseDir);
-//        ProjectScannerLogPanel.log("GitignoreParser initialization complete");
     }
 
     public Map<String, Object> scanProject() {
@@ -64,99 +114,86 @@ public class ProjectAnalyzer {
         Map<String, Object> buildInfo = new HashMap<>();
 
         // Check for common build files
-        if (baseDir.findChild("pom.xml") != null) {
+        if (baseDir.findChild(POM_XML) != null) {
             buildInfo.put("type", "Maven");
             // Add basic Maven commands
             Map<String, String> commands = new HashMap<>();
-            commands.put("build", "mvn clean install");
+            commands.put(BUILD, "mvn clean install");
             commands.put("test", "mvn test");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
-        else if (baseDir.findChild("build.gradle") != null || baseDir.findChild("build.gradle.kts") != null) {
+        else if (baseDir.findChild(BUILD_GRADLE) != null || baseDir.findChild(BUILD_GRADLE_KTS) != null) {
             buildInfo.put("type", "Gradle");
             // Add basic Gradle commands
             Map<String, String> commands = new HashMap<>();
-            commands.put("build", "./gradlew build");
+            commands.put(BUILD, "./gradlew build");
             commands.put("test", "./gradlew test");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
-        else if (baseDir.findChild("CMakeLists.txt") != null) {
+        else if (baseDir.findChild(CMAKE_LISTS_TXT) != null) {
             buildInfo.put("type", "CMake");
             Map<String, String> commands = new HashMap<>();
-            commands.put("build", "cmake --build build");
+            commands.put(BUILD, "cmake --build build");
             commands.put("test", "ctest");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
-        else if (baseDir.findChild("package.json") != null) {
+        else if (baseDir.findChild(PACKAGE_JSON) != null) {
             buildInfo.put("type", "npm/yarn");
             Map<String, String> commands = new HashMap<>();
-            commands.put("build", "npm run build");
+            commands.put(BUILD, "npm run build");
             commands.put("test", "npm test");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
         else if (baseDir.findChild("composer.json") != null) {
             buildInfo.put("type", "Composer");
             Map<String, String> commands = new HashMap<>();
             commands.put("install", "composer install");
             commands.put("test", "composer test");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
-        else if (baseDir.findChild("Cargo.toml") != null) {
+        else if (baseDir.findChild(CARGO_TOML) != null) {
             buildInfo.put("type", "Cargo");
             Map<String, String> commands = new HashMap<>();
-            commands.put("build", "cargo build");
+            commands.put(BUILD, "cargo build");
             commands.put("test", "cargo test");
-            buildInfo.put("commands", commands);
+            buildInfo.put(COMMANDS, commands);
         }
 
         return buildInfo;
     }
 
     private @NotNull Map<String, Object> detectLanguages() {
-//        ProjectScannerLogPanel.log("Starting language detection for project: " + project.getName());
-//        ProjectScannerLogPanel.log("Base directory: " + baseDir.getPath());
-
         Map<String, Object> languages = new HashMap<>();
         Set<String> detectedLanguages = new HashSet<>();
         Map<String, Integer> languageFileCount = new HashMap<>();
 
         // Check for language-specific project files first
-//        ProjectScannerLogPanel.log("Checking for language-specific project files...");
-        if (baseDir.findChild("Cargo.toml") != null) {
-//            ProjectScannerLogPanel.log("Found Cargo.toml - Rust project detected");
-            detectedLanguages.add("Rust");
-            languageFileCount.put("Rust", 1);  // Start with 1 for the project file
+        if (baseDir.findChild(CARGO_TOML) != null) {
+            detectedLanguages.add(RUST);
+            languageFileCount.put(RUST, 1);  // Start with 1 for the project file
         }
-        if (baseDir.findChild("pom.xml") != null) {
-//            ProjectScannerLogPanel.log("Found pom.xml - Java project detected");
-            detectedLanguages.add("Java");
-            languageFileCount.put("Java", 1);
+        if (baseDir.findChild(POM_XML) != null) {
+            detectedLanguages.add(JAVA);
+            languageFileCount.put(JAVA, 1);
         }
-        if (baseDir.findChild("build.gradle") != null || baseDir.findChild("build.gradle.kts") != null) {
-//            ProjectScannerLogPanel.log("Found Gradle build file - Java/Kotlin project detected");
-            detectedLanguages.add("Java");
-            detectedLanguages.add("Kotlin");
-            languageFileCount.put("Java", languageFileCount.getOrDefault("Java", 0) + 1);
-            languageFileCount.put("Kotlin", languageFileCount.getOrDefault("Kotlin", 0) + 1);
+        if (baseDir.findChild(BUILD_GRADLE) != null || baseDir.findChild(BUILD_GRADLE_KTS) != null) {
+            detectedLanguages.add(JAVA);
+            detectedLanguages.add(KOTLIN);
+            languageFileCount.put(JAVA, languageFileCount.getOrDefault(JAVA, 0) + 1);
+            languageFileCount.put(KOTLIN, languageFileCount.getOrDefault(KOTLIN, 0) + 1);
         }
-        if (baseDir.findChild("go.mod") != null) {
-//            ProjectScannerLogPanel.log("Found go.mod - Go project detected");
-            detectedLanguages.add("Go");
-            languageFileCount.put("Go", 1);
+        if (baseDir.findChild(GO_MOD) != null) {
+            detectedLanguages.add(GO);
+            languageFileCount.put(GO, 1);
         }
-        if (baseDir.findChild("package.json") != null) {
-//            ProjectScannerLogPanel.log("Found package.json - JavaScript/TypeScript project detected");
-            detectedLanguages.add("JavaScript/TypeScript");
-            languageFileCount.put("JavaScript/TypeScript", 1);
+        if (baseDir.findChild(PACKAGE_JSON) != null) {
+            detectedLanguages.add(JAVA_SCRIPT_TYPE_SCRIPT);
+            languageFileCount.put(JAVA_SCRIPT_TYPE_SCRIPT, 1);
         }
-        if (baseDir.findChild("CMakeLists.txt") != null) {
-//            ProjectScannerLogPanel.log("Found CMakeLists.txt - C/C++ project detected");
-            detectedLanguages.add("C/C++");
-            languageFileCount.put("C/C++", 1);
+        if (baseDir.findChild(CMAKE_LISTS_TXT) != null) {
+            detectedLanguages.add(C_C_PLUS_PLUS);
+            languageFileCount.put(C_C_PLUS_PLUS, 1);
         }
-
-        // File extension-based detection
-//        ProjectScannerLogPanel.log("Starting file extension-based detection...");
 
         VfsUtil.visitChildrenRecursively(baseDir, new VirtualFileVisitor<Void>() {
             @Override
@@ -164,9 +201,6 @@ public class ProjectAnalyzer {
                 // Check if the file should be ignored based on .gitignore rules
                 String relativePath = getRelativePath(baseDir, file);
                 if (relativePath != null && gitignoreParser.shouldIgnore(relativePath, file.isDirectory())) {
-//                    if (file.isDirectory()) {
-//                        ProjectScannerLogPanel.log("Skipping directory based on .gitignore: " + relativePath);
-//                    }
                     return true; // Skip this file and its children
                 }
 
@@ -180,36 +214,36 @@ public class ProjectAnalyzer {
                         if (extension != null) {
                             switch (extension) {
                                 case "java" -> {
-                                    detectedLanguages.add("Java");
-                                    languageFileCount.put("Java", languageFileCount.getOrDefault("Java", 0) + 1);
+                                    detectedLanguages.add(JAVA);
+                                    languageFileCount.put(JAVA, languageFileCount.getOrDefault(JAVA, 0) + 1);
                                 }
                                 case "kt" -> {
-                                    detectedLanguages.add("Kotlin");
-                                    languageFileCount.put("Kotlin", languageFileCount.getOrDefault("Kotlin", 0) + 1);
+                                    detectedLanguages.add(KOTLIN);
+                                    languageFileCount.put(KOTLIN, languageFileCount.getOrDefault(KOTLIN, 0) + 1);
                                 }
                                 case "php" -> {
-                                    detectedLanguages.add("PHP");
-                                    languageFileCount.put("PHP", languageFileCount.getOrDefault("PHP", 0) + 1);
+                                    detectedLanguages.add(PHP);
+                                    languageFileCount.put(PHP, languageFileCount.getOrDefault(PHP, 0) + 1);
                                 }
                                 case "py" -> {
-                                    detectedLanguages.add("Python");
-                                    languageFileCount.put("Python", languageFileCount.getOrDefault("Python", 0) + 1);
+                                    detectedLanguages.add(PYTHON);
+                                    languageFileCount.put(PYTHON, languageFileCount.getOrDefault(PYTHON, 0) + 1);
                                 }
                                 case "js", "ts" -> {
-                                    detectedLanguages.add("JavaScript/TypeScript");
-                                    languageFileCount.put("JavaScript/TypeScript", languageFileCount.getOrDefault("JavaScript/TypeScript", 0) + 1);
+                                    detectedLanguages.add(JAVA_SCRIPT_TYPE_SCRIPT);
+                                    languageFileCount.put(JAVA_SCRIPT_TYPE_SCRIPT, languageFileCount.getOrDefault(JAVA_SCRIPT_TYPE_SCRIPT, 0) + 1);
                                 }
                                 case "cpp", "h", "c" -> {
-                                    detectedLanguages.add("C/C++");
-                                    languageFileCount.put("C/C++", languageFileCount.getOrDefault("C/C++", 0) + 1);
+                                    detectedLanguages.add(C_C_PLUS_PLUS);
+                                    languageFileCount.put(C_C_PLUS_PLUS, languageFileCount.getOrDefault(C_C_PLUS_PLUS, 0) + 1);
                                 }
                                 case "rs" -> {
-                                    detectedLanguages.add("Rust");
-                                    languageFileCount.put("Rust", languageFileCount.getOrDefault("Rust", 0) + 1);
+                                    detectedLanguages.add(RUST);
+                                    languageFileCount.put(RUST, languageFileCount.getOrDefault(RUST, 0) + 1);
                                 }
                                 case "go" -> {
-                                    detectedLanguages.add("Go");
-                                    languageFileCount.put("Go", languageFileCount.getOrDefault("Go", 0) + 1);
+                                    detectedLanguages.add(GO);
+                                    languageFileCount.put(GO, languageFileCount.getOrDefault(GO, 0) + 1);
                                 }
                             }
                         }
@@ -223,12 +257,6 @@ public class ProjectAnalyzer {
         if (!detectedLanguages.isEmpty()) {
             languages.put("detected", new ArrayList<>(detectedLanguages));
 
-            // Log all detected languages with their file counts
-//            ProjectScannerLogPanel.log("File counts by language:");
-//            for (Map.Entry<String, Integer> entry : languageFileCount.entrySet()) {
-//                ProjectScannerLogPanel.log("  - " + entry.getKey() + ": " + entry.getValue() + " files");
-//            }
-
             // Find the language with the most files
             String primaryLanguage = detectedLanguages.iterator().next();
             int maxFiles = 0;
@@ -241,7 +269,6 @@ public class ProjectAnalyzer {
             }
 
             languages.put("primary", primaryLanguage);
-//            ProjectScannerLogPanel.log("Primary language detected: " + primaryLanguage);
         }
 
         return languages;
@@ -255,24 +282,26 @@ public class ProjectAnalyzer {
         if (editorConfig != null) {
             try {
                 styleInfo.put("editorconfig", VfsUtil.loadText(editorConfig));
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+                // ignore
+            }
         }
 
         // Check for common code style tools
-        if (baseDir.findChild(".eslintrc.js") != null || baseDir.findChild(".eslintrc.json") != null) {
-            styleInfo.put("eslint", true);
+        if (baseDir.findChild(ESLINTRC_JS) != null || baseDir.findChild(".eslintrc.json") != null) {
+            styleInfo.put(ESLINT, true);
         }
-        if (baseDir.findChild(".prettierrc") != null || baseDir.findChild(".prettierrc.js") != null) {
-            styleInfo.put("prettier", true);
+        if (baseDir.findChild(PRETTIERRC) != null || baseDir.findChild(".prettierrc.js") != null) {
+            styleInfo.put(PRETTIER, true);
         }
-        if (baseDir.findChild("checkstyle.xml") != null) {
-            styleInfo.put("checkstyle", true);
+        if (baseDir.findChild(CHECKSTYLE_XML) != null) {
+            styleInfo.put(CHECKSTYLE, true);
         }
-        if (baseDir.findChild("phpcs.xml") != null) {
-            styleInfo.put("phpcs", true);
+        if (baseDir.findChild(PHPCS_XML) != null) {
+            styleInfo.put(PHPCS, true);
         }
-        if (baseDir.findChild(".clang-format") != null) {
-            styleInfo.put("clang-format", true);
+        if (baseDir.findChild(CLANG_FORMAT) != null) {
+            styleInfo.put(CLANG_FORMAT1, true);
         }
 
         return styleInfo;
@@ -285,42 +314,42 @@ public class ProjectAnalyzer {
         List<String> otherFrameworks = new ArrayList<>();
 
         // Check for testing frameworks in various languages
-        if (containsFile(baseDir, "**/*Test.java") || containsFile(baseDir, "**/JUnit*.java")) {
-            testingFrameworks.add("JUnit");
+        if (containsFile(baseDir, TEST_JAVA_PATTERN) || containsFile(baseDir, "**/JUnit*.java")) {
+            testingFrameworks.add(J_UNIT);
         }
-        if (containsFile(baseDir, "**/*Test.php") || containsFile(baseDir, "**/PHPUnit*.php")) {
-            testingFrameworks.add("PHPUnit");
+        if (containsFile(baseDir, TEST_PHP_PATTERN) || containsFile(baseDir, "**/PHPUnit*.php")) {
+            testingFrameworks.add(PHP_UNIT);
         }
-        if (containsFile(baseDir, "**/*_test.py") || containsFile(baseDir, "**/pytest*.py")) {
-            testingFrameworks.add("pytest");
+        if (containsFile(baseDir, TEST_PY_PATTERN) || containsFile(baseDir, "**/pytest*.py")) {
+            testingFrameworks.add(PYTEST);
         }
-        if (containsFile(baseDir, "**/*_test.go")) {
-            testingFrameworks.add("Go testing");
+        if (containsFile(baseDir, TEST_GO_PATTERN)) {
+            testingFrameworks.add(GO_TESTING);
         }
-        if (containsFile(baseDir, "**/*spec.js") || containsFile(baseDir, "**/jest.config.js")) {
-            testingFrameworks.add("Jest");
+        if (containsFile(baseDir, SPEC_JS_PATTERN) || containsFile(baseDir, "**/jest.config.js")) {
+            testingFrameworks.add(JEST);
         }
-        if (containsFile(baseDir, "**/test_*.rs")) {
-            testingFrameworks.add("Rust testing");
+        if (containsFile(baseDir, TEST_RS_PATTERN)) {
+            testingFrameworks.add(RUST_TESTING);
         }
 
         // Web frameworks detection
-        if (containsFile(baseDir, "**/spring-boot*.jar") || containsFile(baseDir, "**/SpringBoot*.java")) {
-            webFrameworks.add("Spring Boot");
+        if (containsFile(baseDir, SPRING_BOOT_JAR) || containsFile(baseDir, "**/SpringBoot*.java")) {
+            webFrameworks.add(SPRING_BOOT);
         }
-        if (containsFile(baseDir, "**/laravel*.php") || findInFile(baseDir, "composer.json", "laravel/framework")) {
-            webFrameworks.add("Laravel");
+        if (containsFile(baseDir, LARAVEL_PHP) || findInFile(baseDir, "composer.json", "laravel/framework")) {
+            webFrameworks.add(LARAVEL);
         }
-        if (containsFile(baseDir, "**/django/*.py") || findInFile(baseDir, "requirements.txt", "django")) {
-            webFrameworks.add("Django");
+        if (containsFile(baseDir, DJANGO_PY) || findInFile(baseDir, "requirements.txt", "django")) {
+            webFrameworks.add(DJANGO);
         }
-        if (containsFile(baseDir, "**/react.js") || findInFile(baseDir, "package.json", "react")) {
-            webFrameworks.add("React");
+        if (containsFile(baseDir, REACT_JS) || findInFile(baseDir, PACKAGE_JSON, "react")) {
+            webFrameworks.add(REACT);
         }
 
-        frameworks.put("testing", testingFrameworks);
-        frameworks.put("web", webFrameworks);
-        frameworks.put("other", otherFrameworks);
+        frameworks.put(TESTING, testingFrameworks);
+        frameworks.put(WEB, webFrameworks);
+        frameworks.put(OTHER, otherFrameworks);
 
         return frameworks;
     }
@@ -398,7 +427,7 @@ public class ProjectAnalyzer {
         List<Map<String, String>> dependencies = new ArrayList<>();
 
         // Check for Gradle dependencies (Kotlin DSL)
-        VirtualFile buildGradleKts = baseDir.findChild("build.gradle.kts");
+        VirtualFile buildGradleKts = baseDir.findChild(BUILD_GRADLE_KTS);
         if (buildGradleKts != null) {
             try {
                 String content = VfsUtil.loadText(buildGradleKts);
@@ -444,7 +473,7 @@ public class ProjectAnalyzer {
         }
 
         // Check for Gradle dependencies (Groovy DSL)
-        VirtualFile buildGradle = baseDir.findChild("build.gradle");
+        VirtualFile buildGradle = baseDir.findChild(BUILD_GRADLE);
         if (buildGradle != null) {
             try {
                 String content = VfsUtil.loadText(buildGradle);
@@ -457,7 +486,7 @@ public class ProjectAnalyzer {
         }
 
         // Check for Maven dependencies
-        VirtualFile pomXml = baseDir.findChild("pom.xml");
+        VirtualFile pomXml = baseDir.findChild(POM_XML);
         if (pomXml != null) {
             try {
                 String content = VfsUtil.loadText(pomXml);
@@ -480,7 +509,7 @@ public class ProjectAnalyzer {
         }
 
         // Check for NPM dependencies
-        VirtualFile packageJson = baseDir.findChild("package.json");
+        VirtualFile packageJson = baseDir.findChild(PACKAGE_JSON);
         if (packageJson != null) {
             try {
                 String content = VfsUtil.loadText(packageJson);

@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "app_id": "app_d274bfb2-942a-4d86-880d-17d429f29d48",
+      "org_id": "user_7afad073-5123-48a7-be84-bfec70acf921",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_d274bfb2-942a-4d86-880d-17d429f29d48.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_d274bfb2-942a-4d86-880d-17d429f29d48.git",
+      "name": "DevoxxGenieDoc",
+      "alias": "DevoxxGenieDoc"
+    }
+  ]
+}

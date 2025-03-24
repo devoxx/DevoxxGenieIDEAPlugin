@@ -50,7 +50,7 @@ public class RustProjectScannerExtension implements ProjectAnalyzerExtension {
             
             // Check for Rust-specific folders, warn if they're missing from .gitignore
             // Get project attributes to check for proper .gitignore configuration
-            Map<String, Object> buildSystem = (Map<String, Object>) projectInfo.get("buildSystem");
+            // Map<String, Object> buildSystem = (Map<String, Object>) projectInfo.get("buildSystem");
             
             // Add Rust information to project info
             projectInfo.put("rust", rustInfo);
