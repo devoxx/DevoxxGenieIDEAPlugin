@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.component.button;
 
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;

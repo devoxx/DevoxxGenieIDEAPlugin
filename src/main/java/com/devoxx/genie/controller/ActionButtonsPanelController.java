@@ -7,7 +7,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.ui.EditorFileButtonManager;
+import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;

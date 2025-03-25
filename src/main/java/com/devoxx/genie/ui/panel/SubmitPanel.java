@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.ui.DevoxxGenieToolWindowContent;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.intellij.openapi.project.Project;

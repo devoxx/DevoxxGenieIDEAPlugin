@@ -613,7 +613,7 @@
         <toolWindow id="DevoxxGenie"
                     anchor="right"
                     icon="/icons/pluginIcon.svg"
-                    factoryClass="com.devoxx.genie.ui.DevoxxGenieToolWindowFactory"/>
+                    factoryClass="com.devoxx.genie.ui.window.DevoxxGenieToolWindowFactory"/>
 
         <toolWindow id="DevoxxGenieMCPLogs"
                     anchor="bottom"
@@ -621,7 +621,7 @@
                     secondary="true"
                     doNotActivateOnStart="true"
                     canCloseContents="true"
-                    factoryClass="com.devoxx.genie.ui.MCPLogToolWindowFactory"/>
+                    factoryClass="com.devoxx.genie.ui.window.MCPLogToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
