@@ -1,529 +1,270 @@
 package com.devoxx.genie.ui.settings.mcp.dialog;
 
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.ui.settings.mcp.dialog.transport.HttpSseTransportPanel;
+import com.devoxx.genie.ui.settings.mcp.dialog.transport.StdioTransportPanel;
+import com.devoxx.genie.ui.settings.mcp.dialog.transport.TransportPanel;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.openapi.util.SystemInfo;
-import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
- * Dialog for adding/editing an MCP server
+ * Dialog for adding/editing an MCP server configuration
  */
 @Slf4j
 public class MCPServerDialog extends DialogWrapper {
     private final JTextField nameField = new JTextField();
-    private final JTextField commandField = new JTextField();
-    private final JTextArea argsArea = new JTextArea(5, 40);
+    private final JComboBox<MCPServer.TransportType> transportTypeCombo = new JComboBox<>(MCPServer.TransportType.values());
+    private final JButton testConnectionButton = new JButton("Test Connection & Fetch Tools");
+    
+    private final Map<MCPServer.TransportType, TransportPanel> transportPanels = new HashMap<>();
+    private final JPanel cardPanel = new JPanel(new CardLayout());
+    
     private final MCPServer existingServer;
-    private List<String> availableTools = new ArrayList<>();
-    private String toolsDescription = "";
-    private Map<String, String> toolDescriptions = new HashMap<>();
-    private JButton testConnectionButton;
     private MCPServer server;
-
+    
+    /**
+     * Creates a new dialog for adding or editing an MCP server
+     *
+     * @param existingServer The server to edit, or null to add a new server
+     */
     public MCPServerDialog(MCPServer existingServer) {
         super(true);
         this.existingServer = existingServer;
         setTitle(existingServer == null ? "Add MCP Server" : "Edit MCP Server");
-        init();
-
+        
+        // Initialize transport panels
+        transportPanels.put(MCPServer.TransportType.STDIO, new StdioTransportPanel());
+        transportPanels.put(MCPServer.TransportType.HTTP_SSE, new HttpSseTransportPanel());
+        
+        // Initialize UI components
+        initUI();
+        
+        // Load existing server settings if editing
         if (existingServer != null) {
-            nameField.setText(existingServer.getName());
-            commandField.setText(existingServer.getCommand());
-            if (existingServer.getArgs() != null) {
-                argsArea.setText(String.join("\n", existingServer.getArgs()));
-            }
-
-            // Disable name field when editing
-            nameField.setEditable(false);
-            
-            // Update test button state based on existing command
-            updateTestButtonState();
+            loadExistingServerSettings();
+        }
+        
+        init();
+    }
+    
+    /**
+     * Initialize the UI components
+     */
+    private void initUI() {
+        // Set up transport type combo box
+        transportTypeCombo.addActionListener(e -> 
+                ((CardLayout) cardPanel.getLayout()).show(cardPanel, transportTypeCombo.getSelectedItem().toString()));
+        
+        // Add transport panels to card layout
+        for (Map.Entry<MCPServer.TransportType, TransportPanel> entry : transportPanels.entrySet()) {
+            cardPanel.add(entry.getValue().getPanel(), entry.getKey().toString());
+        }
+        
+        // Set up test connection button
+        testConnectionButton.addActionListener(e -> testConnection());
+    }
+    
+    /**
+     * Load settings from an existing server
+     */
+    private void loadExistingServerSettings() {
+        nameField.setText(existingServer.getName());
+        nameField.setEditable(false); // Disable name field when editing
+        
+        transportTypeCombo.setSelectedItem(existingServer.getTransportType());
+        
+        // Load settings into the appropriate transport panel
+        TransportPanel panel = transportPanels.get(existingServer.getTransportType());
+        if (panel != null) {
+            panel.loadSettings(existingServer);
         }
     }
-
+    
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        // Create a button to test the connection and fetch tools
-        testConnectionButton = new JButton("Test Connection & Fetch Tools");
-        testConnectionButton.addActionListener(e -> testConnectionAndFetchTools());
-        
-        // Initially disable the button until a full command path is provided
-        testConnectionButton.setEnabled(isFullCommandPath(commandField.getText()));
-        
-        // Add document listener to command field to enable/disable button
-        commandField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                updateTestButtonState();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                updateTestButtonState();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                updateTestButtonState();
-            }
-        });
-
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel mainPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
-
-        // Reset grid width for remaining components
-        gbc.gridwidth = 1;
-        int row = 1;
-
-        // Name field
+        
+        // Add name field
         gbc.gridx = 0;
-        gbc.gridy = row++;
-        panel.add(new JLabel("Name:"), gbc);
-
+        gbc.gridy = 0;
+        gbc.weightx = 0.0;
+        gbc.weighty = 1.0;
+        mainPanel.add(new JLabel("Name:"), gbc);
+        
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        panel.add(nameField, gbc);
-
-        // Command field
+        mainPanel.add(nameField, gbc);
+        
+        // Add transport type selection
         gbc.gridx = 0;
-        gbc.gridy = row++;
+        gbc.gridy = 1;
         gbc.weightx = 0.0;
-        panel.add(new JLabel("Command:"), gbc);
-
+        mainPanel.add(new JLabel("Transport Type:"), gbc);
+        
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        panel.add(commandField, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = row++;
-        gbc.weightx = 0.0;
-        panel.add(new JLabel("⚠️Use full path to your command"), gbc);
-
-        // Arguments area
+        mainPanel.add(transportTypeCombo, gbc);
+        
+        // Add transport panel cards
         gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.weightx = 0.0;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-        panel.add(new JLabel("Arguments:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1.0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        argsArea.setLineWrap(false);
-        JBScrollPane scrollPane = new JBScrollPane(argsArea);
-        panel.add(scrollPane, gbc);
-
-        // Help text
-        gbc.gridx = 0;
-        gbc.gridy = row++;
-        gbc.gridwidth = 2;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(new JLabel("<html>Enter each argument on a new line.</html>"), gbc);
-
+        mainPanel.add(cardPanel, gbc);
+        
         // Add test connection button
         gbc.gridx = 0;
-        gbc.gridy = row++;
+        gbc.gridy = 3;
         gbc.gridwidth = 2;
+        gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(testConnectionButton, gbc);
+        mainPanel.add(testConnectionButton, gbc);
         
-        // Example area
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        JEditorPane exampleArea = new JEditorPane();
-        exampleArea.setContentType("text/html");
-        exampleArea.setEditable(false);
-        exampleArea.setText(
-                "<html><b>Example MCP Command on Mac:</b><br>" +
-                "1) To set up the 'server-filesystem' tool, you first need to install the MCP using pip.<BR>" +
-                "2) Example command: /Users/devoxx/.nvm/versions/node/v22.14.0/bin/npx<br>" +
-                "3) Arguments should be:<br>" +
-                "-y<br>" +
-                "@modelcontextprotocol/server-filesystem<br>" +
-                "/Users/devoxx/IdeaProjects/DevoxxGenieIDEAPlugin<br>" +
-                "‼️First execute the full command (with args) in your terminal to see if it works!</html>");
-        JBScrollPane exampleScrollPane = new JBScrollPane(exampleArea);
-        panel.add(exampleScrollPane, gbc);
-
-        return panel;
+        return mainPanel;
     }
-
+    
     @Override
-    protected @NotNull java.util.List<ValidationInfo> doValidateAll() {
-        java.util.List<ValidationInfo> validationInfos = new ArrayList<>();
+    protected @NotNull List<ValidationInfo> doValidateAll() {
+        List<ValidationInfo> validationInfos = new ArrayList<>();
 
+        // Validate name field
         if (nameField.getText().trim().isEmpty()) {
             validationInfos.add(new ValidationInfo("Name cannot be empty", nameField));
         }
-
-        if (commandField.getText().trim().isEmpty()) {
-            validationInfos.add(new ValidationInfo("Command cannot be empty", commandField));
+        
+        // Validate transport-specific fields
+        MCPServer.TransportType selectedTransport = (MCPServer.TransportType) transportTypeCombo.getSelectedItem();
+        TransportPanel panel = transportPanels.get(selectedTransport);
+        if (panel != null && !panel.isValid()) {
+            validationInfos.add(new ValidationInfo(panel.getErrorMessage(), panel.getPanel()));
         }
-
+        
         return validationInfos;
     }
-
+    
     /**
-     * Tests the connection to the MCP server and fetches the available tools
+     * Test the connection to the MCP server and fetch tools
      */
-    private void testConnectionAndFetchTools() {
+    private void testConnection() {
+        // Get the current transport panel
+        MCPServer.TransportType selectedTransport = (MCPServer.TransportType) transportTypeCombo.getSelectedItem();
+        TransportPanel panel = transportPanels.get(selectedTransport);
+        
+        if (panel == null) {
+            return;
+        }
+        
+        // Validate required fields
+        if (!panel.isValid()) {
+            ErrorDialogUtil.showErrorDialog(
+                    getContentPanel(),
+                    "Validation Error",
+                    "Please correct the following error before testing the connection:\n" + panel.getErrorMessage(),
+                    null
+            );
+            return;
+        }
+        
+        // Disable button and show connecting status
+        testConnectionButton.setEnabled(false);
+        testConnectionButton.setText("Connecting...");
+        
+        // Try to connect and fetch tools
         try {
-            testConnectionButton.setEnabled(false);
-            testConnectionButton.setText("Connecting...");
+            // Create client
+            McpClient mcpClient = panel.createClient();
             
-            // Parse arguments and create command list
-            List<String> args = parseArguments();
-            List<String> mcpCommand = buildCommand(args);
+            // Get available tools
+            List<ToolSpecification> tools = mcpClient.listTools();
             
-            // Log the command for debugging
-            log.debug("Executing command: {}", mcpCommand);
+            // Create server builder
+            MCPServer.MCPServerBuilder builder = MCPServer.builder()
+                    .name(nameField.getText().trim());
             
-            // First, test if the command exists by running it directly
-            if (!testIfCommandExists(commandField.getText().trim())) {
-                handleCommandNotFound();
-                return;
+            // Apply settings from transport panel
+            panel.applySettings(builder);
+            
+            // Process tool specifications
+            panel.processTools(tools, builder);
+            
+            // Build the server
+            if (existingServer != null) {
+                // Preserve environment variables from existing server
+                builder.env(new HashMap<>(existingServer.getEnv()));
             }
             
-            // Create the transport and connect to the server
-            Map<String, String> env = createEnvironmentMap();
-            StdioMcpTransport transport = new StdioMcpTransport.Builder()
-                    .command(mcpCommand)
-                    .environment(env)
-                    .logEvents(true) // Enable logging to capture errors in the logs
-                    .build();
+            // Save the server
+            server = builder.build();
             
-            McpClient mcpClient = new DefaultMcpClient.Builder()
-                    .clientName("DevoxxGenie")
-                    .protocolVersion("2024-11-05")
-                    .transport(transport)
-                    .build();
+            // Close the client
+            mcpClient.close();
             
-            // Get the list of tools and process them
-            processToolsList(mcpClient.listTools(), args, env);
-            
-            // Close the transport
-            transport.close();
-            
-            // Update the button and show success message
-            testConnectionButton.setText("Connection Successful! " + availableTools.size() + " tools found");
+            // Show success message
+            testConnectionButton.setText("Connection Successful! " + tools.size() + " tools found");
             
         } catch (Exception ex) {
-            handleConnectionError(ex);
+            log.error("Failed to connect to MCP server", ex);
+            
+            // Show error message
+            ErrorDialogUtil.showErrorDialog(
+                    getContentPanel(),
+                    "Connection Failed",
+                    "Failed to connect to MCP server",
+                    ex
+            );
+            
+            testConnectionButton.setText("Connection Failed - Try Again");
         } finally {
             testConnectionButton.setEnabled(true);
         }
     }
     
     /**
-     * Parses arguments from the text area
-     * @return List of parsed arguments
-     */
-    private List<String> parseArguments() {
-        return Arrays.stream(
-                argsArea.getText().trim().split("\\s+|\\n+"))
-                .filter(arg -> !arg.isEmpty())
-                .toList();
-    }
-    
-    /**
-     * Builds the command to execute
-     * @param args Arguments to include in the command
-     * @return The complete command list
-     */
-    private @NotNull List<String> buildCommand(List<String> args) {
-        // Create the command list
-        List<String> commandList = new ArrayList<>();
-        commandList.add(commandField.getText().trim());
-        commandList.addAll(args);
-        
-        // Build the bash command
-        List<String> mcpCommand = new ArrayList<>();
-        mcpCommand.add("/bin/bash");
-        mcpCommand.add("-c");
-        String cmdString = commandList.stream()
-                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                .collect(Collectors.joining(" "));
-        mcpCommand.add(cmdString);
-        
-        return mcpCommand;
-    }
-    
-    /**
-     * Creates environment map with PATH updated to include command directory
-     * @return Environment variables map
-     */
-    private @NotNull Map<String, String> createEnvironmentMap() {
-        Map<String, String> env = new HashMap<>(System.getenv());
-        String command = commandField.getText().trim();
-        int lastSeparatorIndex = command.lastIndexOf(File.separator);
-        
-        if (lastSeparatorIndex > 0) {
-            String directoryPath = command.substring(0, lastSeparatorIndex);
-            env.put("PATH", directoryPath + File.pathSeparator + env.getOrDefault("PATH", ""));
-        }
-        
-        return env;
-    }
-    
-    /**
-     * Process the tools list returned from the MCP server
-     * @param tools List of tool specifications
-     * @param args Command arguments
-     * @param env Environment variables
-     */
-    private void processToolsList(@NotNull List<ToolSpecification> tools, List<String> args, Map<String, String> env) {
-        // Update our fields with the tool information
-        availableTools = tools.stream()
-                .map(ToolSpecification::name)
-                .toList();
-        
-        // Store tool descriptions
-        Map<String, String> toolDescs = new HashMap<>();
-        for (ToolSpecification tool : tools) {
-            toolDescs.put(tool.name(), tool.description());
-        }
-        toolDescriptions = toolDescs;
-        
-        // Generate description string
-        StringBuilder description = new StringBuilder("Available tools: ");
-        if (tools.isEmpty()) {
-            description.append("None");
-        } else {
-            description.append(tools.size()).append(" - ");
-            description.append(String.join(", ", availableTools));
-        }
-        toolsDescription = description.toString();
-        
-        // Store tool descriptions for later use
-        server = MCPServer.builder()
-                .name(nameField.getText().trim())
-                .command(commandField.getText().trim())
-                .args(args)
-                .env(existingServer != null ? new HashMap<>(existingServer.getEnv()) : env)
-                .availableTools(availableTools)
-                .toolDescriptions(toolDescs)
-                .toolsDescription(toolsDescription)
-                .build();
-    }
-    
-    /**
-     * Handles case when command is not found
-     */
-    private void handleCommandNotFound() {
-        String errorMessage = "Command not found: " + commandField.getText().trim() + 
-                            "\nPlease check if the path is correct and the command exists.";
-        showErrorDialog(errorMessage, null);
-        toolsDescription = "Connection failed: Command not found";
-        testConnectionButton.setText("Connection Failed - Try Again");
-    }
-    
-    /**
-     * Handles connection errors
-     * @param ex The exception that occurred
-     */
-    private void handleConnectionError(Exception ex) {
-        log.error("Failed to connect to MCP server", ex);
-        String errorMessage = ex.getMessage();
-        
-        // Check for common errors and provide more helpful messages
-        if (errorMessage != null) {
-            if (errorMessage.contains("No such file or directory") || 
-                errorMessage.contains("not found") || 
-                errorMessage.contains("cannot find")) {
-                errorMessage = "Command not found or cannot be executed.\n" +
-                              "Please check if the path is correct and the command exists.";
-            } else if (errorMessage.contains("timed out") || errorMessage.contains("timeout")) {
-                errorMessage = "Connection timed out. The command may be hanging or not responding properly.";
-            }
-        }
-        
-        // Show error dialog with details
-        showErrorDialog(errorMessage, ex);
-        
-        toolsDescription = "Connection failed: " + errorMessage;
-        testConnectionButton.setText("Connection Failed - Try Again");
-    }
-    
-    /**
-     * Tests if a command exists and is executable
-     * @param command The command to test
-     * @return true if the command exists and is executable, false otherwise
-     */
-    private boolean testIfCommandExists(String command) {
-        try {
-            // Create a process to check if the command exists
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            if (SystemInfo.isWindows) {
-                // Windows
-                processBuilder.command("cmd.exe", "/c", "where", command);
-            } else {
-                // Unix/Mac
-                processBuilder.command("/bin/sh", "-c", "which " + command);
-            }
-            
-            Process process = processBuilder.start();
-            int exitCode = process.waitFor();
-            return exitCode == 0;
-        } catch (Exception e) {
-            log.error("Error testing if command exists: {}", e.getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Shows an error dialog with detailed information
+     * Get the configured MCP server
      *
-     * @param message   Error message
-     * @param exception The exception that occurred
+     * @return The configured server
      */
-    private void showErrorDialog(String message, Exception exception) {
-        // Create a text area for the stack trace
-        JTextArea textArea = new JTextArea(15, 50);
-        textArea.setEditable(false);
-        
-        // Prepare detailed error message with command info and stack trace
-        StringBuilder detailedMessage = new StringBuilder();
-        detailedMessage.append(message).append("\n\n");
-        detailedMessage.append("Command: ").append(commandField.getText().trim()).append("\n");
-        
-        // Add arguments if present
-        if (!argsArea.getText().trim().isEmpty()) {
-            detailedMessage.append("Arguments:\n");
-            for (String line : argsArea.getText().trim().split("\n")) {
-                if (!line.trim().isEmpty()) {
-                    detailedMessage.append("  ").append(line.trim()).append("\n");
-                }
-            }
-        }
-        
-        detailedMessage.append("\nError details:\n");
-        
-        // Add stack trace
-        if (exception != null) {
-            // Root cause message
-            Throwable cause = exception;
-            while (cause.getCause() != null) {
-                cause = cause.getCause();
-            }
-            detailedMessage.append(cause.getMessage()).append("\n\n");
-            
-            // Full stack trace for debugging
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            exception.printStackTrace(pw);
-            detailedMessage.append(sw);
-        }
-        
-        textArea.setText(detailedMessage.toString());
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        
-        // Show the error dialog
-        JOptionPane.showMessageDialog(
-                this.getRootPane(),
-                scrollPane,
-                "MCP Connection Failed",
-                JOptionPane.ERROR_MESSAGE
-        );
-    }
-    
-    /**
-     * Checks if the given command text represents a full path
-     * @param commandText The command text to check
-     * @return true if the command appears to be a full path, false otherwise
-     */
-    private boolean isFullCommandPath(String commandText) {
-        if (commandText == null || commandText.trim().isEmpty()) {
-            return false;
-        }
-        
-        String trimmedCommand = commandText.trim();
-        
-        // For Windows paths (starts with drive letter followed by colon)
-        if (trimmedCommand.matches("^[A-Za-z]:.*")) {
-            // Check if it's followed by path separators
-            return trimmedCommand.length() > 2 && 
-                  (trimmedCommand.charAt(2) == '/' || trimmedCommand.charAt(2) == '\\');
-        }
-        
-        // Check for Unix/Mac full path (starts with forward slash)
-        if (trimmedCommand.startsWith("/")) {
-            return true;
-        }
-        
-        // Check for Unix/Mac home directory path
-        if (trimmedCommand.startsWith("~/")) {
-            return true;
-        }
-        
-        // If no path separators found at all, it's not a full path
-        if (!trimmedCommand.contains("/") && !trimmedCommand.contains("\\")) {
-            return false;
-        }
-        
-        // For other cases, check if it contains more than just the command name
-        // For example: path/to/command
-        return trimmedCommand.contains("/") || trimmedCommand.contains("\\");
-    }
-    
-    /**
-     * Updates the test button state based on whether a full command path has been provided
-     */
-    private void updateTestButtonState() {
-        if (testConnectionButton != null) {
-            testConnectionButton.setEnabled(isFullCommandPath(commandField.getText()));
-        }
-    }
-    
     public MCPServer getMcpServer() {
         // If we've already created a server via the test connection button, return that
         if (server != null) {
             return server;
         }
-
-        // Otherwise, create a new server instance
-        List<String> args = Arrays.stream(
-                        argsArea.getText().trim().split("\\s+|\\n+"))
-                .filter(arg -> !arg.isEmpty())
-                .toList();
-
-        Map<String, String> env = existingServer != null ?
-                new HashMap<>(existingServer.getEnv()) : new HashMap<>();
-
-        return MCPServer.builder()
-                .name(nameField.getText().trim())
-                .command(commandField.getText().trim())
-                .args(args)
-                .env(env)
-                .availableTools(availableTools)
-                .toolDescriptions(toolDescriptions)
-                .toolsDescription(toolsDescription)
-                .build();
+        
+        // Otherwise create a new server from the UI fields
+        MCPServer.TransportType selectedTransport = (MCPServer.TransportType) transportTypeCombo.getSelectedItem();
+        TransportPanel panel = transportPanels.get(selectedTransport);
+        
+        // Create builder with name
+        MCPServer.MCPServerBuilder builder = MCPServer.builder()
+                .name(nameField.getText().trim());
+        
+        // Apply transport settings
+        if (panel != null) {
+            panel.applySettings(builder);
+        }
+        
+        // Preserve environment variables from existing server
+        if (existingServer != null) {
+            builder.env(new HashMap<>(existingServer.getEnv()));
+        }
+        
+        return builder.build();
     }
 }
