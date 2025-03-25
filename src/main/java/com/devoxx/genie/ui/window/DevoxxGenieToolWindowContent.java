@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui;
+package com.devoxx.genie.ui.window;
 
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;

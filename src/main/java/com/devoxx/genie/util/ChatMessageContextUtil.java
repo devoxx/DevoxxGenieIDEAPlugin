@@ -9,7 +9,7 @@ import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.mcp.MCPService;
-import com.devoxx.genie.ui.EditorFileButtonManager;
+import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
 import com.intellij.openapi.editor.Document;

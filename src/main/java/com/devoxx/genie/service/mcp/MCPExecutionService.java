@@ -2,6 +2,7 @@ package com.devoxx.genie.service.mcp;
 
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
@@ -17,16 +18,61 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * Service for creating and managing MCP clients based on user configuration
  */
 @Slf4j
-public class MCPExecutionService {
+public class MCPExecutionService implements Disposable {
+
+    // Cache of MCP clients keyed by server name
+    private final Map<String, McpClient> clientCache = new ConcurrentHashMap<>();
 
     public static MCPExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(MCPExecutionService.class);
+    }
+    
+    /**
+     * Clears the client cache, forcing new client creation on next request
+     */
+    public void clearClientCache() {
+        MCPService.logDebug("Clearing MCP client cache: " + clientCache.size() + " clients");
+        // Close each client to clean up resources
+        for (Map.Entry<String, McpClient> entry : clientCache.entrySet()) {
+            try {
+                // Attempt to close client if it has a close method
+                closeClientSafely(entry.getValue());
+            } catch (Exception e) {
+                log.warn("Error closing MCP client for: " + entry.getKey(), e);
+            }
+        }
+        clientCache.clear();
+    }
+
+    /**
+     * Safely close an MCP client, handling exceptions
+     * 
+     * @param client The client to close
+     */
+    private void closeClientSafely(McpClient client) {
+        if (client == null) return;
+
+        try {
+            client.close();
+        } catch (Exception e) {
+            log.warn("Error closing MCP client", e);
+        }
+    }
+    
+    /**
+     * Cleanup resources when the component is disposed
+     */
+    @Override
+    public void dispose() {
+        log.info("Disposing MCPExecutionService, closing all clients");
+        clearClientCache();
     }
     
     /**
@@ -83,8 +129,16 @@ public class MCPExecutionService {
      */
     @Nullable
     private McpClient createMcpClient(@NotNull MCPServer mcpServer) {
+        String serverName = mcpServer.getName();
+        
+        // Check if we already have a client for this server
+        if (clientCache.containsKey(serverName)) {
+            MCPService.logDebug("Reusing existing MCP client for: " + serverName);
+            return clientCache.get(serverName);
+        }
+        
         try {
-            MCPService.logDebug("Creating MCP client for: " + mcpServer.getName());
+            MCPService.logDebug("Creating new MCP client for: " + serverName);
             
             // Handle bash commands differently based on working implementation
             List<String> commandList;
@@ -98,10 +152,15 @@ public class MCPExecutionService {
             
             MCPService.logDebug("Command list: " + commandList);
             
-            // Create the client using the helper method
-            return initStdioClient(commandList, mcpServer.getEnv());
+            // Create the client using the helper method and cache it
+            McpClient client = initStdioClient(commandList, mcpServer.getEnv());
+            if (client != null) {
+                clientCache.put(serverName, client);
+                MCPService.logDebug("Added new MCP client to cache for: " + serverName);
+            }
+            return client;
         } catch (Exception e) {
-            log.error("Failed to create MCP client for: " + mcpServer.getName(), e);
+            log.error("Failed to create MCP client for: " + serverName, e);
             return null;
         }
     }
