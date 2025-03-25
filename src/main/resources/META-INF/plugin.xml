@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.5.2</h2>
+        <UL>
+            <LI>Fix #582 : Reuse existing MCP clients and close them when IDEA stops by @stephanj</LI>
+        </UL>
         <h2>v0.5.1</h2>
         <UL>
             <LI>Fix #567 : At least one message is required by @stephanj</LI>
