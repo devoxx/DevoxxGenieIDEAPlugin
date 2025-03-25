@@ -135,8 +135,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     private void setupTable() {
         mcpTable.getColumnModel().getColumn(0).setPreferredWidth(60);   // Enabled
         mcpTable.getColumnModel().getColumn(1).setPreferredWidth(100);  // Name
-        mcpTable.getColumnModel().getColumn(2).setPreferredWidth(100);  // Command
-        mcpTable.getColumnModel().getColumn(3).setPreferredWidth(250);  // Arguments
+        mcpTable.getColumnModel().getColumn(2).setPreferredWidth(100);  // Transport Type
+        mcpTable.getColumnModel().getColumn(3).setPreferredWidth(150);  // Connection Info
         mcpTable.getColumnModel().getColumn(4).setPreferredWidth(80);   // Env Count
         mcpTable.getColumnModel().getColumn(5).setPreferredWidth(230);  // Tools
         mcpTable.getColumnModel().getColumn(6).setPreferredWidth(70);   // View Button
@@ -441,7 +441,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
      * Table model for displaying MCP servers
      */
     private static class MCPServerTableModel extends AbstractTableModel {
-        private final String[] COLUMN_NAMES = {"Enabled", "Name", "Command", "Arguments", "Env Variables", "Tools", ""};
+        private final String[] COLUMN_NAMES = {"Enabled", "Name", "Transport Type", "Connection Info", "Env Variables", "Tools", ""};
         @Getter
         private List<MCPServer> mcpServers = new ArrayList<>();
 
@@ -497,13 +497,22 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             return switch (columnIndex) {
                 case 0 -> server.isEnabled();
                 case 1 -> server.getName();
-                case 2 -> server.getCommand();
-                case 3 -> server.getArgs() != null ? String.join(" ", server.getArgs()) : "";
+                case 2 -> server.getTransportType();
+                case 3 -> getConnectionInfo(server);
                 case 4 -> server.getEnv() != null ? server.getEnv().size() : 0;
                 case 5 -> getToolsSummary(server);
                 case 6 -> "View";
                 default -> null;
             };
+        }
+
+        private String getConnectionInfo(MCPServer server) {
+            if (server.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
+                return server.getSseUrl();
+            } else {
+                // STDIO transport
+                return server.getCommand();
+            }
         }
         
         private String getToolsSummary(MCPServer server) {
@@ -517,7 +526,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         public Class<?> getColumnClass(int columnIndex) {
             return switch (columnIndex) {
                 case 0 -> Boolean.class;
-                case 1, 2, 3, 5, 6 -> String.class;
+                case 1, 3, 5, 6 -> String.class;
+                case 2 -> MCPServer.TransportType.class;
                 case 4 -> Integer.class;
                 default -> Object.class;
             };

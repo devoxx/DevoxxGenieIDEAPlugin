@@ -18,9 +18,24 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MCPServer {
+    /**
+     * Transport type for MCP communication
+     */
+    public enum TransportType {
+        STDIO,    // Standard I/O communication with a subprocess
+        HTTP_SSE  // HTTP Server-Sent Events for communication
+    }
+    
+    @Builder.Default
+    private TransportType transportType = TransportType.STDIO;
     private String name;
+    
+    // STDIO transport properties
     private String command;
     private List<String> args;
+    
+    // HTTP SSE transport properties
+    private String sseUrl;
     
     @Builder.Default
     private Map<String, String> env = new HashMap<>();

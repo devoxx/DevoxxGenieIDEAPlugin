@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -140,20 +141,28 @@ public class MCPExecutionService implements Disposable {
         try {
             MCPService.logDebug("Creating new MCP client for: " + serverName);
             
-            // Handle bash commands differently based on working implementation
-            List<String> commandList;
-
-            // For other commands, use the standard format
-            commandList = new ArrayList<>();
-            commandList.add(mcpServer.getCommand());
-            if (mcpServer.getArgs() != null) {
-                commandList.addAll(mcpServer.getArgs());
+            // Create client based on transport type
+            McpClient client;
+            
+            if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
+                // Create HTTP SSE client
+                client = initHttpSseClient(mcpServer);
+            } else {
+                // Default to STDIO transport
+                // Handle bash commands differently based on working implementation
+                List<String> commandList = new ArrayList<>();
+                commandList.add(mcpServer.getCommand());
+                if (mcpServer.getArgs() != null) {
+                    commandList.addAll(mcpServer.getArgs());
+                }
+                
+                MCPService.logDebug("Command list: " + commandList);
+                
+                // Create the client using the helper method
+                client = initStdioClient(commandList, mcpServer.getEnv());
             }
             
-            MCPService.logDebug("Command list: " + commandList);
-            
-            // Create the client using the helper method and cache it
-            McpClient client = initStdioClient(commandList, mcpServer.getEnv());
+            // Cache the client if not null
             if (client != null) {
                 clientCache.put(serverName, client);
                 MCPService.logDebug("Added new MCP client to cache for: " + serverName);
@@ -161,6 +170,45 @@ public class MCPExecutionService implements Disposable {
             return client;
         } catch (Exception e) {
             log.error("Failed to create MCP client for: " + serverName, e);
+            return null;
+        }
+    }
+    
+    /**
+     * Helper method to initialize an HTTP SSE client with error handling
+     * 
+     * @param mcpServer The MCP server configuration
+     * @return An initialized MCP client or null if creation fails
+     */
+    @Nullable
+    private static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
+        try {
+            String sseUrl = mcpServer.getSseUrl();
+            if (sseUrl == null || sseUrl.trim().isEmpty()) {
+                log.error("SSE URL cannot be empty for HTTP SSE transport");
+                MCPService.logDebug("SSE URL cannot be empty for HTTP SSE transport");
+                return null;
+            }
+            
+            MCPService.logDebug("Initializing HTTP SSE transport with URL: " + sseUrl);
+            
+            // Create the transport
+            HttpMcpTransport transport = new HttpMcpTransport.Builder()
+                    .sseUrl(sseUrl)
+                    .timeout(java.time.Duration.ofSeconds(60))
+                    .logRequests(MCPService.isDebugLogsEnabled())
+                    .logResponses(MCPService.isDebugLogsEnabled())
+                    .build();
+            
+            // Create and return the client
+            return new DefaultMcpClient.Builder()
+                    .clientName("DevoxxGenie")
+                    .protocolVersion("2024-11-05")
+                    .transport(transport)
+                    .build();
+        } catch (Exception e) {
+            log.error("Failed to initialize HTTP SSE client with URL: {}", mcpServer.getSseUrl(), e);
+            MCPService.logDebug("Failed to initialize HTTP SSE client with URL: " + mcpServer.getSseUrl() + " - " + e.getMessage());
             return null;
         }
     }
