@@ -80,6 +80,12 @@ public class StdioTransportPanel implements TransportPanel {
         panel.add(new JLabel("<html>Enter each argument on a new line.</html>"), gbc);
 
         gbc.gridx = 1;
+        gbc.gridy = row++;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(getExampleLabel(), gbc);
+
+        gbc.gridx = 1;
         gbc.gridy = row;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.BOTH;

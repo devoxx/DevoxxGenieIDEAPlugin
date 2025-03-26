@@ -61,6 +61,26 @@ public interface TransportPanel {
      */
     void applySettings(MCPServer.MCPServerBuilder builder);
 
+    default JLabel getExampleLabel() {
+        // Create hyperlink to documentation
+        JLabel docsLinkLabel = new JLabel("<html><a href=''>Need example? View the FileSystem MCP guide</a></html>");
+        docsLinkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Set up the URL for the docs - use GitHub URL
+        String repoUrl = "https://github.com/stephanj/MCPJavaFileSystem/tree/master";
+        docsLinkLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    Desktop.getDesktop().browse(new URI(repoUrl));
+                } catch (Exception ex) {
+                    //
+                }
+            }
+        });
+        return docsLinkLabel;
+    }
+
     /**
      * Process tool specifications from successful connection test
      * 

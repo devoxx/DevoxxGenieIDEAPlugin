@@ -48,7 +48,14 @@ public class HttpSseTransportPanel implements TransportPanel {
         gbc.gridx = 1;
         gbc.gridy = row++;
         gbc.weightx = 0.0;
-        panel.add(new JLabel("⚠️Example: http://localhost:3000/mcp/sse"), gbc);
+        panel.add(new JLabel("For example: http://localhost:3000/mcp/sse"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = row++;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(getExampleLabel(), gbc);
+
     }
     
     @Override
