@@ -56,9 +56,7 @@ public class PromptExecutionService {
     public void executePrompt(@NotNull ChatMessageContext context,
                              @NotNull PromptOutputPanel panel,
                              @NotNull Runnable enableButtons) {
-                             
-        Project project = context.getProject();
-        
+
         // Cancel any running executions for this project
         if (cancellationService.cancelAllExecutions(project) > 0) {
             log.debug("Cancelled all existing executions for project");
@@ -103,20 +101,19 @@ public class PromptExecutionService {
         // Store context with the task for cancellation handling
         task.putUserData(PromptTask.CONTEXT_KEY, context);
         
-        task.whenComplete((result, error) -> {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                if (error != null) {
-                    handleExecutionError(error, context);
-                } else if (result != null) {
-                    log.debug("Prompt execution completed with result: {}", result);
-                }
-                
-                // Unregister from cancellation service upon completion
-                cancellationService.unregisterExecution(project, context.getId());
-                
-                cleanupAfterExecution(project, enableButtons);
-            });
-        });
+        task.whenComplete((result, error) ->
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (error != null) {
+                        handleExecutionError(error, context);
+                    } else if (result != null) {
+                        log.debug("Prompt execution completed with result: {}", result);
+                    }
+
+                    // Unregister from cancellation service upon completion
+                    cancellationService.unregisterExecution(project, context.getId());
+
+                    cleanupAfterExecution(project, enableButtons);
+                }));
     }
 
     /**
