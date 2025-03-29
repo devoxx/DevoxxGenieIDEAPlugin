@@ -40,6 +40,9 @@ public class AppTopics {
 
     public static final Topic<ShortcutChangeListener> SHORTCUT_CHANGED_TOPIC =
             Topic.create("shortcutChanged", ShortcutChangeListener.class);
+            
+    public static final Topic<NewlineShortcutChangeListener> NEWLINE_SHORTCUT_CHANGED_TOPIC =
+            Topic.create("newlineShortcutChanged", NewlineShortcutChangeListener.class);
 
     public static final Topic<MCPLoggingMessage> MCP_LOGGING_MSG =
             Topic.create("mcpLoggingMessage", MCPLoggingMessage.class);

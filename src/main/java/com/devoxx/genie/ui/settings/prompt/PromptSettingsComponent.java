@@ -48,7 +48,19 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     @Getter
     @Setter
     private String submitShortcutLinux;
+    
+    @Getter
+    @Setter
+    private String newlineShortcutWindows;
 
+    @Getter
+    @Setter
+    private String newlineShortcutMac;
+
+    @Getter
+    @Setter
+    private String newlineShortcutLinux;
+    
     @Getter
     private final JTextArea systemPromptField = new JTextArea(stateService.getSystemPrompt());
     @Getter
@@ -203,43 +215,93 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Configure keyboard submit shortcut");
 
         gbc.gridy++;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.BOTH;
+
+        if (SystemInfo.isWindows) {
+            panel.add(createShortcutPanel("Windows", stateService.getSubmitShortcutWindows(), true), gbc);
+        } else if (SystemInfo.isMac) {
+            panel.add(createShortcutPanel("Mac", stateService.getSubmitShortcutMac(), true), gbc);
+        } else {
+            panel.add(createShortcutPanel("Linux", stateService.getSubmitShortcutLinux(), true), gbc);
+        }
+        
+        // Add keyboard shortcuts section for newline
+        addSection(panel, gbc, "Configure keyboard newline shortcut");
+
+        gbc.gridy++;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
 
         if (SystemInfo.isWindows) {
-            panel.add(createShortcutPanel("Windows", stateService.getSubmitShortcutWindows()), gbc);
+            panel.add(createNewlineShortcutPanel("Windows", stateService.getNewlineShortcutWindows()), gbc);
         } else if (SystemInfo.isMac) {
-            panel.add(createShortcutPanel("Mac", stateService.getSubmitShortcutMac()), gbc);
+            panel.add(createNewlineShortcutPanel("Mac", stateService.getNewlineShortcutMac()), gbc);
         } else {
-            panel.add(createShortcutPanel("Linux", stateService.getSubmitShortcutLinux()), gbc);
+            panel.add(createNewlineShortcutPanel("Linux", stateService.getNewlineShortcutLinux()), gbc);
         }
 
         return panel;
     }
 
-    private @NotNull JPanel createShortcutPanel(String os, String initialShortcut) {
+    private @NotNull JPanel createShortcutPanel(String os, String initialShortcut, boolean isSubmitShortcut) {
         KeyboardShortcutPanel shortcutPanel = new KeyboardShortcutPanel(project, os, initialShortcut, shortcut -> {
             // Update the appropriate shortcut based on OS
-            if ("Mac".equalsIgnoreCase(os)) {
-                setSubmitShortcutMac(shortcut);
-            } else if ("Windows".equalsIgnoreCase(os)) {
-                setSubmitShortcutWindows(shortcut);
+            if (isSubmitShortcut) {
+                if ("Mac".equalsIgnoreCase(os)) {
+                    setSubmitShortcutMac(shortcut);
+                } else if ("Windows".equalsIgnoreCase(os)) {
+                    setSubmitShortcutWindows(shortcut);
+                } else {
+                    setSubmitShortcutLinux(shortcut);
+                }
+                notifyShortcutChanged(shortcut);
             } else {
-                setSubmitShortcutLinux(shortcut);
+                if ("Mac".equalsIgnoreCase(os)) {
+                    setNewlineShortcutMac(shortcut);
+                } else if ("Windows".equalsIgnoreCase(os)) {
+                    setNewlineShortcutWindows(shortcut);
+                } else {
+                    setNewlineShortcutLinux(shortcut);
+                }
+                notifyNewlineShortcutChanged(shortcut);
             }
-            notifyShortcutChanged(shortcut);
         });
 
         // Set initial values from state service
-        if ("Mac".equalsIgnoreCase(os)) {
-            submitShortcutMac = shortcutPanel.getCurrentShortcut();
-        } else if ("Windows".equalsIgnoreCase(os)) {
-            submitShortcutWindows = shortcutPanel.getCurrentShortcut();
+        if (isSubmitShortcut) {
+            if ("Mac".equalsIgnoreCase(os)) {
+                submitShortcutMac = shortcutPanel.getCurrentShortcut();
+            } else if ("Windows".equalsIgnoreCase(os)) {
+                submitShortcutWindows = shortcutPanel.getCurrentShortcut();
+            } else {
+                submitShortcutLinux = shortcutPanel.getCurrentShortcut();
+            }
         } else {
-            submitShortcutLinux = shortcutPanel.getCurrentShortcut();
+            if ("Mac".equalsIgnoreCase(os)) {
+                newlineShortcutMac = shortcutPanel.getCurrentShortcut();
+            } else if ("Windows".equalsIgnoreCase(os)) {
+                newlineShortcutWindows = shortcutPanel.getCurrentShortcut();
+            } else {
+                newlineShortcutLinux = shortcutPanel.getCurrentShortcut();
+            }
         }
 
         return shortcutPanel;
+    }
+    
+    private @NotNull JPanel createShortcutPanel(String os, String initialShortcut) {
+        return createShortcutPanel(os, initialShortcut, true);
+    }
+    
+    private @NotNull JPanel createNewlineShortcutPanel(String os, String initialShortcut) {
+        return createShortcutPanel(os, initialShortcut, false);
+    }
+    
+    private void notifyNewlineShortcutChanged(String shortcut) {
+        project.getMessageBus()
+                .syncPublisher(AppTopics.NEWLINE_SHORTCUT_CHANGED_TOPIC)
+                .onNewlineShortcutChanged(shortcut);
     }
 
     private void setupCustomPromptsTable() {

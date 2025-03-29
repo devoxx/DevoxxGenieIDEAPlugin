@@ -88,18 +88,28 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             KeyStroke currentKeyStroke = KeyStroke.getKeyStrokeForEvent(e);
             DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-            String shortcutString;
+            String submitShortcutString;
+            String newlineShortcutString;
+            
             if (SystemInfo.isMac) {
-                shortcutString = stateService.getSubmitShortcutMac();
+                submitShortcutString = stateService.getSubmitShortcutMac();
+                newlineShortcutString = stateService.getNewlineShortcutMac();
             } else if (SystemInfo.isLinux) {
-                shortcutString = stateService.getSubmitShortcutLinux();
+                submitShortcutString = stateService.getSubmitShortcutLinux();
+                newlineShortcutString = stateService.getNewlineShortcutLinux();
             } else {
-                shortcutString = stateService.getSubmitShortcutWindows();
+                submitShortcutString = stateService.getSubmitShortcutWindows();
+                newlineShortcutString = stateService.getNewlineShortcutWindows();
             }
 
-            KeyStroke submitKeyStroke = KeyStroke.getKeyStroke(shortcutString);
+            KeyStroke submitKeyStroke = KeyStroke.getKeyStroke(submitShortcutString);
+            KeyStroke newlineKeyStroke = KeyStroke.getKeyStroke(newlineShortcutString);
+            
             if (submitKeyStroke != null && submitKeyStroke.equals(currentKeyStroke)) {
                 sendPrompt();
+                e.consume();
+            } else if (newlineKeyStroke != null && newlineKeyStroke.equals(currentKeyStroke)) {
+                insertNewline();
                 e.consume();
             } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
                 autoComplete();
@@ -136,6 +146,14 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
                         break;
                     }
                 }
+            }
+        }
+        
+        private void insertNewline() {
+            try {
+                getDocument().insertString(getCaretPosition(), "\n", null);
+            } catch (BadLocationException ex) {
+                log.error("Error inserting newline", ex);
             }
         }
     }

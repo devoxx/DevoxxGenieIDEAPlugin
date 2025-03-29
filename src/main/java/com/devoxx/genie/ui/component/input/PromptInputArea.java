@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.component.input;
 
+import com.devoxx.genie.ui.listener.NewlineShortcutChangeListener;
 import com.devoxx.genie.ui.listener.PromptInputFocusListener;
 import com.devoxx.genie.ui.listener.RAGStateListener;
 import com.devoxx.genie.ui.listener.ShortcutChangeListener;
@@ -23,12 +24,13 @@ import java.util.ResourceBundle;
 import static com.devoxx.genie.ui.util.WindowPluginUtil.TOOL_WINDOW_ID;
 
 @Getter
-public class PromptInputArea extends JPanel implements ShortcutChangeListener, ToolWindowManagerListener, RAGStateListener {
+public class PromptInputArea extends JPanel implements ShortcutChangeListener, NewlineShortcutChangeListener, ToolWindowManagerListener, RAGStateListener {
     private final CommandAutoCompleteTextField inputField;
     private final SearchOptionsPanel searchOptionsPanel;
     private final ResourceBundle resourceBundle;
     private final Project project;
     private String submitShortcut;
+    private String newlineShortcut;
     private String lastActiveId = null;
 
     public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
@@ -70,6 +72,9 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
 
         MessageBusUtil.subscribe(project.getMessageBus().connect(),
                 AppTopics.SHORTCUT_CHANGED_TOPIC, this);
+                
+        MessageBusUtil.subscribe(project.getMessageBus().connect(),
+                AppTopics.NEWLINE_SHORTCUT_CHANGED_TOPIC, this);
 
         MessageBusUtil.subscribe(project.getMessageBus().connect(),
                 AppTopics.RAG_ACTIVATED_CHANGED_TOPIC, this);
@@ -133,7 +138,6 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
     }
 
     private void setPlaceholderWithKeyboardShortcut(String shortcut) {
-
         // Clean up the shortcut text
         shortcut = shortcut.replace("pressed", "+")
                 .replace("meta", "command");
@@ -143,6 +147,27 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
         submitShortcut = String.join(" + ", parts)
                 .substring(0, 1).toUpperCase()
                 + shortcut.substring(1);
+
+        // Also get newline shortcut for the placeholder
+        String newlineShortcut;
+        if (SystemInfo.isWindows) {
+            newlineShortcut = DevoxxGenieStateService.getInstance().getNewlineShortcutWindows();
+        } else if (SystemInfo.isLinux) {
+            newlineShortcut = DevoxxGenieStateService.getInstance().getNewlineShortcutLinux();
+        } else {
+            newlineShortcut = DevoxxGenieStateService.getInstance().getNewlineShortcutMac();
+        }
+        
+        // Format the newline shortcut text
+        newlineShortcut = newlineShortcut.replace("pressed", "+")
+                .replace("meta", "command");
+        String[] newlineParts = newlineShortcut.split(" ");
+        String formattedNewlineShortcut = String.join(" + ", newlineParts)
+                .substring(0, 1).toUpperCase()
+                + newlineShortcut.substring(1);
+
+        // Store the formatted newline shortcut for use in updatePlaceHolder
+        this.newlineShortcut = formattedNewlineShortcut;
 
         updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
     }
@@ -156,17 +181,40 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, T
     }
 
     private void updatePlaceHolder(boolean ragEnabled) {
+        String placeholderText;
+        
         if (ragEnabled) {
-            inputField.setPlaceholder(submitShortcut + " " +
-                    resourceBundle.getString("rag.prompt.placeholder"));
+            placeholderText = submitShortcut + " to submit, " + newlineShortcut + " for newline. " +
+                    resourceBundle.getString("rag.prompt.placeholder");
         } else {
-            inputField.setPlaceholder(submitShortcut + " " +
-                    resourceBundle.getString("prompt.placeholder"));
+            placeholderText = submitShortcut + " to submit, " + newlineShortcut + " for newline. " +
+                    resourceBundle.getString("prompt.placeholder");
         }
+        
+        inputField.setPlaceholder(placeholderText);
     }
 
     @Override
     public void onRAGStateChanged(boolean enabled) {
         updatePlaceHolder(enabled);
+    }
+    
+    @Override
+    public void onNewlineShortcutChanged(String shortcut) {
+        if (shortcut == null || shortcut.isEmpty()) {
+            return;
+        }
+        // Format the newline shortcut text
+        shortcut = shortcut.replace("pressed", "+")
+                .replace("meta", "command");
+        String[] newlineParts = shortcut.split(" ");
+        String formattedNewlineShortcut = String.join(" + ", newlineParts)
+                .substring(0, 1).toUpperCase()
+                + shortcut.substring(1);
+
+        // Store the formatted newline shortcut for use in updatePlaceHolder
+        this.newlineShortcut = formattedNewlineShortcut;
+        
+        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
     }
 }

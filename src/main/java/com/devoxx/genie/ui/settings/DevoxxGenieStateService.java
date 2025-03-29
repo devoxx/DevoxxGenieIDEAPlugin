@@ -37,6 +37,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String submitShortcutWindows = "shift ENTER";
     private String submitShortcutMac = "shift ENTER";
     private String submitShortcutLinux = "shift ENTER";
+    
+    private String newlineShortcutWindows = "ctrl ENTER";
+    private String newlineShortcutMac = "meta ENTER";  // Command+Enter on Mac
+    private String newlineShortcutLinux = "ctrl ENTER";
 
     // Default excluded files for scan project
     private List<String> excludedFiles = new ArrayList<>(Arrays.asList(
