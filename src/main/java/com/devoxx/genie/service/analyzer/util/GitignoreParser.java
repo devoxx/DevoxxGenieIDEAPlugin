@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.analyzer.util;
 
 import com.devoxx.genie.service.analyzer.tools.GlobTool;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class GitignoreParser {
-    
+
     // Root patterns that apply to the entire project
     private final List<Pattern> rootExcludePatterns = new ArrayList<>();
     private final List<Pattern> rootIncludePatterns = new ArrayList<>();
@@ -28,6 +28,12 @@ public class GitignoreParser {
     
     // The project root directory
     private final VirtualFile baseDir;
+
+    /**
+     * Fast lookup map for top-level directories that are directly excluded
+     * This avoids regex matching for common cases like "build/" and ".gradle/"
+     */
+    private final Set<String> directlyExcludedDirs = new HashSet<>();
 
     /**
      * Initializes the parser by reading and parsing .gitignore files from the given directory
@@ -53,10 +59,10 @@ public class GitignoreParser {
         }
 
         try {
-            String content = VfsUtil.loadText(gitignoreFile);
+            String content = VfsUtilCore.loadText(gitignoreFile);
             parseGitignoreContent(content, rootExcludePatterns, rootIncludePatterns, "");
         } catch (IOException e) {
-            log.error("Error reading root .gitignore file: " + e.getMessage());
+            log.error("Error reading root .gitignore file: {}", e.getMessage());
         }
     }
 
@@ -66,7 +72,7 @@ public class GitignoreParser {
     private void parseNestedGitignores() {
 
         // Use a file visitor to find all nested .gitignore files
-        VfsUtil.visitChildrenRecursively(baseDir, new com.intellij.openapi.vfs.VirtualFileVisitor<Void>() {
+        VfsUtilCore.visitChildrenRecursively(baseDir, new com.intellij.openapi.vfs.VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
                 // Skip the root .gitignore as it's already processed
@@ -81,7 +87,7 @@ public class GitignoreParser {
                             nestedIncludePatterns.putIfAbsent(relativeDirPath, new ArrayList<>());
                             
                             // Parse the content
-                            String content = VfsUtil.loadText(file);
+                            String content = VfsUtilCore.loadText(file);
                             parseGitignoreContent(
                                     content, 
                                     nestedExcludePatterns.get(relativeDirPath), 
@@ -113,7 +119,6 @@ public class GitignoreParser {
             @NotNull String relativeDir) {
         
         String[] lines = content.split("\\r?\\n");
-        String logPrefix = relativeDir.isEmpty() ? "" : "[" + relativeDir + "] ";
 
         for (String line : lines) {
             // Skip empty lines and comments
@@ -124,9 +129,6 @@ public class GitignoreParser {
             // Check if it's a negation pattern (inclusion)
             boolean isNegation = line.startsWith("!");
             String pattern = isNegation ? line.substring(1).trim() : line.trim();
-            
-            // Store the original pattern for optimization checks
-            String originalPattern = pattern;
 
             // Handle directory-only patterns that end with /
             boolean directoryOnly = pattern.endsWith("/");
@@ -171,16 +173,13 @@ public class GitignoreParser {
      */
     @NotNull
     private String convertGitignoreToRegex(@NotNull String pattern, boolean directoryOnly, @NotNull String relativeDir) {
-        // Make a copy to preserve the original pattern for logging
+
         String modifiedPattern = pattern;
         
         // For nested .gitignore files, patterns are relative to that directory
-        if (!relativeDir.isEmpty()) {
-            // If it's an absolute path (starts with /), it's relative to project root instead
-            if (!modifiedPattern.startsWith("/")) {
-                // For nested .gitignore files, prepend the relative directory path
-                modifiedPattern = relativeDir + "/" + modifiedPattern;
-            }
+        if (!relativeDir.isEmpty() && !modifiedPattern.startsWith("/")) {
+            // For nested .gitignore files, prepend the relative directory path
+            modifiedPattern = relativeDir + "/" + modifiedPattern;
         }
         
         // 1. Remove leading / if present - it represents the project root directory
@@ -248,12 +247,6 @@ public class GitignoreParser {
     }
 
     /**
-     * Fast lookup map for top-level directories that are directly excluded
-     * This avoids regex matching for common cases like "build/" and ".gradle/"
-     */
-    private final Set<String> directlyExcludedDirs = new HashSet<>();
-    
-    /**
      * Checks if a file or directory should be ignored based on gitignore rules
      *
      * @param path         The relative path to check
@@ -287,27 +280,22 @@ public class GitignoreParser {
         List<String> parentDirs = getParentDirectories(normalizedPath);
         for (String parentDir : parentDirs) {
             // Don't check the path itself, just its parents
-            if (!parentDir.equals(normalizedPath)) {
-                // If the parent directory is ignored, then this path should also be ignored
-                // We use true for isDirectory since we're checking parent directories
-                if (isPathIgnored(parentDir, true)) {
-                    return true;
-                }
+            if (!parentDir.equals(normalizedPath) && isPathIgnored(parentDir)) {
+                return true;
             }
         }
         
         // If no parent directory is ignored, check this path directly
-        return isPathIgnored(normalizedPath, isDirectory);
+        return isPathIgnored(normalizedPath);
     }
     
     /**
      * Internal method to check if a specific path should be ignored, without checking parent directories
      * 
      * @param normalizedPath The normalized path to check
-     * @param isDirectory Whether the path represents a directory
      * @return true if the path should be ignored, false otherwise
      */
-    private boolean isPathIgnored(@NotNull String normalizedPath, boolean isDirectory) {
+    private boolean isPathIgnored(@NotNull String normalizedPath) {
         // First check against root .gitignore patterns
         
         // Check if the path matches any root include patterns (negations)
@@ -377,37 +365,5 @@ public class GitignoreParser {
         // Sort from most specific (longest path) to least specific
         Collections.reverse(parents);
         return parents;
-    }
-
-    /**
-     * Gets all patterns that are used to exclude files and directories at the root level
-     *
-     * @return A list of compiled regex patterns
-     */
-    @NotNull
-    public List<Pattern> getRootExcludePatterns() {
-        return Collections.unmodifiableList(rootExcludePatterns);
-    }
-    
-    /**
-     * Gets all nested exclusion patterns for a specific directory path
-     * 
-     * @param dirPath The relative directory path
-     * @return A list of compiled regex patterns, or an empty list if none exist
-     */
-    @NotNull
-    public List<Pattern> getNestedExcludePatterns(@NotNull String dirPath) {
-        List<Pattern> patterns = nestedExcludePatterns.get(dirPath);
-        return patterns != null ? Collections.unmodifiableList(patterns) : Collections.emptyList();
-    }
-    
-    /**
-     * Gets a map of all nested exclusion patterns
-     *
-     * @return A map of directory paths to their exclusion patterns
-     */
-    @NotNull
-    public Map<String, List<Pattern>> getAllNestedExcludePatterns() {
-        return Collections.unmodifiableMap(nestedExcludePatterns);
     }
 }

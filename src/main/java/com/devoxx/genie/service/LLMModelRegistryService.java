@@ -507,11 +507,24 @@ public final class LLMModelRegistryService {
                         .build());
 
         String gemini2Pro = "gemini-2.0-pro-exp-02-05";
-        models.put(ModelProvider.Google.getName() + ":" + gemini2FlashLite,
+        models.put(ModelProvider.Google.getName() + ":" + gemini2Pro,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2Pro)
                         .displayName("Gemini 2.0 Pro Exp. 02-05")
+                        .inputCost(0)
+                        .outputCost(0)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(64_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gemini2dot5Pro = "gemini-2.5-pro-exp-03-25";
+        models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Pro,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(gemini2dot5Pro)
+                        .displayName("Gemini 2.5 Pro Exp. 03-05")
                         .inputCost(0)
                         .outputCost(0)
                         .inputMaxTokens(1_048_576)
