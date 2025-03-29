@@ -55,7 +55,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         log.debug("Before memory preparation (streaming) - context ID: {}", context.getId());
         chatMemoryManager.logMemoryState(context.getProject());
         
-        // prepareMemory(context);
+        // Prepare memory and add user message
+        prepareMemory(context);
+        chatMemoryManager.addUserMessage(context);
         
         log.debug("After memory preparation (streaming) - context ID: {}", context.getId());
         chatMemoryManager.logMemoryState(context.getProject());
