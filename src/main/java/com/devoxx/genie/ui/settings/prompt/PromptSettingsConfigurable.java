@@ -66,6 +66,10 @@ public class PromptSettingsConfigurable implements Configurable {
         isModified |= !settings.getSubmitShortcutWindows().equals(promptSettingsComponent.getSubmitShortcutWindows());
         isModified |= !settings.getSubmitShortcutMac().equals(promptSettingsComponent.getSubmitShortcutMac());
         isModified |= !settings.getSubmitShortcutLinux().equals(promptSettingsComponent.getSubmitShortcutLinux());
+        
+        isModified |= !settings.getNewlineShortcutWindows().equals(promptSettingsComponent.getNewlineShortcutWindows());
+        isModified |= !settings.getNewlineShortcutMac().equals(promptSettingsComponent.getNewlineShortcutMac());
+        isModified |= !settings.getNewlineShortcutLinux().equals(promptSettingsComponent.getNewlineShortcutLinux());
 
         return isModified;
     }
@@ -86,7 +90,7 @@ public class PromptSettingsConfigurable implements Configurable {
         settings.setProjectTreeDepth((Integer) promptSettingsComponent.getProjectTreeDepthSpinner().getValue());
         settings.setUseDevoxxGenieMdInPrompt(promptSettingsComponent.getUseDevoxxGenieMdInPromptCheckbox().isSelected());
 
-        // Apply shortcuts and notify changes
+        // Apply submit shortcuts and notify changes
         String newShortcut = null;
         if (SystemInfo.isWindows) {
             settings.setSubmitShortcutWindows(promptSettingsComponent.getSubmitShortcutWindows());
@@ -104,6 +108,26 @@ public class PromptSettingsConfigurable implements Configurable {
             project.getMessageBus()
                     .syncPublisher(AppTopics.SHORTCUT_CHANGED_TOPIC)
                     .onShortcutChanged(newShortcut);
+        }
+        
+        // Apply newline shortcuts and notify changes
+        String newNewlineShortcut = null;
+        if (SystemInfo.isWindows) {
+            settings.setNewlineShortcutWindows(promptSettingsComponent.getNewlineShortcutWindows());
+            newNewlineShortcut = promptSettingsComponent.getNewlineShortcutWindows();
+        } else if (SystemInfo.isMac) {
+            settings.setNewlineShortcutMac(promptSettingsComponent.getNewlineShortcutMac());
+            newNewlineShortcut = promptSettingsComponent.getNewlineShortcutMac();
+        } else {
+            settings.setNewlineShortcutLinux(promptSettingsComponent.getNewlineShortcutLinux());
+            newNewlineShortcut = promptSettingsComponent.getNewlineShortcutLinux();
+        }
+
+        // Notify newline shortcut change
+        if (newNewlineShortcut != null) {
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.NEWLINE_SHORTCUT_CHANGED_TOPIC)
+                    .onNewlineShortcutChanged(newNewlineShortcut);
         }
 
         project.getMessageBus()
