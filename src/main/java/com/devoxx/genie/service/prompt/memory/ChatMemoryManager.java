@@ -140,6 +140,29 @@ public class ChatMemoryManager {
     }
 
     /**
+     * Adds user message to memory from the provided context
+     * @param context The chat message context containing the user message
+     */
+    public void addUserMessage(@NotNull ChatMessageContext context) {
+        try {
+            if (context.getUserMessage() == null && context.getUserPrompt() != null) {
+                // Create user message if not already set
+                context.setUserMessage(UserMessage.from(context.getUserPrompt()));
+            }
+            
+            if (context.getUserMessage() != null) {
+                log.debug("Adding user message to memory for context ID: {}", context.getId());
+                chatMemoryService.addMessage(context.getProject(), context.getUserMessage());
+                log.debug("Successfully added user message to memory");
+            } else {
+                log.warn("Attempted to add null user message to memory for context ID: {}", context.getId());
+            }
+        } catch (Exception e) {
+            throw new MemoryException("Failed to add user message to memory", e);
+        }
+    }
+
+    /**
      * Removes only the last AI message from memory
      * @param context The chat message context containing the AI message to remove
      */

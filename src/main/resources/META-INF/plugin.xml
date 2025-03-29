@@ -38,6 +38,7 @@
         <h2>v0.5.3</h2>
         <UL>
             <Li>Feat #586 : Added Gemini 2.5 Pro model by @stephanj</LI>
+            <LI>Fix #588 : Fix streaming responses regression by @stephanj</LI>
         </UL>
         <h2>v0.5.2</h2>
         <UL>
