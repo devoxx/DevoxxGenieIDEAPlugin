@@ -2,14 +2,12 @@ package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.PromptExecutionService;
-import com.devoxx.genie.service.prompt.streaming.StreamingResponseHandler;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.response.ChatResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -17,14 +15,13 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.MockedStatic;
 
 import java.util.concurrent.CancellationException;
-import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
 /**
  * Tests to verify the correct memory cleanup behavior in various cancellation and removal scenarios.
  */
-public class ChatMemoryCleanupTest {
+class ChatMemoryCleanupTest {
 
     @Mock
     private Project project;
@@ -37,10 +34,7 @@ public class ChatMemoryCleanupTest {
     
     @Mock
     private ChatMemoryService chatMemoryService;
-    
-    @Mock
-    private PromptExecutionService executionService;
-    
+
     @Mock
     private PromptTaskTracker taskTracker;
     
@@ -67,7 +61,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: User cancels a prompt before receiving any response
      */
     @Test
-    public void testUserCancelPrompt() {
+    void testUserCancelPrompt() {
         try (MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class);
              MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class)) {
             
@@ -91,19 +85,12 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Streaming is stopped mid-response
      */
     @Test
-    public void testStreamingCancellation() {
+    void testStreamingCancellation() {
         try (MockedStatic<ChatMemoryService> mockedChatMemoryService = mockStatic(ChatMemoryService.class)) {
             
             // Set up static mocks
             mockedChatMemoryService.when(ChatMemoryService::getInstance).thenReturn(chatMemoryService);
 
-            // Create a streaming response handler - we'll need to mock the constructor calls
-            Consumer<ChatResponse> mockResponse = mock(Consumer.class);
-            Consumer<Throwable> mockThrowable = mock(Consumer.class);
-            
-            // Mock StreamingResponseHandler to avoid trying to create UI components
-            StreamingResponseHandler handler = mock(StreamingResponseHandler.class);
-            
             // Add a partial response
             testContext.setAiMessage(AiMessage.aiMessage("Partial response"));
             
@@ -119,7 +106,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Execution service handles cancellation
      */
     @Test
-    public void testExecutionServiceCancellation() {
+    void testExecutionServiceCancellation() {
         try (MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class)) {
             
             // Set up static mocks
@@ -155,7 +142,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Task fails with an exception
      */
     @Test
-    public void testTaskFailure() {
+    void testTaskFailure() {
         try (MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class)) {
             
             // Set up static mocks
@@ -177,7 +164,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Task is cancelled with CancellationException
      */
     @Test
-    public void testTaskCancellationException() {
+    void testTaskCancellationException() {
         try (MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class)) {
             
             // Set up static mocks
@@ -199,7 +186,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Multiple cancellations in sequence
      */
     @Test
-    public void testMultipleCancellations() {
+    void testMultipleCancellations() {
         try (MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class);
              MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class)) {
             
@@ -227,7 +214,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Centralized cancellation in PromptExecutionService
      */
     @Test
-    public void testCentralizedCancellation() {
+    void testCentralizedCancellation() {
         try (MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class)) {
             
             // Set up static mocks
@@ -253,7 +240,7 @@ public class ChatMemoryCleanupTest {
      * Test scenario: Edge case with null context
      */
     @Test
-    public void testNullContextHandling() {
+    void testNullContextHandling() {
         try (MockedStatic<PromptTaskTracker> mockedTaskTracker = mockStatic(PromptTaskTracker.class);
              MockedStatic<ChatMemoryManager> mockedChatMemoryManager = mockStatic(ChatMemoryManager.class)) {
             
@@ -270,7 +257,7 @@ public class ChatMemoryCleanupTest {
             // Verify only task completion is tracked (no memory cleanup)
             verify(taskTracker).taskCompleted(task);
             verifyNoInteractions(chatMemoryManager);
-            mockedChatMemoryManager.verify(() -> ChatMemoryManager.getInstance(), never());
+            mockedChatMemoryManager.verify(ChatMemoryManager::getInstance, never());
         }
     }
 }

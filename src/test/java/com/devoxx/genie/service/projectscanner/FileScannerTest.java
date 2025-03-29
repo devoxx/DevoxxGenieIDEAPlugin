@@ -10,15 +10,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class FileScannerTest {
+class FileScannerTest {
 
     private Project mockProject;
     private ProjectFileIndex mockFileIndex;
@@ -89,7 +87,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testInitGitignoreParser_WithStartDirectory() {
+    void testInitGitignoreParser_WithStartDirectory() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
             
@@ -129,7 +127,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testInitGitignoreParser_WithProject() {
+    void testInitGitignoreParser_WithProject() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class);
              MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class)) {
 
@@ -183,7 +181,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testScanProjectModules() {
+    void testScanProjectModules() {
         // Setup
         VirtualFile contentRoot1 = mock(VirtualFile.class);
         when(contentRoot1.isDirectory()).thenReturn(true);
@@ -228,7 +226,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testShouldExcludeDirectory() {
+    void testShouldExcludeDirectory() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
 
@@ -254,7 +252,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testShouldExcludeFile() {
+    void testShouldExcludeFile() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
 
@@ -279,7 +277,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testShouldIncludeFile() {
+    void testShouldIncludeFile() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
 
@@ -308,7 +306,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testGenerateSourceTreeRecursive() {
+    void testGenerateSourceTreeRecursive() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
 
@@ -349,7 +347,7 @@ public class FileScannerTest {
     }
 
     @Test
-    public void testScanDirectory() {
+    void testScanDirectory() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
 

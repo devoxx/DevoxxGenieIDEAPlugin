@@ -154,9 +154,8 @@ public class PromptCancellationService {
         PromptTask<?> task = PromptTaskTracker.getInstance().getTaskByContextId(project, contextId);
         if (task != null) {
             Object userData = task.getUserData(PromptTask.CONTEXT_KEY);
-            if (userData instanceof ChatMessageContext) {
-                ChatMessageContext context = (ChatMessageContext) userData;
-                
+            if (userData instanceof ChatMessageContext context) {
+
                 // Remove last user message from memory
                 ChatMemoryManager.getInstance().removeLastUserMessage(context);
                 

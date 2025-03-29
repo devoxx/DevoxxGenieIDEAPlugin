@@ -13,7 +13,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DirectoryScannerServiceTest {
+class DirectoryScannerServiceTest {
 
     private DirectoryScannerService scannerService;
 
@@ -38,7 +38,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testAddDirectory_FirstAddition() {
+    void testAddDirectory_FirstAddition() {
         // Test adding a directory for the first time
         scannerService.addDirectory(mockFileShort);
 
@@ -48,7 +48,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testAddDirectory_DuplicateAddition() {
+    void testAddDirectory_DuplicateAddition() {
         // Add a directory first time
         scannerService.addDirectory(mockFileShort);
 
@@ -59,7 +59,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testAddDirectory_MultipleDifferentDirectories() {
+    void testAddDirectory_MultipleDifferentDirectories() {
         // Add several different directories
         scannerService.addDirectory(mockFileShort);
         scannerService.addDirectory(mockFileMiddle);
@@ -79,7 +79,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testGetHighestCommonRoot_EmptyMap() {
+    void testGetHighestCommonRoot_EmptyMap() {
         // No directories added yet
         Optional<VirtualFile> result = scannerService.getHighestCommonRoot();
 
@@ -88,7 +88,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testGetHighestCommonRoot_SingleDirectory() {
+    void testGetHighestCommonRoot_SingleDirectory() {
         // Add only one directory
         scannerService.addDirectory(mockFileLong);
 
@@ -100,7 +100,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testGetHighestCommonRoot_MultipleDirectories() {
+    void testGetHighestCommonRoot_MultipleDirectories() {
         // Add directories with paths of different lengths
         scannerService.addDirectory(mockFileShort);  // Shortest path
         scannerService.addDirectory(mockFileMiddle);
@@ -114,7 +114,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testGetHighestCommonRoot_DirectoriesInReverseOrder() {
+    void testGetHighestCommonRoot_DirectoriesInReverseOrder() {
         // Add directories in reverse order (longest path first)
         scannerService.addDirectory(mockFileLong);   // Longest path
         scannerService.addDirectory(mockFileMiddle);
@@ -128,7 +128,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testNormalizationOfPaths() {
+    void testNormalizationOfPaths() {
         // Create a mock with a path containing unnecessary components
         VirtualFile mockFileWithDots = mock(VirtualFile.class);
         when(mockFileWithDots.getPath()).thenReturn("/project/./unnecessary/../project");
@@ -141,7 +141,7 @@ public class DirectoryScannerServiceTest {
     }
 
     @Test
-    public void testAddDirectory_NullInput() {
+    void testAddDirectory_NullInput() {
         // Test behavior with null input
         assertThrows(IllegalArgumentException.class, () -> scannerService.addDirectory(null));
     }

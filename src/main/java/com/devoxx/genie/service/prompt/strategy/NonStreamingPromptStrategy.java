@@ -5,9 +5,11 @@ import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.PromptException;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
@@ -30,11 +32,28 @@ import static com.devoxx.genie.service.MessageCreationService.extractFileReferen
 @Slf4j
 public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
-    private final NonStreamingPromptExecutionService promptExecutionService;
+    protected NonStreamingPromptExecutionService promptExecutionService;
 
     public NonStreamingPromptStrategy(Project project) {
         super(project);
         this.promptExecutionService = NonStreamingPromptExecutionService.getInstance();
+    }
+    
+    /**
+     * Constructor for dependency injection, primarily used for testing.
+     *
+     * @param project The IntelliJ project
+     * @param chatMemoryManager The chat memory manager
+     * @param threadPoolManager The thread pool manager
+     * @param promptExecutionService The non-streaming prompt execution service
+     */
+    protected NonStreamingPromptStrategy(
+            @NotNull Project project,
+            @NotNull ChatMemoryManager chatMemoryManager,
+            @NotNull ThreadPoolManager threadPoolManager,
+            @NotNull NonStreamingPromptExecutionService promptExecutionService) {
+        super(project, chatMemoryManager, threadPoolManager);
+        this.promptExecutionService = promptExecutionService;
     }
 
     @Override

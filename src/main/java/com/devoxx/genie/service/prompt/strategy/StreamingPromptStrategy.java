@@ -1,11 +1,14 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ModelException;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.streaming.StreamingResponseHandler;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
@@ -29,6 +32,36 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
     public StreamingPromptStrategy(Project project) {
         super(project);
     }
+    
+    /**
+     * Constructor for dependency injection, primarily used for testing.
+     *
+     * @param project The IntelliJ project
+     * @param chatMemoryManager The chat memory manager
+     * @param threadPoolManager The thread pool manager
+     */
+    protected StreamingPromptStrategy(
+            @NotNull Project project,
+            @NotNull ChatMemoryManager chatMemoryManager,
+            @NotNull ThreadPoolManager threadPoolManager) {
+        super(project, chatMemoryManager, threadPoolManager);
+    }
+    
+    /**
+     * Constructor for full dependency injection, primarily used for testing.
+     *
+     * @param project The IntelliJ project
+     * @param chatMemoryManager The chat memory manager
+     * @param threadPoolManager The thread pool manager
+     * @param messageCreationService The message creation service
+     */
+    protected StreamingPromptStrategy(
+            @NotNull Project project,
+            @NotNull ChatMemoryManager chatMemoryManager,
+            @NotNull ThreadPoolManager threadPoolManager,
+            @NotNull MessageCreationService messageCreationService) {
+        super(project, chatMemoryManager, threadPoolManager, messageCreationService);
+    }
 
     @Override
     protected String getStrategyName() {
@@ -51,9 +84,8 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             return;
         }
 
-        // Prepare memory and add user message
+        // Prepare memory which already adds the user message
         prepareMemory(context);
-        chatMemoryManager.addUserMessage(context);
 
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(

@@ -5,24 +5,24 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CustomPromptCommandTest {
+@ExtendWith(MockitoExtension.class)
+class CustomPromptCommandTest {
 
     @Mock
     private ChatMessageContext context;
@@ -38,13 +38,13 @@ public class CustomPromptCommandTest {
     private final CustomPrompt testPrompt1 = new CustomPrompt("test", "This is a test prompt template");
     private final CustomPrompt testPrompt2 = new CustomPrompt("debug", "Debug the following code:");
 
-    @Before
+    @BeforeEach
     public void setUp() {
         command = new CustomPromptCommand();
     }
 
     @Test
-    public void testMatches_WithCustomCommand() {
+    void testMatches_WithCustomCommand() {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
@@ -63,7 +63,7 @@ public class CustomPromptCommandTest {
     }
     
     @Test
-    public void testMatches_WithNonCustomCommand() {
+    void testMatches_WithNonCustomCommand() {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
@@ -81,7 +81,7 @@ public class CustomPromptCommandTest {
     }
     
     @Test
-    public void testMatches_WithNoCustomCommands() {
+    void testMatches_WithNoCustomCommands() {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up empty custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
@@ -93,7 +93,7 @@ public class CustomPromptCommandTest {
     }
     
     @Test
-    public void testProcess_WithMatchingCommand() {
+    void testProcess_WithMatchingCommand() {
         // Set up context
         when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + "test additional arguments");
         
@@ -115,7 +115,7 @@ public class CustomPromptCommandTest {
     }
     
     @Test
-    public void testProcess_WithNoMatchingCommand() {
+    void testProcess_WithNoMatchingCommand() {
         // Set up context
         String originalPrompt = Constant.COMMAND_PREFIX + "unknown command";
         when(context.getUserPrompt()).thenReturn(originalPrompt);
@@ -135,7 +135,7 @@ public class CustomPromptCommandTest {
     }
     
     @Test
-    public void testProcess_WithEmptyArgs() {
+    void testProcess_WithEmptyArgs() {
         // Set up context with no additional arguments
         when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + "debug");
         

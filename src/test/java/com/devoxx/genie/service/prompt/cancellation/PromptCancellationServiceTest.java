@@ -9,27 +9,33 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.testFramework.LightPlatformTestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PromptCancellationServiceTest extends LightPlatformTestCase {
+/**
+ * JUnit 5 tests for PromptCancellationService.
+ */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class PromptCancellationServiceTest {
+
+    // Static mocks
+    private MockedStatic<PromptTaskTracker> taskTrackerMockedStatic;
+    private MockedStatic<ChatMemoryManager> chatMemoryManagerMockedStatic;
+    private MockedStatic<ApplicationManager> applicationManagerMockedStatic;
 
     @Mock
     private Project project;
@@ -69,32 +75,27 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
     
     private PromptCancellationService service;
     
-    private final String PROJECT_HASH = "project-hash";
-    private final String CONTEXT_ID_1 = "context-id-1";
-    private final String CONTEXT_ID_2 = "context-id-2";
+    private static final String PROJECT_HASH = "project-hash";
+    private static final String CONTEXT_ID_1 = "context-id-1";
+    private static final String CONTEXT_ID_2 = "context-id-2";
 
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-        
+    @BeforeEach
+    void setUp() {
         // Set up default behaviors
         when(project.getLocationHash()).thenReturn(PROJECT_HASH);
         
-        // Mock static instances
-        try (MockedStatic<PromptTaskTracker> taskTrackerMockedStatic = Mockito.mockStatic(PromptTaskTracker.class);
-             MockedStatic<ChatMemoryManager> chatMemoryManagerMockedStatic = Mockito.mockStatic(ChatMemoryManager.class);
-             MockedStatic<ApplicationManager> applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class)) {
-            
-            taskTrackerMockedStatic.when(PromptTaskTracker::getInstance).thenReturn(taskTracker);
-            chatMemoryManagerMockedStatic.when(ChatMemoryManager::getInstance).thenReturn(chatMemoryManager);
-            applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
-            
-            when(application.getService(PromptCancellationService.class)).thenReturn(null);
-            
-            // Create service
-            service = new PromptCancellationService();
-        }
+        // Initialize static mocks that will persist throughout the test
+        taskTrackerMockedStatic = Mockito.mockStatic(PromptTaskTracker.class);
+        chatMemoryManagerMockedStatic = Mockito.mockStatic(ChatMemoryManager.class);
+        applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
+        
+        // Configure static mocks
+        taskTrackerMockedStatic.when(PromptTaskTracker::getInstance).thenReturn(taskTracker);
+        chatMemoryManagerMockedStatic.when(ChatMemoryManager::getInstance).thenReturn(chatMemoryManager);
+        applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
+        
+        // Create service
+        service = new PromptCancellationService();
         
         // Create custom matcher for the getTaskByContextId method
         when(taskTracker.getTaskByContextId(eq(project), eq(CONTEXT_ID_1))).thenAnswer(invocation -> task1);
@@ -113,10 +114,14 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
     }
 
     @Test
-    public void testRegisterAndUnregisterExecution() {
+    void testRegisterAndUnregisterExecution() {
+        // Let's check what strategies are registered initially
+        PromptExecutionStrategy freshStrategy1 = mock(PromptExecutionStrategy.class);
+        PromptExecutionStrategy freshStrategy2 = mock(PromptExecutionStrategy.class);
+        
         // Register executions
-        service.registerExecution(project, CONTEXT_ID_1, strategy1, panel1);
-        service.registerExecution(project, CONTEXT_ID_2, strategy2, panel2);
+        service.registerExecution(project, CONTEXT_ID_1, freshStrategy1, panel1);
+        service.registerExecution(project, CONTEXT_ID_2, freshStrategy2, panel2);
         
         // Test cancellation to verify registrations worked
         when(taskTracker.cancelAllTasks(project)).thenReturn(0);
@@ -124,41 +129,64 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
         int count = service.cancelAllExecutions(project);
         
         // Verify both strategies were cancelled
-        verify(strategy1).cancel();
-        verify(strategy2).cancel();
+        verify(freshStrategy1).cancel();
+        verify(freshStrategy2).cancel();
         assertEquals(2, count);
+    }
+    
+    @Test
+    void testUnregisterExecution() {
+        // Create new mocks for this test to isolate behavior
+        PromptExecutionStrategy testStrategy1 = mock(PromptExecutionStrategy.class);
+        PromptExecutionStrategy testStrategy2 = mock(PromptExecutionStrategy.class);
+        
+        // Register executions
+        service.registerExecution(project, CONTEXT_ID_1, testStrategy1, panel1);
+        service.registerExecution(project, CONTEXT_ID_2, testStrategy2, panel2);
         
         // Unregister one execution
         service.unregisterExecution(project, CONTEXT_ID_1);
         
-        // Reset mocks for another test
-        Mockito.reset(strategy1, strategy2);
+        // Set up for cancellation
         when(taskTracker.cancelAllTasks(project)).thenReturn(0);
         
         // Now only one strategy should be cancelled
-        count = service.cancelAllExecutions(project);
+        int count = service.cancelAllExecutions(project);
         
-        verify(strategy1, never()).cancel();
-        verify(strategy2).cancel();
+        // Only testStrategy2 should be cancelled
+        verify(testStrategy1, never()).cancel();
+        verify(testStrategy2).cancel();
         assertEquals(1, count);
+    }
+    
+    @Test
+    void testUnregisterAllExecutions() {
+        // Create new mocks for this test to isolate behavior
+        PromptExecutionStrategy testStrategy1 = mock(PromptExecutionStrategy.class);
+        PromptExecutionStrategy testStrategy2 = mock(PromptExecutionStrategy.class);
         
-        // Unregister the other execution
+        // Register executions
+        service.registerExecution(project, CONTEXT_ID_1, testStrategy1, panel1);
+        service.registerExecution(project, CONTEXT_ID_2, testStrategy2, panel2);
+        
+        // Unregister both executions
+        service.unregisterExecution(project, CONTEXT_ID_1);
         service.unregisterExecution(project, CONTEXT_ID_2);
         
-        // Reset mocks for another test
-        Mockito.reset(strategy1, strategy2);
+        // Set up for cancellation
         when(taskTracker.cancelAllTasks(project)).thenReturn(0);
         
         // Now no strategies should be cancelled
-        count = service.cancelAllExecutions(project);
+        int count = service.cancelAllExecutions(project);
         
-        verify(strategy1, never()).cancel();
-        verify(strategy2, never()).cancel();
+        // No strategies should be cancelled
+        verify(testStrategy1, never()).cancel();
+        verify(testStrategy2, never()).cancel();
         assertEquals(0, count);
     }
     
     @Test
-    public void testCancelExecution() {
+    void testCancelExecution() {
         // Register executions
         service.registerExecution(project, CONTEXT_ID_1, strategy1, panel1);
         service.registerExecution(project, CONTEXT_ID_2, strategy2, panel2);
@@ -192,7 +220,7 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
     }
     
     @Test
-    public void testCancelAllExecutions() {
+    void testCancelAllExecutions() {
         // Register executions
         service.registerExecution(project, CONTEXT_ID_1, strategy1, panel1);
         service.registerExecution(project, CONTEXT_ID_2, strategy2, panel2);
@@ -234,7 +262,7 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
     }
     
     @Test
-    public void testCleanupCancelledExecution_WithNullPanel() {
+    void testCleanupCancelledExecution_WithNullPanel() {
         // Register execution with strategy only
         service.registerExecution(project, CONTEXT_ID_1, strategy1, panel1);
         
@@ -252,7 +280,7 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
     }
     
     @Test
-    public void testCleanupCancelledExecution_WithNullContext() {
+    void testCleanupCancelledExecution_WithNullContext() {
         // Register execution
         service.registerExecution(project, CONTEXT_ID_1, strategy1, panel1);
         
@@ -267,5 +295,32 @@ public class PromptCancellationServiceTest extends LightPlatformTestCase {
         
         // Verify panel update was not called
         verify(panel1, never()).removeLastUserPrompt(any());
+    }
+    
+    @Test
+    void testGetInstanceMethod() {
+        // Create a separate test class instance to avoid static mock conflicts
+        PromptCancellationService mockService = mock(PromptCancellationService.class);
+        
+        // Set up the mocked application to return our mock service
+        when(application.getService(PromptCancellationService.class)).thenReturn(mockService);
+        
+        // Verify getInstance() returns the mocked service
+        PromptCancellationService instance = PromptCancellationService.getInstance();
+        assertEquals(mockService, instance);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        // Close all the static mocks
+        if (taskTrackerMockedStatic != null) {
+            taskTrackerMockedStatic.close();
+        }
+        if (chatMemoryManagerMockedStatic != null) {
+            chatMemoryManagerMockedStatic.close();
+        }
+        if (applicationManagerMockedStatic != null) {
+            applicationManagerMockedStatic.close();
+        }
     }
 }

@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ContentExtractorTest {
+class ContentExtractorTest {
 
     private ContentExtractor contentExtractor;
     private VirtualFile mockFile;
@@ -32,7 +32,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testExtractFileContent_Success() throws IOException {
+    void testExtractFileContent_Success() throws IOException {
         try (MockedStatic<ReadAction> readActionMock = mockStatic(ReadAction.class);
              MockedStatic<DevoxxGenieStateService> stateServiceMock = mockStatic(DevoxxGenieStateService.class)) {
 
@@ -55,7 +55,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testExtractFileContent_IOExceptionHandling() throws IOException {
+    void testExtractFileContent_IOExceptionHandling() throws IOException {
         // Setup exception throwing when attempting to read the file
         when(mockFile.getInputStream()).thenThrow(new IOException("Test IO exception"));
 
@@ -68,7 +68,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testExtractFileContent_WithOtherExceptionHandling() throws IOException {
+    void testExtractFileContent_WithOtherExceptionHandling() throws IOException {
         // Setup a RuntimeException when trying to read the file
         when(mockFile.getInputStream()).thenThrow(new RuntimeException("Unexpected error"));
 
@@ -81,7 +81,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testCombineContent() {
+    void testCombineContent() {
         // Setup test data
         String directoryStructure = "src/\n  main/\n  test/\n";
         String fileContents = "--- TestFile.java ---\npublic class TestFile { }";
@@ -97,7 +97,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testJavadocRemoval_WhenEnabled() throws IOException {
+    void testJavadocRemoval_WhenEnabled() throws IOException {
         // Setup content with Javadoc
         String fileContent = "/**\n * Test Javadoc comment\n */\npublic class Test {\n    // Regular comment\n    private String field;\n}";
         InputStream contentStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
@@ -119,7 +119,7 @@ public class ContentExtractorTest {
     }
 
     @Test
-    public void testJavadocRetention_WhenDisabled() throws IOException {
+    void testJavadocRetention_WhenDisabled() throws IOException {
         // Setup content with Javadoc
         String fileContent = "/**\n * Test Javadoc comment\n */\npublic class Test {\n    // Regular comment\n    private String field;\n}";
         InputStream contentStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));

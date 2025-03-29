@@ -23,18 +23,56 @@ import java.util.concurrent.CancellationException;
 public abstract class AbstractPromptExecutionStrategy implements PromptExecutionStrategy {
     
     protected final Project project;
-    protected final ChatMemoryManager chatMemoryManager;
-    protected final ThreadPoolManager threadPoolManager;
+    protected ChatMemoryManager chatMemoryManager;
+    protected ThreadPoolManager threadPoolManager;
+    protected MessageCreationService messageCreationService;
     
     /**
      * Constructor for AbstractPromptExecutionStrategy.
      *
      * @param project The IntelliJ project
      */
-    public AbstractPromptExecutionStrategy(@NotNull Project project) {
+    protected AbstractPromptExecutionStrategy(@NotNull Project project) {
         this.project = project;
         this.chatMemoryManager = ChatMemoryManager.getInstance();
         this.threadPoolManager = ThreadPoolManager.getInstance();
+        this.messageCreationService = MessageCreationService.getInstance();
+    }
+    
+    /**
+     * Constructor for AbstractPromptExecutionStrategy that allows dependency injection.
+     * Primarily used for testing.
+     *
+     * @param project The IntelliJ project
+     * @param chatMemoryManager The chat memory manager
+     * @param threadPoolManager The thread pool manager
+     */
+    protected AbstractPromptExecutionStrategy(@NotNull Project project,
+                                           @NotNull ChatMemoryManager chatMemoryManager,
+                                           @NotNull ThreadPoolManager threadPoolManager) {
+        this.project = project;
+        this.chatMemoryManager = chatMemoryManager;
+        this.threadPoolManager = threadPoolManager;
+        this.messageCreationService = MessageCreationService.getInstance();
+    }
+    
+    /**
+     * Constructor for AbstractPromptExecutionStrategy that allows full dependency injection.
+     * Primarily used for testing.
+     *
+     * @param project The IntelliJ project
+     * @param chatMemoryManager The chat memory manager
+     * @param threadPoolManager The thread pool manager
+     * @param messageCreationService The message creation service
+     */
+    protected AbstractPromptExecutionStrategy(@NotNull Project project,
+                                           @NotNull ChatMemoryManager chatMemoryManager,
+                                           @NotNull ThreadPoolManager threadPoolManager,
+                                           @NotNull MessageCreationService messageCreationService) {
+        this.project = project;
+        this.chatMemoryManager = chatMemoryManager;
+        this.threadPoolManager = threadPoolManager;
+        this.messageCreationService = messageCreationService;
     }
     
     @Override
@@ -69,10 +107,9 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      * @param panel The UI panel
      * @param resultTask The task to complete with results
      */
-    protected abstract void executeStrategySpecific(
-        @NotNull ChatMessageContext context,
-        @NotNull PromptOutputPanel panel,
-        @NotNull PromptTask<PromptResult> resultTask);
+    protected abstract void executeStrategySpecific(ChatMessageContext context,
+                                                    PromptOutputPanel panel,
+                                                    PromptTask<PromptResult> resultTask);
     
     /**
      * Returns the name of the strategy for logging purposes.
@@ -86,12 +123,12 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      *
      * @param context The chat message context
      */
-    protected void prepareMemory(@NotNull ChatMessageContext context) {
+    public void prepareMemory(ChatMessageContext context) {
         // Prepare memory with system message if needed and add user message
         log.debug("Before memory preparation - context ID: {}", context.getId());
         chatMemoryManager.prepareMemory(context);
         // Add context information to the user message before adding to memory
-        MessageCreationService.getInstance().addUserMessageToContext(context);
+        messageCreationService.addUserMessageToContext(context);
         // Now add the enriched user message to chat memory
         chatMemoryManager.addUserMessage(context);
     }

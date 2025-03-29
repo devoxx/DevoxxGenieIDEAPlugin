@@ -12,7 +12,7 @@ import org.mockito.MockedStatic;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class TokenCalculatorTest {
+class TokenCalculatorTest {
 
     private Encoding mockEncoding;
 

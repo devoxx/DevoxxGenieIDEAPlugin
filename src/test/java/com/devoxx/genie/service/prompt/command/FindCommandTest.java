@@ -6,22 +6,22 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class FindCommandTest {
+@ExtendWith(MockitoExtension.class)
+class FindCommandTest {
 
     @Mock
     private ChatMessageContext context;
@@ -37,14 +37,14 @@ public class FindCommandTest {
     
     private FindCommand command;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         command = new FindCommand();
-        when(context.getProject()).thenReturn(project);
+        // Removed the unnecessary stubbing from here
     }
 
     @Test
-    public void testMatches_WithFindCommand() {
+    void testMatches_WithFindCommand() {
         // Test with exact find command
         assertTrue(command.matches(Constant.COMMAND_PREFIX + Constant.FIND_COMMAND));
         
@@ -56,7 +56,7 @@ public class FindCommandTest {
     }
     
     @Test
-    public void testMatches_WithNonFindCommand() {
+    void testMatches_WithNonFindCommand() {
         // Test with non-find command
         assertFalse(command.matches(Constant.COMMAND_PREFIX + "not-find"));
         
@@ -68,8 +68,8 @@ public class FindCommandTest {
     }
     
     @Test
-    public void testProcess_WithRAGEnabledAndActivated() {
-        // Set up context
+    void testProcess_WithRAGEnabledAndActivated() {
+        // Set up context with needed stubbings for this test
         when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + Constant.FIND_COMMAND + " search query");
         
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
@@ -98,7 +98,10 @@ public class FindCommandTest {
     }
     
     @Test
-    public void testProcess_WithRAGDisabled() {
+    void testProcess_WithRAGDisabled() {
+        // Set up project stubbing only where it's needed
+        when(context.getProject()).thenReturn(project);
+        
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
              MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
             
@@ -124,7 +127,10 @@ public class FindCommandTest {
     }
     
     @Test
-    public void testProcess_WithRAGEnabledButNotActivated() {
+    void testProcess_WithRAGEnabledButNotActivated() {
+        // Set up project stubbing only where it's needed
+        when(context.getProject()).thenReturn(project);
+        
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
              MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
             
