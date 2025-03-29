@@ -166,8 +166,7 @@ public class NonStreamingPromptExecutionService {
                         .build();
             }
 
-            // Add extra user message context
-            MessageCreationService.getInstance().addUserMessageToContext(chatMessageContext);
+            // The context is already added in AbstractPromptExecutionStrategy.prepareMemory()
 
             if (chatMessageContext.getUserMessage().hasSingleText()) {
                 String queryResponse = assistant.chat(chatMessageContext.getUserMessage().singleText());

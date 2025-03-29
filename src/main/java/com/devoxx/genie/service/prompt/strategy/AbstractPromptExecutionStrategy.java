@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
@@ -86,7 +87,13 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      * @param context The chat message context
      */
     protected void prepareMemory(@NotNull ChatMessageContext context) {
+        // Prepare memory with system message if needed and add user message
+        log.debug("Before memory preparation - context ID: {}", context.getId());
         chatMemoryManager.prepareMemory(context);
+        // Add context information to the user message before adding to memory
+        MessageCreationService.getInstance().addUserMessageToContext(context);
+        // Now add the enriched user message to chat memory
+        chatMemoryManager.addUserMessage(context);
     }
     
     /**
