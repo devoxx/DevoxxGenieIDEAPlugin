@@ -218,26 +218,6 @@ public class ChatMemoryManager {
             throw new MemoryException("Failed to get chat memory", e);
         }
     }
-    
-    /**
-     * Logs the current state of the chat memory for debugging purposes
-     * @param project The project to log memory for
-     */
-    public void logMemoryState(@NotNull Project project) {
-        try {
-            List<ChatMessage> messages = getMessages(project);
-            log.debug("Current memory state for project {}, total messages: {}", project.getName(), messages.size());
-            
-            for (int i = 0; i < messages.size(); i++) {
-                ChatMessage message = messages.get(i);
-                String type = message.getClass().getSimpleName();
-                String content = message.toString();
-                log.debug("Message[{}] - Type: {} - Content: {}", i, type, content);
-            }
-        } catch (Exception e) {
-            log.warn("Failed to log memory state: {}", e.getMessage());
-        }
-    }
 
     /**
      * Restores a conversation from a saved model
