@@ -82,4 +82,14 @@ public class MCPService {
             log.info("[MCP Debug] {}", message);
         }
     }
+    
+    /**
+     * Check if MCP messages should be shown in UI components
+     * Convenience method that checks both if MCP is enabled and if debug logs are enabled
+     * 
+     * @return true if MCP messages should be shown in UI components
+     */
+    public static boolean shouldShowMCPMessages() {
+        return isMCPEnabled() && isDebugLogsEnabled();
+    }
 }

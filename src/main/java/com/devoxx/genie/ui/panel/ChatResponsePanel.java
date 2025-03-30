@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.panel.chatresponse.*;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,11 @@ public class ChatResponsePanel extends BackgroundPanel {
 
         if (chatMessageContext.getSemanticReferences() != null && !chatMessageContext.getSemanticReferences().isEmpty()) {
             add(new SemanticSearchReferencesPanel(chatMessageContext));
+        }
+        
+        // Add MCP message panel if MCP is enabled
+        if (MCPService.shouldShowMCPMessages()) {
+            add(new MCPMessagePanel(chatMessageContext));
         }
 
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowExecutionTime())) {
