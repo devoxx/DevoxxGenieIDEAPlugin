@@ -51,7 +51,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     private static final int BATCH_SIZE = 20; // Process logs in batches for better performance
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
-    private final Project project;
+    private final transient Project project;
     private final DefaultListModel<LogEntry> logListModel;
     private final JBList<LogEntry> logList;
     private final List<LogEntry> fullLogs = new ArrayList<>();
@@ -110,12 +110,11 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         
         // Delay subscription to MCP logging messages for better initial performance
         // This ensures the UI is fully constructed before handling logs
-        ApplicationManager.getApplication().invokeLater(() -> {
-            MessageBusUtil.connect(project, connection -> {
-                MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
-                Disposer.register(this, connection);
-            });
-        });
+        ApplicationManager.getApplication().invokeLater(() ->
+                MessageBusUtil.connect(project, connection -> {
+                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
+                    Disposer.register(this, connection);
+                }));
     }
 
     private void setupToolbar() {

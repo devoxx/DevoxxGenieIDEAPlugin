@@ -2,9 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.panel.chatresponse.MCPMessagePanel;
 import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.intellij.openapi.application.ApplicationManager;
@@ -51,11 +49,6 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
             java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
             ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
             add(fileListPanel);
-        }
-        
-        // Add MCP message panel if MCP is enabled
-        if (MCPService.shouldShowMCPMessages()) {
-            add(new MCPMessagePanel(chatMessageContext));
         }
 
         parser = Parser.builder().build();

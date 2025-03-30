@@ -1,8 +1,7 @@
-package com.devoxx.genie.service.prompt.nonstreaming;
+package com.devoxx.genie.service.prompt.response.nonstreaming;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -165,8 +164,6 @@ public class NonStreamingPromptExecutionService {
                         .chatMemoryProvider(memoryId -> chatMemory)
                         .build();
             }
-
-            // The context is already added in AbstractPromptExecutionStrategy.prepareMemory()
 
             if (chatMessageContext.getUserMessage().hasSingleText()) {
                 String queryResponse = assistant.chat(chatMessageContext.getUserMessage().singleText());

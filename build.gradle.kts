@@ -67,6 +67,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
