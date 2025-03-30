@@ -1,5 +1,10 @@
 package com.devoxx.genie.service.mcp;
 
+import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -13,8 +18,11 @@ import java.util.List;
 
 @Slf4j
 public class MCPListenerService implements ChatModelListener {
+
     @Override
     public void onRequest(@NotNull ChatModelRequestContext requestContext) {
+        log.debug("onRequest: {}", requestContext.chatRequest().toString());
+
         List<ChatMessage> messages = requestContext.chatRequest().messages();
         if (!messages.isEmpty() && messages.size() > 2) {
             ChatMessage chatMessage = messages.get(messages.size() - 2);
@@ -24,15 +32,31 @@ public class MCPListenerService implements ChatModelListener {
             } else if (chatMessage instanceof AiMessage aiMessage) {
                 if (aiMessage.text() != null && !aiMessage.text().isEmpty()) {
                     log.debug(">>> AI msg: {}", aiMessage.text());
+                    postMessage(MCPMessage.builder()
+                            .type(MCPType.AI_MSG)
+                            .content(aiMessage.text())
+                            .build());
                 }
                 if (aiMessage.hasToolExecutionRequests() && !aiMessage.toolExecutionRequests().isEmpty()) {
                     List<ToolExecutionRequest> toolExecutionRequests = aiMessage.toolExecutionRequests();
                     if (toolExecutionRequests != null && !toolExecutionRequests.isEmpty()) {
                         ToolExecutionRequest toolExecutionRequest = toolExecutionRequests.get(0);
                         log.debug(">>> Tool msg: {}", toolExecutionRequest.arguments());
+                        postMessage(MCPMessage.builder()
+                                .type(MCPType.TOOL_MSG)
+                                .content(toolExecutionRequest.arguments())
+                                .build());
                     }
                 }
             }
+        }
+    }
+
+    private static void postMessage(MCPMessage mcpMessage) {
+        if (mcpMessage != null && MCPService.isDebugLogsEnabled()) {
+            MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+            messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
+                    .onMCPLoggingMessage(mcpMessage);
         }
     }
 }

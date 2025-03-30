@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.panel.mcp;
 
+import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -316,15 +317,15 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     }
     
     @Override
-    public void onMCPLoggingMessage(String message) {
-        if (message == null || message.isEmpty() || isPaused) {
+    public void onMCPLoggingMessage(MCPMessage message) {
+        if (message == null || isPaused) {
             return;
         }
         
         // Create a new log entry with timestamp
         LogEntry entry = new LogEntry(
                 LocalDateTime.now().format(TIME_FORMATTER),
-                message
+                message.getContent()
         );
         
         // Add to pending logs for batch processing

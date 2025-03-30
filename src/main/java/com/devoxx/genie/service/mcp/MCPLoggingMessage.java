@@ -1,5 +1,7 @@
 package com.devoxx.genie.service.mcp;
 
+import com.devoxx.genie.model.mcp.MCPMessage;
+
 public interface MCPLoggingMessage {
-    void onMCPLoggingMessage(String message);
+    void onMCPLoggingMessage(MCPMessage message);
 }
