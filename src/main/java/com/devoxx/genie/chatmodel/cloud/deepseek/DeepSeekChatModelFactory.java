@@ -28,6 +28,7 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
             .maxTokens(4_000)   // 8K Beta https://platform.deepseek.com/api-docs/quick_start/pricing
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .topP(chatModel.getTopP())
+            .listeners(getListener())
             .build();
     }
 
@@ -41,6 +42,7 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .listeners(getListener())
             .build();
     }
 

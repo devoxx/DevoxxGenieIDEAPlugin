@@ -25,6 +25,7 @@ public class LlamaChatModelFactory implements ChatModelFactory {
             .topP(chatModel.getTopP())
             .maxRetries(chatModel.getMaxRetries())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .listeners(getListener())
             .build();
     }
 

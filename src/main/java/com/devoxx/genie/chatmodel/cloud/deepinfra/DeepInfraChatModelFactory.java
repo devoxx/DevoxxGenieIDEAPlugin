@@ -28,6 +28,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
             .maxTokens(chatModel.getMaxTokens())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
             .topP(chatModel.getTopP())
+            .listeners(getListener())
             .build();
     }
 
@@ -40,6 +41,7 @@ public class DeepInfraChatModelFactory implements ChatModelFactory {
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .listeners(getListener())
             .build();
     }
 

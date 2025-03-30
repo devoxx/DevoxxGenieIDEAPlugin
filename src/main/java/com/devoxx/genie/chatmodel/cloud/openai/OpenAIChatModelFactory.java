@@ -26,6 +26,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(chatModel))
                 .maxRetries(chatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .listeners(getListener())
                 .build();
     }
 
@@ -36,6 +37,7 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(chatModel))
                 .modelName(chatModel.getModelName())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .listeners(getListener())
                 .build();
     }
 

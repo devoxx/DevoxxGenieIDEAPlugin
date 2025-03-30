@@ -22,12 +22,14 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         return OpenAiChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
-                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ? (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
+                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
+                        (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
                 .maxRetries(chatModel.getMaxRetries())
                 .temperature(chatModel.getTemperature())
                 .maxTokens(chatModel.getMaxTokens())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
                 .topP(chatModel.getTopP())
+                .listeners(getListener())
                 .build();
     }
 
@@ -37,10 +39,12 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
-                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ? (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
+                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
+                        (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
                 .temperature(chatModel.getTemperature())
                 .topP(chatModel.getTopP())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .listeners(getListener())
                 .build();
     }
 
