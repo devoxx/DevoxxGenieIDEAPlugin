@@ -1,8 +1,6 @@
 package com.devoxx.genie.ui.settings.mcp.dialog.transport;
 
 import com.devoxx.genie.model.mcp.MCPServer;
-import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
-import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;

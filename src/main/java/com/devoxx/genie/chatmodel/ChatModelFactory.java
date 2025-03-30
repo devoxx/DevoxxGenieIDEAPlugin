@@ -5,8 +5,11 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.mcp.MCPListenerService;
+import com.devoxx.genie.service.mcp.MCPService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 
 import java.util.List;
 
@@ -59,4 +62,11 @@ public interface ChatModelFactory {
      * Reset the list of local models
      */
     default void resetModels() {}
+
+    default List<ChatModelListener> getListener() {
+        if (MCPService.isMCPEnabled()) {
+            return List.of(new MCPListenerService());
+        }
+        return List.of();
+    }
 }

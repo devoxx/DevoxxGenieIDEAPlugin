@@ -5,15 +5,19 @@ import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.mcp.MCPListenerService;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 public class OllamaChatModelFactory extends LocalChatModelFactory {
 
@@ -23,6 +27,7 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+
         return OllamaChatModel.builder()
                 .baseUrl(DevoxxGenieStateService.getInstance().getOllamaModelUrl())
                 .modelName(chatModel.getModelName())
@@ -30,6 +35,7 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .topP(chatModel.getTopP())
                 .maxRetries(chatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .listeners(getListener())
                 .build();
     }
 

@@ -4,6 +4,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -49,6 +51,9 @@ public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
         // Publish the log message to the log panel
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
         messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
-                  .onMCPLoggingMessage(eventObject.getFormattedMessage());
+                  .onMCPLoggingMessage(MCPMessage.builder()
+                          .type(MCPType.LOG_MSG)
+                          .content(eventObject.getFormattedMessage())
+                          .build());
     }
 }

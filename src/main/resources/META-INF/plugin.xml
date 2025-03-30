@@ -637,7 +637,7 @@
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.nonstreaming.NonStreamingPromptExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.ThreadPoolManager"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.PromptTaskTracker"/>

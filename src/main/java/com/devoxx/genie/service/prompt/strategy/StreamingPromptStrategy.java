@@ -6,7 +6,7 @@ import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
-import com.devoxx.genie.service.prompt.streaming.StreamingResponseHandler;
+import com.devoxx.genie.service.prompt.response.streaming.StreamingResponseHandler;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
@@ -86,6 +86,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
         // Prepare memory which already adds the user message
         prepareMemory(context);
+
+        // We need to add this to chat memory when streaming response
+        ChatMemoryManager.getInstance().addUserMessage(context);
 
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(

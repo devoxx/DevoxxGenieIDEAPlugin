@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.prompt.streaming;
+package com.devoxx.genie.service.prompt.response.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
@@ -106,10 +106,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
     @Override
     public void onError(Throwable error) {
+        log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
         StreamingException streamingError = new StreamingException(
             "Error during streaming response", error);
         PromptErrorHandler.handleException(context.getProject(), streamingError, context);
-        log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
         onErrorCallback.accept(streamingError);
     }
 
