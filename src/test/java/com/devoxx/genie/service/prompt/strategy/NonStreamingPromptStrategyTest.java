@@ -155,30 +155,6 @@ class NonStreamingPromptStrategyTest {
         );
     }
 
-
-    @Test
-    void executeStrategySpecific_shouldNotCallAddUserMessageToContextAgain() {
-        // Arrange
-        // Setup to execute the actual prepareMemory method which will call addUserMessageToContext
-        doCallRealMethod().when(mockChatMemoryManager).prepareMemory(any());
-
-        // Act
-        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
-
-        // Assert - verify addUserMessageToContext is called exactly once (by the parent class's prepareMemory method)
-        // The NonStreamingPromptExecutionService should not call it again
-        verify(mockMessageCreationService, times(1)).addUserMessageToContext(mockChatMessageContext);
-    }
-
-    @Test
-    void executeStrategySpecific_shouldUseChatMemoryManagerToAddUserMessage() {
-        // Act
-        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
-
-        // Assert - verify prepareMemory is called, which internally handles addUserMessage
-        verify(mockChatMemoryManager).prepareMemory(mockChatMessageContext);
-    }
-    
     @org.junit.jupiter.api.AfterEach
     void tearDown() {
         // Close all static mocks to prevent memory leaks

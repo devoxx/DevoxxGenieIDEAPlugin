@@ -40,6 +40,7 @@
             <Li>Feat #586 : Added Gemini 2.5 Pro model by @stephanj</LI>
             <LI>Fix #588 : [Regression] Fix streaming responses by @stephanj</LI>
             <LI>Feat #590 : User can now configure which keys to use for newline by @stephanj</LI>
+            <LI>Fix #595 : At least one message is required by @stephanj</LI>
         </UL>
         <h2>v0.5.2</h2>
         <UL>
