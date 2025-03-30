@@ -18,6 +18,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.scale.JBUIScale;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,12 +76,16 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
 
     public void updateFontSize() {
         int fontSize = (int) JBUIScale.scale(14f) + 6;
-
-        setMaximumSize(new Dimension(fontSize * 3, 30));
-
-        conversationButtonPanel.setPreferredSize(new Dimension(fontSize * 3, 30));
-        conversationButtonPanel.setMinimumSize(new Dimension(fontSize * 3, 30));
-
+        
+        // Calculate sufficient width for the buttons based on zoom level
+        // Use a multiplier that ensures enough space even at high zoom levels
+        int buttonPanelWidth = (int) JBUIScale.scale(120); // Absolute width based on scale
+        
+        setMaximumSize(new Dimension(buttonPanelWidth, 30));
+        
+        conversationButtonPanel.setPreferredSize(new Dimension(buttonPanelWidth, 30));
+        conversationButtonPanel.setMinimumSize(new Dimension(buttonPanelWidth, 30));
+        
         revalidate();
         repaint();
     }
@@ -102,6 +107,10 @@ public class ConversationPanel extends JPanel implements ConversationSelectionLi
      * @return the button panel
      */
     private @NotNull JPanel createButtonPanel() {
+        // Add spacing between buttons to avoid overlapping
+        FlowLayout layout = (FlowLayout) conversationButtonPanel.getLayout();
+        layout.setHgap(JBUI.scale(10)); // Add horizontal gap between buttons
+        
         conversationButtonPanel.add(createActionButton(PlusIcon, e -> startNewConversation()));
         conversationButtonPanel.add(createActionButton(ClockIcon, e -> showConversationHistory()));
 
