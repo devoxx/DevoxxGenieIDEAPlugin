@@ -43,6 +43,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             .temperature(chatModel.getTemperature())
             .topP(chatModel.getTopP())
             .maxTokens(chatModel.getMaxTokens())
+            .listeners(getListener())
             .build();
     }
 

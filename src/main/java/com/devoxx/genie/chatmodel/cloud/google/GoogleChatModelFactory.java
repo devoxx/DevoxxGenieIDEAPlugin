@@ -23,6 +23,7 @@ public class GoogleChatModelFactory implements ChatModelFactory {
             .modelName(chatModel.getModelName())
             .temperature(chatModel.getTemperature())
             .maxOutputTokens(chatModel.getMaxTokens())
+            .listeners(getListener())
             .build();
     }
 
@@ -33,6 +34,7 @@ public class GoogleChatModelFactory implements ChatModelFactory {
                 .modelName(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
                 .maxOutputTokens(chatModel.getMaxTokens())
+                .listeners(getListener())
                 .build();
     }
 
