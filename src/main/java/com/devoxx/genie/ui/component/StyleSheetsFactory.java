@@ -5,6 +5,7 @@ import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StyleSheetUtil;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,10 +18,14 @@ public class StyleSheetsFactory {
 
     @Contract(" -> new")
     public static @NotNull StyleSheet createCodeStyleSheet() {
+        // Use editor font size instead of hardcoded value and account for IDE scale factor
+        int editorFontSize = EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize();
+        // Use JBUI.scale to account for IDE zoom/scaling settings
+        int scaledFontSize = com.intellij.util.ui.JBUI.scale(editorFontSize);
         return StyleSheetUtil.loadStyleSheet(
             "code, pre, .pre { " +
                 "   font-family: '" + SOURCE_CODE_PRO_FONT + "'; " +
-                "   font-size: 14pt;" +
+                "   font-size: " + scaledFontSize + "px;" +
                 "}"
         );
     }
@@ -41,7 +46,7 @@ public class StyleSheetsFactory {
                 "li { padding: " + JBUIScale.scale(1) + "px 0 " + JBUIScale.scale(2) + "px 0; }" +
                 "code, pre, .pre { " +
                 "   font-family: '" + SOURCE_CODE_PRO_FONT + "'; " +
-                "   font-size: 14pt;" +
+                "   font-size: " + com.intellij.util.ui.JBUI.scale(EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize()) + "px;" +
                 "   color: orange" +
                 "}" +
                 "hr {" +

@@ -17,6 +17,7 @@ import org.commonmark.renderer.NodeRenderer;
 import org.commonmark.renderer.html.HtmlNodeRendererContext;
 import org.commonmark.renderer.html.HtmlWriter;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +71,11 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
 
         // Critical: we need to handle newlines properly in the code tag
         Map<String, String> codeStyle = new HashMap<>();
-        codeStyle.put("style", "font-size:14pt; white-space: pre !important; -webkit-user-select: text; user-select: text;");
+        // Use editor font size instead of hardcoded value and account for IDE scale factor
+        int editorFontSize = EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize();
+        // Use JBUI.scale to account for IDE zoom/scaling settings
+        int scaledFontSize = com.intellij.util.ui.JBUI.scale(editorFontSize);
+        codeStyle.put("style", "font-size:" + scaledFontSize + "px; white-space: pre !important; -webkit-user-select: text; user-select: text;");
         htmlOutputWriter.tag("code", codeStyle);
 
         HighlightingMode highlightingMode = determineHighlightingMode(block);

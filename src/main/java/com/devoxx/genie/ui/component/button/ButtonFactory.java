@@ -54,8 +54,10 @@ public class ButtonFactory {
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         if (label == null || label.isEmpty()) {
-            int fontSize = (int) JBUIScale.scale(14f) + 6;
-            button.setPreferredSize(new Dimension(fontSize, 30));
+            // For icon-only buttons, ensure they have enough space at all zoom levels
+            int buttonSize = (int) JBUIScale.scale(28);
+            button.setPreferredSize(new Dimension(buttonSize, buttonSize));
+            button.setMinimumSize(new Dimension(buttonSize, buttonSize));
         }
         
         return button;

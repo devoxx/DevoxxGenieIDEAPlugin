@@ -8,7 +8,9 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
+import com.devoxx.genie.ui.renderer.ModelProviderRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -59,7 +61,13 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         super(new BorderLayout());
         this.project = project;
 
+        // Set consistent renderers and fonts for both combo boxes
+        modelProviderComboBox.setRenderer(new ModelProviderRenderer());
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
+        
+        // Set the font for the combo boxes themselves
+        modelProviderComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+        modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
 
         addModelProvidersToComboBox();
 
@@ -157,6 +165,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
                 updateModelNamesComboBox(selectedProvider.getName());
                 modelNameComboBox.setRenderer(new ModelInfoRenderer());
+                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
                 modelNameComboBox.revalidate();
                 modelNameComboBox.repaint();
                 refreshButton.setEnabled(true);
@@ -176,6 +185,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             try {
                 modelNameComboBox.removeAllItems();
                 modelNameComboBox.setVisible(true);
+                // Ensure font consistency is maintained when updating
+                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
 
                 ChatModelFactoryProvider
                         .getFactoryByProvider(provider)
@@ -293,6 +304,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 updateModelNamesComboBox(modelProvider.getName());
 
                 modelNameComboBox.setRenderer(new ModelInfoRenderer());
+                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
                 modelNameComboBox.revalidate();
                 modelNameComboBox.repaint();
             }

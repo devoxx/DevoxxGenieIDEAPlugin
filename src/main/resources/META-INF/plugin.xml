@@ -41,6 +41,7 @@
             <LI>Fix #588 : [Regression] Fix streaming responses by @stephanj</LI>
             <LI>Feat #590 : User can now configure which keys to use for newline by @stephanj</LI>
             <LI>Fix #595 : At least one message is required (increased default chat memory to 50) by @stephanj</LI>
+            <LI>Fix #589 : Font size for code snippets by @stephanj</LI>
         </UL>
         <h2>v0.5.2</h2>
         <UL>

@@ -5,6 +5,7 @@ import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
+import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,8 +21,10 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         add(nameLabel, BorderLayout.WEST);
         add(infoLabel, BorderLayout.EAST);
         setBorder(JBUI.Borders.empty(2));
-
-        infoLabel.setFont(JBUI.Fonts.smallFont());
+        
+        // Use the centralized fonts for consistent styling
+        nameLabel.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+        infoLabel.setFont(DevoxxGenieFontsUtil.getDropdownInfoFont());
         infoLabel.setForeground(JBColor.GRAY);
     }
 
@@ -53,7 +56,10 @@ public class ModelInfoRenderer extends JPanel implements ListCellRenderer<Langua
         setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
         setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
         setEnabled(list.isEnabled());
-        setFont(list.getFont());
+        
+        // Always ensure the fonts are set correctly (protection against JList overriding them)
+        nameLabel.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+        infoLabel.setFont(DevoxxGenieFontsUtil.getDropdownInfoFont());
 
         return this;
     }
