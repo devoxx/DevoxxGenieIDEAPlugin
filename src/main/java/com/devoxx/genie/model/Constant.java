@@ -54,7 +54,7 @@ public class Constant {
     public static final Integer MAX_OUTPUT_TOKENS = 4000;
     public static final Integer MAX_RETRIES = 1;
     public static final Integer TIMEOUT = 180;
-    public static final Integer MAX_MEMORY = 10;
+    public static final Integer MAX_MEMORY = 50;
 
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;

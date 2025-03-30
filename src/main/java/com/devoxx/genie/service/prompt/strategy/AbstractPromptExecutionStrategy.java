@@ -5,11 +5,13 @@ import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.UserMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -126,11 +128,18 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
     public void prepareMemory(ChatMessageContext context) {
         // Prepare memory with system message if needed and add user message
         log.debug("Before memory preparation - context ID: {}", context.getId());
+
         chatMemoryManager.prepareMemory(context);
+
         // Add context information to the user message before adding to memory
         messageCreationService.addUserMessageToContext(context);
-        // Now add the enriched user message to chat memory
-        chatMemoryManager.addUserMessage(context);
+
+        // Check if user message was properly created
+        if (context.getUserMessage() == null) {
+            log.error("Failed to create user message for context ID: {}", context.getId());
+            // Create a fallback user message if needed
+            context.setUserMessage(UserMessage.from(context.getUserPrompt()));
+        }
     }
     
     /**

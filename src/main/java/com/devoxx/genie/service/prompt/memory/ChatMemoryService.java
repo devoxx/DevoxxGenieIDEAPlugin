@@ -23,6 +23,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ChatMemoryService implements ChatMemoryProvider {
 
+    public static final String CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT = "Chat memory not initialized for project: ";
+    public static final String FAILED_TO_REMOVE_MESSAGES_FROM_MEMORY = "Failed to remove messages from memory";
+    public static final String FAILED_TO_GET_CHAT_MEMORY_FOR_PROJECT_HASH = "Failed to get chat memory for project hash: ";
+    public static final String FAILED_TO_INITIALIZE_CHAT_MEMORY_FOR_PROJECT = "Failed to initialize chat memory for project: ";
+    public static final String FAILED_TO_CLEAR_MEMORY = "Failed to clear memory";
+    public static final String FAILED_TO_ADD_MESSAGE_TO_MEMORY = "Failed to add message to memory";
+    public static final String FAILED_TO_GET_MESSAGES_FROM_MEMORY = "Failed to get messages from memory";
+    public static final String FAILED_TO_CHECK_IF_MEMORY_IS_EMPTY = "Failed to check if memory is empty";
+    public static final String FAILED_TO_REMOVE_LAST_MESSAGE_FROM_MEMORY = "Failed to remove last message from memory";
+
     private final Map<String, MessageWindowChatMemory> projectConversations = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
 
@@ -48,7 +58,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
 
             createChatMemory(projectHash, chatMemorySize);
         } catch (Exception e) {
-            throw new MemoryException("Failed to initialize chat memory for project: " + projectHash, e);
+            throw new MemoryException(FAILED_TO_INITIALIZE_CHAT_MEMORY_FOR_PROJECT + projectHash, e);
         }
     }
 
@@ -67,7 +77,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
                 log.warn("Attempted to clear memory for non-existent project: {}", projectHash);
             }
         } catch (Exception e) {
-            throw new MemoryException("Failed to clear memory", e);
+            throw new MemoryException(FAILED_TO_CLEAR_MEMORY, e);
         }
     }
 
@@ -101,11 +111,11 @@ public class ChatMemoryService implements ChatMemoryProvider {
                 memory.add(chatMessage);
                 log.debug("Successfully added message to project: {}, message type: {}", projectHash, chatMessage.getClass().getSimpleName());
             } else {
-                throw new MemoryException("Chat memory not initialized for project: " + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
-                throw new MemoryException("Failed to add message to memory", e);
+                throw new MemoryException(FAILED_TO_ADD_MESSAGE_TO_MEMORY, e);
             }
             throw e;
         }
@@ -123,11 +133,11 @@ public class ChatMemoryService implements ChatMemoryProvider {
             if (memory != null) {
                 return memory.messages();
             } else {
-                throw new MemoryException("Chat memory not initialized for project: " + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
-                throw new MemoryException("Failed to get messages from memory", e);
+                throw new MemoryException(FAILED_TO_GET_MESSAGES_FROM_MEMORY, e);
             }
             throw e;
         }
@@ -149,7 +159,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
                 return true;
             }
         } catch (Exception e) {
-            throw new MemoryException("Failed to check if memory is empty", e);
+            throw new MemoryException(FAILED_TO_CHECK_IF_MEMORY_IS_EMPTY, e);
         }
     }
 
@@ -176,11 +186,11 @@ public class ChatMemoryService implements ChatMemoryProvider {
                             lastMessage.getClass().getSimpleName(), projectHash);
                 }
             } else {
-                throw new MemoryException("Chat memory not initialized for project: " + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
-                throw new MemoryException("Failed to remove last message from memory", e);
+                throw new MemoryException(FAILED_TO_REMOVE_LAST_MESSAGE_FROM_MEMORY, e);
             }
             throw e;
         }
@@ -212,11 +222,11 @@ public class ChatMemoryService implements ChatMemoryProvider {
                             messagesToRemove.size(), projectHash);
                 }
             } else {
-                throw new MemoryException("Chat memory not initialized for project: " + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
-                throw new MemoryException("Failed to remove messages from memory", e);
+                throw new MemoryException(FAILED_TO_REMOVE_MESSAGES_FROM_MEMORY, e);
             }
             throw e;
         }
@@ -242,7 +252,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
         try {
             return projectConversations.get(projectHash.toString());
         } catch (Exception e) {
-            throw new MemoryException("Failed to get chat memory for project hash: " + projectHash, e);
+            throw new MemoryException(FAILED_TO_GET_CHAT_MEMORY_FOR_PROJECT_HASH + projectHash, e);
         }
     }
 }

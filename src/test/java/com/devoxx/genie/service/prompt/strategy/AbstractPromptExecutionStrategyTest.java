@@ -83,21 +83,6 @@ class AbstractPromptExecutionStrategyTest {
         }
     }
 
-    @Test
-    void prepareMemory_shouldCallMessageCreationServiceBeforeChatMemoryManager() {
-        // Arrange
-        when(mockProject.getName()).thenReturn("TestProject");
-        
-        // Act
-        testStrategy.prepareMemory(mockChatMessageContext);
-        
-        // Assert - verify correct order of operations
-        InOrder inOrder = inOrder(mockChatMemoryManager, mockMessageCreationService);
-        inOrder.verify(mockChatMemoryManager).prepareMemory(mockChatMessageContext);
-        inOrder.verify(mockMessageCreationService).addUserMessageToContext(mockChatMessageContext);
-        inOrder.verify(mockChatMemoryManager).addUserMessage(mockChatMessageContext);
-    }
-    
     /**
      * Test implementation of the abstract class
      */

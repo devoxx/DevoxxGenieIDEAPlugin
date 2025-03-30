@@ -70,6 +70,8 @@ public class MessageCreationService {
      * @param chatMessageContext the chat message context
      */
     public void addUserMessageToContext(@NotNull ChatMessageContext chatMessageContext) {
+        log.debug("Adding user message to context: userPrompt={}", chatMessageContext.getUserPrompt());
+
         // Check if user message already exists to prevent duplicates
         if (chatMessageContext.getUserMessage() != null) {
             // Message already exists, skip creating another one

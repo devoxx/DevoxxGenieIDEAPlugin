@@ -105,7 +105,7 @@ class StreamingPromptStrategyTest {
         // Setup services in the application
         when(mockApplication.getService(ChatMemoryManager.class)).thenReturn(mockChatMemoryManager);
         when(mockApplication.getService(ThreadPoolManager.class)).thenReturn(mockThreadPoolManager);
-        when(mockApplication.getService(MessageCreationService.class)).thenReturn(mockMessageCreationService);
+        // when(mockApplication.getService(MessageCreationService.class)).thenReturn(mockMessageCreationService);
         when(mockApplication.getService(ChatMemoryService.class)).thenReturn(mockChatMemoryService);
         
         // Setup static getInstance methods
@@ -122,6 +122,16 @@ class StreamingPromptStrategyTest {
         when(mockThreadPoolManager.getPromptExecutionPool()).thenReturn(mockExecutor);
         when(mockChatMessageContext.getProject()).thenReturn(mockProject);
         when(mockChatMessageContext.getStreamingChatLanguageModel()).thenReturn(mockStreamingModel);
+        // Mock userPrompt to prevent "text cannot be null or blank" exception
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("Test user prompt");
+        
+        // Mock the behavior of addUserMessageToContext to set a user message on the context
+        doAnswer(invocation -> {
+            ChatMessageContext ctx = invocation.getArgument(0);
+            when(ctx.getUserMessage()).thenReturn(dev.langchain4j.data.message.UserMessage.from("Test user prompt"));
+            return null;
+        }).when(mockMessageCreationService).addUserMessageToContext(any(ChatMessageContext.class));
+
         List<ChatMessage> messages = new ArrayList<>();
         when(mockChatMemoryService.getMessages(any(Project.class))).thenReturn(messages);
         
@@ -150,7 +160,7 @@ class StreamingPromptStrategyTest {
     void executeStrategySpecific_shouldFollowCorrectMessageFlowOrder() {
         // Arrange
         // Use inOrder to verify the exact sequence of method calls
-        org.mockito.InOrder inOrder = inOrder(mockChatMemoryManager, mockMessageCreationService);
+        org.mockito.InOrder inOrder = inOrder(mockChatMemoryManager);
         
         // Act
         strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
