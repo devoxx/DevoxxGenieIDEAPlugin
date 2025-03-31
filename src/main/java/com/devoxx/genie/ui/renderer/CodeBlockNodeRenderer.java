@@ -50,8 +50,8 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
 
     @Override
     public void render(Node node) {
-        if (node instanceof IndentedCodeBlock) {
-            renderNode(((IndentedCodeBlock) node).getLiteral(), true);
+        if (node instanceof IndentedCodeBlock indentedCodeBlock) {
+            renderNode(indentedCodeBlock.getLiteral(), true);
         } else if (node instanceof FencedCodeBlock fencedCodeBlock) {
             renderNode(fencedCodeBlock.getLiteral(), fencedCodeBlock.getInfo(), true);
         } else if (node instanceof Code code) {
@@ -73,9 +73,11 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
         Map<String, String> codeStyle = new HashMap<>();
         // Use editor font size instead of hardcoded value and account for IDE scale factor
         int editorFontSize = EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize();
+
         // Use JBUI.scale to account for IDE zoom/scaling settings
         int scaledFontSize = com.intellij.util.ui.JBUI.scale(editorFontSize);
-        codeStyle.put("style", "font-size:" + scaledFontSize + "px; white-space: pre !important; -webkit-user-select: text; user-select: text;");
+        codeStyle.put("style", "font-size:" + scaledFontSize + "pt; white-space: pre-wrap !important; overflow-x: auto; -webkit-user-select: text; user-select: text;");
+
         htmlOutputWriter.tag("code", codeStyle);
 
         HighlightingMode highlightingMode = determineHighlightingMode(block);

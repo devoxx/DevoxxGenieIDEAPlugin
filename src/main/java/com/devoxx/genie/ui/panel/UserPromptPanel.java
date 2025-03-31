@@ -35,6 +35,8 @@ public class UserPromptPanel extends BackgroundPanel {
                 StyleSheetsFactory.createParagraphStyleSheet()
             );
 
+        htmlJEditorPane.setBorder(BorderFactory.createEmptyBorder(7, 5, 7, 10));
+
         add(headerPanel, BorderLayout.NORTH);
         add(htmlJEditorPane, BorderLayout.CENTER);
     }
@@ -44,8 +46,7 @@ public class UserPromptPanel extends BackgroundPanel {
      */
     private @NotNull JBLabel createHeaderLabel() {
         JBLabel createdOnLabel = new JBLabel("DevoxxGenie", DevoxxIcon, SwingConstants.LEFT);
-        createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
-        createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
+        createdOnLabel.setBorder(BorderFactory.createEmptyBorder(7, 5, 7, 10));
         return createdOnLabel;
     }
 }

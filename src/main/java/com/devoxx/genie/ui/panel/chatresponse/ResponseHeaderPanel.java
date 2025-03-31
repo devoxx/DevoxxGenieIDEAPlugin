@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel.chatresponse;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.util.FontUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
@@ -17,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
+import static com.intellij.notification.impl.ui.NotificationsUtil.getFontSize;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
@@ -61,7 +63,8 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         String label = chatMessageContext.getCreatedOn().format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) + " : " + modelInfo;
 
         JBLabel createdOnLabel = new JBLabel(label, SwingConstants.LEFT);
-        createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(12f));
+        createdOnLabel.setFont(createdOnLabel.getFont().deriveFont(FontUtil.getFontSize()));
+
         createdOnLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
         return createdOnLabel;
     }
