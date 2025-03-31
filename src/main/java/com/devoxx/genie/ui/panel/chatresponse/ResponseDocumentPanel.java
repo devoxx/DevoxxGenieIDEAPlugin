@@ -24,7 +24,6 @@ public class ResponseDocumentPanel extends JPanel {
 
     public ResponseDocumentPanel(@NotNull ChatMessageContext chatMessageContext) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
         this.chatMessageContext = chatMessageContext;
 
         String markDownResponse = chatMessageContext.getAiMessage().text();
@@ -73,11 +72,11 @@ public class ResponseDocumentPanel extends JPanel {
      */
     private void addDocumentNodesToPanel(@NotNull Node document) {
         JPanel jPanel = createPanel();
-
         Node node = document.getFirstChild();
 
         while (node != null) {
             JPanel panel;
+
             if (node instanceof FencedCodeBlock fencedCodeBlock) {
                 panel = processBlock(fencedCodeBlock);
             } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
@@ -87,6 +86,7 @@ public class ResponseDocumentPanel extends JPanel {
             }
 
             setFullWidth(panel);
+
             jPanel.add(panel);
             node = node.getNext();
         }

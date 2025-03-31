@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class NodeProcessorFactory {
 
+    private NodeProcessorFactory() {}
+
     /**
      * Create a processor for the given block
      * @param chatMessageContext the chat message context

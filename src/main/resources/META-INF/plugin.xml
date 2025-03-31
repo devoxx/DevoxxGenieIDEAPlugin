@@ -39,6 +39,7 @@
         <UL>
             <LI>Feat: Show MCP Ai Message in chat output panel by @stephanj</LI>
             <LI>Fix #587 : Escape template variables by @stephanj</LI>
+            <LI>Fix #602 : Corrected the code font size by @stephanj</LI>
         </UL>
         <h2>v0.5.3</h2>
         <UL>

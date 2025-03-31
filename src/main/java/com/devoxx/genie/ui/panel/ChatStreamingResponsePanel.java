@@ -6,6 +6,8 @@ import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -17,15 +19,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_TEXT_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SourceCodeProFontPlan14;
+import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT;
 
 public class ChatStreamingResponsePanel extends BackgroundPanel {
 
     private final JEditorPane editorPane = createEditorPane();
     private final StringBuilder markdownContent = new StringBuilder();
 
-    private final Parser parser;
-    private final HtmlRenderer renderer;
+    private final transient Parser parser;
+    private final transient HtmlRenderer renderer;
 
     /**
      * Create a new chat response panel.
@@ -60,9 +62,9 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
             .builder()
             .nodeRendererFactory(context -> {
                 AtomicReference<CodeBlockNodeRenderer> codeBlockRenderer = new AtomicReference<>();
-                ApplicationManager.getApplication().runReadAction(() -> {
-                    codeBlockRenderer.getAndSet(new CodeBlockNodeRenderer(chatMessageContext.getProject(), context));
-                });
+                ApplicationManager.getApplication().runReadAction((Computable<CodeBlockNodeRenderer>) () ->
+                        codeBlockRenderer.getAndSet(new CodeBlockNodeRenderer(chatMessageContext.getProject(), context))
+                );
                 return codeBlockRenderer.get();
             })
             .escapeHtml(true)
@@ -94,11 +96,16 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
      * @return the editor pane
      */
     private @NotNull JEditorPane createEditorPane() {
-        JEditorPane editorPane = new JEditorPane();
-        editorPane.setContentType("text/html");
-        editorPane.setEditable(false);
-        editorPane.setFont(SourceCodeProFontPlan14);
-        return editorPane;
+        JEditorPane theEditorPane = new JEditorPane();
+        theEditorPane.setContentType("text/html");
+        theEditorPane.setEditable(false);
+        
+        // Use smaller fixed font size
+        int editorFontSize = EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize();
+        Font editorFont = new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, editorFontSize);
+        theEditorPane.setFont(editorFont);
+        
+        return theEditorPane;
     }
 }
 
