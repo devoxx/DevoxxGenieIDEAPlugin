@@ -4,13 +4,21 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.component.ExpandablePanel;
+import com.devoxx.genie.ui.component.JEditorPaneUtils;
+import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.HelpUtil;
+import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.data.message.AiMessage;
@@ -20,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -33,7 +43,7 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
  * help messages, and user prompts.
  */
 @Slf4j
-public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
+public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener, MCPLoggingMessage {
 
     private final transient Project project;
 
@@ -69,6 +79,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         setMinimumSize(new Dimension(200, 200));
         showWelcomeText();
+
+        ApplicationManager.getApplication().invokeLater(() ->
+                MessageBusUtil.connect(project, connection ->
+                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this)
+                ));
     }
 
     /**
@@ -261,5 +276,25 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Override
     public void onCustomPromptsChanged() {
         ApplicationManager.getApplication().invokeLater(this::updateHelpText);
+    }
+
+    @Override
+    public void onMCPLoggingMessage(@NotNull MCPMessage message) {
+        if (message.getType().equals(MCPType.AI_MSG)) {
+            String formattedContent = new SimpleDateFormat("HH:mm:ss")
+                    .format(new Date()) + " - " + message.getContent();
+
+            JEditorPane htmlJEditorPane =
+                    JEditorPaneUtils.createHtmlJEditorPane(
+                            formattedContent,
+                            null,
+                            StyleSheetsFactory.createParagraphStyleSheet()
+                    );
+
+            container.add(htmlJEditorPane);
+            container.revalidate();
+            container.repaint();
+            ApplicationManager.getApplication().invokeLater(this::scrollToBottom);
+        }
     }
 }
