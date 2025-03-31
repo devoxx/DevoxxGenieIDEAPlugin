@@ -12,9 +12,11 @@ import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ClipboardUtil;
+import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -166,12 +168,15 @@ public class NonStreamingPromptExecutionService {
             }
 
             if (chatMessageContext.getUserMessage().hasSingleText()) {
-                String queryResponse = assistant.chat(chatMessageContext.getUserMessage().singleText());
+                String cleanText = TemplateVariableEscaper.escape(chatMessageContext.getUserMessage().singleText());
+                String queryResponse = assistant.chat(cleanText);
                 return ChatResponse.builder()
                         .aiMessage(AiMessage.aiMessage(queryResponse))
                         .build();
             } else {
-                return chatLanguageModel.chat(chatMessageContext.getUserMessage());
+                UserMessage originalUserMessage = chatMessageContext.getUserMessage();
+                String cleanText = TemplateVariableEscaper.escape(originalUserMessage.singleText());
+                return chatLanguageModel.chat(UserMessage.from(cleanText));
             }
 
         } catch (Exception e) {
