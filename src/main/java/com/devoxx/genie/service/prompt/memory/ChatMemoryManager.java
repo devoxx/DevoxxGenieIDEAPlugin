@@ -7,6 +7,7 @@ import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
@@ -146,12 +147,14 @@ public class ChatMemoryManager {
         try {
             if (context.getUserMessage() == null && context.getUserPrompt() != null) {
                 // Create user message if not already set
-                context.setUserMessage(UserMessage.from(context.getUserPrompt()));
+                context.setUserMessage(UserMessage.from(TemplateVariableEscaper.escape(context.getUserPrompt())));
             }
             
             if (context.getUserMessage() != null) {
                 log.debug("Adding user message to memory for context ID: {}", context.getId());
-                chatMemoryService.addMessage(context.getProject(), context.getUserMessage());
+                UserMessage userMessage = context.getUserMessage();
+                String cleanValue = TemplateVariableEscaper.escape(userMessage.singleText());
+                chatMemoryService.addMessage(context.getProject(), UserMessage.from(cleanValue));
                 log.debug("Successfully added user message to memory");
             } else {
                 log.warn("Attempted to add null user message to memory for context ID: {}", context.getId());
