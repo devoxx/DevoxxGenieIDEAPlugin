@@ -18,7 +18,6 @@ import java.time.format.DateTimeFormatter;
 import static com.devoxx.genie.chatmodel.ChatModelFactory.TEST_MODEL;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.CopyIcon;
-import static com.intellij.notification.impl.ui.NotificationsUtil.getFontSize;
 
 public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 

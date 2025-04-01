@@ -9,7 +9,13 @@ public class FontUtil {
     private FontUtil() {}
 
     public static float getFontSize() {
-        EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
+        EditorColorsManager editorColorsManager = EditorColorsManager.getInstance();
+        if (editorColorsManager == null) {
+            // Default font size when running in test environment
+            return JBUIScale.scale(12.0f);
+        }
+        
+        EditorColorsScheme scheme = editorColorsManager.getGlobalScheme();
         float fontSize = scheme.getEditorFontSize(); // returns int (size in points)
         float scaleFactor = JBUIScale.scale(1.0f); // returns scale-adjusted value
         return fontSize * scaleFactor;
