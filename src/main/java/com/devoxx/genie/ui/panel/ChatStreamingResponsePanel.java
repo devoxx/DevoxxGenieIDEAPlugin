@@ -5,8 +5,8 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
+import com.devoxx.genie.ui.util.EditorFontUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.commonmark.parser.Parser;
@@ -100,10 +100,8 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         theEditorPane.setContentType("text/html");
         theEditorPane.setEditable(false);
         
-        // Use smaller fixed font size
-        int editorFontSize = EditorColorsManager.getInstance().getGlobalScheme().getEditorFontSize();
-        Font editorFont = new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, editorFontSize);
-        theEditorPane.setFont(editorFont);
+        // Use smaller fixed font size, with a fallback for tests
+        theEditorPane.setFont(EditorFontUtil.createEditorFont());
         
         return theEditorPane;
     }

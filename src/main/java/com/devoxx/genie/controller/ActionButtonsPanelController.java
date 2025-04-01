@@ -15,6 +15,7 @@ import com.devoxx.genie.ui.processor.CommandProcessor;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import org.jetbrains.annotations.NotNull;
@@ -175,9 +176,18 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
     /**
      * Initiates the calculation of tokens and cost based on the selected model and provider.
      * It delegates the actual calculation to the TokenCalculationController.
+     * This operation is performed in a background task to avoid EDT freezes.
      */
     public void calculateTokensAndCost() {
-        tokenCalculationController.calculateTokensAndCost();
+        // Create and run a background task for token calculation
+        com.intellij.openapi.progress.ProgressManager.getInstance().run(
+            new com.intellij.openapi.progress.Task.Backgroundable(project, "Calculating tokens", false) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    tokenCalculationController.calculateTokensAndCost();
+                }
+            }
+        );
     }
 
     public void updateButtonVisibility() {

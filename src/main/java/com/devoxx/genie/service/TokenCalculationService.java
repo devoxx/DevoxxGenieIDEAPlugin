@@ -7,6 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -119,15 +120,17 @@ public class TokenCalculationService {
             
             // Add skipped file extensions to the message
             if (!skippedExtensions.isEmpty()) {
-                message.append(String.format("\nSkipped files extensions : %s", String.join(", ", skippedExtensions)));
+                message.append(String.format("%nSkipped files extensions : %s", String.join(", ", skippedExtensions)));
             }
             
             // Add skipped directories to the message
             if (!skippedDirs.isEmpty() && result.getSkippedDirectoryCount() > 0) {
-                message.append(String.format("\nSkipped directories : %s", String.join(", ", skippedDirs)));
+                message.append(String.format("%nSkipped directories : %s", String.join(", ", skippedDirs)));
             }
             
-            listener.onTokenCalculationComplete(message.toString());
+            // Ensure UI updates are performed on the EDT
+            ApplicationManager.getApplication().invokeLater(() ->
+                    listener.onTokenCalculationComplete(message.toString()));
         });
     }
 
@@ -139,7 +142,8 @@ public class TokenCalculationService {
         if (!DefaultLLMSettingsUtil.isApiKeyBasedProvider(selectedProvider)) {
             contentFuture.thenAccept(scanResult -> {
                 String defaultMessage = getDefaultMessage(scanResult);
-                listener.onTokenCalculationComplete(defaultMessage);
+                // Ensure UI updates are performed on the EDT
+                ApplicationManager.getApplication().invokeLater(() -> listener.onTokenCalculationComplete(defaultMessage));
             });
         } else {
             showInfoForCloudProvider(project, selectedProvider, languageModel, contentFuture, listener);
@@ -171,7 +175,9 @@ public class TokenCalculationService {
                 message += String.format(". Total project size exceeds model's max context of %s tokens.",
                     WindowContextFormatterUtil.format(languageModel.getInputMaxTokens()));
             }
-            listener.onTokenCalculationComplete(message);
+            // Ensure UI updates are performed on the EDT
+            String finalMessage = message;
+            ApplicationManager.getApplication().invokeLater(() -> listener.onTokenCalculationComplete(finalMessage));
         }), () -> {
             String message = "No input cost found for the selected model.";
             NotificationUtil.sendNotification(project, message);

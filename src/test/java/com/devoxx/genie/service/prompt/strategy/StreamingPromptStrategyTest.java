@@ -172,6 +172,7 @@ class StreamingPromptStrategyTest {
         
         // Verify that streaming starts with the context containing the user message
         verify(mockChatMemoryService).getMessages(mockProject);
+
         // The streaming call is made with the messages from the chat memory service
         verify(mockStreamingModel).chat(anyList(), any(StreamingResponseHandler.class));
     }
