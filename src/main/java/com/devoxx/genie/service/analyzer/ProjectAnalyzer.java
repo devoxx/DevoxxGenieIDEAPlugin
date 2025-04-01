@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import org.jetbrains.annotations.NotNull;
@@ -412,7 +413,7 @@ public class ProjectAnalyzer {
         VirtualFile file = dir.findChild(fileName);
         if (file != null && file.exists() && !file.isDirectory()) {
             try {
-                String text = VfsUtil.loadText(file);
+                String text = VfsUtilCore.loadText(file);
                 return text.contains(content);
             } catch (IOException e) {
                 // Log error or handle exception
@@ -422,114 +423,174 @@ public class ProjectAnalyzer {
         return false;
     }
 
+    /**
+     * Detects dependencies from build files.
+     * 
+     * @return A map with dependency information
+     */
     private @NotNull Map<String, Object> detectDependencies() {
         Map<String, Object> dependenciesInfo = new HashMap<>();
         List<Map<String, String>> dependencies = new ArrayList<>();
 
-        // Check for Gradle dependencies (Kotlin DSL)
-        VirtualFile buildGradleKts = baseDir.findChild(BUILD_GRADLE_KTS);
-        if (buildGradleKts != null) {
-            try {
-                String content = VfsUtil.loadText(buildGradleKts);
-                // Simple regex-based extraction for demonstration
-                // A more robust parser would be better for production use
-                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                        "implementation\\(\"([^\"]+)\"\\)" +
-                                "|implementation\\(\"([^:]+):([^:]+):([^\"]+)\"\\)" +
-                                "|testImplementation\\(\"([^:]+):([^:]+):([^\"]+)\"\\)");
-
-                java.util.regex.Matcher matcher = pattern.matcher(content);
-                while (matcher.find()) {
-                    Map<String, String> dep = new HashMap<>();
-                    if (matcher.group(1) != null) {
-                        // Full dependency string
-                        String[] parts = matcher.group(1).split(":");
-                        if (parts.length >= 3) {
-                            dep.put("group", parts[0]);
-                            dep.put("name", parts[1]);
-                            dep.put("version", parts[2]);
-                            dep.put("scope", "implementation");
-                            dependencies.add(dep);
-                        }
-                    } else if (matcher.group(2) != null) {
-                        // Implementation dependency
-                        dep.put("group", matcher.group(2));
-                        dep.put("name", matcher.group(3));
-                        dep.put("version", matcher.group(4));
-                        dep.put("scope", "implementation");
-                        dependencies.add(dep);
-                    } else if (matcher.group(5) != null) {
-                        // Test dependency
-                        dep.put("group", matcher.group(5));
-                        dep.put("name", matcher.group(6));
-                        dep.put("version", matcher.group(7));
-                        dep.put("scope", "test");
-                        dependencies.add(dep);
-                    }
-                }
-            } catch (IOException e) {
-                // Handle exception
-            }
-        }
-
-        // Check for Gradle dependencies (Groovy DSL)
-        VirtualFile buildGradle = baseDir.findChild(BUILD_GRADLE);
-        if (buildGradle != null) {
-            try {
-                String content = VfsUtil.loadText(buildGradle);
-                // Similar pattern matching for Groovy DSL
-                // TODO - Implement Gradle dependency extraction
-
-            } catch (IOException e) {
-                // Handle exception
-            }
-        }
-
-        // Check for Maven dependencies
-        VirtualFile pomXml = baseDir.findChild(POM_XML);
-        if (pomXml != null) {
-            try {
-                String content = VfsUtil.loadText(pomXml);
-                // Simple regex for Maven dependencies
-                // A more robust XML parser would be better for production
-                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                        "<dependency>\\s*<groupId>([^<]+)</groupId>\\s*<artifactId>([^<]+)</artifactId>\\s*<version>([^<]+)</version>(\\s*<scope>([^<]+)</scope>)?");
-                java.util.regex.Matcher matcher = pattern.matcher(content);
-                while (matcher.find()) {
-                    Map<String, String> dep = new HashMap<>();
-                    dep.put("group", matcher.group(1));
-                    dep.put("name", matcher.group(2));
-                    dep.put("version", matcher.group(3));
-                    dep.put("scope", matcher.group(5) != null ? matcher.group(5) : "compile");
-                    dependencies.add(dep);
-                }
-            } catch (IOException e) {
-                // Handle exception
-            }
-        }
-
-        // Check for NPM dependencies
-        VirtualFile packageJson = baseDir.findChild(PACKAGE_JSON);
-        if (packageJson != null) {
-            try {
-                String content = VfsUtil.loadText(packageJson);
-                // Simple detection for demonstration
-                // A proper JSON parser should be used in production
-                if (content.contains("\"dependencies\"")) {
-                    // Add a placeholder for npm projects
-                    Map<String, String> dep = new HashMap<>();
-                    dep.put("name", "npm-dependencies");
-                    dep.put("note", "See package.json for details");
-                    dependencies.add(dep);
-                }
-            } catch (IOException e) {
-                // Handle exception
-            }
-        }
-
-        // TODO Add more dependency detection for other build systems, like Cargo, Composer, etc.
-
+        // Extract dependencies from different build systems
+        extractGradleKotlinDependencies(dependencies);
+        extractMavenDependencies(dependencies);
+        extractNpmDependencies(dependencies);
+        
         dependenciesInfo.put("list", dependencies);
         return dependenciesInfo;
+    }
+    
+    /**
+     * Extracts dependencies from a Gradle Kotlin DSL build file.
+     * 
+     * @param dependencies List to add the found dependencies to
+     */
+    private void extractGradleKotlinDependencies(List<Map<String, String>> dependencies) {
+        VirtualFile buildFile = baseDir.findChild(BUILD_GRADLE_KTS);
+        if (buildFile == null) {
+            return;
+        }
+        
+        String content = readFileContent(buildFile);
+        if (content.isEmpty()) {
+            return;
+        }
+        
+        // Create pattern for different dependency formats
+        java.util.regex.Pattern pattern = createGradleKotlinDependencyPattern();
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        
+        while (matcher.find()) {
+            processGradleKotlinMatch(matcher, dependencies);
+        }
+    }
+    
+    /**
+     * Creates regex pattern for Gradle Kotlin DSL dependencies.
+     */
+    private java.util.regex.Pattern createGradleKotlinDependencyPattern() {
+        return java.util.regex.Pattern.compile(
+                "implementation\\\\(\\\"([^\\\"]+)\\\"\\\\)" +
+                "|implementation\\\\(\\\"([^:]+):([^:]+):([^\\\"]+)\\\"\\\\)" +
+                "|testImplementation\\\\(\\\"([^:]+):([^:]+):([^\\\"]+)\\\"\\\\)");
+    }
+    
+    /**
+     * Processes a match from the Gradle Kotlin DSL dependency pattern.
+     */
+    private void processGradleKotlinMatch(java.util.regex.Matcher matcher, List<Map<String, String>> dependencies) {
+        if (matcher.group(1) != null) {
+            // Process full string format (e.g., "group:name:version")
+            processDependencyString(matcher.group(1), dependencies, "implementation");
+        } else if (matcher.group(2) != null) {
+            // Process implementation dependency
+            addDependency(dependencies, matcher.group(2), matcher.group(3), 
+                    matcher.group(4), "implementation");
+        } else if (matcher.group(5) != null) {
+            // Process test dependency
+            addDependency(dependencies, matcher.group(5), matcher.group(6), 
+                    matcher.group(7), "test");
+        }
+    }
+    
+    /**
+     * Processes a dependency string in format "group:name:version".
+     */
+    private void processDependencyString(String depString, List<Map<String, String>> dependencies, String scope) {
+        String[] parts = depString.split(":");
+        if (parts.length < 3) {
+            return;
+        }
+        
+        addDependency(dependencies, parts[0], parts[1], parts[2], scope);
+    }
+    
+    /**
+     * Adds a dependency with the given details.
+     */
+    private void addDependency(List<Map<String, String>> dependencies, 
+                               String group, String name, String version, String scope) {
+        Map<String, String> dep = new HashMap<>();
+        dep.put("group", group);
+        dep.put("name", name);
+        dep.put("version", version);
+        dep.put("scope", scope);
+        dependencies.add(dep);
+    }
+    
+    /**
+     * Extracts dependencies from a Maven POM file.
+     * 
+     * @param dependencies List to add the found dependencies to
+     */
+    private void extractMavenDependencies(List<Map<String, String>> dependencies) {
+        VirtualFile pomFile = baseDir.findChild(POM_XML);
+        if (pomFile == null) {
+            return;
+        }
+        
+        String content = readFileContent(pomFile);
+        if (content.isEmpty()) {
+            return;
+        }
+        
+        java.util.regex.Pattern pattern = createMavenDependencyPattern();
+        java.util.regex.Matcher matcher = pattern.matcher(content);
+        
+        while (matcher.find()) {
+            processMavenDependencyMatch(matcher, dependencies);
+        }
+    }
+    
+    /**
+     * Creates regex pattern for Maven dependencies.
+     */
+    private java.util.regex.Pattern createMavenDependencyPattern() {
+        return java.util.regex.Pattern.compile(
+                "<dependency>\\s*<groupId>([^<]+)</groupId>\\s*<artifactId>([^<]+)" +
+                "</artifactId>\\s*<version>([^<]+)</version>(\\s*<scope>([^<]+)</scope>)?");
+    }
+    
+    /**
+     * Processes a match from the Maven dependency pattern.
+     */
+    private void processMavenDependencyMatch(java.util.regex.Matcher matcher, List<Map<String, String>> dependencies) {
+        String scope = matcher.group(5) != null ? matcher.group(5) : "compile";
+        addDependency(dependencies, matcher.group(1), matcher.group(2), matcher.group(3), scope);
+    }
+    
+    /**
+     * Extracts dependencies from a package.json file.
+     * 
+     * @param dependencies List to add the found dependencies to
+     */
+    private void extractNpmDependencies(List<Map<String, String>> dependencies) {
+        VirtualFile packageFile = baseDir.findChild(PACKAGE_JSON);
+        if (packageFile == null) {
+            return;
+        }
+        
+        String content = readFileContent(packageFile);
+        if (content.isEmpty() || !content.contains("\"dependencies\"")) {
+            return;
+        }
+        
+        // Add a placeholder - we'd need a proper JSON parser for detailed extraction
+        Map<String, String> dep = new HashMap<>();
+        dep.put("name", "npm-dependencies");
+        dep.put("note", "See package.json for details");
+        dependencies.add(dep);
+    }
+    
+    /**
+     * Reads content from a file, handling exceptions.
+     */
+    private String readFileContent(VirtualFile file) {
+        try {
+            return VfsUtilCore.loadText(file);
+        } catch (IOException e) {
+            return "";
+        }
     }
 }

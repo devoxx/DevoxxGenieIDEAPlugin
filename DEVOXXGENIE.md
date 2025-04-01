@@ -1,7 +1,5 @@
 # DEVOXXGENIE.md
 
-Auto-generated via Tools > DevoxxGenie > Prompts 
-
 ## Project Guidelines
 
 ### Build Commands
@@ -9,19 +7,19 @@ Auto-generated via Tools > DevoxxGenie > Prompts
 - **Build:** `./gradlew build`
 - **Test:** `./gradlew test`
 - **Single Test:** `./gradlew test --tests ClassName.methodName`
+- **Clean:** `./gradlew clean`
+- **Run:** `./gradlew run`
 
 ### Code Style
 
-### Dependencies
-
-The project uses the following main dependencies:
-
-- **LangChain4j** - Java library for LLM applications
-- **JUnit** - Testing framework
-- **Mockito** - Mocking framework for tests
-- **Retrofit** - HTTP client for API calls
-
-See build.gradle.kts or pom.xml for the complete dependency list.
+- **Formatting:** Use IDE or checkstyle for formatting
+- **Naming:**
+  - Use camelCase for variables, methods, and fields
+  - Use PascalCase for classes and interfaces
+  - Use SCREAMING_SNAKE_CASE for constants
+- **Documentation:** Use JavaDoc for documentation
+- **Imports:** Organize imports and avoid wildcard imports
+- **Exception Handling:** Prefer specific exceptions and document throws
 
 
 
@@ -37,10 +35,12 @@ DevoxxGenieIDEAPlugin/
             genie/
               ui/
                 util/
+                  FontUtil.java
                   HelpUtil.java
                   EditorUtil.java
                   WelcomeUtil.java
                   TimestampUtil.java
+                  EditorFontUtil.java
                   LanguageGuesser.java
                   FileTypeIconUtil.java
                   NotificationUtil.java
@@ -89,10 +89,14 @@ DevoxxGenieIDEAPlugin/
                 dialog/
                   CustomPromptDialog.java
                 window/
+                  MCPLogToolWindowFactory.java
+                  DevoxxGenieToolWindowContent.java
+                  DevoxxGenieToolWindowFactory.java
                 listener/
                   GlowingListener.java
                   RAGStateListener.java
                   FileRemoveListener.java
+                  ConversationStarter.java
                   GitDiffStateListener.java
                   ChatMemorySizeListener.java
                   SettingsChangeListener.java
@@ -105,15 +109,22 @@ DevoxxGenieIDEAPlugin/
                   LLMSettingsChangeListener.java
                   CustomPromptChangeListener.java
                   ConversationSelectionListener.java
+                  NewlineShortcutChangeListener.java
                 renderer/
                   ModelInfoRenderer.java
                   CodeBlockNodeRenderer.java
+                  ModelProviderRenderer.java
                 settings/
                   llm/
                     LLMProvidersComponent.java
                     LLMProvidersConfigurable.java
                   mcp/
                     dialog/
+                      transport/
+                        TransportPanel.java
+                        StdioTransportPanel.java
+                        HttpSseTransportPanel.java
+                      ErrorDialogUtil.java
                       MCPServerDialog.java
                       MCPEnvironmentVariablesDialog.java
                     MCPSettingsComponent.java
@@ -164,6 +175,7 @@ DevoxxGenieIDEAPlugin/
                   button/
                     CustomButton.java
                     ButtonFactory.java
+                    EditorFileButtonManager.java
                   InputSwitch.java
                   RoundBorder.java
                   TokenUsageBar.java
@@ -180,11 +192,6 @@ DevoxxGenieIDEAPlugin/
                   NodeProcessorFactory.java
                   FencedCodeBlockProcessor.java
                   IndentedCodeBlockProcessor.java
-                ConversationStarter.java
-                EditorFileButtonManager.java
-                MCPLogToolWindowFactory.java
-                DevoxxGenieToolWindowContent.java
-                DevoxxGenieToolWindowFactory.java
               util/
                 FileUtil.java
                 HttpUtil.java
@@ -196,6 +203,7 @@ DevoxxGenieIDEAPlugin/
                 ChatMessageContextUtil.java
                 DefaultLLMSettingsUtil.java
                 LocalDateTimeConverter.java
+                TemplateVariableEscaper.java
               error/
                 ErrorHandler.java
               model/
@@ -206,7 +214,9 @@ DevoxxGenieIDEAPlugin/
                   Parameters.java
                   ResponseDTO.java
                 mcp/
+                  MCPType.java
                   MCPServer.java
+                  MCPMessage.java
                   MCPSettings.java
                 ollama/
                   OllamaModelDTO.java
@@ -222,7 +232,6 @@ DevoxxGenieIDEAPlugin/
                 lmstudio/
                   LMStudioModelDTO.java
                   LMStudioModelEntryDTO.java
-                registry/
                 openrouter/
                   Data.java
                   Pricing.java
@@ -251,6 +260,7 @@ DevoxxGenieIDEAPlugin/
                   MCPService.java
                   MCPCallbackLogger.java
                   MCPLoggingMessage.java
+                  MCPListenerService.java
                   MCPExecutionService.java
                 rag/
                   validator/
@@ -293,6 +303,11 @@ DevoxxGenieIDEAPlugin/
                     PromptCommand.java
                     CustomPromptCommand.java
                     PromptCommandProcessor.java
+                  response/
+                    streaming/
+                      StreamingResponseHandler.java
+                    nonstreaming/
+                      NonStreamingPromptExecutionService.java
                   strategy/
                     PromptExecutionStrategy.java
                     StreamingPromptStrategy.java
@@ -300,8 +315,6 @@ DevoxxGenieIDEAPlugin/
                     NonStreamingPromptStrategy.java
                     PromptExecutionStrategyFactory.java
                     AbstractPromptExecutionStrategy.java
-                  streaming/
-                    StreamingResponseHandler.java
                   threading/
                     PromptTask.java
                     PromptTaskTracker.java
@@ -311,8 +324,6 @@ DevoxxGenieIDEAPlugin/
                     WebSearchPromptExecutionService.java
                   cancellation/
                     PromptCancellationService.java
-                  nonstreaming/
-                    NonStreamingPromptExecutionService.java
                   PromptExecutionService.java
                 gitdiff/
                   GitMergeService.java
@@ -341,7 +352,6 @@ DevoxxGenieIDEAPlugin/
                       JavaScriptProjectScannerExtension.java
                   ProjectAnalyzer.java
                   DevoxxGenieGenerator.java
-                  ProjectTreeGenerator.java
                   ProjectAnalyzerExtension.java
                 chromadb/
                   model/
@@ -358,6 +368,22 @@ DevoxxGenieIDEAPlugin/
                   ModelNotActiveException.java
                   ProviderUnavailableException.java
                   UnsuccessfulRequestException.java
+                generator/
+                  file/
+                    FileManager.java
+                  tree/
+                    ProjectTreeGenerator.java
+                  content/
+                    impl/
+                      JavaStyleGenerator.java
+                      RustStyleGenerator.java
+                      RustCommandsGenerator.java
+                      GradleCommandsGenerator.java
+                    PromptBuilder.java
+                    ContentBuilder.java
+                    ContentGenerator.java
+                    BuildCommandsGenerator.java
+                    LanguageStyleGenerator.java
                 conversations/
                   ConversationStorageService.java
                 projectscanner/
@@ -414,7 +440,7 @@ DevoxxGenieIDEAPlugin/
                   gpt4all/
                     GPT4AllModelService.java
                     GPT4AllChatModelFactory.java
-                  llamaCPP/
+                  llamacpp/
                     LlamaChatModelFactory.java
                   lmstudio/
                     LMStudioModelService.java
@@ -478,13 +504,15 @@ DevoxxGenieIDEAPlugin/
                     CustomPromptCommandTest.java
                     PromptCommandProcessorTest.java
                   strategy/
+                    StreamingPromptStrategyTest.java
+                    NonStreamingPromptStrategyTest.java
                     PromptExecutionStrategyFactoryTest.java
                     AbstractPromptExecutionStrategyTest.java
                   cancellation/
                     PromptCancellationServiceTest.java
-                  ChatPromptExecutorIT.java
                   PromptExecutionServiceIT.java
                   PromptExecutionServiceTest.java
+                  PromptMessageFlowIntegrationTest.java
                 openrouter/
                   OpenRouterServiceTest.java
                 projectscanner/
@@ -552,6 +580,163 @@ DevoxxGenieIDEAPlugin/
     buildOutputCleanup/
       cache.properties
   README.md
+  docusaurus/
+    src/
+      css/
+        custom.css
+      pages/
+        index.js
+        index.module.css
+      plugins/
+        schema-plugin/
+          index.js
+      components/
+        HomepageFeatures/
+          icons/
+            GitDiff.js
+            DragDrop.js
+            NaiveRAG.js
+            TokenCost.js
+            WebSearch.js
+            ChatMemory.js
+            MCPSupport.js
+            MultipleLLM.js
+            ProjectScanner.js
+          index.js
+          styles.module.css
+    blog/
+      authors.yml
+      2025-03-24-devoxxgenie-assistant-for-idea.md
+    docs/
+      features/
+        mcp.md
+        rag.md
+        git-diff.md
+        overview.md
+        dnd-images.md
+        web-search.md
+        chat-memory.md
+        mcp_expanded.md
+        chat-interface.md
+        project-scanner.md
+      contributing/
+        development.md
+        prompt-structure.md
+        how-to-contribute.md
+        documentation-standards.md
+      configuration/
+        prompts.md
+        settings.md
+        token-cost.md
+        devoxxgenie-md.md
+      llm-providers/
+        overview.md
+        cloud-models.md
+        local-models.md
+        custom-providers.md
+      getting-started/
+        installation.md
+        introduction.md
+        quick-start-cloud.md
+        quick-start-local.md
+    static/
+      img/
+        copy-placeholders.js
+        create-placeholders.js
+      videos/
+      robots.txt
+    scripts/
+      README.md
+      fix-image-paths.js
+      markdown-files.txt
+      update-metadata.js
+    README.md
+    WEBSITE.md
+    .docusaurus/
+      i18n.json
+      routes.js
+      registry.js
+      globalData.json
+      client-modules.js
+      site-storage.json
+      site-metadata.json
+      client-manifest.json
+      codeTranslations.json
+      routesChunkNames.json
+      docusaurus-plugin-debug/
+        default/
+          p/
+            docusaurus-debug-content-0d5.json
+            devoxx-genie-idea-plugin-docusaurus-debug-content-18c.json
+          __plugin.json
+      docusaurus-plugin-content-blog/
+        default/
+          p/
+            blog-bd9.json
+            blog-tags-df9.json
+            blog-archive-f05.json
+            blog-authors-790.json
+            blog-tags-ai-9a5.json
+            blog-tags-announcements-53f.json
+            blog-tags-intelli-j-idea-7ae.json
+            devoxx-genie-idea-plugin-blog-c94.json
+            devoxx-genie-idea-plugin-blog-tags-b27.json
+            devoxx-genie-idea-plugin-blog-archive-494.json
+            devoxx-genie-idea-plugin-blog-authors-2a1.json
+            devoxx-genie-idea-plugin-blog-tags-ai-1b0.json
+            devoxx-genie-idea-plugin-blog-tags-llm-d62.json
+            devoxx-genie-idea-plugin-blog-tags-java-ade.json
+            devoxx-genie-idea-plugin-blog-tags-announcements-b80.json
+            devoxx-genie-idea-plugin-blog-tags-code-assistant-e76.json
+            devoxx-genie-idea-plugin-blog-tags-intelli-j-idea-906.json
+          __plugin.json
+          blogMetadata-default.json
+          blog-post-list-prop-default.json
+          site-blog-2023-10-08-devoxxgenie-assistant-for-idea-md-e3f.json
+          site-blog-2025-03-24-devoxxgenie-assistant-for-idea-md-7a9.json
+      docusaurus-plugin-content-docs/
+        default/
+          p/
+            docs-175.json
+            devoxx-genie-idea-plugin-docs-3f8.json
+          __plugin.json
+          site-docs-features-mcp-md-dce.json
+          site-docs-features-rag-md-88b.json
+          site-docs-features-mcp-2-md-b82.json
+          site-docs-features-git-diff-md-d2d.json
+          site-docs-features-overview-md-8fd.json
+          site-docs-features-dnd-images-md-2ab.json
+          site-docs-features-web-search-md-c3b.json
+          site-docs-features-chat-memory-md-543.json
+          site-docs-configuration-prompts-md-38c.json
+          site-docs-features-mcp-expanded-md-f50.json
+          site-docs-configuration-settings-md-09f.json
+          site-docs-llm-providers-overview-md-0cb.json
+          site-docs-features-chat-interface-md-b87.json
+          site-docs-configuration-token-cost-md-f86.json
+          site-docs-contributing-development-md-119.json
+          site-docs-features-project-scanner-md-9af.json
+          site-docs-llm-providers-cloud-models-md-b5d.json
+          site-docs-llm-providers-local-models-md-174.json
+          site-docs-configuration-devoxxgenie-md-md-d5a.json
+          site-docs-getting-started-installation-md-54f.json
+          site-docs-getting-started-introduction-md-9ff.json
+          site-docs-contributing-prompt-structure-md-e31.json
+          site-docs-contributing-how-to-contribute-md-4be.json
+          site-docs-llm-providers-custom-providers-md-f93.json
+          site-docs-getting-started-quick-start-cloud-md-bfd.json
+          site-docs-getting-started-quick-start-local-md-994.json
+          site-docs-contributing-documentation-standards-md-af3.json
+      docusaurus-plugin-content-pages/
+        default/
+          __plugin.json
+    sidebars.js
+    .clever.json
+    package.json
+    docusaurus.config.js
+    placeholder-setup.js
+    create-placeholders.js
+    generate-png-placeholders.js
   DEVOXXGENIE.md
   gradle.properties
 
