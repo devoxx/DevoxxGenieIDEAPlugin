@@ -76,7 +76,7 @@ public class PromptCommandProcessor {
      * @param project The current project
      * @return EditorInfo containing selected text, files, and language
      */
-    public @NotNull EditorInfo getEditorInfo(Project project) {
+    public EditorInfo getEditorInfo(Project project) {
         EditorInfo editorInfo = new EditorInfo();
         FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
         Editor editor = fileEditorManager.getSelectedTextEditor();

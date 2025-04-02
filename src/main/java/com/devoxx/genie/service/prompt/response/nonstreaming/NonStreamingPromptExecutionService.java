@@ -16,7 +16,6 @@ import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -139,17 +138,15 @@ public class NonStreamingPromptExecutionService {
                 }
             }
 
-            // Get the ChatMemory from the ChatMemoryManager
-            ChatMemory chatMemory = chatMemoryManager.getChatMemory(project.getLocationHash());
+            String projectId = project.getLocationHash();
 
-            // For debugging - copy message list to clipboard
-            ClipboardUtil.copyToClipboard(chatMemory.messages().toString());
+            ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
 
             // Build the AI service with or without MCP
             Assistant assistant;
             if (mcpToolProvider != null) {
-                MCPService.logDebug("Using MCP tool provider");
-                // With MCP tool provider
+                MCPService.logDebug("Using MCP tools...");
+
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
@@ -157,27 +154,26 @@ public class NonStreamingPromptExecutionService {
                         .toolProvider(mcpToolProvider)
                         .build();
             } else {
-                log.debug("NOT USING MCP!");
-                // Without MCP tool provider
+                log.debug("Not using MCP...");
+
                 assistant = AiServices.builder(Assistant.class)
                         .chatLanguageModel(chatLanguageModel)
-                        .chatMemory(chatMemory)
-                        .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
                         .chatMemoryProvider(memoryId -> chatMemory)
+                        .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
                         .build();
             }
 
-            if (chatMessageContext.getUserMessage().hasSingleText()) {
-                String cleanText = TemplateVariableEscaper.escape(chatMessageContext.getUserMessage().singleText());
-                String queryResponse = assistant.chat(cleanText);
-                return ChatResponse.builder()
-                        .aiMessage(AiMessage.aiMessage(queryResponse))
-                        .build();
-            } else {
-                UserMessage originalUserMessage = chatMessageContext.getUserMessage();
-                String cleanText = TemplateVariableEscaper.escape(originalUserMessage.singleText());
-                return chatLanguageModel.chat(UserMessage.from(cleanText));
-            }
+            String userMessage = chatMessageContext.getUserMessage().singleText();
+            String cleanText = TemplateVariableEscaper.escape(userMessage);
+
+            String queryResponse = assistant.chat(cleanText);
+
+            // For debugging - copy message list to clipboard
+            ClipboardUtil.copyToClipboard(chatMemory.messages().toString());
+
+            return ChatResponse.builder()
+                    .aiMessage(AiMessage.aiMessage(queryResponse))
+                    .build();
 
         } catch (Exception e) {
             // Thread interruption is likely from cancellation, so we handle it specially

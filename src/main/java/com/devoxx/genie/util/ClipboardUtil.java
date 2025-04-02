@@ -6,6 +6,8 @@ import java.awt.datatransfer.StringSelection;
 
 public class ClipboardUtil {
 
+    private ClipboardUtil() {}
+
     /**
      * Copy the given text to the clipboard.
      * @param text The text to copy to the clipboard

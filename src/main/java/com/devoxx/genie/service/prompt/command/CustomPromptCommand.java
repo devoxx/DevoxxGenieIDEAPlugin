@@ -45,12 +45,13 @@ public class CustomPromptCommand implements PromptCommand {
     @Override
     public Optional<String> process(@NotNull ChatMessageContext chatMessageContext, 
                                   @NotNull PromptOutputPanel promptOutputPanel) {
-        String prompt = chatMessageContext.getUserPrompt().trim();
-        
+
         // Get custom commands from settings
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         List<CustomPrompt> customPrompts = settings.getCustomPrompts();
-        
+
+        String prompt = chatMessageContext.getUserPrompt().trim();
+
         // Find the matching custom prompt
         Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
                 .filter(customPrompt -> prompt.startsWith(COMMAND_PREFIX + customPrompt.getName()))
