@@ -85,6 +85,9 @@ public class MCPServerDialog extends DialogWrapper {
         
         transportTypeCombo.setSelectedItem(existingServer.getTransportType());
         
+        // Explicitly show the correct panel in the CardLayout
+        ((CardLayout) cardPanel.getLayout()).show(cardPanel, existingServer.getTransportType().toString());
+        
         // Load settings into the appropriate transport panel
         TransportPanel panel = transportPanels.get(existingServer.getTransportType());
         if (panel != null) {
