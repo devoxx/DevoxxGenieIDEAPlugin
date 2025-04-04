@@ -38,6 +38,7 @@
         <h2>v0.5.5</h2>
         <UL>
             <LI>Fix #609 : Always place the user query at the bottom of the message</LI>
+            <LI>Fix #613 : Fix MCP config screen opens on STDIO but uses SSE settings</LI>
         </UL>
         <h2>v0.5.4</h2>
         <UL>
