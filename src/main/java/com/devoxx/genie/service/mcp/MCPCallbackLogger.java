@@ -41,11 +41,6 @@ public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
         if (openProjects.length > 0) {
             // Only handle the first message as a trigger to show the panel
             eventObject.getFormattedMessage();
-            if (eventObject.getFormattedMessage().startsWith(">") && eventObject.getFormattedMessage().contains("initialize")) {
-                // Show the MCP log panel and notify user
-                Project project = openProjects[0];
-                MCPService.showMCPLogPanel(project);
-            }
         }
         
         // Publish the log message to the log panel

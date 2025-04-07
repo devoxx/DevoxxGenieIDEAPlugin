@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPEnvironmentVariablesDialog;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
@@ -110,20 +111,10 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 log.error(ex.getMessage());
             }
         });
-        
-        JButton openLogPanelButton = new JButton("Open MCP Log Panel", AllIcons.General.OpenDisk);
-        openLogPanelButton.addActionListener(e -> {
-            Project[] projects = ProjectManager.getInstance().getOpenProjects();
-            if (projects.length > 0) {
-                Project currentProject = projects[0];
-                MCPService.showMCPLogPanel(currentProject);
-            }
-        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.add(infoButton);
         buttonPanel.add(availableMCPButtons);
-        buttonPanel.add(openLogPanelButton);
 
         // Build the main panel
         panel.setLayout(new BorderLayout());
@@ -246,6 +237,19 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
             
             isModified = false;
+            
+            // Update the Open MCP Log Panel button if it exists
+            for (Component component : panel.getComponents()) {
+                if (component instanceof JPanel) {
+                    JPanel subPanel = (JPanel) component;
+                    for (Component c : subPanel.getComponents()) {
+                        if (c instanceof JButton && ((JButton) c).getText().equals("Open MCP Log Panel")) {
+                            updateButtonBasedOnState((JButton) c);
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -435,6 +439,65 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
         enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
         isModified = false;
+        
+        // Find and update the Open MCP Log Panel button if it exists
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JPanel) {
+                JPanel subPanel = (JPanel) component;
+                for (Component c : subPanel.getComponents()) {
+                    if (c instanceof JButton && ((JButton) c).getText().equals("Open MCP Log Panel")) {
+                        updateButtonBasedOnState((JButton) c);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Updates the Open MCP log panel button's state based on current settings
+     * 
+     * @param button The button to update
+     */
+    private void updateLogButtonState(JButton button) {
+        boolean logsEnabled = MCPService.isDebugLogsEnabled();
+        
+        // Set tooltip based on current state
+        if (logsEnabled) {
+            button.setToolTipText("Open the MCP log panel to view MCP communication logs");
+        } else {
+            button.setToolTipText("Enable MCP and MCP logging to view logs");
+        }
+        
+        // Listen for checkbox changes to update button state
+        enableMcpCheckbox.addActionListener(e -> {
+            updateButtonBasedOnState(button);
+        });
+        
+        enableDebugLogsCheckbox.addActionListener(e -> {
+            updateButtonBasedOnState(button);
+        });
+        
+        // Initial state
+        updateButtonBasedOnState(button);
+    }
+    
+    /**
+     * Helper method to update button based on current checkbox states
+     * 
+     * @param button The button to update
+     */
+    private void updateButtonBasedOnState(JButton button) {
+        boolean logsEnabled = enableMcpCheckbox.isSelected() && enableDebugLogsCheckbox.isSelected();
+        
+        // Update tooltip and visual state
+        if (logsEnabled) {
+            button.setToolTipText("Open the MCP log panel to view MCP communication logs");
+            button.setEnabled(true);
+        } else {
+            button.setToolTipText("Enable MCP and MCP logging to view logs");
+            button.setEnabled(false);
+        }
     }
 
     /**
