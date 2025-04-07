@@ -1,6 +1,12 @@
 package com.devoxx.genie.service.mcp;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -8,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class MCPService {
+
+    private MCPService() {}
 
     // Static flag to prevent duplicate notifications
     private static boolean notificationShown = false;
@@ -32,36 +40,12 @@ public class MCPService {
     }
     
     /**
-     * Show the MCP log panel tool window
-     * 
-     * @param project The current project
-     */
-    public static void showMCPLogPanel(com.intellij.openapi.project.Project project) {
-        if (isDebugLogsEnabled() && project != null) {
-            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
-                com.intellij.openapi.wm.ToolWindow toolWindow = 
-                    com.intellij.openapi.wm.ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenieMCPLogs");
-                if (toolWindow != null && !toolWindow.isVisible()) {
-                    toolWindow.show();
-                    
-                    // Show a single notification when logs are first shown
-                    if (!notificationShown) {
-                        com.devoxx.genie.ui.util.NotificationUtil.sendNotification(
-                            project, "MCP logs are enabled - check the MCP Logs panel for details");
-                        notificationShown = true;
-                    }
-                }
-            });
-        }
-    }
-    
-    /**
      * Refresh the MCP tool window visibility for all open projects
      * This should be called when MCP settings are changed
      */
     public static void refreshToolWindowVisibility() {
-        com.intellij.openapi.application.ApplicationManager.getApplication().getMessageBus()
-            .syncPublisher(com.devoxx.genie.ui.topic.AppTopics.SETTINGS_CHANGED_TOPIC)
+        ApplicationManager.getApplication().getMessageBus()
+            .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
             .settingsChanged(true);
     }
 
@@ -81,15 +65,5 @@ public class MCPService {
         if (isDebugLogsEnabled()) {
             log.info("[MCP Debug] {}", message);
         }
-    }
-    
-    /**
-     * Check if MCP messages should be shown in UI components
-     * Convenience method that checks both if MCP is enabled and if debug logs are enabled
-     * 
-     * @return true if MCP messages should be shown in UI components
-     */
-    public static boolean shouldShowMCPMessages() {
-        return isMCPEnabled() && isDebugLogsEnabled();
     }
 }
