@@ -14,10 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Dialog for adding/editing an MCP server configuration
@@ -63,14 +61,18 @@ public class MCPServerDialog extends DialogWrapper {
      * Initialize the UI components
      */
     private void initUI() {
-        // Set up transport type combo box
-        transportTypeCombo.addActionListener(e -> 
-                ((CardLayout) cardPanel.getLayout()).show(cardPanel, transportTypeCombo.getSelectedItem().toString()));
-        
         // Add transport panels to card layout
         for (Map.Entry<MCPServer.TransportType, TransportPanel> entry : transportPanels.entrySet()) {
             cardPanel.add(entry.getValue().getPanel(), entry.getKey().toString());
         }
+        
+        // Set up transport type combo box
+        transportTypeCombo.addActionListener(e -> 
+                ((CardLayout) cardPanel.getLayout()).show(cardPanel, Objects.requireNonNull(transportTypeCombo.getSelectedItem()).toString()));
+        
+        // Initially show the STDIO panel when dialog is first opened
+        transportTypeCombo.setSelectedItem(MCPServer.TransportType.STDIO);
+        ((CardLayout) cardPanel.getLayout()).show(cardPanel, MCPServer.TransportType.STDIO.toString());
         
         // Set up test connection button
         testConnectionButton.addActionListener(e -> testConnection());
