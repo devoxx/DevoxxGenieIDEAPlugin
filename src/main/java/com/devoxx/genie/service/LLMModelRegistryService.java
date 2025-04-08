@@ -519,12 +519,12 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gemini2dot5Pro = "gemini-2.5-pro-exp-03-25";
+        String gemini2dot5Pro = "gemini-2.5-pro-preview-03-25";
         models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Pro,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2dot5Pro)
-                        .displayName("Gemini 2.5 Pro Exp. 03-05")
+                        .displayName("Gemini 2.5 Pro Preview 03-05")
                         .inputCost(0)
                         .outputCost(0)
                         .inputMaxTokens(1_048_576)
