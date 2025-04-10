@@ -789,7 +789,7 @@ public final class LLMModelRegistryService {
         // Anthropic - Claude - anthropic.claude-v2
 
         // Anthropic - Claude 3.7 Sonnet - anthropic.claude-3-7-sonnet-20250219-v1:0
-        String claude3dot7 = "us.anthropic.claude-3-7-sonnet-20250219-v1:0";
+        String claude3dot7 = "anthropic.claude-3-7-sonnet-20250219-v1:0";
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot7,
                 LanguageModel.builder()
                         .provider(ModelProvider.Bedrock)

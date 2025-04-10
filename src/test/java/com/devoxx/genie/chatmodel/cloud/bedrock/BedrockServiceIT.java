@@ -176,6 +176,7 @@ class BedrockServiceIT {
         ChatLanguageModel model = BedrockChatModel.builder()
                 .modelId("us.anthropic.claude-3-7-sonnet-20250219-v1:0")
                 .maxRetries(1)
+        .region(Region.US_EAST_1)
         .logRequests(true)
         .logResponses(true)
         .defaultRequestParameters(ChatRequestParameters.builder()
@@ -184,6 +185,35 @@ class BedrockServiceIT {
                 .maxOutputTokens(2000)
                 .build())
         .build();
+
+        String joke = model.chat("Tell me a joke about Java");
+        assertThat(joke).isNotNull();
+    }
+
+    @Test
+    void test_ClaudeSonnet37InEURegion() {
+        String secretAccessKey = Dotenv.load().get("AWS_SECRET_ACCESS_KEY");
+        String accessKeyId = Dotenv.load().get("AWS_ACCESS_KEY_ID");
+
+        assert secretAccessKey != null;
+        assert accessKeyId != null;
+
+        if (secretAccessKey.isEmpty() || accessKeyId.isEmpty()) {
+            return;
+        }
+
+        ChatLanguageModel model = BedrockChatModel.builder()
+                .modelId("eu.anthropic.claude-3-7-sonnet-20250219-v1:0")
+                .maxRetries(1)
+                .region(Region.EU_CENTRAL_1)
+                .logRequests(true)
+                .logResponses(true)
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .topP(1.0)
+                        .temperature(1.0)
+                        .maxOutputTokens(2000)
+                        .build())
+                .build();
 
         String joke = model.chat("Tell me a joke about Java");
         assertThat(joke).isNotNull();
