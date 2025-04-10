@@ -23,6 +23,7 @@ import java.util.List;
  */
 public class BedrockModelFactory implements ChatModelFactory {
     private static final String MODEL_PREFIX_ANTHROPIC = "anthropic";
+    private static final String MODEL_PREFIX_US_ANTHROPIC = "us.anthropic";
     private static final String MODEL_PREFIX_MISTRAL = "mistral";
     private static final String MODEL_PREFIX_META = "meta";
     private static final String MODEL_PREFIX_COHERE = "cohere";
@@ -43,7 +44,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     public ChatLanguageModel createChatModel(ChatModel chatModel) {
         final String modelName = chatModel.getModelName().toLowerCase();
 
-        if (modelName.startsWith(MODEL_PREFIX_ANTHROPIC)) {
+        if (modelName.startsWith(MODEL_PREFIX_ANTHROPIC) || modelName.startsWith(MODEL_PREFIX_US_ANTHROPIC)) {
             return createAnthropicChatModel(chatModel);
         } else if (modelName.startsWith(MODEL_PREFIX_MISTRAL)) {
             return createMistralChatModel(chatModel);
