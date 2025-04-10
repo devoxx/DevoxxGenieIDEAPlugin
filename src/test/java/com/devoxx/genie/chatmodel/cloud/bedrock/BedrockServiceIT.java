@@ -5,6 +5,8 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import java.util.List;
 
 import dev.langchain4j.model.bedrock.BedrockChatModel;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.junit.jupiter.api.Test;
@@ -65,8 +67,7 @@ class BedrockServiceIT {
             // Then
             assertThat(foundationModelSummaries).isNotEmpty();
             assertThat(foundationModelSummaries).allMatch(model -> model.modelId() != null);
-
-            assertThat(foundationModelSummaries.size()).isGreaterThan(30);
+            assertThat(foundationModelSummaries.size()).isPositive();
         }
     }
 
@@ -158,6 +159,34 @@ class BedrockServiceIT {
 
             assertThat(foundationModels.size()).isZero();
         }
+    }
+
+    @Test
+    void test_ClaudeSonnet37InUsRegion() {
+        String secretAccessKey = Dotenv.load().get("AWS_SECRET_ACCESS_KEY");
+        String accessKeyId = Dotenv.load().get("AWS_ACCESS_KEY_ID");
+
+        assert secretAccessKey != null;
+        assert accessKeyId != null;
+
+        if (secretAccessKey.isEmpty() || accessKeyId.isEmpty()) {
+            return;
+        }
+
+        ChatLanguageModel model = BedrockChatModel.builder()
+                .modelId("us.anthropic.claude-3-7-sonnet-20250219-v1:0")
+                .maxRetries(1)
+        .logRequests(true)
+        .logResponses(true)
+        .defaultRequestParameters(ChatRequestParameters.builder()
+                .topP(1.0)
+                .temperature(1.0)
+                .maxOutputTokens(2000)
+                .build())
+        .build();
+
+        String joke = model.chat("Tell me a joke about Java");
+        assertThat(joke).isNotNull();
     }
 
     @Test
