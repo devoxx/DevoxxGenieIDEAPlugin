@@ -4,14 +4,11 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 import java.util.List;
 
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.service.AiServices;
 import io.github.cdimascio.dotenv.Dotenv;
-import kotlinx.html.B;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -33,6 +30,8 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilde
  *     <li>{@code AWS_REGION}</li>
  * </ul>
  */
+@EnabledIfEnvironmentVariable(named = "AWS_SECRET_ACCESS_KEY", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AWS_ACCESS_KEY_ID", matches = ".+")
 class BedrockServiceIT {
 
     @Test
@@ -67,8 +66,7 @@ class BedrockServiceIT {
             assertThat(foundationModelSummaries).isNotEmpty();
             assertThat(foundationModelSummaries).allMatch(model -> model.modelId() != null);
 
-            foundationModelSummaries.stream()
-                    .filter(model -> model.modelId().equals("bedrock-1.0-pro-exp-02-05"));
+            assertThat(foundationModelSummaries.size()).isGreaterThan(30);
         }
     }
 
@@ -103,7 +101,7 @@ class BedrockServiceIT {
                     .filter(foundationModelSummary ->
                             foundationModelSummary.modelName().contains("3.5")).toList();
 
-            assert foundationModels.size() > 0;
+            assertThat(foundationModels.size()).isPositive();
             String modelId = foundationModels.get(0).modelId();
 
             System.out.println("Use model id : " + modelId);
@@ -142,7 +140,6 @@ class BedrockServiceIT {
 
         AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
         StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsBasicCredentials);
-        BedrockRuntimeClientBuilder bedrockRuntimeClientBuilder = BedrockRuntimeClient.builder().credentialsProvider(credentialsProvider);
 
         try (BedrockClient bedrockClient = BedrockClient.builder()
                 .region(Region.of(regionName))
@@ -159,7 +156,7 @@ class BedrockServiceIT {
                     .filter(foundationModelSummary ->
                             foundationModelSummary.modelName().contains("3-7")).toList();
 
-            assert foundationModels.size() == 0;
+            assertThat(foundationModels.size()).isZero();
         }
     }
 
