@@ -23,7 +23,6 @@ import java.util.List;
  */
 public class BedrockModelFactory implements ChatModelFactory {
     private static final String MODEL_PREFIX_ANTHROPIC = "anthropic";
-    private static final String MODEL_PREFIX_US_ANTHROPIC = "us.anthropic";
     private static final String MODEL_PREFIX_MISTRAL = "mistral";
     private static final String MODEL_PREFIX_META = "meta";
     private static final String MODEL_PREFIX_COHERE = "cohere";
@@ -41,20 +40,20 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @throws NotImplementedException if the requested model is not supported.
      */
     @Override
-    public ChatLanguageModel createChatModel(ChatModel chatModel) {
+    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
         final String modelName = chatModel.getModelName().toLowerCase();
 
-        if (modelName.startsWith(MODEL_PREFIX_ANTHROPIC) || modelName.startsWith(MODEL_PREFIX_US_ANTHROPIC)) {
+        if (modelName.contains(MODEL_PREFIX_ANTHROPIC)) {
             return createAnthropicChatModel(chatModel);
-        } else if (modelName.startsWith(MODEL_PREFIX_MISTRAL)) {
+        } else if (modelName.contains(MODEL_PREFIX_MISTRAL)) {
             return createMistralChatModel(chatModel);
-        } else if (modelName.startsWith(MODEL_PREFIX_COHERE)) {
+        } else if (modelName.contains(MODEL_PREFIX_COHERE)) {
             return createCohereChatModel(chatModel);
-        } else if (modelName.startsWith(MODEL_PREFIX_META)) {
+        } else if (modelName.contains(MODEL_PREFIX_META)) {
             return createLamaChatModel(chatModel);
-        } else if (modelName.startsWith(MODEL_PREFIX_AI21)) {
+        } else if (modelName.contains(MODEL_PREFIX_AI21)) {
             return createAI21ChatModel(chatModel);
-        } else if (modelName.startsWith(MODEL_PREFIX_STABILITY)) {
+        } else if (modelName.contains(MODEL_PREFIX_STABILITY)) {
             return createStabilityChatModel(chatModel);
         } else {
             throw new NotImplementedException(modelName + " not yet supported.");
@@ -68,8 +67,9 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An instance of {@link ChatLanguageModel} configured for Anthropic models.
      */
     private ChatLanguageModel createAnthropicChatModel(@NotNull ChatModel chatModel) {
+
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(getModelId(chatModel.getModelName()))
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
@@ -111,7 +111,7 @@ public class BedrockModelFactory implements ChatModelFactory {
 
     private ChatLanguageModel createLamaChatModel(@NotNull ChatModel chatModel) {
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(getModelId(chatModel.getModelName()))
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
@@ -170,7 +170,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      *
      * @return An {@link AwsCredentialsProvider} for authenticating with AWS.
      */
-    AwsCredentialsProvider getCredentialsProvider() {
+    private @NotNull AwsCredentialsProvider getCredentialsProvider() {
         String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
         String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
 
@@ -182,9 +182,26 @@ public class BedrockModelFactory implements ChatModelFactory {
      *
      * @return The AWS {@link Region}.
      */
-    Region getRegion() {
+    private Region getRegion() {
         return Region.of(
                 DevoxxGenieStateService.getInstance().getAwsRegion()
         );
+    }
+
+    /**
+     * Get the model name with prefix us, eu or apac
+     * @param modelName the base model name
+     * @return update model name
+     */
+    private @NotNull String getModelId(String modelName) {
+        Region userProvidedRegion = getRegion();
+        String strRegion = userProvidedRegion.toString().toLowerCase();
+        if (strRegion.startsWith("eu")) {
+            return "eu." + modelName;
+        } else if (strRegion.startsWith("ap")) {
+            return "apac." + modelName;
+        } else {
+            return "us." + modelName;
+        }
     }
 }
