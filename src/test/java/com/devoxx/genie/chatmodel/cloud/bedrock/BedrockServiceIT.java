@@ -32,8 +32,8 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilde
  *     <li>{@code AWS_REGION}</li>
  * </ul>
  */
-//@EnabledIfEnvironmentVariable(named = "AWS_SECRET_ACCESS_KEY", matches = ".+")
-//@EnabledIfEnvironmentVariable(named = "AWS_ACCESS_KEY_ID", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AWS_SECRET_ACCESS_KEY", matches = ".+")
+@EnabledIfEnvironmentVariable(named = "AWS_ACCESS_KEY_ID", matches = ".+")
 class BedrockServiceIT {
 
     @Test
