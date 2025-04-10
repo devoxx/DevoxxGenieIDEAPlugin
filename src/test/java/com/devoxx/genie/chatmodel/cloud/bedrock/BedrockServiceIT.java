@@ -163,6 +163,39 @@ class BedrockServiceIT {
         }
     }
 
+    @Test
+    void test_loadFoundationModelsForEURegion() {
+        String secretAccessKey = Dotenv.load().get("AWS_SECRET_ACCESS_KEY");
+        String accessKeyId = Dotenv.load().get("AWS_ACCESS_KEY_ID");
+
+        assert secretAccessKey != null;
+        assert accessKeyId != null;
+
+        if (secretAccessKey.isEmpty() || accessKeyId.isEmpty()) {
+            return;
+        }
+
+        String regionName = "eu-central-1";
+
+        AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+        StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsBasicCredentials);
+        BedrockRuntimeClientBuilder bedrockRuntimeClientBuilder = BedrockRuntimeClient.builder().credentialsProvider(credentialsProvider);
+
+        try (BedrockClient bedrockClient = BedrockClient.builder()
+                .region(Region.of(regionName))
+                .credentialsProvider(credentialsProvider)
+                .build()) {
+
+            ListFoundationModelsResponse response = bedrockClient.listFoundationModels(request ->
+                    request.byInferenceType("ON_DEMAND")
+            );
+
+            List<FoundationModelSummary> foundationModelSummaries = response.modelSummaries();
+
+            assertThat(foundationModelSummaries.size()).isPositive();
+        }
+    }
+
     interface Assistant {
         String chat(String query);
     }
