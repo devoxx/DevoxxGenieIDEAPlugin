@@ -155,7 +155,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         if (selectedProvider == ModelProvider.LMStudio ||
             selectedProvider == ModelProvider.Ollama ||
             selectedProvider == ModelProvider.Jan ||
-            selectedProvider == ModelProvider.GPT4All) {
+            selectedProvider == ModelProvider.GPT4All ||
+            selectedProvider == ModelProvider.OpenRouter ||
+            selectedProvider == ModelProvider.Bedrock) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 refreshButton.setEnabled(false);
 
