@@ -437,7 +437,7 @@ public class MCPServerDialog extends DialogWrapper {
     /**
      * Dialog for adding/editing environment variables
      */
-    private class EnvVarDialog extends DialogWrapper {
+    private static class EnvVarDialog extends DialogWrapper {
         private final JTextField keyField = new JTextField();
         private final JTextField valueField = new JTextField();
 
