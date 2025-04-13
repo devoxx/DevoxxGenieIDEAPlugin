@@ -196,7 +196,10 @@ public class MCPServerDialog extends DialogWrapper {
         int selectedRow = envVarTable.getSelectedRow();
         if (selectedRow >= 0) {
             String key = (String) envVarTableModel.getValueAt(selectedRow, 0);
-            String value = (String) envVarTableModel.getValueAt(selectedRow, 1);
+            
+            // Always retrieve the real value from the map, not the displayed (potentially masked) value
+            Map.Entry<String, String> entry = envVarTableModel.getEntryAt(selectedRow);
+            String value = entry.getValue();
             
             EnvVarDialog dialog = new EnvVarDialog(key, value);
             if (dialog.showAndGet()) {
@@ -358,6 +361,9 @@ public class MCPServerDialog extends DialogWrapper {
         private final String[] COLUMN_NAMES = {"Key", "Value"};
         private final List<Map.Entry<String, String>> entries = new ArrayList<>();
         private final Map<String, String> envVars = new HashMap<>();
+        private static final List<String> SENSITIVE_KEYWORDS = Arrays.asList(
+                "key", "secret", "token", "password", "pwd", "pass", "credential", "api", "auth"
+        );
 
         public EnvVarTableModel() {
         }
@@ -397,6 +403,18 @@ public class MCPServerDialog extends DialogWrapper {
                 fireTableRowsDeleted(row, row);
             }
         }
+        
+        /**
+         * Gets the entry at the specified row index
+         * @param row The row index
+         * @return The Map.Entry at the specified row or null if invalid index
+         */
+        public @Nullable Map.Entry<String, String> getEntryAt(int row) {
+            if (row >= 0 && row < entries.size()) {
+                return entries.get(row);
+            }
+            return null;
+        }
 
         private void refreshEntries() {
             entries.clear();
@@ -421,11 +439,31 @@ public class MCPServerDialog extends DialogWrapper {
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             Map.Entry<String, String> entry = entries.get(rowIndex);
-            return switch (columnIndex) {
-                case 0 -> entry.getKey();
-                case 1 -> entry.getValue();
-                default -> null;
-            };
+            
+            if (columnIndex == 0) {
+                return entry.getKey();
+            } else if (columnIndex == 1) {
+                // For the value column, check if the key indicates sensitive data
+                String key = entry.getKey().toLowerCase();
+                if (isSensitiveKey(key)) {
+                    // Mask the actual value with asterisks
+                    return "••••••••";
+                } else {
+                    return entry.getValue();
+                }
+            }
+            
+            return null;
+        }
+        
+        /**
+         * Determines if a key indicates sensitive information
+         * @param key The key to check (should be lowercase)
+         * @return true if sensitive, false otherwise
+         */
+        private boolean isSensitiveKey(String key) {
+            if (key == null) return false;
+            return SENSITIVE_KEYWORDS.stream().anyMatch(key::contains);
         }
 
         @Override
@@ -439,20 +477,146 @@ public class MCPServerDialog extends DialogWrapper {
      */
     private static class EnvVarDialog extends DialogWrapper {
         private final JTextField keyField = new JTextField();
-        private final JTextField valueField = new JTextField();
+        private JComponent valueField;  // Can be JTextField or JPasswordField
+        private final JCheckBox showPasswordCheckbox = new JCheckBox("Show Value");
+        
+        // List of keywords that indicate sensitive information
+        private static final List<String> SENSITIVE_KEYWORDS = Arrays.asList(
+                "key", "secret", "token", "password", "pwd", "pass", "credential", "api", "auth"
+        );
 
         public EnvVarDialog(String key, String value) {
             super(true);
             setTitle(key == null ? "Add Environment Variable" : "Edit Environment Variable");
+            
+            // Determine if this should be a password field based on the key name
+            boolean isSensitive = isSensitiveKey(key);
+            
+            // Create appropriate field type
+            if (isSensitive) {
+                valueField = new JPasswordField();
+                showPasswordCheckbox.setSelected(false);
+                
+                // Add listener to toggle between showing and hiding password
+                showPasswordCheckbox.addActionListener(e -> {
+                    String currentValue = getValue();
+                    boolean show = showPasswordCheckbox.isSelected();
+                    
+                    // Replace the current field with the appropriate type
+                    Container parent = valueField.getParent();
+                    if (parent != null) {
+                        int index = Arrays.asList(parent.getComponents()).indexOf(valueField);
+                        if (index >= 0) {
+                            parent.remove(valueField);
+                            
+                            if (show) {
+                                valueField = new JTextField(currentValue);
+                            } else {
+                                valueField = new JPasswordField(currentValue);
+                            }
+                            
+                            valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
+                            parent.add(valueField, getConstraints(index));
+                            parent.revalidate();
+                            parent.repaint();
+                        }
+                    }
+                });
+            } else {
+                valueField = new JTextField();
+                showPasswordCheckbox.setVisible(false);
+            }
+            
             init();
 
             if (key != null) {
                 keyField.setText(key);
-                valueField.setText(value);
+                
+                if (valueField instanceof JTextField) {
+                    ((JTextField) valueField).setText(value);
+                } else if (valueField instanceof JPasswordField) {
+                    ((JPasswordField) valueField).setText(value);
+                }
 
                 // Disable key field when editing
                 keyField.setEditable(false);
             }
+            
+            // Add listener to key field to update field type when key changes
+            keyField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFieldType();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFieldType();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFieldType();
+                }
+                
+                private void updateFieldType() {
+                    boolean shouldBeSensitive = isSensitiveKey(keyField.getText().trim().toLowerCase());
+                    
+                    // Only update if the field type needs to change
+                    boolean isCurrentlySensitive = valueField instanceof JPasswordField;
+                    if (shouldBeSensitive != isCurrentlySensitive) {
+                        String currentValue = getValue();
+                        
+                        // Replace field with appropriate type
+                        Container parent = valueField.getParent();
+                        if (parent != null) {
+                            int index = Arrays.asList(parent.getComponents()).indexOf(valueField);
+                            if (index >= 0) {
+                                parent.remove(valueField);
+                                
+                                if (shouldBeSensitive) {
+                                    valueField = new JPasswordField(currentValue);
+                                    showPasswordCheckbox.setVisible(true);
+                                    showPasswordCheckbox.setSelected(false);
+                                } else {
+                                    valueField = new JTextField(currentValue);
+                                    showPasswordCheckbox.setVisible(false);
+                                }
+                                
+                                valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
+                                parent.add(valueField, getConstraints(index));
+                                parent.revalidate();
+                                parent.repaint();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        /**
+         * Determines if a key indicates sensitive information
+         * @param key The key to check
+         * @return true if sensitive, false otherwise
+         */
+        private boolean isSensitiveKey(String key) {
+            if (key == null) return false;
+            
+            String lowerKey = key.toLowerCase();
+            return SENSITIVE_KEYWORDS.stream().anyMatch(lowerKey::contains);
+        }
+        
+        /**
+         * Helper method to get the GridBagConstraints for a component at a specific index
+         */
+        private GridBagConstraints getConstraints(int index) {
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.insets = new Insets(5, 5, 5, 5);
+            gbc.gridx = 1;
+            gbc.gridy = 1;
+            gbc.weightx = 1.0;
+            return gbc;
         }
 
         @Override
@@ -482,6 +646,12 @@ public class MCPServerDialog extends DialogWrapper {
             gbc.weightx = 1.0;
             valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
             panel.add(valueField, gbc);
+            
+            // Show password checkbox (only visible for sensitive fields)
+            gbc.gridx = 1;
+            gbc.gridy = 2;
+            gbc.weightx = 1.0;
+            panel.add(showPasswordCheckbox, gbc);
 
             return panel;
         }
@@ -502,7 +672,12 @@ public class MCPServerDialog extends DialogWrapper {
         }
 
         public String getValue() {
-            return valueField.getText().trim();
+            if (valueField instanceof JTextField) {
+                return ((JTextField) valueField).getText().trim();
+            } else if (valueField instanceof JPasswordField) {
+                return new String(((JPasswordField) valueField).getPassword()).trim();
+            }
+            return "";
         }
     }
 }

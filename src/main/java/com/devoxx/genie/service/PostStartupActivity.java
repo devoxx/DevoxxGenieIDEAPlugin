@@ -95,8 +95,6 @@ public class PostStartupActivity implements ProjectActivity {
                         log.debug("Made MCP tool window unavailable");
                     }
                 }
-            } else {
-                log.debug("MCP tool window not found");
             }
         });
     }

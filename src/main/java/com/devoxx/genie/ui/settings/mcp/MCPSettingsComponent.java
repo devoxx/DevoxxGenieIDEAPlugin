@@ -85,11 +85,19 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
         });
 
-        JButton availableMCPButtons = new JButton("Available MCP servers", AllIcons.Actions.Search);
-        availableMCPButtons.addActionListener(e -> {
-            // https://github.com/modelcontextprotocol/servers
+        JButton githubMCPButton = new JButton("GitHub MCP", AllIcons.Vcs.Vendors.Github);
+        githubMCPButton.addActionListener(e -> {
             try {
-                Desktop.getDesktop().browse(new URI("https://github.com/modelcontextprotocol/servers"));
+                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/GitHubMCP"));
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+            }
+        });
+        
+        JButton fileSystemMCPButton = new JButton("FileSystem MCP", AllIcons.General.OpenDisk);
+        fileSystemMCPButton.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/MCPJavaFileSystem"));
             } catch (Exception ex) {
                 log.error(ex.getMessage());
             }
@@ -97,7 +105,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.add(infoButton);
-        buttonPanel.add(availableMCPButtons);
+        buttonPanel.add(githubMCPButton);
+        buttonPanel.add(fileSystemMCPButton);
 
         // Build the main panel
         panel.setLayout(new BorderLayout());

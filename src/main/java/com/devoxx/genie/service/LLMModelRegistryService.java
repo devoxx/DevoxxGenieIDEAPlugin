@@ -93,7 +93,7 @@ public final class LLMModelRegistryService {
                         .build());
 
         // Available from February 2025
-        String claudeSonnet37 = "claude-3-7-sonnet-20250219";
+        String claudeSonnet37 = "claude-3-7-sonnet-latest";
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet37,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
