@@ -7,7 +7,7 @@ repositories {
 }
 
 dependencies {
-    val lg4j_version = "1.0.0-beta1"
+    val lg4j_version = "1.0.0-beta3"
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-local-ai:$lg4j_version")
