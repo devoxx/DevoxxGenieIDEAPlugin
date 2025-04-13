@@ -170,7 +170,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      *
      * @return An {@link AwsCredentialsProvider} for authenticating with AWS.
      */
-    private @NotNull AwsCredentialsProvider getCredentialsProvider() {
+    public @NotNull AwsCredentialsProvider getCredentialsProvider() {
         String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
         String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
 
@@ -182,7 +182,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      *
      * @return The AWS {@link Region}.
      */
-    private Region getRegion() {
+    public Region getRegion() {
         return Region.of(
                 DevoxxGenieStateService.getInstance().getAwsRegion()
         );

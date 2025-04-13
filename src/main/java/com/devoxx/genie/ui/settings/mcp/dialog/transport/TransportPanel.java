@@ -63,16 +63,20 @@ public interface TransportPanel {
 
     default JLabel getExampleLabel() {
         // Create hyperlink to documentation
-        JLabel docsLinkLabel = new JLabel("<html><a href=''>Need example? View the FileSystem MCP guide</a></html>");
+        JLabel docsLinkLabel = new JLabel("<html><a href=''>Need examples? View the FileSystem MCP guide</a> or <a href=''>GitHub MCP guide</a></html>");
         docsLinkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         // Set up the URL for the docs - use GitHub URL
-        String repoUrl = "https://github.com/stephanj/MCPJavaFileSystem/tree/master";
+        final String fileSystemMcpUrl = "https://github.com/stephanj/MCPJavaFileSystem/tree/master";
+        final String githubMcpUrl = "https://github.com/stephanj/GitHubMCP";
+        
         docsLinkLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                    Desktop.getDesktop().browse(new URI(repoUrl));
+                    // Determine which link was clicked based on the x-coordinate
+                    String url = e.getX() < 270 ? fileSystemMcpUrl : githubMcpUrl;
+                    Desktop.getDesktop().browse(new URI(url));
                 } catch (Exception ex) {
                     //
                 }
