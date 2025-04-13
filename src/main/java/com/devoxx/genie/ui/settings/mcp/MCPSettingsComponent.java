@@ -61,26 +61,15 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(mcpTable)
                 .setAddAction(button -> addMcpServer())
                 .setEditAction(button -> editMcpServer())
-                .setRemoveAction(button -> removeMcpServer())
-                .addExtraAction(new AnActionButton("Edit Environment Settings", AllIcons.General.Settings) {
-                    @Override
-                    public void actionPerformed(@NotNull AnActionEvent e) {
-                        editEnvironmentVariables();
-                    }
-
-                    @Override
-                    public boolean isEnabled() {
-                        return mcpTable.getSelectedRow() >= 0;
-                    }
-                });
+                .setRemoveAction(button -> removeMcpServer());
                 
         JPanel decoratedTablePanel = toolbarDecorator.createPanel();
         
         // Create the description panel
         JPanel infoPanel = new JPanel(new BorderLayout());
         infoPanel.add(new JLabel("<html>Configure MCP (Model Context Protocol) servers.<br>" +
-                                 "Each MCP requires a name, command and arguments.<br>" +
-                                 "Environment variables are optional.</html>"), BorderLayout.CENTER);
+                                 "Each MCP requires a name, command, arguments and optional environment variables.<br>" +
+                                 "Environment variables can be configured when adding or editing a server.</html>"), BorderLayout.CENTER);
         
         // Create the checkbox panel
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
