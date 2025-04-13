@@ -3,17 +3,20 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
+import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
-import com.devoxx.genie.ui.util.EditorFontUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.impl.EditorCssFontResolver;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ui.HTMLEditorKitBuilder;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -100,8 +103,17 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         theEditorPane.setContentType("text/html");
         theEditorPane.setEditable(false);
         
-        // Use smaller fixed font size, with a fallback for tests
-        theEditorPane.setFont(EditorFontUtil.createEditorFont());
+        // Set up HTML editor kit with proper styling to match non-streaming responses
+        HTMLEditorKitBuilder htmlEditorKitBuilder =
+            new HTMLEditorKitBuilder()
+                .withWordWrapViewFactory()
+                .withFontResolver(EditorCssFontResolver.getGlobalInstance());
+
+        HTMLEditorKit editorKit = htmlEditorKitBuilder.build();
+        
+        // Apply the same stylesheet that's used for regular chat responses
+        editorKit.getStyleSheet().addStyleSheet(StyleSheetsFactory.createParagraphStyleSheet());
+        theEditorPane.setEditorKit(editorKit);
         
         return theEditorPane;
     }
