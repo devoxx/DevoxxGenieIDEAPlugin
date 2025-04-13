@@ -39,6 +39,7 @@
         <UL>
             <LI>Fix #545 : Use Bedrock model name with 'us' prefix to make it work 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'</LI>
             <LI>Feat #630 : Update Bedrock model Id with eu,us,apac prefix when using Anthropic, LLama</LI>
+            <LI>Feat #632 : Stopping a chat which is running doesn't stop the MCP process</LI>
         </UL>
         <h2>v0.5.6</h2>
         <UL>

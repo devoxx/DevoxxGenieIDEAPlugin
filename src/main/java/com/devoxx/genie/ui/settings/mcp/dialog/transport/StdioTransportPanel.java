@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings.mcp.dialog.transport;
 
 import com.devoxx.genie.model.mcp.MCPServer;
 
+import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.components.JBScrollPane;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
@@ -18,7 +19,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Panel for configuring STDIO MCP transport
@@ -205,15 +205,7 @@ public class StdioTransportPanel implements TransportPanel {
         commandList.addAll(args);
         
         // Build the bash command
-        List<String> mcpCommand = new ArrayList<>();
-        mcpCommand.add("/bin/bash");
-        mcpCommand.add("-c");
-        String cmdString = commandList.stream()
-                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                .collect(Collectors.joining(" "));
-        mcpCommand.add(cmdString);
-        
-        return mcpCommand;
+        return MCPExecutionService.createMCPCommand(commandList);
     }
     
     /**
