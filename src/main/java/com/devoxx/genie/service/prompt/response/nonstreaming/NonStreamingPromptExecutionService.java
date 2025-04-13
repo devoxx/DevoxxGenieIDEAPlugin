@@ -112,6 +112,9 @@ public class NonStreamingPromptExecutionService {
         CompletableFuture<ChatResponse> future = currentQueryFuture.get();
         if (future != null && !future.isDone()) {
             future.cancel(true);
+            if (MCPService.isMCPEnabled()) {
+                MCPExecutionService.getInstance().clearClientCache();
+            }
             currentQueryFuture.set(null);
             running = false;
         }

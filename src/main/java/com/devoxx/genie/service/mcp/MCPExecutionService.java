@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ public class MCPExecutionService implements Disposable {
                 // Attempt to close client if it has a close method
                 closeClientSafely(entry.getValue());
             } catch (Exception e) {
-                log.warn("Error closing MCP client for: " + entry.getKey(), e);
+                log.warn("Error closing MCP client for: {}", entry.getKey(), e);
             }
         }
         clientCache.clear();
@@ -195,7 +196,7 @@ public class MCPExecutionService implements Disposable {
             // Create the transport
             HttpMcpTransport transport = new HttpMcpTransport.Builder()
                     .sseUrl(sseUrl)
-                    .timeout(java.time.Duration.ofSeconds(60))
+                    .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
                     .build();
@@ -205,7 +206,9 @@ public class MCPExecutionService implements Disposable {
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
                     .transport(transport)
+                    .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .build();
+
         } catch (Exception e) {
             log.error("Failed to initialize HTTP SSE client with URL: {}", mcpServer.getSseUrl(), e);
             MCPService.logDebug("Failed to initialize HTTP SSE client with URL: " + mcpServer.getSseUrl() + " - " + e.getMessage());
@@ -240,13 +243,7 @@ public class MCPExecutionService implements Disposable {
 
             MCPService.logDebug("MCP environment : " + env);
 
-            List<String> mcpCommand = new ArrayList<>();
-            mcpCommand.add("/bin/bash");
-            mcpCommand.add("-c");
-            String cmdString = command.stream()
-                    .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                    .collect(Collectors.joining(" "));
-            mcpCommand.add(cmdString);
+            List<String> mcpCommand = createMCPCommand(command);
             log.debug("MCP command : {}", mcpCommand);
 
             // Create the transport
@@ -261,11 +258,24 @@ public class MCPExecutionService implements Disposable {
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
                     .transport(transport)
+                    .toolExecutionTimeout(Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .build();
+
         } catch (Exception e) {
             log.error("Failed to initialize stdio client with command: {}", command, e);
             MCPService.logDebug("Failed to initialize stdio client with command: " + command + " - " + e.getMessage());
             return null;
         }
+    }
+
+    public static @NotNull List<String> createMCPCommand(@NotNull List<String> command) {
+        List<String> mcpCommand = new ArrayList<>();
+        mcpCommand.add("/bin/bash");
+        mcpCommand.add("-c");
+        String cmdString = command.stream()
+                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                .collect(Collectors.joining(" "));
+        mcpCommand.add(cmdString);
+        return mcpCommand;
     }
 }
