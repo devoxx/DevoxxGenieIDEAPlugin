@@ -41,6 +41,7 @@
             <LI>Feat #630 : Update Bedrock model Id with eu,us,apac prefix when using Anthropic, LLama</LI>
             <LI>Feat #632 : Stopping a chat which is running doesn't stop the MCP process</LI>
             <LI>Feat #635 : Add MCP Envs is same window</LI>
+            <LI>Feat #638 : Migrated to Langchain4J v1.0.0 beta3</LI>
         </UL>
         <h2>v0.5.6</h2>
         <UL>
