@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.5.9</h2>
+        <UL>
+            <LI>Feat #646 : Support for GPT 4.1, mini and nano</LI>
+        </UL>
         <h2>v0.5.8</h2>
         <UL>
             <LI>Fix #644 : MCP Functionality Issue on Windows Platform</LI>
