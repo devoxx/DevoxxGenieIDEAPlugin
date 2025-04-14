@@ -270,12 +270,26 @@ public class MCPExecutionService implements Disposable {
 
     public static @NotNull List<String> createMCPCommand(@NotNull List<String> command) {
         List<String> mcpCommand = new ArrayList<>();
-        mcpCommand.add("/bin/bash");
-        mcpCommand.add("-c");
-        String cmdString = command.stream()
-                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                .collect(Collectors.joining(" "));
-        mcpCommand.add(cmdString);
+        
+        if (com.intellij.openapi.util.SystemInfo.isWindows) {
+            // Windows platform handling
+            mcpCommand.add("cmd.exe");
+            mcpCommand.add("/c");
+            String cmdString = command.stream()
+                    .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                    .collect(Collectors.joining(" "));
+            mcpCommand.add(cmdString);
+        } else {
+            // Unix/macOS platform handling
+            mcpCommand.add("/bin/bash");
+            mcpCommand.add("-c");
+            String cmdString = command.stream()
+                    .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                    .collect(Collectors.joining(" "));
+            mcpCommand.add(cmdString);
+        }
+        
+        log.debug("Platform-specific command: {}", mcpCommand);
         return mcpCommand;
     }
 }

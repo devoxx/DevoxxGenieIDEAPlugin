@@ -232,19 +232,40 @@ public class StdioTransportPanel implements TransportPanel {
      */
     private boolean testIfCommandExists(String command) {
         try {
-            // Create a process to check if the command exists
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            if (SystemInfo.isWindows) {
-                // Windows
-                processBuilder.command("cmd.exe", "/c", "where", command);
+            // When a full path is provided, just check if the file exists and is executable
+            File file = new File(command);
+            if (file.exists()) {
+                if (SystemInfo.isWindows) {
+                    // On Windows, check if file has a valid executable extension
+                    String lowerCasePath = command.toLowerCase();
+                    if (lowerCasePath.endsWith(".exe") || lowerCasePath.endsWith(".bat") || 
+                        lowerCasePath.endsWith(".cmd") || lowerCasePath.endsWith(".ps1")) {
+                        return true;
+                    } else {
+                        log.debug("File exists but is not a recognized executable type: {}", command);
+                        // Still return true as it might be a valid executable without extension
+                        return true;
+                    }
+                } else {
+                    // On Unix-like systems, check if the file is executable
+                    return file.canExecute();
+                }
             } else {
-                // Unix/Mac
-                processBuilder.command("/bin/sh", "-c", "which " + command);
+                log.debug("File does not exist: {}", command);
+                // If not a full path, attempt to find it in PATH
+                ProcessBuilder processBuilder = new ProcessBuilder();
+                if (SystemInfo.isWindows) {
+                    // Windows
+                    processBuilder.command("cmd.exe", "/c", "where", command);
+                } else {
+                    // Unix/Mac
+                    processBuilder.command("/bin/sh", "-c", "which " + command);
+                }
+                
+                Process process = processBuilder.start();
+                int exitCode = process.waitFor();
+                return exitCode == 0;
             }
-            
-            Process process = processBuilder.start();
-            int exitCode = process.waitFor();
-            return exitCode == 0;
         } catch (Exception e) {
             log.error("Error testing if command exists: {}", e.getMessage());
             return false;
