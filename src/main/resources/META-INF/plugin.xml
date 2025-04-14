@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.5.8</h2>
+        <UL>
+            <LI>Fix #644 : MCP Functionality Issue on Windows Platform</LI>
+        </UL>
         <h2>v0.5.7</h2>
         <UL>
             <LI>Fix #545 : Use Bedrock model name with 'us' prefix to make it work 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'</LI>
