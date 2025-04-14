@@ -108,19 +108,44 @@ public final class LLMModelRegistryService {
 
     private void addOpenAiModels() {
 
-        // Not yet available via API
-//        String o3Model = OpenAIChatModelName.O3.toString();
-//        models.put(ModelProvider.OpenAI.getName() + ":" + o3Model,
-//                LanguageModel.builder()
-//                        .provider(ModelProvider.OpenAI)
-//                        .modelName(o3Model)
-//                        .displayName("o3")
-//                        .inputCost(5)
-//                        .outputCost(15)
-//                        .inputMaxTokens(200_000)
-//                        .outputMaxTokens(100_000)
-//                        .apiKeyUsed(true)
-//                        .build());
+        String gpt41Model = "gpt-4.1-2025-04-14";
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41Model,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41Model)
+                        .displayName("GPT 4.1 (2025-04-14)")
+                        .inputCost(2)
+                        .outputCost(8)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(32_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt41MiniModel = "gpt-4.1-mini-2025-04-14";
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41MiniModel,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41MiniModel)
+                        .displayName("GPT 4.1 Mini (2025-04-14)")
+                        .inputCost(0.4)
+                        .outputCost(1.6)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(32_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt41NanoModel = "gpt-4.1-nano-2025-04-14";
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41NanoModel,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41NanoModel)
+                        .displayName("GPT 4.1 Nano (2025-04-14)")
+                        .inputCost(0.1)
+                        .outputCost(0.4)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(32_000)
+                        .apiKeyUsed(true)
+                        .build());
 
         String o3MiniModel = OpenAIChatModelName.O3_MINI.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o3MiniModel,
