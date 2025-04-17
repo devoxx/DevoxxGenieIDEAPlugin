@@ -7,6 +7,9 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.concurrency.AppExecutorUtil;
+
+import dev.langchain4j.http.client.jdk.JdkHttpClient;
+import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -14,6 +17,7 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,12 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     protected static boolean warningShown = false;
     public boolean providerRunning = false;
     public boolean providerChecked = false;
+
+    // LMStudio does not support HTTP_2, see https://github.com/langchain4j/langchain4j/issues/2758
+    private final HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1) ;
+    private final JdkHttpClientBuilder jdkHttpClientBuilder = JdkHttpClient.builder()
+            .httpClientBuilder(httpClientBuilder);
 
     protected LocalChatModelFactory(ModelProvider modelProvider) {
         this.modelProvider = modelProvider;
@@ -43,6 +53,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     protected ChatLanguageModel createOpenAiChatModel(@NotNull ChatModel chatModel) {
         return OpenAiChatModel.builder()
                 .baseUrl(getModelUrl())
+                .httpClientBuilder(jdkHttpClientBuilder)
                 .apiKey("na")
                 .modelName(chatModel.getModelName())
                 .maxRetries(chatModel.getMaxRetries())
@@ -57,6 +68,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     protected StreamingChatLanguageModel createOpenAiStreamingChatModel(@NotNull ChatModel chatModel) {
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(getModelUrl())
+                .httpClientBuilder(jdkHttpClientBuilder)
                 .apiKey("na")
                 .modelName(chatModel.getModelName())
                 .temperature(chatModel.getTemperature())
