@@ -550,10 +550,24 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.Google)
                         .modelName(gemini2dot5Pro)
                         .displayName("Gemini 2.5 Pro Preview 03-05")
-                        .inputCost(0)
-                        .outputCost(0)
+                        .inputCost(2.50)
+                        .outputCost(15.0)
                         .inputMaxTokens(1_048_576)
                         .outputMaxTokens(64_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        // gemini-2.5-flash-preview-04-17
+        String gemini2dot5Flash = "gemini-2.5-flash-preview-04-17";
+        models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Flash,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(gemini2dot5Flash)
+                        .displayName("Gemini 2.5 Flash Preview 04-17")
+                        .inputCost(0.15)
+                        .outputCost(3.50)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(65_536)
                         .apiKeyUsed(true)
                         .build());
     }
