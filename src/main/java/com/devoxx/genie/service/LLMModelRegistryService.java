@@ -423,7 +423,7 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.Google)
                         .modelName(gemini15Flash)
                         .displayName("Gemini 1.5 Flash")
-                        .inputCost(0.0375)
+                        .inputCost(0.15)
                         .outputCost(0.6)
                         .inputMaxTokens(1_048_576)
                         .outputMaxTokens(8_192)
@@ -443,51 +443,14 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gemini15Pro = "gemini-1.5-pro";
-        models.put(ModelProvider.Google.getName() + ":" + gemini15Pro,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini15Pro)
-                        .displayName("Gemini 1.5 Pro")
-                        .inputCost(7)
-                        .outputCost(21)
-                        .inputMaxTokens(2_097_152)
-                        .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gemini15ProExp0801 = "gemini-1.5-pro-exp-0801";
+        String gemini15ProExp0801 = "gemini-1.5-pro";
         models.put(ModelProvider.Google.getName() + ":" + gemini15ProExp0801,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini15ProExp0801)
-                        .displayName("Gemini 1.5 Pro Exp. 0801")
-                        .inputCost(7)
-                        .outputCost(21)
-                        .inputMaxTokens(2_000_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String geminiLearnLM = "learnlm-1.5-pro-experimental";
-        models.put(ModelProvider.Google.getName() + ":" + geminiLearnLM,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(geminiLearnLM)
-                        .displayName("Learn LM 1.5 Pro Exp.")
-                        .inputCost(0)
-                        .outputCost(0)
-                        .inputMaxTokens(2_000_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String geminiExp1206 = "gemini-exp-1206";
-        models.put(ModelProvider.Google.getName() + ":" + geminiExp1206,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(geminiExp1206)
-                        .displayName("Gemini Exp. 1206")
-                        .inputCost(0)
-                        .outputCost(0)
+                        .displayName("Gemini 1.5 Pro")
+                        .inputCost(1.25)
+                        .outputCost(5)
                         .inputMaxTokens(2_000_000)
                         .apiKeyUsed(true)
                         .build());
@@ -497,9 +460,9 @@ public final class LLMModelRegistryService {
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2FlashExp)
-                        .displayName("Gemini 2.0 Flash 001")
-                        .inputCost(0)
-                        .outputCost(0)
+                        .displayName("Gemini 2.0 Flash")
+                        .inputCost(0.10)
+                        .outputCost(0.40)
                         .inputMaxTokens(1_048_576)
                         .outputMaxTokens(8_192)
                         .apiKeyUsed(true)
@@ -518,29 +481,16 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gemini2FlashLite = "gemini-2.0-flash-lite-preview-02-05";
+        String gemini2FlashLite = " gemini-2.0-flash-lite-001";
         models.put(ModelProvider.Google.getName() + ":" + gemini2FlashLite,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2FlashLite)
-                        .displayName("Gemini 2.0 Flash Lite Preview 02-05")
-                        .inputCost(0)
-                        .outputCost(0)
+                        .displayName("Gemini 2.0 Flash Lite")
+                        .inputCost(0.075)
+                        .outputCost(0.30)
                         .inputMaxTokens(1_048_576)
                         .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gemini2Pro = "gemini-2.0-pro-exp-02-05";
-        models.put(ModelProvider.Google.getName() + ":" + gemini2Pro,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini2Pro)
-                        .displayName("Gemini 2.0 Pro Exp. 02-05")
-                        .inputCost(0)
-                        .outputCost(0)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
 
