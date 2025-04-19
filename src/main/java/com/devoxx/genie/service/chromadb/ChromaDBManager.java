@@ -3,6 +3,7 @@ package com.devoxx.genie.service.chromadb;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.service.rag.validator.ChromeDBValidator;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.HttpClientProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -23,18 +24,22 @@ import java.util.List;
 @Slf4j
 @Service
 public final class ChromaDBManager {
-    
-    private final ChromaDBService service;
+
+    private static Project theProject;
+    private ChromaDBService service;
 
     @NotNull
-    public static ChromaDBManager getInstance() {
+    public static ChromaDBManager getInstance(Project project) {
+        theProject = project;
         return ApplicationManager.getApplication().getService(ChromaDBManager.class);
     }
 
     public ChromaDBManager() {
+        ApplicationManager.getApplication().invokeLater(this::initChromaDBService);
+    }
 
+    private void initChromaDBService() {
         String url = "http://localhost:" + DevoxxGenieStateService.getInstance().getIndexerPort();
-
         OkHttpClient client = HttpClientProvider.getClient();
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(url)
@@ -46,11 +51,16 @@ public final class ChromaDBManager {
     }
 
     public @NotNull List<ChromaCollection> listCollections() throws IOException {
-        retrofit2.Response<ChromaCollection[]> execute = service.getCollections().execute();
-        if (execute.isSuccessful() && execute.body() != null) {
-            return new ArrayList<>(List.of(execute.body()));
+        if (service != null) {
+            retrofit2.Response<ChromaCollection[]> execute = service.getCollections().execute();
+            if (execute.isSuccessful() && execute.body() != null) {
+                return new ArrayList<>(List.of(execute.body()));
+            } else {
+                throw new IOException("Failed to list collections");
+            }
         } else {
-            throw new IOException("Failed to list collections");
+            NotificationUtil.sendNotification(ChromaDBManager.theProject, "ChromeDB service not available");
+            return List.of();
         }
     }
 
@@ -64,15 +74,6 @@ public final class ChromaDBManager {
             return execute.body();
         } else {
             throw new IOException("Failed to count documents");
-        }
-    }
-
-    public boolean isReady() {
-        try {
-            listCollections();
-            return true;
-        } catch (IOException e) {
-            return false;
         }
     }
 
@@ -117,11 +118,11 @@ public final class ChromaDBManager {
     }
 
     public void pullChromaDockerImage(Project project, ChromaDBStatusCallback callback) {
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Pulling ChromaDB Image") {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Pulling chromaDB image") {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(true);
-                indicator.setText("Pulling ChromaDB Docker image...");
+                indicator.setText("Pulling chromaDB docker image...");
 
                 try {
                     ChromaDockerService dockerService =

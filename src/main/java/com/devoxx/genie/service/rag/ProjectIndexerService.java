@@ -33,7 +33,7 @@ import static com.devoxx.genie.service.rag.IndexerConstants.*;
 @Service
 public final class ProjectIndexerService {
     
-    private final ChromaEmbeddingService embeddingService;
+    private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
 
     private DocumentSplitter documentSplitter;
@@ -44,7 +44,7 @@ public final class ProjectIndexerService {
     }
 
     public ProjectIndexerService() {
-        this.embeddingService = ChromaEmbeddingService.getInstance();
+        this.chromaEmbeddingService = ChromaEmbeddingService.getInstance();
         this.projectScannerService = ProjectScannerService.getInstance();
     }
 
@@ -60,8 +60,8 @@ public final class ProjectIndexerService {
             String projectHash = createProjectHash(projectPath);
 
             // Search for the project hash in metadata
-            Embedding hashEmbedding = embeddingService.getEmbeddingModel().embed(projectHash).content();
-            var results = embeddingService.getEmbeddingStore().search(EmbeddingSearchRequest.builder()
+            Embedding hashEmbedding = chromaEmbeddingService.getEmbeddingModel().embed(projectHash).content();
+            var results = chromaEmbeddingService.getEmbeddingStore().search(EmbeddingSearchRequest.builder()
                     .queryEmbedding(hashEmbedding)
                     .maxResults(1)
                     .minScore(0.99) // High threshold for exact match
@@ -69,7 +69,7 @@ public final class ProjectIndexerService {
 
             return !results.matches().isEmpty();
         } catch (Exception e) {
-            log.warn("Error checking project index status: " + e.getMessage());
+            log.warn("Error checking project index status: {}", e.getMessage());
             return false;
         }
     }
@@ -83,8 +83,8 @@ public final class ProjectIndexerService {
     private boolean isFileIndexed(Path filePath) {
         try {
             String fileIdentifier = filePath.toAbsolutePath().toString();
-            Embedding fileEmbedding = embeddingService.getEmbeddingModel().embed(fileIdentifier).content();
-            var results = embeddingService.getEmbeddingStore().search(EmbeddingSearchRequest
+            Embedding fileEmbedding = chromaEmbeddingService.getEmbeddingModel().embed(fileIdentifier).content();
+            var results = chromaEmbeddingService.getEmbeddingStore().search(EmbeddingSearchRequest
                     .builder()
                     .queryEmbedding(fileEmbedding)
                     .maxResults(1)
@@ -106,7 +106,7 @@ public final class ProjectIndexerService {
                            boolean forceReindex,
                            JProgressBar progressBar,
                            JLabel progressLabel) {
-        embeddingService.init(project);
+        chromaEmbeddingService.init(project);
         documentSplitter = DocumentSplitters.recursive(500, 0);
 
         String basePath = project.getBasePath();
@@ -177,7 +177,8 @@ public final class ProjectIndexerService {
             if (!storedMetadata.containsKey("lastModified")) {
                 return true;
             }
-            long storedLastModified = storedMetadata.getLong("lastModified");
+            Long storedLastModified = storedMetadata.getLong("lastModified");
+            if (storedLastModified == null) return false;
             return currentLastModified > storedLastModified;
         } catch (IOException e) {
             return true; // If we can't check, assume it changed
@@ -198,8 +199,8 @@ public final class ProjectIndexerService {
     private void markFileAsIndexed(Path filePath, TextSegment segment) {
         try {
             String fileIdentifier = createFileIdentifier(filePath);
-            Embedding embedding = embeddingService.getEmbeddingModel().embed(fileIdentifier).content();
-            embeddingService.getEmbeddingStore().add(embedding, segment);
+            Embedding embedding = chromaEmbeddingService.getEmbeddingModel().embed(fileIdentifier).content();
+            chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
         } catch (Exception e) {
             log.warn("Error marking file as indexed: " + e.getMessage());
         }

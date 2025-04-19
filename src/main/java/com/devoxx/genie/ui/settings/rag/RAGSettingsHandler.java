@@ -37,7 +37,7 @@ public class RAGSettingsHandler implements ActionListener {
         this.project = project;
         this.validationPanel = validationPanel;
         this.settingsComponent = settingsComponent;
-        this.chromaDBManager = ChromaDBManager.getInstance();
+        this.chromaDBManager = ChromaDBManager.getInstance(project);
     }
 
     public void performValidation() {

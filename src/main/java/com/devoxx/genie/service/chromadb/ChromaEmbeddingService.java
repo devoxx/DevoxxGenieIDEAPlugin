@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.chromadb;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
@@ -37,9 +38,14 @@ public final class ChromaEmbeddingService {
                     .collectionName(getCollectionName(project))
                     .build();
 
-            initEmbeddingModel();
+            this.embeddingModel = getEmbeddingModel();
+
+            if (this.embeddingModel == null) {
+                NotificationUtil.sendNotification(project, "Failed to initialize ChromaDB");
+                throw new RuntimeException("Failed to initialize ChromaDB");
+            }
         } catch (Exception e) {
-            log.error("Failed to initialize ChromaDB: " + e.getMessage());
+            log.error("Failed to initialize ChromaDB: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -55,8 +61,8 @@ public final class ChromaEmbeddingService {
                       .replaceAll("[^a-z0-9-]", "-");
     }
 
-    private void initEmbeddingModel() {
-        this.embeddingModel = OllamaEmbeddingModel.builder()
+    public OllamaEmbeddingModel getEmbeddingModel() {
+        return OllamaEmbeddingModel.builder()
                 .baseUrl(stateService.getOllamaModelUrl())
                 .modelName("nomic-embed-text")
                 .build();
