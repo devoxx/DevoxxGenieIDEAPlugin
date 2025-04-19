@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.ToolbarDecorator;
@@ -36,22 +37,19 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox enableDebugLogsCheckbox;
 
     public MCPSettingsComponent() {
-        super();
+
         tableModel = new MCPServerTableModel();
         mcpTable = new JBTable(tableModel);
         
         // Initialize checkboxes
         enableMcpCheckbox = new JCheckBox("Enable MCP Support");
-        enableMcpCheckbox.setSelected(DevoxxGenieStateService.getInstance().getMcpEnabled());
         enableMcpCheckbox.addActionListener(e -> isModified = true);
         
         enableDebugLogsCheckbox = new JCheckBox("Enable MCP Logging");
-        enableDebugLogsCheckbox.setSelected(DevoxxGenieStateService.getInstance().getMcpDebugLogsEnabled());
         enableDebugLogsCheckbox.addActionListener(e -> isModified = true);
         
         setupTable();
-        loadCurrentSettings();
-        
+
         ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(mcpTable)
                 .setAddAction(button -> addMcpServer())
                 .setEditAction(button -> editMcpServer())
@@ -75,6 +73,26 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         topPanel.add(infoPanel, BorderLayout.NORTH);
         topPanel.add(checkboxPanel, BorderLayout.CENTER);
 
+        JPanel buttonPanel = getButtonPanel();
+
+        // Build the main panel
+        panel.setLayout(new BorderLayout());
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(decoratedTablePanel, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            loadCurrentSettings(); // Load data after UI is potentially visible
+            // Now set checkbox states after loading
+            DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+            enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
+            enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
+            // Reset modified flag if needed, as initial load shouldn't count as modification
+            isModified = false;
+        });
+    }
+
+    private static @NotNull JPanel getButtonPanel() {
         JButton infoButton = new JButton("What is MCP", AllIcons.Actions.Help);
         infoButton.addActionListener(e -> {
             // Open browser
@@ -93,7 +111,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 log.error(ex.getMessage());
             }
         });
-        
+
         JButton fileSystemMCPButton = new JButton("FileSystem MCP", AllIcons.General.OpenDisk);
         fileSystemMCPButton.addActionListener(e -> {
             try {
@@ -107,12 +125,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         buttonPanel.add(infoButton);
         buttonPanel.add(githubMCPButton);
         buttonPanel.add(fileSystemMCPButton);
-
-        // Build the main panel
-        panel.setLayout(new BorderLayout());
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(decoratedTablePanel, BorderLayout.CENTER);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
+        return buttonPanel;
     }
 
     private void setupTable() {
@@ -430,34 +443,6 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 }
             }
         }
-    }
-    
-    /**
-     * Updates the Open MCP log panel button's state based on current settings
-     * 
-     * @param button The button to update
-     */
-    private void updateLogButtonState(JButton button) {
-        boolean logsEnabled = MCPService.isDebugLogsEnabled();
-        
-        // Set tooltip based on current state
-        if (logsEnabled) {
-            button.setToolTipText("Open the MCP log panel to view MCP communication logs");
-        } else {
-            button.setToolTipText("Enable MCP and MCP logging to view logs");
-        }
-        
-        // Listen for checkbox changes to update button state
-        enableMcpCheckbox.addActionListener(e -> {
-            updateButtonBasedOnState(button);
-        });
-        
-        enableDebugLogsCheckbox.addActionListener(e -> {
-            updateButtonBasedOnState(button);
-        });
-        
-        // Initial state
-        updateButtonBasedOnState(button);
     }
     
     /**
