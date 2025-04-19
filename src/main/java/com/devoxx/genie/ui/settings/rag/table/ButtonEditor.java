@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings.rag.table;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaDockerService;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -82,7 +83,7 @@ public class ButtonEditor extends DefaultCellEditor {
                 String collectionId = (String) tableModel.getValueAt(row, 0);
                 if (collectionId != null && confirmDeletion(collectionId)) {
                     // Delete collection first
-                    ChromaDBManager.getInstance().deleteCollection(collectionId);
+                    ChromaDBManager.getInstance(project).deleteCollection(collectionId);
 
                     // Delete the associated volume data
                     dockerService.deleteCollectionData(project, collectionId);
@@ -110,12 +111,18 @@ public class ButtonEditor extends DefaultCellEditor {
                 // Clear table first
                 tableModel.setRowCount(0);
 
+                // Check if RAG is enabled in settings
+                if (!DevoxxGenieStateService.getInstance().getRagEnabled()) {
+                    // Don't try to load collections if RAG is disabled
+                    return;
+                }
+
                 // Load collections
-                List<ChromaCollection> collections = ChromaDBManager.getInstance().listCollections();
+                List<ChromaCollection> collections = ChromaDBManager.getInstance(project).listCollections();
 
                 // Add rows safely
                 for (ChromaCollection collection : collections) {
-                    int totalDocs = ChromaDBManager.getInstance().countDocuments(collection.id());
+                    int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
                     tableModel.addRow(new Object[]{
                             collection.name(),
                             totalDocs,
@@ -127,10 +134,8 @@ public class ButtonEditor extends DefaultCellEditor {
                 tableModel.fireTableDataChanged();
             } catch (IOException e) {
                 // Don't show error during startup
-                if (ChromaDBManager.getInstance().isReady()) {
-                    NotificationUtil.sendNotification(project,
-                            "Failed to load collections: " + e.getMessage());
-                }
+                NotificationUtil.sendNotification(project,
+                        "Failed to load collections: " + e.getMessage());
             }
         });
     }
