@@ -182,7 +182,7 @@ public final class ChromaDockerService {
         Path collectionPath = volumePath.resolve(collectionName);
 
         if (!Files.exists(collectionPath)) {
-            log.debug("Collection directory does not exist: " + collectionPath);
+            log.debug("Collection directory does not exist: {}", collectionPath);
             return;
         }
 
@@ -197,13 +197,13 @@ public final class ChromaDockerService {
                     .forEach(path -> {
                         try {
                             Files.delete(path);
-                            log.debug("Deleted: " + path);
+                            log.debug("Deleted: {}", path);
                         } catch (IOException e) {
-                            log.warn("Failed to delete: " + path, e);
+                            log.warn("Failed to delete: {} : {}", path, e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            log.error("Failed to delete collection data for: " + collectionName, e);
+            log.error("Failed to delete collection data for: {}", collectionName, e);
         }
     }
 }

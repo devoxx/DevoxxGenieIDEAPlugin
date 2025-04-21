@@ -20,32 +20,22 @@ public final class ChromaEmbeddingService {
     @Getter
     private ChromaEmbeddingStore embeddingStore;
 
-    @Getter
-    private OllamaEmbeddingModel embeddingModel;
-
     @NotNull
     public static ChromaEmbeddingService getInstance() {
         return ApplicationManager.getApplication().getService(ChromaEmbeddingService.class);
     }
 
     public void init(Project project) {
+        String url = "http://localhost:" + stateService.getIndexerPort();
         try {
-            String url = "http://localhost:" + stateService.getIndexerPort();
             this.embeddingStore = ChromaEmbeddingStore.builder()
                     .baseUrl(url)
                     .logRequests(true)
                     .logResponses(true)
                     .collectionName(getCollectionName(project))
                     .build();
-
-            this.embeddingModel = getEmbeddingModel();
-
-            if (this.embeddingModel == null) {
-                NotificationUtil.sendNotification(project, "Failed to initialize ChromaDB");
-                throw new RuntimeException("Failed to initialize ChromaDB");
-            }
         } catch (Exception e) {
-            log.error("Failed to initialize ChromaDB: {}", e.getMessage());
+            log.error("Failed to initialize ChromaDB via {}: {}", url, e.getMessage());
             throw new RuntimeException(e);
         }
     }

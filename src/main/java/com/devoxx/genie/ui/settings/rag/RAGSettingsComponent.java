@@ -116,8 +116,12 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
         progressBar.setVisible(false);
-        progressLabel = new JLabel();
+        progressLabel = new JLabel("Ready to index");
         progressLabel.setVisible(false);
+        
+        // Set preferred size to ensure the progress bar is visible when shown
+        progressBar.setPreferredSize(new Dimension(300, 20));
+        progressLabel.setPreferredSize(new Dimension(300, 20));
     }
 
     @Override
@@ -209,31 +213,106 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy++;
     }
 
+    // Flag to track if indexing is currently running
+    private boolean isIndexing = false;
+    
     private void startIndexing() {
         if (!enableIndexerCheckBox.isSelected()) {
             return;
         }
-        startIndexButton.setEnabled(false);
-        startIndexButton.setText("Indexing in progress...");
-        progressBar.setValue(0);
-        progressBar.setVisible(true);
-        progressLabel.setVisible(true);
-        // Use a separate thread for indexing
-        new Thread(() -> {
+        
+        // If indexing is already running, stop it
+        if (isIndexing) {
+            // Request cancellation
+            ProjectIndexerService.getInstance().cancelIndexing();
+            
+            // Update UI to show we're stopping
+            SwingUtilities.invokeLater(() -> {
+                progressLabel.setText("Stopping indexing process...");
+            });
+            
+            return;
+        }
+        
+        // Set indexing flag
+        isIndexing = true;
+        
+        // Make sure progress components are visible before starting the indexing process
+        setStartButtons(false);
+        
+        // Run the indexing process in a background thread to avoid blocking the UI
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
+                // Run the indexing process
                 ProjectIndexerService.getInstance().indexFiles(project, true, progressBar, progressLabel);
-            } catch (Exception e) {
-                NotificationUtil.sendNotification(project, "Error indexing project: " + e.getMessage());
-            } finally {
+                
+                // Update UI after indexing is complete
                 SwingUtilities.invokeLater(() -> {
-                    startIndexButton.setEnabled(true);
-                    startIndexButton.setText("Start Indexing");
-                    progressBar.setVisible(false);
-                    progressLabel.setVisible(false);
-                    loadCollections();
+                    // Reset indexing flag
+                    isIndexing = false;
+                    
+                    // First reset the buttons
+                    setStartButtons(true);
+                    
+                    // Clear the table before reloading
+                    tableModel.setRowCount(0);
+                    tableModel.fireTableDataChanged();
+                    
+                    // Add a small delay to ensure ChromaDB has time to update its state
+                    Timer timer = new Timer(500, e -> {
+                        // Reload collections
+                        loadCollections();
+                        
+                        // Force table repaint
+                        collectionsTable.revalidate();
+                        collectionsTable.repaint();
+                        
+                        // Show a notification that indexing is complete
+                        if (ProjectIndexerService.getInstance().isIndexingCancelled()) {
+                            NotificationUtil.sendNotification(project, "Project indexing was cancelled");
+                        } else {
+                            NotificationUtil.sendNotification(project, "Project indexing completed successfully");
+                        }
+                    });
+                    timer.setRepeats(false);
+                    timer.start();
+                });
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    // Reset indexing flag
+                    isIndexing = false;
+                    
+                    NotificationUtil.sendNotification(project, "Error indexing project: " + e.getMessage());
+                    setStartButtons(true);
                 });
             }
-        }).start();
+        });
+    }
+
+    private void setStartButtons(boolean state) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            // If we're already on the EDT, update directly
+            updateButtonsState(state);
+        } else {
+            // Otherwise, use invokeLater
+            SwingUtilities.invokeLater(() -> updateButtonsState(state));
+        }
+    }
+    
+    private void updateButtonsState(boolean state) {
+        // Update button text based on indexing state
+        if (state) {
+            // If state is true, we're either not indexing or ready to start
+            startIndexButton.setText("Start Indexing");
+            isIndexing = false;
+        } else {
+            // If state is false, we're currently indexing
+            startIndexButton.setText("Stop Indexing");
+            isIndexing = true;
+        }
+        
+        progressBar.setVisible(!state);
+        progressLabel.setVisible(!state);
     }
 
     private void updateActionButtonState() {

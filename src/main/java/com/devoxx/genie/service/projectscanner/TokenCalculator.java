@@ -32,13 +32,13 @@ public class TokenCalculator {
      */
     public int calculateTokens(@NotNull String text) {
         // Make sure we're getting the accurate token count
-        log.info("Calculating tokens for text of length: " + text.length());
+        log.info("Calculating tokens for text of length: {}", text.length());
         int tokenCount = encoding.countTokensOrdinary(text);
-        log.info("Token count calculated: " + tokenCount);
+        log.info("Token count calculated: {}", tokenCount);
         return tokenCount;
     }
 
-    public String truncateToTokens(@NotNull String text, int maxTokens, boolean isTokenCalculation) {
+    public String truncateToTokens(@NotNull String text, int maxTokens) {
         IntArrayList tokens = encoding.encodeOrdinary(text);
         if (tokens.size() <= maxTokens) {
             return text;
@@ -48,7 +48,6 @@ public class TokenCalculator {
             truncatedTokens.add(tokens.get(i));
         }
         String truncatedContent = encoding.decode(truncatedTokens);
-        return isTokenCalculation ? truncatedContent :
-                truncatedContent + "\n--- Project context truncated due to token limit ---\n";
+        return truncatedContent + "\n--- Project context truncated due to token limit ---\n";
     }
 }

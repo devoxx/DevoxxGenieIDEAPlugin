@@ -39,6 +39,8 @@
         <UL>
             <LI>Feat #651 : Added gemini-2.5-flash-preview-04-17</LI>
             <LI>Fix #655 : DevoxxGenie settings panel blocks UI</LI>
+            <LI>Feat #657 : Init RAG async</LI>
+            <LI>Fix #657 : Make RAG process more robust</LI>
         </UL>
         <h2>v0.5.10</h2>
         <UL>
