@@ -20,7 +20,6 @@ import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,7 +92,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                     int index = logList.locationToIndex(e.getPoint());
                     if (index >= 0 && index < logListModel.size()) {
                         openLogInEditor(logListModel.getElementAt(index));
-                        log.debug("Opening log entry at index: " + index);
+                        log.debug("Opening log entry at index: {}", index);
                     }
                 }
             }
@@ -284,7 +283,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         ApplicationManager.getApplication().invokeLater(() -> {
             // Clear placeholder messages if this is the first real log
             if (fullLogs.size() == 1) {
-                String firstLogMessage = fullLogs.get(0).getLogMessage();
+                String firstLogMessage = fullLogs.get(0).logMessage();
                 if (firstLogMessage.equals(MCP_DISABLED_MESSAGE) || firstLogMessage.equals(MCP_EMPTY_LOGS_MESSAGE)) {
                     fullLogs.clear();
                     logListModel.clear();
@@ -357,7 +356,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         
         try {
             // Get original content
-            String content = logEntry.getLogMessage();
+            String content = logEntry.logMessage();
             
             // Log to help with debugging
             log.debug("Opening log entry: {} ... ", content.substring(0, Math.min(50, content.length())));
@@ -368,7 +367,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             }
             
             // Create a filename based on the timestamp
-            String fileName = "MCPLog_" + logEntry.getTimestamp().replace(":", "").replace(".", "_") + ".json";
+            String fileName = "MCPLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".json";
             
             // Create a virtual file and open it in the editor using invokeLater to avoid threading issues
             String finalContent = content;
@@ -416,21 +415,13 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         fullLogs.clear();
         logListModel.clear();
     }
-    
+
     /**
      * Log entry data class
      */
-    @Getter
-    private static class LogEntry {
-        private final String timestamp;
-        private final String logMessage;
-        
-        public LogEntry(String timestamp, String logMessage) {
-            this.timestamp = timestamp;
-            this.logMessage = logMessage;
-        }
+    private record LogEntry(String timestamp, String logMessage) {
 
-        @Override
+    @Override
         public String toString() {
             return timestamp + " " + logMessage;
         }
@@ -453,9 +444,9 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 // Only use HTML when needed for complex formatting
                 // For simple cases, we'll just set the text directly with colors
                 if (!isSelected) {
-                    String message = logEntry.getLogMessage();
+                    String message = logEntry.logMessage();
 
-                    label.setText(logEntry.getTimestamp() + " " + message);
+                    label.setText(logEntry.timestamp() + " " + message);
                     
                     // Set text color based on message type
                     if (message.startsWith("<")) {
@@ -466,7 +457,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
                 }
                 
                 // Set tooltip with just the message part for clarity
-                label.setToolTipText(logEntry.getLogMessage());
+                label.setToolTipText(logEntry.logMessage());
             }
             
             return label;
