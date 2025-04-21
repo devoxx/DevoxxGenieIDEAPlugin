@@ -51,6 +51,11 @@ public final class ChromaDBManager {
     }
 
     public @NotNull List<ChromaCollection> listCollections() throws IOException {
+        // Ensure service is initialized
+        if (service == null) {
+            initChromaDBService();
+        }
+        
         if (service != null) {
             retrofit2.Response<ChromaCollection[]> execute = service.getCollections().execute();
             if (execute.isSuccessful() && execute.body() != null) {

@@ -114,6 +114,7 @@ public class ButtonEditor extends DefaultCellEditor {
                 // Check if RAG is enabled in settings
                 if (!DevoxxGenieStateService.getInstance().getRagEnabled()) {
                     // Don't try to load collections if RAG is disabled
+                    tableModel.fireTableDataChanged();
                     return;
                 }
 
@@ -122,16 +123,31 @@ public class ButtonEditor extends DefaultCellEditor {
 
                 // Add rows safely
                 for (ChromaCollection collection : collections) {
-                    int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
-                    tableModel.addRow(new Object[]{
-                            collection.name(),
-                            totalDocs,
-                            DELETE_LABEL
-                    });
+                    try {
+                        int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
+                        tableModel.addRow(new Object[]{
+                                collection.name(),
+                                totalDocs,
+                                DELETE_LABEL
+                        });
+                    } catch (IOException e) {
+                        // If we can't count documents for a specific collection, still add it with 0 count
+                        tableModel.addRow(new Object[]{
+                                collection.name(),
+                                0,
+                                DELETE_LABEL
+                        });
+                    }
                 }
 
                 // Notify table of data change
                 tableModel.fireTableDataChanged();
+                
+                // Force the table to repaint
+                if (collectionsTable != null) {
+                    collectionsTable.revalidate();
+                    collectionsTable.repaint();
+                }
             } catch (IOException e) {
                 // Don't show error during startup
                 NotificationUtil.sendNotification(project,
