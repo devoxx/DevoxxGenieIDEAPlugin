@@ -12,19 +12,32 @@ import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.component.JEditorPaneUtils;
 import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.DevoxxGenieColorsUtil;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.impl.EditorCssFontResolver;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.HTMLEditorKitBuilder;
 import dev.langchain4j.data.message.AiMessage;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.text.html.HTMLEditorKit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_TEXT_COLOR;
 
 import javax.swing.*;
 import java.awt.*;
@@ -281,16 +294,50 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Override
     public void onMCPLoggingMessage(@NotNull MCPMessage message) {
         if (message.getType().equals(MCPType.AI_MSG)) {
-            String formattedContent = new SimpleDateFormat("HH:mm:ss")
-                    .format(new Date()) + " - " + message.getContent();
 
-            JEditorPane htmlJEditorPane =
-                    JEditorPaneUtils.createHtmlJEditorPane(
-                            formattedContent,
-                            null,
-                            StyleSheetsFactory.createParagraphStyleSheet()
+            // Parse and render markdown content
+            String markdownContent = "⦿ " + message.getContent();
+            
+            // Create parser and renderer for markdown
+            Parser parser = Parser.builder().build();
+            HtmlRenderer renderer = HtmlRenderer
+                .builder()
+                .nodeRendererFactory(context -> {
+                    AtomicReference<CodeBlockNodeRenderer> codeBlockRenderer = new AtomicReference<>();
+                    ApplicationManager.getApplication().runReadAction((Computable<CodeBlockNodeRenderer>) () ->
+                            codeBlockRenderer.getAndSet(new CodeBlockNodeRenderer(project, context))
                     );
+                    return codeBlockRenderer.get();
+                })
+                .escapeHtml(true)
+                .build();
+            
+            // Convert markdown to HTML
+            String htmlContent = renderer.render(parser.parse(markdownContent));
 
+            // Create and configure the editor pane
+            JEditorPane htmlJEditorPane = new JEditorPane();
+            htmlJEditorPane.setContentType("text/html");
+            htmlJEditorPane.setEditable(false);
+            
+            // Set up HTML editor kit with proper styling
+            HTMLEditorKitBuilder htmlEditorKitBuilder =
+                new HTMLEditorKitBuilder()
+                    .withWordWrapViewFactory()
+                    .withFontResolver(EditorCssFontResolver.getGlobalInstance());
+
+            HTMLEditorKit editorKit = htmlEditorKitBuilder.build();
+            editorKit.getStyleSheet().addStyleSheet(StyleSheetsFactory.createParagraphStyleSheet());
+            htmlJEditorPane.setEditorKit(editorKit);
+            
+            // Set background and foreground colors
+            htmlJEditorPane.setBackground(PROMPT_BG_COLOR);
+            htmlJEditorPane.setForeground(PROMPT_TEXT_COLOR);
+            
+            // Set the HTML content
+            htmlJEditorPane.setText(htmlContent);
+            
+            // Add to container and update UI
             container.add(htmlJEditorPane);
             container.revalidate();
             container.repaint();

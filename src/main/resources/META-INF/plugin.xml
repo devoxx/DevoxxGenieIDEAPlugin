@@ -41,6 +41,7 @@
             <LI>Fix #655 : DevoxxGenie settings panel blocks UI</LI>
             <LI>Feat #657 : Init RAG async</LI>
             <LI>Fix #657 : Make RAG process more robust</LI>
+            <LI>Feat #658: Improve the MCP logging UI/UX</LI>
         </UL>
         <h2>v0.5.10</h2>
         <UL>
