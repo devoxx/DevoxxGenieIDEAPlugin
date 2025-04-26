@@ -3,11 +3,12 @@ package com.devoxx.genie.ui.panel.chatresponse;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.gitdiff.GitMergeService;
-import com.devoxx.genie.ui.panel.WebViewResponsePanel;
+import com.devoxx.genie.ui.processor.NodeProcessorFactory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
+import org.commonmark.node.Block;
 import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.IndentedCodeBlock;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
@@ -20,10 +21,9 @@ import java.util.List;
 public class ResponseDocumentPanel extends JPanel {
 
     private final transient ChatMessageContext chatMessageContext;
-    private WebViewResponsePanel webViewResponsePanel;
 
     public ResponseDocumentPanel(@NotNull ChatMessageContext chatMessageContext) {
-        setLayout(new BorderLayout());
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         this.chatMessageContext = chatMessageContext;
 
         String markDownResponse = chatMessageContext.getAiMessage().text();
@@ -34,8 +34,7 @@ public class ResponseDocumentPanel extends JPanel {
             processGitDiff(chatMessageContext, document);
         }
 
-        // Create the WebView-based response panel
-        createWebViewPanel();
+        addDocumentNodesToPanel(document);
     }
 
     private void processGitDiff(@NotNull ChatMessageContext chatMessageContext, @NotNull Node document) {
@@ -65,19 +64,55 @@ public class ResponseDocumentPanel extends JPanel {
         }
     }
 
+
     /**
-     * Create a WebView panel to display the response content
+     * Add document nodes to the panel.
+     *
+     * @param document the document
      */
-    private void createWebViewPanel() {
-        webViewResponsePanel = new WebViewResponsePanel(chatMessageContext);
-        
-        // Use a scrollable panel for the web view
-        JBScrollPane scrollPane = new JBScrollPane(webViewResponsePanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        
-        // Add to the main panel
-        add(scrollPane, BorderLayout.CENTER);
+    private void addDocumentNodesToPanel(@NotNull Node document) {
+        JPanel jPanel = createPanel();
+        Node node = document.getFirstChild();
+
+        while (node != null) {
+            JPanel panel;
+
+            if (node instanceof FencedCodeBlock fencedCodeBlock) {
+                panel = processBlock(fencedCodeBlock);
+            } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
+                panel = processBlock(indentedCodeBlock);
+            } else {
+                panel = processBlock((Block) node);
+            }
+
+            setFullWidth(panel);
+
+            jPanel.add(panel);
+            node = node.getNext();
+        }
+
+        add(jPanel);
+    }
+
+    private void setFullWidth(@NotNull JPanel panel) {
+        Dimension maximumSize = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        panel.setMaximumSize(maximumSize);
+        panel.setMinimumSize(new Dimension(panel.getPreferredSize().width, panel.getPreferredSize().height));
+    }
+
+    private @NotNull JPanel createPanel() {
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+        return jPanel;
+    }
+
+    /**
+     * Process a block and return a panel.
+     *
+     * @param theBlock the block
+     * @return the panel
+     */
+    private JPanel processBlock(Block theBlock) {
+        return NodeProcessorFactory.createProcessor(chatMessageContext, theBlock).processNode();
     }
 }

@@ -15,6 +15,8 @@ public class ChatResponsePanel extends BackgroundPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         add(new ResponseHeaderPanel(chatMessageContext));
+        
+        // Use the new WebView-based response panel instead of the previous Swing-based panel
         add(new ResponseDocumentPanel(chatMessageContext));
 
         if (!FileListManager.getInstance().isEmpty(chatMessageContext.getProject())) {

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.5.11"
+version = "0.6.0"
 
 repositories {
     mavenCentral()
@@ -80,6 +80,7 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.0.0")
     implementation("org.commonmark:commonmark:0.22.0")
+    implementation("io.netty:netty-all:4.1.100.Final")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.12")

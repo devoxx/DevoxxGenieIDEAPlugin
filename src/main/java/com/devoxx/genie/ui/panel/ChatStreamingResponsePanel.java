@@ -24,14 +24,14 @@ import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_TEXT_COLOR;
 import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT;
 
+/**
+ * Panel for displaying streaming chat responses.
+ * This implementation now uses a WebView for rendering responses with PrismJS.
+ */
 public class ChatStreamingResponsePanel extends BackgroundPanel {
 
-    private final JEditorPane editorPane = createEditorPane();
-    private final StringBuilder markdownContent = new StringBuilder();
-
-    private final transient Parser parser;
-    private final transient HtmlRenderer renderer;
-
+    private final StreamingWebViewResponsePanel webViewPanel;
+    
     /**
      * Create a new chat response panel.
      *
@@ -41,43 +41,14 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
         super(chatMessageContext.getId());
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        add(new ResponseHeaderPanel(chatMessageContext));
-
-        editorPane.setBackground(PROMPT_BG_COLOR);
-        editorPane.setForeground(PROMPT_TEXT_COLOR);
-
-        add(editorPane);
-
-        setMaxWidth();
-
-        if (!FileListManager.getInstance().isEmpty(chatMessageContext.getProject())) {
-            java.util.List<VirtualFile> files = FileListManager.getInstance().getFiles(chatMessageContext.getProject());
-            ExpandablePanel fileListPanel = new ExpandablePanel(chatMessageContext, files);
-            add(fileListPanel);
-        }
-
-        parser = Parser.builder().build();
-        renderer = createHTMLRenderer(chatMessageContext);
-    }
-
-    private static HtmlRenderer createHTMLRenderer(@NotNull ChatMessageContext chatMessageContext) {
-        return HtmlRenderer
-            .builder()
-            .nodeRendererFactory(context -> {
-                AtomicReference<CodeBlockNodeRenderer> codeBlockRenderer = new AtomicReference<>();
-                ApplicationManager.getApplication().runReadAction((Computable<CodeBlockNodeRenderer>) () ->
-                        codeBlockRenderer.getAndSet(new CodeBlockNodeRenderer(chatMessageContext.getProject(), context))
-                );
-                return codeBlockRenderer.get();
-            })
-            .escapeHtml(true)
-            .build();
-    }
-
-    private void setMaxWidth() {
+        
+        // Create and add the WebView-based streaming response panel
+        webViewPanel = new StreamingWebViewResponsePanel(chatMessageContext);
+        add(webViewPanel);
+        
+        // Set maximum size for proper display
         Dimension maximumSize = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
-        editorPane.setMaximumSize(maximumSize);
-        editorPane.setMinimumSize(new Dimension(editorPane.getPreferredSize().width, editorPane.getPreferredSize().height));
+        setMaximumSize(maximumSize);
     }
 
     /**
@@ -86,36 +57,7 @@ public class ChatStreamingResponsePanel extends BackgroundPanel {
      * @param token the LLM string token
      */
     public void insertToken(String token) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            markdownContent.append(token);
-            String fullHtmlContent = renderer.render(parser.parse(markdownContent.toString()));
-            editorPane.setText(fullHtmlContent);
-        });
-    }
-
-    /**
-     * Create an editor pane.
-     *
-     * @return the editor pane
-     */
-    private @NotNull JEditorPane createEditorPane() {
-        JEditorPane theEditorPane = new JEditorPane();
-        theEditorPane.setContentType("text/html");
-        theEditorPane.setEditable(false);
-        
-        // Set up HTML editor kit with proper styling to match non-streaming responses
-        HTMLEditorKitBuilder htmlEditorKitBuilder =
-            new HTMLEditorKitBuilder()
-                .withWordWrapViewFactory()
-                .withFontResolver(EditorCssFontResolver.getGlobalInstance());
-
-        HTMLEditorKit editorKit = htmlEditorKitBuilder.build();
-        
-        // Apply the same stylesheet that's used for regular chat responses
-        editorKit.getStyleSheet().addStyleSheet(StyleSheetsFactory.createParagraphStyleSheet());
-        theEditorPane.setEditorKit(editorKit);
-        
-        return theEditorPane;
+        // Delegate token insertion to the WebView panel
+        webViewPanel.insertToken(token);
     }
 }
-
