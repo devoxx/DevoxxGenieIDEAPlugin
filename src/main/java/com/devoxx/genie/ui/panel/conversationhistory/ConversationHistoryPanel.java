@@ -4,6 +4,7 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
@@ -139,7 +140,14 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     @Override
     public void onConversationSelected(Conversation conversation) {
-
+        // Find the ConversationPanel instance and notify it about the selected conversation
+        Project project = this.project;
+        if (project != null) {
+            // Get the message bus connection
+            project.getMessageBus()
+                .syncPublisher(AppTopics.CONVERSATION_SELECTION_TOPIC)
+                .onConversationSelected(conversation);
+        }
     }
 
     // Table model class

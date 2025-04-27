@@ -44,6 +44,7 @@ public class ConversationStorageService {
             throw new RuntimeException("Failed to create database directory", e);
         }
         createTableIfNotExists();
+        migrateDatabase();
     }
 
     public static @NotNull ConversationStorageService getInstance() {
@@ -79,6 +80,7 @@ public class ConversationStorageService {
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             conversationId TEXT,
                             content TEXT,
+                            isUser INTEGER,
                             FOREIGN KEY (conversationId) REFERENCES conversations(id)
                         )
                     """);
@@ -122,20 +124,22 @@ public class ConversationStorageService {
                     ps.setString(4, conversation.getTitle());
                     ps.setString(5, conversation.getLlmProvider());
                     ps.setString(6, conversation.getModelName());
-                    ps.setInt(7, conversation.getApiKeyUsed() ? 1 : 0); // SQLite uses INTEGER for boolean
+                    // Handle nulls for boolean values
+                    ps.setInt(7, conversation.getApiKeyUsed() != null && conversation.getApiKeyUsed() ? 1 : 0);
                     ps.setLong(8, conversation.getInputCost() == null ? 0 : conversation.getInputCost());
                     ps.setLong(9, conversation.getOutputCost() == null ? 0 : conversation.getOutputCost());
                     ps.setInt(10, conversation.getContextWindow() == null ? 0 : conversation.getContextWindow());
-                    ps.setInt(11, (int) conversation.getExecutionTimeMs());
+                    ps.setInt(11, (int) (conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 0));
                     ps.executeUpdate();
                 }
 
                 // Insert chat messages
                 try (PreparedStatement msgPs = connection.prepareStatement(
-                        "INSERT INTO chat_messages (conversationId, content) VALUES (?, ?)")) {
+                        "INSERT INTO chat_messages (conversationId, content, isUser) VALUES (?, ?, ?)")) {
                     for (ChatMessage message : conversation.getMessages()) {
                         msgPs.setString(1, conversation.getId());
                         msgPs.setString(2, message.getContent());
+                        msgPs.setInt(3, message.isUser() ? 1 : 0); // Store isUser as INTEGER (1=true, 0=false)
                         msgPs.executeUpdate();
                     }
                 }
@@ -182,6 +186,18 @@ public class ConversationStorageService {
                             while (msgRs.next()) {
                                 ChatMessage message = new ChatMessage();
                                 message.setContent(msgRs.getString("content"));
+                                
+                                // Check if the isUser column exists in the result set
+                                try {
+                                    int isUserFlag = msgRs.getInt("isUser");
+                                    message.setUser(isUserFlag == 1);
+                                    log.debug("Set isUser flag to {} for message", isUserFlag == 1);
+                                } catch (SQLException e) {
+                                    // Column doesn't exist in older database versions, default to alternating pattern
+                                    message.setUser(messages.size() % 2 == 0);
+                                    log.debug("isUser column not found, defaulting to alternating pattern");
+                                }
+                                
                                 messages.add(message);
                             }
                         }
@@ -297,6 +313,91 @@ public class ConversationStorageService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error clearing conversations", e);
+        }
+    }
+    
+    /**
+     * Migrate database to newer schema if needed.
+     * This method handles adding new columns and populating existing records
+     * with appropriate values to ensure backward compatibility.
+     */
+    private void migrateDatabase() {
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            
+            try {
+                // Check if isUser column exists in chat_messages table
+                boolean isUserColumnExists = false;
+                try (Statement statement = connection.createStatement();
+                     ResultSet rs = statement.executeQuery("PRAGMA table_info(chat_messages)")) {
+                    
+                    while (rs.next()) {
+                        String columnName = rs.getString("name");
+                        if ("isUser".equals(columnName)) {
+                            isUserColumnExists = true;
+                            log.info("isUser column already exists in chat_messages table");
+                            break;
+                        }
+                    }
+                }
+                
+                if (!isUserColumnExists) {
+                    log.info("Adding isUser column to chat_messages table");
+                    
+                    // Add the isUser column to the table
+                    try (Statement statement = connection.createStatement()) {
+                        statement.execute("ALTER TABLE chat_messages ADD COLUMN isUser INTEGER DEFAULT 0");
+                    }
+                    
+                    // Process all conversations to set isUser flag correctly
+                    try (Statement statement = connection.createStatement();
+                         ResultSet conversationRs = statement.executeQuery("SELECT id FROM conversations")) {
+                        
+                        while (conversationRs.next()) {
+                            String conversationId = conversationRs.getString("id");
+                            
+                            // Get messages for this conversation
+                            try (PreparedStatement msgPs = connection.prepareStatement(
+                                 "SELECT id FROM chat_messages WHERE conversationId = ? ORDER BY id")) {
+                                msgPs.setString(1, conversationId);
+                                ResultSet msgRs = msgPs.executeQuery();
+                                
+                                // Set every even-indexed message as user (isUser=1)
+                                // and every odd-indexed message as AI (isUser=0)
+                                int messageIndex = 0;
+                                while (msgRs.next()) {
+                                    int messageId = msgRs.getInt("id");
+                                    boolean isUser = messageIndex % 2 == 0; // Even index = user message
+                                    
+                                    try (PreparedStatement updatePs = connection.prepareStatement(
+                                         "UPDATE chat_messages SET isUser = ? WHERE id = ?")) {
+                                        updatePs.setInt(1, isUser ? 1 : 0);
+                                        updatePs.setInt(2, messageId);
+                                        updatePs.executeUpdate();
+                                    }
+                                    
+                                    messageIndex++;
+                                }
+                                
+                                log.debug("Updated {} messages for conversation {}", messageIndex, conversationId);
+                            }
+                        }
+                    }
+                    
+                    log.info("Database migration completed successfully");
+                }
+                
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                log.error("Error during database migration", e);
+                // Don't throw exception to allow application to continue with fallback behavior
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            log.error("Failed to connect to database for migration", e);
+            // Don't throw exception to allow application to continue with fallback behavior
         }
     }
 }

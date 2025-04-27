@@ -50,4 +50,7 @@ public class AppTopics {
     public static final Topic<FileReferencesListener> FILE_REFERENCES_TOPIC =
             Topic.create("fileReferences", FileReferencesListener.class);
 
+    public static final Topic<ConversationSelectionListener> CONVERSATION_SELECTION_TOPIC =
+            Topic.create("conversationSelection", ConversationSelectionListener.class);
+
 }

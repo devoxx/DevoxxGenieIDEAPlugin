@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.conversation.Conversation;
+import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.intellij.util.messages.MessageBusConnection;
+import dev.langchain4j.data.message.AiMessage;
 import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
@@ -91,10 +94,11 @@ public class ConversationPanel
         setBackground(Color.BLACK);
         setVisible(true);
         
-        // Subscribe to the FILE_REFERENCES_TOPIC
-        project.getMessageBus()
-            .connect()
-            .subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
+        // Subscribe to the FILE_REFERENCES_TOPIC and CONVERSATION_SELECTION_TOPIC
+        MessageBusConnection msgBusConnection = project.getMessageBus().connect();
+
+        msgBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
+        msgBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
     }
 
     /**
@@ -119,6 +123,14 @@ public class ConversationPanel
     public void clear() {
         webViewController.clearConversation();
         showWelcome();
+    }
+    
+    /**
+     * Clear the conversation content without showing the welcome message.
+     * Used when restoring conversation history.
+     */
+    public void clearWithoutWelcome() {
+        webViewController.clearConversation();
     }
 
     public void loadConversationHistory() {
@@ -164,6 +176,9 @@ public class ConversationPanel
     }
 
     private void showConversationHistory() {
+        // Always reload the conversation history before showing it
+        loadConversationHistory();
+        
         JBPopup historyPopup = JBPopupFactory.getInstance()
                 .createComponentPopupBuilder(historyPanel, null)
                 .setTitle("Conversation History")
@@ -182,11 +197,17 @@ public class ConversationPanel
 
         // Show the popup at the calculated position
         historyPopup.show(new RelativePoint(screenPoint));
+        
+        log.debug("Conversation history popup shown with freshly loaded conversations");
     }
 
     @Override
     public void onNewConversation(ChatMessageContext chatMessageContext) {
-        loadConversationHistory();
+        // Reload the conversation history when a new conversation is created
+        ApplicationManager.getApplication().invokeLater(() -> {
+            loadConversationHistory();
+            log.debug("Conversation history reloaded after new conversation event");
+        });
     }
 
     /**
@@ -202,21 +223,215 @@ public class ConversationPanel
 
         ApplicationManager.getApplication().invokeLater(() -> {
             updateNewConversationLabel();
-            clear(); // Clear the conversation in the webview
-
-            // TODO Clear conversation
-//            submitPanel.getPromptInputArea().clear();
-//            promptOutputPanel.clear();
-//            submitPanel.getActionButtonsPanel().resetProjectContext();
-//            submitPanel.getActionButtonsPanel().enableButtons();
-//            submitPanel.getActionButtonsPanel().resetTokenUsageBar();
-//            submitPanel.getPromptInputArea().requestFocusInWindow();
+            clear();
         });
     }
 
     @Override
     public void onConversationSelected(Conversation conversation) {
-        // TODO
+        log.debug("Starting conversation restoration for ID: {}", conversation.getId());
+        
+        // Update the conversation label with the title
+        conversationLabel.setText(conversation.getTitle());
+
+        // Check if conversation has any messages
+        List<ChatMessage> messages = conversation.getMessages();
+        if (messages == null || messages.isEmpty()) {
+            log.warn("Selected conversation has no messages to restore");
+            return;
+        }
+        
+        log.debug("Restoring conversation with {} messages", messages.size());
+        
+        // Clear the current conversation in the web view without showing welcome screen
+        clearWithoutWelcome();
+        
+        // Make sure browser is fully initialized before adding messages
+        if (!webViewController.isInitialized()) {
+            log.info("Browser not yet fully initialized, waiting before restoration");
+            webViewController.ensureBrowserInitialized(() -> restoreConversationMessages(conversation, messages));
+        } else {
+            restoreConversationMessages(conversation, messages);
+        }
+    }
+    
+    /**
+     * Helper method to restore the messages of a conversation
+     */
+    private void restoreConversationMessages(Conversation conversation, List<ChatMessage> messages) {
+        // Check if the conversation has any messages
+        if (messages.isEmpty()) {
+            log.warn("No messages to restore");
+            return;
+        }
+
+        // Process all messages
+        int messageIndex = 0;
+
+        // If the first message is an AI message, handle it specially
+        if (messageIndex < messages.size() && !messages.get(messageIndex).isUser()) {
+            log.info("First message is an AI message, creating an empty user message");
+            
+            // Create context for an empty user message paired with this AI message
+            ChatMessageContext context = ChatMessageContext.builder()
+                .project(project)
+                .executionTimeMs(conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 1000)
+                .build();
+            
+            // Set a stable, unique message ID
+            String messageId = conversation.getId() + "-msg-0";
+            context.setId(messageId);
+            
+            // Set empty user prompt
+            context.setUserPrompt(""); 
+            
+            // Set the AI message
+            ChatMessage aiMessage = messages.get(messageIndex);
+            context.setAiMessage(AiMessage.from(aiMessage.getContent()));
+            
+            // Add LLM information
+            populateModelInfo(context, conversation);
+            
+            // Add the message pair
+            addCompleteChatMessage(context);
+            
+            // Advance to next message
+            messageIndex++;
+        }
+
+        // Process remaining messages
+        while (messageIndex < messages.size()) {
+            // Get the current message
+            ChatMessage currentMessage = messages.get(messageIndex);
+            
+            // Create the context for this message or message pair
+            ChatMessageContext context = ChatMessageContext.builder()
+                .project(project)
+                .executionTimeMs(conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 1000)
+                .build();
+            
+            // Set a stable, unique message ID
+            String messageId = conversation.getId() + "-msg-" + messageIndex;
+            context.setId(messageId);
+            
+            // Add LLM information
+            populateModelInfo(context, conversation);
+            
+            if (currentMessage.isUser()) {
+                // Handle user message
+                context.setUserPrompt(currentMessage.getContent());
+                
+                // Check if there's a next message that's an AI response
+                if (messageIndex + 1 < messages.size() && !messages.get(messageIndex + 1).isUser()) {
+                    // We have a matching pair
+                    ChatMessage aiMessage = messages.get(messageIndex + 1);
+                    context.setAiMessage(AiMessage.from(aiMessage.getContent()));
+                    
+                    // Add the complete message pair
+                    addCompleteChatMessage(context);
+                    
+                    // Advance by 2 messages
+                    messageIndex += 2;
+                } else {
+                    // Just a user message with no response
+                    addUserMessageOnly(context);
+                    messageIndex++;
+                }
+            } else {
+                // Handle standalone AI message that wasn't paired with a user message
+                log.warn("Found unpaired AI message at position {}", messageIndex);
+                context.setUserPrompt(""); // Empty user prompt
+                context.setAiMessage(AiMessage.from(currentMessage.getContent()));
+                
+                // Add the message pair with empty user message
+                addCompleteChatMessage(context);
+                messageIndex++;
+            }
+        }
+            
+        // After adding all messages, scroll to the top
+        scrollToTop();
+    }
+    
+    /**
+     * Adds a complete chat message (user + AI) in a thread-safe way
+     */
+    private void addCompleteChatMessage(ChatMessageContext context) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                webViewController.addChatMessage(context);
+                log.debug("Successfully added message pair with ID: {}", context.getId());
+            } catch (Exception e) {
+                log.error("Error adding chat message: {}", e.getMessage(), e);
+            }
+        });
+        
+        // Small delay to ensure proper rendering between messages
+        sleep(75);
+    }
+    
+    /**
+     * Adds just a user message without AI response
+     */
+    private void addUserMessageOnly(ChatMessageContext context) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                webViewController.addUserPromptMessage(context);
+                log.debug("Added user-only message with ID: {}", context.getId());
+            } catch (Exception e) {
+                log.error("Error adding user message: {}", e.getMessage(), e);
+            }
+        });
+        
+        // Small delay to ensure proper rendering
+        sleep(50);
+    }
+    
+    /**
+     * Helper to populate model information 
+     */
+    private void populateModelInfo(ChatMessageContext context, Conversation conversation) {
+        if (conversation.getModelName() != null && !conversation.getModelName().isEmpty()) {
+            com.devoxx.genie.model.LanguageModel model = new com.devoxx.genie.model.LanguageModel();
+            model.setModelName(conversation.getModelName());
+            
+            // Add provider information if available
+            if (conversation.getLlmProvider() != null && !conversation.getLlmProvider().isEmpty()) {
+                try {
+                    model.setProvider(com.devoxx.genie.model.enumarations.ModelProvider.valueOf(conversation.getLlmProvider()));
+                } catch (IllegalArgumentException e) {
+                    // Handle case where provider name might have changed
+                    log.warn("Unknown provider name in saved conversation: {}", conversation.getLlmProvider());
+                }
+            }
+            
+            model.setApiKeyUsed(conversation.getApiKeyUsed() != null ? conversation.getApiKeyUsed() : false);
+            model.setDisplayName(conversation.getModelName());
+            context.setLanguageModel(model);
+        }
+    }
+    
+    /**
+     * Simple sleep helper
+     */
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
+    /**
+     * Scrolls to the top of the conversation
+     */
+    private void scrollToTop() {
+        // Small delay before scrolling to ensure all message rendering is complete
+        ApplicationManager.getApplication().invokeLater(() -> {
+            sleep(300);
+            webViewController.executeJavaScript("window.scrollTo(0, 0);");
+            log.debug("Conversation restoration completed and scrolled to top");
+        });
     }
     
     /**

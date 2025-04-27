@@ -5,6 +5,7 @@ import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
@@ -383,7 +384,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             log.error("Error opening MCP log entry: " + e.getMessage());
             
             // Notify the user about the error
-            com.devoxx.genie.ui.util.NotificationUtil.sendNotification(
+            NotificationUtil.sendNotification(
                 project, 
                 "Error opening MCP log: " + e.getMessage()
             );

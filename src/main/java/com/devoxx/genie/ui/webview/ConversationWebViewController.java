@@ -29,7 +29,6 @@ import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 
 import static java.lang.Thread.sleep;
 
@@ -56,55 +55,55 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
     public ConversationWebViewController(Project project) {
         this.project = project;
         this.webServer = WebServer.getInstance();
-        
+
         // Ensure web server is running
         if (!webServer.isRunning()) {
             webServer.start();
         }
-        
+
         // TODO: Review : Register for theme change notifications via ThemeDetector
         ThemeDetector.addThemeChangeListener(this::themeChanged);
-        
+
         // Create initial HTML content using the template
         ConversationTemplate template = new ConversationTemplate(webServer);
         String htmlContent = template.generate();
-        
+
         // Register content with the web server to get a URL
         String resourceId = webServer.addDynamicResource(htmlContent);
         String resourceUrl = webServer.getResourceUrl(resourceId);
-        
+
         LOG.info("Loading ConversationWebView content from: " + resourceUrl);
-        
+
         // Create browser and load content
         browser = WebViewFactory.createBrowser(resourceUrl);
-        
+
         // Set minimum size to ensure visibility
         browser.getComponent().setMinimumSize(new Dimension(600, 400));
         browser.getComponent().setPreferredSize(new Dimension(800, 600));
-        
+
         // Setup JavaScript bridge to handle file opening
         // Use a custom handler in JS to communicate with Java
         browser.getCefBrowser().executeJavaScript(
-            "window.openFileFromJava = function(path) {" +
-            "  console.log('Opening file: ' + path);" +
-            "  if (window.java_fileOpened) {" +
-            "    window.java_fileOpened(path);" + 
-            "  }" +
-            "}",
-            browser.getCefBrowser().getURL(), 0
+                "window.openFileFromJava = function(path) {" +
+                        "  console.log('Opening file: ' + path);" +
+                        "  if (window.java_fileOpened) {" +
+                        "    window.java_fileOpened(path);" +
+                        "  }" +
+                        "}",
+                browser.getCefBrowser().getURL(), 0
         );
-        
+
         // Set up a handler to open files when clicked and override the fileOpened function
         executeJavaScript(
-            "window.java_fileOpened = function(filePath) {" +
-            "  console.log('Request to open file in IDE: ' + filePath);" +
-            "  // Set the file path in a global variable that our polling will detect" +
-            "  window.fileToOpen = filePath;" +
-            "  // Also store the last found path to make it easier to capture" +
-            "  window.lastFoundPath = filePath;" +
-            "};"
+                "window.java_fileOpened = function(filePath) {" +
+                        "  console.log('Request to open file in IDE: ' + filePath);" +
+                        "  // Set the file path in a global variable that our polling will detect" +
+                        "  window.fileToOpen = filePath;" +
+                        "  // Also store the last found path to make it easier to capture" +
+                        "  window.lastFoundPath = filePath;" +
+                        "};"
         );
-        
+
         // Setup a polling mechanism to check for file open requests
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             while (true) {
@@ -112,32 +111,32 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
                     Thread.sleep(100); // Check every 100ms
                     // Create a mechanism to store the file path in a global variable
                     // that we can poll for
-                    String checkJs = 
-                        "var path = null;" +
-                        "if (window.fileToOpen) {" +
-                        "  path = window.fileToOpen;" +
-                        "  window.fileToOpen = null;" +
-                        "}" +
-                        "if (path) { console.log('Found file to open: ' + path); }" +
-                        "return path;";
-                    
+                    String checkJs =
+                            "var path = null;" +
+                                    "if (window.fileToOpen) {" +
+                                    "  path = window.fileToOpen;" +
+                                    "  window.fileToOpen = null;" +
+                                    "}" +
+                                    "if (path) { console.log('Found file to open: ' + path); }" +
+                                    "return path;";
+
                     // Execute the JavaScript to check for a file to open and capture the result as a string
                     browser.getCefBrowser().executeJavaScript(
-                        "(() => { " + checkJs + " })();", 
-                        browser.getCefBrowser().getURL(), 
-                        0
+                            "(() => { " + checkJs + " })();",
+                            browser.getCefBrowser().getURL(),
+                            0
                     );
-                    
+
                     // After executing, check if there's a window.lastFoundPath that might have been set
                     browser.getCefBrowser().executeJavaScript(
-                        "if (window.lastFoundPath) { " +
-                        "  const path = window.lastFoundPath; " +
-                        "  window.lastFoundPath = null; " +
-                        "  console.log('Opening file from path variable: ' + path); " +
-                        "  window.java_fileOpened(path); " +
-                        "}", 
-                        browser.getCefBrowser().getURL(), 
-                        0
+                            "if (window.lastFoundPath) { " +
+                                    "  const path = window.lastFoundPath; " +
+                                    "  window.lastFoundPath = null; " +
+                                    "  console.log('Opening file from path variable: ' + path); " +
+                                    "  window.java_fileOpened(path); " +
+                                    "}",
+                            browser.getCefBrowser().getURL(),
+                            0
                     );
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -146,20 +145,20 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
                 }
             }
         });
-        
+
         // Define the openFile function to handle file opening when a file is clicked
         browser.getCefBrowser().executeJavaScript(
-            "window.openFile = function(elementId) { " +
-            "  const element = document.getElementById(elementId); " +
-            "  if (element && element.dataset.filePath) { " +
-            "    console.log('Request to open file: ' + element.dataset.filePath);" +
-            "    // Call our openFileFromJava function to handle file opening" +
-            "    openFileFromJava(element.dataset.filePath);" +
-            "  }" +
-            "};",
-            browser.getCefBrowser().getURL(), 0
+                "window.openFile = function(elementId) { " +
+                        "  const element = document.getElementById(elementId); " +
+                        "  if (element && element.dataset.filePath) { " +
+                        "    console.log('Request to open file: ' + element.dataset.filePath);" +
+                        "    // Call our openFileFromJava function to handle file opening" +
+                        "    openFileFromJava(element.dataset.filePath);" +
+                        "  }" +
+                        "};",
+                browser.getCefBrowser().getURL(), 0
         );
-        
+
         // Add load handler to detect when page is fully loaded
         browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
             @Override
@@ -169,6 +168,93 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
                 LOG.info("ConversationWebView loaded with status: " + httpStatusCode);
             }
         }, browser.getCefBrowser());
+    }
+
+    /**
+     * Check if the browser is fully initialized and ready for use
+     */
+    public boolean isInitialized() {
+        return initialized.get();
+    }
+    
+    /**
+     * Ensures the browser is initialized before executing a callback.
+     * If already initialized, executes immediately, otherwise waits.
+     */
+    public void ensureBrowserInitialized(Runnable callback) {
+        if (initialized.get() && isLoaded) {
+            // Already initialized and loaded, execute immediately
+            LOG.debug("Browser already initialized, executing callback immediately");
+            callback.run();
+        } else {
+            // Wait for initialization in a background thread
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                LOG.info("Waiting for browser to initialize...");
+                long startTime = System.currentTimeMillis();
+                
+                // Wait up to 15 seconds for initialization (increased timeout)
+                while ((!initialized.get() || !isLoaded) && System.currentTimeMillis() - startTime < 15000) {
+                    try {
+                        // Log status periodically
+                        if (System.currentTimeMillis() - startTime > 5000 && System.currentTimeMillis() % 1000 < 100) {
+                            LOG.info("Still waiting for browser... initialized=" + initialized.get() +", loaded=" + isLoaded);
+                        }
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while waiting for browser to initialize", e);
+                        return;
+                    }
+                }
+                
+                if (initialized.get() && isLoaded) {
+                    LOG.info("Browser fully initialized, executing callback");
+                    // Add a small delay to ensure the DOM is ready
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    
+                    // Make sure we're running on the UI thread
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            callback.run();
+                        } catch (Exception e) {
+                            LOG.error("Error executing browser callback: " + e.getMessage());
+                        }
+                    });
+                } else {
+                    LOG.error("Browser failed to initialize within timeout (initialized=" + initialized.get() + " loaded=" + isLoaded);
+                    
+                    // Try to recover by forcing a reload
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            // Force reload the browser
+                            LOG.info("Attempting to recover by reloading the browser");
+                            ConversationTemplate template = new ConversationTemplate(webServer);
+                            String htmlContent = template.generate();
+                            String resourceId = webServer.addDynamicResource(htmlContent);
+                            String resourceUrl = webServer.getResourceUrl(resourceId);
+                            browser.loadURL(resourceUrl);
+                            
+                            // Retry with a delay
+                            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                                try {
+                                    Thread.sleep(2000);
+                                    LOG.info("Recovery attempt complete, retrying callback");
+                                    ApplicationManager.getApplication().invokeLater(callback);
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            });
+                        } catch (Exception e) {
+                            LOG.error("Error during browser recovery: " + e.getMessage());
+                        }
+                    });
+                }
+            });
+        }
     }
 
     /**
