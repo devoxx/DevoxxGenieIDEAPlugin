@@ -88,7 +88,7 @@ class ProjectScannerServiceTest  {
 
         // Set up TokenCalculator behavior
         when(mockTokenCalculator.calculateTokens(anyString())).thenReturn(50);
-        when(mockTokenCalculator.truncateToTokens(anyString(), anyInt(), anyBoolean())).thenAnswer(invocation -> {
+        when(mockTokenCalculator.truncateToTokens(anyString(), anyInt())).thenAnswer(invocation -> {
             String content = invocation.getArgument(0);
             int maxTokens = invocation.getArgument(1);
             boolean isTokenCalculation = invocation.getArgument(2);
@@ -151,7 +151,7 @@ class ProjectScannerServiceTest  {
             verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockRootDirectory), any(ScanContentResult.class));
             verify(mockContentExtractor).extractFileContent(mockFile);
             verify(mockContentExtractor).combineContent(anyString(), anyString());
-            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
+            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100));
         }
     }
 
@@ -178,7 +178,7 @@ class ProjectScannerServiceTest  {
             verify(mockFileScanner).scanDirectory(eq(mockProjectFileIndex), eq(mockDirectory), any(ScanContentResult.class));
             verify(mockContentExtractor).extractFileContent(mockFile);
             verify(mockContentExtractor).combineContent(anyString(), anyString());
-            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
+            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100));
         }
     }
 
@@ -357,7 +357,7 @@ class ProjectScannerServiceTest  {
             verify(mockContentExtractor).extractFileContent(mockFile);
             verify(mockContentExtractor).combineContent(anyString(), anyString());
             verify(mockTokenCalculator, atLeastOnce()).calculateTokens(anyString());
-            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
+            verify(mockTokenCalculator).truncateToTokens(anyString(), eq(100));
         }
     }
 
@@ -390,7 +390,7 @@ class ProjectScannerServiceTest  {
             // Set token calculations to exceed limit
             TokenCalculator testTokenCalculator = mock(TokenCalculator.class);
             when(testTokenCalculator.calculateTokens(anyString())).thenReturn(150);
-            when(testTokenCalculator.truncateToTokens(anyString(), eq(100), eq(false)))
+            when(testTokenCalculator.truncateToTokens(anyString(), eq(100)))
                     .thenReturn("Truncated content\n--- Project context truncated due to token limit ---\n");
             
             // Create a test-specific instance of ProjectScannerService with our test mocks
@@ -418,7 +418,7 @@ class ProjectScannerServiceTest  {
             assertTrue(scanContentResult.getContent().contains("--- Project context truncated due to token limit ---"));
 
             // Verify truncation was called
-            verify(testTokenCalculator).truncateToTokens(anyString(), eq(100), eq(false));
+            verify(testTokenCalculator).truncateToTokens(anyString(), eq(100));
         }
     }
 }

@@ -59,11 +59,11 @@ public class ChatMessageTemplate extends HtmlTemplate {
         messageHtml.append("    <div class=\"assistant-message\">\n")
                 .append("        ").append(formatMetadata()).append("\n")
                 .append("        <button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>\n");
-        
+
         // Parse and render the markdown content
-        Node document = markdownParser.parse(chatMessageContext.getAiMessage().text());
+        Node document = markdownParser.parse(chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text());
         Node node = document.getFirstChild();
-        
+
         while (node != null) {
             if (node instanceof FencedCodeBlock fencedCodeBlock) {
                 messageHtml.append(renderCodeBlock(fencedCodeBlock));
@@ -74,7 +74,7 @@ public class ChatMessageTemplate extends HtmlTemplate {
             }
             node = node.getNext();
         }
-        
+
         messageHtml.append("    </div>\n")
                 .append("</div>\n");
         

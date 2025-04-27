@@ -37,7 +37,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Getter
     private final ConversationPanel conversationPanel;
     private final HelpPanel helpPanel;
-    private final WaitingPanel waitingPanel = new WaitingPanel();
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cards = new JPanel(cardLayout);
 
@@ -106,8 +105,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
-        waitingPanel.hideMsg();
-        
+
         // Ensure we're showing the conversation panel
         cardLayout.show(cards, "conversation");
 

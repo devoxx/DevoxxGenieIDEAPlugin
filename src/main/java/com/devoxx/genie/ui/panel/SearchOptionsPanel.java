@@ -13,9 +13,9 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class SearchOptionsPanel extends JPanel {
     private static final int DEFAULT_HEIGHT = JBUI.scale(30);
-    @Getter
     private final List<InputSwitch> switches = new ArrayList<>();
 
     public SearchOptionsPanel(Project project) {

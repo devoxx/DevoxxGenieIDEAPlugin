@@ -88,7 +88,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         prepareMemory(context);
 
         // We need to add this to chat memory when streaming response
-        ChatMemoryManager.getInstance().addUserMessage(context);
+        chatMemoryManager.addUserMessage(context);
 
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(

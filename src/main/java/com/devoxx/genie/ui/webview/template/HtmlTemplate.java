@@ -42,13 +42,13 @@ public abstract class HtmlTemplate {
     }
     
     /**
-     * Escape JavaScript string literals.
+     * TODO Re-introduce the Escape IF REQUIRED JavaScript string literals.
      * This prevents issues when inserting HTML into JavaScript template literals.
      *
      * @param text The text to escape
      * @return Escaped text suitable for use in JavaScript
      */
-    protected String escapeJS(String text) {
+    protected String escapeJS(@NotNull String text) {
         return text.replace("\\", "\\\\")
                 .replace("`", "\\`")
                 .replace("${", "\\${");

@@ -7,9 +7,9 @@ import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -26,13 +26,13 @@ import java.util.function.Consumer;
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final ChatMessageContext context;
-    private final ChatStreamingResponsePanel streamingPanel;
     private final PromptOutputPanel outputPanel;
     private final long startTime;
     private final Project project;
     private final Consumer<ChatResponse> onCompleteCallback;
     private final Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
+    private final ConversationWebViewController conversationWebViewController;
 
     /**
      * Creates a new streaming response handler
@@ -50,11 +50,14 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         
         this.context = context;
         this.outputPanel = outputPanel;
-        this.streamingPanel = new ChatStreamingResponsePanel(context);
         this.project = context.getProject();
         this.onCompleteCallback = onCompleteCallback;
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
+        this.conversationWebViewController = new ConversationWebViewController();
+
+        // Add the user query to the conversation view
+        this.conversationWebViewController.addChatMessage(context);
         
         log.debug("Created streaming handler for context {}", context.getId());
     }
@@ -62,7 +65,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     @Override
     public void onPartialResponse(String partialResponse) {
         if (!isStopped) {
-            streamingPanel.insertToken(partialResponse);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                // Update the AI response in the context
+                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(partialResponse));
+
+                // Update the web view with the partial response
+                conversationWebViewController.addChatMessage(context);
+            });
         }
     }
 
@@ -71,12 +80,17 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         if (isStopped) {
             return;
         }
-        
+
         try {
             long endTime = System.currentTimeMillis();
             context.setExecutionTimeMs(endTime - startTime);
             context.setAiMessage(response.aiMessage());
-            
+
+            // Update the web view with the final response
+            ApplicationManager.getApplication().invokeLater(() -> {
+                conversationWebViewController.addChatMessage(context);
+            });
+
             project.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                 .onNewConversation(context);

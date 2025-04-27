@@ -217,7 +217,7 @@ public class WebServer {
                     <title>DevoxxGenie</title>
                     <link rel="stylesheet" href="%s">
                     <style>
-                        body { 
+                        body {
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, 
                                          Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
                             line-height: 1.6; 
