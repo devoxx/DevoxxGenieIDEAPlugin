@@ -160,6 +160,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService"/>

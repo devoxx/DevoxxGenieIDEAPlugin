@@ -11,6 +11,7 @@ import com.devoxx.genie.ui.util.HelpUtil;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.devoxx.genie.ui.panel.PromptPanelRegistry;
 import com.intellij.ui.components.JBPanel;
 import dev.langchain4j.data.message.AiMessage;
 import lombok.Getter;
@@ -69,11 +70,17 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         // Show the welcome text initially
         showWelcomeText();
 
-        // Subscribe to MCP messages
+        // Register this panel with the registry
+        PromptPanelRegistry.getInstance().registerPanel(project, this);
+
+        // Subscribe to MCP messages and file references
         ApplicationManager.getApplication().invokeLater(() ->
-                MessageBusUtil.connect(project, connection ->
-                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this)
-                ));
+                MessageBusUtil.connect(project, connection -> {
+                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
+                    // Also subscribe to file reference events
+                    MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, 
+                        conversationPanel); // Delegate to the conversation panel
+                }));
     }
 
     /**
@@ -131,18 +138,15 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
     /**
      * Adds file references from a streaming response to the panel.
+     * This method is kept for backward compatibility but no longer shows a dialog.
+     * Instead, file references are now embedded directly in the HTML.
      *
      * @param fileListPanel The panel containing file references.
+     * @deprecated File references are now shown inline in the web view
      */
+    @Deprecated
     public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
-        // TODO: Handle file references in the WebView
-        // For now, create a separate dialog for file references
-        JDialog dialog = new JDialog();
-        dialog.setTitle("File References");
-        dialog.setContentPane(fileListPanel);
-        dialog.setSize(800, 400);
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
+        // No longer creating a dialog - references are shown in the HTML now
     }
 
     /**
@@ -185,5 +189,16 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
                 conversationPanel.addChatMessage(chatMessageContext);
             });
         }
+    }
+    
+    /**
+     * Called when panel is removed/disposed.
+     * Unregisters from the panel registry.
+     */
+    @Override
+    public void removeNotify() {
+        // Unregister from the registry when removed from the UI
+        PromptPanelRegistry.getInstance().unregisterPanel(project, this);
+        super.removeNotify();
     }
 }

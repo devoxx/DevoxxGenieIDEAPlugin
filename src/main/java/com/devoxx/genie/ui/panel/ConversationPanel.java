@@ -9,7 +9,9 @@ import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.listener.FileReferencesListener;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,7 +27,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.util.ResourceBundle;
+import com.intellij.openapi.vfs.VirtualFile;
 
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
@@ -38,10 +42,10 @@ import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
 @Slf4j
 public class ConversationPanel
         extends JBPanel<ConversationPanel>
-        implements CustomPromptChangeListener, ConversationSelectionListener, ConversationEventListener, ConversationStarter {
+        implements CustomPromptChangeListener, ConversationSelectionListener, ConversationEventListener, ConversationStarter, FileReferencesListener {
 
     // Make the webViewController accessible
-    public final ConversationWebViewController webViewController = new ConversationWebViewController();
+    public final ConversationWebViewController webViewController;
 
     private final Project project;
     private final ResourceBundle resourceBundle;
@@ -60,6 +64,8 @@ public class ConversationPanel
 
         this.project = project;
         this.resourceBundle = resourceBundle;
+
+        webViewController = new ConversationWebViewController(project);
 
         add(createButtonPanel(), BorderLayout.NORTH);
 
@@ -84,6 +90,11 @@ public class ConversationPanel
         setOpaque(true);
         setBackground(Color.BLACK);
         setVisible(true);
+        
+        // Subscribe to the FILE_REFERENCES_TOPIC
+        project.getMessageBus()
+            .connect()
+            .subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
     }
 
     /**
@@ -206,5 +217,25 @@ public class ConversationPanel
     @Override
     public void onConversationSelected(Conversation conversation) {
         // TODO
+    }
+    
+    /**
+     * Handle file references being available for a chat message.
+     * This is called when the non-streaming response handler wants to add file references.
+     *
+     * @param chatMessageContext The chat message context
+     * @param files The list of files referenced in the chat
+     */
+    @Override
+    public void onFileReferencesAvailable(@NotNull ChatMessageContext chatMessageContext, @NotNull List<VirtualFile> files) {
+        log.debug("File references available for chat message: {}, files: {}", 
+            chatMessageContext.getId(), files.size());
+        
+        // Use the web view controller to add file references to the conversation
+        if (!files.isEmpty()) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                webViewController.addFileReferences(chatMessageContext, files);
+            });
+        }
     }
 }

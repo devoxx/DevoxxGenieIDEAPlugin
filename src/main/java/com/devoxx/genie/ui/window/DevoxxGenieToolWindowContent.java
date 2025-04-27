@@ -176,6 +176,9 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 //            MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel.getWelcomePanel());
             // MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> promptOutputPanel.getWelcomePanel().updateFontSize());
             MessageBusUtil.subscribe(connection, AppTopics.SHORTCUT_CHANGED_TOPIC, submitPanel.getPromptInputArea());
+            
+            // Subscribe to file references events and forward them to the conversation panel
+            MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, promptOutputPanel.getConversationPanel());
 
             // Search options panel : Set up message bus listeners for visibility changes
             MessageBusUtil.subscribe(connection, AppTopics.RAG_STATE_TOPIC, enabled -> {

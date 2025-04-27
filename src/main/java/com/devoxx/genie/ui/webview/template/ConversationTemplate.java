@@ -75,6 +75,18 @@ public class ConversationTemplate extends HtmlTemplate {
                         .feature-name { font-weight: bold; }
                         .subtext { font-size: 0.9em; color: #aaaaaa; margin-top: 5px; }
                         .container { width: 100%; max-width: 800px; margin: 0 auto; }
+                        /* File references styles */
+                        .file-references-container { margin: 10px 0; background-color: #1e1e1e; border-radius: 4px; border-left: 4px solid #64b5f6; }
+                        .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }
+                        .file-references-header:hover { background-color: rgba(255, 255, 255, 0.1); }
+                        .file-references-icon { margin-right: 8px; }
+                        .file-references-title { flex-grow: 1; font-weight: bold; }
+                        .file-references-toggle { margin-left: 8px; }
+                        .file-references-content { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+                        .file-list { list-style-type: none; padding: 0; margin: 0; }
+                        .file-item { padding: 5px 0; }
+                        .file-name { font-weight: bold; margin-right: 8px; }
+                        .file-path { color: #aaaaaa; font-style: italic; font-size: 0.9em; }
                     </style>
                 """;
     }
@@ -125,6 +137,18 @@ public class ConversationTemplate extends HtmlTemplate {
                         }).catch(function(err) {
                             console.error('Failed to copy: ', err);
                         });
+                    }
+                    
+                    function toggleFileReferences(header) {
+                        const content = header.nextElementSibling;
+                        const toggle = header.querySelector('.file-references-toggle');
+                        if (content.style.display === 'none') {
+                            content.style.display = 'block';
+                            toggle.textContent = '▼';
+                        } else {
+                            content.style.display = 'none';
+                            toggle.textContent = '▶';
+                        }
                     }
                 
                     function highlightCodeBlocks() {

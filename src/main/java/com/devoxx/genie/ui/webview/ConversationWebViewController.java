@@ -22,8 +22,12 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 
 import static java.lang.Thread.sleep;
 
@@ -40,11 +44,15 @@ public class ConversationWebViewController {
     private final WebServer webServer;
     private boolean isLoaded = false;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final Project project;
 
     /**
      * Creates a new ConversationWebViewController with a fresh browser.
+     *
+     * @param project The project context
      */
-    public ConversationWebViewController() {
+    public ConversationWebViewController(Project project) {
+        this.project = project;
         this.webServer = WebServer.getInstance();
         
         // Ensure web server is running
@@ -68,6 +76,84 @@ public class ConversationWebViewController {
         // Set minimum size to ensure visibility
         browser.getComponent().setMinimumSize(new Dimension(600, 400));
         browser.getComponent().setPreferredSize(new Dimension(800, 600));
+        
+        // Setup JavaScript bridge to handle file opening
+        // Use a custom handler in JS to communicate with Java
+        browser.getCefBrowser().executeJavaScript(
+            "window.openFileFromJava = function(path) {" +
+            "  console.log('Opening file: ' + path);" +
+            "  if (window.java_fileOpened) {" +
+            "    window.java_fileOpened(path);" + 
+            "  }" +
+            "}",
+            browser.getCefBrowser().getURL(), 0
+        );
+        
+        // Set up a handler to open files when clicked and override the fileOpened function
+        executeJavaScript(
+            "window.java_fileOpened = function(filePath) {" +
+            "  console.log('Request to open file in IDE: ' + filePath);" +
+            "  // Set the file path in a global variable that our polling will detect" +
+            "  window.fileToOpen = filePath;" +
+            "  // Also store the last found path to make it easier to capture" +
+            "  window.lastFoundPath = filePath;" +
+            "};"
+        );
+        
+        // Setup a polling mechanism to check for file open requests
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(100); // Check every 100ms
+                    // Create a mechanism to store the file path in a global variable
+                    // that we can poll for
+                    String checkJs = 
+                        "var path = null;" +
+                        "if (window.fileToOpen) {" +
+                        "  path = window.fileToOpen;" +
+                        "  window.fileToOpen = null;" +
+                        "}" +
+                        "if (path) { console.log('Found file to open: ' + path); }" +
+                        "return path;";
+                    
+                    // Execute the JavaScript to check for a file to open and capture the result as a string
+                    browser.getCefBrowser().executeJavaScript(
+                        "(() => { " + checkJs + " })();", 
+                        browser.getCefBrowser().getURL(), 
+                        0
+                    );
+                    
+                    // After executing, check if there's a window.lastFoundPath that might have been set
+                    browser.getCefBrowser().executeJavaScript(
+                        "if (window.lastFoundPath) { " +
+                        "  const path = window.lastFoundPath; " +
+                        "  window.lastFoundPath = null; " +
+                        "  console.log('Opening file from path variable: ' + path); " +
+                        "  window.java_fileOpened(path); " +
+                        "}", 
+                        browser.getCefBrowser().getURL(), 
+                        0
+                    );
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOG.error("Interrupted while polling for file open requests", e);
+                    break;
+                }
+            }
+        });
+        
+        // Define the openFile function to handle file opening when a file is clicked
+        browser.getCefBrowser().executeJavaScript(
+            "window.openFile = function(elementId) { " +
+            "  const element = document.getElementById(elementId); " +
+            "  if (element && element.dataset.filePath) { " +
+            "    console.log('Request to open file: ' + element.dataset.filePath);" +
+            "    // Call our openFileFromJava function to handle file opening" +
+            "    openFileFromJava(element.dataset.filePath);" +
+            "  }" +
+            "};",
+            browser.getCefBrowser().getURL(), 0
+        );
         
         // Add load handler to detect when page is fully loaded
         browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
@@ -390,5 +476,160 @@ public class ConversationWebViewController {
      */
     public void updateCustomPrompts(ResourceBundle resourceBundle) {
         showWelcomeContent(resourceBundle);
+    }
+    
+    /**
+     * Opens a file in the IDE editor.
+     * 
+     * @param filePath The path to the file to open
+     */
+    private void openFileInEditor(String filePath) {
+        try {
+            LOG.info("Opening file in editor: " + filePath);
+            
+            // Find the virtual file by path
+            com.intellij.openapi.vfs.VirtualFileManager fileManager = com.intellij.openapi.vfs.VirtualFileManager.getInstance();
+            VirtualFile file = fileManager.findFileByUrl("file://" + filePath);
+            
+            if (file == null) {
+                LOG.error("Could not find file: " + filePath);
+                return;
+            }
+            
+            // Open the file in the editor
+            ApplicationManager.getApplication().invokeLater(() -> {
+                new OpenFileDescriptor(project, file).navigate(true);
+            });
+        } catch (Exception e) {
+            LOG.error("Error opening file: " + filePath, e);
+        }
+    }
+    
+    /**
+     * Add file references to the conversation after a response.
+     * Creates an expandable/collapsible component to display the file list.
+     *
+     * @param chatMessageContext The chat message context
+     * @param files The list of files referenced in the response
+     */
+    public void addFileReferences(ChatMessageContext chatMessageContext, List<VirtualFile> files) {
+        if (files == null || files.isEmpty()) {
+            return;
+        }
+        
+        LOG.info("Adding file references to conversation: " + files.size() + " files");
+        
+        // Create HTML for the expandable file references component
+        StringBuilder fileReferencesHtml = new StringBuilder();
+        fileReferencesHtml.append("<div class=\"file-references-container\" id=\"file-refs-")
+                .append(escapeHtml(chatMessageContext.getId()))
+                .append("\">\n");
+                
+        // Add the collapsible header
+        fileReferencesHtml.append("  <div class=\"file-references-header\" onclick=\"toggleFileReferences(this)\">\n")
+                .append("    <span class=\"file-references-icon\">📂</span>\n")
+                .append("    <span class=\"file-references-title\">Referenced Files (")
+                .append(files.size())
+                .append(")</span>\n")
+                .append("    <span class=\"file-references-toggle\">▶</span>\n")
+                .append("  </div>\n");
+                
+        // Add the file list container (initially collapsed)
+        fileReferencesHtml.append("  <div class=\"file-references-content\" style=\"display: none;\">\n")
+                .append("    <ul class=\"file-list\">\n");
+                
+        // Add each file as a list item - make items clickable with data attributes to store path
+        for (int i = 0; i < files.size(); i++) {
+            VirtualFile file = files.get(i);
+            String fileId = "file-" + escapeHtml(chatMessageContext.getId()) + "-" + i;
+            fileReferencesHtml.append("      <li class=\"file-item\" id=\"")
+                    .append(fileId)
+                    .append("\" data-file-path=\"")
+                    .append(escapeHtml(file.getPath()))
+                    .append("\" style=\"cursor: pointer;\" onclick=\"openFile('")
+                    .append(escapeJS(fileId)) // Use escapeJS here since it's inside JavaScript
+                    .append("')\">\n")
+                    .append("        <span class=\"file-name\">")
+                    .append(escapeHtml(file.getName()))
+                    .append("</span>\n")
+                    .append("        <span class=\"file-path\">")
+                    .append(escapeHtml(file.getPath().replace(chatMessageContext.getProject().getBasePath() + "/", "")))
+                    .append("</span>\n")
+                    .append("      </li>\n");
+        }
+        
+        fileReferencesHtml.append("    </ul>\n")
+                .append("  </div>\n")
+                .append("</div>\n");
+                
+        // JavaScript to add the file references after the message pair
+        String js = "try {\n" +
+                    "  const messagePair = document.getElementById('" + escapeJS(chatMessageContext.getId()) + "');\n" +
+                    "  if (messagePair) {\n" +
+                    "    // Create a container for the file references\n" +
+                    "    const fileRefsContainer = document.createElement('div');\n" +
+                    "    fileRefsContainer.innerHTML = `" + escapeJS(fileReferencesHtml.toString()) + "`;\n" +
+                    "    \n" +
+                    "    // Insert the file references after the message pair\n" +
+                    "    messagePair.parentNode.insertBefore(fileRefsContainer, messagePair.nextSibling);\n" +
+                    "    \n" +
+                    "    // If the file opening functionality isn't already defined, add it\n" +
+                    "    if (!window.openFile) {\n" +
+                    "      window.openFile = function(fileId) {\n" +
+                    "        const fileElement = document.getElementById(fileId);\n" +
+                    "        if (fileElement && fileElement.dataset.filePath) {\n" +
+                    "          // Post a message to Java to open the file\n" +
+                    "          console.log('Opening file: ' + fileElement.dataset.filePath);\n" +
+                    "          openFileFromJava(fileElement.dataset.filePath);\n" +
+                    "        }\n" +
+                    "      };\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    // If the toggle functionality isn't already defined, add it\n" +
+                    "    if (!window.toggleFileReferences) {\n" +
+                    "      window.toggleFileReferences = function(header) {\n" +
+                    "        const content = header.nextElementSibling;\n" +
+                    "        const toggle = header.querySelector('.file-references-toggle');\n" +
+                    "        if (content.style.display === 'none') {\n" +
+                    "          content.style.display = 'block';\n" +
+                    "          toggle.textContent = '▼';\n" +
+                    "        } else {\n" +
+                    "          content.style.display = 'none';\n" +
+                    "          toggle.textContent = '▶';\n" +
+                    "        }\n" +
+                    "      };\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    // Add styles if they don't exist yet\n" +
+                    "    if (!document.getElementById('file-references-styles')) {\n" +
+                    "      const styleEl = document.createElement('style');\n" +
+                    "      styleEl.id = 'file-references-styles';\n" +
+                    "      styleEl.textContent = `\n" +
+                    "        .file-references-container { margin: 10px 0; background-color: #1e1e1e; border-radius: 4px; border-left: 4px solid #64b5f6; }\n" +
+                    "        .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }\n" +
+                    "        .file-references-header:hover { background-color: rgba(255, 255, 255, 0.1); }\n" +
+                    "        .file-references-icon { margin-right: 8px; }\n" +
+                    "        .file-references-title { flex-grow: 1; font-weight: bold; }\n" +
+                    "        .file-references-toggle { margin-left: 8px; }\n" +
+                    "        .file-references-content { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }\n" +
+                    "        .file-list { list-style-type: none; padding: 0; margin: 0; }\n" +
+                    "        .file-item { padding: 5px 0; }\n" +
+                    "        .file-name { font-weight: bold; margin-right: 8px; }\n" +
+                    "        .file-path { color: #aaaaaa; font-style: italic; font-size: 0.9em; }\n" +
+                    "      `;\n" +
+                    "      document.head.appendChild(styleEl);\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    // Scroll to show the file references\n" +
+                    "    window.scrollTo(0, document.body.scrollHeight);\n" +
+                    "  } else {\n" +
+                    "    console.error('Message pair not found: " + escapeJS(chatMessageContext.getId()) + "');\n" +
+                    "  }\n" +
+                    "} catch (error) {\n" +
+                    "  console.error('Error adding file references:', error);\n" +
+                    "}";
+                
+        LOG.info("Executing JavaScript to add file references");
+        executeJavaScript(js);
     }
 }

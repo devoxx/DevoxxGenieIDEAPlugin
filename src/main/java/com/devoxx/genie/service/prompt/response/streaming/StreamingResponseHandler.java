@@ -125,12 +125,9 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // Add file references if any
             if (!FileListManager.getInstance().isEmpty(context.getProject())) {
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    ExpandablePanel fileListPanel = new ExpandablePanel(
-                        context, 
-                        FileListManager.getInstance().getFiles(context.getProject())
-                    );
-                    fileListPanel.setName(context.getId());
-                    outputPanel.addStreamFileReferencesResponse(fileListPanel);
+                    // Add file references to the web view instead of creating a dialog
+                    conversationWebViewController.addFileReferences(context, 
+                        FileListManager.getInstance().getFiles(context.getProject()));
                 });
             }
             

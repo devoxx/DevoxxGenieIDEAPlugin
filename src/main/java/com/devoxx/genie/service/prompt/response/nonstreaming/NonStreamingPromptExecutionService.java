@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.response.nonstreaming;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -10,7 +11,9 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.devoxx.genie.util.ClipboardUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
@@ -29,6 +32,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.panel.PromptPanelRegistry;
 
 @Slf4j
 public class NonStreamingPromptExecutionService {
@@ -97,6 +102,13 @@ public class NonStreamingPromptExecutionService {
                 // Always clear the current future reference when done
                 currentQueryFuture.set(null);
                 running = false;
+                
+                // Add file references if any, similar to StreamingResponseHandler
+                if (response != null && !FileListManager.getInstance().isEmpty(project)) {
+                    log.debug("Adding file references for non-streaming response");
+                    // Store the file references in the context for later use
+                    chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
+                }
             });
         
         // Store the future for potential cancellation
