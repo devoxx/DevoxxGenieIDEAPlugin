@@ -16,7 +16,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -191,6 +190,7 @@ public class ConversationPanel
 
         ApplicationManager.getApplication().invokeLater(() -> {
             updateNewConversationLabel();
+            clear(); // Clear the conversation in the webview
 
             // TODO Clear conversation
 //            submitPanel.getPromptInputArea().clear();

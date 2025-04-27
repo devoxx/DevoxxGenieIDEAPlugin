@@ -171,9 +171,6 @@ public class NonStreamingPromptExecutionService {
 
             String queryResponse = assistant.chat(cleanText);
 
-            // For debugging - copy message list to clipboard
-            ClipboardUtil.copyToClipboard(chatMemory.messages().toString());
-
             return ChatResponse.builder()
                     .aiMessage(AiMessage.aiMessage(queryResponse))
                     .build();

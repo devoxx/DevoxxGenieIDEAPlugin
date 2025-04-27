@@ -147,13 +147,13 @@ public class ConversationWebViewController {
     
     /**
      * Performs the actual operation of adding a chat message to the conversation.
+     * Insert the message HTML at the end of the conversation container.
+     * Using a more robust approach with createElement and appendChild instead of innerHTML +=
+     * which can cause issues with event handlers on subsequent messages
      * 
      * @param messageHtml The HTML of the message to add
      */
     private void doAddChatMessage(String messageHtml) {
-        // Insert the message HTML at the end of the conversation container
-        // Using a more robust approach with createElement and appendChild instead of innerHTML += 
-        // which can cause issues with event handlers on subsequent messages
         String js = "try {" +
                     "  const container = document.getElementById('conversation-container');" +
                     "  const tempDiv = document.createElement('div');" +
