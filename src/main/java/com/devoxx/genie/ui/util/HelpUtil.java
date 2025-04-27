@@ -56,7 +56,7 @@ public class HelpUtil {
         return DevoxxGenieStateService.getInstance()
             .getCustomPrompts()
             .stream()
-            .map(customPrompt -> "<li>/" + customPrompt.getName() + " : " + customPrompt.getPrompt() + "</li>")
+            .map(customPrompt -> "/" + customPrompt.getName() + " : " + customPrompt.getPrompt())
             .collect(Collectors.joining());
     }
     
@@ -70,7 +70,7 @@ public class HelpUtil {
         return DevoxxGenieStateService.getInstance()
             .getCustomPrompts()
             .stream()
-            .map(customPrompt -> "<li><span class=\"feature-emoji\">•</span><span class=\"feature-name\">/" + 
+            .map(customPrompt -> "<li><span class=\"feature-name\">/" +
                  customPrompt.getName() + "</span> : " + customPrompt.getPrompt() + "</li>")
             .collect(Collectors.joining("\n"));
     }

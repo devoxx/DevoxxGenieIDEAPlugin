@@ -418,7 +418,8 @@ public class ConversationWebViewController {
      * 
      * @param messageHtml The HTML of the message to add
      */
-    private void doAddChatMessage(String messageHtml) {
+private void doAddChatMessage(String messageHtml) {
+        // First add the message to the conversation
         String js = "try {" +
                     "  const container = document.getElementById('conversation-container');" +
                     "  const tempDiv = document.createElement('div');" +
