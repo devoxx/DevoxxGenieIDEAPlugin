@@ -48,6 +48,9 @@ public class PromptExecutionController implements PromptExecutionListener {
         }
 
         startPromptExecution();
+        
+        // Immediately show the user message and scroll to the bottom
+        promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
 
         AtomicBoolean response = new AtomicBoolean(true);
         Optional<String> processedPrompt = commandProcessor.processCommands(currentChatMessageContext, promptOutputPanel);
@@ -65,6 +68,9 @@ public class PromptExecutionController implements PromptExecutionListener {
     }
 
     private void executePromptWithContext() {
+        // Scroll to the bottom immediately after user submits prompt
+        promptOutputPanel.scrollToBottom();
+        
         promptExecutionService.executePrompt(
                 currentChatMessageContext, 
                 promptOutputPanel, 

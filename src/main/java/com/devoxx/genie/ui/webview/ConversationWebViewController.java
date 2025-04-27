@@ -526,6 +526,73 @@ private void doAddChatMessage(String messageHtml) {
             browser.loadURL(resourceUrl);
         }
     }
+    
+    /**
+     * Adds just the user message to the conversation view without waiting for the AI response.
+     * This is used to show the user's message immediately when they submit a prompt.
+     *
+     * @param chatMessageContext The chat message context containing the user prompt
+     */
+    public void addUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
+        if (!isLoaded) {
+            LOG.warn("Browser not loaded yet, waiting before adding user message");
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                while (!initialized.get()) {
+                    try {
+                        sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while waiting for browser to load", e);
+                        return;
+                    }
+                }
+                doAddUserPromptMessage(chatMessageContext);
+            });
+        } else {
+            doAddUserPromptMessage(chatMessageContext);
+        }
+    }
+
+    /**
+     * Performs the actual operation of adding a user message to the conversation.
+     * This creates a message pair with just the user's message and a loading indicator for the AI response.
+     *
+     * @param chatMessageContext The chat message context
+     */
+    private void doAddUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
+        // Create a div for the message pair with the user message and an empty assistant message
+        String messageId = chatMessageContext.getId();
+        String userPrompt = chatMessageContext.getUserPrompt() == null ? "" : chatMessageContext.getUserPrompt();
+        
+        // Format the user message as HTML with proper escaping
+        String userMessage = "<div class=\"user-message\">" + escapeHtml(userPrompt) + "</div>";
+        
+        // Format the AI message placeholder with a loading indicator
+        String aiMessagePlaceholder = "<div class=\"assistant-message\"><div class=\"loading-indicator\">Thinking...</div></div>";
+        
+        // Create the complete message pair HTML
+        String messagePairHtml = 
+                "<div class=\"message-pair\" id=\"" + escapeHtml(messageId) + "\">\n" +
+                userMessage + "\n" +
+                aiMessagePlaceholder + "\n" +
+                "</div>";
+        
+        // JavaScript to add the message to the conversation and scroll to bottom
+        String js = "try {\n" +
+                    "  const container = document.getElementById('conversation-container');\n" +
+                    "  const tempDiv = document.createElement('div');\n" +
+                    "  tempDiv.innerHTML = `" + escapeJS(messagePairHtml) + "`;\n" +
+                    "  while (tempDiv.firstChild) {\n" +
+                    "    container.appendChild(tempDiv.firstChild);\n" +
+                    "  }\n" +
+                    "  window.scrollTo(0, document.body.scrollHeight);\n" +
+                    "} catch (error) {\n" +
+                    "  console.error('Error adding user message:', error);\n" +
+                    "}";
+        
+        LOG.info("Executing JavaScript to add user message");
+        executeJavaScript(js);
+    }
 
     public void addFileReferences(ChatMessageContext chatMessageContext, List<VirtualFile> files) {
         if (files == null || files.isEmpty()) {

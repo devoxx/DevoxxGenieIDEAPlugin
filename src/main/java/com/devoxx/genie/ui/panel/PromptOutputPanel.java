@@ -131,8 +131,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
             dialog.setLocationRelativeTo(this);
             dialog.setVisible(true);
         } else {
-            // Add the message to the conversation panel
-            conversationPanel.addChatMessage(chatMessageContext);
+            // Update the existing message pair instead of creating a new one
+            conversationPanel.updateUserPromptWithResponse(chatMessageContext);
         }
     }
 
@@ -182,10 +182,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
                     .executionTimeMs(0)
                     .build();
             
-            // Add the message to the conversation panel
+            // Add the message to the conversation panel 
             ApplicationManager.getApplication().invokeLater(() -> {
                 // Ensure we're showing the conversation panel
                 cardLayout.show(cards, "conversation");
+                // For MCP messages, we still use addChatMessage since there is no user prompt to update
                 conversationPanel.addChatMessage(chatMessageContext);
             });
         }
@@ -200,5 +201,18 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         // Unregister from the registry when removed from the UI
         PromptPanelRegistry.getInstance().unregisterPanel(project, this);
         super.removeNotify();
+    }
+    
+    /**
+     * Scrolls the conversation view to the bottom.
+     * Used when a prompt is submitted to ensure the latest content is visible.
+     */
+    public void scrollToBottom() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            // First make sure we're showing the conversation panel
+            cardLayout.show(cards, "conversation");
+            // Then defer to the conversation panel which contains the WebViewController
+            conversationPanel.scrollToBottom();
+        });
     }
 }

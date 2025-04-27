@@ -82,15 +82,12 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // Set the AI message with accumulated tokens so far
             context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
             
-            // First time: add the full message pair (user + AI)
-            if (!hasAddedInitialMessage) {
-                log.debug("Adding initial message for {}", context.getId());
-                conversationWebViewController.addChatMessage(context);
-                hasAddedInitialMessage = true;
-            } else {
-                // Subsequent updates: just update the AI response part
-                conversationWebViewController.updateAiMessageContent(context);
-            }
+            // Always update the existing message - we already created a placeholder
+            // when the user submitted the prompt
+            conversationWebViewController.updateAiMessageContent(context);
+            
+            // Mark that we've started streaming
+            hasAddedInitialMessage = true;
         });
     }
 

@@ -238,4 +238,36 @@ public class ConversationPanel
             });
         }
     }
+    
+    /**
+     * Scrolls the conversation view to the bottom.
+     * This is used both when a user submits a prompt and when a response is received.
+     */
+    public void scrollToBottom() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            webViewController.executeJavaScript("window.scrollTo(0, document.body.scrollHeight);");
+        });
+    }
+    
+    /**
+     * Add a user prompt message to the conversation immediately.
+     * This is used to show the user's message right away before the AI response begins.
+     * 
+     * @param chatMessageContext The chat message context with the user prompt
+     */
+    public void addUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
+        webViewController.addUserPromptMessage(chatMessageContext);
+        scrollToBottom();
+    }
+    
+    /**
+     * Updates a message that was previously added as a user prompt with the full AI response.
+     * This is used specifically for non-streaming responses.
+     *
+     * @param chatMessageContext The chat message context with the complete AI response
+     */
+    public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {
+        webViewController.updateAiMessageContent(chatMessageContext);
+        scrollToBottom();
+    }
 }
