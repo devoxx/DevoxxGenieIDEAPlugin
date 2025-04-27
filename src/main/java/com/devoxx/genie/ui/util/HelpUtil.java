@@ -59,4 +59,19 @@ public class HelpUtil {
             .map(customPrompt -> "<li>/" + customPrompt.getName() + " : " + customPrompt.getPrompt() + "</li>")
             .collect(Collectors.joining());
     }
+    
+    /**
+     * Get the custom prompt commands formatted for modern HTML display in WebView.
+     * This provides better formatting with strong text for command names.
+     *
+     * @return HTML-formatted string of custom commands
+     */
+    public static @NotNull String getCustomPromptCommandsForWebView() {
+        return DevoxxGenieStateService.getInstance()
+            .getCustomPrompts()
+            .stream()
+            .map(customPrompt -> "<li><span class=\"feature-emoji\">•</span><span class=\"feature-name\">/" + 
+                 customPrompt.getName() + "</span> : " + customPrompt.getPrompt() + "</li>")
+            .collect(Collectors.joining("\n"));
+    }
 }

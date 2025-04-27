@@ -14,6 +14,7 @@ import com.devoxx.genie.ui.component.StyleSheetsFactory;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.panel.WelcomeWebViewPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.DevoxxGenieColorsUtil;
 import com.devoxx.genie.ui.util.HelpUtil;
@@ -62,7 +63,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
     private final JPanel container = new JPanel();
     @Getter
-    private final WelcomePanel welcomePanel;
+    private final WelcomeWebViewPanel welcomePanel;
     private final HelpPanel helpPanel;
     private final WaitingPanel waitingPanel = new WaitingPanel();
     private final JBScrollPane scrollPane;
@@ -78,7 +79,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         this.project = project;
 
-        welcomePanel = new WelcomePanel(resourceBundle);
+        welcomePanel = new WelcomeWebViewPanel(resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage());
 
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
@@ -286,7 +287,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      */
     @Override
     public void onCustomPromptsChanged() {
-        ApplicationManager.getApplication().invokeLater(this::updateHelpText);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            updateHelpText();
+            // Also notify the welcome panel about the changes to update the prompt list
+            welcomePanel.onCustomPromptsChanged();
+        });
     }
 
     @Override
