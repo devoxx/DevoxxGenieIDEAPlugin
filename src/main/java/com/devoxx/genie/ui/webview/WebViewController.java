@@ -1,15 +1,14 @@
 package com.devoxx.genie.ui.webview;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.util.LanguageGuesser;
-import com.intellij.lang.Language;
-import com.intellij.lang.documentation.DocumentationSettings;
-import com.intellij.openapi.application.ApplicationManager;
+import com.devoxx.genie.service.ProjectContentService;
+import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Computable;
 import com.intellij.ui.jcef.JBCefBrowser;
+import com.knuddels.jtokkit.api.Encoding;
+import dev.langchain4j.model.output.TokenUsage;
 import lombok.Getter;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
@@ -18,18 +17,15 @@ import org.commonmark.node.Block;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.IndentedCodeBlock;
 import org.commonmark.node.Node;
-import org.commonmark.node.Paragraph;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Locale;
 
 /**
  * Controller for managing the WebView component.
@@ -329,6 +325,7 @@ public class WebViewController {
     
     /**
      * Format metadata information for display in the WebView.
+     * Includes date, LLM model, execution time, and token usage.
      * 
      * @param chatMessageContext The chat message context
      * @return HTML string with formatted metadata
@@ -343,6 +340,39 @@ public class WebViewController {
             modelName = chatMessageContext.getLanguageModel().getModelName();
         }
         
-        return "<div class=\"metadata-info\">" + timestamp + " · " + modelName + "</div>";
+        // Add metrics data (execution time and token usage)
+        StringBuilder metricInfo = new StringBuilder();
+        metricInfo.append(String.format(" · ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0));
+        
+        // Add token usage information if available
+        TokenUsage tokenUsage = chatMessageContext.getTokenUsage();
+        if (tokenUsage != null) {
+            // Calculate token counts (special handling for Ollama)
+            if (chatMessageContext.getLanguageModel().getProvider() == ModelProvider.Ollama && 
+                chatMessageContext.getFilesContext() != null) {
+                Encoding encoding = ProjectContentService
+                    .getEncodingForProvider(chatMessageContext.getLanguageModel().getProvider());
+                int inputContextTokens = encoding.encode(chatMessageContext.getFilesContext()).size();
+                tokenUsage = new TokenUsage(
+                    tokenUsage.inputTokenCount() + inputContextTokens, 
+                    tokenUsage.outputTokenCount()
+                );
+            }
+            
+            // Format token counts with locale-specific number formatting
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
+            String formattedInputTokens = numberFormat.format(tokenUsage.inputTokenCount());
+            String formattedOutputTokens = numberFormat.format(tokenUsage.outputTokenCount());
+            
+            metricInfo.append(String.format(" · Tokens ↑ %s ↓ %s", formattedInputTokens, formattedOutputTokens));
+            
+            // Add cost information if applicable for API-based services
+            if (DefaultLLMSettingsUtil.isApiKeyBasedProvider(
+                    chatMessageContext.getLanguageModel().getProvider())) {
+                metricInfo.append(String.format(" · $%.5f", chatMessageContext.getCost()));
+            }
+        }
+        
+        return "<div class=\"metadata-info\">" + timestamp + " · " + modelName + metricInfo.toString() + "</div>";
     }
 }

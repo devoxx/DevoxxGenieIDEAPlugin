@@ -20,7 +20,6 @@ import java.util.List;
 public class ResponseDocumentPanel extends JPanel {
 
     private final transient ChatMessageContext chatMessageContext;
-    private WebViewResponsePanel webViewResponsePanel;
 
     public ResponseDocumentPanel(@NotNull ChatMessageContext chatMessageContext) {
         setLayout(new BorderLayout());
@@ -69,7 +68,7 @@ public class ResponseDocumentPanel extends JPanel {
      * Create a WebView panel to display the response content
      */
     private void createWebViewPanel() {
-        webViewResponsePanel = new WebViewResponsePanel(chatMessageContext);
+        WebViewResponsePanel webViewResponsePanel = new WebViewResponsePanel(chatMessageContext);
         
         // Use a scrollable panel for the web view
         JBScrollPane scrollPane = new JBScrollPane(webViewResponsePanel);
