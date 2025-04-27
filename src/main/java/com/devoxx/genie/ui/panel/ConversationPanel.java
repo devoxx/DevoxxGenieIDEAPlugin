@@ -40,7 +40,8 @@ public class ConversationPanel
         extends JBPanel<ConversationPanel>
         implements CustomPromptChangeListener, ConversationSelectionListener, ConversationEventListener, ConversationStarter {
 
-    private final ConversationWebViewController webViewController = new ConversationWebViewController();
+    // Make the webViewController accessible
+    public final ConversationWebViewController webViewController = new ConversationWebViewController();
 
     private final Project project;
     private final ResourceBundle resourceBundle;

@@ -11,9 +11,17 @@ import lombok.Getter;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
+import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.IndentedCodeBlock;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -146,6 +154,177 @@ public class ConversationWebViewController {
     }
     
     /**
+     * Updates just the AI response part of an existing message in the conversation view.
+     * Used for streaming responses to avoid creating multiple message pairs.
+     *
+     * @param chatMessageContext The chat message context
+     */
+    public void updateAiMessageContent(ChatMessageContext chatMessageContext) {
+        if (chatMessageContext.getAiMessage() == null) {
+            LOG.warn("No AI message to update for context: " + chatMessageContext.getId());
+            return;
+        }
+        
+        if (!isLoaded) {
+            LOG.warn("Browser not loaded yet, waiting before updating message");
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                while (!initialized.get()) {
+                    try {
+                        sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while waiting for browser to load", e);
+                        return;
+                    }
+                }
+                doUpdateAiMessageContent(chatMessageContext);
+            });
+        } else {
+            doUpdateAiMessageContent(chatMessageContext);
+        }
+    }
+    
+    /**
+     * Performs the actual update of just the AI response content.
+     * 
+     * @param chatMessageContext The chat message context
+     */
+    private void doUpdateAiMessageContent(ChatMessageContext chatMessageContext) {
+        String messageId = chatMessageContext.getId();
+        
+        // Parse and render the markdown content
+        Parser markdownParser = Parser.builder().build();
+        HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+        
+        String aiMessageText = chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text();
+        Node document = markdownParser.parse(aiMessageText);
+        
+        StringBuilder contentHtml = new StringBuilder();
+        
+        // Format metadata information
+        LocalDateTime dateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
+        String timestamp = dateTime.format(formatter);
+        
+        String modelName = "Unknown";
+        if (chatMessageContext.getLanguageModel() != null) {
+            modelName = chatMessageContext.getLanguageModel().getModelName();
+        }
+        
+        // Add metrics data
+        StringBuilder metricInfo = new StringBuilder();
+        metricInfo.append(String.format(" · ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0));
+        
+        // Add metadata div
+        contentHtml.append("<div class=\"metadata-info\">")
+                .append(timestamp)
+                .append(" · ")
+                .append(modelName)
+                .append(metricInfo.toString())
+                .append("</div>")
+                .append("<button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>");
+        
+        // Add content
+        Node node = document.getFirstChild();
+        while (node != null) {
+            if (node instanceof FencedCodeBlock fencedCodeBlock) {
+                String code = fencedCodeBlock.getLiteral();
+                String language = fencedCodeBlock.getInfo();
+                String prismLanguage = mapLanguageToPrism(language);
+                
+                contentHtml.append("<pre><code class=\"language-")
+                        .append(prismLanguage)
+                        .append("\">")
+                        .append(escapeHtml(code))
+                        .append("</code></pre>\n");
+            } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
+                String code = indentedCodeBlock.getLiteral();
+                contentHtml.append("<pre><code class=\"language-plaintext\">")
+                        .append(escapeHtml(code))
+                        .append("</code></pre>\n");
+            } else {
+                contentHtml.append(htmlRenderer.render(node));
+            }
+            node = node.getNext();
+        }
+        
+        // JavaScript to update just the assistant message content
+        String js = "try {" +
+                   "  const messagePair = document.getElementById('" + escapeJS(messageId) + "');" +
+                   "  if (messagePair) {" +
+                   "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
+                   "    if (assistantMessage) {" +
+                   "      assistantMessage.innerHTML = `" + escapeJS(contentHtml.toString()) + "`;" +
+                   "      window.scrollTo(0, document.body.scrollHeight);" +
+                   "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                   "    } else {" +
+                   "      console.error('Assistant message element not found in message pair');" +
+                   "    }" +
+                   "  } else {" +
+                   "    console.error('Message pair not found: " + escapeJS(messageId) + "');" +
+                   "  }" +
+                   "} catch (error) {" +
+                   "  console.error('Error updating AI message:', error);" +
+                   "}";
+        
+        LOG.info("Executing JavaScript to update AI message");
+        executeJavaScript(js);
+    }
+    
+    /**
+     * Map language identifier to PrismJS language class.
+     * This is a copy of the method in ChatMessageTemplate to keep functionality consistent.
+     */
+    private @NotNull String mapLanguageToPrism(@Nullable String languageInfo) {
+        if (languageInfo == null || languageInfo.isEmpty()) {
+            return "plaintext";
+        }
+        
+        String lang = languageInfo.trim().toLowerCase();
+        
+        // Map common language identifiers to PrismJS language classes
+        return switch (lang) {
+            case "js", "javascript" -> "javascript";
+            case "ts", "typescript" -> "typescript";
+            case "py", "python" -> "python";
+            case "java" -> "java";
+            case "c#", "csharp", "cs" -> "csharp";
+            case "c++" -> "cpp";
+            case "go" -> "go";
+            case "rust" -> "rust";
+            case "rb", "ruby" -> "ruby";
+            case "kt", "kotlin" -> "kotlin";
+            case "json" -> "json";
+            case "yaml", "yml" -> "yaml";
+            case "html" -> "markup";
+            case "css" -> "css";
+            case "sh", "bash" -> "bash";
+            case "md", "markdown" -> "markdown";
+            case "sql" -> "sql";
+            case "docker", "dockerfile" -> "docker";
+            case "dart" -> "dart";
+            case "graphql" -> "graphql";
+            case "hcl" -> "hcl";
+            case "nginx" -> "nginx";
+            case "powershell", "ps" -> "powershell";
+            // Add more language mappings as needed
+            default -> "plaintext";
+        };
+    }
+    
+    /**
+     * Escape HTML special characters.
+     * This is a copy of the method in ChatMessageTemplate to keep functionality consistent.
+     */
+    private @NotNull String escapeHtml(@NotNull String text) {
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+    
+    /**
      * Performs the actual operation of adding a chat message to the conversation.
      * Insert the message HTML at the end of the conversation container.
      * Using a more robust approach with createElement and appendChild instead of innerHTML +=
@@ -176,7 +355,7 @@ public class ConversationWebViewController {
      *
      * @param script The JavaScript to execute
      */
-    private void executeJavaScript(String script) {
+    public void executeJavaScript(String script) {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (isLoaded) {
                 browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
@@ -193,7 +372,7 @@ public class ConversationWebViewController {
      * @param text The text to escape
      * @return Escaped text suitable for use in JavaScript
      */
-    private @NotNull String escapeJS(@NotNull String text) {
+    public @NotNull String escapeJS(@NotNull String text) {
         return text.replace("\\", "\\\\")
                 .replace("`", "\\`")
                 .replace("${", "\\${");

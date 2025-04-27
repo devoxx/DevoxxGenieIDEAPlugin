@@ -34,17 +34,23 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private volatile boolean isStopped = false;
     private final ConversationWebViewController conversationWebViewController;
 
+    // Track if we've added the initial message and accumulate the streamed tokens
+    private boolean hasAddedInitialMessage = false;
+    private final StringBuilder accumulatedResponse = new StringBuilder();
+
     /**
      * Creates a new streaming response handler
      *
      * @param context The chat message context
      * @param outputPanel The UI panel to display response
+     * @param conversationWebViewController The web view controller to display conversation
      * @param onCompleteCallback Called when streaming completes successfully
      * @param onErrorCallback Called when streaming encounters an error
      */
     public StreamingResponseHandler(
             @NotNull ChatMessageContext context,
             @NotNull PromptOutputPanel outputPanel,
+            @NotNull ConversationWebViewController conversationWebViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
         
@@ -54,25 +60,38 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         this.onCompleteCallback = onCompleteCallback;
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
-        this.conversationWebViewController = new ConversationWebViewController();
-
-        // Add the user query to the conversation view
-        this.conversationWebViewController.addChatMessage(context);
+        this.conversationWebViewController = conversationWebViewController;
         
         log.debug("Created streaming handler for context {}", context.getId());
     }
 
     @Override
     public void onPartialResponse(String partialResponse) {
-        if (!isStopped) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                // Update the AI response in the context
-                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(partialResponse));
-
-                // Update the web view with the partial response
-                conversationWebViewController.addChatMessage(context);
-            });
+        if (isStopped) {
+            return;
         }
+
+        log.debug("Received partial response: '{}...'", 
+                partialResponse.substring(0, Math.min(20, partialResponse.length())));
+        
+        // Accumulate the response tokens 
+        accumulatedResponse.append(partialResponse);
+        String fullText = accumulatedResponse.toString();
+        
+        ApplicationManager.getApplication().invokeLater(() -> {
+            // Set the AI message with accumulated tokens so far
+            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
+            
+            // First time: add the full message pair (user + AI)
+            if (!hasAddedInitialMessage) {
+                log.debug("Adding initial message for {}", context.getId());
+                conversationWebViewController.addChatMessage(context);
+                hasAddedInitialMessage = true;
+            } else {
+                // Subsequent updates: just update the AI response part
+                conversationWebViewController.updateAiMessageContent(context);
+            }
+        });
     }
 
     @Override
@@ -88,7 +107,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
             // Update the web view with the final response
             ApplicationManager.getApplication().invokeLater(() -> {
-                conversationWebViewController.addChatMessage(context);
+                // If we've already shown partial responses, just update the AI content
+                // Otherwise add a new message pair (when we get complete response without partials)
+                if (hasAddedInitialMessage) {
+                    conversationWebViewController.updateAiMessageContent(context);
+                } else {
+                    conversationWebViewController.addChatMessage(context);
+                }
             });
 
             project.getMessageBus()

@@ -94,6 +94,8 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         StreamingResponseHandler handler = new StreamingResponseHandler(
             context, 
             panel,
+            // Get the ConversationWebViewController from the PromptOutputPanel
+            panel.getConversationPanel().webViewController,
             // On complete callback
             (ChatResponse response) -> {
                 log.debug("Streaming completed successfully for context: {}", context.getId());
