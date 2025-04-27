@@ -53,15 +53,16 @@ public class ConversationTemplate extends HtmlTemplate {
      * @return CSS styles as a string
      */
     private String generateStyles() {
-        // Get background color from DevoxxGenieColorsUtil
-        Color bgColor = DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
-        String bgColorHex = String.format("#%02x%02x%02x", 
-                bgColor.getRed(), 
-                bgColor.getGreen(), 
-                bgColor.getBlue());
+        // Use the ThemeDetector to determine if dark mode is active
+        boolean isDarkMode = com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme();
         
-        // Determine if this is dark mode based on the background color's brightness
-        boolean isDarkMode = isDarkTheme(bgColor);
+        // Set appropriate background and text colors based on theme
+        String bgColorHex;
+        if (isDarkMode) {
+            bgColorHex = "#2b2b2b"; // Dark theme background
+        } else {
+            bgColorHex = "#f5f5f5"; // Light theme background
+        }
         String textColor = isDarkMode ? "#e0e0e0" : "#2b2b2b";
         
         // Get the editor font size from the IDE settings

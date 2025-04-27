@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.ConversationTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
@@ -36,7 +37,7 @@ import static java.lang.Thread.sleep;
  * This class handles the interaction between the Java code and the WebView, appending
  * new content to the conversation without creating new WebView instances.
  */
-public class ConversationWebViewController {
+public class ConversationWebViewController implements ThemeChangeNotifier {
     private static final Logger LOG = Logger.getInstance(ConversationWebViewController.class);
 
     @Getter
@@ -513,6 +514,31 @@ private void doAddChatMessage(String messageHtml) {
      * @param chatMessageContext The chat message context
      * @param files The list of files referenced in the response
      */
+    /**
+     * Called when the IDE theme changes.
+     * Refresh the web view with new styling based on the current theme.
+     *
+     * @param isDarkTheme true if the new theme is dark, false if it's light
+     */
+    @Override
+    public void themeChanged(boolean isDarkTheme) {
+        LOG.info("Theme changed to " + (isDarkTheme ? "dark" : "light") + " mode, refreshing web view");
+        
+        // Reload the content with the new theme
+        ConversationTemplate template = new ConversationTemplate(webServer);
+        String htmlContent = template.generate();
+        
+        // Update the browser content - this will reload with the new theme styles
+        if (isLoaded) {
+            // Create a new resource with the updated HTML content
+            String resourceId = webServer.addDynamicResource(htmlContent);
+            String resourceUrl = webServer.getResourceUrl(resourceId);
+            
+            // Reload the browser with the new content
+            browser.loadURL(resourceUrl);
+        }
+    }
+
     public void addFileReferences(ChatMessageContext chatMessageContext, List<VirtualFile> files) {
         if (files == null || files.isEmpty()) {
             return;
