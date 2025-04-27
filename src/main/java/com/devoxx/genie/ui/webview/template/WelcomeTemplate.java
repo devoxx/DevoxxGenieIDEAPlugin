@@ -52,25 +52,23 @@ public class WelcomeTemplate extends HtmlTemplate {
      * 
      * @return Features section HTML as a string
      */
-    private String generateFeaturesSection() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("    <h2>Features 🚀</h2>\n")
-               .append("    <p class=\"subtext\">Configure features in the settings page.</p>\n")
-               .append("    <ul>\n")
-               .append("        <li><span class=\"feature-emoji\">🔥</span><span class=\"feature-name\">MCP Support:</span> You can now add MCP servers!</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🗄️</span><span class=\"feature-name\">DEVOXXGENIE.md:</span> Generate project info for extra system instructions</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🎹</span><span class=\"feature-name\">Define submit shortcode:</span> You can now define the keyboard shortcode to submit a prompt in settings.</li>\n")
-               .append("        <li><span class=\"feature-emoji\">📸</span><span class=\"feature-name\">DnD images:</span> You can now DnD images with multimodal LLM's.</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🧐</span><span class=\"feature-name\">RAG Support:</span> Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>\n")
-               .append("        <li><span class=\"feature-emoji\">💪🏻</span><span class=\"feature-name\">Git Diff:</span> Show Git Diff dialog to commit LLM suggestions</li>\n")
-               .append("        <li><span class=\"feature-emoji\">❌</span><span class=\"feature-name\">.gitignore:</span> Exclude files and directories based on .gitignore file</li>\n")
-               .append("        <li><span class=\"feature-emoji\">👀</span><span class=\"feature-name\">Chat History:</span> All chats are saved and can be restored or removed</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🧠</span><span class=\"feature-name\">Project Scanner:</span> Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>\n")
-               .append("        <li><span class=\"feature-emoji\">💰</span><span class=\"feature-name\">Token Cost Calculator:</span> Calculate the cost when using Cloud LLM providers. Input/Output token prices can be viewed in the Settings page.</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🔍</span><span class=\"feature-name\">Web Search:</span> Search the web for a given query using Google or Tavily</li>\n")
-               .append("        <li><span class=\"feature-emoji\">🏎️</span><span class=\"feature-name\">Streaming responses:</span> See each token as it's received from the LLM in real-time</li>\n")
-               .append("    </ul>\n");
-        return builder.toString();
+    private @NotNull String generateFeaturesSection() {
+        return "    <h2>Features 🚀</h2>\n" +
+                "    <p class=\"subtext\">Configure features in the settings page.</p>\n" +
+                "    <ul>\n" +
+                "        <li><span class=\"feature-emoji\">🔥</span><span class=\"feature-name\">MCP Support:</span> You can now add MCP servers!</li>\n" +
+                "        <li><span class=\"feature-emoji\">🗄️</span><span class=\"feature-name\">DEVOXXGENIE.md:</span> Generate project info for extra system instructions</li>\n" +
+                "        <li><span class=\"feature-emoji\">🎹</span><span class=\"feature-name\">Define submit shortcode:</span> You can now define the keyboard shortcode to submit a prompt in settings.</li>\n" +
+                "        <li><span class=\"feature-emoji\">📸</span><span class=\"feature-name\">DnD images:</span> You can now DnD images with multimodal LLM's.</li>\n" +
+                "        <li><span class=\"feature-emoji\">🧐</span><span class=\"feature-name\">RAG Support:</span> Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.</li>\n" +
+                "        <li><span class=\"feature-emoji\">💪🏻</span><span class=\"feature-name\">Git Diff:</span> Show Git Diff dialog to commit LLM suggestions</li>\n" +
+                "        <li><span class=\"feature-emoji\">❌</span><span class=\"feature-name\">.gitignore:</span> Exclude files and directories based on .gitignore file</li>\n" +
+                "        <li><span class=\"feature-emoji\">👀</span><span class=\"feature-name\">Chat History:</span> All chats are saved and can be restored or removed</li>\n" +
+                "        <li><span class=\"feature-emoji\">🧠</span><span class=\"feature-name\">Project Scanner:</span> Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>\n" +
+                "        <li><span class=\"feature-emoji\">💰</span><span class=\"feature-name\">Token Cost Calculator:</span> Calculate the cost when using Cloud LLM providers. Input/Output token prices can be viewed in the Settings page.</li>\n" +
+                "        <li><span class=\"feature-emoji\">🔍</span><span class=\"feature-name\">Web Search:</span> Search the web for a given query using Google or Tavily</li>\n" +
+                "        <li><span class=\"feature-emoji\">🏎️</span><span class=\"feature-name\">Streaming responses:</span> See each token as it's received from the LLM in real-time</li>\n" +
+                "    </ul>\n";
     }
     
     /**
@@ -78,13 +76,11 @@ public class WelcomeTemplate extends HtmlTemplate {
      * 
      * @return Utility commands section HTML as a string
      */
-    private String generateUtilityCommandsSection() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("    <h2>Utility Commands:</h2>\n")
-               .append("    <p class=\"subtext\">You can update the prompts for each utility command or add custom ones in the settings page.</p>\n")
-               .append("    <ul>\n")
-               .append("        ").append(HelpUtil.getCustomPromptCommandsForWebView()).append("\n")
-               .append("    </ul>\n");
-        return builder.toString();
+    private @NotNull String generateUtilityCommandsSection() {
+        return "    <h2>Utility Commands:</h2>\n" +
+                "    <p class=\"subtext\">You can update the prompts for each utility command or add custom ones in the settings page.</p>\n" +
+                "    <ul>\n" +
+                "        " + HelpUtil.getCustomPromptCommandsForWebView() + "\n" +
+                "    </ul>\n";
     }
 }

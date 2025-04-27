@@ -100,7 +100,7 @@ public class ConversationTemplate extends HtmlTemplate {
             .copy-response-button:hover { background: %s; }
             a { color: %s; text-decoration: none; }
             a:hover { text-decoration: underline; }
-            h2 { margin-top: 20px; margin-bottom: 10px; color: %s; font-size: %dpx; }
+            h2 { margin-top: 10px; margin-bottom: 10px; color: %s; font-size: %dpx; }
             ul { padding-left: 20px; }
             li { margin-bottom: 8px; }
             .feature-emoji { margin-right: 5px; }
