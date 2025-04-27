@@ -5,6 +5,7 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.ThemeChangeListener;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -61,6 +62,13 @@ public class PostStartupActivity implements ProjectActivity {
         
         // Set initial state of MCP tool window
         updateMCPToolWindowVisibility(project);
+        
+        // Register theme change listener
+        if (project.isDefault()) {
+            // Only register the listener once during application startup
+            ThemeChangeListener.register();
+            log.debug("Registered ThemeChangeListener for theme changes");
+        }
 
         return Unit.INSTANCE;
     }

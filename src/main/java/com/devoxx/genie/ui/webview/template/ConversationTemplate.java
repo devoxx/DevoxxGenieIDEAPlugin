@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview.template;
 
 import com.devoxx.genie.ui.util.DevoxxGenieColorsUtil;
+import com.devoxx.genie.ui.util.ThemeDetector;
 import com.devoxx.genie.ui.webview.WebServer;
 import org.jetbrains.annotations.NotNull;
 

@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.webview;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
+import com.devoxx.genie.ui.util.ThemeDetector;
 import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.ConversationTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
@@ -60,6 +61,9 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
         if (!webServer.isRunning()) {
             webServer.start();
         }
+        
+        // TODO: Review : Register for theme change notifications via ThemeDetector
+        ThemeDetector.addThemeChangeListener(this::themeChanged);
         
         // Create initial HTML content using the template
         ConversationTemplate template = new ConversationTemplate(webServer);
@@ -246,7 +250,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
      *
      * @param chatMessageContext The chat message context
      */
-    public void updateAiMessageContent(ChatMessageContext chatMessageContext) {
+    public void updateAiMessageContent(@NotNull ChatMessageContext chatMessageContext) {
         if (chatMessageContext.getAiMessage() == null) {
             LOG.warn("No AI message to update for context: " + chatMessageContext.getId());
             return;
@@ -276,7 +280,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
      * 
      * @param chatMessageContext The chat message context
      */
-    private void doUpdateAiMessageContent(ChatMessageContext chatMessageContext) {
+    private void doUpdateAiMessageContent(@NotNull ChatMessageContext chatMessageContext) {
         String messageId = chatMessageContext.getId();
         
         // Parse and render the markdown content
@@ -481,40 +485,6 @@ private void doAddChatMessage(String messageHtml) {
     }
     
     /**
-     * Opens a file in the IDE editor.
-     * 
-     * @param filePath The path to the file to open
-     */
-    private void openFileInEditor(String filePath) {
-        try {
-            LOG.info("Opening file in editor: " + filePath);
-            
-            // Find the virtual file by path
-            com.intellij.openapi.vfs.VirtualFileManager fileManager = com.intellij.openapi.vfs.VirtualFileManager.getInstance();
-            VirtualFile file = fileManager.findFileByUrl("file://" + filePath);
-            
-            if (file == null) {
-                LOG.error("Could not find file: " + filePath);
-                return;
-            }
-            
-            // Open the file in the editor
-            ApplicationManager.getApplication().invokeLater(() -> {
-                new OpenFileDescriptor(project, file).navigate(true);
-            });
-        } catch (Exception e) {
-            LOG.error("Error opening file: " + filePath, e);
-        }
-    }
-    
-    /**
-     * Add file references to the conversation after a response.
-     * Creates an expandable/collapsible component to display the file list.
-     *
-     * @param chatMessageContext The chat message context
-     * @param files The list of files referenced in the response
-     */
-    /**
      * Called when the IDE theme changes.
      * Refresh the web view with new styling based on the current theme.
      *
@@ -533,6 +503,24 @@ private void doAddChatMessage(String messageHtml) {
             // Create a new resource with the updated HTML content
             String resourceId = webServer.addDynamicResource(htmlContent);
             String resourceUrl = webServer.getResourceUrl(resourceId);
+            
+            // Set a flag to indicate that we should reload welcome content after the browser loads
+            final boolean[] welcomeReloaded = {false};
+            
+            // Add a temporary load handler to reload the welcome content after the theme change
+            browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
+                @Override
+                public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
+                    if (!welcomeReloaded[0]) {
+                        welcomeReloaded[0] = true;
+                        LOG.info("Browser reloaded after theme change, restoring welcome content");
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
+                            showWelcomeContent(resourceBundle);
+                        });
+                    }
+                }
+            }, browser.getCefBrowser());
             
             // Reload the browser with the new content
             browser.loadURL(resourceUrl);
@@ -632,17 +620,17 @@ private void doAddChatMessage(String messageHtml) {
                     "      const styleEl = document.createElement('style');\n" +
                     "      styleEl.id = 'file-references-styles';\n" +
                     "      styleEl.textContent = `\n" +
-                    "        .file-references-container { margin: 10px 0; background-color: #1e1e1e; border-radius: 4px; border-left: 4px solid #64b5f6; }\n" +
+                    "        .file-references-container { margin: 10px 0; background-color: " + (ThemeDetector.isDarkTheme() ? "#1e1e1e" : "#f5f5f5") + "; border-radius: 4px; border-left: 4px solid " + (ThemeDetector.isDarkTheme() ? "#64b5f6" : "#2196F3") + "; }\n" +
                     "        .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }\n" +
-                    "        .file-references-header:hover { background-color: rgba(255, 255, 255, 0.1); }\n" +
+                    "        .file-references-header:hover { background-color: " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)") + "; }\n" +
                     "        .file-references-icon { margin-right: 8px; }\n" +
                     "        .file-references-title { flex-grow: 1; font-weight: bold; }\n" +
                     "        .file-references-toggle { margin-left: 8px; }\n" +
-                    "        .file-references-content { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }\n" +
+                    "        .file-references-content { padding: 10px; border-top: 1px solid " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)") + "; }\n" +
                     "        .file-list { list-style-type: none; padding: 0; margin: 0; }\n" +
                     "        .file-item { padding: 5px 0; }\n" +
                     "        .file-name { font-weight: bold; margin-right: 8px; }\n" +
-                    "        .file-path { color: #aaaaaa; font-style: italic; font-size: 0.9em; }\n" +
+                    "        .file-path { color: " + (ThemeDetector.isDarkTheme() ? "#aaaaaa" : "#666666") + "; font-style: italic; font-size: 0.9em; }\n" +
                     "      `;\n" +
                     "      document.head.appendChild(styleEl);\n" +
                     "    }\n" +

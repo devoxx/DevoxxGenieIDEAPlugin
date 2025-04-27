@@ -1,12 +1,47 @@
 package com.devoxx.genie.ui.util;
 
+import com.intellij.ide.ui.LafManager;
+import com.intellij.ide.ui.LafManagerListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.JBColor;
-import java.awt.Color;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility class for detecting the current IDE theme (light/dark).
+ * Includes real-time notification when the theme changes.
  */
 public class ThemeDetector {
+    private static final List<ThemeChangeListener> themeChangeListeners = new ArrayList<>();
+    private static boolean isDarkThemeValue;
+
+    static {
+        // Initialize the current theme value
+        isDarkThemeValue = !JBColor.isBright();
+        
+        // Register a listener for theme changes with the LAF manager
+        var application = ApplicationManager.getApplication();
+        if (application != null) {
+            application.getMessageBus().connect()
+                .subscribe(LafManagerListener.TOPIC, new LafManagerListener() {
+                    @Override
+                    public void lookAndFeelChanged(@NotNull LafManager source) {
+                        boolean newIsDarkTheme = !JBColor.isBright();
+                        // Only notify if the theme type (dark/light) has actually changed
+                        if (newIsDarkTheme != isDarkThemeValue) {
+                            isDarkThemeValue = newIsDarkTheme;
+                            notifyThemeChangeListeners(isDarkThemeValue);
+                        }
+                    }
+                });
+        }
+    }
+
+    public static void addThemeChangeListener(ThemeChangeListener listener) {
+        themeChangeListeners.add(listener);
+    }
 
     /**
      * Check if the current IDE theme is dark.
@@ -14,24 +49,29 @@ public class ThemeDetector {
      * @return true if the IDE is using a dark theme, false otherwise
      */
     public static boolean isDarkTheme() {
-        // Use JBColor.isBright() which is the recommended way to check theme status
-        // This is a stable API that's unlikely to change
-        return !JBColor.isBright();  // If JBColor is NOT bright, it's dark theme
+        return isDarkThemeValue;
     }
     
     /**
-     * Determine if a color is considered dark.
+     * Notify all registered listeners that the theme has changed.
      * 
-     * @param color The color to check
-     * @return true if the color is dark, false otherwise
+     * @param isDark true if the new theme is dark, false otherwise
      */
-    public static boolean isDarkColor(Color color) {
-        // Calculate the perceived brightness 
-        double brightness = (0.299 * color.getRed() + 
-                           0.587 * color.getGreen() + 
-                           0.114 * color.getBlue()) / 255.0;
-        
-        // If brightness is less than 0.5, it's considered dark
-        return brightness < 0.5;
+    private static void notifyThemeChangeListeners(boolean isDark) {
+        for (ThemeChangeListener listener : themeChangeListeners) {
+            listener.onThemeChanged(isDark);
+        }
+    }
+    
+    /**
+     * Interface for listeners that want to be notified when the theme changes.
+     */
+    public interface ThemeChangeListener {
+        /**
+         * Called when the theme changes.
+         * 
+         * @param isDarkTheme true if the new theme is dark, false if it's light
+         */
+        void onThemeChanged(boolean isDarkTheme);
     }
 }
