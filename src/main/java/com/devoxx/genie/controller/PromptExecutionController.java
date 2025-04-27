@@ -49,7 +49,15 @@ public class PromptExecutionController implements PromptExecutionListener {
 
         startPromptExecution();
         
-        // Immediately show the user message and scroll to the bottom
+        // Check if this is the first prompt in the conversation - if so, clear the welcome content first
+        if (promptOutputPanel.isNewConversation()) {
+            promptOutputPanel.getConversationPanel().clearWithoutWelcome();
+            
+            // Mark the conversation as started (no longer new) after the first prompt
+            promptOutputPanel.markConversationAsStarted();
+        }
+        
+        // Now show the user message and scroll to the bottom
         promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
 
         AtomicBoolean response = new AtomicBoolean(true);

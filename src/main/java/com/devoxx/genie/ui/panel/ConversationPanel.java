@@ -224,6 +224,12 @@ public class ConversationPanel
         ApplicationManager.getApplication().invokeLater(() -> {
             updateNewConversationLabel();
             clear();
+            
+            // Make sure all panels know this is a new conversation
+            for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+                // The clear() method already resets isNewConversation = true
+                panel.clear();
+            }
         });
     }
 
@@ -245,6 +251,11 @@ public class ConversationPanel
         
         // Clear the current conversation in the web view without showing welcome screen
         clearWithoutWelcome();
+        
+        // Mark this as not a new conversation in any panel that might be registered
+        for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+            panel.markConversationAsStarted();
+        }
         
         // Make sure browser is fully initialized before adding messages
         if (!webViewController.isInitialized()) {

@@ -19,10 +19,14 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
+
+import com.devoxx.genie.service.conversations.ConversationStorageService;
+import com.devoxx.genie.model.conversation.Conversation;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.
@@ -39,6 +43,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     private final HelpPanel helpPanel;
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cards = new JPanel(cardLayout);
+    
+    // Flag to track if we're in a new conversation (no messages sent yet)
+    private boolean isNewConversation = true;
 
     /**
      * Constructor for PromptOutputPanel.
@@ -88,6 +95,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void clear() {
         conversationPanel.clear();
         showWelcomeText();
+        
+        // Reset the new conversation flag since we've cleared everything
+        isNewConversation = true;
     }
 
     /**
@@ -211,5 +221,23 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
             // Then defer to the conversation panel which contains the WebViewController
             conversationPanel.scrollToBottom();
         });
+    }
+    
+    /**
+     * Checks if this is a new conversation (no messages sent yet).
+     * This is used to determine if we should clear the welcome screen when the first prompt is submitted.
+     * 
+     * @return true if this is a new conversation with no previous messages
+     */
+    public boolean isNewConversation() {
+        return isNewConversation;
+    }
+    
+    /**
+     * Marks the conversation as no longer new after the first prompt is submitted.
+     * This is called from the controller after processing the first prompt.
+     */
+    public void markConversationAsStarted() {
+        isNewConversation = false;
     }
 }
