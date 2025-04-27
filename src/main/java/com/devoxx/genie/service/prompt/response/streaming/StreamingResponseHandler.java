@@ -56,7 +56,6 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
         
-        outputPanel.addStreamResponse(streamingPanel);
         log.debug("Created streaming handler for context {}", context.getId());
     }
 

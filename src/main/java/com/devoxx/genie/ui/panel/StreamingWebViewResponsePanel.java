@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
 import com.devoxx.genie.ui.webview.WebServer;
 import com.devoxx.genie.ui.webview.WebViewFactory;
 import com.intellij.openapi.application.ApplicationManager;
@@ -14,11 +13,9 @@ import com.intellij.ui.jcef.JBCefClient;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
-import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,8 +42,8 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
         super(chatMessageContext.getId());
         this.chatMessageContext = chatMessageContext;
 
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        add(new ResponseHeaderPanel(chatMessageContext));
+//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+//        add(new ResponseHeaderPanel(chatMessageContext));
 
         // Initialize web server
         webServer = WebServer.getInstance();

@@ -27,7 +27,7 @@ public class WebViewPanelTest {
         
         // Create a conversation panel
         ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-        ConversationPanel panel = new ConversationPanel(resourceBundle);
+        ConversationPanel panel = new ConversationPanel(project, resourceBundle);
         
         // Show welcome content
         panel.showWelcome();

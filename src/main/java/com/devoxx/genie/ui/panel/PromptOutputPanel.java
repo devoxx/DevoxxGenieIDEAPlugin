@@ -53,7 +53,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         this.project = project;
 
         // Initialize panels with proper sizes
-        conversationPanel = new ConversationPanel(resourceBundle);
+        conversationPanel = new ConversationPanel(project, resourceBundle);
         helpPanel = new HelpPanel(HelpUtil.getHelpMessage());
         
         // Add components to the card panel
@@ -129,16 +129,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
             // Add the message to the conversation panel
             conversationPanel.addChatMessage(chatMessageContext);
         }
-    }
-
-    /**
-     * Adds a streaming response to the panel.
-     * Currently not used with the WebView implementation - would need a streaming API.
-     *
-     * @param chatResponseStreamingPanel The streaming response panel.
-     */
-    public void addStreamResponse(ChatStreamingResponsePanel chatResponseStreamingPanel) {
-        // Not used with WebView - we would need to implement streaming separately
     }
 
     /**

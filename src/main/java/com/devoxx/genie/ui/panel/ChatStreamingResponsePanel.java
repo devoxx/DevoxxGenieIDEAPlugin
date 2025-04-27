@@ -1,28 +1,10 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.component.StyleSheetsFactory;
-import com.devoxx.genie.ui.panel.chatresponse.ResponseHeaderPanel;
-import com.devoxx.genie.ui.renderer.CodeBlockNodeRenderer;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.impl.EditorCssFontResolver;
-import com.intellij.openapi.util.Computable;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.HTMLEditorKitBuilder;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_TEXT_COLOR;
-import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT;
 
 /**
  * Panel for displaying streaming chat responses.

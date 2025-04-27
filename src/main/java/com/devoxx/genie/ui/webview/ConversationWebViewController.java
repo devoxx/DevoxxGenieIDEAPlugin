@@ -123,6 +123,34 @@ public class ConversationWebViewController {
         ChatMessageTemplate messageTemplate = new ChatMessageTemplate(webServer, chatMessageContext);
         String messageHtml = messageTemplate.generate();
         
+        // Log for debugging
+        LOG.info("Adding chat message to conversation view: " + chatMessageContext.getId());
+        
+        if (!isLoaded) {
+            LOG.warn("Browser not loaded yet, waiting before adding message");
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                while (!initialized.get()) {
+                    try {
+                        sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while waiting for browser to load", e);
+                        return;
+                    }
+                }
+                doAddChatMessage(messageHtml);
+            });
+        } else {
+            doAddChatMessage(messageHtml);
+        }
+    }
+    
+    /**
+     * Performs the actual operation of adding a chat message to the conversation.
+     * 
+     * @param messageHtml The HTML of the message to add
+     */
+    private void doAddChatMessage(String messageHtml) {
         // Insert the message HTML at the end of the conversation container
         String js = "const container = document.getElementById('conversation-container');" +
                     "container.innerHTML += `" + escapeJS(messageHtml) + "`;" +

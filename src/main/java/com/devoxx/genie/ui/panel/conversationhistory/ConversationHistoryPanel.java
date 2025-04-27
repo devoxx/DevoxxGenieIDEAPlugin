@@ -30,18 +30,17 @@ import java.util.function.Function;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
-public class ConversationHistoryPanel extends JPanel {
+public class ConversationHistoryPanel extends JPanel implements ConversationSelectionListener {
     private final ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
     private final Project project;
 
-    public ConversationHistoryPanel(@NotNull ConversationStorageService storageService,
-                                    ConversationSelectionListener conversationSelectionListener,
-                                    Project project) {
-        this.storageService = storageService;
+    public ConversationHistoryPanel(Project project) {
         this.project = project;
 
         setLayout(new BorderLayout());
+
+        storageService = ConversationStorageService.getInstance();
 
         // Create table model
         tableModel = new ConversationTableModel();
@@ -77,7 +76,7 @@ public class ConversationHistoryPanel extends JPanel {
                     // Update chat memory
                     updateChatMemory(conversation);
                     // Notify listener
-                    conversationSelectionListener.onConversationSelected(conversation);
+                    onConversationSelected(conversation);
                 }
             }
         });
@@ -136,6 +135,11 @@ public class ConversationHistoryPanel extends JPanel {
         conversations.sort((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
         tableModel.setConversations(conversations);
         tableModel.fireTableDataChanged();
+    }
+
+    @Override
+    public void onConversationSelected(Conversation conversation) {
+
     }
 
     // Table model class

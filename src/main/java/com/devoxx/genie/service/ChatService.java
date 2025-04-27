@@ -18,8 +18,8 @@ public class ChatService implements ConversationEventListener {
     private final ConversationStorageService storageService;
     private final Project project;
 
-    public ChatService(ConversationStorageService storageService, Project project) {
-        this.storageService = storageService;
+    public ChatService(Project project) {
+        this.storageService = ConversationStorageService.getInstance();
         this.project = project;
 
         project.getMessageBus()

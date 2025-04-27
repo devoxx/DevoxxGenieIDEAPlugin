@@ -52,15 +52,13 @@ public class ChatMessageTemplate extends HtmlTemplate {
         
         // Add user message
         messageHtml.append("    <div class=\"user-message\">\n")
-                .append("        <strong>User:</strong>\n")
                 .append("        <p>").append(escapeHtml(chatMessageContext.getUserPrompt())).append("</p>\n")
                 .append("    </div>\n");
         
         // Add assistant response
         messageHtml.append("    <div class=\"assistant-message\">\n")
                 .append("        ").append(formatMetadata()).append("\n")
-                .append("        <button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>\n")
-                .append("        <strong>Assistant:</strong>\n");
+                .append("        <button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>\n");
         
         // Parse and render the markdown content
         Node document = markdownParser.parse(chatMessageContext.getAiMessage().text());

@@ -11,6 +11,7 @@ import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.panel.LlmProviderPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.SubmitPanel;
+import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.MessageBusUtil;
@@ -126,6 +127,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private @NotNull JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(llmProviderPanel, BorderLayout.NORTH);
+        // topPanel.add(new ConversationHistoryPanel(project), BorderLayout.CENTER);
         return topPanel;
     }
 
