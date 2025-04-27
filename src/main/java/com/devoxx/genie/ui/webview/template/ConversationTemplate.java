@@ -126,16 +126,28 @@ public class ConversationTemplate extends HtmlTemplate {
         return """
                     function copyMessageResponse(button) {
                         const assistantMessage = button.closest('.assistant-message');
-                        const messageText = assistantMessage.innerText;
-                        // Extract text content after Assistant: label
-                        const responseText = messageText.split('Assistant:')[1].trim();
-                        navigator.clipboard.writeText(responseText).then(function() {
+                        // Get all content except the Copy button and metadata
+                        const contentToCopy = Array.from(assistantMessage.childNodes)
+                            .filter(node => !node.classList || (!node.classList.contains('copy-response-button') && !node.classList.contains('metadata-info')))
+                            .map(node => node.textContent || node.innerText)
+                            .join('\\n')
+                            .trim();
+                            
+                        navigator.clipboard.writeText(contentToCopy).then(function() {
+                            // Add animation class
+                            button.classList.add('copy-button-flash');
                             button.textContent = 'Copied!';
+                            
                             setTimeout(function() {
                                 button.textContent = 'Copy';
+                                button.classList.remove('copy-button-flash');
                             }, 2000);
                         }).catch(function(err) {
                             console.error('Failed to copy: ', err);
+                            button.textContent = 'Error!';
+                            setTimeout(function() {
+                                button.textContent = 'Copy';
+                            }, 2000);
                         });
                     }
                     
