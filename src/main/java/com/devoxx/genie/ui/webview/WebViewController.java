@@ -10,6 +10,7 @@ import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.ui.jcef.JBCefBrowser;
+import lombok.Getter;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
@@ -25,6 +26,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Controller for managing the WebView component.
@@ -32,10 +37,16 @@ import java.nio.charset.StandardCharsets;
  */
 public class WebViewController {
     private static final Logger LOG = Logger.getInstance(WebViewController.class);
-    
+
+    /**
+     * -- GETTER --
+     *  Get the JCef browser component.
+     *
+     * @return The JBCefBrowser instance
+     */
+    @Getter
     private final JBCefBrowser browser;
     private final WebServer webServer;
-    private final ChatMessageContext chatMessageContext;
     private boolean isLoaded = false;
     
     // Languages that require additional PrismJS component loading
@@ -50,7 +61,6 @@ public class WebViewController {
      * @param chatMessageContext The chat message context
      */
     public WebViewController(@NotNull ChatMessageContext chatMessageContext) {
-        this.chatMessageContext = chatMessageContext;
         this.webServer = WebServer.getInstance();
         
         // Ensure web server is running
@@ -79,16 +89,7 @@ public class WebViewController {
             }
         }, browser.getCefBrowser());
     }
-    
-    /**
-     * Get the JCef browser component.
-     *
-     * @return The JBCefBrowser instance
-     */
-    public JBCefBrowser getBrowser() {
-        return browser;
-    }
-    
+
     /**
      * Check if the browser is fully loaded.
      *
@@ -116,15 +117,34 @@ public class WebViewController {
                 .append("    <title>DevoxxGenie Response</title>\n")
                 .append("    <link rel=\"stylesheet\" href=\"").append(webServer.getPrismCssUrl()).append("\">\n")
                 .append("    <style>\n")
-                .append("        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; margin: 0; padding: 10px; }\n")
-                .append("        pre { margin: 1em 0; position: relative; border-radius: 4px; }\n")
+                .append("        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; margin: 0; padding: 10px; background-color: #000000; color: #e0e0e0; }\n")
+                .append("        pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: #1e1e1e; }\n")
                 .append("        code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }\n")
                 .append("        .toolbar-container { position: absolute; top: 0; right: 0; padding: 5px; }\n")
-                .append("        .copy-button { background: rgba(0, 0, 0, 0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }\n")
-                .append("        .copy-button:hover { background: rgba(0, 0, 0, 0.2); }\n")
+                .append("        .copy-button { background: rgba(255, 255, 255, 0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }\n")
+                .append("        .copy-button:hover { background: rgba(255, 255, 255, 0.2); }\n")
+                .append("        .user-message { background-color: #1a2733; border-left: 4px solid #0077cc; padding: 10px; margin: 10px 0; border-radius: 4px; }\n")
+                .append("        .assistant-message { background-color: #1a2a1a; border-left: 4px solid #4CAF50; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; }\n")
+                .append("        .metadata-info { font-size: 0.8em; color: #aaaaaa; margin-bottom: 10px; font-style: italic; }\n")
+                .append("        .copy-response-button { position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.1); border: none; border-radius: 4px; color: #e0e0e0; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }\n")
+                .append("        .copy-response-button:hover { background: rgba(255, 255, 255, 0.2); }\n")
+                .append("        a { color: #64b5f6; }\n")
                 .append("    </style>\n")
                 .append("</head>\n")
-                .append("<body>\n");
+                .append("<body>\n")
+                .append("<div class=\"conversation\">\n");
+        
+        // Add user message
+        htmlBuilder.append("    <div class=\"user-message\">\n")
+                .append("        <strong>User:</strong>\n")
+                .append("        <p>").append(escapeHtml(chatMessageContext.getUserPrompt())).append("</p>\n")
+                .append("    </div>\n");
+        
+        // Add assistant response
+        htmlBuilder.append("    <div class=\"assistant-message\">\n")
+                .append("        ").append(formatMetadata(chatMessageContext)).append("\n")
+                .append("        <button class=\"copy-response-button\" onclick=\"copyFullResponse()\">Copy</button>\n")
+                .append("        <strong>Assistant:</strong>\n");
         
         // Parse the markdown content
         String markdownResponse = chatMessageContext.getAiMessage().text();
@@ -146,6 +166,9 @@ public class WebViewController {
             node = node.getNext();
         }
         
+        htmlBuilder.append("    </div>\n")
+                .append("</div>\n");
+        
         // Load PrismJS core and components
         htmlBuilder.append("\n<script src=\"").append(webServer.getPrismJsUrl()).append("\"></script>\n");
         
@@ -156,8 +179,24 @@ public class WebViewController {
                     .append(".min.js\"></script>\n");
         }
         
-        // Initialize PrismJS and add copy functionality
+        // Add function to copy full assistant response
         htmlBuilder.append("<script>\n")
+                .append("    function copyFullResponse() {\n")
+                .append("        const assistantMessage = document.querySelector('.assistant-message').innerText;\n")
+                .append("        const responseText = assistantMessage.split('Assistant:')[1].trim();\n")
+                .append("        navigator.clipboard.writeText(responseText).then(function() {\n")
+                .append("            const button = document.querySelector('.copy-response-button');\n")
+                .append("            button.textContent = 'Copied!';\n")
+                .append("            setTimeout(function() {\n")
+                .append("                button.textContent = 'Copy';\n")
+                .append("            }, 2000);\n")
+                .append("        }).catch(function(err) {\n")
+                .append("            console.error('Failed to copy: ', err);\n")
+                .append("        });\n")
+                .append("    }\n");
+        
+        // Initialize PrismJS and add copy functionality
+        htmlBuilder.append("\n")
                 .append("    // Initialize PrismJS\n")
                 .append("    document.addEventListener('DOMContentLoaded', function() {\n")
                 .append("        if (typeof Prism !== 'undefined') {\n")
@@ -286,5 +325,24 @@ public class WebViewController {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
+    }
+    
+    /**
+     * Format metadata information for display in the WebView.
+     * 
+     * @param chatMessageContext The chat message context
+     * @return HTML string with formatted metadata
+     */
+    private @NotNull String formatMetadata(@NotNull ChatMessageContext chatMessageContext) {
+        LocalDateTime dateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
+        String timestamp = dateTime.format(formatter);
+        
+        String modelName = "Unknown";
+        if (chatMessageContext.getLanguageModel() != null) {
+            modelName = chatMessageContext.getLanguageModel().getModelName();
+        }
+        
+        return "<div class=\"metadata-info\">" + timestamp + " · " + modelName + "</div>";
     }
 }

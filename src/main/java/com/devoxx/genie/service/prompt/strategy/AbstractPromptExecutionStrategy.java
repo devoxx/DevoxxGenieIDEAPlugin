@@ -87,7 +87,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         resultTask.putUserData(PromptTask.CONTEXT_KEY, context);
         
         // Add user prompt to UI
-        panel.addUserPrompt(context);
+        // panel.addUserPrompt(context);
         
         // Execute strategy-specific logic
         try {

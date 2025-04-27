@@ -143,15 +143,15 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void addUserPrompt(ChatMessageContext chatMessageContext) {
         container.remove(welcomePanel);
 
-        UserPromptPanel userPromptPanel = new UserPromptPanel(chatMessageContext);
+        // UserPromptPanel userPromptPanel = new UserPromptPanel(chatMessageContext);
 
-        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
-            waitingPanel.showMsg();
-            userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
-        }
+//        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getStreamMode())) {
+//            waitingPanel.showMsg();
+//            userPromptPanel.add(waitingPanel, BorderLayout.SOUTH);
+//        }
 
         addFiller(chatMessageContext.getId());
-        container.add(userPromptPanel);
+        // container.add(userPromptPanel);
         scrollToBottom();
     }
 
@@ -247,9 +247,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
             for (ChatMessage message : conversation.getMessages()) {
                 conversation.setId(conversationId);
                 ChatMessageContext chatMessageContext = createChatMessageContext(conversation, message);
-                if (message.isUser()) {
-                    addUserPrompt(chatMessageContext);
-                } else {
+                if (!message.isUser()) {
                     addChatResponse(chatMessageContext);
                 }
             }

@@ -1,8 +1,6 @@
 package com.devoxx.genie.ui.webview;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -14,9 +12,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,9 +28,7 @@ public class WebServer {
     // PrismJS CDN URLs
     private static final String PRISM_CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css";
     private static final String PRISM_JS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js";
-    private static final String PRISM_LINE_NUMBERS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js";
-    private static final String PRISM_COMPONENTS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/";
-    
+
     private WebServer() {
         initializeEmbeddedResources();
     }
@@ -105,15 +98,11 @@ public class WebServer {
         return serverChannel != null && serverChannel.isOpen();
     }
 
-    public int getPort() {
-        return port;
-    }
-
     public String getServerUrl() {
         return "http://localhost:" + port;
     }
 
-    public String addDynamicResource(String content) {
+    public String addDynamicResource(@NotNull String content) {
         String resourceId = "/dynamic/" + System.currentTimeMillis() + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
         LOG.info("Adding dynamic resource: " + resourceId + ", content length: " + content.length());
         resources.put(resourceId, content);

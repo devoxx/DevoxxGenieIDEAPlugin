@@ -32,9 +32,7 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
         andTransparent()
             .withMaximumHeight(30)
             .withPreferredHeight(30);
-
-        add(getCreatedOnLabel(chatMessageContext), BorderLayout.WEST);
-        
+            
         // Create a panel for the buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         buttonPanel.setOpaque(false);
@@ -42,7 +40,6 @@ public class ResponseHeaderPanel extends JBPanel<ResponseHeaderPanel> {
 
         add(buttonPanel, BorderLayout.EAST);
     }
-
     /**
      * Get the created on label.
      *

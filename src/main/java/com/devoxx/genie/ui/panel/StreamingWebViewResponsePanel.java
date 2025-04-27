@@ -31,8 +31,10 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
 
     private final JBCefBrowser browser;
     private final WebServer webServer;
+    private final ChatMessageContext chatMessageContext;
     private final StringBuilder markdownContent = new StringBuilder();
     private final AtomicBoolean isLoaded = new AtomicBoolean(false);
+    private final Parser parser = Parser.builder().build();
 
     /**
      * Create a new streaming response panel with WebView.
@@ -41,6 +43,7 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
      */
     public StreamingWebViewResponsePanel(@NotNull ChatMessageContext chatMessageContext) {
         super(chatMessageContext.getId());
+        this.chatMessageContext = chatMessageContext;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(new ResponseHeaderPanel(chatMessageContext));
@@ -115,7 +118,7 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
                 .replace("\r", "\\r");
         
         // Use JavaScript to update the content and apply syntax highlighting
-        String script = "updateContent('" + escapedMarkdown + "');";
+        String script = "updateAssistantContent('" + escapedMarkdown + "');";
         browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
     }
 
@@ -125,6 +128,15 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
      * @return the HTML content
      */
     private String createInitialHtml() {
+        // Get user query for display
+        String userQuery = chatMessageContext.getUserPrompt();
+        String escapedUserQuery = userQuery.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;")
+                .replace("\n", "<br>");
+
         return """
                 <!DOCTYPE html>
                 <html>
@@ -178,10 +190,36 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
                         #content {
                             min-height: 100px;
                         }
+                        .user-message {
+                            background-color: #f2f8ff;
+                            border-left: 4px solid #0077cc;
+                            padding: 10px;
+                            margin: 10px 0;
+                            border-radius: 4px;
+                        }
+                        .assistant-message {
+                            background-color: #f5f5f5;
+                            border-left: 4px solid #4CAF50;
+                            padding: 10px;
+                            margin: 10px 0;
+                            border-radius: 4px;
+                        }
                     </style>
                 </head>
                 <body>
-                    <div id="content"></div>
+                    <div class="conversation">
+                        <!-- User message -->
+                        <div class="user-message">
+                            <strong>User:</strong>
+                            <p>%s</p>
+                        </div>
+                        
+                        <!-- Assistant message (to be filled in dynamically) -->
+                        <div class="assistant-message">
+                            <strong>Assistant:</strong>
+                            <div id="assistant-content"></div>
+                        </div>
+                    </div>
                     
                     <!-- Load PrismJS from CDN -->
                     <script src="%s"></script>
@@ -224,9 +262,9 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
                             return html;
                         }
                         
-                        // Update content and highlight code
-                        function updateContent(markdown) {
-                            const contentDiv = document.getElementById('content');
+                        // Update assistant content and highlight code
+                        function updateAssistantContent(markdown) {
+                            const contentDiv = document.getElementById('assistant-content');
                             contentDiv.innerHTML = markdownToHtml(markdown);
                             
                             // Apply PrismJS highlighting
@@ -267,17 +305,18 @@ public class StreamingWebViewResponsePanel extends BackgroundPanel {
                         
                         // Initialize
                         document.addEventListener('DOMContentLoaded', function() {
-                            updateContent('');
+                            updateAssistantContent('');
                         });
                     </script>
                 </body>
                 </html>
                 """.formatted(
                 webServer.getPrismCssUrl(),
+                escapedUserQuery,
                 webServer.getPrismJsUrl()
         );
     }
-
+//
 //    @Override
 //    public void dispose() {
 //        if (browser != null) {
