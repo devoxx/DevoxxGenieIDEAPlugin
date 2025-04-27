@@ -6,7 +6,7 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <n>DevoxxGenie</n>
+    <name>DevoxxGenie</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
@@ -85,8 +85,6 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    <!-- Add dependency for JCEF browser support -->
-    <depends>com.intellij.modules.ultimate</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->

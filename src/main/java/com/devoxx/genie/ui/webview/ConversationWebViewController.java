@@ -152,11 +152,22 @@ public class ConversationWebViewController {
      */
     private void doAddChatMessage(String messageHtml) {
         // Insert the message HTML at the end of the conversation container
-        String js = "const container = document.getElementById('conversation-container');" +
-                    "container.innerHTML += `" + escapeJS(messageHtml) + "`;" +
-                    "window.scrollTo(0, document.body.scrollHeight);" +
-                    "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }";
+        // Using a more robust approach with createElement and appendChild instead of innerHTML += 
+        // which can cause issues with event handlers on subsequent messages
+        String js = "try {" +
+                    "  const container = document.getElementById('conversation-container');" +
+                    "  const tempDiv = document.createElement('div');" +
+                    "  tempDiv.innerHTML = `" + escapeJS(messageHtml) + "`;" +
+                    "  while (tempDiv.firstChild) {" +
+                    "    container.appendChild(tempDiv.firstChild);" +
+                    "  }" +
+                    "  window.scrollTo(0, document.body.scrollHeight);" +
+                    "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                    "} catch (error) {" +
+                    "  console.error('Error adding chat message:', error);" +
+                    "}";
         
+        LOG.info("Executing JavaScript to add message");
         executeJavaScript(js);
     }
     
