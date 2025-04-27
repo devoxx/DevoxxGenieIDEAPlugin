@@ -84,7 +84,9 @@ public class WelcomeWebViewController implements CustomPromptChangeListener {
      */
     private @NotNull String generateWelcomeHtml() {
         StringBuilder htmlBuilder = new StringBuilder();
-        
+        // Get the editor font size from the IDE settings
+        int editorFontSize = com.devoxx.genie.ui.util.EditorFontUtil.getEditorFontSize();
+
         // Start HTML document with references to PrismJS resources
         htmlBuilder.append("<!DOCTYPE html>\n")
                 .append("<html>\n")
@@ -95,15 +97,24 @@ public class WelcomeWebViewController implements CustomPromptChangeListener {
                 .append("    <link rel=\"stylesheet\" href=\"").append(webServer.getPrismCssUrl()).append("\">\n")
                 .append("    <style>\n")
                 .append("        html, body { width: 100%; height: 100%; margin: 0; padding: 0; }\n")
-                .append("        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #000000; color: #e0e0e0; overflow-y: auto; }\n")
-                .append("        h2 { margin-top: 20px; margin-bottom: 10px; color: #64b5f6; }\n")
+                .append("        body { \n")
+                .append("            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; \n")
+                .append("            font-size: ").append(editorFontSize).append("px; \n")
+                .append("            line-height: 1.6; \n")
+                .append("            margin: 0; \n")
+                .append("            padding: 0; \n")
+                .append("            background-color: #000000; \n")
+                .append("            color: #e0e0e0; \n")
+                .append("            overflow-y: auto; \n")
+                .append("        }\n")
+                .append("        h2 { margin-top: 20px; margin-bottom: 10px; color: #64b5f6; font-size: \" + Math.max((int)(editorFontSize * 1.2), 14) + \"px; }\n")
                 .append("        a { color: #64b5f6; text-decoration: none; }\n")
                 .append("        a:hover { text-decoration: underline; }\n")
                 .append("        ul { padding-left: 20px; }\n")
                 .append("        li { margin-bottom: 8px; }\n")
                 .append("        .feature-emoji { margin-right: 5px; }\n")
                 .append("        .feature-name { font-weight: bold; }\n")
-                .append("        .subtext { font-size: 0.9em; color: #aaaaaa; margin-top: 5px; }\n")
+                .append("        .subtext { font-size: \" + Math.max(editorFontSize - 2, 10) + \"px; color: #aaaaaa; margin-top: 5px; }\n")
                 .append("        .container { max-width: 800px; margin: 0 auto; min-height: 100%; padding: 20px; }\n")
                 .append("    </style>\n")
                 .append("</head>\n")

@@ -63,32 +63,47 @@ public class ConversationTemplate extends HtmlTemplate {
         // Determine if this is dark mode based on the background color's brightness
         boolean isDarkMode = isDarkTheme(bgColor);
         String textColor = isDarkMode ? "#e0e0e0" : "#2b2b2b";
-
+        
+        // Get the editor font size from the IDE settings
+        int editorFontSize = com.devoxx.genie.ui.util.EditorFontUtil.getEditorFontSize();
+        
         return String.format("""
         <style>
             html, body { width: 100%%; height: 100%%; margin: 0; padding: 0; }
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
-                   line-height: 1.6; padding: 0; background-color: %s; color: %s; overflow-y: auto; }
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
+                font-size: %dpx;
+                line-height: 1.6; 
+                padding: 0; 
+                background-color: %s; 
+                color: %s; 
+                overflow-y: auto; 
+            }
             #conversation-container { padding: 20px; min-height: 100%%; }
             pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: %s; overflow-x: auto; }
-            code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; white-space: pre-wrap; word-break: break-word; }
+            code { 
+                font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; 
+                font-size: %dpx;
+                white-space: pre-wrap; 
+                word-break: break-word; 
+            }
             .toolbar-container { position: absolute; top: 0; right: 0; padding: 5px; }
             .copy-button { background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
             .copy-button:hover { background: %s; }
             .message-pair { margin-bottom: 20px; width: 100%%; }
             .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px; margin: 10px 0; border-radius: 4px; word-wrap: break-word; overflow-wrap: break-word; }
             .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
-            .metadata-info { font-size: 0.8em; color: %s; margin-bottom: 10px; font-style: italic; }
-            .copy-response-button { position: absolute; top: 10px; right: 10px; background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
+            .metadata-info { font-size: %dpx; color: %s; margin-bottom: 10px; font-style: italic; }
+            .copy-response-button { position: absolute; top: 10px; right: 10px; background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: %dpx; padding: 4px 8px; }
             .copy-response-button:hover { background: %s; }
             a { color: %s; text-decoration: none; }
             a:hover { text-decoration: underline; }
-            h2 { margin-top: 20px; margin-bottom: 10px; color: %s; }
+            h2 { margin-top: 20px; margin-bottom: 10px; color: %s; font-size: %dpx; }
             ul { padding-left: 20px; }
             li { margin-bottom: 8px; }
             .feature-emoji { margin-right: 5px; }
             .feature-name { font-weight: bold; }
-            .subtext { font-size: 0.9em; color: %s; margin-top: 5px; }
+            .subtext { font-size: %dpx; color: %s; margin-top: 5px; }
             .container { width: 100%%; max-width: 800px; margin: 0 auto; }
             .file-references-container { margin: 10px 0; background-color: %s; border-radius: 4px; border-left: 4px solid %s; }
             .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }
@@ -100,29 +115,36 @@ public class ConversationTemplate extends HtmlTemplate {
             .file-list { list-style-type: none; padding: 0; margin: 0; }
             .file-item { padding: 5px 0; }
             .file-name { font-weight: bold; margin-right: 8px; }
-            .file-path { color: %s; font-style: italic; font-size: 0.9em; word-wrap: break-word; overflow-wrap: break-word; }
+            .file-path { color: %s; font-style: italic; font-size: %dpx; word-wrap: break-word; overflow-wrap: break-word; }
         </style>
         """,
+                editorFontSize,
                 bgColorHex,
                 textColor,
                 isDarkMode ? "#1e1e1e" : "#f5f5f5",
+                editorFontSize,
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
                 isDarkMode ? "#ffffff" : "#333333",
                 isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
                 isDarkMode ? "#2a2520" : "#fff9f0", // Devoxx orange-tinted background for user messages
                 isDarkMode ? "#1e282e" : "#f0f7ff", // Blue-tinted background for assistant messages
+                Math.max(editorFontSize - 2, 10), // Slightly smaller font for metadata
                 isDarkMode ? "#aaaaaa" : "#666666",
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
                 isDarkMode ? "#e0e0e0" : "#4a4a4a",
+                Math.max(editorFontSize - 2, 10), // Slightly smaller font for buttons
                 isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
                 isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
                 isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                Math.max((int)(editorFontSize * 1.2), 14), // Slightly larger font for headings
+                Math.max(editorFontSize - 2, 10), // Slightly smaller font for subtexts
                 isDarkMode ? "#aaaaaa" : "#666666",
                 isDarkMode ? "#1e1e1e" : "#f5f5f5",
                 isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-                isDarkMode ? "#aaaaaa" : "#666666"
+                isDarkMode ? "#aaaaaa" : "#666666",
+                Math.max(editorFontSize - 2, 10) // Slightly smaller font for file paths
         );
     }
     
