@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -19,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.HammerIcon;
 
@@ -32,8 +32,6 @@ public class MCPToolsManager {
     
     @Getter
     private final JLabel mcpToolsCountLabel;
-    
-    private Consumer<Boolean> visibilityChangeListener;
 
     /**
      * Constructs a new MCPToolsManager for the given project.
@@ -48,15 +46,6 @@ public class MCPToolsManager {
     }
 
     /**
-     * Sets a callback to be invoked when the visibility of MCP tools changes.
-     *
-     * @param listener The listener to be called with the new visibility state
-     */
-    public void setVisibilityChangeListener(Consumer<Boolean> listener) {
-        this.visibilityChangeListener = listener;
-    }
-
-    /**
      * Creates the MCP tools counter label with its icon and listeners.
      *
      * @return The configured JLabel for MCP tools count
@@ -68,6 +57,8 @@ public class MCPToolsManager {
         label.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
         label.setFont(label.getFont().deriveFont(Font.BOLD));
         label.setHorizontalTextPosition(SwingConstants.RIGHT);
+        label.setVerticalAlignment(SwingConstants.CENTER);
+        label.setVerticalTextPosition(SwingConstants.CENTER);
         label.setIconTextGap(4);
         label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
@@ -89,9 +80,6 @@ public class MCPToolsManager {
     public void updateMCPToolsCounter() {
         if (!MCPService.isMCPEnabled()) {
             mcpToolsCountLabel.setVisible(false);
-            if (visibilityChangeListener != null) {
-                visibilityChangeListener.accept(false);
-            }
             return;
         }
         
@@ -119,15 +107,8 @@ public class MCPToolsManager {
             
             toolTip.append("<br>Click to enable/disable MCP servers</html>");
             mcpToolsCountLabel.setToolTipText(toolTip.toString());
-            
-            if (visibilityChangeListener != null) {
-                visibilityChangeListener.accept(true);
-            }
         } else {
             mcpToolsCountLabel.setVisible(false);
-            if (visibilityChangeListener != null) {
-                visibilityChangeListener.accept(false);
-            }
         }
     }
 
@@ -283,7 +264,7 @@ public class MCPToolsManager {
      * 
      * @param mcpServers The map of MCP servers
      */
-    private void showAllMCPTools(Map<String, MCPServer> mcpServers) {
+    private void showAllMCPTools(@NotNull Map<String, MCPServer> mcpServers) {
         List<ToolInfo> allTools = new ArrayList<>();
         
         // Collect all tools from all servers

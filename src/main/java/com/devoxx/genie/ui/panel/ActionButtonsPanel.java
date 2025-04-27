@@ -111,7 +111,7 @@ public class ActionButtonsPanel extends JPanel
     }
 
     private @NotNull JPanel createButtonPanel() {
-        JPanel buttonPanel = new JPanel(new BorderLayout());
+        JPanel buttonPanel = new JPanel(new BorderLayout(0, 0));
         
         // Main buttons using GridLayout
         JPanel mainButtons = new JPanel(new GridLayout(1, 4, 5, 0));
@@ -123,6 +123,7 @@ public class ActionButtonsPanel extends JPanel
         
         // MCP Tools counter on the right
         JPanel mcpPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        mcpPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
         mcpPanel.add(mcpToolsManager.getMcpToolsCountLabel());
         
         buttonPanel.add(mcpPanel, BorderLayout.EAST);
@@ -321,12 +322,5 @@ public class ActionButtonsPanel extends JPanel
     @Override
     public void onTokenCalculationComplete(String message) {
         com.devoxx.genie.ui.util.NotificationUtil.sendNotification(project, message);
-    }
-    
-    /**
-     * Updates the MCP Tools counter
-     */
-    public void updateMCPToolsCounter() {
-        mcpToolsManager.updateMCPToolsCounter();
     }
 }
