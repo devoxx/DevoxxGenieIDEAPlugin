@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui.webview.template;
 
+import com.devoxx.genie.ui.util.DevoxxGenieColorsUtil;
 import com.devoxx.genie.ui.webview.WebServer;
 import org.jetbrains.annotations.NotNull;
+
+import java.awt.*;
 
 /**
  * Template for generating the main conversation HTML structure.
@@ -50,45 +53,77 @@ public class ConversationTemplate extends HtmlTemplate {
      * @return CSS styles as a string
      */
     private String generateStyles() {
-        return """
-                    <style>
-                        html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
-                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; padding: 0; background-color: #000000; color: #e0e0e0; overflow-y: auto; }
-                        #conversation-container { padding: 20px; min-height: 100%; }
-                        pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: #1e1e1e; overflow-x: auto; }
-                        code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
-                        .toolbar-container { position: absolute; top: 0; right: 0; padding: 5px; }
-                        .copy-button { background: rgba(255, 255, 255, 0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
-                        .copy-button:hover { background: rgba(255, 255, 255, 0.2); }
-                        .message-pair { margin-bottom: 20px; width: 100%; }
-                        .user-message { background-color: #1a2733; border-left: 4px solid #0077cc; padding: 10px; margin: 10px 0; border-radius: 4px; }
-                        .assistant-message { background-color: #1a2a1a; border-left: 4px solid #4CAF50; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; }
-                        .metadata-info { font-size: 0.8em; color: #aaaaaa; margin-bottom: 10px; font-style: italic; }
-                        .copy-response-button { position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.1); border: none; border-radius: 4px; color: #e0e0e0; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
-                        .copy-response-button:hover { background: rgba(255, 255, 255, 0.2); }
-                        a { color: #64b5f6; text-decoration: none; }
-                        a:hover { text-decoration: underline; }
-                        h2 { margin-top: 20px; margin-bottom: 10px; color: #64b5f6; }
-                        ul { padding-left: 20px; }
-                        li { margin-bottom: 8px; }
-                        .feature-emoji { margin-right: 5px; }
-                        .feature-name { font-weight: bold; }
-                        .subtext { font-size: 0.9em; color: #aaaaaa; margin-top: 5px; }
-                        .container { width: 100%; max-width: 800px; margin: 0 auto; }
-                        /* File references styles */
-                        .file-references-container { margin: 10px 0; background-color: #1e1e1e; border-radius: 4px; border-left: 4px solid #64b5f6; }
-                        .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }
-                        .file-references-header:hover { background-color: rgba(255, 255, 255, 0.1); }
-                        .file-references-icon { margin-right: 8px; }
-                        .file-references-title { flex-grow: 1; font-weight: bold; }
-                        .file-references-toggle { margin-left: 8px; }
-                        .file-references-content { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
-                        .file-list { list-style-type: none; padding: 0; margin: 0; }
-                        .file-item { padding: 5px 0; }
-                        .file-name { font-weight: bold; margin-right: 8px; }
-                        .file-path { color: #aaaaaa; font-style: italic; font-size: 0.9em; }
-                    </style>
-                """;
+        // Get background color from DevoxxGenieColorsUtil
+        Color bgColor = DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
+        String bgColorHex = String.format("#%02x%02x%02x", 
+                bgColor.getRed(), 
+                bgColor.getGreen(), 
+                bgColor.getBlue());
+        
+        // Determine if this is dark mode based on the background color's brightness
+        boolean isDarkMode = isDarkTheme(bgColor);
+        String textColor = isDarkMode ? "#e0e0e0" : "#2b2b2b";
+
+        return String.format("""
+        <style>
+            html, body { width: 100%%; height: 100%%; margin: 0; padding: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
+                   line-height: 1.6; padding: 0; background-color: %s; color: %s; overflow-y: auto; }
+            #conversation-container { padding: 20px; min-height: 100%%; }
+            pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: %s; overflow-x: auto; }
+            code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
+            .toolbar-container { position: absolute; top: 0; right: 0; padding: 5px; }
+            .copy-button { background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
+            .copy-button:hover { background: %s; }
+            .message-pair { margin-bottom: 20px; width: 100%%; }
+            .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px; margin: 10px 0; border-radius: 4px; }
+            .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; }
+            .metadata-info { font-size: 0.8em; color: %s; margin-bottom: 10px; font-style: italic; }
+            .copy-response-button { position: absolute; top: 10px; right: 10px; background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
+            .copy-response-button:hover { background: %s; }
+            a { color: %s; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+            h2 { margin-top: 20px; margin-bottom: 10px; color: %s; }
+            ul { padding-left: 20px; }
+            li { margin-bottom: 8px; }
+            .feature-emoji { margin-right: 5px; }
+            .feature-name { font-weight: bold; }
+            .subtext { font-size: 0.9em; color: %s; margin-top: 5px; }
+            .container { width: 100%%; max-width: 800px; margin: 0 auto; }
+            .file-references-container { margin: 10px 0; background-color: %s; border-radius: 4px; border-left: 4px solid %s; }
+            .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }
+            .file-references-header:hover { background-color: %s; }
+            .file-references-icon { margin-right: 8px; }
+            .file-references-title { flex-grow: 1; font-weight: bold; }
+            .file-references-toggle { margin-left: 8px; }
+            .file-references-content { padding: 10px; border-top: 1px solid %s; }
+            .file-list { list-style-type: none; padding: 0; margin: 0; }
+            .file-item { padding: 5px 0; }
+            .file-name { font-weight: bold; margin-right: 8px; }
+            .file-path { color: %s; font-style: italic; font-size: 0.9em; }
+        </style>
+        """,
+                bgColorHex,
+                textColor,
+                isDarkMode ? "#1e1e1e" : "#f5f5f5",
+                isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                isDarkMode ? "#ffffff" : "#333333",
+                isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
+                isDarkMode ? "#2a2520" : "#fff9f0", // Devoxx orange-tinted background for user messages
+                isDarkMode ? "#1e282e" : "#f0f7ff", // Blue-tinted background for assistant messages
+                isDarkMode ? "#aaaaaa" : "#666666",
+                isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                isDarkMode ? "#e0e0e0" : "#4a4a4a",
+                isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
+                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                isDarkMode ? "#aaaaaa" : "#666666",
+                isDarkMode ? "#1e1e1e" : "#f5f5f5",
+                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+                isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+                isDarkMode ? "#aaaaaa" : "#666666"
+        );
     }
     
     /**
@@ -132,12 +167,12 @@ public class ConversationTemplate extends HtmlTemplate {
                             .map(node => node.textContent || node.innerText)
                             .join('\\n')
                             .trim();
-                            
+
                         navigator.clipboard.writeText(contentToCopy).then(function() {
                             // Add animation class
                             button.classList.add('copy-button-flash');
                             button.textContent = 'Copied!';
-                            
+
                             setTimeout(function() {
                                 button.textContent = 'Copy';
                                 button.classList.remove('copy-button-flash');
@@ -150,7 +185,7 @@ public class ConversationTemplate extends HtmlTemplate {
                             }, 2000);
                         });
                     }
-                    
+
                     function toggleFileReferences(header) {
                         const content = header.nextElementSibling;
                         const toggle = header.querySelector('.file-references-toggle');
@@ -200,5 +235,21 @@ public class ConversationTemplate extends HtmlTemplate {
                         document.body.style.display = 'block';
                     });
                 """;
+    }
+    
+    /**
+     * Determine if the given color represents a dark theme.
+     * This is determined by calculating the brightness of the color.
+     * 
+     * @param color The color to check
+     * @return true if the color represents a dark theme, false otherwise
+     */
+    private boolean isDarkTheme(Color color) {
+        // Calculate the perceived brightness using the formula
+        // Brightness = 0.299*R + 0.587*G + 0.114*B
+        double brightness = (0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue()) / 255.0;
+        
+        // If brightness is less than 0.5, it's considered a dark theme
+        return brightness < 0.5;
     }
 }
