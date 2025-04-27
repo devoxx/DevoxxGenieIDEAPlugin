@@ -81,7 +81,7 @@ public class ConversationTemplate extends HtmlTemplate {
                 color: %s; 
                 overflow-y: auto; 
             }
-            #conversation-container { padding: 20px; min-height: 100%%; }
+            #conversation-container { padding: 20px 10px; min-height: 100%%; }
             pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: %s; overflow-x: auto; }
             code { 
                 font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; 
@@ -93,8 +93,8 @@ public class ConversationTemplate extends HtmlTemplate {
             .copy-button { background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
             .copy-button:hover { background: %s; }
             .message-pair { margin-bottom: 20px; width: 100%%; }
-            .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px; margin: 10px 0; border-radius: 4px; word-wrap: break-word; overflow-wrap: break-word; }
-            .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
+            .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px 8px; margin: 10px 0; border-radius: 4px; word-wrap: break-word; overflow-wrap: break-word; }
+            .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px 8px; margin: 10px 0; border-radius: 4px; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
             .metadata-info { font-size: %dpx; color: %s; margin-bottom: 10px; font-style: italic; }
             .copy-response-button { position: absolute; top: 10px; right: 10px; background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: %dpx; padding: 4px 8px; }
             .copy-response-button:hover { background: %s; }
@@ -108,12 +108,12 @@ public class ConversationTemplate extends HtmlTemplate {
             .subtext { font-size: %dpx; color: %s; margin-top: 5px; }
             .container { width: 100%%; max-width: 800px; margin: 0 auto; }
             .file-references-container { margin: 10px 0; background-color: %s; border-radius: 4px; border-left: 4px solid %s; }
-            .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }
+            .file-references-header { padding: 10px 8px; cursor: pointer; display: flex; align-items: center; }
             .file-references-header:hover { background-color: %s; }
             .file-references-icon { margin-right: 8px; }
             .file-references-title { flex-grow: 1; font-weight: bold; }
             .file-references-toggle { margin-left: 8px; }
-            .file-references-content { padding: 10px; border-top: 1px solid %s; }
+            .file-references-content { padding: 10px 8px; border-top: 1px solid %s; }
             .file-list { list-style-type: none; padding: 0; margin: 0; }
             .file-item { padding: 5px 0; }
             .file-name { font-weight: bold; margin-right: 8px; }

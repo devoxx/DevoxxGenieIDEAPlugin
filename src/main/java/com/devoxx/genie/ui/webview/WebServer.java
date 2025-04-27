@@ -24,10 +24,6 @@ public class WebServer {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
-    
-    // PrismJS CDN URLs
-    private static final String PRISM_CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css";
-    private static final String PRISM_JS_URL = "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -125,13 +121,25 @@ public class WebServer {
         }
     }
     
+    private static final String PRISM_CSS_RESOURCE = "/prism-okaidia.min.css";
+    private static final String PRISM_JS_RESOURCE = "/prism.min.js";
+    
     /**
      * Get the PrismJS CSS URL.
      * 
      * @return URL to PrismJS CSS
      */
     public String getPrismCssUrl() {
-        return PRISM_CSS_URL;
+        if (!resources.containsKey(PRISM_CSS_RESOURCE)) {
+            try {
+                String cssContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism-okaidia.min.css").readAllBytes());
+                resources.put(PRISM_CSS_RESOURCE, cssContent);
+                LOG.info("Loaded Prism CSS from resources");
+            } catch (Exception e) {
+                LOG.error("Failed to load Prism CSS from resources", e);
+            }
+        }
+        return getServerUrl() + PRISM_CSS_RESOURCE;
     }
     
     /**
@@ -140,7 +148,16 @@ public class WebServer {
      * @return URL to PrismJS JavaScript
      */
     public String getPrismJsUrl() {
-        return PRISM_JS_URL;
+        if (!resources.containsKey(PRISM_JS_RESOURCE)) {
+            try {
+                String jsContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.min.js").readAllBytes());
+                resources.put(PRISM_JS_RESOURCE, jsContent);
+                LOG.info("Loaded Prism JS from resources");
+            } catch (Exception e) {
+                LOG.error("Failed to load Prism JS from resources", e);
+            }
+        }
+        return getServerUrl() + PRISM_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -208,6 +225,10 @@ public class WebServer {
 
     // Base HTML template with PrismJS includes from CDN
     private String getBaseHtml() {
+        // Initialize Prism resources
+        getPrismCssUrl();
+        getPrismJsUrl();
+        
         return """
                 <!DOCTYPE html>
                 <html>
@@ -335,6 +356,6 @@ public class WebServer {
                     </script>
                 </body>
                 </html>
-                """.formatted(PRISM_CSS_URL, PRISM_JS_URL);
+                """.formatted(getPrismCssUrl(), getPrismJsUrl());
     }
 }

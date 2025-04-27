@@ -688,12 +688,12 @@ private void doAddChatMessage(String messageHtml) {
                     "      styleEl.id = 'file-references-styles';\n" +
                     "      styleEl.textContent = `\n" +
                     "        .file-references-container { margin: 10px 0; background-color: " + (ThemeDetector.isDarkTheme() ? "#1e1e1e" : "#f5f5f5") + "; border-radius: 4px; border-left: 4px solid " + (ThemeDetector.isDarkTheme() ? "#64b5f6" : "#2196F3") + "; }\n" +
-                    "        .file-references-header { padding: 10px; cursor: pointer; display: flex; align-items: center; }\n" +
+                    "        .file-references-header { padding: 10px 8px; cursor: pointer; display: flex; align-items: center; }\n" +
                     "        .file-references-header:hover { background-color: " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)") + "; }\n" +
                     "        .file-references-icon { margin-right: 8px; }\n" +
                     "        .file-references-title { flex-grow: 1; font-weight: bold; }\n" +
                     "        .file-references-toggle { margin-left: 8px; }\n" +
-                    "        .file-references-content { padding: 10px; border-top: 1px solid " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)") + "; }\n" +
+                    "        .file-references-content { padding: 10px 8px; border-top: 1px solid " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)") + "; }\n" +
                     "        .file-list { list-style-type: none; padding: 0; margin: 0; }\n" +
                     "        .file-item { padding: 5px 0; }\n" +
                     "        .file-name { font-weight: bold; margin-right: 8px; }\n" +

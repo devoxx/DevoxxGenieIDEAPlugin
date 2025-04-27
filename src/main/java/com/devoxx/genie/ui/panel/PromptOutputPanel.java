@@ -11,7 +11,6 @@ import com.devoxx.genie.ui.util.HelpUtil;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.devoxx.genie.ui.panel.PromptPanelRegistry;
 import com.intellij.ui.components.JBPanel;
 import dev.langchain4j.data.message.AiMessage;
 import lombok.Getter;
@@ -170,15 +169,13 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     @Override
     public void onMCPLoggingMessage(@NotNull MCPMessage message) {
         if (message.getType().equals(MCPType.AI_MSG)) {
-            // Parse and render markdown content
-            String markdownContent = "⦿ " + message.getContent();
             
             // Create a chat message context for MCP messages
             ChatMessageContext chatMessageContext = ChatMessageContext.builder()
                     .id("mcp-" + UUID.randomUUID())
                     .project(project)
                     .userPrompt("")
-                    .aiMessage(AiMessage.aiMessage(markdownContent))
+                    .aiMessage(AiMessage.aiMessage(message.getContent()))
                     .executionTimeMs(0)
                     .build();
             
