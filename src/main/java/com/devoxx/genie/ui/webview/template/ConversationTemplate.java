@@ -71,13 +71,13 @@ public class ConversationTemplate extends HtmlTemplate {
                    line-height: 1.6; padding: 0; background-color: %s; color: %s; overflow-y: auto; }
             #conversation-container { padding: 20px; min-height: 100%%; }
             pre { margin: 1em 0; position: relative; border-radius: 4px; background-color: %s; overflow-x: auto; }
-            code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
+            code { font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; white-space: pre-wrap; word-break: break-word; }
             .toolbar-container { position: absolute; top: 0; right: 0; padding: 5px; }
             .copy-button { background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
             .copy-button:hover { background: %s; }
             .message-pair { margin-bottom: 20px; width: 100%%; }
-            .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px; margin: 10px 0; border-radius: 4px; }
-            .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; }
+            .user-message { background-color: %s; border-left: 4px solid #FF5400; padding: 10px; margin: 10px 0; border-radius: 4px; word-wrap: break-word; overflow-wrap: break-word; }
+            .assistant-message { background-color: %s; border-left: 4px solid #0095C9; padding: 10px; margin: 10px 0; border-radius: 4px; position: relative; word-wrap: break-word; overflow-wrap: break-word; }
             .metadata-info { font-size: 0.8em; color: %s; margin-bottom: 10px; font-style: italic; }
             .copy-response-button { position: absolute; top: 10px; right: 10px; background: %s; border: none; border-radius: 4px; color: %s; cursor: pointer; font-size: 0.8em; padding: 4px 8px; }
             .copy-response-button:hover { background: %s; }
@@ -100,7 +100,7 @@ public class ConversationTemplate extends HtmlTemplate {
             .file-list { list-style-type: none; padding: 0; margin: 0; }
             .file-item { padding: 5px 0; }
             .file-name { font-weight: bold; margin-right: 8px; }
-            .file-path { color: %s; font-style: italic; font-size: 0.9em; }
+            .file-path { color: %s; font-style: italic; font-size: 0.9em; word-wrap: break-word; overflow-wrap: break-word; }
         </style>
         """,
                 bgColorHex,
