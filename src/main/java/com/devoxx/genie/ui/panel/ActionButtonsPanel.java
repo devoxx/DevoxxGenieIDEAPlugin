@@ -6,8 +6,7 @@ import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.mcp.MCPServer;
-import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.ui.mcp.MCPToolsManager;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -16,8 +15,6 @@ import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -31,15 +28,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import com.intellij.ui.components.JBList;
-import com.intellij.ui.components.JBScrollPane;
 import java.awt.event.ActionEvent;
-import javax.swing.event.MouseInputAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 import static com.devoxx.genie.model.Constant.*;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
@@ -56,20 +48,19 @@ public class ActionButtonsPanel extends JPanel
     private JButton addFileBtn;
     private JButton submitBtn;
     private JButton addProjectBtn;
-    private JLabel mcpToolsCountLabel;
     private JButton calcTokenCostBtn;
 
     private final SubmitPanel submitPanel;
-
     private final JPanel calcProjectPanel = createCalcProjectPanel();
-
     private final PromptInputArea promptInputArea;
     private final TokenUsageBar tokenUsageBar = createTokenUsageBar();
-
     private final transient DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
 
     private final transient ActionButtonsPanelController controller;
     private final transient ProjectContextController projectContextController;
+    
+    // The MCP tools manager
+    private final transient MCPToolsManager mcpToolsManager;
 
     public ActionButtonsPanel(Project project,
                               SubmitPanel submitPanel,
@@ -94,6 +85,9 @@ public class ActionButtonsPanel extends JPanel
                 project, promptInputArea, promptOutputPanel,
                 llmProvidersComboBox, modelNameComboBox, this
         );
+        
+        // Initialize the MCP tools manager
+        this.mcpToolsManager = new MCPToolsManager(project);
 
         llmProvidersComboBox.addActionListener(e -> controller.updateButtonVisibility());
 
@@ -104,159 +98,9 @@ public class ActionButtonsPanel extends JPanel
 
     private void setupUI() {
         createButtons();
-        createMCPToolsCounter();
-
+        
         add(createProgressPanel(), BorderLayout.NORTH);
         add(createButtonPanel(), BorderLayout.CENTER);
-    }
-    
-    private void createMCPToolsCounter() {
-        mcpToolsCountLabel = new JLabel();
-        mcpToolsCountLabel.setIcon(HammerIcon);
-        mcpToolsCountLabel.setToolTipText("Total MCP Tools Available");
-        mcpToolsCountLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 10));
-        mcpToolsCountLabel.setFont(mcpToolsCountLabel.getFont().deriveFont(Font.BOLD));
-        mcpToolsCountLabel.setHorizontalTextPosition(SwingConstants.RIGHT);
-        mcpToolsCountLabel.setIconTextGap(4);
-        mcpToolsCountLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        
-        // Add click listener for showing the tool list popup or opening the MCP logs panel
-        mcpToolsCountLabel.addMouseListener(new MouseInputAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                showMCPToolsPopup();
-            }
-        });
-        
-        updateMCPToolsCounter();
-    }
-
-    /**
-     * Shows a popup with the list of all MCP tools and their descriptions.
-     */
-    private void showMCPToolsPopup() {
-        if (!MCPService.isMCPEnabled()) {
-            return;
-        }
-        
-        // Collect all tool information from enabled servers
-        Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
-        List<ToolInfo> allTools = new ArrayList<>();
-        
-        mcpServers.values().stream()
-                .filter(MCPServer::isEnabled)
-                .forEach(server -> {
-                    for (String toolName : server.getAvailableTools()) {
-                        String description = server.getToolDescriptions().getOrDefault(toolName, "");
-                        allTools.add(new ToolInfo(server.getName(), toolName, description));
-                    }
-                });
-        
-        if (allTools.isEmpty()) {
-            return;
-        }
-        
-        // Sort tools alphabetically by name
-        allTools.sort(Comparator.comparing(ToolInfo::toolName));
-        
-        // Create a panel with a list of tools
-        JPanel popupPanel = new JPanel(new BorderLayout());
-        
-        DefaultListModel<ToolInfo> listModel = new DefaultListModel<>();
-        allTools.forEach(listModel::addElement);
-        
-        JBList<ToolInfo> toolsList = new JBList<>(listModel);
-        toolsList.setCellRenderer(new ToolInfoRenderer());
-        
-        JBScrollPane scrollPane = new JBScrollPane(toolsList);
-        scrollPane.setPreferredSize(new Dimension(500, 300));
-        popupPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        // Create and show the popup
-        JBPopup popup = JBPopupFactory.getInstance()
-                .createComponentPopupBuilder(popupPanel, null)
-                .setTitle("Available MCP Tools")
-                .setResizable(true)
-                .setMovable(true)
-                .setRequestFocus(true)
-                .createPopup();
-        
-        popup.showUnderneathOf(mcpToolsCountLabel);
-    }
-    
-    /**
-     * Record for storing tool information for display in the popup.
-     */
-    private record ToolInfo(String serverName, String toolName, String description) {
-        @Override
-        public String toString() {
-            return toolName;
-        }
-    }
-    
-    /**
-     * Custom cell renderer for displaying tool information in the list.
-     */
-    private static class ToolInfoRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            
-            if (value instanceof ToolInfo tool) {
-                StringBuilder text = new StringBuilder("<html>");
-                text.append("<b>").append(tool.toolName()).append("</b>");
-                text.append(" <font color='gray'>(from ").append(tool.serverName()).append(")</font>");
-                
-                if (!tool.description().isEmpty()) {
-                    text.append("<br><font size='2'>").append(tool.description()).append("</font>");
-                }
-                
-                text.append("</html>");
-                label.setText(text.toString());
-                label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            }
-            
-            return label;
-        }
-    }
-    
-    /**
-     * Updates the MCP Tools counter to display the total number of tools provided by all activated MCP servers.
-     */
-    public void updateMCPToolsCounter() {
-        if (!MCPService.isMCPEnabled()) {
-            mcpToolsCountLabel.setVisible(false);
-            return;
-        }
-        
-        Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
-        int totalToolsCount = mcpServers.values().stream()
-                .filter(MCPServer::isEnabled)
-                .mapToInt(server -> server.getAvailableTools().size())
-                .sum();
-        
-        if (totalToolsCount > 0) {
-            mcpToolsCountLabel.setText(String.valueOf(totalToolsCount));
-            mcpToolsCountLabel.setVisible(true);
-            
-            // Create a more detailed tooltip
-            StringBuilder toolTip = new StringBuilder("<html>Total MCP Tools Available: " + totalToolsCount + "<br><br>");
-            
-            mcpServers.values().stream()
-                    .filter(MCPServer::isEnabled)
-                    .forEach(server -> {
-                        if (!server.getAvailableTools().isEmpty()) {
-                            toolTip.append("<b>").append(server.getName()).append(":</b> ")
-                                  .append(server.getAvailableTools().size()).append(" tools<br>");
-                        }
-                    });
-            
-            toolTip.append("<br>Click to open MCP logs panel<br>");
-            toolTip.append("Shift+Click to see tools list</html>");
-            mcpToolsCountLabel.setToolTipText(toolTip.toString());
-        } else {
-            mcpToolsCountLabel.setVisible(false);
-        }
     }
 
     private void createButtons() {
@@ -279,7 +123,7 @@ public class ActionButtonsPanel extends JPanel
         
         // MCP Tools counter on the right
         JPanel mcpPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        mcpPanel.add(mcpToolsCountLabel);
+        mcpPanel.add(mcpToolsManager.getMcpToolsCountLabel());
         
         buttonPanel.add(mcpPanel, BorderLayout.EAST);
         
@@ -414,7 +258,7 @@ public class ActionButtonsPanel extends JPanel
     public void settingsChanged(boolean hasKey) {
         calcProjectPanel.setVisible(hasKey && projectContextController.isProjectContextSupportedProvider());
         controller.updateButtonVisibility();
-        updateMCPToolsCounter();
+        mcpToolsManager.updateMCPToolsCounter();
     }
 
     public void updateTokenUsage(int maxTokens) {
@@ -476,6 +320,13 @@ public class ActionButtonsPanel extends JPanel
 
     @Override
     public void onTokenCalculationComplete(String message) {
-        NotificationUtil.sendNotification(project, message);
+        com.devoxx.genie.ui.util.NotificationUtil.sendNotification(project, message);
+    }
+    
+    /**
+     * Updates the MCP Tools counter
+     */
+    public void updateMCPToolsCounter() {
+        mcpToolsManager.updateMCPToolsCounter();
     }
 }
