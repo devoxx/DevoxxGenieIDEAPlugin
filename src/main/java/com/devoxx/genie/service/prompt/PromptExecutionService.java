@@ -146,7 +146,7 @@ public class PromptExecutionService {
         ChatMemoryManager.getInstance().removeLastUserMessage(context);
         
         // Update UI if needed
-        panel.removeLastUserPrompt(context);
+//        panel.removeLastUserPrompt(context);
         
         log.debug("Handled cancellation for context {}", context.getId());
     }

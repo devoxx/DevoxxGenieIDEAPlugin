@@ -37,6 +37,9 @@ public class WelcomeWebViewPanel extends JBPanel<WelcomeWebViewPanel> implements
 
         // Set a preferred size for the panel
         setPreferredSize(new Dimension(800, 600));
+        
+        // Ensure the browser component fills the entire panel
+        browser.getComponent().setPreferredSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
     }
 
     /**

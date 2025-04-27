@@ -8,6 +8,8 @@ import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
+
 /**
  * Factory for creating JCef browser instances.
  * This class handles the initialization of JCEF components for the plugin.
@@ -34,6 +36,9 @@ public class WebViewFactory {
         
         // Create a simple browser without recursive builder calls
         JBCefBrowser browser = new JBCefBrowser();
+        
+        // Make sure the browser component takes up all available space
+        browser.getComponent().setMinimumSize(new Dimension(100, 100));
         
         // Add load handler to detect load completion
         JBCefClient client = browser.getJBCefClient();
