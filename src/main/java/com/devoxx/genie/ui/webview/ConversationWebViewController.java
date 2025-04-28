@@ -510,21 +510,55 @@ public class ConversationWebViewController implements ThemeChangeNotifier {
      * @param messageHtml The HTML of the message to add
      */
 private void doAddChatMessage(String messageHtml) {
-        // First add the message to the conversation
-        String js = "try {" +
-                    "  const container = document.getElementById('conversation-container');" +
-                    "  const tempDiv = document.createElement('div');" +
-                    "  tempDiv.innerHTML = `" + escapeJS(messageHtml) + "`;" +
-                    "  while (tempDiv.firstChild) {" +
-                    "    container.appendChild(tempDiv.firstChild);" +
-                    "  }" +
-                    "  window.scrollTo(0, document.body.scrollHeight);" +
-                    "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
-                    "} catch (error) {" +
-                    "  console.error('Error adding chat message:', error);" +
-                    "}";
+        // Extract the message ID from the HTML
+        // The message ID is in the format: <div class="message-pair" id="SOME_ID">
+        String messageId = null;
+        int idStartIndex = messageHtml.indexOf("id=\"") + 4;
+        if (idStartIndex > 4) {
+            int idEndIndex = messageHtml.indexOf("\"", idStartIndex);
+            if (idEndIndex > idStartIndex) {
+                messageId = messageHtml.substring(idStartIndex, idEndIndex);
+            }
+        }
+
+        // Create JavaScript that checks if the message already exists
+        String js;
+        if (messageId != null && !messageId.isEmpty()) {
+            // If we have an ID, check if it exists before adding
+            js = "try {" +
+                 "  // Check if this message already exists to avoid duplicates" +
+                 "  if (!document.getElementById('" + escapeJS(messageId) + "')) {" +
+                 "    const container = document.getElementById('conversation-container');" +
+                 "    const tempDiv = document.createElement('div');" +
+                 "    tempDiv.innerHTML = `" + escapeJS(messageHtml) + "`;" +
+                 "    while (tempDiv.firstChild) {" +
+                 "      container.appendChild(tempDiv.firstChild);" +
+                 "    }" +
+                 "  } else {" +
+                 "    console.log('Message with ID " + escapeJS(messageId) + " already exists, skipping addition');" +
+                 "  }" +
+                 "  window.scrollTo(0, document.body.scrollHeight);" +
+                 "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                 "} catch (error) {" +
+                 "  console.error('Error adding chat message:', error);" +
+                 "}";
+        } else {
+            // If we couldn't extract an ID, fall back to the original behavior
+            js = "try {" +
+                 "  const container = document.getElementById('conversation-container');" +
+                 "  const tempDiv = document.createElement('div');" +
+                 "  tempDiv.innerHTML = `" + escapeJS(messageHtml) + "`;" +
+                 "  while (tempDiv.firstChild) {" +
+                 "    container.appendChild(tempDiv.firstChild);" +
+                 "  }" +
+                 "  window.scrollTo(0, document.body.scrollHeight);" +
+                 "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                 "} catch (error) {" +
+                 "  console.error('Error adding chat message:', error);" +
+                 "}";
+        }
         
-        LOG.info("Executing JavaScript to add message");
+        LOG.info("Executing JavaScript to add message" + (messageId != null ? " with ID: " + messageId : ""));
         executeJavaScript(js);
     }
     
@@ -664,12 +698,18 @@ private void doAddChatMessage(String messageHtml) {
                 "</div>";
         
         // JavaScript to add the message to the conversation and scroll to bottom
+        // First check if the message ID already exists to avoid duplicates
         String js = "try {\n" +
-                    "  const container = document.getElementById('conversation-container');\n" +
-                    "  const tempDiv = document.createElement('div');\n" +
-                    "  tempDiv.innerHTML = `" + escapeJS(messagePairHtml) + "`;\n" +
-                    "  while (tempDiv.firstChild) {\n" +
-                    "    container.appendChild(tempDiv.firstChild);\n" +
+                    "  // Check if this message already exists to avoid duplicates\n" +
+                    "  if (!document.getElementById('" + escapeJS(messageId) + "')) {\n" +
+                    "    const container = document.getElementById('conversation-container');\n" +
+                    "    const tempDiv = document.createElement('div');\n" +
+                    "    tempDiv.innerHTML = `" + escapeJS(messagePairHtml) + "`;\n" +
+                    "    while (tempDiv.firstChild) {\n" +
+                    "      container.appendChild(tempDiv.firstChild);\n" +
+                    "    }\n" +
+                    "  } else {\n" +
+                    "    console.log('Message with ID " + escapeJS(messageId) + " already exists, skipping addition');\n" +
                     "  }\n" +
                     "  window.scrollTo(0, document.body.scrollHeight);\n" +
                     "} catch (error) {\n" +

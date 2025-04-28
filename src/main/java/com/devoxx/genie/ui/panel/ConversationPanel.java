@@ -276,8 +276,12 @@ public class ConversationPanel
             return;
         }
 
+        // Clear any existing DOM content first to prevent duplicate messages
+        webViewController.clearConversation();
+        
         // Process all messages
         int messageIndex = 0;
+        long baseTimestamp = System.currentTimeMillis();
 
         // If the first message is an AI message, handle it specially
         if (messageIndex < messages.size() && !messages.get(messageIndex).isUser()) {
@@ -289,8 +293,8 @@ public class ConversationPanel
                 .executionTimeMs(conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 1000)
                 .build();
             
-            // Set a stable, unique message ID
-            String messageId = conversation.getId() + "-msg-0";
+            // Set a stable, unique message ID based on conversation ID + message index
+            String messageId = conversation.getId() + "_msg_" + messageIndex;
             context.setId(messageId);
             
             // Set empty user prompt
@@ -321,8 +325,9 @@ public class ConversationPanel
                 .executionTimeMs(conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 1000)
                 .build();
             
-            // Set a stable, unique message ID
-            String messageId = conversation.getId() + "-msg-" + messageIndex;
+            // Set a stable, unique message ID based on conversation ID + message index
+            // This ensures IDs are consistent if we restore the same conversation multiple times
+            String messageId = conversation.getId() + "_msg_" + messageIndex;
             context.setId(messageId);
             
             // Add LLM information

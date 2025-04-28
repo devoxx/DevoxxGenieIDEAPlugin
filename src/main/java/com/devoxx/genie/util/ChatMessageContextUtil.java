@@ -37,7 +37,7 @@ public class ChatMessageContextUtil {
 
         ChatMessageContext chatMessageContext = ChatMessageContext.builder()
                 .project(chatContextParameters.project())
-                .id(String.valueOf(System.currentTimeMillis()))
+                                .id(String.valueOf(System.currentTimeMillis()))
                 .userPrompt(chatContextParameters.userPromptText())
                 .languageModel(chatContextParameters.languageModel())
                 .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))

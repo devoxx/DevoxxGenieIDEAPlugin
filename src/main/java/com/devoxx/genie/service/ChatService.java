@@ -39,7 +39,7 @@ public class ChatService implements ConversationEventListener {
             return;
         }
         Conversation conversation = new Conversation();
-        conversation.setId(UUID.randomUUID().toString());
+        conversation.setId(String.valueOf(System.currentTimeMillis()));
         conversation.setTitle(userPrompt);
         conversation.setTimestamp(LocalDateTime.now().toString());
         conversation.setModelName(chatMessageContext.getLanguageModel().getModelName());
@@ -55,7 +55,7 @@ public class ChatService implements ConversationEventListener {
 
     public void startNewConversation(String title) {
         Conversation conversation = new Conversation();
-        conversation.setId(UUID.randomUUID().toString());
+        conversation.setId(String.valueOf(System.currentTimeMillis()));
         
         // Use provided title or default to "New conversation"
         if (title != null && !title.trim().isEmpty()) {
