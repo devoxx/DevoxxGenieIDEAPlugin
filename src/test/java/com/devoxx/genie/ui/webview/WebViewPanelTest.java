@@ -3,7 +3,7 @@ package com.devoxx.genie.ui.webview;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.panel.ConversationPanel;
+import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import org.junit.Ignore;

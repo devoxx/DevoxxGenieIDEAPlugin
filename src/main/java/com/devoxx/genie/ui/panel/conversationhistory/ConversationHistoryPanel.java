@@ -223,6 +223,8 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     }
 
     private static class TitleRenderer extends DefaultTableCellRenderer {
+        private static final int MAX_TITLE_LENGTH = 50;
+        
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
@@ -230,17 +232,21 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             setHorizontalAlignment(SwingConstants.LEADING);
-            setText(String.valueOf(value));
+            
+            // Truncate long titles
+            String fullText = String.valueOf(value);
+            String displayText = fullText.length() > MAX_TITLE_LENGTH ? 
+                fullText.substring(0, MAX_TITLE_LENGTH) + "..." : 
+                fullText;
+            
+            setText(displayText);
             setMinimumSize(new Dimension(0, getHeight()));
             setBorder(JBUI.Borders.empty(0, 8));
+            
+            // Store the full text as tooltip
+            setToolTipText(fullText);
 
             return this;
-        }
-
-        @Override
-        public void setText(String text) {
-            super.setText(text);
-             setToolTipText(text);
         }
 
         // Override these methods to ensure proper text display

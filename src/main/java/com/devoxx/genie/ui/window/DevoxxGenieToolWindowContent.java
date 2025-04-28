@@ -156,9 +156,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             MessageBusUtil.subscribe(connection, AppTopics.LLM_SETTINGS_CHANGED_TOPIC, llmProviderPanel);
             MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel);
 
-            // MessageBusUtil.subscribe(connection, AppTopics.CONVERSATION_TOPIC, conversationPanel);
-            // MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> conversationPanel.updateFontSize());
-
             MessageBusUtil.subscribe(connection, AppTopics.SETTINGS_CHANGED_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, AppTopics.PROMPT_SUBMISSION_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
@@ -173,8 +170,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                 }
             });
 
-//            MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel.getWelcomePanel());
-            // MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> promptOutputPanel.getWelcomePanel().updateFontSize());
             MessageBusUtil.subscribe(connection, AppTopics.SHORTCUT_CHANGED_TOPIC, submitPanel.getPromptInputArea());
             
             // Subscribe to file references events and forward them to the conversation panel

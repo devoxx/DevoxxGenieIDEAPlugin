@@ -1,15 +1,12 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.mcp.MCPMessage;
-import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.ThemeDetector;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Handles MCP logging in the WebView.
@@ -108,10 +105,8 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
         log.debug("Updating indicator for message ID: {}", messageId);
         
         String js = "try {\n" +
-                    "  console.log('Looking for loading indicator with ID: loading-" + messageId + "');\n" +
                     "  const indicator = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');\n" +
                     "  if (indicator) {\n" +
-                    "    console.log('Found indicator, updating content');\n" +
                     "    indicator.innerHTML = `" + jsExecutor.escapeJS(content) + "`;\n" +
                     "    indicator.style.display = 'block';\n" +
                     "    if (!document.getElementById('mcp-logs-styles')) {\n" +
@@ -146,24 +141,16 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
                     "    }\n" +
                     "    window.scrollTo(0, document.body.scrollHeight);\n" +
                     "  } else {\n" +
-                    "    console.error('Thinking indicator not found for message: " + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "    console.log('Trying to find indicator by class instead');\n" +
                     "    const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');\n" +
                     "    if (messagePair) {\n" +
                     "      const loadingIndicator = messagePair.querySelector('.loading-indicator');\n" +
                     "      if (loadingIndicator) {\n" +
-                    "        console.log('Found indicator by class, updating content');\n" +
                     "        loadingIndicator.innerHTML = `" + jsExecutor.escapeJS(content) + "`;\n" +
                     "        loadingIndicator.style.display = 'block';\n" +
-                    "      } else {\n" +
-                    "        console.error('No loading indicator found even by class in message: " + jsExecutor.escapeJS(messageId) + "');\n" +
                     "      }\n" +
-                    "    } else {\n" +
-                    "      console.error('Message pair not found: " + jsExecutor.escapeJS(messageId) + "');\n" +
                     "    }\n" +
                     "  }\n" +
                     "} catch (error) {\n" +
-                    "  console.error('Error updating thinking indicator:', error);\n" +
                     "}\n";
         
         jsExecutor.executeJavaScript(js);

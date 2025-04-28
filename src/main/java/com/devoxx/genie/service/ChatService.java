@@ -11,14 +11,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class ChatService implements ConversationEventListener {
 
     private final ConversationStorageService storageService;
     private final Project project;
 
-    public ChatService(Project project) {
+    public ChatService(@NotNull Project project) {
         this.storageService = ConversationStorageService.getInstance();
         this.project = project;
 

@@ -87,7 +87,8 @@ public class MCPExecutionService implements Disposable {
 
         // Get all configured MCP servers
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
-                .getMcpSettings().getMcpServers();
+                .getMcpSettings()
+                .getMcpServers();
         
         if (mcpServers.isEmpty()) {
             MCPService.logDebug("No MCP servers configured");

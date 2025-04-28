@@ -55,7 +55,7 @@ public class ButtonFactory {
 
         if (label == null || label.isEmpty()) {
             // For icon-only buttons, ensure they have enough space at all zoom levels
-            int buttonSize = (int) JBUIScale.scale(28);
+            int buttonSize = JBUIScale.scale(28);
             button.setPreferredSize(new Dimension(buttonSize, buttonSize));
             button.setMinimumSize(new Dimension(buttonSize, buttonSize));
         }

@@ -6,6 +6,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
+import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.HelpUtil;
 import com.devoxx.genie.util.MessageBusUtil;
@@ -19,14 +20,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
-
-import com.devoxx.genie.service.conversations.ConversationStorageService;
-import com.devoxx.genie.model.conversation.Conversation;
 
 /**
  * This class represents the output panel for displaying chat prompts and responses.
