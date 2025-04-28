@@ -13,11 +13,6 @@ public class DevoxxGenieColorsUtil {
     public static final Color GRAY_REGULAR = Gray._100;
     public static final Color GRAY_DARK = Gray._85; // Darker for dark theme if desired
 
-    public static final Color PROMPT_TEXT_COLOR = new JBColor(
-            new Color(0, 0, 0),                // Light theme
-            new Color(255, 255, 255)            // Dark theme
-    );
-
     public static final Color HOVER_BG_COLOR = new JBColor(
             new Color(180, 180, 180, 50),        // Light theme
             new Color(60, 60, 60, DARK_ALPHA)       // Dark theme

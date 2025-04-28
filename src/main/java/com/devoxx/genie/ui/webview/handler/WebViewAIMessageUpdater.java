@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.util.CodeLanguageUtil;
 import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,6 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,23 +39,21 @@ public class WebViewAIMessageUpdater {
      */
     public void updateAiMessageContent(@NotNull ChatMessageContext chatMessageContext) {
         if (chatMessageContext.getAiMessage() == null) {
-            log.warn("No AI message to update for context: " + chatMessageContext.getId());
+            log.warn("No AI message to update for context: {}", chatMessageContext.getId());
             return;
         }
         
         if (!jsExecutor.isLoaded()) {
             log.warn("Browser not loaded yet, waiting before updating message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                while (!initialized.get()) {
-                    ThreadUtils.sleep(100);
-                }
+                ThreadUtils.sleep(100);
                 doUpdateAiMessageContent(chatMessageContext);
             });
         } else {
             doUpdateAiMessageContent(chatMessageContext);
             
             // Also ensure any loading indicators are hidden when we update with a real response
-            hideLoadingIndicator(chatMessageContext.getId());
+            WebViewUIHelper.hideLoadingIndicator(jsExecutor, chatMessageContext.getId());
         }
     }
     
@@ -103,10 +101,8 @@ public class WebViewAIMessageUpdater {
             if (node instanceof FencedCodeBlock fencedCodeBlock) {
                 String code = fencedCodeBlock.getLiteral();
                 String language = fencedCodeBlock.getInfo();
-                String prismLanguage = mapLanguageToPrism(language);
-                
                 contentHtml.append("<pre><code class=\"language-")
-                        .append(prismLanguage)
+                        .append(CodeLanguageUtil.mapLanguageToPrism(language))
                         .append("\">")
                         .append(jsExecutor.escapeHtml(code))
                         .append("</code></pre>\n");
@@ -144,45 +140,7 @@ public class WebViewAIMessageUpdater {
         jsExecutor.executeJavaScript(js);
     }
     
-    /**
-     * Map language identifier to PrismJS language class.
-     */
-    private @NotNull String mapLanguageToPrism(@Nullable String languageInfo) {
-        if (languageInfo == null || languageInfo.isEmpty()) {
-            return "plaintext";
-        }
-        
-        String lang = languageInfo.trim().toLowerCase();
-        
-        // Map common language identifiers to PrismJS language classes
-        return switch (lang) {
-            case "js", "javascript" -> "javascript";
-            case "ts", "typescript" -> "typescript";
-            case "py", "python" -> "python";
-            case "java" -> "java";
-            case "c#", "csharp", "cs" -> "csharp";
-            case "c++" -> "cpp";
-            case "go" -> "go";
-            case "rust" -> "rust";
-            case "rb", "ruby" -> "ruby";
-            case "kt", "kotlin" -> "kotlin";
-            case "json" -> "json";
-            case "yaml", "yml" -> "yaml";
-            case "html" -> "markup";
-            case "css" -> "css";
-            case "sh", "bash" -> "bash";
-            case "md", "markdown" -> "markdown";
-            case "sql" -> "sql";
-            case "docker", "dockerfile" -> "docker";
-            case "dart" -> "dart";
-            case "graphql" -> "graphql";
-            case "hcl" -> "hcl";
-            case "nginx" -> "nginx";
-            case "powershell", "ps" -> "powershell";
-            // Add more language mappings as needed
-            default -> "plaintext";
-        };
-    }
+
     
     /**
      * Adds just the user message to the conversation view without waiting for the AI response.
@@ -240,8 +198,6 @@ public class WebViewAIMessageUpdater {
                     "    while (tempDiv.firstChild) {\n" +
                     "      container.appendChild(tempDiv.firstChild);\n" +
                     "    }\n" +
-                    "  } else {\n" +
-                    "    console.log('Message with ID " + jsExecutor.escapeJS(messageId) + " already exists, skipping addition');\n" +
                     "  }\n" +
                     "  window.scrollTo(0, document.body.scrollHeight);\n" +
                     "} catch (error) {\n" +
@@ -249,41 +205,6 @@ public class WebViewAIMessageUpdater {
                     "}\n";
 
         log.info("Executing JavaScript to add user message");
-        jsExecutor.executeJavaScript(js);
-    }
-    
-    /**
-     * Hides the loading indicator for a message when no MCP activity is detected
-     *
-     * @param messageId The ID of the message
-     */
-    private void hideLoadingIndicator(String messageId) {
-        if (!jsExecutor.isLoaded() || messageId == null) {
-            return;
-        }
-        
-        log.debug("Hiding loading indicator for message ID: {}", messageId);
-        
-        String js = "try {\n" +
-                    "  const indicator = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "  if (indicator) {\n" +
-                    "    console.log('Found indicator, hiding it');\n" +
-                    "    indicator.style.display = 'none';\n" +
-                    "  } else {\n" +
-                    "    console.log('Trying to find indicator by class instead');\n" +
-                    "    const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "    if (messagePair) {\n" +
-                    "      const loadingIndicator = messagePair.querySelector('.loading-indicator');\n" +
-                    "      if (loadingIndicator) {\n" +
-                    "        console.log('Found indicator by class, hiding it');\n" +
-                    "        loadingIndicator.style.display = 'none';\n" +
-                    "      }\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "} catch (error) {\n" +
-                    "  console.error('Error hiding loading indicator:', error);\n" +
-                    "}\n";
-        
         jsExecutor.executeJavaScript(js);
     }
 }

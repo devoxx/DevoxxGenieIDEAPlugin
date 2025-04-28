@@ -175,25 +175,25 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
     @Override
     public void onMCPLoggingMessage(@NotNull MCPMessage message) {
-        if (message.getType().equals(MCPType.AI_MSG)) {
+//        if (message.getType().equals(MCPType.AI_MSG)) {
             
             // Create a chat message context for MCP messages
-            ChatMessageContext chatMessageContext = ChatMessageContext.builder()
-                    .id("mcp-" + UUID.randomUUID())
-                    .project(project)
-                    .userPrompt("")
-                    .aiMessage(AiMessage.aiMessage(message.getContent()))
-                    .executionTimeMs(0)
-                    .build();
-            
-            // Add the message to the conversation panel 
-            ApplicationManager.getApplication().invokeLater(() -> {
-                // Ensure we're showing the conversation panel
-                cardLayout.show(cards, "conversation");
-                // For MCP messages, we still use addChatMessage since there is no user prompt to update
-                conversationPanel.addChatMessage(chatMessageContext);
-            });
-        }
+//            ChatMessageContext chatMessageContext = ChatMessageContext.builder()
+//                    .id("mcp-" + UUID.randomUUID())
+//                    .project(project)
+//                    .userPrompt("")
+//                    .aiMessage(AiMessage.aiMessage(message.getContent()))
+//                    .executionTimeMs(0)
+//                    .build();
+//
+//            // Add the message to the conversation panel
+//            ApplicationManager.getApplication().invokeLater(() -> {
+//                // Ensure we're showing the conversation panel
+//                cardLayout.show(cards, "conversation");
+//                // For MCP messages, we still use addChatMessage since there is no user prompt to update
+//                conversationPanel.addChatMessage(chatMessageContext);
+//            });
+//        }
     }
     
     /**

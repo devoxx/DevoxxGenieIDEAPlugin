@@ -87,8 +87,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 var response = promptExecutionService.executeQuery(context).get();
                 
                 if (response == null) {
-                    resultTask.complete(PromptResult.failure(context, 
-                        new ExecutionException("Null response received")));
+                    resultTask.complete(PromptResult.failure(context, new ExecutionException("Null response received")));
                     return;
                 }
                 

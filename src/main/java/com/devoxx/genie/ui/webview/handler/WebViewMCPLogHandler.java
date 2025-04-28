@@ -4,6 +4,7 @@ import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.util.ThemeDetector;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
      * @param message The MCP message received
      */
     @Override
-    public void onMCPLoggingMessage(MCPMessage message) {
+    public void onMCPLoggingMessage(@NotNull MCPMessage message) {
         log.info(">>> MCP message: {}", message.getContent());
 
         // Always store the log message regardless of debug setting
@@ -78,7 +79,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
             } else {
                 // No actual MCP activity, don't show any indicator
                 // Hide the loading indicator instead
-                hideLoadingIndicator(activeMessageId);
+                WebViewUIHelper.hideLoadingIndicator(jsExecutor, activeMessageId);
                 return;
             }
         }
@@ -155,40 +156,5 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
         
         jsExecutor.executeJavaScript(js);
         log.debug("updateThinkingIndicator executed");
-    }
-    
-    /**
-     * Hides the loading indicator for a message when no MCP activity is detected
-     *
-     * @param messageId The ID of the message
-     */
-    private void hideLoadingIndicator(String messageId) {
-        if (!jsExecutor.isLoaded() || messageId == null) {
-            return;
-        }
-        
-        log.debug("Hiding loading indicator for message ID: {}", messageId);
-        
-        String js = "try {\n" +
-                    "  const indicator = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "  if (indicator) {\n" +
-                    "    console.log('Found indicator, hiding it');\n" +
-                    "    indicator.style.display = 'none';\n" +
-                    "  } else {\n" +
-                    "    console.log('Trying to find indicator by class instead');\n" +
-                    "    const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "    if (messagePair) {\n" +
-                    "      const loadingIndicator = messagePair.querySelector('.loading-indicator');\n" +
-                    "      if (loadingIndicator) {\n" +
-                    "        console.log('Found indicator by class, hiding it');\n" +
-                    "        loadingIndicator.style.display = 'none';\n" +
-                    "      }\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "} catch (error) {\n" +
-                    "  console.error('Error hiding loading indicator:', error);\n" +
-                    "}\n";
-        
-        jsExecutor.executeJavaScript(js);
     }
 }

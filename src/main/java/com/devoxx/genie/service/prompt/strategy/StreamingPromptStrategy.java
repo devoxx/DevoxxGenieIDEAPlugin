@@ -92,9 +92,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler handler = new StreamingResponseHandler(
-            context, 
-            panel,
-            // Get the ConversationWebViewController from the PromptOutputPanel
+            context,
             panel.getConversationPanel().webViewController,
             // On complete callback
             (ChatResponse response) -> {

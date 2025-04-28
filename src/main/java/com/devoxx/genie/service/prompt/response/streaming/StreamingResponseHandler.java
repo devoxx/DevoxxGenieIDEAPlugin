@@ -6,8 +6,6 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
-import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.intellij.openapi.application.ApplicationManager;
@@ -26,7 +24,6 @@ import java.util.function.Consumer;
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final ChatMessageContext context;
-    private final PromptOutputPanel outputPanel;
     private final long startTime;
     private final Project project;
     private final Consumer<ChatResponse> onCompleteCallback;
@@ -42,27 +39,22 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
      * Creates a new streaming response handler
      *
      * @param context The chat message context
-     * @param outputPanel The UI panel to display response
      * @param conversationWebViewController The web view controller to display conversation
      * @param onCompleteCallback Called when streaming completes successfully
      * @param onErrorCallback Called when streaming encounters an error
      */
     public StreamingResponseHandler(
             @NotNull ChatMessageContext context,
-            @NotNull PromptOutputPanel outputPanel,
             @NotNull ConversationWebViewController conversationWebViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
-        
+        log.debug("Created streaming handler for context {}", context.getId());
         this.context = context;
-        this.outputPanel = outputPanel;
         this.project = context.getProject();
         this.onCompleteCallback = onCompleteCallback;
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
         this.conversationWebViewController = conversationWebViewController;
-        
-        log.debug("Created streaming handler for context {}", context.getId());
     }
 
     @Override

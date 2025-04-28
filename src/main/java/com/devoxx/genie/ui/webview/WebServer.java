@@ -230,7 +230,7 @@ public class WebServer {
         getPrismCssUrl();
         getPrismJsUrl();
 
-        // TODO Externalize this HTML below
+        // TODO: Move this HTML to an external template file in resources
         return """
                 <!DOCTYPE html>
                 <html>

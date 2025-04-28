@@ -21,18 +21,9 @@ public class EditorFontUtil {
      */
     public static int getEditorFontSize() {
         EditorColorsManager manager = EditorColorsManager.getInstance();
-        if (manager != null && manager.getGlobalScheme() != null) {
+        if (manager != null) {
             return manager.getGlobalScheme().getEditorFontSize();
         }
         return DEFAULT_FONT_SIZE;
-    }
-
-    /**
-     * Creates an editor font with the appropriate size, falling back to a default if necessary.
-     *
-     * @return the editor font
-     */
-    public static @NotNull Font createEditorFont() {
-        return new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, getEditorFontSize());
     }
 }

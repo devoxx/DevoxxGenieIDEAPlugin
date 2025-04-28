@@ -15,6 +15,7 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.devoxx.genie.ui.util.CodeLanguageUtil;
 
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -153,58 +154,14 @@ public class ChatMessageTemplate extends HtmlTemplate {
         } else {
             return ""; // Unsupported code block type
         }
-        
-        // Map language from markdown to PrismJS language classes
-        String prismLanguage = mapLanguageToPrism(language);
-        
+
         // Create HTML for code block with PrismJS classes
-        sb.append("<pre><code class=\"language-").append(prismLanguage).append("\">")
+        sb.append("<pre><code class=\"language-").append(CodeLanguageUtil.mapLanguageToPrism(language)).append("\">")
                 .append(escapeHtml(code))
                 .append("</code></pre>\n");
         
         return sb.toString();
     }
     
-    /**
-     * Map language identifier to PrismJS language class.
-     *
-     * @param languageInfo Language info from markdown code block
-     * @return PrismJS language class
-     */
-    private @NotNull String mapLanguageToPrism(@Nullable String languageInfo) {
-        if (languageInfo == null || languageInfo.isEmpty()) {
-            return "plaintext";
-        }
-        
-        String lang = languageInfo.trim().toLowerCase();
-        
-        // Map common language identifiers to PrismJS language classes
-        return switch (lang) {
-            case "js", "javascript" -> "javascript";
-            case "ts", "typescript" -> "typescript";
-            case "py", "python" -> "python";
-            case "java" -> "java";
-            case "c#", "csharp", "cs" -> "csharp";
-            case "c++" -> "cpp";
-            case "go" -> "go";
-            case "rust" -> "rust";
-            case "rb", "ruby" -> "ruby";
-            case "kt", "kotlin" -> "kotlin";
-            case "json" -> "json";
-            case "yaml", "yml" -> "yaml";
-            case "html" -> "markup";
-            case "css" -> "css";
-            case "sh", "bash" -> "bash";
-            case "md", "markdown" -> "markdown";
-            case "sql" -> "sql";
-            case "docker", "dockerfile" -> "docker";
-            case "dart" -> "dart";
-            case "graphql" -> "graphql";
-            case "hcl" -> "hcl";
-            case "nginx" -> "nginx";
-            case "powershell", "ps" -> "powershell";
-            // Add more language mappings as needed
-            default -> "plaintext";
-        };
-    }
+
 }
