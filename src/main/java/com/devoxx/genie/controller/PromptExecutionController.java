@@ -57,8 +57,14 @@ public class PromptExecutionController implements PromptExecutionListener {
             promptOutputPanel.markConversationAsStarted();
         }
         
-        // Now show the user message and scroll to the bottom
-        promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
+        // Check if this is a help command before showing the user message
+        String prompt = currentChatMessageContext.getUserPrompt().trim();
+        boolean isHelpCommand = prompt.startsWith("/help");
+        
+        if (!isHelpCommand) {
+            // Only show user message if it's not a help command
+            promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
+        }
 
         AtomicBoolean response = new AtomicBoolean(true);
         Optional<String> processedPrompt = commandProcessor.processCommands(currentChatMessageContext, promptOutputPanel);
