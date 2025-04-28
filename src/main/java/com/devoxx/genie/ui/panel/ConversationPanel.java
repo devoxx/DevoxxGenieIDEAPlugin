@@ -68,7 +68,7 @@ public class ConversationPanel
         this.project = project;
         this.resourceBundle = resourceBundle;
 
-        webViewController = new ConversationWebViewController(project);
+        webViewController = new ConversationWebViewController();
 
         add(createButtonPanel(), BorderLayout.NORTH);
 
@@ -99,6 +99,8 @@ public class ConversationPanel
 
         msgBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
         msgBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
+        // Subscribe webViewController to MCP log messages
+        msgBusConnection.subscribe(AppTopics.MCP_LOGGING_MSG, webViewController);
     }
 
     /**

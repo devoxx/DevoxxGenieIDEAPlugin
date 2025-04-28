@@ -53,7 +53,7 @@ public class MCPListenerService implements ChatModelListener {
     }
 
     private static void postMessage(MCPMessage mcpMessage) {
-        if (mcpMessage != null && MCPService.isDebugLogsEnabled()) {
+        if (mcpMessage != null) {
             MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
             messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
                     .onMCPLoggingMessage(mcpMessage);

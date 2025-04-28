@@ -53,13 +53,18 @@ public class MCPService {
     }
     
     /**
-     * Log a debug message if debug logs are enabled
+     * Log a debug message for MCP actions regardless of settings
+     * This ensures the messages are always available for capture
      * 
      * @param message The message to log
      */
     public static void logDebug(String message) {
+        // Always log internally but only show in IDE log if debug logs are enabled
         if (isDebugLogsEnabled()) {
             log.info("[MCP Debug] {}", message);
+        } else {
+            // Log at debug level so we don't pollute the logs
+            log.debug("[MCP] {}", message);
         }
     }
 }
