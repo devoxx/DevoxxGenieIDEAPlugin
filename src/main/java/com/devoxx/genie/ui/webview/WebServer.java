@@ -25,6 +25,9 @@ public class WebServer {
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
 
+    private static final String PRISM_CSS_RESOURCE = "/prism.css";
+    private static final String PRISM_JS_RESOURCE = "/prism.js";
+
     private WebServer() {
         initializeEmbeddedResources();
     }
@@ -120,10 +123,7 @@ public class WebServer {
             return 8090; // Fallback port
         }
     }
-    
-    private static final String PRISM_CSS_RESOURCE = "/prism-okaidia.min.css";
-    private static final String PRISM_JS_RESOURCE = "/prism.min.js";
-    
+
     /**
      * Get the PrismJS CSS URL.
      * 
@@ -132,7 +132,7 @@ public class WebServer {
     public String getPrismCssUrl() {
         if (!resources.containsKey(PRISM_CSS_RESOURCE)) {
             try {
-                String cssContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism-okaidia.min.css").readAllBytes());
+                String cssContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.css").readAllBytes());
                 resources.put(PRISM_CSS_RESOURCE, cssContent);
                 log.info("Loaded Prism CSS from resources");
             } catch (Exception e) {
@@ -151,7 +151,7 @@ public class WebServer {
         if (!resources.containsKey(PRISM_JS_RESOURCE)) {
             // TODO Fix 'InputStream' used without 'try'-with-resources statement
             try {
-                String jsContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.min.js").readAllBytes());
+                String jsContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.js").readAllBytes());
                 resources.put(PRISM_JS_RESOURCE, jsContent);
                 log.info("Loaded Prism JS from resources");
             } catch (Exception e) {
@@ -229,7 +229,8 @@ public class WebServer {
         // Initialize Prism resources
         getPrismCssUrl();
         getPrismJsUrl();
-        
+
+        // TODO Externalize this HTML below
         return """
                 <!DOCTYPE html>
                 <html>

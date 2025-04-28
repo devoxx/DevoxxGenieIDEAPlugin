@@ -41,6 +41,8 @@
             <LI>Feat: Improved code block rendering and copy functionality</LI>
             <LI>Feat: Better code syntax highlighting across all languages</LI>
             <LI>Feat: Enhanced streaming responses with WebView</LI>
+            <LI>Feat: Enable MCP servers from input field</LI>
+            <LI>Feat: Include code snippet or files in context when MCP is enabled</LI>
         </UL>
         <h2>v0.5.12</h2>
         <UL>

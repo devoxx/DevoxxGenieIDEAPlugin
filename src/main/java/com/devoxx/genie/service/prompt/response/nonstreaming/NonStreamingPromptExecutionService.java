@@ -155,8 +155,6 @@ public class NonStreamingPromptExecutionService {
                         MCPService.logDebug("Added file references to MCP context: " + 
                             FileListManager.getInstance().getFiles(project).size() + " files");
                     }
-                } else {
-                    NotificationUtil.sendNotification(project, "MCP is enabled, but no MCP tool provider could be created");
                 }
             }
 
