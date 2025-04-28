@@ -48,7 +48,7 @@ public class HelpUtil {
                     </body>
                 </html>
                 """.formatted(scaleFactor == 1.0f ? "normal" : scaleFactor * 100 + "%",
-                getCustomPromptCommands()
+                getCustomPromptCommandsForWebView()
         );
     }
 

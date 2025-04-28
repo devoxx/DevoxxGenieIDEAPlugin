@@ -1,9 +1,6 @@
 package com.devoxx.genie.ui.panel;
 
-import com.devoxx.genie.model.mcp.MCPMessage;
-import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.component.ExpandablePanel;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
@@ -13,7 +10,6 @@ import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
-import dev.langchain4j.data.message.AiMessage;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
-import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 
@@ -31,15 +26,12 @@ import static com.devoxx.genie.model.Constant.FIND_COMMAND;
  * help messages, and user prompts.
  */
 @Slf4j
-public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener, MCPLoggingMessage {
+public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements CustomPromptChangeListener {
 
     private final transient Project project;
     
     @Getter
     private final ConversationPanel conversationPanel;
-    private final HelpPanel helpPanel;
-    private final CardLayout cardLayout = new CardLayout();
-    private final JPanel cards = new JPanel(cardLayout);
     
     // Flag to track if we're in a new conversation (no messages sent yet)
     private boolean isNewConversation = true;
@@ -55,16 +47,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         this.project = project;
 
-        // Initialize panels with proper sizes
+        // Initialize conversation panel
         conversationPanel = new ConversationPanel(project, resourceBundle);
-        helpPanel = new HelpPanel(HelpUtil.getHelpMessage());
         
-        // Add components to the card panel
-        cards.add(conversationPanel, "conversation");
-        cards.add(helpPanel, "help");
-        
-        // This is a key step - add our card panel to fill the entire area
-        add(cards, BorderLayout.CENTER);
+        // Add conversation panel directly to this panel
+        add(conversationPanel, BorderLayout.CENTER);
 
         // Set size constraints
         setMinimumSize(new Dimension(600, 400));
@@ -79,9 +66,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         // Subscribe to MCP messages and file references
         ApplicationManager.getApplication().invokeLater(() ->
                 MessageBusUtil.connect(project, connection -> {
-                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
-                    // Also subscribe to file reference events
-                    MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, 
+                    MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC,
                         conversationPanel); // Delegate to the conversation panel
                 }));
     }
@@ -101,15 +86,38 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * Displays the welcome message in the panel.
      */
     public void showWelcomeText() {
-        cardLayout.show(cards, "conversation");
         conversationPanel.showWelcome();
     }
 
     /**
      * Displays help text in the panel.
+     * Now creates a help message as a direct AI response in the conversation panel
+     * without showing a separate user prompt for it.
      */
     public void showHelpText() {
-        cardLayout.show(cards, "help");
+        String helpId = "help_" + System.currentTimeMillis();
+        
+        // Create special help content that doesn't include a user message
+        String helpContent = HelpUtil.getHelpMessage();
+        
+        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
+        // and duplicate /help command display
+        conversationPanel.webViewController.executeJavaScript(
+            "const container = document.getElementById('conversation-container');" +
+            "const messagePair = document.createElement('div');" +
+            "messagePair.className = 'message-pair';" +
+            "messagePair.id = '" + helpId + "';" +
+            "const aiMessage = document.createElement('div');" +
+            "aiMessage.className = 'assistant-message';" +
+            "aiMessage.innerHTML = `" + 
+            "<div class='metadata-info'>Available commands:</div>" +
+            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
+            helpContent + "`;" +
+            "messagePair.appendChild(aiMessage);" +
+            "container.appendChild(messagePair);" +
+            "window.scrollTo(0, document.body.scrollHeight);" +
+            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
+        );
     }
 
     /**
@@ -118,10 +126,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
-
-        // Ensure we're showing the conversation panel
-        cardLayout.show(cards, "conversation");
-
         // Special handling for find command
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
             chatMessageContext.getSemanticReferences() != null &&
@@ -156,10 +160,33 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     }
 
     /**
-     * Updates the help text displayed in the help panel.
+     * Creates a new help context and shows it in the conversation panel.
+     * Called when custom prompts have changed.
      */
     public void updateHelpText() {
-        helpPanel.updateHelpText(HelpUtil.getHelpMessage());
+        String helpId = "help_updated_" + System.currentTimeMillis();
+        
+        // Create special help content that doesn't include a user message
+        String helpContent = HelpUtil.getHelpMessage();
+        
+        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
+        // and duplicate /help command display
+        conversationPanel.webViewController.executeJavaScript(
+            "const container = document.getElementById('conversation-container');" +
+            "const messagePair = document.createElement('div');" +
+            "messagePair.className = 'message-pair';" +
+            "messagePair.id = '" + helpId + "';" +
+            "const aiMessage = document.createElement('div');" +
+            "aiMessage.className = 'assistant-message';" +
+            "aiMessage.innerHTML = `" + 
+            "<div class='metadata-info'>Updated commands:</div>" +
+            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
+            helpContent + "`;" +
+            "messagePair.appendChild(aiMessage);" +
+            "container.appendChild(messagePair);" +
+            "window.scrollTo(0, document.body.scrollHeight);" +
+            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
+        );
     }
 
     /**
@@ -173,29 +200,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         });
     }
 
-    @Override
-    public void onMCPLoggingMessage(@NotNull MCPMessage message) {
-//        if (message.getType().equals(MCPType.AI_MSG)) {
-            
-            // Create a chat message context for MCP messages
-//            ChatMessageContext chatMessageContext = ChatMessageContext.builder()
-//                    .id("mcp-" + UUID.randomUUID())
-//                    .project(project)
-//                    .userPrompt("")
-//                    .aiMessage(AiMessage.aiMessage(message.getContent()))
-//                    .executionTimeMs(0)
-//                    .build();
-//
-//            // Add the message to the conversation panel
-//            ApplicationManager.getApplication().invokeLater(() -> {
-//                // Ensure we're showing the conversation panel
-//                cardLayout.show(cards, "conversation");
-//                // For MCP messages, we still use addChatMessage since there is no user prompt to update
-//                conversationPanel.addChatMessage(chatMessageContext);
-//            });
-//        }
-    }
-    
     /**
      * Called when panel is removed/disposed.
      * Unregisters from the panel registry.
@@ -212,12 +216,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * Used when a prompt is submitted to ensure the latest content is visible.
      */
     public void scrollToBottom() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            // First make sure we're showing the conversation panel
-            cardLayout.show(cards, "conversation");
-            // Then defer to the conversation panel which contains the WebViewController
-            conversationPanel.scrollToBottom();
-        });
+        // Defer to the conversation panel which contains the WebViewController
+        ApplicationManager.getApplication().invokeLater(conversationPanel::scrollToBottom);
     }
     
     /**
