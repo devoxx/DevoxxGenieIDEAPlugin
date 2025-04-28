@@ -19,7 +19,7 @@ import static com.devoxx.genie.ui.util.TimestampUtil.getCurrentTimestamp;
  * Manages UI components and interactions for the conversation panel.
  */
 public class ConversationUIController implements CustomPromptChangeListener {
-    private final Project project;
+
     private final ResourceBundle resourceBundle;
     private final MessageRenderer messageRenderer;
     private final ConversationManager conversationManager;
@@ -45,7 +45,6 @@ public class ConversationUIController implements CustomPromptChangeListener {
                                    MessageRenderer messageRenderer,
                                    ConversationManager conversationManager,
                                    ConversationHistoryManager historyManager) {
-        this.project = project;
         this.resourceBundle = resourceBundle;
         this.messageRenderer = messageRenderer;
         this.conversationManager = conversationManager;

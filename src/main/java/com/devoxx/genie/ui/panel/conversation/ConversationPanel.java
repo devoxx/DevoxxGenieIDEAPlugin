@@ -33,13 +33,10 @@ public class ConversationPanel
         extends JBPanel<ConversationPanel>
         implements CustomPromptChangeListener, ConversationSelectionListener, ConversationEventListener, ConversationStarter, FileReferencesListener {
 
-    // Specialized components
     private final MessageRenderer messageRenderer;
-    private final ConversationHistoryManager historyManager;
     private final ConversationManager conversationManager;
     private final ConversationUIController uiController;
     
-    // WebView controller is kept public for backward compatibility
     public final ConversationWebViewController webViewController;
 
     /**
@@ -51,31 +48,26 @@ public class ConversationPanel
     public ConversationPanel(Project project, ResourceBundle resourceBundle) {
         super(new BorderLayout());
 
-        // Create web view controller first as other components depend on it
         webViewController = new ConversationWebViewController();
         
-        // Initialize rendering component
         messageRenderer = new MessageRenderer(project, webViewController);
         
-        // Initialize history components
         ConversationHistoryPanel historyPanel = new ConversationHistoryPanel(project);
-        historyManager = new ConversationHistoryManager(project, historyPanel, messageRenderer);
+        ConversationHistoryManager historyManager = new ConversationHistoryManager(project, historyPanel, messageRenderer);
         
-        // Initialize the UI controller
         uiController = new ConversationUIController(
             project, 
             resourceBundle, 
             messageRenderer, 
             null, // We'll set this after creating conversationManager 
-            historyManager
+                historyManager
         );
         
-        // Initialize the conversation manager 
         ChatService chatService = new ChatService(project);
         conversationManager = new ConversationManager(
             project, 
-            chatService, 
-            historyManager, 
+            chatService,
+                historyManager,
             messageRenderer, 
             uiController.getConversationLabel()
         );
@@ -146,25 +138,11 @@ public class ConversationPanel
     }
 
     /**
-     * Load conversation history.
-     */
-    public void loadConversationHistory() {
-        historyManager.loadConversationHistory();
-    }
-
-    /**
      * Called when custom prompts change - updates the welcome content if it's visible.
      */
     @Override
     public void onCustomPromptsChanged() {
         uiController.onCustomPromptsChanged();
-    }
-
-    /**
-     * Update the conversation label with new timestamp.
-     */
-    public void updateNewConversationLabel() {
-        conversationManager.updateNewConversationLabel();
     }
 
     /**
