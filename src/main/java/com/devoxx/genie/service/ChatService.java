@@ -11,15 +11,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class ChatService implements ConversationEventListener {
 
     private final ConversationStorageService storageService;
     private final Project project;
 
-    public ChatService(ConversationStorageService storageService, Project project) {
-        this.storageService = storageService;
+    public ChatService(@NotNull Project project) {
+        this.storageService = ConversationStorageService.getInstance();
         this.project = project;
 
         project.getMessageBus()
@@ -39,7 +38,7 @@ public class ChatService implements ConversationEventListener {
             return;
         }
         Conversation conversation = new Conversation();
-        conversation.setId(UUID.randomUUID().toString());
+        conversation.setId(String.valueOf(System.currentTimeMillis()));
         conversation.setTitle(userPrompt);
         conversation.setTimestamp(LocalDateTime.now().toString());
         conversation.setModelName(chatMessageContext.getLanguageModel().getModelName());
@@ -54,12 +53,34 @@ public class ChatService implements ConversationEventListener {
     }
 
     public void startNewConversation(String title) {
+        Conversation conversation = new Conversation();
+        conversation.setId(String.valueOf(System.currentTimeMillis()));
+        
+        // Use provided title or default to "New conversation"
         if (title != null && !title.trim().isEmpty()) {
-            Conversation conversation = new Conversation();
             conversation.setTitle(title);
-            conversation.setTimestamp(LocalDateTime.now().toString());
-            conversation.setMessages(new ArrayList<>());
-            storageService.addConversation(project, conversation);
+        } else {
+            conversation.setTitle("New conversation");
         }
+        
+        conversation.setTimestamp(LocalDateTime.now().toString());
+        // Initialize messages list to prevent NullPointerException
+        conversation.setMessages(new ArrayList<>());
+        
+        // Initialize required fields to prevent NullPointerException
+        conversation.setApiKeyUsed(false); // Default to false
+        conversation.setInputCost(0L);
+        conversation.setOutputCost(0L);
+        conversation.setContextWindow(0);
+        conversation.setExecutionTimeMs(0);
+        conversation.setModelName("None"); // Default model name
+        conversation.setLlmProvider("Unknown"); // Default provider
+        
+        storageService.addConversation(project, conversation);
+        
+        // Reload conversation history
+        project.getMessageBus()
+               .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+               .onNewConversation(ChatMessageContext.builder().project(project).build());
     }
 }

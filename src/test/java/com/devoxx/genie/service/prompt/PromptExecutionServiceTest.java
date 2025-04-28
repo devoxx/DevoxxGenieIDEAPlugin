@@ -296,6 +296,5 @@ public class PromptExecutionServiceTest extends LightPlatformTestCase {
         
         // Verify memory manager and panel were updated
         verify(chatMemoryManager).removeLastUserMessage(context);
-        verify(panel).removeLastUserPrompt(context);
     }
 }

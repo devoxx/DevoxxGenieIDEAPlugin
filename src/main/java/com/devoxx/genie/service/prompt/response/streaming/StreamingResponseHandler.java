@@ -6,10 +6,8 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
-import com.devoxx.genie.ui.component.ExpandablePanel;
-import com.devoxx.genie.ui.panel.ChatStreamingResponsePanel;
-import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -26,45 +24,63 @@ import java.util.function.Consumer;
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final ChatMessageContext context;
-    private final ChatStreamingResponsePanel streamingPanel;
-    private final PromptOutputPanel outputPanel;
     private final long startTime;
     private final Project project;
     private final Consumer<ChatResponse> onCompleteCallback;
     private final Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
+    private final ConversationWebViewController conversationWebViewController;
+
+    // Track if we've added the initial message and accumulate the streamed tokens
+    private boolean hasAddedInitialMessage = false;
+    private final StringBuilder accumulatedResponse = new StringBuilder();
 
     /**
      * Creates a new streaming response handler
      *
      * @param context The chat message context
-     * @param outputPanel The UI panel to display response
+     * @param conversationWebViewController The web view controller to display conversation
      * @param onCompleteCallback Called when streaming completes successfully
      * @param onErrorCallback Called when streaming encounters an error
      */
     public StreamingResponseHandler(
             @NotNull ChatMessageContext context,
-            @NotNull PromptOutputPanel outputPanel,
+            @NotNull ConversationWebViewController conversationWebViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
-        
+        log.debug("Created streaming handler for context {}", context.getId());
         this.context = context;
-        this.outputPanel = outputPanel;
-        this.streamingPanel = new ChatStreamingResponsePanel(context);
         this.project = context.getProject();
         this.onCompleteCallback = onCompleteCallback;
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
-        
-        outputPanel.addStreamResponse(streamingPanel);
-        log.debug("Created streaming handler for context {}", context.getId());
+        this.conversationWebViewController = conversationWebViewController;
     }
 
     @Override
     public void onPartialResponse(String partialResponse) {
-        if (!isStopped) {
-            streamingPanel.insertToken(partialResponse);
+        if (isStopped) {
+            return;
         }
+
+        log.debug("Received partial response: '{}...'", 
+                partialResponse.substring(0, Math.min(20, partialResponse.length())));
+        
+        // Accumulate the response tokens 
+        accumulatedResponse.append(partialResponse);
+        String fullText = accumulatedResponse.toString();
+        
+        ApplicationManager.getApplication().invokeLater(() -> {
+            // Set the AI message with accumulated tokens so far
+            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
+            
+            // Always update the existing message - we already created a placeholder
+            // when the user submitted the prompt
+            conversationWebViewController.updateAiMessageContent(context);
+            
+            // Mark that we've started streaming
+            hasAddedInitialMessage = true;
+        });
     }
 
     @Override
@@ -72,12 +88,23 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         if (isStopped) {
             return;
         }
-        
+
         try {
             long endTime = System.currentTimeMillis();
             context.setExecutionTimeMs(endTime - startTime);
             context.setAiMessage(response.aiMessage());
-            
+
+            // Update the web view with the final response
+            ApplicationManager.getApplication().invokeLater(() -> {
+                // If we've already shown partial responses, just update the AI content
+                // Otherwise add a new message pair (when we get complete response without partials)
+                if (hasAddedInitialMessage) {
+                    conversationWebViewController.updateAiMessageContent(context);
+                } else {
+                    conversationWebViewController.addChatMessage(context);
+                }
+            });
+
             project.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                 .onNewConversation(context);
@@ -87,12 +114,9 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // Add file references if any
             if (!FileListManager.getInstance().isEmpty(context.getProject())) {
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    ExpandablePanel fileListPanel = new ExpandablePanel(
-                        context, 
-                        FileListManager.getInstance().getFiles(context.getProject())
-                    );
-                    fileListPanel.setName(context.getId());
-                    outputPanel.addStreamFileReferencesResponse(fileListPanel);
+                    // Add file references to the web view instead of creating a dialog
+                    conversationWebViewController.addFileReferences(context, 
+                        FileListManager.getInstance().getFiles(context.getProject()));
                 });
             }
             

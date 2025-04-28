@@ -119,7 +119,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         addSection(panel, gbc, "Local Large Language Response");
         addSettingRow(panel, gbc, "Enable Stream Mode", streamModeCheckBox);
-        addSettingRow(panel, gbc, "⚠️MCP is currently not enabled in streaming mode.");
 
         // Local LLM Providers section
         addSection(panel, gbc, "Local LLM Providers");

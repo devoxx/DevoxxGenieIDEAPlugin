@@ -192,8 +192,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer defaultWindowContext = 8000;
     
     // MCP settings
+    @Setter
+    @Getter
     private MCPSettings mcpSettings = new MCPSettings();
+    @Setter
+    @Getter
     private Boolean mcpEnabled = false;
+    @Setter
+    @Getter
     private Boolean mcpDebugLogsEnabled = false;
 
     @Setter(AccessLevel.NONE)
@@ -310,29 +316,5 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             case "ollamaModelUrl" -> getOllamaModelUrl();
             default -> null;
         };
-    }
-    
-    public MCPSettings getMcpSettings() {
-        return mcpSettings;
-    }
-    
-    public void setMcpSettings(MCPSettings mcpSettings) {
-        this.mcpSettings = mcpSettings;
-    }
-    
-    public Boolean getMcpEnabled() {
-        return mcpEnabled;
-    }
-    
-    public void setMcpEnabled(Boolean mcpEnabled) {
-        this.mcpEnabled = mcpEnabled;
-    }
-    
-    public Boolean getMcpDebugLogsEnabled() {
-        return mcpDebugLogsEnabled;
-    }
-    
-    public void setMcpDebugLogsEnabled(Boolean mcpDebugLogsEnabled) {
-        this.mcpDebugLogsEnabled = mcpDebugLogsEnabled;
     }
 }

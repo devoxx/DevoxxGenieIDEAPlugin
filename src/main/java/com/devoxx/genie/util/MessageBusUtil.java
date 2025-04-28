@@ -16,12 +16,7 @@ public class MessageBusUtil {
         connection.subscribe(topic, listener);
     }
 
-    public static <T> void publish(@NotNull Project project, @NotNull Topic<T> topic, @NotNull Consumer<T> publisher) {
-        T publisherInstance = project.getMessageBus().syncPublisher(topic);
-        publisher.accept(publisherInstance);
-    }
-
-    public static Disposable connect(@NotNull Project project, @NotNull Consumer<MessageBusConnection> consumer) {
+    public static @NotNull Disposable connect(@NotNull Project project, @NotNull Consumer<MessageBusConnection> consumer) {
         MessageBusConnection connection = project.getMessageBus().connect();
         consumer.accept(connection);
         return connection;

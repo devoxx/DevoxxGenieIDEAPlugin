@@ -48,6 +48,23 @@ public class PromptExecutionController implements PromptExecutionListener {
         }
 
         startPromptExecution();
+        
+        // Check if this is the first prompt in the conversation - if so, clear the welcome content first
+        if (promptOutputPanel.isNewConversation()) {
+            promptOutputPanel.getConversationPanel().clearWithoutWelcome();
+            
+            // Mark the conversation as started (no longer new) after the first prompt
+            promptOutputPanel.markConversationAsStarted();
+        }
+        
+        // Check if this is a help command before showing the user message
+        String prompt = currentChatMessageContext.getUserPrompt().trim();
+        boolean isHelpCommand = prompt.startsWith("/help");
+        
+        if (!isHelpCommand) {
+            // Only show user message if it's not a help command
+            promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
+        }
 
         AtomicBoolean response = new AtomicBoolean(true);
         Optional<String> processedPrompt = commandProcessor.processCommands(currentChatMessageContext, promptOutputPanel);
@@ -65,6 +82,9 @@ public class PromptExecutionController implements PromptExecutionListener {
     }
 
     private void executePromptWithContext() {
+        // Scroll to the bottom immediately after user submits prompt
+        promptOutputPanel.scrollToBottom();
+        
         promptExecutionService.executePrompt(
                 currentChatMessageContext, 
                 promptOutputPanel, 

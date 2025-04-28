@@ -11,6 +11,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.intellij.openapi.vfs.VirtualFile;
 
 /**
  * Represents the context of a chat message with all the necessary information.
@@ -46,6 +47,10 @@ public class ChatMessageContext {
     @Getter
     @Setter
     private List<SemanticFile> semanticReferences;
+    
+    @Getter
+    @Setter
+    private List<VirtualFile> fileReferences;
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;

@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.mcp;
 
 import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.util.messages.MessageBus;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class MCPListenerService implements ChatModelListener {
@@ -22,6 +25,16 @@ public class MCPListenerService implements ChatModelListener {
     @Override
     public void onRequest(@NotNull ChatModelRequestContext requestContext) {
         log.debug("onRequest: {}", requestContext.chatRequest().toString());
+
+        Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
+        int totalToolsCount = mcpServers.values().stream()
+                .filter(MCPServer::isEnabled)
+                .mapToInt(server -> server.getAvailableTools().size())
+                .sum();
+
+        if (totalToolsCount == 0) {
+            return;
+        }
 
         List<ChatMessage> messages = requestContext.chatRequest().messages();
         if (!messages.isEmpty() && messages.size() > 2) {
@@ -53,7 +66,7 @@ public class MCPListenerService implements ChatModelListener {
     }
 
     private static void postMessage(MCPMessage mcpMessage) {
-        if (mcpMessage != null && MCPService.isDebugLogsEnabled()) {
+        if (mcpMessage != null) {
             MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
             messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
                     .onMCPLoggingMessage(mcpMessage);

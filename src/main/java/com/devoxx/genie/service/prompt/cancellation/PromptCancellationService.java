@@ -160,10 +160,10 @@ public class PromptCancellationService {
                 ChatMemoryManager.getInstance().removeLastUserMessage(context);
                 
                 // Update UI if needed
-                if (panel != null) {
-                    ApplicationManager.getApplication().invokeLater(() -> 
-                        panel.removeLastUserPrompt(context));
-                }
+//                if (panel != null) {
+//                    ApplicationManager.getApplication().invokeLater(() ->
+//                        panel.removeLastUserPrompt(context));
+//                }
                 
                 log.debug("Cleaned up cancelled execution: contextId={}", contextId);
             }

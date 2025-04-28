@@ -87,8 +87,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 var response = promptExecutionService.executeQuery(context).get();
                 
                 if (response == null) {
-                    resultTask.complete(PromptResult.failure(context, 
-                        new ExecutionException("Null response received")));
+                    resultTask.complete(PromptResult.failure(context, new ExecutionException("Null response received")));
                     return;
                 }
                 
@@ -104,7 +103,15 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                         .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                         .onNewConversation(context);
 
+                // Add chat response to panel
                 panel.addChatResponse(context);
+                
+                // Add file references if any
+                if (context.getFileReferences() != null && !context.getFileReferences().isEmpty()) {
+                    log.debug("Adding file references to conversation: {} files", context.getFileReferences().size());
+                    panel.getConversationPanel().webViewController.addFileReferences(context, context.getFileReferences());
+                }
+                
                 resultTask.complete(PromptResult.success(context));
             } catch (Exception e) {
                 if (e instanceof CancellationException || 

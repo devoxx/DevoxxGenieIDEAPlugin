@@ -1,17 +1,11 @@
 package com.devoxx.genie.service;
 
-import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
-import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.util.MessageBusUtil;
-import com.intellij.openapi.application.ApplicationManager;
+import com.devoxx.genie.ui.util.ThemeChangeListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.util.messages.MessageBusConnection;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import lombok.extern.slf4j.Slf4j;
@@ -47,55 +41,14 @@ public class PostStartupActivity implements ProjectActivity {
         } else {
             log.error("threadPoolManager is null");
         }
-        
-        // Setup MCP Tool Window visibility handler
-        MessageBusConnection messageBusConnection = project.getMessageBus().connect();
-        
-        // Subscribe to settings changes to update MCP tool window visibility
-        MessageBusUtil.subscribe(messageBusConnection, AppTopics.SETTINGS_CHANGED_TOPIC, hasKey -> {
-            // Update MCP tool window visibility if settings change
-            ApplicationManager.getApplication().invokeLater(() -> {
-                updateMCPToolWindowVisibility(project);
-            });
-        });
-        
-        // Set initial state of MCP tool window
-        updateMCPToolWindowVisibility(project);
+
+        // Register theme change listener
+        if (project.isDefault()) {
+            // Only register the listener once during application startup
+            ThemeChangeListener.register();
+            log.debug("Registered ThemeChangeListener for theme changes");
+        }
 
         return Unit.INSTANCE;
-    }
-    
-    /**
-     * Update the visibility of the MCP tool window based on MCP enabled state
-     * 
-     * @param project The current project
-     */
-    private void updateMCPToolWindowVisibility(@NotNull Project project) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            if (project.isDisposed()) {
-                return;
-            }
-            
-            ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-            ToolWindow mcpToolWindow = toolWindowManager.getToolWindow("DevoxxGenieMCPLogs");
-            
-            if (mcpToolWindow != null) {
-                boolean mcpEnabled = MCPService.isMCPEnabled();
-                
-                if (mcpEnabled) {
-                    // Show tool window if not already visible
-                    if (!mcpToolWindow.isAvailable()) {
-                        mcpToolWindow.setAvailable(true);
-                        log.debug("Made MCP tool window available");
-                    }
-                } else {
-                    // Hide tool window if currently visible
-                    if (mcpToolWindow.isAvailable()) {
-                        mcpToolWindow.setAvailable(false);
-                        log.debug("Made MCP tool window unavailable");
-                    }
-                }
-            }
-        });
     }
 }

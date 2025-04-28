@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ public class CustomPromptDialog extends DialogWrapper {
     }
 
     // New constructor for editing existing prompts
-    public CustomPromptDialog(Project project, String initialCommand, String initialPrompt) {
+    public CustomPromptDialog(Project project, @NotNull String initialCommand, String initialPrompt) {
         super(project);
         setTitle(initialCommand.isEmpty() ? "Add Custom Prompt" : "Edit Custom Prompt");
 

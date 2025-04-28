@@ -8,14 +8,13 @@ import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
-import com.devoxx.genie.ui.panel.ConversationPanel;
 import com.devoxx.genie.ui.panel.LlmProviderPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.SubmitPanel;
+import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.MessageBusUtil;
-import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
@@ -54,8 +53,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private final AnimatedGlowingBorder animatedBorder;
     @Getter
     private LlmProviderPanel llmProviderPanel;
-    @Getter
-    private ConversationPanel conversationPanel;
     @Getter
     private SubmitPanel submitPanel;
     @Getter
@@ -100,7 +97,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         llmProviderPanel = new LlmProviderPanel(project);
         promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
         submitPanel = new SubmitPanel(this);
-        conversationPanel = new ConversationPanel(this);
     }
 
     private void setupLayout() {
@@ -131,7 +127,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private @NotNull JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(llmProviderPanel, BorderLayout.NORTH);
-        topPanel.add(conversationPanel, BorderLayout.CENTER);
+        // topPanel.add(new ConversationHistoryPanel(project), BorderLayout.CENTER);
         return topPanel;
     }
 
@@ -160,9 +156,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             MessageBusUtil.subscribe(connection, AppTopics.LLM_SETTINGS_CHANGED_TOPIC, llmProviderPanel);
             MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel);
 
-            MessageBusUtil.subscribe(connection, AppTopics.CONVERSATION_TOPIC, conversationPanel);
-            MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> conversationPanel.updateFontSize());
-
             MessageBusUtil.subscribe(connection, AppTopics.SETTINGS_CHANGED_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, AppTopics.PROMPT_SUBMISSION_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
@@ -177,9 +170,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                 }
             });
 
-            MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel.getWelcomePanel());
-            MessageBusUtil.subscribe(connection, LafManagerListener.TOPIC, source -> promptOutputPanel.getWelcomePanel().updateFontSize());
             MessageBusUtil.subscribe(connection, AppTopics.SHORTCUT_CHANGED_TOPIC, submitPanel.getPromptInputArea());
+            
+            // Subscribe to file references events and forward them to the conversation panel
+            MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, promptOutputPanel.getConversationPanel());
 
             // Search options panel : Set up message bus listeners for visibility changes
             MessageBusUtil.subscribe(connection, AppTopics.RAG_STATE_TOPIC, enabled -> {

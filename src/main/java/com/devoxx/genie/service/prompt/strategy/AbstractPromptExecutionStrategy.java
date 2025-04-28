@@ -87,7 +87,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         resultTask.putUserData(PromptTask.CONTEXT_KEY, context);
         
         // Add user prompt to UI
-        panel.addUserPrompt(context);
+        // panel.addUserPrompt(context);
         
         // Execute strategy-specific logic
         try {
@@ -97,7 +97,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         }
         
         // Common post-execution handling
-        handleTaskCompletion(resultTask, context, panel);
+        handleTaskCompletion(resultTask, context);
         
         return resultTask;
     }
@@ -170,14 +170,13 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      *
      * @param task The prompt task
      * @param context The chat message context
-     * @param panel The UI panel
      */
     protected void handleTaskCompletion(@NotNull PromptTask<PromptResult> task, 
-                                     @NotNull ChatMessageContext context,
-                                     @NotNull PromptOutputPanel panel) {
+                                     @NotNull ChatMessageContext context) {
         task.whenComplete((result, error) -> {
             if (task.isCancelled()) {
-                panel.removeLastUserPrompt(context);
+                // TODO Check if we can actually remove context from memory?!
+                // panel.removeLastUserPrompt(context);
                 chatMemoryManager.removeLastUserMessage(context);
                 log.debug("Task for context {} was cancelled, cleaned up UI and memory", context.getId());
             }

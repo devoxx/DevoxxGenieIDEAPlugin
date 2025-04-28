@@ -4,6 +4,7 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
@@ -30,18 +31,17 @@ import java.util.function.Function;
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
-public class ConversationHistoryPanel extends JPanel {
+public class ConversationHistoryPanel extends JPanel implements ConversationSelectionListener {
     private final ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
     private final Project project;
 
-    public ConversationHistoryPanel(@NotNull ConversationStorageService storageService,
-                                    ConversationSelectionListener conversationSelectionListener,
-                                    Project project) {
-        this.storageService = storageService;
+    public ConversationHistoryPanel(Project project) {
         this.project = project;
 
         setLayout(new BorderLayout());
+
+        storageService = ConversationStorageService.getInstance();
 
         // Create table model
         tableModel = new ConversationTableModel();
@@ -77,7 +77,7 @@ public class ConversationHistoryPanel extends JPanel {
                     // Update chat memory
                     updateChatMemory(conversation);
                     // Notify listener
-                    conversationSelectionListener.onConversationSelected(conversation);
+                    onConversationSelected(conversation);
                 }
             }
         });
@@ -136,6 +136,18 @@ public class ConversationHistoryPanel extends JPanel {
         conversations.sort((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
         tableModel.setConversations(conversations);
         tableModel.fireTableDataChanged();
+    }
+
+    @Override
+    public void onConversationSelected(Conversation conversation) {
+        // Find the ConversationPanel instance and notify it about the selected conversation
+        Project project = this.project;
+        if (project != null) {
+            // Get the message bus connection
+            project.getMessageBus()
+                .syncPublisher(AppTopics.CONVERSATION_SELECTION_TOPIC)
+                .onConversationSelected(conversation);
+        }
     }
 
     // Table model class
@@ -211,6 +223,8 @@ public class ConversationHistoryPanel extends JPanel {
     }
 
     private static class TitleRenderer extends DefaultTableCellRenderer {
+        private static final int MAX_TITLE_LENGTH = 50;
+        
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
@@ -218,17 +232,21 @@ public class ConversationHistoryPanel extends JPanel {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             setHorizontalAlignment(SwingConstants.LEADING);
-            setText(String.valueOf(value));
+            
+            // Truncate long titles
+            String fullText = String.valueOf(value);
+            String displayText = fullText.length() > MAX_TITLE_LENGTH ? 
+                fullText.substring(0, MAX_TITLE_LENGTH) + "..." : 
+                fullText;
+            
+            setText(displayText);
             setMinimumSize(new Dimension(0, getHeight()));
             setBorder(JBUI.Borders.empty(0, 8));
+            
+            // Store the full text as tooltip
+            setToolTipText(fullText);
 
             return this;
-        }
-
-        @Override
-        public void setText(String text) {
-            super.setText(text);
-             setToolTipText(text);
         }
 
         // Override these methods to ensure proper text display

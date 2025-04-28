@@ -37,7 +37,7 @@ public class ChatMessageContextUtil {
 
         ChatMessageContext chatMessageContext = ChatMessageContext.builder()
                 .project(chatContextParameters.project())
-                .id(String.valueOf(System.currentTimeMillis()))
+                                .id(String.valueOf(System.currentTimeMillis()))
                 .userPrompt(chatContextParameters.userPromptText())
                 .languageModel(chatContextParameters.languageModel())
                 .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
@@ -84,10 +84,9 @@ public class ChatMessageContextUtil {
 
             // Set editor info if available
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-            // Only include the editor file when MCP is disabled
+            // Include editor information regardless of MCP state if we have a file open
             if ((chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty()) &&
-                selectedTextEditor != null &&
-                !MCPService.isMCPEnabled()) {
+                selectedTextEditor != null) {
                 addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
         }
