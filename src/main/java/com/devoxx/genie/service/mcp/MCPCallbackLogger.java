@@ -5,13 +5,17 @@ import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
 
@@ -42,13 +46,13 @@ public class MCPCallbackLogger extends AppenderBase<ILoggingEvent> {
             // Only handle the first message as a trigger to show the panel
             eventObject.getFormattedMessage();
         }
-        
+
         // Publish the log message to the log panel
         MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
         messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
-                  .onMCPLoggingMessage(MCPMessage.builder()
-                          .type(MCPType.LOG_MSG)
-                          .content(eventObject.getFormattedMessage())
-                          .build());
+                .onMCPLoggingMessage(MCPMessage.builder()
+                        .type(MCPType.LOG_MSG)
+                        .content(eventObject.getFormattedMessage())
+                        .build());
     }
 }
