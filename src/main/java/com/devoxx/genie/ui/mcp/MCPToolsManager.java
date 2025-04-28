@@ -50,7 +50,7 @@ public class MCPToolsManager {
      *
      * @return The configured JLabel for MCP tools count
      */
-    private JLabel createMCPToolsCounter() {
+    private @NotNull JLabel createMCPToolsCounter() {
         JLabel label = new JLabel();
         label.setIcon(HammerIcon);
         label.setToolTipText("Total MCP Tools Available");
@@ -79,20 +79,20 @@ public class MCPToolsManager {
      */
     public void updateMCPToolsCounter() {
         if (!MCPService.isMCPEnabled()) {
-            mcpToolsCountLabel.setVisible(false);
             return;
         }
-        
+
+        mcpToolsCountLabel.setVisible(true);
+
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
         int totalToolsCount = mcpServers.values().stream()
                 .filter(MCPServer::isEnabled)
                 .mapToInt(server -> server.getAvailableTools().size())
                 .sum();
-        
+
+        mcpToolsCountLabel.setText(String.valueOf(totalToolsCount));
+
         if (totalToolsCount > 0) {
-            mcpToolsCountLabel.setText(String.valueOf(totalToolsCount));
-            mcpToolsCountLabel.setVisible(true);
-            
             // Create a more detailed tooltip
             StringBuilder toolTip = new StringBuilder("<html>Total MCP Tools Available: " + totalToolsCount + "<br><br>");
             
@@ -107,8 +107,6 @@ public class MCPToolsManager {
             
             toolTip.append("<br>Click to enable/disable MCP servers</html>");
             mcpToolsCountLabel.setToolTipText(toolTip.toString());
-        } else {
-            mcpToolsCountLabel.setVisible(false);
         }
     }
 

@@ -222,10 +222,11 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 if (!enableMcpCheckbox.isSelected()) {
                     MCPService.resetNotificationFlag();
                 }
-                
-                // Update tool window visibility
-                MCPService.refreshToolWindowVisibility();
             }
+            
+            // Always update tool window visibility when applying changes
+            // This ensures hammer icon stays visible even when no MCP servers are active
+            MCPService.refreshToolWindowVisibility();
             
             isModified = false;
             
@@ -499,6 +500,13 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             if (row >= 0 && row < mcpServers.size()) {
                 mcpServers.remove(row);
                 fireTableRowsDeleted(row, row);
+                
+                // Refresh tool window visibility when a server is removed
+                // This ensures the hammer icon remains visible when MCP is enabled
+                // even if all MCP servers are removed
+                if (DevoxxGenieStateService.getInstance().getMcpEnabled()) {
+                    MCPService.refreshToolWindowVisibility();
+                }
             }
         }
 
@@ -571,6 +579,13 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
                 MCPServer server = mcpServers.get(rowIndex);
                 server.setEnabled(enabled);
                 fireTableCellUpdated(rowIndex, columnIndex);
+                
+                // Refresh tool window visibility when a server is enabled/disabled
+                // This ensures the hammer icon remains visible when MCP is enabled
+                // even if all MCP servers are disabled
+                if (DevoxxGenieStateService.getInstance().getMcpEnabled()) {
+                    MCPService.refreshToolWindowVisibility();
+                }
             }
         }
     }
