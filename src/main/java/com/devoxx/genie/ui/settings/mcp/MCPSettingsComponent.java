@@ -232,8 +232,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             
             // Update the Open MCP Log Panel button if it exists
             for (Component component : panel.getComponents()) {
-                if (component instanceof JPanel) {
-                    JPanel subPanel = (JPanel) component;
+                if (component instanceof JPanel subPanel) {
                     for (Component c : subPanel.getComponents()) {
                         if (c instanceof JButton && ((JButton) c).getText().equals("Open MCP Log Panel")) {
                             updateButtonBasedOnState((JButton) c);
@@ -273,7 +272,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
             
             @Override
-            protected @Nullable JComponent createCenterPanel() {
+            protected JComponent createCenterPanel() {
                 JPanel panel = new JPanel(new BorderLayout());
                 panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
                 
@@ -365,7 +364,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     /**
      * Table cell renderer for buttons
      */
-    private class ButtonRenderer extends JButton implements TableCellRenderer {
+    private static class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
         }
@@ -434,8 +433,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         
         // Find and update the Open MCP Log Panel button if it exists
         for (Component component : panel.getComponents()) {
-            if (component instanceof JPanel) {
-                JPanel subPanel = (JPanel) component;
+            if (component instanceof JPanel subPanel) {
                 for (Component c : subPanel.getComponents()) {
                     if (c instanceof JButton && ((JButton) c).getText().equals("Open MCP Log Panel")) {
                         updateButtonBasedOnState((JButton) c);
@@ -526,7 +524,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         }
 
         @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
+        public @Nullable Object getValueAt(int rowIndex, int columnIndex) {
             MCPServer server = mcpServers.get(rowIndex);
             return switch (columnIndex) {
                 case 0 -> server.isEnabled();
@@ -540,7 +538,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             };
         }
 
-        private String getConnectionInfo(MCPServer server) {
+        private String getConnectionInfo(@NotNull MCPServer server) {
             if (server.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
                 return server.getSseUrl();
             } else {
@@ -549,7 +547,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
         }
         
-        private String getToolsSummary(MCPServer server) {
+        private @NotNull String getToolsSummary(@NotNull MCPServer server) {
             if (server.getAvailableTools() == null || server.getAvailableTools().isEmpty()) {
                 return "No tools info";
             }

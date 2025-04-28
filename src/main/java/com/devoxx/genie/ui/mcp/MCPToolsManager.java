@@ -79,6 +79,7 @@ public class MCPToolsManager {
      */
     public void updateMCPToolsCounter() {
         if (!MCPService.isMCPEnabled()) {
+            mcpToolsCountLabel.setVisible(false);
             return;
         }
 

@@ -7,6 +7,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.mcp.MCPToolsManager;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -218,10 +219,6 @@ public class ActionButtonsPanel extends JPanel
         });
     }
 
-    public void resetProjectContext() {
-        projectContextController.resetProjectContext();
-    }
-
     public void updateAddProjectButton(boolean isProjectContextAdded) {
         updateAddProjectButton(isProjectContextAdded, 0);
     }
@@ -321,6 +318,6 @@ public class ActionButtonsPanel extends JPanel
 
     @Override
     public void onTokenCalculationComplete(String message) {
-        com.devoxx.genie.ui.util.NotificationUtil.sendNotification(project, message);
+        NotificationUtil.sendNotification(project, message);
     }
 }
