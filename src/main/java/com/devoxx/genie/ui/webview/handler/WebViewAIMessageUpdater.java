@@ -3,7 +3,7 @@ package com.devoxx.genie.ui.webview.handler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.IndentedCodeBlock;
 import org.commonmark.node.Node;
@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Handles updating AI messages in the WebView.
  * This class is responsible for updating the content of AI responses.
  */
+@Slf4j
 public class WebViewAIMessageUpdater {
-    private static final Logger LOG = Logger.getInstance(WebViewAIMessageUpdater.class);
-    
+
     private final WebViewJavaScriptExecutor jsExecutor;
     private final AtomicBoolean initialized;
     
@@ -39,12 +39,12 @@ public class WebViewAIMessageUpdater {
      */
     public void updateAiMessageContent(@NotNull ChatMessageContext chatMessageContext) {
         if (chatMessageContext.getAiMessage() == null) {
-            LOG.warn("No AI message to update for context: " + chatMessageContext.getId());
+            log.warn("No AI message to update for context: " + chatMessageContext.getId());
             return;
         }
         
         if (!jsExecutor.isLoaded()) {
-            LOG.warn("Browser not loaded yet, waiting before updating message");
+            log.warn("Browser not loaded yet, waiting before updating message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 while (!initialized.get()) {
                     ThreadUtils.sleep(100);
@@ -136,8 +136,8 @@ public class WebViewAIMessageUpdater {
                    "} catch (error) {" +
                    "  console.error('Error updating AI message:', error);" +
                    "}";
-        
-        LOG.info("Executing JavaScript to update AI message");
+
+        log.info("Executing JavaScript to update AI message");
         jsExecutor.executeJavaScript(js);
     }
     
@@ -189,7 +189,7 @@ public class WebViewAIMessageUpdater {
      */
     public void addUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
         if (!jsExecutor.isLoaded()) {
-            LOG.warn("Browser not loaded yet, waiting before adding user message");
+            log.warn("Browser not loaded yet, waiting before adding user message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 while (!initialized.get()) {
                    ThreadUtils.sleep(100);
@@ -244,114 +244,8 @@ public class WebViewAIMessageUpdater {
                     "} catch (error) {\n" +
                     "  console.error('Error adding user message:', error);\n" +
                     "}\n";
-        
-        LOG.info("Executing JavaScript to add user message");
-        jsExecutor.executeJavaScript(js);
-    }
-    
-    /**
-     * Adds just the AI message to the conversation view.
-     * This is used to show the AI's response when it's ready.
-     *
-     * @param chatMessageContext The chat message context containing the AI response
-     */
-    public void addAiPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
-        if (!jsExecutor.isLoaded()) {
-            LOG.warn("Browser not loaded yet, waiting before adding AI message");
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                while (!initialized.get()) {
-                    ThreadUtils.sleep(100);
-                }
-                doAddAiPromptMessage(chatMessageContext);
-            });
-        } else {
-            doAddAiPromptMessage(chatMessageContext);
-        }
-    }
 
-    /**
-     * Performs the actual operation of adding an AI message to the conversation.
-     * This updates the AI response part of an existing message pair.
-     *
-     * @param chatMessageContext The chat message context
-     */
-    private void doAddAiPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
-        String messageId = chatMessageContext.getId();
-        
-        // Parse and render the markdown content
-        Parser markdownParser = Parser.builder().build();
-        HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
-        
-        String aiMessageText = chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text();
-        Node document = markdownParser.parse(aiMessageText);
-        
-        StringBuilder contentHtml = new StringBuilder();
-        
-        // Format metadata information
-        LocalDateTime dateTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
-        String timestamp = dateTime.format(formatter);
-        
-        String modelName = "Unknown";
-        if (chatMessageContext.getLanguageModel() != null) {
-            modelName = chatMessageContext.getLanguageModel().getModelName();
-        }
-
-        // Add metadata div
-        contentHtml.append("<div class=\"metadata-info\">")
-                .append(timestamp)
-                .append(" · ")
-                .append(modelName)
-                .append(String.format(" · ϟ %.2fs", chatMessageContext.getExecutionTimeMs() / 1000.0)
-                        // Add metadata div
-                )
-                .append("</div>")
-                .append("<button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>");
-        
-        // Add content
-        Node node = document.getFirstChild();
-        while (node != null) {
-            if (node instanceof FencedCodeBlock fencedCodeBlock) {
-                String code = fencedCodeBlock.getLiteral();
-                String language = fencedCodeBlock.getInfo();
-                String prismLanguage = mapLanguageToPrism(language);
-                
-                contentHtml.append("<pre><code class=\"language-")
-                        .append(prismLanguage)
-                        .append("\">")
-                        .append(jsExecutor.escapeHtml(code))
-                        .append("</code></pre>\n");
-            } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
-                String code = indentedCodeBlock.getLiteral();
-                contentHtml.append("<pre><code class=\"language-plaintext\">")
-                        .append(jsExecutor.escapeHtml(code))
-                        .append("</code></pre>\n");
-            } else {
-                contentHtml.append(htmlRenderer.render(node));
-            }
-            node = node.getNext();
-        }
-        
-        // JavaScript to update just the assistant message content
-        String js = "try {" +
-                   "  const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');" +
-                   "  if (messagePair) {" +
-                   "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
-                   "    if (assistantMessage) {" +
-                   "      assistantMessage.innerHTML = `" + jsExecutor.escapeJS(contentHtml.toString()) + "`;" +
-                   "      window.scrollTo(0, document.body.scrollHeight);" +
-                   "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
-                   "    } else {" +
-                   "      console.error('Assistant message element not found in message pair');" +
-                   "    }" +
-                   "  } else {" +
-                   "    console.error('Message pair not found: " + jsExecutor.escapeJS(messageId) + "');" +
-                   "  }" +
-                   "} catch (error) {" +
-                   "  console.error('Error updating AI message:', error);" +
-                   "}";
-        
-        LOG.info("Executing JavaScript to add AI message");
+        log.info("Executing JavaScript to add user message");
         jsExecutor.executeJavaScript(js);
     }
 }

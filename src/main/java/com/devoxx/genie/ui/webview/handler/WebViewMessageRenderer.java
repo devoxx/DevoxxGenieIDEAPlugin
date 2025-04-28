@@ -4,6 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.webview.WebServer;
 import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
+import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.commonmark.node.FencedCodeBlock;
@@ -48,13 +49,7 @@ public class WebViewMessageRenderer {
             // Wait for browser to load before injecting content
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 while (!initialized.get()) {
-                    try {
-                        sleep(100);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted while waiting for browser to load", e);
-                        return;
-                    }
+                    ThreadUtils.sleep(100);
                 }
                 showWelcomeContent(resourceBundle);
             });
@@ -97,13 +92,7 @@ public class WebViewMessageRenderer {
             LOG.warn("Browser not loaded yet, waiting before adding message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 while (!initialized.get()) {
-                    try {
-                        sleep(100);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted while waiting for browser to load", e);
-                        return;
-                    }
+                    ThreadUtils.sleep(100);
                 }
                 doAddChatMessage(messageHtml);
             });
@@ -132,10 +121,9 @@ public class WebViewMessageRenderer {
 
         // Create JavaScript that checks if the message already exists
         String js;
-        if (messageId != null && !messageId.isEmpty()) {
+        if (messageId != null) {
             // If we have an ID, check if it exists before adding
             js = "try {" +
-                 "  // Check if this message already exists to avoid duplicates" +
                  "  if (!document.getElementById('" + jsExecutor.escapeJS(messageId) + "')) {" +
                  "    const container = document.getElementById('conversation-container');" +
                  "    const tempDiv = document.createElement('div');" +

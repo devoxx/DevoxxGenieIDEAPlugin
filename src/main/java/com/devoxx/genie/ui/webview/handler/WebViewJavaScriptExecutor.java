@@ -1,17 +1,17 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowser;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Handles JavaScript execution in the WebView.
  * This class encapsulates the logic for executing JavaScript in the browser.
  */
+@Slf4j
 public class WebViewJavaScriptExecutor {
-    private static final Logger LOG = Logger.getInstance(WebViewJavaScriptExecutor.class);
-    
+
     private final JBCefBrowser browser;
     private boolean isLoaded = false;
     
@@ -47,7 +47,7 @@ public class WebViewJavaScriptExecutor {
             if (isLoaded) {
                 browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
             } else {
-                LOG.warn("Browser not loaded, cannot execute JavaScript");
+                log.warn("Browser not loaded, cannot execute JavaScript");
             }
         });
     }

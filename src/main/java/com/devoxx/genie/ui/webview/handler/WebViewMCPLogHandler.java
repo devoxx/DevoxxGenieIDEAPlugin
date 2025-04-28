@@ -2,10 +2,7 @@ package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
-import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.util.ThemeDetector;
-import com.intellij.openapi.diagnostic.Logger;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -19,8 +16,8 @@ import java.util.List;
 public class WebViewMCPLogHandler implements MCPLoggingMessage {
 
     private final WebViewJavaScriptExecutor jsExecutor;
-    private String activeMessageId; // Track the active message that is currently thinking
-    private final List<String> mcpLogs = new ArrayList<>(); // Store MCP logs for the current thinking process
+    private String activeMessageId;
+    private final List<String> mcpLogs = new ArrayList<>();
     
     public WebViewMCPLogHandler(WebViewJavaScriptExecutor jsExecutor) {
         this.jsExecutor = jsExecutor;
@@ -33,7 +30,6 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
      */
     public void setActiveMessageId(String messageId) {
         this.activeMessageId = messageId;
-        // Clear previous MCP logs when starting a new conversation
         mcpLogs.clear();
     }
     
@@ -58,11 +54,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
         List<String> filteredLogs = mcpLogs.stream()
                 .filter(log -> !log.startsWith("<") && !log.startsWith(">") && !log.startsWith("{"))
                 .toList();
-        
-        // Create container for all logs
-//        formattedLogs.append("<div class=\"mcp-outer-container\">\n");
-//        formattedLogs.append("<div class=\"mcp-header\">MCP Actions</div>\n");
-        
+
         // Add filtered logs to display
         if (!filteredLogs.isEmpty()) {
             // Create individual entry for each log
@@ -79,9 +71,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
             formattedLogs.append("<span class=\"mcp-counter\">MCP activity in progress (no action messages yet)</span>");
             formattedLogs.append("</div>\n");
         }
-        
-//        formattedLogs.append("</div>");
-        
+
         // Update the UI with the formatted logs
         updateThinkingIndicator(activeMessageId, formattedLogs.toString());
     }
@@ -134,9 +124,6 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
                     "        .mcp-log-entry { \n" +
                     "          margin-bottom: 8px;\n" +
                     "          padding: 8px;\n" +
-//                    "          background-color: " + (ThemeDetector.isDarkTheme() ? "#1e1e1e" : "#ffffff") + ";\n" +
-//                    "          border-radius: 4px;\n" +
-//                    "          border-left: 4px solid #2196F3;\n" +
                     "        }\n" +
                     "        .mcp-regular { color: #FF9800; font-weight: bold; }\n" +
                     "        .mcp-counter { color: #757575; font-style: italic; }\n" +
@@ -146,7 +133,6 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
                     "    window.scrollTo(0, document.body.scrollHeight);\n" +
                     "  } else {\n" +
                     "    console.error('Thinking indicator not found for message: " + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "    // Fall back to trying to find by class if not found by ID\n" +
                     "    console.log('Trying to find indicator by class instead');\n" +
                     "    const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');\n" +
                     "    if (messagePair) {\n" +

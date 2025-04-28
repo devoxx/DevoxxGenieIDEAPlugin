@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.webview;
 
-import com.intellij.openapi.diagnostic.Logger;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -10,14 +9,15 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 public class WebServer {
-    private static final Logger LOG = Logger.getInstance(WebServer.class);
     private static WebServer instance;
     private int port = -1;
     private EventLoopGroup bossGroup;
@@ -67,9 +67,9 @@ public class WebServer {
 
             ChannelFuture future = bootstrap.bind(port).sync();
             serverChannel = future.channel();
-            LOG.info("Web server started on port " + port);
+            log.info("Web server started on port " + port);
         } catch (Exception e) {
-            LOG.error("Failed to start web server", e);
+            log.error("Failed to start web server", e);
             stop();
         }
     }
@@ -100,7 +100,7 @@ public class WebServer {
 
     public String addDynamicResource(@NotNull String content) {
         String resourceId = "/dynamic/" + System.currentTimeMillis() + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
-        LOG.info("Adding dynamic resource: " + resourceId + ", content length: " + content.length());
+        log.info("Adding dynamic resource: " + resourceId + ", content length: " + content.length());
         resources.put(resourceId, content);
         return resourceId;
     }
@@ -116,7 +116,7 @@ public class WebServer {
             socket.close();
             return port;
         } catch (Exception e) {
-            LOG.error("Failed to find available port", e);
+            log.error("Failed to find available port", e);
             return 8090; // Fallback port
         }
     }
@@ -134,9 +134,9 @@ public class WebServer {
             try {
                 String cssContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism-okaidia.min.css").readAllBytes());
                 resources.put(PRISM_CSS_RESOURCE, cssContent);
-                LOG.info("Loaded Prism CSS from resources");
+                log.info("Loaded Prism CSS from resources");
             } catch (Exception e) {
-                LOG.error("Failed to load Prism CSS from resources", e);
+                log.error("Failed to load Prism CSS from resources", e);
             }
         }
         return getServerUrl() + PRISM_CSS_RESOURCE;
@@ -149,12 +149,13 @@ public class WebServer {
      */
     public String getPrismJsUrl() {
         if (!resources.containsKey(PRISM_JS_RESOURCE)) {
+            // TODO Fix 'InputStream' used without 'try'-with-resources statement
             try {
                 String jsContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.min.js").readAllBytes());
                 resources.put(PRISM_JS_RESOURCE, jsContent);
-                LOG.info("Loaded Prism JS from resources");
+                log.info("Loaded Prism JS from resources");
             } catch (Exception e) {
-                LOG.error("Failed to load Prism JS from resources", e);
+                log.error("Failed to load Prism JS from resources", e);
             }
         }
         return getServerUrl() + PRISM_JS_RESOURCE;
@@ -169,8 +170,8 @@ public class WebServer {
             if (uri.contains("?")) {
                 uri = uri.substring(0, uri.indexOf("?"));
             }
-            
-            LOG.info("Handling request for: " + uri);
+
+            log.info("Handling request for: " + uri);
             
             if (resources.containsKey(uri)) {
                 String content = resources.get(uri);
@@ -180,7 +181,7 @@ public class WebServer {
                         HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buffer);
                 
                 String contentType = getContentType(uri);
-                LOG.info("Serving content with type: " + contentType);
+                log.info("Serving content with type: " + contentType);
                 
                 response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
                 response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
@@ -192,7 +193,7 @@ public class WebServer {
                 
                 ctx.writeAndFlush(response);
             } else {
-                LOG.warn("Resource not found: " + uri);
+                log.warn("Resource not found: " + uri);
                 ByteBuf buffer = Unpooled.copiedBuffer("Resource not found: " + uri, CharsetUtil.UTF_8);
                 FullHttpResponse response = new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, buffer);
@@ -204,7 +205,7 @@ public class WebServer {
             }
         }
 
-        private String getContentType(String uri) {
+        private @NotNull String getContentType(@NotNull String uri) {
             if (uri.endsWith(".js")) {
                 return "application/javascript";
             } else if (uri.endsWith(".css")) {
@@ -217,14 +218,14 @@ public class WebServer {
         }
 
         @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            LOG.error("Exception in web server handler", cause);
+        public void exceptionCaught(@NotNull ChannelHandlerContext ctx, Throwable cause) {
+            log.error("Exception in web server handler", cause);
             ctx.close();
         }
     }
 
     // Base HTML template with PrismJS includes from CDN
-    private String getBaseHtml() {
+    private @NotNull String getBaseHtml() {
         // Initialize Prism resources
         getPrismCssUrl();
         getPrismJsUrl();

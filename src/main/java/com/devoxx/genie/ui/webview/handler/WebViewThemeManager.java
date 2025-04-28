@@ -5,8 +5,8 @@ import com.devoxx.genie.ui.util.ThemeDetector;
 import com.devoxx.genie.ui.webview.WebServer;
 import com.devoxx.genie.ui.webview.template.ConversationTemplate;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowser;
+import lombok.extern.slf4j.Slf4j;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
@@ -18,9 +18,9 @@ import java.util.function.Consumer;
  * Manages theme-related functionality for the WebView.
  * Handles theme changes and updates the WebView accordingly.
  */
+@Slf4j
 public class WebViewThemeManager implements ThemeChangeNotifier {
-    private static final Logger LOG = Logger.getInstance(WebViewThemeManager.class);
-    
+
     private final JBCefBrowser browser;
     private final WebServer webServer;
     private final WebViewJavaScriptExecutor jsExecutor;
@@ -46,7 +46,7 @@ public class WebViewThemeManager implements ThemeChangeNotifier {
      */
     @Override
     public void themeChanged(boolean isDarkTheme) {
-        LOG.info("Theme changed to " + (isDarkTheme ? "dark" : "light") + " mode, refreshing web view");
+        log.info("Theme changed to " + (isDarkTheme ? "dark" : "light") + " mode, refreshing web view");
         
         // Reload the content with the new theme
         ConversationTemplate template = new ConversationTemplate(webServer);
@@ -67,7 +67,7 @@ public class WebViewThemeManager implements ThemeChangeNotifier {
                 public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
                     if (!welcomeReloaded[0]) {
                         welcomeReloaded[0] = true;
-                        LOG.info("Browser reloaded after theme change, restoring welcome content");
+                        log.info("Browser reloaded after theme change, restoring welcome content");
                         ApplicationManager.getApplication().invokeLater(() -> {
                             ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
                             welcomeContentLoader.accept(resourceBundle);
