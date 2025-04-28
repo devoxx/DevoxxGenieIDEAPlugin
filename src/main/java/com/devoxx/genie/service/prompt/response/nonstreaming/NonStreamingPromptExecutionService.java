@@ -148,6 +148,13 @@ public class NonStreamingPromptExecutionService {
                 mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider();
                 if (mcpToolProvider != null) {
                     MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
+                    
+                    // Add file references to context before processing if we have them
+                    if (!FileListManager.getInstance().isEmpty(project)) {
+                        chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
+                        MCPService.logDebug("Added file references to MCP context: " + 
+                            FileListManager.getInstance().getFiles(project).size() + " files");
+                    }
                 } else {
                     NotificationUtil.sendNotification(project, "MCP is enabled, but no MCP tool provider could be created");
                 }

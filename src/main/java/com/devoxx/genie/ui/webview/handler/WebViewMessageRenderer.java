@@ -6,29 +6,19 @@ import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
 import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import org.commonmark.node.FencedCodeBlock;
-import org.commonmark.node.IndentedCodeBlock;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static java.lang.Thread.sleep;
 
 /**
  * Handles rendering of messages in the WebView.
  * This class is responsible for adding and updating chat messages in the conversation.
  */
+@Slf4j
 public class WebViewMessageRenderer {
-    private static final Logger LOG = Logger.getInstance(WebViewMessageRenderer.class);
-    
+
     private final WebServer webServer;
     private final WebViewJavaScriptExecutor jsExecutor;
     private final AtomicBoolean initialized;
@@ -86,10 +76,10 @@ public class WebViewMessageRenderer {
         String messageHtml = messageTemplate.generate();
         
         // Log for debugging
-        LOG.info("Adding chat message to conversation view: " + chatMessageContext.getId());
+        log.info("Adding chat message to conversation view: " + chatMessageContext.getId());
         
         if (!jsExecutor.isLoaded()) {
-            LOG.warn("Browser not loaded yet, waiting before adding message");
+            log.warn("Browser not loaded yet, waiting before adding message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 while (!initialized.get()) {
                     ThreadUtils.sleep(100);
@@ -107,7 +97,7 @@ public class WebViewMessageRenderer {
      * 
      * @param messageHtml The HTML of the message to add
      */
-    private void doAddChatMessage(String messageHtml) {
+    private void doAddChatMessage(@NotNull String messageHtml) {
         // Extract the message ID from the HTML
         // The message ID is in the format: <div class=\"message-pair\" id=\"SOME_ID\">
         String messageId = null;
@@ -154,8 +144,8 @@ public class WebViewMessageRenderer {
                  "  console.error('Error adding chat message:', error);" +
                  "}";
         }
-        
-        LOG.info("Executing JavaScript to add message" + (messageId != null ? " with ID: " + messageId : ""));
+
+        log.info("Executing JavaScript to add message" + (messageId != null ? " with ID: " + messageId : ""));
         jsExecutor.executeJavaScript(js);
     }
 }

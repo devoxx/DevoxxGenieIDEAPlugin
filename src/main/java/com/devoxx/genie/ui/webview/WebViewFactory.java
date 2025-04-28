@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.webview;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefClient;
 import lombok.extern.slf4j.Slf4j;

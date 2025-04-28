@@ -2,8 +2,8 @@ package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.util.ThemeDetector;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
@@ -11,9 +11,9 @@ import java.util.List;
  * Manages file references in the WebView.
  * This class handles adding file references to the conversation.
  */
+@Slf4j
 public class WebViewFileReferenceManager {
-    private static final Logger LOG = Logger.getInstance(WebViewFileReferenceManager.class);
-    
+
     private final WebViewJavaScriptExecutor jsExecutor;
     
     public WebViewFileReferenceManager(WebViewJavaScriptExecutor jsExecutor) {
@@ -31,7 +31,7 @@ public class WebViewFileReferenceManager {
             return;
         }
         
-        LOG.info("Adding file references to conversation: " + files.size() + " files");
+        log.info("Adding file references to conversation: " + files.size() + " files");
         
         // Create HTML for the expandable file references component
         StringBuilder fileReferencesHtml = new StringBuilder();
@@ -135,8 +135,8 @@ public class WebViewFileReferenceManager {
                     "} catch (error) {\n" +
                     "  console.error('Error adding file references:', error);\n" +
                     "}";
-                
-        LOG.info("Executing JavaScript to add file references");
+
+        log.info("Executing JavaScript to add file references");
         jsExecutor.executeJavaScript(js);
     }
 }

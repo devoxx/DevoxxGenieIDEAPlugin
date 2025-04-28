@@ -6,8 +6,8 @@ import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.webview.handler.*;
 import com.devoxx.genie.ui.webview.template.ConversationTemplate;
+import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.jcef.JBCefBrowser;
 import lombok.Getter;
@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.util.List;
@@ -28,7 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 public class ConversationWebViewController implements ThemeChangeNotifier, MCPLoggingMessage {
-    private static final Logger LOG = Logger.getInstance(ConversationWebViewController.class);
 
     @Getter
     private final JBCefBrowser browser;
@@ -62,7 +62,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         String resourceId = webServer.addDynamicResource(htmlContent);
         String resourceUrl = webServer.getResourceUrl(resourceId);
 
-        LOG.info("Loading ConversationWebView content from: " + resourceUrl);
+        log.info("Loading ConversationWebView content from: " + resourceUrl);
 
         // Create browser and load content
         browser = WebViewFactory.createBrowser(resourceUrl);
@@ -92,7 +92,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
             public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
                 jsExecutor.setLoaded(true);
                 initialized.set(true);
-                LOG.info("ConversationWebView loaded with status: " + httpStatusCode);
+                log.info("ConversationWebView loaded with status: " + httpStatusCode);
             }
         }, browser.getCefBrowser());
     }
@@ -104,7 +104,6 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         // Use a custom handler in JS to communicate with Java
         browser.getCefBrowser().executeJavaScript(
                 "window.openFileFromJava = function(path) {" +
-                        "  console.log('Opening file: ' + path);" +
                         "  if (window.java_fileOpened) {" +
                         "    window.java_fileOpened(path);" +
                         "  }" +
@@ -115,10 +114,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         // Set up a handler to open files when clicked and override the fileOpened function
         jsExecutor.executeJavaScript(
                 "window.java_fileOpened = function(filePath) {" +
-                        "  console.log('Request to open file in IDE: ' + filePath);" +
-                        "  // Set the file path in a global variable that our polling will detect" +
                         "  window.fileToOpen = filePath;" +
-                        "  // Also store the last found path to make it easier to capture" +
                         "  window.lastFoundPath = filePath;" +
                         "};"
         );
@@ -128,8 +124,6 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                 "window.openFile = function(elementId) { " +
                         "  const element = document.getElementById(elementId); " +
                         "  if (element && element.dataset.filePath) { " +
-                        "    console.log('Request to open file: ' + element.dataset.filePath);" +
-                        "    // Call our openFileFromJava function to handle file opening" +
                         "    openFileFromJava(element.dataset.filePath);" +
                         "  }" +
                         "};",
@@ -144,7 +138,8 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             while (true) {
                 try {
-                    Thread.sleep(100); // Check every 100ms
+                    ThreadUtils.sleep(50);
+
                     // Create a mechanism to store the file path in a global variable
                     // that we can poll for
                     String checkJs =
@@ -168,15 +163,14 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                             "if (window.lastFoundPath) { " +
                                     "  const path = window.lastFoundPath; " +
                                     "  window.lastFoundPath = null; " +
-                                    "  console.log('Opening file from path variable: ' + path); " +
                                     "  window.java_fileOpened(path); " +
                                     "}",
                             browser.getCefBrowser().getURL(),
                             0
                     );
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     Thread.currentThread().interrupt();
-                    LOG.error("Interrupted while polling for file open requests", e);
+                    log.error("Interrupted while polling for file open requests", e);
                     break;
                 }
             }
@@ -285,7 +279,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
      * @param message The MCP message received
      */
     @Override
-    public void onMCPLoggingMessage(MCPMessage message) {
+    public void onMCPLoggingMessage(@NotNull MCPMessage message) {
         log.info("Received MCP logging message: {}", message.getContent());
         mcpLogHandler.onMCPLoggingMessage(message);
     }

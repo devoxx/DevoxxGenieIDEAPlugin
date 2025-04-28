@@ -1,12 +1,16 @@
 package com.devoxx.genie.util;
 
-import com.intellij.openapi.diagnostic.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Utility class for thread-related operations.
  */
+@Slf4j
 public class ThreadUtils {
-    private static final Logger LOG = Logger.getInstance(ThreadUtils.class);
+
+    private ThreadUtils() {
+        // Private constructor to prevent instantiation
+    }
 
     /**
      * Sleeps for the specified duration in milliseconds.
@@ -19,7 +23,7 @@ public class ThreadUtils {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.debug("Thread interrupted during sleep", e);
+            log.debug("Thread interrupted during sleep", e);
         }
     }
 
@@ -35,11 +39,7 @@ public class ThreadUtils {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error(errorMessage, e);
+            log.error(errorMessage, e);
         }
-    }
-
-    private ThreadUtils() {
-        // Private constructor to prevent instantiation
     }
 }

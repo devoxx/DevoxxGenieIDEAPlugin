@@ -182,13 +182,10 @@ public class MessageCreationService {
                     .append("</ProjectPath>");
         }
 
-        // Only include the currently open editor file when MCP is disabled
-        if (!MCPService.isMCPEnabled()) {
-            // Add editor content or selected text
-            String editorContent = getEditorContentOrSelectedText(chatMessageContext);
-            if (!editorContent.isEmpty()) {
-                stringBuilder.append(editorContent);
-            }
+        // Add editor content or selected text
+        String editorContent = getEditorContentOrSelectedText(chatMessageContext);
+        if (!editorContent.isEmpty()) {
+            stringBuilder.append(editorContent);
         }
 
         // Add the user's prompt, this MUST BE at the bottom of the prompt for some local models to understand!
