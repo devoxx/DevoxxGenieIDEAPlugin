@@ -259,6 +259,7 @@ public class MCPExecutionService implements Disposable {
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
                     .transport(transport)
+                    .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .build();
 
