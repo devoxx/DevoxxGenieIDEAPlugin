@@ -127,6 +127,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"));
         addProviderSettingRow(panel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
                 createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
+        // Add hint text for LMStudio URL
+        addHintText(panel, gbc, "Use \"http://localhost:1234/api/v0\" to get the correct window context");
         addProviderSettingRow(panel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
                 createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addProviderSettingRow(panel, gbc, "Jan URL", janEnabledCheckBox,
@@ -289,5 +291,31 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             panel.revalidate();
             panel.repaint();
         }
+    }
+    
+    /**
+     * Adds a hint text below a setting row.
+     * The hint text is indented and styled as a smaller, gray label.
+     *
+     * @param panel The panel to add the hint text to.
+     * @param gbc   The GridBagConstraints for layout.
+     * @param text  The hint text to display.
+     */
+    private void addHintText(
+            @NotNull JPanel panel,
+            @NotNull GridBagConstraints gbc,
+            String text
+    ) {
+        JLabel hintLabel = new JLabel(text);
+        hintLabel.setFont(hintLabel.getFont().deriveFont(hintLabel.getFont().getSize() - 2f));
+        hintLabel.setForeground(Color.GRAY);
+
+        JPanel providerPanel = new JPanel(new BorderLayout(5, 0));
+        providerPanel.add(hintLabel, BorderLayout.CENTER);
+
+        gbc.gridwidth = 1;
+        gbc.gridx = 1;
+        panel.add(providerPanel, gbc);
+        gbc.gridy++;
     }
 }
