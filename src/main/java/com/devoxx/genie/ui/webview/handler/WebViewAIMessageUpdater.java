@@ -200,11 +200,16 @@ public class WebViewAIMessageUpdater {
                     "    while (tempDiv.firstChild) {\n" +
                     "      container.appendChild(tempDiv.firstChild);\n" +
                     "    }\n" +
-                    "  }\n" +
-                    "  // Add padding and position at the top of the container for the first message\n" +
-                    "  const container = document.getElementById('conversation-container');\n" +
-                    "  if (container && container.childElementCount === 1) {\n" +
-                    "    window.scrollTo(0, 0);\n" +
+                    "    // Check if this is the first message to add proper spacing\n" +
+                    "    if (container.childElementCount === 1) {\n" +
+                    "      // Add top margin to the first message pair for spacing below the header\n" +
+                    "      const firstMessage = container.firstElementChild;\n" +
+                    "      if (firstMessage) {\n" +
+                    "        firstMessage.style.marginTop = '30px';\n" +
+                    "      }\n" +
+                    "      // Make sure we're at the top of the container\n" +
+                    "      window.scrollTo(0, 0);\n" +
+                    "    }\n" +
                     "  }\n" +
                     "} catch (error) {\n" +
                     "  console.error('Error adding user message:', error);\n" +

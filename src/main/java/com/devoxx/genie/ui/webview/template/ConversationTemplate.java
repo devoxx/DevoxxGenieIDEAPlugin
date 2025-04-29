@@ -3,8 +3,6 @@ package com.devoxx.genie.ui.webview.template;
 import com.devoxx.genie.ui.webview.WebServer;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-
 /**
  * Template for generating the main conversation HTML structure.
  */
