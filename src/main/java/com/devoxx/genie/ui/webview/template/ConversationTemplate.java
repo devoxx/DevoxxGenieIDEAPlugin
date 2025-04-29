@@ -1,7 +1,5 @@
 package com.devoxx.genie.ui.webview.template;
 
-import com.devoxx.genie.ui.util.DevoxxGenieColorsUtil;
-import com.devoxx.genie.ui.util.ThemeDetector;
 import com.devoxx.genie.ui.webview.WebServer;
 import org.jetbrains.annotations.NotNull;
 
@@ -136,13 +134,13 @@ public class ConversationTemplate extends HtmlTemplate {
                 isDarkMode ? "#e0e0e0" : "#4a4a4a",
                 Math.max(editorFontSize - 2, 10), // Slightly smaller font for buttons
                 isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)",
-                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
-                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                "#FF5400", // Use Devoxx orange color
+                "#FF5400", // Use Devoxx orange color
                 Math.max((int)(editorFontSize * 1.2), 14), // Slightly larger font for headings
                 Math.max(editorFontSize - 2, 10), // Slightly smaller font for subtexts
                 isDarkMode ? "#aaaaaa" : "#666666",
                 isDarkMode ? "#1e1e1e" : "#f5f5f5",
-                isDarkMode ? "#FF5400" : "#FF5400", // Use Devoxx orange color
+                "#FF5400", // Use Devoxx orange color
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
                 isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
                 isDarkMode ? "#aaaaaa" : "#666666",
@@ -259,21 +257,5 @@ public class ConversationTemplate extends HtmlTemplate {
                         document.body.style.display = 'block';
                     });
                 """;
-    }
-    
-    /**
-     * Determine if the given color represents a dark theme.
-     * This is determined by calculating the brightness of the color.
-     * 
-     * @param color The color to check
-     * @return true if the color represents a dark theme, false otherwise
-     */
-    private boolean isDarkTheme(Color color) {
-        // Calculate the perceived brightness using the formula
-        // Brightness = 0.299*R + 0.587*G + 0.114*B
-        double brightness = (0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue()) / 255.0;
-        
-        // If brightness is less than 0.5, it's considered a dark theme
-        return brightness < 0.5;
     }
 }

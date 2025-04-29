@@ -51,6 +51,7 @@ public class PromptExecutionController implements PromptExecutionListener {
         
         // Check if this is the first prompt in the conversation - if so, clear the welcome content first
         if (promptOutputPanel.isNewConversation()) {
+            // Clear the welcome panel completely before showing the first user message
             promptOutputPanel.getConversationPanel().clearWithoutWelcome();
             
             // Mark the conversation as started (no longer new) after the first prompt
@@ -82,8 +83,11 @@ public class PromptExecutionController implements PromptExecutionListener {
     }
 
     private void executePromptWithContext() {
-        // Scroll to the bottom immediately after user submits prompt
-        promptOutputPanel.scrollToBottom();
+        // Only scroll to bottom for non-first messages
+        // The first message should not be scrolled to preserve the spacing below the header
+        if (!promptOutputPanel.isNewConversation()) {
+            promptOutputPanel.scrollToBottom();
+        }
         
         promptExecutionService.executePrompt(
                 currentChatMessageContext, 

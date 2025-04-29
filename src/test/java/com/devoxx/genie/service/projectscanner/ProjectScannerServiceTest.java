@@ -91,13 +91,11 @@ class ProjectScannerServiceTest  {
         when(mockTokenCalculator.truncateToTokens(anyString(), anyInt())).thenAnswer(invocation -> {
             String content = invocation.getArgument(0);
             int maxTokens = invocation.getArgument(1);
-            boolean isTokenCalculation = invocation.getArgument(2);
 
             // Simple simulation of truncation
             if (mockTokenCalculator.calculateTokens(content) > maxTokens) {
-                return isTokenCalculation ?
-                        "Truncated content" :
-                        "Truncated content\n--- Project context truncated due to token limit ---\n";
+                // Returning a simple marker for truncation in the mock
+                return "Truncated content\n--- Project context truncated due to token limit ---\n";
             }
             return content;
         });
