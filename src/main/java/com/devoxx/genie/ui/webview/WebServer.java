@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.webview;
 
+import com.devoxx.genie.ui.webview.template.ResourceLoader;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -27,6 +28,8 @@ public class WebServer {
 
     private static final String PRISM_CSS_RESOURCE = "/prism.css";
     private static final String PRISM_JS_RESOURCE = "/prism.js";
+    private static final String BASE_CSS_RESOURCE = "/base.css";
+    private static final String BASE_JS_RESOURCE = "/base.js";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -149,16 +152,55 @@ public class WebServer {
      */
     public String getPrismJsUrl() {
         if (!resources.containsKey(PRISM_JS_RESOURCE)) {
-            // TODO Fix 'InputStream' used without 'try'-with-resources statement
-            try {
-                String jsContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.js").readAllBytes());
-                resources.put(PRISM_JS_RESOURCE, jsContent);
-                log.info("Loaded Prism JS from resources");
+            try (var inputStream = getClass().getResourceAsStream("/webview/prism/1.29.0/prism.js")) {
+                if (inputStream != null) {
+                    String jsContent = new String(inputStream.readAllBytes());
+                    resources.put(PRISM_JS_RESOURCE, jsContent);
+                    log.info("Loaded Prism JS from resources");
+                } else {
+                    log.error("Prism JS resource not found");
+                }
             } catch (Exception e) {
                 log.error("Failed to load Prism JS from resources", e);
             }
         }
         return getServerUrl() + PRISM_JS_RESOURCE;
+    }
+    
+    /**
+     * Get the base CSS URL.
+     * 
+     * @return URL to base CSS
+     */
+    public String getBaseCssUrl() {
+        if (!resources.containsKey(BASE_CSS_RESOURCE)) {
+            try {
+                String cssContent = ResourceLoader.loadResource("webview/css/base.css");
+                resources.put(BASE_CSS_RESOURCE, cssContent);
+                log.info("Loaded base CSS from resources");
+            } catch (Exception e) {
+                log.error("Failed to load base CSS from resources", e);
+            }
+        }
+        return getServerUrl() + BASE_CSS_RESOURCE;
+    }
+    
+    /**
+     * Get the base JS URL.
+     * 
+     * @return URL to base JavaScript
+     */
+    public String getBaseJsUrl() {
+        if (!resources.containsKey(BASE_JS_RESOURCE)) {
+            try {
+                String jsContent = ResourceLoader.loadResource("webview/js/base.js");
+                resources.put(BASE_JS_RESOURCE, jsContent);
+                log.info("Loaded base JS from resources");
+            } catch (Exception e) {
+                log.error("Failed to load base JS from resources", e);
+            }
+        }
+        return getServerUrl() + BASE_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -224,140 +266,26 @@ public class WebServer {
         }
     }
 
-    // Base HTML template with PrismJS includes from CDN
+    /**
+     * Generate the base HTML template
+     * 
+     * @return Base HTML template with proper resource URLs
+     */
     private @NotNull String getBaseHtml() {
-        // Initialize Prism resources
+        // Initialize all resources
         getPrismCssUrl();
         getPrismJsUrl();
+        getBaseCssUrl();
+        getBaseJsUrl();
 
-        // TODO: Move this HTML to an external template file in resources
-        return """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>DevoxxGenie</title>
-                    <link rel="stylesheet" href="%s">
-                    <style>
-                        body {
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, 
-                                         Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; 
-                            line-height: 1.6; 
-                            margin: 0; 
-                            padding: 10px; 
-                            color: #333;
-                            background-color: #f8f8f8;
-                        }
-                        pre { 
-                            margin: 1em 0; 
-                            border-radius: 4px;
-                            position: relative;
-                        }
-                        code { 
-                            font-family: 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', 
-                                        'Ubuntu Mono', monospace; 
-                        }
-                        .toolbar-container {
-                            position: absolute;
-                            top: 0;
-                            right: 0;
-                            padding: 5px;
-                            opacity: 0.7;
-                            transition: opacity 0.3s;
-                        }
-                        .toolbar-container:hover {
-                            opacity: 1;
-                        }
-                        .copy-button {
-                            background: rgba(255, 255, 255, 0.2);
-                            border: none;
-                            border-radius: 3px;
-                            color: #fff;
-                            cursor: pointer;
-                            font-size: 12px;
-                            padding: 3px 8px;
-                        }
-                        .copy-button:hover {
-                            background: rgba(255, 255, 255, 0.3);
-                        }
-                        h1, h2, h3, h4, h5, h6 {
-                            margin-top: 1.5em;
-                            margin-bottom: 0.5em;
-                        }
-                        p {
-                            margin-bottom: 1em;
-                        }
-                        ul, ol {
-                            margin-bottom: 1em;
-                            padding-left: 2em;
-                        }
-                        blockquote {
-                            border-left: 4px solid #ddd;
-                            padding-left: 1em;
-                            margin-left: 0;
-                            color: #666;
-                        }
-                        table {
-                            border-collapse: collapse;
-                            width: 100%%;
-                            margin-bottom: 1em;
-                        }
-                        table, th, td {
-                            border: 1px solid #ddd;
-                        }
-                        th, td {
-                            padding: 8px 12px;
-                            text-align: left;
-                        }
-                        th {
-                            background-color: #f2f2f2;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div id="content"></div>
-                    <script src="%s"></script>
-                    <script>
-                        // Will be initialized when content is loaded
-                        function highlightCode() {
-                            if (typeof Prism !== 'undefined') {
-                                Prism.highlightAll();
-                                
-                                // Add copy buttons to code blocks
-                                document.querySelectorAll('pre').forEach(function(pre) {
-                                    const container = document.createElement('div');
-                                    container.className = 'toolbar-container';
-                                    
-                                    const copyButton = document.createElement('button');
-                                    copyButton.className = 'copy-button';
-                                    copyButton.textContent = 'Copy';
-                                    
-                                    copyButton.addEventListener('click', function() {
-                                        const code = pre.querySelector('code');
-                                        const text = code.textContent;
-                                        
-                                        navigator.clipboard.writeText(text).then(function() {
-                                            copyButton.textContent = 'Copied!';
-                                            setTimeout(function() {
-                                                copyButton.textContent = 'Copy';
-                                            }, 2000);
-                                        }).catch(function(err) {
-                                            console.error('Failed to copy: ', err);
-                                        });
-                                    });
-                                    
-                                    container.appendChild(copyButton);
-                                    pre.appendChild(container);
-                                });
-                            }
-                        }
-                        
-                        // Call highlight when the page loads
-                        document.addEventListener('DOMContentLoaded', highlightCode);
-                    </script>
-                </body>
-                </html>
-                """.formatted(getPrismCssUrl(), getPrismJsUrl());
+        // Load the HTML template from the external file
+        String htmlTemplate = ResourceLoader.loadResource("webview/html/base.html");
+        
+        // Replace the placeholders with actual URLs
+        return htmlTemplate
+                .replace("${prismCssUrl}", getPrismCssUrl())
+                .replace("${baseCssUrl}", getBaseCssUrl())
+                .replace("${prismJsUrl}", getPrismJsUrl())
+                .replace("${baseJsUrl}", getBaseJsUrl());
     }
 }

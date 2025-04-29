@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.util.ThemeDetector;
+import com.devoxx.genie.ui.webview.template.ResourceLoader;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,6 +16,7 @@ import java.util.List;
 public class WebViewFileReferenceManager {
 
     private final WebViewJavaScriptExecutor jsExecutor;
+    private boolean fileReferencesScriptAdded = false;
     
     public WebViewFileReferenceManager(WebViewJavaScriptExecutor jsExecutor) {
         this.jsExecutor = jsExecutor;
@@ -61,7 +63,7 @@ public class WebViewFileReferenceManager {
                     .append("\" data-file-path=\"")
                     .append(jsExecutor.escapeHtml(file.getPath()))
                     .append("\" style=\"cursor: pointer;\" onclick=\"openFile('")
-                    .append(jsExecutor.escapeJS(fileId)) // Use escapeJS here since it's inside JavaScript
+                    .append(jsExecutor.escapeJS(fileId))
                     .append("')\">\n")
                     .append("        <span class=\"file-name\">")
                     .append(jsExecutor.escapeHtml(file.getName()))
@@ -75,68 +77,65 @@ public class WebViewFileReferenceManager {
         fileReferencesHtml.append("    </ul>\n")
                 .append("  </div>\n")
                 .append("</div>\n");
+         
+        // Make sure the file references script is loaded
+        ensureFileReferencesScriptLoaded();
                 
-        // JavaScript to add the file references after the message pair
-        String js = "try {\n" +
-                    "  const messagePair = document.getElementById('" + jsExecutor.escapeJS(chatMessageContext.getId()) + "');\n" +
-                    "  if (messagePair) {\n" +
-                    "    const fileRefsContainer = document.createElement('div');\n" +
-                    "    fileRefsContainer.innerHTML = `" + jsExecutor.escapeJS(fileReferencesHtml.toString()) + "`;\n" +
-                    "    \n" +
-                    "    messagePair.parentNode.insertBefore(fileRefsContainer, messagePair.nextSibling);\n" +
-                    "    \n" +
-                    "    if (!window.openFile) {\n" +
-                    "      window.openFile = function(fileId) {\n" +
-                    "        const fileElement = document.getElementById(fileId);\n" +
-                    "        if (fileElement && fileElement.dataset.filePath) {\n" +
-                    "          console.log('Opening file: ' + fileElement.dataset.filePath);\n" +
-                    "          openFileFromJava(fileElement.dataset.filePath);\n" +
-                    "        }\n" +
-                    "      };\n" +
-                    "    }\n" +
-                    "    \n" +
-                    "    if (!window.toggleFileReferences) {\n" +
-                    "      window.toggleFileReferences = function(header) {\n" +
-                    "        const content = header.nextElementSibling;\n" +
-                    "        const toggle = header.querySelector('.file-references-toggle');\n" +
-                    "        if (content.style.display === 'none') {\n" +
-                    "          content.style.display = 'block';\n" +
-                    "          toggle.textContent = '▼';\n" +
-                    "        } else {\n" +
-                    "          content.style.display = 'none';\n" +
-                    "          toggle.textContent = '▶';\n" +
-                    "        }\n" +
-                    "      };\n" +
-                    "    }\n" +
-                    "    \n" +
-                    "    if (!document.getElementById('file-references-styles')) {\n" +
-                    "      const styleEl = document.createElement('style');\n" +
-                    "      styleEl.id = 'file-references-styles';\n" +
-                    "      styleEl.textContent = `\n" +
-                    "        .file-references-container { margin: 10px 0; background-color: " + (ThemeDetector.isDarkTheme() ? "#1e1e1e" : "#f5f5f5") + "; border-radius: 4px; border-left: 4px solid " + (ThemeDetector.isDarkTheme() ? "#64b5f6" : "#2196F3") + "; }\n" +
-                    "        .file-references-header { padding: 10px 8px; cursor: pointer; display: flex; align-items: center; }\n" +
-                    "        .file-references-header:hover { background-color: " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)") + "; }\n" +
-                    "        .file-references-icon { margin-right: 8px; }\n" +
-                    "        .file-references-title { flex-grow: 1; font-weight: bold; }\n" +
-                    "        .file-references-toggle { margin-left: 8px; }\n" +
-                    "        .file-references-content { padding: 10px 8px; border-top: 1px solid " + (ThemeDetector.isDarkTheme() ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)") + "; }\n" +
-                    "        .file-list { list-style-type: none; padding: 0; margin: 0; }\n" +
-                    "        .file-item { padding: 5px 0; }\n" +
-                    "        .file-name { font-weight: bold; margin-right: 8px; }\n" +
-                    "        .file-path { color: " + (ThemeDetector.isDarkTheme() ? "#aaaaaa" : "#666666") + "; font-style: italic; font-size: 0.9em; }\n" +
-                    "      `;\n" +
-                    "      document.head.appendChild(styleEl);\n" +
-                    "    }\n" +
-                    "    \n" +
-                    "    window.scrollTo(0, document.body.scrollHeight);\n" +
-                    "  } else {\n" +
-                    "    console.error('Message pair not found: " + jsExecutor.escapeJS(chatMessageContext.getId()) + "');\n" +
-                    "  }\n" +
-                    "} catch (error) {\n" +
-                    "  console.error('Error adding file references:', error);\n" +
-                    "}";
+        // Call the JavaScript function to add file references and apply styles
+        String js = String.format(
+            "if (typeof addFileReferencesToConversation === 'function') {\n" +
+            "  addFileReferencesToConversation('%s', `%s`);\n" +
+            "  addFileReferencesStyles(%s);\n" +
+            "} else {\n" +
+            "  console.error('File references functions not loaded properly');\n" +
+            "}",
+            jsExecutor.escapeJS(chatMessageContext.getId()),
+            jsExecutor.escapeJS(fileReferencesHtml.toString()),
+            ThemeDetector.isDarkTheme()
+        );
 
         log.info("Executing JavaScript to add file references");
+        jsExecutor.executeJavaScript(js);
+    }
+    
+    /**
+     * Ensure the file references JavaScript is loaded.
+     * This uses the script-loader.js utility to dynamically load scripts.
+     */
+    private void ensureFileReferencesScriptLoaded() {
+        if (!fileReferencesScriptAdded) {
+            // First ensure script loader is available
+            ensureScriptLoaderAvailable();
+            
+            // Load the file references script using the script loader
+            String fileReferencesScript = ResourceLoader.loadResource("webview/js/file-references.js");
+            
+            // Use the script loader to add the file references script
+            String js = "if (typeof loadScriptContent === 'function') {\n" +
+                        "  loadScriptContent('file-references-script', `" + jsExecutor.escapeJS(fileReferencesScript) + "`);\n" +
+                        "} else {\n" +
+                        "  console.error('Script loader not available');\n" +
+                        "}";
+            
+            jsExecutor.executeJavaScript(js);
+            fileReferencesScriptAdded = true;
+        }
+    }
+    
+    /**
+     * Ensure the script loader utility is available.
+     */
+    private void ensureScriptLoaderAvailable() {
+        // Load the script loader if it doesn't exist in the page
+        String scriptLoaderJs = ResourceLoader.loadResource("webview/js/script-loader.js");
+        
+        String js = "if (!document.getElementById('script-loader')) {\n" +
+                    "  const scriptEl = document.createElement('script');\n" +
+                    "  scriptEl.id = 'script-loader';\n" +
+                    "  scriptEl.textContent = `" + jsExecutor.escapeJS(scriptLoaderJs) + "`;\n" +
+                    "  document.head.appendChild(scriptEl);\n" +
+                    "}";
+        
         jsExecutor.executeJavaScript(js);
     }
 }

@@ -46,40 +46,31 @@ public class ChatMessageTemplate extends HtmlTemplate {
 
     @Override
     public @NotNull String generate() {
-        StringBuilder messageHtml = new StringBuilder();
+        // Load the template from resources
+        String messageTemplate = ResourceLoader.loadResource("webview/html/chatmessage.html");
         
-        // Add message-pair container with ID
-        messageHtml.append("<div class=\"message-pair\" id=\"").append(chatMessageContext.getId()).append("\">\n");
-        
-        // Add user message
-        messageHtml.append("    <div class=\"user-message\">\n")
-                .append("        <p>").append(escapeHtml(chatMessageContext.getUserPrompt())).append("</p>\n")
-                .append("    </div>\n");
-        
-        // Add assistant response
-        messageHtml.append("    <div class=\"assistant-message\">\n")
-                .append("        ").append(formatMetadata()).append("\n")
-                .append("        <button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>\n");
-
-        // Parse and render the markdown content
+        // Generate the assistant's content by parsing and rendering markdown
+        StringBuilder assistantContentBuilder = new StringBuilder();
         Node document = markdownParser.parse(chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text());
         Node node = document.getFirstChild();
 
         while (node != null) {
             if (node instanceof FencedCodeBlock fencedCodeBlock) {
-                messageHtml.append(renderCodeBlock(fencedCodeBlock));
+                assistantContentBuilder.append(renderCodeBlock(fencedCodeBlock));
             } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
-                messageHtml.append(renderCodeBlock(indentedCodeBlock));
+                assistantContentBuilder.append(renderCodeBlock(indentedCodeBlock));
             } else {
-                messageHtml.append(htmlRenderer.render(node));
+                assistantContentBuilder.append(htmlRenderer.render(node));
             }
             node = node.getNext();
         }
-
-        messageHtml.append("    </div>\n")
-                .append("</div>\n");
         
-        return messageHtml.toString();
+        // Replace the template variables with actual content
+        return messageTemplate
+                .replace("${messageId}", chatMessageContext.getId())
+                .replace("${userPrompt}", escapeHtml(chatMessageContext.getUserPrompt()))
+                .replace("${metadata}", formatMetadata())
+                .replace("${assistantContent}", assistantContentBuilder.toString());
     }
     
     /**
@@ -162,6 +153,4 @@ public class ChatMessageTemplate extends HtmlTemplate {
         
         return sb.toString();
     }
-    
-
 }

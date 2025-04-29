@@ -1,0 +1,17 @@
+/* Dark Theme Overrides */
+:root {
+    --bg-color: var(--dark-bg);
+    --text-color: var(--dark-text);
+    --code-block-bg: var(--dark-code-bg);
+    --button-bg: var(--dark-button-bg);
+    --button-text-color: var(--dark-button-text);
+    --button-hover-bg: var(--dark-button-hover-bg);
+    --user-msg-bg: var(--dark-user-msg-bg);
+    --assistant-msg-bg: var(--dark-assistant-msg-bg);
+    --metadata-color: var(--dark-metadata-color);
+    --subtext-color: var(--dark-subtext-color);
+    --file-refs-bg: var(--dark-file-refs-bg);
+    --file-refs-header-hover-bg: var(--dark-file-refs-header-hover-bg);
+    --file-refs-divider-color: var(--dark-file-refs-divider-color);
+    --file-path-color: var(--dark-file-path-color);
+}

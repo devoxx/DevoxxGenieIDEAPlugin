@@ -1,0 +1,58 @@
+/* Theme-specific CSS variables */
+
+:root {
+    /* Brand Colors */
+    --devoxx-orange: #FF5400;
+    --devoxx-blue: #0095C9;
+    
+    /* Light Theme Colors */
+    --light-bg: #f5f5f5;
+    --light-text: #2b2b2b;
+    --light-code-bg: #f5f5f5;
+    --light-button-bg: rgba(0, 0, 0, 0.1);
+    --light-button-text: #333333;
+    --light-button-hover-bg: rgba(0, 0, 0, 0.2);
+    --light-user-msg-bg: #fff9f0;
+    --light-assistant-msg-bg: #f0f7ff;
+    --light-metadata-color: #666666;
+    --light-subtext-color: #666666;
+    --light-file-refs-bg: #f5f5f5;
+    --light-file-refs-header-hover-bg: rgba(0, 0, 0, 0.05);
+    --light-file-refs-divider-color: rgba(0, 0, 0, 0.1);
+    --light-file-path-color: #666666;
+    
+    /* Dark Theme Colors */
+    --dark-bg: #2b2b2b;
+    --dark-text: #e0e0e0;
+    --dark-code-bg: #1e1e1e;
+    --dark-button-bg: rgba(255, 255, 255, 0.1);
+    --dark-button-text: #ffffff;
+    --dark-button-hover-bg: rgba(255, 255, 255, 0.2);
+    --dark-user-msg-bg: #2a2520;
+    --dark-assistant-msg-bg: #1e282e;
+    --dark-metadata-color: #aaaaaa;
+    --dark-subtext-color: #aaaaaa;
+    --dark-file-refs-bg: #1e1e1e;
+    --dark-file-refs-header-hover-bg: rgba(255, 255, 255, 0.1);
+    --dark-file-refs-divider-color: rgba(255, 255, 255, 0.1);
+    --dark-file-path-color: #aaaaaa;
+    
+    /* Default theme variables - these will be overridden */
+    --bg-color: var(--light-bg);
+    --text-color: var(--light-text);
+    --code-block-bg: var(--light-code-bg);
+    --button-bg: var(--light-button-bg);
+    --button-text-color: var(--light-button-text);
+    --button-hover-bg: var(--light-button-hover-bg);
+    --user-msg-bg: var(--light-user-msg-bg);
+    --assistant-msg-bg: var(--light-assistant-msg-bg);
+    --metadata-color: var(--light-metadata-color);
+    --link-color: var(--devoxx-orange);
+    --header-color: var(--devoxx-orange);
+    --subtext-color: var(--light-subtext-color);
+    --file-refs-bg: var(--light-file-refs-bg);
+    --file-refs-border: var(--devoxx-orange);
+    --file-refs-header-hover-bg: var(--light-file-refs-header-hover-bg);
+    --file-refs-divider-color: var(--light-file-refs-divider-color);
+    --file-path-color: var(--light-file-path-color);
+}
