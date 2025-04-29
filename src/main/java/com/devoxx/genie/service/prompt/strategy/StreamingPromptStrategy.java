@@ -1,24 +1,30 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.mcp.MCPExecutionService;
+import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.response.streaming.StreamingResponseHandler;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.intellij.openapi.project.Project;
-import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.tool.ToolExecution;
+import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -32,21 +38,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
     public StreamingPromptStrategy(Project project) {
         super(project);
     }
-    
-    /**
-     * Constructor for dependency injection, primarily used for testing.
-     *
-     * @param project The IntelliJ project
-     * @param chatMemoryManager The chat memory manager
-     * @param threadPoolManager The thread pool manager
-     */
-    protected StreamingPromptStrategy(
-            @NotNull Project project,
-            @NotNull ChatMemoryManager chatMemoryManager,
-            @NotNull ThreadPoolManager threadPoolManager) {
-        super(project, chatMemoryManager, threadPoolManager);
-    }
-    
+
     /**
      * Constructor for full dependency injection, primarily used for testing.
      *
@@ -91,7 +83,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         chatMemoryManager.addUserMessage(context);
 
         // Create the streaming handler that will process chunks of response
-        StreamingResponseHandler handler = new StreamingResponseHandler(
+        StreamingResponseHandler streamingResponseHandler = new StreamingResponseHandler(
             context,
             panel.getConversationPanel().webViewController,
             // On complete callback
@@ -107,25 +99,56 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         );
         
         // Store reference for potential cancellation
-        currentHandler.set(handler);
+        currentHandler.set(streamingResponseHandler);
         
         // Check for early cancellation
         if (resultTask.isCancelled()) {
-            handler.stop();
+            streamingResponseHandler.stop();
             return;
         }
 
         // Execute streaming using thread pool
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
-                // Get all messages from memory
-                List<ChatMessage> messages = ChatMemoryService.getInstance().getMessages(context.getProject());
-                
-                // Start streaming the response (this will execute until completion or error)
-                streamingModel.chat(messages, handler);
+                String projectId = project.getLocationHash();
+
+                ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
+
+                Assistant assistant;
+
+                ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider();
+                if (mcpToolProvider != null) {
+                    MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
+
+                    // Add file references to context before processing if we have them
+                    if (!FileListManager.getInstance().isEmpty(project)) {
+                        context.setFileReferences(FileListManager.getInstance().getFiles(project));
+                        MCPService.logDebug("Added file references to MCP context: " +
+                                FileListManager.getInstance().getFiles(project).size() + " files");
+                    }
+                    assistant = AiServices.builder(Assistant.class)
+                            .streamingChatLanguageModel(streamingModel)
+                            .toolProvider(mcpToolProvider)
+                            .chatMemoryProvider(memoryId -> chatMemory)
+                            .build();
+                } else {
+                    assistant = AiServices.builder(Assistant.class)
+                            .streamingChatLanguageModel(streamingModel)
+                            .chatMemoryProvider(memoryId -> chatMemory)
+                            .build();
+                }
+
+                TokenStream chat = assistant.chat(context.getUserPrompt());
+
+                chat.onPartialResponse(streamingResponseHandler::onPartialResponse)
+                    .onToolExecuted(ToolExecution::request)
+                    .onCompleteResponse(streamingResponseHandler::onCompleteResponse)
+                    .onError(streamingResponseHandler::onError)
+                    .start();
+
             } catch (Exception e) {
                 log.error("Error in streaming prompt execution", e);
-                handler.onError(e);
+                streamingResponseHandler.onError(e);
             }
         });
         
@@ -149,5 +172,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         if (handler != null) {
             handler.stop();
         }
+    }
+
+    interface Assistant {
+        TokenStream chat(String userMessage);
     }
 }
