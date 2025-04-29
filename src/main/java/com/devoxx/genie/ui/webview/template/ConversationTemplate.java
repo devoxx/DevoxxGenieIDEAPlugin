@@ -8,12 +8,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ConversationTemplate extends HtmlTemplate {
 
-    // Languages that require additional PrismJS component loading
-    private static final String[] LANGUAGES_WITH_COMPONENTS = {
-            "java", "python", "javascript", "typescript", "csharp", "go", "rust", "kotlin", 
-            "bash", "cpp", "css", "dart", "json", "markdown", "sql", "yaml"
-    };
-
     /**
      * Constructor with WebServer dependency.
      *
@@ -87,31 +81,49 @@ public class ConversationTemplate extends HtmlTemplate {
     private @NotNull String generateScriptTags() {
         StringBuilder scripts = new StringBuilder();
         
-        // Add PrismJS core
-        scripts.append("\n<script src=\"").append(webServer.getPrismJsUrl()).append("\"></script>\n");
+        // First add the script loader utility
+        scripts.append("\n<script id=\"script-loader\">\n")
+               .append(ResourceLoader.loadResource("webview/js/script-loader.js"))
+               .append("\n</script>\n");
         
-        // Add components for detected languages
-        for (String lang : LANGUAGES_WITH_COMPONENTS) {
-            scripts.append("<script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-")
-                    .append(lang)
-                    .append(".min.js\"></script>\n");
-        }
+        // Add PrismJS core - Note: already includes basic language support
+        scripts.append("<script src=\"").append(webServer.getPrismJsUrl()).append("\"></script>\n");
         
-        // Add JavaScript for handling copy functionality and code highlighting
+        // Get conversation JavaScript 
+        String conversationJs = ResourceLoader.loadResource("webview/js/conversation.js");
+        String fileReferencesJs = ResourceLoader.loadResource("webview/js/file-references.js");
+        
+        // Add script to load the JavaScript dynamically
         scripts.append("<script>\n")
-                .append(generateJavaScript())
-                .append("</script>\n");
+               .append("  // Load the conversation JavaScript\n")
+               .append("  loadScriptContent('conversation-script', `")
+               .append(escapeJS(conversationJs))
+               .append("`);\n\n")
+               .append("  // Load the file references JavaScript\n")
+               .append("  loadScriptContent('file-references-script', `")
+               .append(escapeJS(fileReferencesJs))
+               .append("`);\n\n")
+               .append("  // Initialize theme for file references\n")
+               .append("  document.addEventListener('DOMContentLoaded', function() {\n")
+               .append("    if (typeof addFileReferencesStyles === 'function') {\n")
+               .append("      addFileReferencesStyles(").append(com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme()).append(");\n")
+               .append("    }\n")
+               .append("  });\n")
+               .append("</script>\n");
         
         return scripts.toString();
     }
     
     /**
-     * Generate custom JavaScript functions for the conversation.
-     * 
-     * @return JavaScript functions as a string
+     * Escapes JavaScript string literals.
+     * Prevents issues when inserting JavaScript inside template literals.
+     *
+     * @param text The text to escape
+     * @return Escaped text suitable for use in JavaScript
      */
-    private String generateJavaScript() {
-        // Load JavaScript from external file
-        return ResourceLoader.loadResource("webview/js/conversation.js");
+    public String escapeJS(@NotNull String text) {
+        return text.replace("\\", "\\\\")
+                .replace("`", "\\`")
+                .replace("${", "\\${");
     }
 }
