@@ -52,6 +52,8 @@ public class ConversationUIController implements CustomPromptChangeListener {
         
         // Initialize UI components
         this.conversationLabel = new JLabel("New conversation " + getCurrentTimestamp());
+        // Apply standard font that's used in other components
+        this.conversationLabel.setFont(com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.getDropdownFont());
         this.settingsButton = createActionButton(CogIcon, e -> SettingsDialogUtil.showSettingsDialog(project));
     }
 
@@ -65,6 +67,8 @@ public class ConversationUIController implements CustomPromptChangeListener {
 
         // Wrap the label in a panel to prevent it from being compressed too much
         JPanel labelPanel = new JPanel(new BorderLayout());
+        // Add padding to the label to match the spacing of other text inputs
+        labelPanel.setBorder(JBUI.Borders.empty(0, 10, 0, 0)); // 10 pixels of left padding
         labelPanel.add(conversationLabel, BorderLayout.WEST);
         // Add some minimum size to ensure the label has space
         labelPanel.setMinimumSize(new Dimension(100, 30));
