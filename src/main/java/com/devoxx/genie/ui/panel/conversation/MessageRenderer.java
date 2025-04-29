@@ -57,7 +57,8 @@ public class MessageRenderer implements FileReferencesListener {
      */
     public void addUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
         webViewController.addUserPromptMessage(chatMessageContext);
-        scrollToBottom();
+        // Don't automatically scroll to bottom for first messages in a new conversation
+        // This is handled specifically for the first message to maintain header spacing
     }
 
     /**

@@ -102,7 +102,7 @@ public class ConversationUIController implements CustomPromptChangeListener {
     
     /**
      * Clear the conversation content without showing the welcome message.
-     * Used when restoring conversation history.
+     * Used when restoring conversation history or submitting the first prompt.
      */
     public void clearWithoutWelcome() {
         messageRenderer.clear();

@@ -187,8 +187,10 @@ public class WebViewAIMessageUpdater {
                 userMessage + "\n" +
                 aiMessagePlaceholder + "\n" +
                 "</div>";
+                
+        // Apply a CSS class to ensure proper spacing when this is the first message
         
-        // JavaScript to add the message to the conversation and scroll to bottom
+        // JavaScript to add the message to the conversation
         // First check if the message ID already exists to avoid duplicates
         String js = "try {\n" +
                     "  if (!document.getElementById('" + jsExecutor.escapeJS(messageId) + "')) {\n" +
@@ -198,8 +200,17 @@ public class WebViewAIMessageUpdater {
                     "    while (tempDiv.firstChild) {\n" +
                     "      container.appendChild(tempDiv.firstChild);\n" +
                     "    }\n" +
+                    "    // Check if this is the first message to add proper spacing\n" +
+                    "    if (container.childElementCount === 1) {\n" +
+                    "      // Add top margin to the first message pair for spacing below the header\n" +
+                    "      const firstMessage = container.firstElementChild;\n" +
+                    "      if (firstMessage) {\n" +
+                    "        firstMessage.style.marginTop = '30px';\n" +
+                    "      }\n" +
+                    "      // Make sure we're at the top of the container\n" +
+                    "      window.scrollTo(0, 0);\n" +
+                    "    }\n" +
                     "  }\n" +
-                    "  window.scrollTo(0, document.body.scrollHeight);\n" +
                     "} catch (error) {\n" +
                     "  console.error('Error adding user message:', error);\n" +
                     "}\n";

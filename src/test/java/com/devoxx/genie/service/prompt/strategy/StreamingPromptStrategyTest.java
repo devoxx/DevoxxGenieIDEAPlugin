@@ -124,7 +124,9 @@ class StreamingPromptStrategyTest {
         when(mockChatMessageContext.getStreamingChatLanguageModel()).thenReturn(mockStreamingModel);
         // Mock userPrompt to prevent "text cannot be null or blank" exception
         when(mockChatMessageContext.getUserPrompt()).thenReturn("Test user prompt");
-        
+        // Ensure getUserMessage() returns a valid object before the test starts
+        when(mockChatMessageContext.getUserMessage()).thenReturn(dev.langchain4j.data.message.UserMessage.from("Test user prompt"));
+
         // Mock the behavior of addUserMessageToContext to set a user message on the context
         doAnswer(invocation -> {
             ChatMessageContext ctx = invocation.getArgument(0);
