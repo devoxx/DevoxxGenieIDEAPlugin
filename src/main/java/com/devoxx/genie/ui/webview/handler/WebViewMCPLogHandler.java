@@ -53,7 +53,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
         
         // Filter to get only the desired log messages
         List<String> filteredLogs = mcpLogs.stream()
-                .filter(log -> !log.startsWith("<") && !log.startsWith(">") && !log.startsWith("{"))
+                .filter(log -> !log.startsWith("<") && !log.startsWith(">"))
                 .toList();
 
         // Add filtered logs to display
