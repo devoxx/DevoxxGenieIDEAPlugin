@@ -23,13 +23,13 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
-    private final ChatMessageContext context;
-    private final long startTime;
-    private final Project project;
-    private final Consumer<ChatResponse> onCompleteCallback;
-    private final Consumer<Throwable> onErrorCallback;
+    private ChatMessageContext context;
+    private long startTime;
+    private Project project;
+    private Consumer<ChatResponse> onCompleteCallback;
+    private Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
-    private final ConversationWebViewController conversationWebViewController;
+    private ConversationWebViewController conversationWebViewController;
 
     // Track if we've added the initial message and accumulate the streamed tokens
     private boolean hasAddedInitialMessage = false;
@@ -129,7 +129,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     }
 
     @Override
-    public void onError(Throwable error) {
+    public void onError(@NotNull Throwable error) {
         log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
         StreamingException streamingError = new StreamingException(
             "Error during streaming response", error);
