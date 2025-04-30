@@ -91,18 +91,14 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         JTabbedPane tabbedPane = new JBTabbedPane();
         
         // Create panels for each tab
-        JPanel generalPanel = createGeneralPanel();
         JPanel colorsPanel = createColorsPanel();
         JPanel spacingPanel = createSpacingPanel();
         JPanel fontsPanel = createFontsPanel();
-        // Preview panel removed
         
-        // Add tabs
-        tabbedPane.addTab("General", generalPanel);
+        // Add tabs - Colors is now the first tab 
         tabbedPane.addTab("Colors", colorsPanel);
         tabbedPane.addTab("Spacing", spacingPanel);
         tabbedPane.addTab("Fonts", fontsPanel);
-        // Preview tab removed
         
         panel.add(tabbedPane, BorderLayout.CENTER);
         
@@ -116,37 +112,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         panel.add(buttonPanel, BorderLayout.SOUTH);
     }
     
-    private @NotNull JPanel createGeneralPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = JBUI.insets(5);
-        gbc.weightx = 1.0;
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        
-        // Ensure useRoundedCorners and cornerRadiusSpinner are initialized
-        if (useRoundedCorners != null && cornerRadiusSpinner != null) {
-            addSection(panel, gbc, "General Appearance Settings");
-            
-            addSettingRow(panel, gbc, "Use rounded corners:", useRoundedCorners);
-            addSettingRow(panel, gbc, "Corner radius:", cornerRadiusSpinner);
-            
-            // Add empty panel to push everything to the top
-            gbc.weighty = 1.0;
-            gbc.fill = GridBagConstraints.BOTH;
-            gbc.gridx = 0;
-            gbc.gridy++;
-            panel.add(new JPanel(), gbc);
-        } else {
-            // Add a placeholder if components aren't initialized
-            JLabel placeholderLabel = new JLabel("Settings components are being initialized...");
-            panel.add(placeholderLabel, new GridBagConstraints());
-        }
-        
-        return panel;
-    }
+    // General panel removed as its settings were moved to Spacing panel
     
     private @NotNull JPanel createColorsPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -163,10 +129,13 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             userMessageBackgroundColor != null && assistantMessageBackgroundColor != null) {
             
             addSection(panel, gbc, "Message Colors");
-
+            
+            // Group user message colors
             addSettingRow(panel, gbc, "User message text color:", createColorPickerField(userMessageTextColor));
             addSettingRow(panel, gbc, "User message background color:", createColorPickerField(userMessageBackgroundColor));
             addSettingRow(panel, gbc, "User message border color:", createColorPickerField(userMessageBorderColor));
+            
+            // Group assistant message colors
             addSettingRow(panel, gbc, "Assistant message text color:", createColorPickerField(assistantMessageTextColor));
             addSettingRow(panel, gbc, "Assistant message background color:", createColorPickerField(assistantMessageBackgroundColor));
             addSettingRow(panel, gbc, "Assistant message border color:", createColorPickerField(assistantMessageBorderColor));
@@ -206,6 +175,10 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             addSettingRow(panel, gbc, "Message internal padding (px):", messagePaddingSpinner);
             addSettingRow(panel, gbc, "Message external margin (px):", messageMarginSpinner);
             addSettingRow(panel, gbc, "Border width (px):", borderWidthSpinner);
+            
+            // Add rounded corners settings previously in General tab
+            addSettingRow(panel, gbc, "Use rounded corners:", useRoundedCorners);
+            addSettingRow(panel, gbc, "Corner radius (px):", cornerRadiusSpinner);
             
             // Add empty panel to push everything to the top
             gbc.weighty = 1.0;
