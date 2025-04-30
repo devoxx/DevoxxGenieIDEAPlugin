@@ -21,7 +21,7 @@ With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a 
 [![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
 
 ### 🗂️ Video Tutorials:
-
+- [Agentic programming with DevoxxGenie (VoxxedDays Bucharest 2025)](https://www.youtube.com/watch?v=ZRNx9ZOoxsg)
 - [DevoxxGenie in action (Devoxx Belgium 2024)](https://www.youtube.com/watch?v=c5EyVLAXaGQ)
 - [How ChatMemory works](https://www.youtube.com/watch?v=NRAe4d7n6_4)
 - [Hands-on with DevoxxGenie](https://youtu.be/Rs8S4rMTR9s?feature=shared)
