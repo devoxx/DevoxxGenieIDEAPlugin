@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.topic;
 
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.listener.*;
+import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
 import com.intellij.util.messages.Topic;
 
 public class AppTopics {
@@ -52,5 +53,8 @@ public class AppTopics {
 
     public static final Topic<ConversationSelectionListener> CONVERSATION_SELECTION_TOPIC =
             Topic.create("conversationSelection", ConversationSelectionListener.class);
+
+    public static final Topic<AppearanceSettingsEvents> APPEARANCE_SETTINGS_TOPIC =
+            Topic.create("DevoxxGenie Appearance Settings", AppearanceSettingsEvents.class);
 
 }

@@ -202,6 +202,30 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Getter
     private Boolean mcpDebugLogsEnabled = false;
 
+    // Appearance settings
+    private Double lineHeight = 1.6;  // Default line height multiplier
+    private Integer messagePadding = 10;  // Padding inside messages in px
+    private Integer messageMargin = 10;  // Margin between messages in px
+    private Integer borderWidth = 4;  // Border width in px
+    private Integer cornerRadius = 4;  // Border radius in px
+    private String userMessageBorderColor = "#FF5400";  // Devoxx orange
+    private String assistantMessageBorderColor = "#0095C9";  // Devoxx blue
+    private String userMessageBackgroundColor = "#fff9f0";  // Light theme default
+    private String assistantMessageBackgroundColor = "#f0f7ff";  // Light theme default
+    private String userMessageTextColor = "#000000";  // Default text color for user messages
+    private String assistantMessageTextColor = "#000000";  // Default text color for assistant messages
+    @Getter
+    @Setter
+    private Boolean useCustomFontSize = false;
+    private Integer customFontSize = 14;
+    @Getter
+    @Setter
+    private Boolean useCustomCodeFontSize = false;
+    private Integer customCodeFontSize = 14;
+    @Getter
+    @Setter
+    private Boolean useRoundedCorners = true;
+
     @Setter(AccessLevel.NONE)
     private List<Runnable> loadListeners = new ArrayList<>();
 
