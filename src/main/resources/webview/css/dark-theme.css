@@ -6,6 +6,7 @@
     --button-bg: var(--dark-button-bg);
     --button-text-color: var(--dark-button-text);
     --button-hover-bg: var(--dark-button-hover-bg);
+    --button-active-bg: var(--dark-button-active-bg);
     --user-msg-bg: var(--dark-user-msg-bg);
     --assistant-msg-bg: var(--dark-assistant-msg-bg);
     --metadata-color: var(--dark-metadata-color);
@@ -14,4 +15,15 @@
     --file-refs-header-hover-bg: var(--dark-file-refs-header-hover-bg);
     --file-refs-divider-color: var(--dark-file-refs-divider-color);
     --file-path-color: var(--dark-file-path-color);
+}
+
+/* Ensure copy buttons are visible in dark theme */
+.copy-user-message-button {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.copy-user-message-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }

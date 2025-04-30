@@ -25,6 +25,49 @@ function copyMessageResponse(button) {
     });
 }
 
+function copyUserMessage(button) {
+    const userMessage = button.closest('.user-message');
+    // Get all the text from the user message paragraph(s)
+    let contentToCopy = '';
+    
+    // Try to get text from paragraphs or directly from the div
+    const paragraphs = userMessage.querySelectorAll('p');
+    if (paragraphs && paragraphs.length > 0) {
+        contentToCopy = Array.from(paragraphs)
+            .map(p => p.textContent)
+            .join('\n')
+            .trim();
+    } else {
+        // Fallback to get all text content except the button
+        contentToCopy = Array.from(userMessage.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE || 
+                    (node.nodeType === Node.ELEMENT_NODE && 
+                     !node.classList.contains('copy-user-message-button')))
+            .map(node => node.textContent)
+            .join('\n')
+            .trim();
+    }
+
+    console.log("Copying user message: ", contentToCopy);
+    
+    navigator.clipboard.writeText(contentToCopy).then(function() {
+        // Add animation class
+        button.classList.add('copy-button-flash');
+        button.textContent = 'Copied!';
+
+        setTimeout(function() {
+            button.textContent = 'Copy';
+            button.classList.remove('copy-button-flash');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+        button.textContent = 'Error!';
+        setTimeout(function() {
+            button.textContent = 'Copy';
+        }, 2000);
+    });
+}
+
 function toggleFileReferences(header) {
     const content = header.nextElementSibling;
     const toggle = header.querySelector('.file-references-toggle');
@@ -67,9 +110,68 @@ function highlightCodeBlocks() {
         });
     }
 }
+// Add copy buttons to user messages that don't have them
+function addCopyButtonsToUserMessages() {
+    document.querySelectorAll('.user-message:not(.processed-copy-button)').forEach(function(userMessage) {
+        // Mark the message as processed
+        userMessage.classList.add('processed-copy-button');
+        
+        // Check if it already has a copy button
+        if (!userMessage.querySelector('.copy-user-message-button')) {
+            // Create the button
+            const button = document.createElement('button');
+            button.className = 'copy-user-message-button';
+            button.textContent = 'Copy';
+            button.onclick = function() { copyUserMessage(this); };
+            
+            // Add the button to the user message
+            userMessage.insertBefore(button, userMessage.firstChild);
+            
+            // Ensure the text doesn't overlap with the button by adding margin wrapper if needed
+            if (!userMessage.querySelector('div[style*="margin-right"]')) {
+                // Get all content except the button
+                const contentNodes = Array.from(userMessage.childNodes)
+                    .filter(node => node !== button);
+                
+                // Create wrapper div with margin
+                const wrapper = document.createElement('div');
+                wrapper.style.marginRight = '50px';
+                
+                // Move content to wrapper
+                contentNodes.forEach(node => {
+                    wrapper.appendChild(node.cloneNode(true));
+                    if (node.parentNode === userMessage) {
+                        userMessage.removeChild(node);
+                    }
+                });
+                
+                // Add wrapper to message
+                userMessage.appendChild(wrapper);
+            }
+        }
+    });
+}
+
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     highlightCodeBlocks();
+    addCopyButtonsToUserMessages();
     // Ensure the whole page is visible
     document.body.style.display = 'block';
+    
+    // Use a MutationObserver to detect when new messages are added
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                // Check for new user messages and add copy buttons
+                addCopyButtonsToUserMessages();
+            }
+        });
+    });
+    
+    // Start observing the conversation container for changes
+    const container = document.getElementById('conversation-container');
+    if (container) {
+        observer.observe(container, { childList: true, subtree: true });
+    }
 });
