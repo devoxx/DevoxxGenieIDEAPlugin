@@ -47,6 +47,7 @@ public class ConversationTemplate extends HtmlTemplate {
         String themeVariables = ResourceLoader.loadResource("webview/css/theme-variables.css");
         String darkThemeOverrides = ResourceLoader.loadResource("webview/css/dark-theme.css");
         String cssTemplate = ResourceLoader.loadResource("webview/css/conversation.css");
+        String appearanceTemplate = ResourceLoader.loadResource("webview/css/appearance-custom.css");
         
         // Apply font size variables to the CSS template
         String css = cssTemplate
@@ -56,6 +57,26 @@ public class ConversationTemplate extends HtmlTemplate {
                 .replace("${headerFontSize}", String.valueOf(headerFontSize))
                 .replace("${subtextFontSize}", String.valueOf(subtextFontSize))
                 .replace("${filePathFontSize}", String.valueOf(filePathFontSize));
+        
+        // Apply appearance settings to the custom appearance CSS template
+        com.devoxx.genie.ui.settings.DevoxxGenieStateService stateService = 
+                com.devoxx.genie.ui.settings.DevoxxGenieStateService.getInstance();
+        
+        String customAppearanceCss = appearanceTemplate
+                .replace("${lineHeight}", String.valueOf(stateService.getLineHeight()))
+                .replace("${messagePadding}", String.valueOf(stateService.getMessagePadding()))
+                .replace("${messageMargin}", String.valueOf(stateService.getMessageMargin()))
+                .replace("${borderWidth}", String.valueOf(stateService.getBorderWidth()))
+                .replace("${cornerRadius}", String.valueOf(stateService.getCornerRadius()))
+                .replace("${userMessageBorderColor}", stateService.getUserMessageBorderColor())
+                .replace("${assistantMessageBorderColor}", stateService.getAssistantMessageBorderColor())
+                .replace("${userMessageBackgroundColor}", stateService.getUserMessageBackgroundColor())
+                .replace("${assistantMessageBackgroundColor}", stateService.getAssistantMessageBackgroundColor())
+                .replace("${userMessageTextColor}", stateService.getUserMessageTextColor())
+                .replace("${assistantMessageTextColor}", stateService.getAssistantMessageTextColor())
+                .replace("${customFontSize}", String.valueOf(stateService.getCustomFontSize()))
+                .replace("${customCodeFontSize}", String.valueOf(stateService.getCustomCodeFontSize()))
+                .replace("${useRoundedCorners}", String.valueOf(stateService.getUseRoundedCorners()));
         
         // Return the combined styles, including dark theme overrides if needed
         StringBuilder styleBuilder = new StringBuilder();
@@ -68,6 +89,10 @@ public class ConversationTemplate extends HtmlTemplate {
         }
         
         styleBuilder.append(css).append("\n");
+        
+        // Apply custom appearance styles
+        styleBuilder.append(customAppearanceCss).append("\n");
+        
         styleBuilder.append("</style>");
         
         return styleBuilder.toString();

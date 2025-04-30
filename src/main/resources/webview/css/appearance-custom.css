@@ -1,0 +1,51 @@
+/* Custom appearance settings CSS template */
+/* This file will be processed with variables like ${cornerRadius} */
+
+:root {
+    /* Custom appearance variables */
+    --custom-line-height: ${lineHeight};
+    --custom-message-padding: ${messagePadding}px;
+    --custom-message-margin: ${messageMargin}px;
+    --custom-border-width: ${borderWidth}px;
+    --custom-corner-radius: ${cornerRadius}px;
+    --custom-user-message-border-color: ${userMessageBorderColor};
+    --custom-assistant-message-border-color: ${assistantMessageBorderColor};
+    --custom-user-message-background-color: ${userMessageBackgroundColor};
+    --custom-assistant-message-background-color: ${assistantMessageBackgroundColor};
+    --custom-user-message-text-color: ${userMessageTextColor};
+    --custom-assistant-message-text-color: ${assistantMessageTextColor};
+    --custom-font-size: ${customFontSize}px;
+    --custom-code-font-size: ${customCodeFontSize}px;
+}
+
+/* Apply custom settings to the appropriate elements */
+body {
+    line-height: var(--custom-line-height);
+}
+
+.user-message {
+    background-color: var(--custom-user-message-background-color);
+    border-left: var(--custom-border-width) solid var(--custom-user-message-border-color);
+    padding: var(--custom-message-padding) 8px;
+    margin: var(--custom-message-margin) 0;
+    border-radius: ${useRoundedCorners ? 'var(--custom-corner-radius)' : '0'}px;
+    color: var(--custom-user-message-text-color);
+}
+
+.assistant-message {
+    background-color: var(--custom-assistant-message-background-color);
+    border-left: var(--custom-border-width) solid var(--custom-assistant-message-border-color);
+    padding: var(--custom-message-padding) 8px;
+    margin: var(--custom-message-margin) 0;
+    border-radius: ${useRoundedCorners ? 'var(--custom-corner-radius)' : '0'}px;
+    color: var(--custom-assistant-message-text-color);
+}
+
+/* Apply custom font sizes if enabled */
+${useCustomFontSize ? 'body { font-size: var(--custom-font-size); }' : ''}
+${useCustomCodeFontSize ? 'code { font-size: var(--custom-code-font-size); }' : ''}
+
+/* Adjust other elements to match custom settings */
+.message-pair {
+    margin-bottom: calc(var(--custom-message-margin) * 2);
+}

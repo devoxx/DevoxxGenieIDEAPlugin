@@ -62,7 +62,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         String resourceId = webServer.addDynamicResource(htmlContent);
         String resourceUrl = webServer.getResourceUrl(resourceId);
 
-        log.info("Loading ConversationWebView content from: " + resourceUrl);
+        log.info("Loading ConversationWebView content from: {}", resourceUrl);
 
         // Create browser and load content
         browser = WebViewFactory.createBrowser(resourceUrl);

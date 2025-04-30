@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.6.1</h2>
+        <UL>
+            <LI>Feat: Appearance settings added so we can customize UI output panel</LI>
+        </UL>
         <h2>v0.6.0</h2>
         <UL>
             <LI>Feat: WebView-based response panel with PrismJS for syntax highlighting</LI>
@@ -133,6 +137,11 @@
                              instance="com.devoxx.genie.ui.settings.rag.RAGSettingsConfigurable"
                              displayName="RAG"/>
 
+        <projectConfigurable id="com.devoxx.genie.appearance"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.appearance.AppearanceSettingsConfigurable"
+                             displayName="Appearance"/>
+
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
@@ -182,6 +191,8 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
         <!-- New service for WebView implementation -->
         <applicationService serviceImplementation="com.devoxx.genie.ui.webview.WebServer"/>
+        <!-- Appearance settings handler -->
+        <applicationService serviceImplementation="com.devoxx.genie.ui.settings.appearance.AppearanceRefreshHandler"/>
     </extensions>
 
     <extensionPoints>

@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.webview;
 
-import com.devoxx.genie.ui.webview.template.ResourceLoader;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -17,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.devoxx.genie.ui.webview.template.ResourceLoader.loadResource;
+
 @Slf4j
 public class WebServer {
     private static WebServer instance;
@@ -25,11 +26,11 @@ public class WebServer {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
-
-    private static final String PRISM_CSS_RESOURCE = "/prism.css";
-    private static final String PRISM_JS_RESOURCE = "/prism.js";
-    private static final String BASE_CSS_RESOURCE = "/base.css";
-    private static final String BASE_JS_RESOURCE = "/base.js";
+    private final Map<String, String> scripts = new ConcurrentHashMap<>();
+    public static final String PRISM_JS = "prism.js";
+    public static final String BASE_CSS = "base.css";
+    public static final String BASE_JS = "base.js";
+    public static final String BASE_HTML = "base.html";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -40,11 +41,6 @@ public class WebServer {
             instance = new WebServer();
         }
         return instance;
-    }
-
-    private void initializeEmbeddedResources() {
-        // Add base HTML template
-        resources.put("/base.html", getBaseHtml());
     }
 
     public void start() {
@@ -73,7 +69,7 @@ public class WebServer {
 
             ChannelFuture future = bootstrap.bind(port).sync();
             serverChannel = future.channel();
-            log.info("Web server started on port " + port);
+            log.info("Web server started on port {}", port);
         } catch (Exception e) {
             log.error("Failed to start web server", e);
             stop();
@@ -106,13 +102,37 @@ public class WebServer {
 
     public String addDynamicResource(@NotNull String content) {
         String resourceId = "/dynamic/" + System.currentTimeMillis() + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
-        log.info("Adding dynamic resource: " + resourceId + ", content length: " + content.length());
+        log.info("Adding dynamic resource: {} - content length: {}", resourceId, content.length());
         resources.put(resourceId, content);
         return resourceId;
     }
 
     public String getResourceUrl(String resourcePath) {
         return getServerUrl() + resourcePath;
+    }
+    
+    /**
+     * Add a dynamic JavaScript script that can be injected into web views.
+     *
+     * @param scriptId unique identifier for the script
+     * @param content  JavaScript content
+     */
+    public void addDynamicScript(@NotNull String scriptId, @NotNull String content) {
+        String resourcePath = "/scripts/" + scriptId + ".js";
+        log.info("Adding dynamic script: {}, content length: {}", resourcePath, content.length());
+        resources.put(resourcePath, content);
+        scripts.put(scriptId, resourcePath);
+    }
+    
+    /**
+     * Get the URL for a previously registered script.
+     * 
+     * @param scriptId the script identifier
+     * @return URL to the script, or null if not found
+     */
+    public String getScriptUrl(String scriptId) {
+        String path = scripts.get(scriptId);
+        return path != null ? getServerUrl() + path : null;
     }
 
     private int findAvailablePort() {
@@ -127,80 +147,33 @@ public class WebServer {
         }
     }
 
-    /**
-     * Get the PrismJS CSS URL.
-     * 
-     * @return URL to PrismJS CSS
-     */
+    public void initializeEmbeddedResources() {
+        String baseHTML = loadResource("webview/html/base.html")
+                .replace("${prismCssUrl}", getPrismCssUrl())
+                .replace("${baseCssUrl}", getBaseCssUrl())
+                .replace("${prismJsUrl}", getPrismJsUrl())
+                .replace("${baseJsUrl}", getBaseJsUrl());
+        resources.put(BASE_HTML, baseHTML);
+    }
+
     public String getPrismCssUrl() {
-        if (!resources.containsKey(PRISM_CSS_RESOURCE)) {
-            try {
-                String cssContent = new String(getClass().getResourceAsStream("/webview/prism/1.29.0/prism.css").readAllBytes());
-                resources.put(PRISM_CSS_RESOURCE, cssContent);
-                log.info("Loaded Prism CSS from resources");
-            } catch (Exception e) {
-                log.error("Failed to load Prism CSS from resources", e);
-            }
-        }
-        return getServerUrl() + PRISM_CSS_RESOURCE;
+        resources.put("prism.css", loadResource("webview/prism/prism.css"));
+        return resources.get("prism.css");
     }
-    
-    /**
-     * Get the PrismJS JS URL.
-     * 
-     * @return URL to PrismJS JavaScript
-     */
+
     public String getPrismJsUrl() {
-        if (!resources.containsKey(PRISM_JS_RESOURCE)) {
-            try (var inputStream = getClass().getResourceAsStream("/webview/prism/1.29.0/prism.js")) {
-                if (inputStream != null) {
-                    String jsContent = new String(inputStream.readAllBytes());
-                    resources.put(PRISM_JS_RESOURCE, jsContent);
-                    log.info("Loaded Prism JS from resources");
-                } else {
-                    log.error("Prism JS resource not found");
-                }
-            } catch (Exception e) {
-                log.error("Failed to load Prism JS from resources", e);
-            }
-        }
-        return getServerUrl() + PRISM_JS_RESOURCE;
+        resources.put(PRISM_JS, loadResource("webview/prism/prism.js"));
+        return resources.get(PRISM_JS);
     }
     
-    /**
-     * Get the base CSS URL.
-     * 
-     * @return URL to base CSS
-     */
     public String getBaseCssUrl() {
-        if (!resources.containsKey(BASE_CSS_RESOURCE)) {
-            try {
-                String cssContent = ResourceLoader.loadResource("webview/css/base.css");
-                resources.put(BASE_CSS_RESOURCE, cssContent);
-                log.info("Loaded base CSS from resources");
-            } catch (Exception e) {
-                log.error("Failed to load base CSS from resources", e);
-            }
-        }
-        return getServerUrl() + BASE_CSS_RESOURCE;
+        resources.put(BASE_CSS, loadResource("webview/css/base.css"));
+        return resources.get(BASE_CSS);
     }
-    
-    /**
-     * Get the base JS URL.
-     * 
-     * @return URL to base JavaScript
-     */
+
     public String getBaseJsUrl() {
-        if (!resources.containsKey(BASE_JS_RESOURCE)) {
-            try {
-                String jsContent = ResourceLoader.loadResource("webview/js/base.js");
-                resources.put(BASE_JS_RESOURCE, jsContent);
-                log.info("Loaded base JS from resources");
-            } catch (Exception e) {
-                log.error("Failed to load base JS from resources", e);
-            }
-        }
-        return getServerUrl() + BASE_JS_RESOURCE;
+        resources.put(BASE_JS, loadResource("webview/js/base.js"));
+        return resources.get(BASE_JS);
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -223,7 +196,7 @@ public class WebServer {
                         HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buffer);
                 
                 String contentType = getContentType(uri);
-                log.info("Serving content with type: " + contentType);
+                log.info("Serving content with type: {}", contentType);
                 
                 response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
                 response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
@@ -235,7 +208,7 @@ public class WebServer {
                 
                 ctx.writeAndFlush(response);
             } else {
-                log.warn("Resource not found: " + uri);
+                log.warn("Resource not found: {}", uri);
                 ByteBuf buffer = Unpooled.copiedBuffer("Resource not found: " + uri, CharsetUtil.UTF_8);
                 FullHttpResponse response = new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, buffer);
@@ -264,28 +237,5 @@ public class WebServer {
             log.error("Exception in web server handler", cause);
             ctx.close();
         }
-    }
-
-    /**
-     * Generate the base HTML template
-     * 
-     * @return Base HTML template with proper resource URLs
-     */
-    private @NotNull String getBaseHtml() {
-        // Initialize all resources
-        getPrismCssUrl();
-        getPrismJsUrl();
-        getBaseCssUrl();
-        getBaseJsUrl();
-
-        // Load the HTML template from the external file
-        String htmlTemplate = ResourceLoader.loadResource("webview/html/base.html");
-        
-        // Replace the placeholders with actual URLs
-        return htmlTemplate
-                .replace("${prismCssUrl}", getPrismCssUrl())
-                .replace("${baseCssUrl}", getBaseCssUrl())
-                .replace("${prismJsUrl}", getPrismJsUrl())
-                .replace("${baseJsUrl}", getBaseJsUrl());
     }
 }
