@@ -38,6 +38,7 @@
         <h2>v0.6.1</h2>
         <UL>
             <LI>Feat: Appearance settings added so we can customize UI output panel</LI>
+            <LI>Fix #671 : Copy user prompt, and response and use markdown</LI>
         </UL>
         <h2>v0.6.0</h2>
         <UL>

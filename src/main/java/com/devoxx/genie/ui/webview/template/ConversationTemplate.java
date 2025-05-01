@@ -114,6 +114,11 @@ public class ConversationTemplate extends HtmlTemplate {
         // Add PrismJS core - Note: already includes basic language support
         scripts.append("<script src=\"").append(webServer.getPrismJsUrl()).append("\"></script>\n");
         
+        // Add Turndown.js for HTML to Markdown conversion
+        scripts.append("<script>\n")
+               .append(ResourceLoader.loadResource("webview/js/lib/turndown.js"))
+               .append("\n</script>\n");
+        
         // Get conversation JavaScript 
         String conversationJs = ResourceLoader.loadResource("webview/js/conversation.js");
         String fileReferencesJs = ResourceLoader.loadResource("webview/js/file-references.js");

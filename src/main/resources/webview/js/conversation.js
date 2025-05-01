@@ -1,6 +1,46 @@
-function copyToClipboard(contentToCopy, button) {
+function copyToClipboard(contentToCopy, button, isHtml = false) {
     // Store the original content of the button
     const originalContent = button.innerHTML;
+    
+    // If the content is HTML and we need to convert it to Markdown
+    if (isHtml) {
+        // Use Turndown library to convert HTML to Markdown
+        const turndownService = new TurndownService({
+            headingStyle: 'atx',
+            codeBlockStyle: 'fenced',
+            emDelimiter: '*',
+            strongDelimiter: '**'
+        });
+        
+        // Configure Turndown to handle code blocks better
+        turndownService.addRule('fencedCodeBlock', {
+            filter: function (node, options) {
+                return (
+                    node.nodeName === 'PRE' &&
+                    node.firstChild &&
+                    node.firstChild.nodeName === 'CODE'
+                )
+            },
+            replacement: function (content, node, options) {
+                const className = node.firstChild.getAttribute('class') || '';
+                const language = (className.match(/language-(\w+)/) || [null, ''])[1];
+                const code = node.firstChild.textContent;
+                return '\n\n```' + language + '\n' + code + '\n```\n\n';
+            }
+        });
+        
+        // Skip certain divs like metadata and copy buttons
+        turndownService.remove(function(node) {
+            return (
+                node.nodeName === 'DIV' && 
+                (node.classList.contains('metadata-info') || 
+                 node.classList.contains('copy-response-button') ||
+                 node.classList.contains('loading-indicator'))
+            );
+        });
+        
+        contentToCopy = turndownService.turndown(contentToCopy);
+    }
     
     navigator.clipboard.writeText(contentToCopy).then(function () {
         // Add animation class
@@ -22,40 +62,49 @@ function copyToClipboard(contentToCopy, button) {
 
 function copyMessageResponse(button) {
     const assistantMessage = button.closest('.assistant-message');
-    // Get all content except the Copy button and metadata
-    const contentToCopy = Array.from(assistantMessage.childNodes)
-        .filter(node => !node.classList || (!node.classList.contains('copy-response-button') && !node.classList.contains('metadata-info')))
-        .map(node => node.textContent || node.innerText)
-        .join('\n')
-        .trim();
-
-    copyToClipboard(contentToCopy, button);
+    
+    // Create a clone of the assistant message to work with
+    const clonedMessage = assistantMessage.cloneNode(true);
+    
+    // Remove the copy button and metadata from the clone
+    const copyButton = clonedMessage.querySelector('.copy-response-button');
+    if (copyButton) copyButton.remove();
+    
+    const metadata = clonedMessage.querySelector('.metadata-info');
+    if (metadata) metadata.remove();
+    
+    // Get the HTML content of the message (without the removed elements)
+    const htmlContent = clonedMessage.innerHTML;
+    
+    // Copy the content as Markdown
+    copyToClipboard(htmlContent, button, true);
 }
 
 function copyUserMessage(button) {
     const userMessage = button.closest('.user-message');
-    // Get all the text from the user message paragraph(s)
-    let contentToCopy = '';
     
-    // Try to get text from paragraphs or directly from the div
-    const paragraphs = userMessage.querySelectorAll('p');
-    if (paragraphs && paragraphs.length > 0) {
-        contentToCopy = Array.from(paragraphs)
-            .map(p => p.textContent)
-            .join('\n')
-            .trim();
-    } else {
-        // Fallback to get all text content except the button
-        contentToCopy = Array.from(userMessage.childNodes)
-            .filter(node => node.nodeType === Node.TEXT_NODE || 
-                    (node.nodeType === Node.ELEMENT_NODE && 
-                     !node.classList.contains('copy-user-message-button')))
-            .map(node => node.textContent)
-            .join('\n')
-            .trim();
+    // Create a clone of the user message to work with
+    const clonedMessage = userMessage.cloneNode(true);
+    
+    // Remove the copy button from the clone
+    const copyButton = clonedMessage.querySelector('.copy-user-message-button');
+    if (copyButton) copyButton.remove();
+    
+    // Remove any margin wrapper divs
+    const marginWrapper = clonedMessage.querySelector('div[style*="margin-right"]');
+    if (marginWrapper) {
+        // Move the content from the wrapper to the parent
+        while (marginWrapper.firstChild) {
+            clonedMessage.appendChild(marginWrapper.firstChild);
+        }
+        marginWrapper.remove();
     }
-
-    copyToClipboard(contentToCopy, button);
+    
+    // Get the HTML content of the message (without the removed elements)
+    const htmlContent = clonedMessage.innerHTML;
+    
+    // Copy the content as Markdown
+    copyToClipboard(htmlContent, button, true);
 }
 
 function toggleFileReferences(header) {
@@ -91,7 +140,20 @@ function highlightCodeBlocks() {
             button.addEventListener('click', function() {
                 var code = block.querySelector('code');
                 var text = code.textContent;
-                navigator.clipboard.writeText(text).then(function() {
+                
+                // Get language class if available
+                var language = '';
+                if (code.className) {
+                    var match = code.className.match(/language-(\w+)/);
+                    if (match) {
+                        language = match[1];
+                    }
+                }
+                
+                // Format as markdown code block
+                var markdownText = '```' + language + '\n' + text + '\n```';
+                
+                navigator.clipboard.writeText(markdownText).then(function() {
                     // Store the original icon
                     const originalIcon = button.innerHTML;
                     button.innerHTML = 'Copied!';
