@@ -1,18 +1,21 @@
 function copyToClipboard(contentToCopy, button) {
+    // Store the original content of the button
+    const originalContent = button.innerHTML;
+    
     navigator.clipboard.writeText(contentToCopy).then(function () {
         // Add animation class
         button.classList.add('copy-button-flash');
-        button.textContent = 'Copied!';
+        button.innerHTML = 'Copied!';
 
         setTimeout(function () {
-            button.textContent = 'Copy';
+            button.innerHTML = originalContent;
             button.classList.remove('copy-button-flash');
         }, 2000);
     }).catch(function (err) {
         console.error('Failed to copy: ', err);
-        button.textContent = 'Error!';
+        button.innerHTML = 'Error!';
         setTimeout(function () {
-            button.textContent = 'Copy';
+            button.innerHTML = originalContent;
         }, 2000);
     });
 }
@@ -76,7 +79,11 @@ function highlightCodeBlocks() {
             block.classList.add('processed');
             var button = document.createElement('button');
             button.className = 'copy-button';
-            button.textContent = 'Copy';
+            const copyIcon = document.createElement('img');
+            copyIcon.src = '../icons/copy.svg';
+            copyIcon.alt = 'Copy';
+            copyIcon.className = 'copy-icon';
+            button.appendChild(copyIcon);
             var container = document.createElement('div');
             container.className = 'toolbar-container';
             container.appendChild(button);
@@ -85,13 +92,25 @@ function highlightCodeBlocks() {
                 var code = block.querySelector('code');
                 var text = code.textContent;
                 navigator.clipboard.writeText(text).then(function() {
-                    button.textContent = 'Copied!';
+                    // Store the original icon
+                    const originalIcon = button.innerHTML;
+                    button.innerHTML = 'Copied!';
                     setTimeout(function() {
-                        button.textContent = 'Copy';
+                        // Restore the icon
+                        button.innerHTML = originalIcon;
                     }, 2000);
                 }).catch(function(err) {
                     console.error('Failed to copy: ', err);
-                    button.textContent = 'Error!';
+                    button.innerHTML = 'Error!';
+                    setTimeout(function() {
+                        // Restore the icon
+                        const copyIcon = document.createElement('img');
+                        copyIcon.src = '../icons/copy.svg';
+                        copyIcon.alt = 'Copy';
+                        copyIcon.className = 'copy-icon';
+                        button.innerHTML = '';
+                        button.appendChild(copyIcon);
+                    }, 2000);
                 });
             });
         });
@@ -108,7 +127,11 @@ function addCopyButtonsToUserMessages() {
             // Create the button
             const button = document.createElement('button');
             button.className = 'copy-user-message-button';
-            button.textContent = 'Copy';
+            const copyIcon = document.createElement('img');
+            copyIcon.src = '../icons/copy.svg';
+            copyIcon.alt = 'Copy';
+            copyIcon.className = 'copy-icon';
+            button.appendChild(copyIcon);
             button.onclick = function() { copyUserMessage(this); };
             
             // Add the button to the user message

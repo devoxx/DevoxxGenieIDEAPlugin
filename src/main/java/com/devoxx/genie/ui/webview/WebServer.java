@@ -155,6 +155,30 @@ public class WebServer {
                 .replace("${prismJsUrl}", getPrismJsUrl())
                 .replace("${baseJsUrl}", getBaseJsUrl());
         resources.put(BASE_HTML_RESOURCE, baseHTML);
+        
+        // Add static icon resources
+        addStaticResource("/icons/copy.svg", "icons/copy.svg");
+        addStaticResource("/icons/copy_dark.svg", "icons/copy_dark.svg");
+    }
+    
+    /**
+     * Add a static resource from the resources directory to be served by the web server.
+     *
+     * @param uriPath the URI path to serve the resource at
+     * @param resourcePath the path to the resource in the resources directory
+     */
+    public void addStaticResource(String uriPath, String resourcePath) {
+        try {
+            String content = loadResource(resourcePath);
+            if (!content.isEmpty()) {
+                resources.put(uriPath, content);
+                log.info("Added static resource: {} from {}", uriPath, resourcePath);
+            } else {
+                log.warn("Failed to load static resource: {}", resourcePath);
+            }
+        } catch (Exception e) {
+            log.error("Error loading static resource: " + resourcePath, e);
+        }
     }
 
     public String getPrismCssUrl() {
@@ -228,6 +252,8 @@ public class WebServer {
                 return "text/css";
             } else if (uri.endsWith(".html") || uri.startsWith("/dynamic/")) {
                 return "text/html";
+            } else if (uri.endsWith(".svg")) {
+                return "image/svg+xml";
             } else {
                 return "text/plain";
             }

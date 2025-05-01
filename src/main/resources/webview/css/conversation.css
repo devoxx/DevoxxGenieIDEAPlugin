@@ -51,7 +51,7 @@ code {
     color: var(--button-text-color); 
     cursor: pointer; 
     font-size: 0.8em; 
-    padding: 4px 8px; 
+    padding: 4px; 
 }
 
 .copy-button:hover { 
@@ -103,7 +103,7 @@ code {
     color: var(--button-text-color); 
     cursor: pointer; 
     font-size: ${buttonFontSize}px; 
-    padding: 4px 8px; 
+    padding: 4px; 
 }
 
 .copy-response-button:hover { 
@@ -120,7 +120,7 @@ code {
     color: var(--button-text-color); 
     cursor: pointer; 
     font-size: ${buttonFontSize}px; 
-    padding: 4px 8px; 
+    padding: 4px; 
     z-index: 10;
     opacity: 0.9;
 }
@@ -139,6 +139,19 @@ code {
     0% { background-color: var(--button-bg); }
     50% { background-color: var(--button-active-bg); }
     100% { background-color: var(--button-active-bg); }
+}
+
+.copy-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Dark theme support for copy icons */
+@media (prefers-color-scheme: dark) {
+    .copy-icon {
+        content: url('/icons/copy_dark.svg');
+    }
 }
 
 /* Typography */

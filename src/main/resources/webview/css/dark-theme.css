@@ -18,12 +18,12 @@
 }
 
 /* Ensure copy buttons are visible in dark theme */
-.copy-user-message-button {
+.copy-user-message-button, .copy-response-button, .copy-button {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.copy-user-message-button:hover {
+.copy-user-message-button:hover, .copy-response-button:hover, .copy-button:hover {
     background: rgba(255, 255, 255, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }

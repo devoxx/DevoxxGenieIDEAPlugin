@@ -93,7 +93,7 @@ public class WebViewAIMessageUpdater {
                         // Add metadata div
                 )
                 .append("</div>")
-                .append("<button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\">Copy</button>");
+                .append("<button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\"><img src=\"/icons/copy.svg\" alt=\"Copy\" class=\"copy-icon\"></button>");
         
         // Add content
         Node node = document.getFirstChild();
