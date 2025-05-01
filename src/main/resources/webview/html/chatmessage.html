@@ -1,10 +1,13 @@
 <div class="message-pair" id="${messageId}">
     <div class="user-message">
-        <p>${userPrompt}</p>
+        <button class="copy-user-message-button" onclick="copyUserMessage(this)"><img src="/icons/copy.svg" alt="Copy" class="copy-icon"></button>
+        <div style="margin-right: 50px;">
+            <p>${userPrompt}</p>
+        </div>
     </div>
     <div class="assistant-message">
         ${metadata}
-        <button class="copy-response-button" onclick="copyMessageResponse(this)">Copy</button>
+        <button class="copy-response-button" onclick="copyMessageResponse(this)"><img src="/icons/copy.svg" alt="Copy" class="copy-icon"></button>
         ${assistantContent}
     </div>
 </div>

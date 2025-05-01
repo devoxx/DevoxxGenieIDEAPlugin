@@ -27,10 +27,11 @@ public class WebServer {
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
     private final Map<String, String> scripts = new ConcurrentHashMap<>();
-    public static final String PRISM_JS = "prism.js";
-    public static final String BASE_CSS = "base.css";
-    public static final String BASE_JS = "base.js";
-    public static final String BASE_HTML = "base.html";
+    public static final String PRISM_CSS_RESOURCE = "/prism.css";
+    public static final String PRISM_JS_RESOURCE = "/prism.js";
+    public static final String BASE_CSS_RESOURCE = "/base.css";
+    public static final String BASE_JS_RESOURCE = "/base.js";
+    public static final String BASE_HTML_RESOURCE = "/base.html";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -153,27 +154,51 @@ public class WebServer {
                 .replace("${baseCssUrl}", getBaseCssUrl())
                 .replace("${prismJsUrl}", getPrismJsUrl())
                 .replace("${baseJsUrl}", getBaseJsUrl());
-        resources.put(BASE_HTML, baseHTML);
+        resources.put(BASE_HTML_RESOURCE, baseHTML);
+        
+        // Add static icon resources
+        addStaticResource("/icons/copy.svg", "icons/copy.svg");
+        addStaticResource("/icons/copy_dark.svg", "icons/copy_dark.svg");
+    }
+    
+    /**
+     * Add a static resource from the resources directory to be served by the web server.
+     *
+     * @param uriPath the URI path to serve the resource at
+     * @param resourcePath the path to the resource in the resources directory
+     */
+    public void addStaticResource(String uriPath, String resourcePath) {
+        try {
+            String content = loadResource(resourcePath);
+            if (!content.isEmpty()) {
+                resources.put(uriPath, content);
+                log.info("Added static resource: {} from {}", uriPath, resourcePath);
+            } else {
+                log.warn("Failed to load static resource: {}", resourcePath);
+            }
+        } catch (Exception e) {
+            log.error("Error loading static resource: " + resourcePath, e);
+        }
     }
 
     public String getPrismCssUrl() {
-        resources.put("prism.css", loadResource("webview/prism/prism.css"));
-        return resources.get("prism.css");
+        resources.put(PRISM_CSS_RESOURCE, loadResource("webview/prism/prism.css"));
+        return getServerUrl() + PRISM_CSS_RESOURCE;
     }
 
     public String getPrismJsUrl() {
-        resources.put(PRISM_JS, loadResource("webview/prism/prism.js"));
-        return resources.get(PRISM_JS);
+        resources.put(PRISM_JS_RESOURCE, loadResource("webview/prism/prism.js"));
+        return getServerUrl() + PRISM_JS_RESOURCE;
     }
     
     public String getBaseCssUrl() {
-        resources.put(BASE_CSS, loadResource("webview/css/base.css"));
-        return resources.get(BASE_CSS);
+        resources.put(BASE_CSS_RESOURCE, loadResource("webview/css/base.css"));
+        return getServerUrl() + BASE_CSS_RESOURCE;
     }
 
     public String getBaseJsUrl() {
-        resources.put(BASE_JS, loadResource("webview/js/base.js"));
-        return resources.get(BASE_JS);
+        resources.put(BASE_JS_RESOURCE, loadResource("webview/js/base.js"));
+        return getServerUrl() + BASE_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -227,6 +252,8 @@ public class WebServer {
                 return "text/css";
             } else if (uri.endsWith(".html") || uri.startsWith("/dynamic/")) {
                 return "text/html";
+            } else if (uri.endsWith(".svg")) {
+                return "image/svg+xml";
             } else {
                 return "text/plain";
             }

@@ -77,30 +77,78 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-corner-radius', '")
                 .append(state.getCornerRadius()).append("px');\n");
 
-        // Apply colors
+        // Apply border colors - these are always the Devoxx brand colors regardless of theme
+        // Orange for user, blue for assistant
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-border-color', '")
                 .append(state.getUserMessageBorderColor()).append("');\n");
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-border-color', '")
                 .append(state.getAssistantMessageBorderColor()).append("');\n");
 
-        // Apply background colors - always use the user's selected colors
-        // Remove dark theme override to respect user settings
+        // Apply background and text colors based on useCustomColors setting
+        String userMessageBorderColor;
+        String userMessageBackgroundColor;
+        String userMessageTextColor;
+
+        String assistantMessageBorderColor;
+        String assistantMessageBackgroundColor;
+        String assistantMessageTextColor;
+
+        if (state.getUseCustomColors()) {
+            log.debug("Use custom colors");
+
+            // Use user-defined colors
+            userMessageBorderColor = state.getUserMessageBorderColor();
+            userMessageBackgroundColor = state.getUserMessageBackgroundColor();
+            userMessageTextColor = state.getUserMessageTextColor();
+
+            assistantMessageBorderColor = state.getAssistantMessageBorderColor();
+            assistantMessageBackgroundColor = state.getAssistantMessageBackgroundColor();
+            assistantMessageTextColor = state.getAssistantMessageTextColor();
+
+        } else {
+            // Use default theme-based colors
+            if (isDarkTheme) {
+                log.debug("Use Dark theme");
+                // Dark theme defaults
+                userMessageBorderColor = "#FF5400";
+                userMessageBackgroundColor = "#2a2520";
+                userMessageTextColor = "#e0e0e0";
+
+                assistantMessageBorderColor = "#0095C9";
+                assistantMessageBackgroundColor = "#1e282e";
+                assistantMessageTextColor = "#e0e0e0";
+            } else {
+                log.debug("Use Light theme");
+                // Light theme defaults
+                userMessageBorderColor = "#FF5400";
+                userMessageBackgroundColor = "#fff9f0";
+                userMessageTextColor = "#000000";
+
+                assistantMessageBorderColor = "#0095C9";
+                assistantMessageTextColor = "#000000";
+                assistantMessageBackgroundColor = "#f0f7ff";
+            }
+        }
+
+        // Set CSS variables
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-background-color', '")
-                .append(state.getUserMessageBackgroundColor()).append("');\n");
+                .append(userMessageBackgroundColor).append("');\n");
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-background-color', '")
-                .append(state.getAssistantMessageBackgroundColor()).append("');\n");
-                
-        // Apply text colors
+                .append(assistantMessageBackgroundColor).append("');\n");
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-text-color', '")
-                .append(state.getUserMessageTextColor()).append("');\n");
+                .append(userMessageTextColor).append("');\n");
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-text-color', '")
-                .append(state.getAssistantMessageTextColor()).append("');\n");
+                .append(assistantMessageTextColor).append("');\n");
                 
-        // Apply text colors directly to elements
+        // Apply text colors directly to elements - this is needed for proper rendering
         cssStyleUpdates.append("document.querySelectorAll('.user-message').forEach(function(el) { ")
-                .append("el.style.color = '").append(state.getUserMessageTextColor()).append("'; });\n");
+                .append("el.style.color = '").append(userMessageTextColor).append("'; ")
+                .append("el.style.backgroundColor = '").append(userMessageBackgroundColor).append("'; ")
+                .append("el.style.borderColor = '").append(userMessageBorderColor).append("'; });\n");
         cssStyleUpdates.append("document.querySelectorAll('.assistant-message').forEach(function(el) { ")
-                .append("el.style.color = '").append(state.getAssistantMessageTextColor()).append("'; });\n");
+                .append("el.style.color = '").append(assistantMessageTextColor).append("'; ")
+                .append("el.style.backgroundColor = '").append(assistantMessageBackgroundColor).append("'; ")
+                .append("el.style.borderColor = '").append(assistantMessageBorderColor).append("'; });\n");
 
         // Apply font sizes if custom sizes are enabled
         if (state.getUseCustomFontSize()) {

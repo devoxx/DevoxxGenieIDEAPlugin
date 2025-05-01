@@ -39,6 +39,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner customCodeFontSizeSpinner;
     private final JCheckBox useRoundedCorners;
     private final JBIntSpinner cornerRadiusSpinner;
+    private final JCheckBox useCustomColors;
     private final JButton resetButton;
 
     // Removed theme preview components
@@ -79,6 +80,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         
         // Initialize other controls
         useRoundedCorners = new JCheckBox("Use rounded corners", state.getUseRoundedCorners());
+        useCustomColors = new JCheckBox("Use custom colors", state.getUseCustomColors());
         
         // Preview panels removed
         
@@ -127,6 +129,21 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         // Ensure color fields are initialized
         if (userMessageBorderColor != null && assistantMessageBorderColor != null &&
             userMessageBackgroundColor != null && assistantMessageBackgroundColor != null) {
+            
+            addSection(panel, gbc, "Theme Settings");
+            
+            // Add the "Use custom colors" toggle checkbox at the top
+            addSettingRow(panel, gbc, "Override theme colors:", useCustomColors);
+            
+            // Add a separator
+            gbc.gridx = 0;
+            gbc.gridy++;
+            gbc.gridwidth = 2;
+            JSeparator separator = new JSeparator();
+            separator.setPreferredSize(new Dimension(separator.getPreferredSize().width, 10));
+            panel.add(separator, gbc);
+            gbc.gridwidth = 1;
+            gbc.gridy++;
             
             addSection(panel, gbc, "Message Colors");
             
@@ -334,7 +351,8 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
                state.getCustomFontSize() != customFontSizeSpinner.getNumber() ||
                state.getUseCustomCodeFontSize() != useCustomCodeFontSize.isSelected() ||
                state.getCustomCodeFontSize() != customCodeFontSizeSpinner.getNumber() ||
-               state.getUseRoundedCorners() != useRoundedCorners.isSelected();
+               state.getUseRoundedCorners() != useRoundedCorners.isSelected() ||
+               state.getUseCustomColors() != useCustomColors.isSelected();
     }
     
     public void apply() {
@@ -363,6 +381,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         
         // Apply other settings
         state.setUseRoundedCorners(useRoundedCorners.isSelected());
+        state.setUseCustomColors(useCustomColors.isSelected());
         
         // Notify open windows to refresh their styling
         ApplicationManager.getApplication().getMessageBus().syncPublisher(APPEARANCE_SETTINGS_TOPIC)
@@ -395,6 +414,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         
         // Reset other controls
         useRoundedCorners.setSelected(state.getUseRoundedCorners());
+        useCustomColors.setSelected(state.getUseCustomColors());
         
         // Update control states
         customFontSizeSpinner.setEnabled(useCustomFontSize.isSelected());
@@ -429,26 +449,32 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         borderWidthSpinner.setNumber(4);
         cornerRadiusSpinner.setNumber(4);
         
-        userMessageBorderColor.setText("#FF5400");
-        assistantMessageBorderColor.setText("#0095C9");
+        // Reset border colors to Devoxx brand colors
+        userMessageBorderColor.setText("#FF5400");  // Devoxx orange
+        assistantMessageBorderColor.setText("#0095C9");  // Devoxx blue
+        
+        // Reset background and text colors based on current theme
         if (isDarkTheme()) {
-            userMessageBackgroundColor.setText("#2a2520");
-            assistantMessageBackgroundColor.setText("#1e282e");
-            userMessageTextColor.setText("#e0e0e0");         // Light text for dark theme
-            assistantMessageTextColor.setText("#e0e0e0");    // Light text for dark theme
+            userMessageBackgroundColor.setText("#2a2520");  // Dark theme user background
+            assistantMessageBackgroundColor.setText("#1e282e");  // Dark theme assistant background
+            userMessageTextColor.setText("#e0e0e0");  // Light text for dark theme
+            assistantMessageTextColor.setText("#e0e0e0");  // Light text for dark theme
         } else {
-            userMessageBackgroundColor.setText("#fff9f0");
-            assistantMessageBackgroundColor.setText("#f0f7ff");
-            userMessageTextColor.setText("#000000");         // Dark text for light theme
-            assistantMessageTextColor.setText("#000000");    // Dark text for light theme
+            userMessageBackgroundColor.setText("#fff9f0");  // Light theme user background
+            assistantMessageBackgroundColor.setText("#f0f7ff");  // Light theme assistant background
+            userMessageTextColor.setText("#000000");  // Dark text for light theme
+            assistantMessageTextColor.setText("#000000");  // Dark text for light theme
         }
         
+        // Reset font settings
         useCustomFontSize.setSelected(false);
         customFontSizeSpinner.setNumber(14);
         useCustomCodeFontSize.setSelected(false);
         customCodeFontSizeSpinner.setNumber(14);
         
+        // Reset other settings
         useRoundedCorners.setSelected(true);
+        useCustomColors.setSelected(false);  // Important: default to using theme-based colors
         
         // Update control states
         customFontSizeSpinner.setEnabled(useCustomFontSize.isSelected());

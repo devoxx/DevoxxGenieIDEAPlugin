@@ -10,19 +10,36 @@ function highlightCode() {
             
             const copyButton = document.createElement('button');
             copyButton.className = 'copy-button';
-            copyButton.textContent = 'Copy';
+            const copyIcon = document.createElement('img');
+            copyIcon.src = '/icons/copy.svg';
+            copyIcon.alt = 'Copy';
+            copyIcon.className = 'copy-icon';
+            copyButton.appendChild(copyIcon);
             
             copyButton.addEventListener('click', function() {
                 const code = pre.querySelector('code');
                 const text = code.textContent;
                 
                 navigator.clipboard.writeText(text).then(function() {
-                    copyButton.textContent = 'Copied!';
+                    // Store the original icon
+                    const originalIcon = copyButton.innerHTML;
+                    copyButton.innerHTML = 'Copied!';
                     setTimeout(function() {
-                        copyButton.textContent = 'Copy';
+                        // Restore the icon
+                        copyButton.innerHTML = originalIcon;
                     }, 2000);
                 }).catch(function(err) {
                     console.error('Failed to copy: ', err);
+                    copyButton.innerHTML = 'Error!';
+                    setTimeout(function() {
+                        // Restore the icon
+                        const copyIcon = document.createElement('img');
+                        copyIcon.src = '../icons/copy.svg';
+                        copyIcon.alt = 'Copy';
+                        copyIcon.className = 'copy-icon';
+                        copyButton.innerHTML = '';
+                        copyButton.appendChild(copyIcon);
+                    }, 2000);
                 });
             });
             

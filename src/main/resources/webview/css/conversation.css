@@ -51,7 +51,7 @@ code {
     color: var(--button-text-color); 
     cursor: pointer; 
     font-size: 0.8em; 
-    padding: 4px 8px; 
+    padding: 4px; 
 }
 
 .copy-button:hover { 
@@ -72,6 +72,7 @@ code {
     border-radius: 4px; 
     word-wrap: break-word; 
     overflow-wrap: break-word; 
+    position: relative;
 }
 
 .assistant-message { 
@@ -102,11 +103,55 @@ code {
     color: var(--button-text-color); 
     cursor: pointer; 
     font-size: ${buttonFontSize}px; 
-    padding: 4px 8px; 
+    padding: 4px; 
 }
 
 .copy-response-button:hover { 
     background: var(--button-hover-bg); 
+}
+
+.copy-user-message-button { 
+    position: absolute; 
+    top: 8px; 
+    right: 8px; 
+    background: var(--button-bg); 
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px; 
+    color: var(--button-text-color); 
+    cursor: pointer; 
+    font-size: ${buttonFontSize}px; 
+    padding: 4px; 
+    z-index: 10;
+    opacity: 0.9;
+}
+
+.copy-user-message-button:hover { 
+    background: var(--button-hover-bg);
+    opacity: 1;
+}
+
+.copy-button-flash {
+    animation: flash 0.3s ease-in-out;
+    background-color: var(--button-active-bg) !important;
+}
+
+@keyframes flash {
+    0% { background-color: var(--button-bg); }
+    50% { background-color: var(--button-active-bg); }
+    100% { background-color: var(--button-active-bg); }
+}
+
+.copy-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Dark theme support for copy icons */
+@media (prefers-color-scheme: dark) {
+    .copy-icon {
+        content: url('/icons/copy_dark.svg');
+    }
 }
 
 /* Typography */

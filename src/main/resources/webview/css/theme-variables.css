@@ -12,6 +12,7 @@
     --light-button-bg: rgba(0, 0, 0, 0.1);
     --light-button-text: #333333;
     --light-button-hover-bg: rgba(0, 0, 0, 0.2);
+    --light-button-active-bg: rgba(0, 0, 0, 0.3);
     --light-user-msg-bg: #fff9f0;
     --light-assistant-msg-bg: #f0f7ff;
     --light-metadata-color: #666666;
@@ -28,6 +29,7 @@
     --dark-button-bg: rgba(255, 255, 255, 0.1);
     --dark-button-text: #ffffff;
     --dark-button-hover-bg: rgba(255, 255, 255, 0.2);
+    --dark-button-active-bg: rgba(255, 255, 255, 0.3);
     --dark-user-msg-bg: #2a2520;
     --dark-assistant-msg-bg: #1e282e;
     --dark-metadata-color: #aaaaaa;
@@ -44,6 +46,7 @@
     --button-bg: var(--light-button-bg);
     --button-text-color: var(--light-button-text);
     --button-hover-bg: var(--light-button-hover-bg);
+    --button-active-bg: var(--light-button-active-bg);
     --user-msg-bg: var(--light-user-msg-bg);
     --assistant-msg-bg: var(--light-assistant-msg-bg);
     --metadata-color: var(--light-metadata-color);

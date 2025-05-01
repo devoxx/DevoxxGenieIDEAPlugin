@@ -208,6 +208,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer messageMargin = 10;  // Margin between messages in px
     private Integer borderWidth = 4;  // Border width in px
     private Integer cornerRadius = 4;  // Border radius in px
+
     private String userMessageBorderColor = "#FF5400";  // Devoxx orange
     private String assistantMessageBorderColor = "#0095C9";  // Devoxx blue
     private String userMessageBackgroundColor = "#fff9f0";  // Light theme default
@@ -225,6 +226,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Getter
     @Setter
     private Boolean useRoundedCorners = true;
+    
+    @Getter
+    @Setter
+    private Boolean useCustomColors = false;
 
     @Setter(AccessLevel.NONE)
     private List<Runnable> loadListeners = new ArrayList<>();
