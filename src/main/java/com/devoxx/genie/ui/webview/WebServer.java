@@ -154,8 +154,7 @@ public class WebServer {
                 .replace("${prismCssUrl}", getPrismCssUrl())
                 .replace("${baseCssUrl}", getBaseCssUrl())
                 .replace("${prismJsUrl}", getPrismJsUrl())
-                .replace("${baseJsUrl}", getBaseJsUrl())
-                .replace("${mcpLogHandlerJsUrl}", getMCPLogHandlerJsUrl());
+                .replace("${baseJsUrl}", getBaseJsUrl());
         resources.put(BASE_HTML_RESOURCE, baseHTML);
         
         // Add static icon resources
@@ -201,11 +200,6 @@ public class WebServer {
     public String getBaseJsUrl() {
         resources.put(BASE_JS_RESOURCE, loadResource("webview/js/base.js"));
         return getServerUrl() + BASE_JS_RESOURCE;
-    }
-    
-    public String getMCPLogHandlerJsUrl() {
-        resources.put(MCP_LOG_HANDLER_JS_RESOURCE, loadResource("webview/js/mcpLogHandler.js"));
-        return getServerUrl() + MCP_LOG_HANDLER_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {

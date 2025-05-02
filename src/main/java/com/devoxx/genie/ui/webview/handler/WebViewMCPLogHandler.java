@@ -168,6 +168,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
         // JavaScript to update the thinking indicator - log current messageId to help debug
         log.debug("Updating indicator for message ID: {}", messageId);
 
+        // TODO Externalise this javascript and css to the resources/webview directory
         String js = "try {\n" +
                     "  const indicator = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');\n" +
                     "  if (indicator) {\n" +

@@ -41,15 +41,11 @@ public class MCPMessageTemplate extends HtmlTemplate {
         MCPType messageType = mcpMessage.getType();
         
         // Based on the message type, generate appropriate HTML
-        switch (messageType) {
-            case AI_MSG:
-                return formatAIMessage(content);
-            case TOOL_MSG:
-                return formatToolMessage(content);
-            case LOG_MSG:
-            default:
-                return formatLogMessage(content);
-        }
+        return switch (messageType) {
+            case AI_MSG -> formatAIMessage(content);
+            case TOOL_MSG -> formatToolMessage(content);
+            default -> formatLogMessage(content);
+        };
     }
     
     /**
@@ -84,10 +80,10 @@ public class MCPMessageTemplate extends HtmlTemplate {
         htmlBuilder.append("<div class=\"tool-message\">");
         
         // Tool header with name and collapse toggle
-        htmlBuilder.append("<div class=\"tool-message-header\">")
-                  .append("<img src=\"/icons/tool.svg\" class=\"tool-icon\" alt=\"Tool\">")
-                  .append(escapeHtml(toolName));
-        
+//        htmlBuilder.append("<div class=\"tool-message-header\">")
+//                  .append("<img src=\"/icons/tool.svg\" class=\"tool-icon\" alt=\"Tool\">")
+//                  .append(escapeHtml(toolName));
+//
         // Add tool type badge if available
         if (toolType != null) {
             htmlBuilder.append("<span class=\"tool-badge ").append(badgeClass).append("\">")

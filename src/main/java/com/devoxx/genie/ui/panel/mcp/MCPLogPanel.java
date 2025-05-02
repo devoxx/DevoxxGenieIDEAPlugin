@@ -1,15 +1,11 @@
 package com.devoxx.genie.ui.panel.mcp;
 
 import com.devoxx.genie.model.mcp.MCPMessage;
-import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.ui.webview.WebServer;
-import com.devoxx.genie.ui.webview.template.MCPMessageTemplate;
-import com.devoxx.genie.ui.webview.template.ResourceLoader;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
@@ -350,8 +346,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     }
     
     /**
-     * Open the log entry in a specialized HTML renderer that displays the content
-     * similar to Claude's UI/UX with proper formatting for tool outputs
+     * Open the log entry in a new editor tab without custom JSON formatting
      *
      * @param logEntry The log entry to open
      */
@@ -361,95 +356,22 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         }
         
         try {
-            // Get the original message content
-            String messageContent = logEntry.logMessage();
+            // Get original content
+            String content = logEntry.logMessage();
             
             // Log to help with debugging
-            log.debug("Opening log entry: {} ... ", 
-                    messageContent.substring(0, Math.min(50, messageContent.length())));
-            
-            // Determine message type based on content
-            MCPType messageType = determineMessageType(messageContent);
-            
-            // Strip direction markers
-            String content = messageContent;
-            if (messageContent.startsWith("<") || messageContent.startsWith(">")) {
-                content = messageContent.substring(1).trim();
-            }
-            
-            // Create an MCP message with the appropriate type
-            MCPMessage mcpMessage = MCPMessage.builder()
-                    .type(messageType)
-                    .content(content)
-                    .build();
-            
-            // Generate the HTML version using the MCP message template if WebServer is available
-            WebServer webServer = WebServer.getInstance();
-            String fileContent;
-            
-            if (webServer != null) {
-                // Use modern formatting with MCPMessageTemplate
-                // Wrap in a minimal HTML document with our styles
-                MCPMessageTemplate template = new MCPMessageTemplate(webServer, mcpMessage);
-                StringBuilder htmlBuilder = new StringBuilder();
-                
-                // Create a standalone HTML document with styles
-                htmlBuilder.append("<!DOCTYPE html>\n<html>\n<head>\n");
-                htmlBuilder.append("<title>MCP Message</title>\n");
-                
-                // Include CSS styles
-                htmlBuilder.append("<style>\n");
-                htmlBuilder.append(ResourceLoader.loadResource("webview/css/theme-variables.css"));
-                htmlBuilder.append("\n");
-                
-                // Add dark theme support
-                if (com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme()) {
-                    htmlBuilder.append(ResourceLoader.loadResource("webview/css/dark-theme.css"));
-                    htmlBuilder.append("\n");
-                }
-                
-                // Add MCP-specific styles
-                htmlBuilder.append(ResourceLoader.loadResource("webview/css/mcp-formatting.css"));
-                htmlBuilder.append("\n");
-                
-                // Add base styling
-                htmlBuilder.append("body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; }\n");
-                htmlBuilder.append("</style>\n");
-                
-                // Add JavaScript for interactive elements
-                htmlBuilder.append("<script>\n");
-                htmlBuilder.append(ResourceLoader.loadResource("webview/js/mcp-handler.js"));
-                htmlBuilder.append("\n</script>\n");
-                
-                htmlBuilder.append("</head>\n<body");
-                // Add dark-theme class to body if needed
-                if (com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme()) {
-                    htmlBuilder.append(" class=\"dark-theme\"");
-                }
-                htmlBuilder.append(">\n");
-                
-                // Add timestamp header
-                htmlBuilder.append("<div style=\"margin-bottom: 20px; color: #888;\">");
-                htmlBuilder.append(logEntry.timestamp()).append("</div>\n");
-                
-                // Add the formatted message content
-                htmlBuilder.append(template.generate());
-                
-                // Close the document
-                htmlBuilder.append("\n</body>\n</html>");
-                
-                fileContent = htmlBuilder.toString();
-            } else {
-                // Fallback to plain JSON if WebServer is unavailable
-                fileContent = content;
+            log.debug("Opening log entry: {} ... ", content.substring(0, Math.min(50, content.length())));
+
+                    // Remove the first character (< or >) to make the JSON valid
+            if (content.startsWith("<") || content.startsWith(">")) {
+                content = content.substring(1).trim();
             }
             
             // Create a filename based on the timestamp
-            String fileExtension = webServer != null ? ".html" : ".json";
-            String fileName = "MCPLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + fileExtension;
+            String fileName = "MCPLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".json";
             
             // Create a virtual file and open it in the editor using invokeLater to avoid threading issues
-            String finalContent = fileContent;
+            String finalContent = content;
             ApplicationManager.getApplication().invokeLater(() -> {
                 // Create virtual file
                 LightVirtualFile virtualFile = new LightVirtualFile(fileName, finalContent);
@@ -459,29 +381,13 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             });
         } catch (Exception e) {
             // Log any exceptions to help diagnose issues
-            log.error("Error opening MCP log entry: {}", e.getMessage());
+            log.error("Error opening MCP log entry: " + e.getMessage());
             
             // Notify the user about the error
             NotificationUtil.sendNotification(
                 project, 
                 "Error opening MCP log: " + e.getMessage()
             );
-        }
-    }
-    
-    /**
-     * Determine the message type based on content analysis
-     * 
-     * @param message The message content
-     * @return The appropriate MCPType
-     */
-    private MCPType determineMessageType(String message) {
-        if (message.startsWith("<")) {
-            return MCPType.AI_MSG;
-        } else if (message.startsWith(">")) {
-            return MCPType.TOOL_MSG;
-        } else {
-            return MCPType.LOG_MSG;
         }
     }
     
@@ -523,13 +429,10 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     }
     
     /**
-     * Custom renderer for log entries with optimized formatting
+     * Custom renderer for log entries with optimization to reduce HTML generation
      */
-    private class LogEntryRenderer extends DefaultListCellRenderer {
-        // Web server instance for template generation
-        private final WebServer webServer = WebServer.getInstance();
-        
-        // Colors for different types of messages (used only for simple list display)
+    private static class LogEntryRenderer extends DefaultListCellRenderer {
+        // Colors for different types of messages
         private static final Color INCOMING_COLOR = new Color(76, 175, 80);  // Green
         private static final Color OUTGOING_COLOR = new Color(33, 150, 243); // Blue
         
@@ -539,34 +442,18 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             
             if (value instanceof LogEntry logEntry) {
-                // Basic text representation for the list view
+                // Only use HTML when needed for complex formatting
+                // For simple cases, we'll just set the text directly with colors
                 if (!isSelected) {
                     String message = logEntry.logMessage();
+
+                    label.setText(logEntry.timestamp() + " " + message);
                     
-                    // First check if it's an info/status message before applying more complex formatting
-                    if (message.equals(WELCOME_MESSAGE) || 
-                        message.equals(MCP_DISABLED_MESSAGE) || 
-                        message.equals(MCP_EMPTY_LOGS_MESSAGE)) {
-                        
-                        label.setText(logEntry.timestamp() + " " + message);
-                    } else {
-                        // Determine message type based on content
-                        MCPType messageType = determineMessageType(message);
-                        
-                        // Simple text for list display with appropriate coloring
-                        label.setText(logEntry.timestamp() + " " + message);
-                        
-                        // Set text color based on message type
-                        switch (messageType) {
-                            case AI_MSG:
-                                label.setForeground(INCOMING_COLOR);
-                                break;
-                            case TOOL_MSG:
-                                label.setForeground(OUTGOING_COLOR);
-                                break;
-                            default:
-                                // Use default color for other types
-                        }
+                    // Set text color based on message type
+                    if (message.startsWith("<")) {
+                        label.setForeground(INCOMING_COLOR);
+                    } else if (message.startsWith(">")) {
+                        label.setForeground(OUTGOING_COLOR);
                     }
                 }
                 
@@ -575,22 +462,6 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             }
             
             return label;
-        }
-        
-        /**
-         * Determine the message type based on content analysis
-         * 
-         * @param message The message content
-         * @return The appropriate MCPType
-         */
-        private MCPType determineMessageType(String message) {
-            if (message.startsWith("<")) {
-                return MCPType.AI_MSG;
-            } else if (message.startsWith(">")) {
-                return MCPType.TOOL_MSG;
-            } else {
-                return MCPType.LOG_MSG;
-            }
         }
     }
 }
