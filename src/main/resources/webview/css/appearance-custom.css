@@ -16,6 +16,22 @@
     --custom-assistant-message-text-color: ${assistantMessageTextColor};
     --custom-font-size: ${customFontSize}px;
     --custom-code-font-size: ${customCodeFontSize}px;
+    
+    /* MCP Tool message variables */
+    --tool-msg-bg: ${isDarkTheme ? '#2d3033' : '#f8f9fa'};
+    --tool-msg-border: #6c757d;
+    --tool-msg-text: ${isDarkTheme ? '#e0e0e0' : '#212529'};
+    --tool-header-color: ${isDarkTheme ? '#adb5bd' : '#495057'};
+    --tool-header-border: ${isDarkTheme ? 'rgba(173, 181, 189, 0.3)' : 'rgba(108, 117, 125, 0.3)'};
+    --citation-color: ${isDarkTheme ? '#adb5bd' : '#6c757d'};
+    --citation-border: ${isDarkTheme ? 'rgba(173, 181, 189, 0.3)' : 'rgba(108, 117, 125, 0.3)'};
+    --ai-reference-bg: ${isDarkTheme ? 'rgba(13, 110, 253, 0.15)' : 'rgba(13, 110, 253, 0.08)'};
+    --chain-line: ${isDarkTheme ? 'rgba(173, 181, 189, 0.3)' : 'rgba(108, 117, 125, 0.3)'};
+    --badge-bg: ${isDarkTheme ? '#343a40' : '#e9ecef'};
+    --badge-text: ${isDarkTheme ? '#e9ecef' : '#495057'};
+    --thinking-bg: ${isDarkTheme ? '#332701' : '#fff3cd'};
+    --thinking-border: #ffc107;
+    --thinking-text: ${isDarkTheme ? '#e0e0e0' : '#212529'};
 }
 
 /* Apply custom settings to the appropriate elements */
@@ -41,9 +57,17 @@ body {
     color: var(--custom-assistant-message-text-color);
 }
 
+/* Apply MCP tool message styling to match custom settings */
+.tool-message {
+    border-left: var(--custom-border-width) solid var(--tool-msg-border);
+    padding: var(--custom-message-padding) 8px;
+    margin: var(--custom-message-margin) 0;
+    border-radius: ${useRoundedCorners ? 'var(--custom-corner-radius)' : '0'}px;
+}
+
 /* Apply custom font sizes if enabled */
 ${useCustomFontSize ? 'body { font-size: var(--custom-font-size); }' : ''}
-${useCustomCodeFontSize ? 'code { font-size: var(--custom-code-font-size); }' : ''}
+${useCustomCodeFontSize ? 'code, .tool-result { font-size: var(--custom-code-font-size); }' : ''}
 
 /* Adjust other elements to match custom settings */
 .message-pair {

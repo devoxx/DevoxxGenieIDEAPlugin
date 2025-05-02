@@ -16,10 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -89,35 +86,26 @@ public class MCPExecutionService implements Disposable {
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
                 .getMcpSettings()
                 .getMcpServers();
-        
+
         if (mcpServers.isEmpty()) {
             MCPService.logDebug("No MCP servers configured");
             return null;
         }
-        
-        // Create MCP clients for each enabled server
-        List<McpClient> mcpClients = new ArrayList<>();
-        
-        for (MCPServer mcpServer : mcpServers.values()) {
-            // Skip disabled servers
-            if (!mcpServer.isEnabled()) {
-                MCPService.logDebug("Skipping disabled MCP server: " + mcpServer.getName());
-                continue;
-            }
-            
-            McpClient mcpClient = createMcpClient(mcpServer);
-            if (mcpClient != null) {
-                mcpClients.add(mcpClient);
-                MCPService.logDebug("Added MCP client for: " + mcpServer.getName());
-            }
-        }
-        
+
+        // Filter enabled servers, map to clients, and collect
+        List<McpClient> mcpClients = mcpServers.values().stream()
+                .filter(MCPServer::isEnabled)
+                .peek(server -> MCPService.logDebug("Processing MCP server: " + server.getName()))
+                .map(this::createMcpClient)
+                .filter(Objects::nonNull)
+                .peek(client -> MCPService.logDebug("Added MCP client"))
+                .collect(Collectors.toList());
+
         if (mcpClients.isEmpty()) {
             MCPService.logDebug("No MCP clients could be created");
             return null;
         }
-        
-        // Build the tool provider with all MCP clients
+
         MCPService.logDebug("Creating MCP Tool Provider with " + mcpClients.size() + " clients");
         return McpToolProvider.builder()
                 .mcpClients(mcpClients)
@@ -133,19 +121,19 @@ public class MCPExecutionService implements Disposable {
     @Nullable
     private McpClient createMcpClient(@NotNull MCPServer mcpServer) {
         String serverName = mcpServer.getName();
-        
+
         // Check if we already have a client for this server
         if (clientCache.containsKey(serverName)) {
             MCPService.logDebug("Reusing existing MCP client for: " + serverName);
             return clientCache.get(serverName);
         }
-        
+
         try {
             MCPService.logDebug("Creating new MCP client for: " + serverName);
-            
+
             // Create client based on transport type
             McpClient client;
-            
+
             if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
                 // Create HTTP SSE client
                 client = initHttpSseClient(mcpServer);
@@ -157,13 +145,13 @@ public class MCPExecutionService implements Disposable {
                 if (mcpServer.getArgs() != null) {
                     commandList.addAll(mcpServer.getArgs());
                 }
-                
+
                 MCPService.logDebug("Command list: " + commandList);
-                
+
                 // Create the client using the helper method
                 client = initStdioClient(commandList, mcpServer.getEnv());
             }
-            
+
             // Cache the client if not null
             if (client != null) {
                 clientCache.put(serverName, client);
@@ -175,7 +163,7 @@ public class MCPExecutionService implements Disposable {
             return null;
         }
     }
-    
+
     /**
      * Helper method to initialize an HTTP SSE client with error handling
      * 

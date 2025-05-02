@@ -1,0 +1,45 @@
+/* MCP Logs Styling */
+.mcp-outer-container { 
+  margin-top: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: var(--font-family);
+  font-size: 13px;
+  padding: 8px;
+  background-color: var(--mcp-container-bg);
+  border-radius: 6px;
+  border: none;
+  margin-bottom: 15px;
+  clear: both;
+  display: block;
+}
+.mcp-header { 
+  font-size: 14px;
+  font-weight: bold;
+  color: #FF5400;
+  margin-bottom: 10px;
+}
+.mcp-log-entry { 
+  margin-bottom: 8px;
+  padding: 8px;
+}
+.mcp-log-entry pre { 
+  margin: 8px 0;
+  padding: 8px;
+  background-color: var(--mcp-pre-bg);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.mcp-log-entry code { 
+  font-family: monospace;
+  font-size: 12px;
+}
+.mcp-log-entry p { 
+  margin: 6px 0;
+}
+.mcp-regular { color: #FF9800; }
+.mcp-counter { color: #757575; font-style: italic; }
+.mcp-ai-message { color: #4CAF50; }
+.mcp-tool-message { color: #2196F3; }
+.mcp-completed { border-top: 1px solid #FF5400; padding-top: 8px; margin-top: 15px; }
+.loading-indicator { display: block !important; }

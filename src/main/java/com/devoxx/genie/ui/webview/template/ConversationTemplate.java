@@ -31,7 +31,7 @@ public class ConversationTemplate extends HtmlTemplate {
      * 
      * @return CSS styles as a string
      */
-    private String generateStyles() {
+    private @NotNull String generateStyles() {
         // Get the theme state and font sizes
         boolean isDarkMode = com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme();
         int editorFontSize = com.devoxx.genie.ui.util.EditorFontUtil.getEditorFontSize();
@@ -48,6 +48,7 @@ public class ConversationTemplate extends HtmlTemplate {
         String darkThemeOverrides = ResourceLoader.loadResource("webview/css/dark-theme.css");
         String cssTemplate = ResourceLoader.loadResource("webview/css/conversation.css");
         String appearanceTemplate = ResourceLoader.loadResource("webview/css/appearance-custom.css");
+        String mcpFormatting = ResourceLoader.loadResource("webview/css/mcp-formatting.css");
         
         // Apply font size variables to the CSS template
         String css = cssTemplate
@@ -93,6 +94,9 @@ public class ConversationTemplate extends HtmlTemplate {
         // Apply custom appearance styles
         styleBuilder.append(customAppearanceCss).append("\n");
         
+        // Apply MCP formatting styles
+        styleBuilder.append("<style>\n");
+        styleBuilder.append(mcpFormatting).append("\n");
         styleBuilder.append("</style>");
         
         return styleBuilder.toString();
@@ -122,6 +126,7 @@ public class ConversationTemplate extends HtmlTemplate {
         // Get conversation JavaScript 
         String conversationJs = ResourceLoader.loadResource("webview/js/conversation.js");
         String fileReferencesJs = ResourceLoader.loadResource("webview/js/file-references.js");
+        String mcpHandlerJs = ResourceLoader.loadResource("webview/js/mcp-handler.js");
         
         // Add script to load the JavaScript dynamically
         scripts.append("<script>\n")
@@ -132,6 +137,10 @@ public class ConversationTemplate extends HtmlTemplate {
                .append("  // Load the file references JavaScript\n")
                .append("  loadScriptContent('file-references-script', `")
                .append(escapeJS(fileReferencesJs))
+               .append("`);\n\n")
+               .append("  // Load the MCP handler JavaScript\n")
+               .append("  loadScriptContent('mcp-handler-script', `")
+               .append(escapeJS(mcpHandlerJs))
                .append("`);\n\n")
                .append("  // Initialize theme for file references\n")
                .append("  document.addEventListener('DOMContentLoaded', function() {\n")

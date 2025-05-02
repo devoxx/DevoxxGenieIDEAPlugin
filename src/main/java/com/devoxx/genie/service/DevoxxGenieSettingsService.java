@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 
 public interface DevoxxGenieSettingsService {
 
@@ -98,8 +97,6 @@ public interface DevoxxGenieSettingsService {
 
     void setCustomPrompts(List<CustomPrompt> customPrompts);
 
-    void setLanguageModels(List<LanguageModel> languageModels);
-
     void setOllamaModelUrl(String url);
 
     void setLmstudioModelUrl(String url);
@@ -165,21 +162,11 @@ public interface DevoxxGenieSettingsService {
 
     void setSystemPrompt(String prompt);
 
-    void setTestPrompt(String prompt);
-
-    void setReviewPrompt(String prompt);
-
-    void setExplainPrompt(String prompt);
-
     void setExcludeJavaDoc(Boolean exclude);
 
     void setExcludedDirectories(List<String> directories);
 
     void setIncludedFileExtensions(List<String> extensions);
-
-    void setDefaultWindowContext(Integer context);
-
-    void setModelWindowContext(ModelProvider provider, String modelName, int windowContext);
 
     String getLlamaCPPUrl();
 

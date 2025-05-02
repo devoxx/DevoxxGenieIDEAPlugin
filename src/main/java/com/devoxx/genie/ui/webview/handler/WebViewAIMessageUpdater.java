@@ -52,8 +52,8 @@ public class WebViewAIMessageUpdater {
         } else {
             doUpdateAiMessageContent(chatMessageContext);
             
-            // Also ensure any loading indicators are hidden when we update with a real response
-            WebViewUIHelper.hideLoadingIndicator(jsExecutor, chatMessageContext.getId());
+            // Mark MCP logs as completed but keep them visible
+            WebViewUIHelper.markMCPLogsAsCompleted(jsExecutor, chatMessageContext.getId());
         }
     }
     
@@ -123,7 +123,9 @@ public class WebViewAIMessageUpdater {
                    "  if (messagePair) {" +
                    "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
                    "    if (assistantMessage) {" +
-                   "      assistantMessage.innerHTML = `" + jsExecutor.escapeJS(contentHtml.toString()) + "`;" +
+                   "      const loadingIndicator = assistantMessage.querySelector('.loading-indicator');" +
+                   "      const loadingIndicatorHtml = loadingIndicator ? loadingIndicator.outerHTML : '';" +
+                   "      assistantMessage.innerHTML = `" + jsExecutor.escapeJS(contentHtml.toString()) + "` + loadingIndicatorHtml;" +
                    "      window.scrollTo(0, document.body.scrollHeight);" +
                    "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                    "    } else {" +
@@ -139,9 +141,7 @@ public class WebViewAIMessageUpdater {
         log.info("Executing JavaScript to update AI message");
         jsExecutor.executeJavaScript(js);
     }
-    
 
-    
     /**
      * Adds just the user message to the conversation view without waiting for the AI response.
      * This is used to show the user's message immediately when they submit a prompt.
@@ -200,14 +200,11 @@ public class WebViewAIMessageUpdater {
                     "    while (tempDiv.firstChild) {\n" +
                     "      container.appendChild(tempDiv.firstChild);\n" +
                     "    }\n" +
-                    "    // Check if this is the first message to add proper spacing\n" +
                     "    if (container.childElementCount === 1) {\n" +
-                    "      // Add top margin to the first message pair for spacing below the header\n" +
                     "      const firstMessage = container.firstElementChild;\n" +
                     "      if (firstMessage) {\n" +
                     "        firstMessage.style.marginTop = '30px';\n" +
                     "      }\n" +
-                    "      // Make sure we're at the top of the container\n" +
                     "      window.scrollTo(0, 0);\n" +
                     "    }\n" +
                     "  }\n" +
