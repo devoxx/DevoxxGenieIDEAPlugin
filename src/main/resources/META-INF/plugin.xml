@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.6.3</h2>
+        <UL>
+            <LI>Fix #677: Fixed new conversation is immediately added to history</LI>
+        </UL>
         <h2>v0.6.2</h2>
         <UL>
             <LI>Feat: Improved MCP output in web view</LI>

@@ -76,7 +76,7 @@ public class ChatService implements ConversationEventListener {
         conversation.setModelName("None"); // Default model name
         conversation.setLlmProvider("Unknown"); // Default provider
         
-        storageService.addConversation(project, conversation);
+        // storageService.addConversation(project, conversation);
         
         // Reload conversation history
         project.getMessageBus()
