@@ -152,7 +152,7 @@ public class ProjectScannerService {
         } else {
             // Only truncate if the content will be used (not for token calculation only)
             log.info("Truncating content to {} tokens for usage in prompt", windowContextMaxTokens);
-            return tokenCalculator.truncateToTokens(fullContent, windowContextMaxTokens);
+            return tokenCalculator.truncateToTokens(fullContent, windowContextMaxTokens, isTokenCalculation);
         }
     }
 

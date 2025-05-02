@@ -69,7 +69,7 @@ class TokenCalculatorTest {
             when(mockEncoding.encodeOrdinary(text)).thenReturn(tokens);
 
             // Execute the method - maxTokens more than actual tokens
-            String result = calculator.truncateToTokens(text, 10);
+            String result = calculator.truncateToTokens(text, 10, false);
 
             // Verify
             assertEquals(text, result); // Should return the original text
@@ -100,7 +100,7 @@ class TokenCalculatorTest {
             when(mockEncoding.decode(any(IntArrayList.class))).thenReturn(truncatedText);
 
             // Execute the method - truncate to 5 tokens
-            String result = calculator.truncateToTokens(text, 5);
+            String result = calculator.truncateToTokens(text, 5, false);
 
             // Verify
             assertEquals(truncatedText + "\n--- Project context truncated due to token limit ---\n", result);
@@ -131,7 +131,7 @@ class TokenCalculatorTest {
             when(mockEncoding.decode(any(IntArrayList.class))).thenReturn(truncatedText);
 
             // Execute the method - truncate to 5 tokens with isTokenCalculation=true
-            String result = calculator.truncateToTokens(text, 5);
+            String result = calculator.truncateToTokens(text, 5, true);
 
             // Verify - should not include the truncation message
             assertEquals(truncatedText, result);
@@ -170,11 +170,13 @@ class TokenCalculatorTest {
         String text = "one two three four five six seven eight nine ten";
 
         // Truncate to different token limits
-        String truncated3 = calculator.truncateToTokens(text, 3);
-        String truncated5 = calculator.truncateToTokens(text, 5);
-        // Verify truncated text ends at word boundaries (check token count)
-        assertEquals(3, calculator.calculateTokens(truncated3)); // Check token count instead of exact ending
+        String truncated3 = calculator.truncateToTokens(text, 3, true);
+        String truncated5 = calculator.truncateToTokens(text, 5, true);
+
+        // Verify truncated text ends at word boundaries
+        assertTrue(truncated3.endsWith("three"));
         assertTrue(truncated5.endsWith("five"));
+
         // Calculate tokens in truncated text to verify it matches the limit
         assertEquals(3, calculator.calculateTokens(truncated3));
         assertEquals(5, calculator.calculateTokens(truncated5));
