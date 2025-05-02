@@ -285,7 +285,7 @@ public class MessageCreationService {
         if (selectedFiles != null && !selectedFiles.isEmpty()) {
             contentBuilder.append("<FileContents>\n");
             for (VirtualFile file : selectedFiles) {
-                contentBuilder.append("File: ").append(file.getName()).append("\n")
+                contentBuilder.append("File: ").append(file.getCanonicalPath()).append("\n")
                         .append(readFileContent(file))
                         .append("\n\n");
             }
@@ -344,12 +344,12 @@ public class MessageCreationService {
         for (VirtualFile file : files) {
             ApplicationManager.getApplication().runReadAction(() -> {
                 if (file.getFileType().getName().equals("UNKNOWN")) {
-                    userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                    userPromptContext.append("File: ").append(file.getCanonicalPath()).append("\n");
                     userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
                 } else {
                     Document document = fileDocumentManager.getDocument(file);
                     if (document != null) {
-                        userPromptContext.append("Filename: ").append(file.getName()).append("\n");
+                        userPromptContext.append("Filename: ").append(file.getCanonicalPath()).append("\n");
                         String content = document.getText();
                         userPromptContext.append(content).append("\n");
                     } else if (!ImageUtil.isImageFile(file)){

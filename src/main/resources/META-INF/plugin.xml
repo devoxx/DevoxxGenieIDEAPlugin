@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.6.2</h2>
+        <UL>
+            <LI>Feat: Improved MCP output in web view</LI>
+        </UL>
         <h2>v0.6.1</h2>
         <UL>
             <LI>Feat: Appearance settings added so we can customize UI output panel</LI>
@@ -220,7 +224,7 @@
 
         <action id="DevoxxGenie.AddSnippetAction"
                 class="com.devoxx.genie.action.AddSnippetAction"
-                text="Add To Prompt Context"
+                text="Add To Conversation"
                 icon="/icons/pluginIcon.svg"
                 description="Add code snippet to context window">
             <add-to-group group-id="EditorPopupMenu" anchor="last" />
@@ -228,15 +232,15 @@
 
         <action id="DevoxxGenie.AddFilesAction"
                 class="com.devoxx.genie.action.AddFileAction"
-                text="Add File(s) To Prompt Context"
+                text="Add File(s) To Conversation"
                 icon="/icons/pluginIcon.svg"
-                description="Add file(s) to the prompt context">
+                description="Add file(s) to the conversation">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
 
         <action id="AddDirectoryToContextWindow"
                 class="com.devoxx.genie.action.AddDirectoryAction"
-                text="Add Directory to Prompt Context"
+                text="Add Directory to Conversation"
                 icon="/icons/pluginIcon.svg"
                 description="Add the selected directory to the context window">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>

@@ -160,12 +160,12 @@ public class NonStreamingPromptExecutionService {
                     if (mcpToolProvider != null) {
                         MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
 
-                        // Add file references to context before processing if we have them
-                        if (!FileListManager.getInstance().isEmpty(project)) {
-                            chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
-                            MCPService.logDebug("Added file references to MCP context: " +
-                                    FileListManager.getInstance().getFiles(project).size() + " files");
-                        }
+//                        // Add file references to context before processing if we have them
+//                        if (!FileListManager.getInstance().isEmpty(project)) {
+//                            chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
+//                            MCPService.logDebug("Added file references to MCP context: " +
+//                                    FileListManager.getInstance().getFiles(project).size() + " files");
+//                        }
 
                         assistant = AiServices.builder(Assistant.class)
                                 .chatLanguageModel(chatLanguageModel)

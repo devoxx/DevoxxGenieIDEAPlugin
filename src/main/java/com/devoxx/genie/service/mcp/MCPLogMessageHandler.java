@@ -52,16 +52,39 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
      * @return The formatted message
      */
     private @NotNull String formatLogMessage(@NotNull String message) {
-        // The original implementation relied on the stdio transport to prefix
-        // messages with < or > to indicate direction.
-        // We'll try to determine direction based on content as a fallback:
+        // Determine message direction based on content analysis
+        MCPType messageType = classifyMessageType(message);
+        
+        // Apply formatting based on message type
+        return switch (messageType) {
+            case AI_MSG -> "< " + message; // AI response (incoming)
+            case TOOL_MSG -> "> " + message; // Tool request (outgoing)
+            default -> message;      // General log
+        };
+    }
+    
+    /**
+     * Classify the message type based on content analysis
+     * 
+     * @param message The message content
+     * @return Appropriate MCPType
+     */
+    private MCPType classifyMessageType(@NotNull String message) {
+        // Use content pattern matching to determine message type
         if (message.startsWith("{") || message.startsWith("[")) {
-            return "< " + message; // Assume incoming JSON
-        } else if (message.startsWith("POST") || message.startsWith("GET")) {
-            return "> " + message; // Assume outgoing request
+            // JSON content is typically a response
+            if (message.contains("\"content\":") || message.contains("\"response\":")) {
+                return MCPType.AI_MSG;
+            } else if (message.contains("\"function\":") || message.contains("\"name\":")) {
+                return MCPType.TOOL_MSG;
+            }
+            return MCPType.AI_MSG; // Default for JSON
+        } else if (message.startsWith("POST") || message.startsWith("GET") || message.contains("function(")) {
+            // HTTP requests or function definitions are tool related
+            return MCPType.TOOL_MSG;
         } else {
-            // For other messages, don't add a prefix since we can't reliably determine direction
-            return message;
+            // Other messages are treated as general logs
+            return MCPType.LOG_MSG;
         }
     }
     
@@ -75,9 +98,6 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
         switch (level) {
             case DEBUG:
                 log.debug(message);
-                break;
-            case INFO:
-                log.info(message);
                 break;
             case ERROR:
                 log.error(message);
@@ -95,10 +115,25 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
     private void publishToBus(String message) {
         try {
             MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+            
+            // Strip direction markers for cleaner display
+            String cleanMessage = message;
+            if (message.startsWith("< ") || message.startsWith("> ")) {
+                cleanMessage = message.substring(2);
+            }
+            
+            // Determine message type based on content
+            MCPType messageType = MCPType.LOG_MSG;
+            if (message.startsWith("< ")) {
+                messageType = MCPType.AI_MSG;
+            } else if (message.startsWith("> ")) {
+                messageType = MCPType.TOOL_MSG;
+            }
+            
             messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
                     .onMCPLoggingMessage(MCPMessage.builder()
-                            .type(MCPType.LOG_MSG)
-                            .content(message)
+                            .type(messageType)
+                            .content(cleanMessage)
                             .build());
         } catch (Exception e) {
             log.error("Error publishing MCP log message to message bus", e);
