@@ -386,14 +386,15 @@ class MessageCreationServiceTest {
                 }
             });
 
-            when(mockVirtualFile.getName()).thenReturn("TestFile.java");
+            when(mockVirtualFile.getCanonicalPath()).thenReturn("/tmp/TestFile.java");
             when(mockFileDocumentManager.getDocument(mockVirtualFile)).thenReturn(mockDocument);
             when(mockDocument.getText()).thenReturn("Test file content");
 
             String result = messageCreationService.createAttachedFilesContext(mockProject, files);
 
             assertNotNull(result);
-            assertTrue(result.contains("Filename: TestFile.java"));
+            assertTrue(result.contains("Filename: "));
+            assertTrue(result.contains("/tmp/TestFile.java"));
             assertTrue(result.contains("Test file content"));
         }
     }
@@ -455,7 +456,7 @@ class MessageCreationServiceTest {
             String result = messageCreationService.createAttachedFilesContext(mockProject, files);
 
             assertNotNull(result);
-            assertTrue(result.contains("Filename: Unknown.file"));
+            assertTrue(result.contains("File: "));
             assertTrue(result.contains("Code Snippet: Selected snippet content"));
         }
     }

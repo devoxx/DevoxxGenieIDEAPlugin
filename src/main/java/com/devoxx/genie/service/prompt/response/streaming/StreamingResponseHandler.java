@@ -39,13 +39,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
      * Creates a new streaming response handler
      *
      * @param context The chat message context
-     * @param conversationWebViewController The web view controller to display conversation
+     * @param conversationWebViewController The web view controller to display conversation (can be null in tests)
      * @param onCompleteCallback Called when streaming completes successfully
      * @param onErrorCallback Called when streaming encounters an error
      */
     public StreamingResponseHandler(
             @NotNull ChatMessageContext context,
-            @NotNull ConversationWebViewController conversationWebViewController,
+            ConversationWebViewController conversationWebViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
         log.debug("Created streaming handler for context {}", context.getId());
@@ -70,17 +70,24 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         accumulatedResponse.append(partialResponse);
         String fullText = accumulatedResponse.toString();
         
-        ApplicationManager.getApplication().invokeLater(() -> {
-            // Set the AI message with accumulated tokens so far
+        // Only update the UI if we have a valid controller (might be null in tests)
+        if (conversationWebViewController != null) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                // Set the AI message with accumulated tokens so far
+                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
+                
+                // Always update the existing message - we already created a placeholder
+                // when the user submitted the prompt
+                conversationWebViewController.updateAiMessageContent(context);
+                
+                // Mark that we've started streaming
+                hasAddedInitialMessage = true;
+            });
+        } else {
+            // Still update the message in context even without UI
             context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
-            
-            // Always update the existing message - we already created a placeholder
-            // when the user submitted the prompt
-            conversationWebViewController.updateAiMessageContent(context);
-            
-            // Mark that we've started streaming
             hasAddedInitialMessage = true;
-        });
+        }
     }
 
     @Override
@@ -94,16 +101,18 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             context.setExecutionTimeMs(endTime - startTime);
             context.setAiMessage(response.aiMessage());
 
-            // Update the web view with the final response
-            ApplicationManager.getApplication().invokeLater(() -> {
-                // If we've already shown partial responses, just update the AI content
-                // Otherwise add a new message pair (when we get complete response without partials)
-                if (hasAddedInitialMessage) {
-                    conversationWebViewController.updateAiMessageContent(context);
-                } else {
-                    conversationWebViewController.addChatMessage(context);
-                }
-            });
+            // Update the web view with the final response (if webViewController is available)
+            if (conversationWebViewController != null) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    // If we've already shown partial responses, just update the AI content
+                    // Otherwise add a new message pair (when we get complete response without partials)
+                    if (hasAddedInitialMessage) {
+                        conversationWebViewController.updateAiMessageContent(context);
+                    } else {
+                        conversationWebViewController.addChatMessage(context);
+                    }
+                });
+            }
 
             project.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_TOPIC)
@@ -112,7 +121,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             ChatMemoryManager.getInstance().addAiResponse(context);
             
             // Add file references if any
-            if (!FileListManager.getInstance().isEmpty(context.getProject())) {
+            if (!FileListManager.getInstance().isEmpty(context.getProject()) && conversationWebViewController != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     // Add file references to the web view instead of creating a dialog
                     conversationWebViewController.addFileReferences(context, 
