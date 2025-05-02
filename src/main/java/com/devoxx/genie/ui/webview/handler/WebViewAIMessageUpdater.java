@@ -119,7 +119,9 @@ public class WebViewAIMessageUpdater {
         
         // JavaScript to update just the assistant message content
         String js = "try {" +
-                   "  const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');" +
+                "  const thinkingText = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');" +
+                "  if (thinkingText) thinkingText.style.display = 'none';" +
+                "  const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');" +
                    "  if (messagePair) {" +
                    "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
                    "    if (assistantMessage) {" +
