@@ -98,14 +98,14 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 // Set token usage and cost
                 context.setTokenUsageAndCost(response.tokenUsage());
 
+                // Add chat response to panel
+                panel.addChatResponse(context);
+
                 // Add the conversation to the chat service
                 project.getMessageBus()
                         .syncPublisher(AppTopics.CONVERSATION_TOPIC)
                         .onNewConversation(context);
 
-                // Add chat response to panel
-                panel.addChatResponse(context);
-                
                 // Add file references if any
                 if (context.getFileReferences() != null && !context.getFileReferences().isEmpty()) {
                     log.debug("Adding file references to conversation: {} files", context.getFileReferences().size());

@@ -113,8 +113,8 @@ public class ConversationStorageService {
             try {
                 try (PreparedStatement ps = connection.prepareStatement(
                         """
-                                INSERT INTO conversations 
-                                (id, projectHash, timestamp, title, llmProvider, modelName, 
+                                INSERT INTO conversations
+                                (id, projectHash, timestamp, title, llmProvider, modelName,
                                  apiKeyUsed, inputCost, outputCost, contextWindow, executionTimeMs)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 """)) {
@@ -222,9 +222,9 @@ public class ConversationStorageService {
                         "DELETE FROM chat_messages WHERE conversationId = ?")) {
                     ps.setString(1, conversation.getId());
                     int messagesDeleted = ps.executeUpdate();
-                    log.info("Deleted " + messagesDeleted + " messages for conversation " + conversation.getId());
+                    log.info("Deleted {} messages for conversation {}", messagesDeleted, conversation.getId());
                     if (messagesDeleted == 0) {
-                        log.warn("No messages found for conversation " + conversation.getId());
+                        log.warn("No messages found for conversation {}", conversation.getId());
                     }
                 }
 
@@ -259,7 +259,7 @@ public class ConversationStorageService {
                 // Delete all messages for conversations in this project
                 try (PreparedStatement ps = connection.prepareStatement(
                         """
-                                DELETE FROM chat_messages 
+                                DELETE FROM chat_messages
                                 WHERE conversationId IN (
                                     SELECT id FROM conversations WHERE projectHash = ?
                                 )
@@ -297,13 +297,13 @@ public class ConversationStorageService {
                                 "SELECT id FROM conversations ORDER BY timestamp ASC LIMIT ?)")) {
                     ps.setInt(1, DELETE_COUNT);
                     int deleted = ps.executeUpdate();
-                    log.info("Deleted " + deleted + " old conversations to free up space.");
+                    log.info("Deleted {} old conversations to free up space", deleted);
                 }
                 // Also delete associated messages
                 try (PreparedStatement ps = connection.prepareStatement(
                         "DELETE FROM chat_messages WHERE conversationId NOT IN (SELECT id FROM conversations)")) {
                     int msgDeleted = ps.executeUpdate();
-                    log.info("Deleted " + msgDeleted + " orphaned chat messages.");
+                    log.info("Deleted {} orphaned chat messages", msgDeleted);
                 }
             } catch (SQLException e) {
                 connection.rollback();
