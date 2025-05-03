@@ -14,7 +14,7 @@ In addition to Git Dif viewer and LLM-driven web search with [Google](https://de
 With Claude 3.7 Sonnet, DevoxxGenie isn't just another developer tool... it's a glimpse into the future of software engineering. One thing is clear: we're witnessing a paradigm shift in Ai Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-19.8K+ Downloads
+20K+ Downloads
 
 ### Hands-on with DevoxxGenie
 
