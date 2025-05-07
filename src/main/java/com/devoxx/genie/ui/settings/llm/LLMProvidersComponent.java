@@ -75,6 +75,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox customOpenAIUrlEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIUrlEnabled());
     @Getter
+    private final JCheckBox customOpenAIForceHttp11CheckBox = new JCheckBox("", stateService.isCustomOpenAIForceHttp11());
+    @Getter
     private final JCheckBox customOpenAIModelNameEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIModelNameEnabled());
     @Getter
     private final JCheckBox enableCustomOpenAIApiKeyCheckBox = new JCheckBox("", stateService.isCustomOpenAIApiKeyEnabled());
@@ -138,6 +140,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
+        addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
 
         // Cloud LLM Providers section
         addSection(panel, gbc, "Cloud LLM Providers");

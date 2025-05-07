@@ -101,6 +101,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // Local custom OpenAI-compliant LLM fields
     private boolean isCustomOpenAIUrlEnabled = false;
+    private boolean isCustomOpenAIForceHttp11 = false;
     private boolean isCustomOpenAIModelNameEnabled = false;
     private boolean isCustomOpenAIApiKeyEnabled = false;
 
