@@ -67,7 +67,7 @@ public class WebViewAIMessageUpdater {
         
         // Parse and render the markdown content
         Parser markdownParser = Parser.builder().build();
-        HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+        HtmlRenderer htmlRenderer = HtmlRenderer.builder().escapeHtml(true).build();
         
         String aiMessageText = chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text();
         Node document = markdownParser.parse(aiMessageText);
