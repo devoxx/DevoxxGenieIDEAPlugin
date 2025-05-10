@@ -93,7 +93,7 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
         String assistantMessageBackgroundColor;
         String assistantMessageTextColor;
 
-        if (state.getUseCustomColors()) {
+        if (Boolean.TRUE.equals(state.getUseCustomColors())) {
             log.debug("Use custom colors");
 
             // Use user-defined colors
@@ -151,13 +151,13 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
                 .append("el.style.borderColor = '").append(assistantMessageBorderColor).append("'; });\n");
 
         // Apply font sizes if custom sizes are enabled
-        if (state.getUseCustomFontSize()) {
+        if (Boolean.TRUE.equals(state.getUseCustomFontSize())) {
             cssStyleUpdates.append("document.body.style.fontSize = '").append(state.getCustomFontSize()).append("px';\n");
         } else {
             cssStyleUpdates.append("document.body.style.fontSize = '';\n");
         }
 
-        if (state.getUseCustomCodeFontSize()) {
+        if (Boolean.TRUE.equals(state.getUseCustomCodeFontSize())) {
             cssStyleUpdates.append("document.querySelectorAll('code').forEach(function(el) { el.style.fontSize = '")
                     .append(state.getCustomCodeFontSize()).append("px'; });\n");
         } else {
@@ -165,7 +165,7 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
         }
 
         // Apply rounded corners setting
-        String borderRadius = state.getUseRoundedCorners() ? state.getCornerRadius() + "px" : "0";
+        String borderRadius = Boolean.TRUE.equals(state.getUseRoundedCorners()) ? state.getCornerRadius() + "px" : "0";
         cssStyleUpdates.append("document.querySelectorAll('.user-message, .assistant-message').forEach(function(el) { ")
                 .append("el.style.borderRadius = '").append(borderRadius).append("'; });\n");
 
