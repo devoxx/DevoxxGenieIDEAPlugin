@@ -58,7 +58,7 @@ public class ConversationTemplate extends HtmlTemplate {
                 .replace("${headerFontSize}", String.valueOf(headerFontSize))
                 .replace("${subtextFontSize}", String.valueOf(subtextFontSize))
                 .replace("${filePathFontSize}", String.valueOf(filePathFontSize));
-        
+
         // Apply appearance settings to the custom appearance CSS template
         com.devoxx.genie.ui.settings.DevoxxGenieStateService stateService = 
                 com.devoxx.genie.ui.settings.DevoxxGenieStateService.getInstance();
@@ -83,16 +83,18 @@ public class ConversationTemplate extends HtmlTemplate {
         StringBuilder styleBuilder = new StringBuilder();
         styleBuilder.append("<style>\n");
         styleBuilder.append(themeVariables).append("\n");
-        
+
         // Apply dark theme overrides if needed
         if (isDarkMode) {
             styleBuilder.append(darkThemeOverrides).append("\n");
         }
-        
+
         styleBuilder.append(css).append("\n");
         
         // Apply custom appearance styles
-        styleBuilder.append(customAppearanceCss).append("\n");
+        if (Boolean.TRUE.equals(stateService.getUseCustomColors())) {
+            styleBuilder.append(customAppearanceCss).append("\n");
+        }
         
         // Apply MCP formatting styles
         styleBuilder.append("<style>\n");
