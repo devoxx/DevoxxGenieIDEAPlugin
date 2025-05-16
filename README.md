@@ -1,4 +1,4 @@
-## Devoxx Genie 
+## DevoxxGenie 
 
 <img height="128" src="src/main/resources/icons/pluginIcon.svg" width="128"/>
 
