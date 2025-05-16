@@ -94,6 +94,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
         isModified |= stateService.isCustomOpenAIUrlEnabled() != llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().isSelected();
         isModified |= stateService.isCustomOpenAIModelNameEnabled() != llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().isSelected();
+        isModified |= stateService.isCustomOpenAIForceHttp11() != llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().isSelected();
 
         isModified |= stateService.isOpenAIEnabled() != llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected();
         isModified |= stateService.isMistralEnabled() != llmSettingsComponent.getMistralEnabledCheckBox().isSelected();
@@ -129,6 +130,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
         settings.setCustomOpenAIApiKey(new String(llmSettingsComponent.getCustomOpenAIApiKeyField().getPassword()));
         settings.setCustomOpenAIApiKeyEnabled(llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected());
+        settings.setCustomOpenAIForceHttp11(llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().isSelected());
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -231,6 +233,8 @@ public class LLMProvidersConfigurable implements Configurable {
 
         llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().setSelected(settings.isCustomOpenAIUrlEnabled());
         llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().setSelected(settings.isCustomOpenAIModelNameEnabled());
+        llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().setSelected(settings.isCustomOpenAIForceHttp11());
+
 
         llmSettingsComponent.getOpenAIEnabledCheckBox().setSelected(settings.isOpenAIEnabled());
         llmSettingsComponent.getMistralEnabledCheckBox().setSelected(settings.isMistralEnabled());
