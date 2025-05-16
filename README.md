@@ -16,16 +16,18 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 21K+ Downloads
 
-### Hands-on with DevoxxGenie
+### Agentic Programming with DevoxxGenie
 
-[![DevoxxGenie Demo](https://devoxx.be/wp-content/uploads/2024/08/DevoxxGenieDemo.jpg)](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
+[![DevoxxGenie Demo](https://github.com/user-attachments/assets/94358040-e129-4534-8430-b02c63dc1b27)](https://www.youtube.com/watch?v=I4qPgRHCLBY)
 
 ### 🗂️ Video Tutorials:
+- [Building full-stack AI agents: From project generation to code execution (Devoxx France 2025)](https://www.youtube.com/watch?v=I4qPgRHCLBY)
 - [Agentic programming with DevoxxGenie (VoxxedDays Bucharest 2025)](https://www.youtube.com/watch?v=ZRNx9ZOoxsg)
 - [DevoxxGenie in action (Devoxx Belgium 2024)](https://www.youtube.com/watch?v=c5EyVLAXaGQ)
 - [How ChatMemory works](https://www.youtube.com/watch?v=NRAe4d7n6_4)
 - [Hands-on with DevoxxGenie](https://youtu.be/Rs8S4rMTR9s?feature=shared)
 - [The Era of AAP: Ai Augmented Programming using only Java](https://www.youtube.com/watch?v=yvgvALVs3xo)
+- [DevoxxGenie Demo 2024](https://www.youtube.com/live/kgtctcbA6WE?feature=shared&t=124)
 
 ### Blog Posts:
 
