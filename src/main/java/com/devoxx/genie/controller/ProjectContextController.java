@@ -107,7 +107,8 @@ public class ProjectContextController {
                 modelProvider.equals(Ollama) ||
                 modelProvider.equals(Jan) ||
                 modelProvider.equals(Bedrock) ||
-                modelProvider.equals(LMStudio);
+                modelProvider.equals(LMStudio) ||
+                modelProvider.equals(AzureOpenAI);
                 // Note : NOT GPT4All because the selected context window is not provided in JSON model response
     }
 
