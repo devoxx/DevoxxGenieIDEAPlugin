@@ -38,6 +38,11 @@
         <h2>v0.6.3</h2>
         <UL>
             <LI>Fix #677: Fixed new conversation is immediately added to history</LI>
+            <LI>Feat #679 : Add “Custom OpenAI HTTP 1.1” toggle for custom OpenAI provider by @denis-kudelin</LI>
+            <LI>Fix #683 : With Dark theme, light background was used by @mydeveloperplanet</LI>
+            <LI>Fix #681 : Escape html tags in the response by @mydeveloperplanet</LI>
+            <LI>Feat #688 : Replaced Google Gemini 2.5 Pro with 05-06 version by @stephanj</LI>
+            <LI>Fix #677 : Fix for new conversation being immediately added to history by @stephanj</LI>
         </UL>
         <h2>v0.6.2</h2>
         <UL>

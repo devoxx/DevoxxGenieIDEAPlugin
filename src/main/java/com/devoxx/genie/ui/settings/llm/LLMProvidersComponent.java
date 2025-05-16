@@ -141,7 +141,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
-
+        addHintText(panel, gbc, "Use HTTP/2 when unchecked");
         // Cloud LLM Providers section
         addSection(panel, gbc, "Cloud LLM Providers");
         addProviderSettingRow(panel, gbc, "OpenAI API Key", openAIEnabledCheckBox,
