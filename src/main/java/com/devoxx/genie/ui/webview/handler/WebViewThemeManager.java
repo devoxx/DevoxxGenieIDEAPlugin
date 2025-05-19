@@ -57,16 +57,26 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
     private void applyAppearanceChanges() {
         log.info("Appearance settings changed, updating WebView");
         
+        // Check if browser is available
+        if (browser == null) {
+            log.warn("Browser is null, cannot apply appearance changes");
+            return;
+        }
+        
         if (jsExecutor.isLoaded()) {
-            // Get script from the appearance handler via the web server
-            String scriptUrl = webServer.getScriptUrl("appearance-update-script");
-            if (scriptUrl != null && !scriptUrl.isEmpty()) {
-                // Run the script that updates all CSS variables
-                jsExecutor.executeJavaScript(
-                    String.format("var script = document.createElement('script'); " +
-                                 "script.src = '%s'; " +
-                                 "document.head.appendChild(script);", scriptUrl)
-                );
+            try {
+                // Get script from the appearance handler via the web server
+                String scriptUrl = webServer.getScriptUrl("appearance-update-script");
+                if (scriptUrl != null && !scriptUrl.isEmpty()) {
+                    // Run the script that updates all CSS variables
+                    jsExecutor.executeJavaScript(
+                        String.format("var script = document.createElement('script'); " +
+                                     "script.src = '%s'; " +
+                                     "document.head.appendChild(script);", scriptUrl)
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Error applying appearance changes: {}", e.getMessage());
             }
         }
     }
@@ -81,36 +91,46 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
     public void themeChanged(boolean isDarkTheme) {
         log.info("Theme changed to " + (isDarkTheme ? "dark" : "light") + " mode, refreshing web view");
         
+        // Check if browser is available
+        if (browser == null) {
+            log.warn("Browser is null, cannot refresh theme");
+            return;
+        }
+        
         // Reload the content with the new theme
         ConversationTemplate template = new ConversationTemplate(webServer);
         String htmlContent = template.generate();
         
         // Update the browser content - this will reload with the new theme styles
         if (jsExecutor.isLoaded()) {
-            // Create a new resource with the updated HTML content
-            String resourceId = webServer.addDynamicResource(htmlContent);
-            String resourceUrl = webServer.getResourceUrl(resourceId);
-            
-            // Set a flag to indicate that we should reload welcome content after the browser loads
-            final boolean[] welcomeReloaded = {false};
-            
-            // Add a temporary load handler to reload the welcome content after the theme change
-            browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
-                @Override
-                public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
-                    if (!welcomeReloaded[0]) {
-                        welcomeReloaded[0] = true;
-                        log.info("Browser reloaded after theme change, restoring welcome content");
-                        ApplicationManager.getApplication().invokeLater(() -> {
-                            ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
-                            welcomeContentLoader.accept(resourceBundle);
-                        });
+            try {
+                // Create a new resource with the updated HTML content
+                String resourceId = webServer.addDynamicResource(htmlContent);
+                String resourceUrl = webServer.getResourceUrl(resourceId);
+                
+                // Set a flag to indicate that we should reload welcome content after the browser loads
+                final boolean[] welcomeReloaded = {false};
+                
+                // Add a temporary load handler to reload the welcome content after the theme change
+                browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
+                    @Override
+                    public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
+                        if (!welcomeReloaded[0]) {
+                            welcomeReloaded[0] = true;
+                            log.info("Browser reloaded after theme change, restoring welcome content");
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
+                                welcomeContentLoader.accept(resourceBundle);
+                            });
+                        }
                     }
-                }
-            }, browser.getCefBrowser());
-            
-            // Reload the browser with the new content
-            browser.loadURL(resourceUrl);
+                }, browser.getCefBrowser());
+                
+                // Reload the browser with the new content
+                browser.loadURL(resourceUrl);
+            } catch (Exception e) {
+                log.error("Error refreshing browser theme: {}", e.getMessage());
+            }
         }
     }
 

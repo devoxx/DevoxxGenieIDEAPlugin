@@ -320,4 +320,34 @@ public class ActionButtonsPanel extends JPanel
     public void onTokenCalculationComplete(String message) {
         NotificationUtil.sendNotification(project, message);
     }
+    
+    /**
+     * Override setEnabled to properly handle disabling all child components
+     * when JCEF is not available.
+     * 
+     * @param enabled whether the component should be enabled
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        
+        // Disable individual components
+        submitBtn.setEnabled(enabled);
+        addFileBtn.setEnabled(enabled);
+        addProjectBtn.setEnabled(enabled);
+        calcTokenCostBtn.setEnabled(enabled);
+        
+        // Update visual state
+        if (!enabled) {
+            submitBtn.setToolTipText("Prompt submission is disabled because JCEF is not available");
+            addFileBtn.setToolTipText("File selection is disabled because JCEF is not available");
+            addProjectBtn.setToolTipText("Project context is disabled because JCEF is not available");
+            calcTokenCostBtn.setToolTipText("Token calculation is disabled because JCEF is not available");
+        } else {
+            submitBtn.setToolTipText("Submit prompt to AI");
+            addFileBtn.setToolTipText("Add files to context");
+            addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
+            calcTokenCostBtn.setToolTipText(CALC_TOKENS_COST);
+        }
+    }
 }

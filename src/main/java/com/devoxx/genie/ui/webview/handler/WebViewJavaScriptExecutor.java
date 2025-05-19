@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui.webview.handler;
 
+import com.devoxx.genie.ui.webview.JCEFChecker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.jcef.JBCefBrowser;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,41 +16,37 @@ import org.jetbrains.annotations.NotNull;
 public class WebViewJavaScriptExecutor {
 
     private final JBCefBrowser browser;
+
+    @Getter
+    @Setter
     private boolean isLoaded = false;
     
     public WebViewJavaScriptExecutor(JBCefBrowser browser) {
         this.browser = browser;
     }
-    
-    /**
-     * Set the loaded state of the browser.
-     * 
-     * @param loaded true if the browser is loaded, false otherwise
-     */
-    public void setLoaded(boolean loaded) {
-        this.isLoaded = loaded;
-    }
-    
-    /**
-     * Check if the browser is loaded.
-     * 
-     * @return true if the browser is loaded, false otherwise
-     */
-    public boolean isLoaded() {
-        return isLoaded;
-    }
-    
+
     /**
      * Execute JavaScript in the browser.
      *
      * @param script The JavaScript to execute
      */
     public void executeJavaScript(String script) {
+        // Skip JavaScript execution if JCEF is not available or browser is null
+        if (!JCEFChecker.isJCEFAvailable() || browser == null) {
+            log.debug("JCEF is not available or browser is null, skipping JavaScript execution: {}", 
+                    script != null && script.length() > 50 ? script.substring(0, 50) + "..." : script);
+            return;
+        }
+        
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (isLoaded) {
-                browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
-            } else {
-                log.warn("Browser not loaded, cannot execute JavaScript");
+            try {
+                if (isLoaded) {
+                    browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
+                } else {
+                    log.warn("Browser not loaded or not initialized properly, cannot execute JavaScript");
+                }
+            } catch (Exception e) {
+                log.error("Error executing JavaScript: {}", e.getMessage());
             }
         });
     }
