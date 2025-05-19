@@ -3,16 +3,19 @@ package com.devoxx.genie.ui.panel;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
+import com.devoxx.genie.ui.webview.JCEFChecker;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
+@Slf4j
 public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListener {
 
     private static final int MIN_INPUT_HEIGHT = 200;
@@ -39,7 +42,25 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         ResourceBundle resourceBundle = toolWindowContent.getResourceBundle();
 
         promptInputArea = new PromptInputArea(project, resourceBundle);
+        
+        // Check if JCEF is available and disable input if not
+        if (!JCEFChecker.isJCEFAvailable()) {
+            log.warn("JCEF is not available, disabling prompt input");
+            promptInputArea.setEnabled(false);
+            
+            // Add warning text to the placeholder
+            String disabledMessage = "Prompt input is disabled because JCEF is not available. " +
+                "Please enable JCEF in your IDE settings to use DevoxxGenie.";
+            promptInputArea.setText(disabledMessage);
+            promptInputArea.setForeground(Color.RED);
+        }
+        
         actionButtonsPanel = createActionButtonsPanel();
+        
+        // Disable action buttons if JCEF is not available
+        if (!JCEFChecker.isJCEFAvailable()) {
+            actionButtonsPanel.setEnabled(false);
+        }
 
         add(createSubmitPanel(actionButtonsPanel), BorderLayout.CENTER);
     }

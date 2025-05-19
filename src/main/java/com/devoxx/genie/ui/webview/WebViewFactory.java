@@ -1,17 +1,18 @@
 package com.devoxx.genie.ui.webview;
 
-import com.intellij.ui.jcef.JBCefBrowser;
-import com.intellij.ui.jcef.JBCefClient;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.cef.browser.CefBrowser;
-import org.cef.browser.CefFrame;
-import org.cef.handler.CefLoadHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 /**
- * Factory for creating JCef browser instances.
+ * Factory for creating JCef browser instances or fallback components when JCEF is not available.
  * This class handles the initialization of JCEF components for the plugin.
  */
 @Slf4j
@@ -20,38 +21,61 @@ public class WebViewFactory {
     private WebViewFactory() {
         // Utility class, no instances needed
     }
-    
+
     /**
-     * Creates a new JBCefBrowser instance and loads the specified URL.
+     * Creates a fallback text component when JCEF is not available.
      * 
-     * @param url URL to load in the browser
-     * @return A new JBCefBrowser instance
+     * @param message The message to display in the fallback component
+     * @return A JComponent that can be used instead of the browser
      */
-    public static @NotNull JBCefBrowser createBrowser(String url) {
-        // Ensure web server is running
-        WebServer webServer = WebServer.getInstance();
-        if (!webServer.isRunning()) {
-            webServer.start();
-        }
+    public static @NotNull JComponent createFallbackComponent(String message) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(JBUI.Borders.empty(10));
         
-        // Create a simple browser without recursive builder calls
-        JBCefBrowser browser = new JBCefBrowser();
+        // Main text area
+        JBTextArea textArea = new JBTextArea();
+        textArea.setText(message);
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setBorder(JBUI.Borders.empty(10, 0, 10, 0));
         
-        // Make sure the browser component takes up all available space
-        browser.getComponent().setMinimumSize(new Dimension(100, 100));
+        // Instructions panel with a titled border
+        JPanel instructionsPanel = new JPanel(new BorderLayout());
+        TitledBorder titledBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "How to Enable JCEF Support"
+        );
+        Font titleFont = UIUtil.getLabelFont().deriveFont(Font.BOLD);
+        titledBorder.setTitleFont(titleFont);
+        instructionsPanel.setBorder(titledBorder);
         
-        // Add load handler to detect load completion
-        JBCefClient client = browser.getJBCefClient();
-        client.addLoadHandler(new CefLoadHandlerAdapter() {
-            @Override
-            public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
-                log.debug("Browser loaded: " + url + " with status " + httpStatusCode);
-            }
-        }, browser.getCefBrowser());
+        // Instruction steps as HTML
+        JEditorPane instructionsPane = new JEditorPane();
+        instructionsPane.setEditorKit(JEditorPane.createEditorKitForContentType("text/html"));
+        instructionsPane.setEditable(false);
+        instructionsPane.setOpaque(false);
+        instructionsPane.setText(
+                "<html><body style='margin: 10px; font-family: sans-serif;'>" +
+                "<ol>" +
+                "<li>Go to <b>Help > Find Action</b> in the menu</li>" +
+                "<li>Type \"<b>Choose Boot Java Runtime for the IDE</b>\" and select it</li>" +
+                "<li>From the dropdown menu, select a runtime with <b>JCEF support</b></li>" +
+                "<li>Click <b>OK</b> and restart the IDE</li>" +
+                "</ol>" +
+                "<p><i>Note: Changing the runtime may cause unexpected issues in some cases.</i></p>" +
+                "</body></html>"
+        );
         
-        // Load the URL
-        browser.loadURL(url);
+        instructionsPanel.add(instructionsPane, BorderLayout.CENTER);
         
-        return browser;
+        // Assemble all components
+        panel.add(textArea, BorderLayout.NORTH);
+        panel.add(instructionsPanel, BorderLayout.CENTER);
+        
+        // Wrap everything in a scroll pane
+        JBScrollPane scrollPane = new JBScrollPane(panel);
+        scrollPane.setMinimumSize(new Dimension(400, 300));
+        return scrollPane;
     }
 }

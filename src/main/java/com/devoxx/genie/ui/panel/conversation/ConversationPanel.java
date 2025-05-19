@@ -84,11 +84,11 @@ public class ConversationPanel
         // Setup UI
         add(uiController.createButtonPanel(), BorderLayout.NORTH);
 
-        // Set browser layout and sizing
-        JComponent browserComponent = webViewController.getBrowser().getComponent();
-        browserComponent.setOpaque(true);
-        browserComponent.setBackground(Color.BLACK);
-        add(browserComponent, BorderLayout.CENTER);
+        // Set component layout and sizing
+        JComponent displayComponent = webViewController.getComponent();
+        displayComponent.setOpaque(true);
+        displayComponent.setBackground(Color.BLACK);
+        add(displayComponent, BorderLayout.CENTER);
         
         // Set sizes for the panel to ensure proper display
         setMinimumSize(new Dimension(400, 300));
