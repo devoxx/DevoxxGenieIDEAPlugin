@@ -1,9 +1,11 @@
 package com.devoxx.genie.chatmodel.cloud.azureopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Function;
 
 public class AzureOpenAIChatModelFactory implements ChatModelFactory {
 
@@ -52,8 +55,10 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
     /**
      * Using the Azure OpenAI provider, models are wrapped in a deployment.
      * There is an API available with which you can list your deployments and info about them,
-     * but it's not through the same endpoint and needs a different api key,
-     * so we're sadly creating a single mock model for now, which is the name of deployment.
+     * but it's not through the same endpoint and needs a different api key.
+     * We fall back to matching a deployed model with known models from OpenAI in general based on its name.
+     * When there is a match, the settings are taken from those models from the LLMModelRegistryService.
+     * In other cases, we're sadly creating a single mock model for now, which is the name of deployment.
      */
     @Override
     public List<LanguageModel> getModels() {
@@ -61,10 +66,16 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
                 .provider(MODEL_PROVIDER)
                 .modelName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .displayName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
-                .inputCost(0.0)
-                .outputCost(0.0)
-                .inputMaxTokens(0)
+                .inputCost(getAzureOpenAIModelConfig(LanguageModel::getInputCost, 0.0))
+                .outputCost(getAzureOpenAIModelConfig(LanguageModel::getOutputCost, 0.0))
+                .inputMaxTokens(getAzureOpenAIModelConfig(LanguageModel::getInputMaxTokens, 0))
                 .apiKeyUsed(true)
                 .build());
+    }
+
+    private <N extends Number> N getAzureOpenAIModelConfig(Function<LanguageModel, N> getConfigFunction, N defaultValue) {
+        return LLMModelRegistryService.getInstance().getModels().stream()
+                .filter(model -> model.getModelName().equals(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment()))
+                .map(getConfigFunction).findFirst().orElse(defaultValue);
     }
 }
