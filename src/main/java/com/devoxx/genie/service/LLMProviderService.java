@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ public class LLMProviderService {
         providerKeyMap.put(Google, stateService::getGeminiKey);
         providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
         providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
+        providerKeyMap.put(Grok, stateService::getGrokKey);
         providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
         providerKeyMap.put(Bedrock, stateService::getAwsSecretKey);
     }

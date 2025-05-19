@@ -3,7 +3,7 @@ package com.devoxx.genie.chatmodel;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.LLMModelRegistryService;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.mcp.MCPListenerService;
 import com.devoxx.genie.service.mcp.MCPService;

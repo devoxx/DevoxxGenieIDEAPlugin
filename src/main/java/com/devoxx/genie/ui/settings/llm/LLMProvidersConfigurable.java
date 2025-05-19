@@ -65,6 +65,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), stateService.getDeepSeekKey());
         isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), stateService.getLlamaCPPUrl());
         isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), stateService.getOpenRouterKey());
+        isModified |= isFieldModified(llmSettingsComponent.getGrokApiKeyField(), stateService.getGrokKey());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), stateService.getLmstudioModelUrl());
@@ -104,6 +105,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isGoogleEnabled() != llmSettingsComponent.getGeminiEnabledCheckBox().isSelected();
         isModified |= stateService.isDeepSeekEnabled() != llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected();
         isModified |= stateService.isOpenRouterEnabled() != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
+        isModified |= stateService.isGrokEnabled() != llmSettingsComponent.getGrokEnabledCheckBox().isSelected();
         isModified |= stateService.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
 
         return isModified;
@@ -140,6 +142,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGeminiKey(new String(llmSettingsComponent.getGeminiApiKeyField().getPassword()));
         settings.setDeepSeekKey(new String(llmSettingsComponent.getDeepSeekApiKeyField().getPassword()));
         settings.setOpenRouterKey(new String(llmSettingsComponent.getOpenRouterApiKeyField().getPassword()));
+        settings.setGrokKey(new String(llmSettingsComponent.getGrokApiKeyField().getPassword()));
 
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
@@ -168,6 +171,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGoogleEnabled(llmSettingsComponent.getGeminiEnabledCheckBox().isSelected());
         settings.setDeepSeekEnabled(llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected());
         settings.setOpenRouterEnabled(llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected());
+        settings.setGrokEnabled(llmSettingsComponent.getGrokEnabledCheckBox().isSelected());
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
@@ -180,6 +184,7 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getDeepInfraKey().isBlank() && settings.isDeepInfraEnabled()) ||
                     (!settings.getGeminiKey().isBlank() && settings.isGoogleEnabled()) ||
                     (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
+                    (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
                     (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
                     (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
@@ -244,6 +249,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGeminiEnabledCheckBox().setSelected(settings.isGoogleEnabled());
         llmSettingsComponent.getDeepSeekEnabledCheckBox().setSelected(settings.isDeepSeekEnabled());
         llmSettingsComponent.getOpenRouterEnabledCheckBox().setSelected(settings.isOpenRouterEnabled());
+        llmSettingsComponent.getGrokEnabledCheckBox().setSelected(settings.isGrokEnabled());
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());
     }
 }

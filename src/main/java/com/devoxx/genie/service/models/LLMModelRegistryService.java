@@ -1,4 +1,4 @@
-package com.devoxx.genie.service;
+package com.devoxx.genie.service.models;
 
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
@@ -36,6 +36,7 @@ public final class LLMModelRegistryService {
         addMistralModels();
         addDeepSeekModels();
         addBedrockModels();
+        addGrokModels();
     }
 
     private void addAnthropicModels() {
@@ -972,6 +973,86 @@ public final class LLMModelRegistryService {
                         .inputCost(0.15)
                         .outputCost(0.2)
                         .inputMaxTokens(32_000)
+                        .build());
+    }
+
+    private void addGrokModels() {
+        String grok3 = "grok-3";
+        models.put(ModelProvider.Grok.getName() + ":" + grok3,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok3)
+                        .displayName("Grok-3")
+                        .inputCost(3.00)
+                        .outputCost(15.00)
+                        .inputMaxTokens(131_072)
+                        .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String grok3Mini = "grok-3-mini";
+        models.put(ModelProvider.Grok.getName() + ":" + grok3Mini,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok3Mini)
+                        .displayName("Grok-3-mini")
+                        .inputCost(0.30)
+                        .outputCost(0.50)
+                        .inputMaxTokens(131_072)
+                        .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String grok3Fast = "grok-3-fast";
+        models.put(ModelProvider.Grok.getName() + ":" + grok3Fast,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok3Fast)
+                        .displayName("Grok-3-fast")
+                        .inputCost(5.00)
+                        .outputCost(25.00)
+                        .inputMaxTokens(131_072)
+                        .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String grok3MiniFast = "grok-3-mini-fast";
+        models.put(ModelProvider.Grok.getName() + ":" + grok3MiniFast,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok3MiniFast)
+                        .displayName("Grok-3-mini-fast")
+                        .inputCost(0.60)
+                        .outputCost(4.00)
+                        .inputMaxTokens(131_072)
+                        .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String grok2Vision1212 = "grok-2-vision-1212";
+        models.put(ModelProvider.Grok.getName() + ":" + grok2Vision1212,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok2Vision1212)
+                        .displayName("Grok-2-vision-1212")
+                        .inputCost(2.00)
+                        .outputCost(10.00)
+                        .inputMaxTokens(32_768)
+                        .outputMaxTokens(32_768)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String grok21212 = "grok-2-1212";
+        models.put(ModelProvider.Grok.getName() + ":" + grok21212,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Grok)
+                        .modelName(grok21212)
+                        .displayName("Grok-2-1212")
+                        .inputCost(2.00)
+                        .outputCost(10.00)
+                        .inputMaxTokens(131_072)
+                        .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
                         .build());
     }
 
