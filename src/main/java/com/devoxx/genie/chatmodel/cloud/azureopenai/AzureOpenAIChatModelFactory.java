@@ -1,11 +1,10 @@
 package com.devoxx.genie.chatmodel.cloud.azureopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.model.ChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.LLMModelRegistryService;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;

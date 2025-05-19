@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
-import com.devoxx.genie.service.LLMModelRegistryService;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;

@@ -5,7 +5,7 @@ import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.LLMModelRegistryService;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;

@@ -23,6 +23,7 @@ public enum ModelProvider {
     Google("Google", Type.CLOUD),
     OpenRouter("OpenRouter", Type.CLOUD),
     DeepSeek("DeepSeek", Type.CLOUD),
+    Grok("Grok", Type.CLOUD),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);

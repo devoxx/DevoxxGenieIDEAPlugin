@@ -114,6 +114,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGoogleEnabled = false;
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
+    private boolean isGrokEnabled = false;
     private boolean isAWSEnabled = false;
 
     // LLM API Keys
@@ -125,6 +126,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String geminiKey = "";
     private String deepSeekKey = "";
     private String openRouterKey = "";
+    private String grokKey = "";
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     private String azureOpenAIKey = "";

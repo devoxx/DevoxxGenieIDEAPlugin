@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +56,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
+    private final JPasswordField grokApiKeyField = new JPasswordField(stateService.getGrokKey());
+    @Getter
     private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
@@ -96,6 +99,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox deepSeekEnabledCheckBox = new JCheckBox("", stateService.isDeepSeekEnabled());
     @Getter
     private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isOpenRouterEnabled());
+    @Getter
+    private final JCheckBox grokEnabledCheckBox = new JCheckBox("", stateService.isGrokEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
@@ -160,6 +165,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithPasswordButton(deepSeekApiKeyField, "https://platform.deepseek.com/api_keys"));
         addProviderSettingRow(panel, gbc, "Open Router API Key", openRouterEnabledCheckBox,
                 createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
+        addProviderSettingRow(panel, gbc, "Grok API Key", grokEnabledCheckBox,
+                createTextWithPasswordButton(grokApiKeyField, "https://accounts.x.ai/sign-in"));
 
         addAzureOpenAIPanel(panel, gbc);
         addAWSPanel(panel, gbc);
@@ -204,15 +211,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         geminiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(geminiEnabledCheckBox, geminiApiKeyField));
         deepSeekEnabledCheckBox.addItemListener(e -> updateUrlFieldState(deepSeekEnabledCheckBox, deepSeekApiKeyField));
         openRouterEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openRouterEnabledCheckBox, openRouterApiKeyField));
+        grokEnabledCheckBox.addItemListener(e -> updateUrlFieldState(grokEnabledCheckBox, grokApiKeyField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
     }
-
-//    // In LLMProvidersComponent.java
-//    private boolean isAzureConfigValid() {
-//        return !azureOpenAIKeyField.getPassword().toString().isEmpty()
-//                && !azureOpenAIEndpointField.getText().trim().isEmpty()
-//                && !azureOpenAIDeploymentField.getText().trim().isEmpty();
-//    }
 
     private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {
         final String azureOpenAIUrl = "https://learn.microsoft.com/en-us/azure/ai-services/openai/overview";
@@ -311,7 +312,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     ) {
         JLabel hintLabel = new JLabel(text);
         hintLabel.setFont(hintLabel.getFont().deriveFont(hintLabel.getFont().getSize() - 2f));
-        hintLabel.setForeground(Color.GRAY);
+        hintLabel.setForeground(JBColor.GRAY);
 
         JPanel providerPanel = new JPanel(new BorderLayout(5, 0));
         providerPanel.add(hintLabel, BorderLayout.CENTER);
