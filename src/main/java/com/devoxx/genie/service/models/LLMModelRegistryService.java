@@ -109,7 +109,7 @@ public final class LLMModelRegistryService {
         models.put(ModelProvider.Anthropic.getName() + "-" + claude4Opus,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
-                        .modelName(claudeSonnet37)
+                        .modelName(claude4Opus)
                         .displayName("Claude 4 Opus")
                         .inputCost(15)
                         .outputCost(75)
@@ -121,7 +121,7 @@ public final class LLMModelRegistryService {
         models.put(ModelProvider.Anthropic.getName() + "-" + claude4Sonnet,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
-                        .modelName(claudeSonnet37)
+                        .modelName(claude4Sonnet)
                         .displayName("Claude 4 Sonnet")
                         .inputCost(3)
                         .outputCost(15)
