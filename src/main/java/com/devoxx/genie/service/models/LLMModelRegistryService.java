@@ -93,7 +93,6 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        // Available from February 2025
         String claudeSonnet37 = "claude-3-7-sonnet-latest";
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet37,
                 LanguageModel.builder()
@@ -103,6 +102,30 @@ public final class LLMModelRegistryService {
                         .inputCost(3)
                         .outputCost(15)
                         .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude4Opus = "claude-opus-4-20250514";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude4Opus,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claudeSonnet37)
+                        .displayName("Claude 4 Opus")
+                        .inputCost(15)
+                        .outputCost(75)
+                        .inputMaxTokens(32_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude4Sonnet = "claude-sonnet-4-20250514";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude4Sonnet,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claudeSonnet37)
+                        .displayName("Claude 4 Sonnet")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(64_000)
                         .apiKeyUsed(true)
                         .build());
     }

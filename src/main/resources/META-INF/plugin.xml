@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.6.6</h2>
+        <UL>
+            <LI>Feat #701 : Support for Claude 4</LI>
+        </UL>
         <h2>v0.6.5</h2>
         <UL>
             <LI>Feat #695 : Support for Grok as frontier cloud model</LI>
