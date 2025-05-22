@@ -113,7 +113,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 4 Opus")
                         .inputCost(15)
                         .outputCost(75)
-                        .inputMaxTokens(32_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
@@ -125,7 +125,7 @@ public final class LLMModelRegistryService {
                         .displayName("Claude 4 Sonnet")
                         .inputCost(3)
                         .outputCost(15)
-                        .inputMaxTokens(64_000)
+                        .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
     }
