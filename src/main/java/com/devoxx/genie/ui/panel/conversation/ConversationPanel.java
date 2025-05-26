@@ -69,9 +69,9 @@ public class ConversationPanel
             chatService,
                 historyManager,
             messageRenderer, 
-            uiController.getConversationLabel()
-        );
-        
+            uiController.getConversationLabel(),
+            this::refreshWebViewForNewConversation
+        );        
         // Now set the conversationManager in the UI controller via reflection
         try {
             Field field = uiController.getClass().getDeclaredField("conversationManager");
@@ -196,5 +196,35 @@ public class ConversationPanel
      */
     public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {
         messageRenderer.updateUserPromptWithResponse(chatMessageContext);
+    }
+    
+    /**
+     * Dispose of resources when the panel is no longer needed.
+     * This should be called when the panel is being removed or when the project closes.
+     */
+    public void dispose() {
+        if (webViewController != null) {
+            webViewController.dispose();
+        }
+    }
+    
+    /**
+     * Manually trigger recovery from sleep/wake issues when the webview appears corrupted.
+     * This is a convenience method that can be called externally if needed.
+     */
+    public void triggerWebViewRecovery() {
+        if (webViewController != null) {
+            webViewController.triggerRecovery();
+        }
+    }
+    
+    /**
+     * Force refresh the webview for a new conversation.
+     * This ensures a clean state and can help recover from any rendering issues.
+     */
+    public void refreshWebViewForNewConversation() {
+        if (webViewController != null) {
+            webViewController.refreshForNewConversation();
+        }
     }
 }

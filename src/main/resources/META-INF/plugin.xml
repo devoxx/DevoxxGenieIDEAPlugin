@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.6.7</h2>
+        <UL>
+            <LI>Issue #698: Black panel after "restart" next day</LI>
+        </UL>
         <h2>v0.6.6</h2>
         <UL>
             <LI>Feat #701 : Support for Claude 4</LI>
