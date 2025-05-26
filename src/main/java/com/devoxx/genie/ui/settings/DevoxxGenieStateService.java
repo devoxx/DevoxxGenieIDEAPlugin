@@ -61,7 +61,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private List<LanguageModel> languageModels = new ArrayList<>();
 
-    private Boolean showExecutionTime = true;
+    private Boolean useFileInEditor = true;
 
     // Settings panel
     private Boolean ragEnabled = false;

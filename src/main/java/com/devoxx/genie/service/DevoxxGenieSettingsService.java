@@ -172,9 +172,9 @@ public interface DevoxxGenieSettingsService {
 
     void setLlamaCPPUrl(String text);
 
-    Boolean getShowExecutionTime();
+    Boolean getUseFileInEditor();
 
-    void setShowExecutionTime(Boolean showExecutionTime);
+    void setUseFileInEditor(Boolean useFileInEditor);
 
     void setUseGitIgnore(Boolean useGitIgnore);
 

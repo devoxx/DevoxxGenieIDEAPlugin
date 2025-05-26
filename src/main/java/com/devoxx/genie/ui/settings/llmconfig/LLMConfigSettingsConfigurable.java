@@ -55,7 +55,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         isModified |= llmConfigSettingsComponent.getChatMemorySizeField().getNumber() != stateService.getChatMemorySize();
         isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != stateService.getTimeout();
         isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != stateService.getMaxRetries();
-        isModified |= llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected() != stateService.getShowExecutionTime();
+        isModified |= llmConfigSettingsComponent.getUseFileInEditorCheckBox().isSelected() != stateService.getUseFileInEditor();
         return isModified;
     }
 
@@ -74,7 +74,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         stateService.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
         stateService.setMaxRetries(llmConfigSettingsComponent.getRetryField().getNumber());
 
-        stateService.setShowExecutionTime(llmConfigSettingsComponent.getShowExecutionTimeCheckBox().isSelected());
+        stateService.setUseFileInEditor(llmConfigSettingsComponent.getUseFileInEditorCheckBox().isSelected());
     }
 
     /**
@@ -92,6 +92,6 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         llmConfigSettingsComponent.getTimeoutField().setNumber(stateService.getTimeout());
         llmConfigSettingsComponent.getRetryField().setNumber(stateService.getMaxRetries());
 
-        llmConfigSettingsComponent.getShowExecutionTimeCheckBox().setSelected(stateService.getShowExecutionTime());
+        llmConfigSettingsComponent.getUseFileInEditorCheckBox().setSelected(stateService.getUseFileInEditor());
     }
 }
