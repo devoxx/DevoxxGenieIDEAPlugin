@@ -5,6 +5,7 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.*;
 
@@ -89,7 +90,7 @@ public final class FileListManager {
         }
     }
 
-    public List<VirtualFile> getFiles(@NotNull Project project) {
+    public @NotNull List<VirtualFile> getFiles(@NotNull Project project) {
         List<VirtualFile> virtualFiles = Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
         List<VirtualFile> imageFiles = Collections.unmodifiableList(imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
         List<VirtualFile> allFiles = new ArrayList<>(virtualFiles);
@@ -97,7 +98,7 @@ public final class FileListManager {
         return allFiles;
     }
 
-    public List<VirtualFile> getImageFiles(@NotNull Project project) {
+    public @NotNull List<VirtualFile> getImageFiles(@NotNull Project project) {
         return Collections.unmodifiableList(imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
 
@@ -131,6 +132,26 @@ public final class FileListManager {
         imageFilesMap.remove(projectHash);
         previouslyAddedFiles.remove(projectHash);
 
+        notifyAllObservers(project);
+    }
+
+    /**
+     * Clear only the previously added files for a new conversation, keeping current files intact.
+     * This is used when starting a new conversation to ensure all current files are treated as "new".
+     */
+    public void clearPreviouslyAddedFiles(@NotNull Project project) {
+        String projectHash = project.getLocationHash();
+        previouslyAddedFiles.remove(projectHash);
+    }
+
+    /**
+     * Clear current files but keep previously added files.
+     * This is useful when replacing the current file list but preserving the conversation history.
+     */
+    public void clearCurrentFiles(@NotNull Project project) {
+        String projectHash = project.getLocationHash();
+        filesMap.remove(projectHash);
+        imageFilesMap.remove(projectHash);
         notifyAllObservers(project);
     }
 

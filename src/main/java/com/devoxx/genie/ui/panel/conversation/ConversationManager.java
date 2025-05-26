@@ -81,6 +81,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
      */
     @Override
     public void startNewConversation() {
+        // Clear everything for a new conversation - this is the correct behavior
         FileListManager.getInstance().clear(project);
         ChatMemoryService.getInstance().clearMemory(project);
 
