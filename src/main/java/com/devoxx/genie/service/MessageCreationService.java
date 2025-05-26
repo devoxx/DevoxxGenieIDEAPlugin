@@ -267,7 +267,8 @@ public class MessageCreationService {
      */
     private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext) {
         EditorInfo editorInfo = chatMessageContext.getEditorInfo();
-        if (editorInfo == null) {
+        if (editorInfo == null ||
+            Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
             return "";
         }
 

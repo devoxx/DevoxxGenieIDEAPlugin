@@ -85,9 +85,8 @@ public class ChatMessageContextUtil {
             // Set editor info if available and if useFileInEditor setting is enabled
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
 
-            // Include editor information only if the setting allows it and we have a file open OR some text is selected
+            // Include selected text (if any)
             if ((chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty()) &&
-                Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor()) ||
                 selectedTextEditor != null) {
                 addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
@@ -96,21 +95,13 @@ public class ChatMessageContextUtil {
 
     /**
      * Process attached files.
-     * We only include newly added files to the conversation to avoid duplicate content!
-     * The previously added files are stored in the FileListManager to support this logic.
+     * Include all files that have been added to the current conversation.
+     * Files are only cleared when starting a new conversation.
      * @param chatMessageContext the chat message context
      */
     private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext) {
         FileListManager fileListManager = FileListManager.getInstance();
         List<VirtualFile> files = fileListManager.getFiles(chatMessageContext.getProject());
-        List<VirtualFile> previouslyAddedFiles = fileListManager.getPreviouslyAddedFiles(chatMessageContext.getProject());
-
-        if (!previouslyAddedFiles.isEmpty()) {
-            // Create a new list containing only new files
-            files = files.stream()
-                    .filter(file -> !previouslyAddedFiles.contains(file))
-                    .toList();
-        }
 
         if (!files.isEmpty()) {
             try {
@@ -150,11 +141,11 @@ public class ChatMessageContextUtil {
             originalFile.putUserData(SELECTION_END_KEY, endOffset);
             originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
             originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
+            FileListManager.getInstance().addFile(chatMessageContext.getProject(), editor.getVirtualFile());
         } else {
             originalFile.putUserData(SELECTED_TEXT_KEY, "");
         }
 
-        FileListManager.getInstance().addFile(chatMessageContext.getProject(), editor.getVirtualFile());
     }
 
     /**
