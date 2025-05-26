@@ -20,6 +20,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -56,6 +58,9 @@ public class FileSelectionPanelFactory implements DumbAware {
         for (VirtualFile file : openFiles) {
             listModel.addElement(file);
         }
+
+        // Setup keyboard navigation between filter field and result list
+        setupKeyboardNavigation(filterField, resultList, project);
 
         return mainPanel;
     }
@@ -245,5 +250,74 @@ public class FileSelectionPanelFactory implements DumbAware {
                 fileListManager.addFile(project, selectedFile);
             }
         }
+    }
+
+    /**
+     * Setup keyboard navigation between filter field and result list
+     *
+     * @param filterField the filter field
+     * @param resultList  the result list
+     * @param project     the project
+     */
+    private static void setupKeyboardNavigation(JBTextField filterField, JBList<VirtualFile> resultList, Project project) {
+        // Add key listener to filter field to handle DOWN arrow and ENTER keys
+        filterField.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                // Not used
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DOWN && resultList.getModel().getSize() > 0) {
+                    // Transfer focus to the result list and select first item if nothing is selected
+                    resultList.requestFocusInWindow();
+                    if (resultList.getSelectedIndex() == -1) {
+                        resultList.setSelectedIndex(0);
+                    }
+                    e.consume(); // Prevent further processing
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER && resultList.getModel().getSize() > 0) {
+                    // If Enter is pressed in filter field and there are results, select first item and add it
+                    if (resultList.getSelectedIndex() == -1 && resultList.getModel().getSize() > 0) {
+                        resultList.setSelectedIndex(0);
+                    }
+                    if (resultList.getSelectedValue() != null) {
+                        addSelectedFile(project, resultList);
+                    }
+                    e.consume();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                // Not used
+            }
+        });
+
+        // Add key listener to result list to handle UP arrow and ENTER keys
+        resultList.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                // Not used
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_UP && resultList.getSelectedIndex() == 0) {
+                    // If UP arrow is pressed and we're at the first item, go back to filter field
+                    filterField.requestFocusInWindow();
+                    e.consume();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    // If Enter is pressed in result list, add the selected file
+                    addSelectedFile(project, resultList);
+                    e.consume();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                // Not used
+            }
+        });
     }
 }
