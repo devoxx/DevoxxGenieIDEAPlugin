@@ -241,6 +241,17 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
             panel.add(createNewlineShortcutPanel("Linux", stateService.getNewlineShortcutLinux()), gbc);
         }
 
+        JEditorPane addFilesInfoPane = new JEditorPane(
+                "text/html",
+                "<html><body style='margin: 5px'>You can also trigger the add files popup dialog using @ in the input field.</body></html>"
+        );
+        addFilesInfoPane.setEditable(false);
+        addFilesInfoPane.setBackground(null);
+        addFilesInfoPane.setBorder(null);
+
+        gbc.gridy++;
+        panel.add(addFilesInfoPane, gbc);
+
         return panel;
     }
 

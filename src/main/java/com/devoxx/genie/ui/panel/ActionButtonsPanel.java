@@ -160,6 +160,13 @@ public class ActionButtonsPanel extends JPanel
     /**
      * Add files to the prompt context.
      */
+    public void selectFilesForPromptContext() {
+        selectFilesForPromptContext(null);
+    }
+    
+    /**
+     * Add files to the prompt context.
+     */
     private void selectFilesForPromptContext(ActionEvent e) {
         java.util.List<VirtualFile> openFiles = editorFileButtonManager.getOpenFiles();
         List<VirtualFile> sortedFiles = new ArrayList<>(openFiles);

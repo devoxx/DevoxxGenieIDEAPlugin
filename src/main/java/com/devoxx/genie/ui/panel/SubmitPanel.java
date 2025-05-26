@@ -57,6 +57,10 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         
         actionButtonsPanel = createActionButtonsPanel();
         
+        // Set up file selection callback for @ key trigger
+        promptInputArea.setFileSelectionCallback(() -> 
+            actionButtonsPanel.selectFilesForPromptContext());
+        
         // Disable action buttons if JCEF is not available
         if (!JCEFChecker.isJCEFAvailable()) {
             actionButtonsPanel.setEnabled(false);
