@@ -136,6 +136,10 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
             inputField.setCaretPosition(inputField.getText().length());
         });
     }
+    
+    public void setFileSelectionCallback(Runnable fileSelectionCallback) {
+        inputField.setFileSelectionCallback(fileSelectionCallback);
+    }
 
     private void setPlaceholderWithKeyboardShortcut(String shortcut) {
         // Clean up the shortcut text

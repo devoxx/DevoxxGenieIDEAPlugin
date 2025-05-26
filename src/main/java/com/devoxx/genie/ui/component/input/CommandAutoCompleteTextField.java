@@ -34,6 +34,8 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private boolean isAutoCompleting = false;
     @Getter
     private String placeholder = "";
+    
+    private Runnable fileSelectionCallback;
 
     public CommandAutoCompleteTextField(@NotNull Project project) {
         super();
@@ -66,6 +68,10 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     public void setPlaceholder(String placeholder) {
         this.placeholder = placeholder;
         repaint();
+    }
+    
+    public void setFileSelectionCallback(Runnable fileSelectionCallback) {
+        this.fileSelectionCallback = fileSelectionCallback;
     }
 
     @Override
@@ -114,6 +120,13 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             } else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
                 autoComplete();
                 e.consume();
+            } else if (e.getKeyChar() == '@') {
+                if (shouldShowFileSelection()) {
+                    if (fileSelectionCallback != null) {
+                        fileSelectionCallback.run();
+                        e.consume();
+                    }
+                }
             }
         }
 
@@ -155,6 +168,24 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             } catch (BadLocationException ex) {
                 log.error("Error inserting newline", ex);
             }
+        }
+        
+        private boolean shouldShowFileSelection() {
+            int caretPosition = getCaretPosition();
+            String text = getText();
+            
+            // Check if @ is at the beginning of the text
+            if (caretPosition == 0) {
+                return true;
+            }
+            
+            // Check if the character before the caret position is a space
+            if (caretPosition > 0 && caretPosition <= text.length()) {
+                char prevChar = text.charAt(caretPosition - 1);
+                return prevChar == ' ' || prevChar == '\n' || prevChar == '\t';
+            }
+            
+            return false;
         }
     }
 

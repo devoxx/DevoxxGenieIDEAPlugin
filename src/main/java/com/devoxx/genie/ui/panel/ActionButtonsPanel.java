@@ -160,13 +160,21 @@ public class ActionButtonsPanel extends JPanel
     /**
      * Add files to the prompt context.
      */
+    public void selectFilesForPromptContext() {
+        selectFilesForPromptContext(null);
+    }
+    
+    /**
+     * Add files to the prompt context.
+     */
     private void selectFilesForPromptContext(ActionEvent e) {
         java.util.List<VirtualFile> openFiles = editorFileButtonManager.getOpenFiles();
         List<VirtualFile> sortedFiles = new ArrayList<>(openFiles);
         sortedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
 
+        JPanel fileSelectionPanel = FileSelectionPanelFactory.createPanel(project, sortedFiles);
         JBPopup popup = JBPopupFactory.getInstance()
-                .createComponentPopupBuilder(FileSelectionPanelFactory.createPanel(project, sortedFiles), null)
+                .createComponentPopupBuilder(fileSelectionPanel, null)
                 .setTitle(FILTER_AND_DOUBLE_CLICK_TO_ADD_TO_PROMPT_CONTEXT)
                 .setRequestFocus(true)
                 .setResizable(true)
@@ -179,6 +187,14 @@ public class ActionButtonsPanel extends JPanel
                     popup,
                     devoxxGenieToolWindowContent.getContentPanel().getSize().width,
                     promptInputArea.getLocationOnScreen().y);
+                    
+            // Focus the filter field after the popup is shown
+            SwingUtilities.invokeLater(() -> {
+                Component focusableComponent = findFocusableComponent(fileSelectionPanel);
+                if (focusableComponent != null) {
+                    focusableComponent.requestFocusInWindow();
+                }
+            });
         }
     }
 
@@ -319,6 +335,27 @@ public class ActionButtonsPanel extends JPanel
     @Override
     public void onTokenCalculationComplete(String message) {
         NotificationUtil.sendNotification(project, message);
+    }
+    
+    /**
+     * Find the first focusable component (text field) in the panel
+     * 
+     * @param panel the panel to search in
+     * @return the first focusable text field found, or null if none found
+     */
+    private Component findFocusableComponent(Container panel) {
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JTextField && component.isFocusable()) {
+                return component;
+            }
+            if (component instanceof Container) {
+                Component found = findFocusableComponent((Container) component);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
     
     /**

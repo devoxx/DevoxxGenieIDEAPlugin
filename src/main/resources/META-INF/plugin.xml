@@ -39,6 +39,7 @@
         <UL>
             <LI>Issue #698: Black panel after "restart" next day</LI>
             <LI>Feat #699: Add (or not) current open file in window context (New LLM option settings)</LI>
+            <LI>Feat #787: Add file" icon should move cursor/focus to "Type to search..." field by default</LI>
         </UL>
         <h2>v0.6.6</h2>
         <UL>
