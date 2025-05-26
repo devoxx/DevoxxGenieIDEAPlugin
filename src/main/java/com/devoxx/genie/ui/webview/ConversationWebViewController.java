@@ -44,6 +44,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private final WebViewFileReferenceManager fileReferenceManager;
     private final WebViewMCPLogHandler mcpLogHandler;
     private final WebViewBrowserInitializer browserInitializer;
+    private final WebViewSleepWakeRecoveryHandler sleepWakeRecoveryHandler;
 
     /**
      * Creates a new ConversationWebViewController with a fresh browser.
@@ -139,6 +140,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         mcpLogHandler = new WebViewMCPLogHandler(jsExecutor);
         browserInitializer = new WebViewBrowserInitializer(initialized, jsExecutor);
         themeManager = new WebViewThemeManager(browser, webServer, jsExecutor, this::showWelcomeContent);
+        sleepWakeRecoveryHandler = new WebViewSleepWakeRecoveryHandler(browser);
     }
 
     /**
@@ -316,6 +318,141 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     }
     
     /**
+     * Force refresh the webview when starting a new conversation.
+     * This helps ensure a clean state and can recover from any rendering issues.
+     */
+    public void refreshForNewConversation() {
+        if (!JCEFChecker.isJCEFAvailable() || browser == null) {
+            log.debug("Cannot refresh webview - JCEF not available or browser is null");
+            return;
+        }
+        
+        log.info("Refreshing webview for new conversation");
+        
+        // Don't clear content immediately - let the normal flow handle that
+        // Just ensure the webview is in a good state for rendering
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                // Strategy 1: Light refresh - just force component revalidation
+                if (attemptLightRefresh()) {
+                    log.debug("Light refresh completed for new conversation");
+                    return;
+                }
+                
+                // Strategy 2: If light refresh fails, try component refresh only
+                if (attemptComponentRefresh()) {
+                    log.debug("Component refresh completed for new conversation");
+                    return;
+                }
+                
+                // Strategy 3: Only use recovery handler as last resort
+                log.warn("Component refresh failed, using recovery handler");
+                if (sleepWakeRecoveryHandler != null) {
+                    sleepWakeRecoveryHandler.triggerRecovery();
+                }
+                
+            } catch (Exception e) {
+                log.error("Error during webview refresh for new conversation", e);
+            }
+        });
+    }
+    
+    /**
+     * Attempt a light refresh by just ensuring component validity.
+     */
+    private boolean attemptLightRefresh() {
+        try {
+            JComponent component = browser.getComponent();
+            if (component.isDisplayable()) {
+                // Just ensure the component is properly validated
+                component.revalidate();
+                component.repaint();
+                return true;
+            }
+        } catch (Exception e) {
+            log.debug("Light refresh failed: {}", e.getMessage());
+        }
+        return false;
+    }
+    
+    /**
+     * Attempt component refresh without touching browser content.
+     */
+    private boolean attemptComponentRefresh() {
+        try {
+            JComponent component = browser.getComponent();
+            if (component != null) {
+                // Force component hierarchy refresh
+                component.invalidate();
+                component.revalidate();
+                component.repaint();
+                
+                // Also refresh parent if needed
+                Container parent = component.getParent();
+                if (parent != null) {
+                    parent.revalidate();
+                    parent.repaint();
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            log.debug("Component refresh failed: {}", e.getMessage());
+        }
+        return false;
+    }    
+    /**
+     * Attempt a soft refresh by reloading the current page.
+     */
+    private boolean attemptSoftRefresh() {
+        try {
+            if (browser.getCefBrowser() != null) {
+                String currentUrl = browser.getCefBrowser().getURL();
+                if (currentUrl != null && !currentUrl.isEmpty()) {
+                    browser.getCefBrowser().reload();
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Soft refresh failed: {}", e.getMessage());
+        }
+        return false;
+    }
+    
+    /**
+     * Attempt a hard refresh by forcing component revalidation and browser reload.
+     */
+    private boolean attemptHardRefresh() {
+        try {
+            // Force UI component refresh
+            JComponent component = browser.getComponent();
+            if (component != null) {
+                component.invalidate();
+                component.revalidate();
+                component.repaint();
+                
+                // Also refresh parent containers
+                Container parent = component.getParent();
+                if (parent != null) {
+                    parent.invalidate();
+                    parent.revalidate();
+                    parent.repaint();
+                }
+            }
+            
+            // Then reload the browser
+            if (browser.getCefBrowser() != null) {
+                String currentUrl = browser.getCefBrowser().getURL();
+                if (currentUrl != null && !currentUrl.isEmpty()) {
+                    browser.getCefBrowser().reload();
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Hard refresh failed: {}", e.getMessage());
+        }
+        return false;
+    }    
+    /**
      * Update the custom prompt commands in the welcome panel.
      */
     public void updateCustomPrompts(ResourceBundle resourceBundle) {
@@ -385,4 +522,22 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         }
         return browser.getComponent();
     }
-}
+    
+    /**
+     * Manually trigger recovery from sleep/wake issues.
+     * This can be called when the webview appears to be in a corrupted state.
+     */
+    public void triggerRecovery() {
+        if (sleepWakeRecoveryHandler != null) {
+            sleepWakeRecoveryHandler.triggerRecovery();
+        }
+    }
+    
+    /**
+     * Dispose of resources when the controller is no longer needed.
+     */
+    public void dispose() {
+        if (sleepWakeRecoveryHandler != null) {
+            sleepWakeRecoveryHandler.dispose();
+        }
+    }}

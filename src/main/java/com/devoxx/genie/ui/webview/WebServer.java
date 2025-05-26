@@ -214,6 +214,12 @@ public class WebServer {
 
             log.info("Handling request for: " + uri);
             
+            // Handle health check endpoint
+            if ("/health-check".equals(uri)) {
+                handleHealthCheckRequest(ctx);
+                return;
+            }
+            
             if (resources.containsKey(uri)) {
                 String content = resources.get(uri);
                 ByteBuf buffer = Unpooled.copiedBuffer(content, CharsetUtil.UTF_8);
@@ -240,6 +246,48 @@ public class WebServer {
                         HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, buffer);
                 
                 response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
+                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
+                
+                ctx.writeAndFlush(response);
+            }
+        }
+
+        /**
+         * Handle health check requests to verify server connectivity.
+         */
+        private void handleHealthCheckRequest(ChannelHandlerContext ctx) {
+            try {
+                String healthStatus = "{\"status\":\"ok\",\"timestamp\":" + System.currentTimeMillis() + "}";
+                ByteBuf buffer = Unpooled.copiedBuffer(healthStatus, CharsetUtil.UTF_8);
+                
+                FullHttpResponse response = new DefaultFullHttpResponse(
+                        HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buffer);
+                
+                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
+                
+                // Set CORS headers
+                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, OPTIONS");
+                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type");
+                
+                // Add cache control to prevent caching
+                response.headers().set(HttpHeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+                response.headers().set(HttpHeaderNames.PRAGMA, "no-cache");
+                response.headers().set(HttpHeaderNames.EXPIRES, "0");
+                
+                ctx.writeAndFlush(response);
+                log.debug("Health check response sent");
+                
+            } catch (Exception e) {
+                log.error("Error handling health check request", e);
+                
+                // Send error response
+                ByteBuf buffer = Unpooled.copiedBuffer("{\"status\":\"error\"}", CharsetUtil.UTF_8);
+                FullHttpResponse response = new DefaultFullHttpResponse(
+                        HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, buffer);
+                
+                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
                 response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
                 
                 ctx.writeAndFlush(response);

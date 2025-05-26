@@ -44,7 +44,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
+    @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = "^sk-.*")
     void testExecuteQueryOpenAI() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.OpenAI)

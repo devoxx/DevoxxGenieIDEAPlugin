@@ -33,6 +33,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
     private final MessageRenderer messageRenderer;
     private final JLabel conversationLabel;
     private static final int MAX_TITLE_LENGTH = 50;
+    private final Runnable webViewRefreshCallback;
 
     /**
      * Creates a new conversation manager.
@@ -48,13 +49,32 @@ public class ConversationManager implements ConversationEventListener, Conversat
                               ConversationHistoryManager historyManager,
                               MessageRenderer messageRenderer,
                               JLabel conversationLabel) {
+        this(project, chatService, historyManager, messageRenderer, conversationLabel, null);
+    }
+
+    /**
+     * Creates a new conversation manager with webview refresh callback.
+     *
+     * @param project The active project
+     * @param chatService The chat service
+     * @param historyManager The history manager
+     * @param messageRenderer The message renderer
+     * @param conversationLabel The conversation label to update
+     * @param webViewRefreshCallback Optional callback to refresh webview
+     */
+    public ConversationManager(Project project, 
+                              ChatService chatService,
+                              ConversationHistoryManager historyManager,
+                              MessageRenderer messageRenderer,
+                              JLabel conversationLabel,
+                              Runnable webViewRefreshCallback) {
         this.project = project;
         this.chatService = chatService;
         this.historyManager = historyManager;
         this.messageRenderer = messageRenderer;
         this.conversationLabel = conversationLabel;
+        this.webViewRefreshCallback = webViewRefreshCallback;
     }
-
     /**
      * Start a new conversation.
      * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
@@ -66,6 +86,9 @@ public class ConversationManager implements ConversationEventListener, Conversat
 
         chatService.startNewConversation("");
 
+        // Only trigger webview refresh if we suspect there might be rendering issues
+        // This is more conservative to avoid interfering with normal operation
+        // The callback can still be used manually if needed
         ApplicationManager.getApplication().invokeLater(() -> {
             updateNewConversationLabel();
             messageRenderer.clear();
@@ -80,7 +103,6 @@ public class ConversationManager implements ConversationEventListener, Conversat
             }
         });
     }
-
     /**
      * Handle selection of a conversation from history.
      *
@@ -128,4 +150,16 @@ public class ConversationManager implements ConversationEventListener, Conversat
             log.debug("Conversation history reloaded after new conversation event");
         });
     }
-}
+    
+    /**
+     * Manually trigger webview refresh if callback is available.
+     * This can be called when webview issues are suspected.
+     */
+    public void triggerWebViewRefresh() {
+        if (webViewRefreshCallback != null) {
+            log.info("Manually triggering webview refresh");
+            webViewRefreshCallback.run();
+        } else {
+            log.debug("No webview refresh callback available");
+        }
+    }}
