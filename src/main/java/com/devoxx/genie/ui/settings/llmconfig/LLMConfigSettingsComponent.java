@@ -20,7 +20,7 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner timeoutField = new JBIntSpinner(new UINumericRange(stateService.getTimeout(), 1, Integer.MAX_VALUE));
     private final JBIntSpinner retryField = new JBIntSpinner(new UINumericRange(stateService.getMaxRetries(), 1, 5));
 
-    private final JCheckBox showExecutionTimeCheckBox = new JCheckBox("", stateService.getShowExecutionTime());
+    private final JCheckBox useFileInEditorCheckBox = new JCheckBox("", stateService.getUseFileInEditor());
 
     public LLMConfigSettingsComponent() {
         addListeners();
@@ -106,9 +106,9 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
         gbc.gridy++;
         gbc.gridx = 0;
-        panel.add(new JLabel("Show details metrics (execution time, tokens, price)"), gbc);
+        panel.add(new JLabel("Include currently open file in context"), gbc);
         gbc.gridx = 1;
-        panel.add(showExecutionTimeCheckBox, gbc);
+        panel.add(useFileInEditorCheckBox, gbc);
 
         return panel;
     }

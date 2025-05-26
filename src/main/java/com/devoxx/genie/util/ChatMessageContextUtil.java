@@ -82,10 +82,12 @@ public class ChatMessageContextUtil {
             // We don't include separate added files to the context if the full project is already included
             processAttachedFiles(chatMessageContext);
 
-            // Set editor info if available
+            // Set editor info if available and if useFileInEditor setting is enabled
             Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-            // Include editor information regardless of MCP state if we have a file open
+
+            // Include editor information only if the setting allows it and we have a file open OR some text is selected
             if ((chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty()) &&
+                Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor()) ||
                 selectedTextEditor != null) {
                 addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
             }
