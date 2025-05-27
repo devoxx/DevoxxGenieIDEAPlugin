@@ -1,0 +1,36 @@
+/* External Link Styling */
+.external-link-indicator {
+    margin-left: 4px;
+    opacity: 0.6;
+    font-size: 0.9em;
+    color: var(--external-link-indicator-color, #007acc);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.external-link-indicator:hover {
+    opacity: 1;
+}
+
+/* Dark theme adjustments */
+body.dark-theme .external-link-indicator {
+    color: var(--external-link-indicator-color, #4db6e7);
+}
+
+/* External links styling */
+a.external-link {
+    position: relative;
+}
+
+a.external-link:hover {
+    opacity: 0.8;
+}
+
+/* Make external links more visually distinct */
+a[href^="http"]:not([href^="http://localhost"]):not([href^="https://localhost"]) {
+    border-bottom: 1px dotted currentColor;
+}
+
+a[href^="http"]:not([href^="http://localhost"]):not([href^="https://localhost"]):hover {
+    border-bottom-style: solid;
+}
