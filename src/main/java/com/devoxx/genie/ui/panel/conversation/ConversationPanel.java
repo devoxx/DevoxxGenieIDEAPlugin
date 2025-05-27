@@ -71,7 +71,10 @@ public class ConversationPanel
             messageRenderer, 
             uiController.getConversationLabel(),
             this::refreshWebViewForNewConversation
-        );        
+        );
+        
+        // Set the conversation manager in the chat service for conversation tracking
+        chatService.setConversationManager(conversationManager);        
         // Now set the conversationManager in the UI controller via reflection
         try {
             Field field = uiController.getClass().getDeclaredField("conversationManager");

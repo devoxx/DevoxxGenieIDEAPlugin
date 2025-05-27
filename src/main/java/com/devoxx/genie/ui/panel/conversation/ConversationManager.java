@@ -34,6 +34,9 @@ public class ConversationManager implements ConversationEventListener, Conversat
     private final JLabel conversationLabel;
     private static final int MAX_TITLE_LENGTH = 50;
     private final Runnable webViewRefreshCallback;
+    
+    // Track the current active conversation
+    private Conversation currentConversation;
 
     /**
      * Creates a new conversation manager.
@@ -76,6 +79,24 @@ public class ConversationManager implements ConversationEventListener, Conversat
         this.webViewRefreshCallback = webViewRefreshCallback;
     }
     /**
+     * Get the current active conversation.
+     * 
+     * @return The current conversation, or null if none is active
+     */
+    public Conversation getCurrentConversation() {
+        return currentConversation;
+    }
+    
+    /**
+     * Set the current active conversation.
+     * 
+     * @param conversation The conversation to set as current
+     */
+    public void setCurrentConversation(Conversation conversation) {
+        this.currentConversation = conversation;
+    }
+
+    /**
      * Start a new conversation.
      * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
      * Also check for and recover from black screen issues.
@@ -85,6 +106,9 @@ public class ConversationManager implements ConversationEventListener, Conversat
         // Clear everything for a new conversation - this is the correct behavior
         FileListManager.getInstance().clear(project);
         ChatMemoryService.getInstance().clearMemory(project);
+        
+        // Clear the current conversation state
+        currentConversation = null;
 
         chatService.startNewConversation("");
 
@@ -129,6 +153,8 @@ public class ConversationManager implements ConversationEventListener, Conversat
      */
     @Override
     public void onConversationSelected(@NotNull Conversation conversation) {
+        // Set this as the current active conversation
+        currentConversation = conversation;
 
         String displayTitle = conversation.getTitle().length() > MAX_TITLE_LENGTH ?
                 conversation.getTitle().substring(0, MAX_TITLE_LENGTH) + "..." :

@@ -113,7 +113,7 @@ public class ConversationStorageService {
             try {
                 try (PreparedStatement ps = connection.prepareStatement(
                         """
-                                INSERT INTO conversations
+                                INSERT OR REPLACE INTO conversations
                                 (id, projectHash, timestamp, title, llmProvider, modelName,
                                  apiKeyUsed, inputCost, outputCost, contextWindow, executionTimeMs)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -131,6 +131,13 @@ public class ConversationStorageService {
                     ps.setInt(10, conversation.getContextWindow() == null ? 0 : conversation.getContextWindow());
                     ps.setInt(11, (int) (conversation.getExecutionTimeMs() > 0 ? conversation.getExecutionTimeMs() : 0));
                     ps.executeUpdate();
+                }
+
+                // Delete existing messages for this conversation (for updates)
+                try (PreparedStatement deletePs = connection.prepareStatement(
+                        "DELETE FROM chat_messages WHERE conversationId = ?")) {
+                    deletePs.setString(1, conversation.getId());
+                    deletePs.executeUpdate();
                 }
 
                 // Insert chat messages
