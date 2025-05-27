@@ -303,15 +303,17 @@ public class WebViewRenderingDetector {
     }
     
     /**
-     * Increment render issues counter and check if recovery is needed.
+     * Increment render issues counter but don't trigger automatic recovery.
+     * Recovery will only happen when creating a new conversation.
      */
     private void incrementRenderIssues(String reason) {
         int issueCount = consecutiveRenderIssues.incrementAndGet();
         debugLogger.warn("Render issue detected: {} (consecutive issues: {})", reason, issueCount);
         
         if (issueCount >= MAX_CONSECUTIVE_RENDER_ISSUES) {
-            debugLogger.warn("Max consecutive render issues reached, triggering recovery");
-            triggerRecovery("Render issues: " + reason + " (consecutive: " + issueCount + ")");
+            debugLogger.warn("Max consecutive render issues reached - will recover on next new conversation");
+            // Don't trigger automatic recovery - let the new conversation flow handle it
+            // triggerRecovery("Render issues: " + reason + " (consecutive: " + issueCount + ")");
         }
     }
     

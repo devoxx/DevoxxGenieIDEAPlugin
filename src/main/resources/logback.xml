@@ -9,7 +9,8 @@
         <appender-ref ref="CONSOLE" />
     </root>
 
-    <logger name="com.devoxx.genie" level="DEBUG"/>
+    <logger name="com.devoxx.genie" level="INFO"/>
+    <logger name="com.devoxx.genie.ui.webview" level="ALL"/>
     <logger name="dev.langchain4j.mcp" level="DEBUG"/>
 
 </configuration>

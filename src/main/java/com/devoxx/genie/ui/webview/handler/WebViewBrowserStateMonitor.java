@@ -28,8 +28,7 @@ public class WebViewBrowserStateMonitor {
     private final AtomicBoolean hasConnectionIssues = new AtomicBoolean(false);
     private final AtomicInteger consecutiveLoadErrors = new AtomicInteger(0);
     private final AtomicLong lastSuccessfulLoad = new AtomicLong(System.currentTimeMillis());
-    
-    private Consumer<String> recoveryCallback;
+
     private Timer healthCheckTimer;
     
     private static final int MAX_CONSECUTIVE_ERRORS = 3;
@@ -52,7 +51,6 @@ public class WebViewBrowserStateMonitor {
      * Set callback to be called when recovery is needed.
      */
     public void setRecoveryCallback(Consumer<String> callback) {
-        this.recoveryCallback = callback;
         debugLogger.debug("Recovery callback set");
     }
     
@@ -278,33 +276,19 @@ public class WebViewBrowserStateMonitor {
             triggerRecovery("Browser state inconsistency detected");
         }
     }
-    
+
     /**
-     * Reset state counters.
-     */
-    public void resetCounters() {
-        consecutiveLoadErrors.set(0);
-        hasConnectionIssues.set(false);
-        debugLogger.debug("State counters reset");
-    }
-    
-    /**
-     * Get current browser load state.
-     */
-    public boolean isBrowserLoaded() {
-        return browserLoaded.get();
-    }
-    
-    /**
-     * Trigger recovery callback.
+     * Trigger recovery callback - disabled to prevent automatic recovery.
+     * Recovery will only happen when creating a new conversation.
      */
     private void triggerRecovery(String reason) {
-        debugLogger.warn("Triggering recovery from browser state monitor: {}", reason);
-        if (recoveryCallback != null) {
-            recoveryCallback.accept("BrowserStateMonitor: " + reason);
-        } else {
-            debugLogger.warn("Recovery callback is null - cannot trigger recovery");
-        }
+        debugLogger.warn("Browser state issues detected: {} - will recover on next new conversation", reason);
+        // Don't trigger automatic recovery - let the new conversation flow handle it
+        // if (recoveryCallback != null) {
+        //     recoveryCallback.accept("BrowserStateMonitor: " + reason);
+        // } else {
+        //     debugLogger.warn("Recovery callback is null - cannot trigger recovery");
+        // }
     }
     
     /**

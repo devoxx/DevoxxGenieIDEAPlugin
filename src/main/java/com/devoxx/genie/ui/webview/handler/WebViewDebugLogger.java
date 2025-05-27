@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -72,7 +73,7 @@ public class WebViewDebugLogger {
     /**
      * Log state information for debugging.
      */
-    public void logState(String operation, Object... stateInfo) {
+    public void logState(String operation, Object @NotNull ... stateInfo) {
         StringBuilder stateBuilder = new StringBuilder();
         stateBuilder.append("STATE[").append(operation).append("]: ");
         

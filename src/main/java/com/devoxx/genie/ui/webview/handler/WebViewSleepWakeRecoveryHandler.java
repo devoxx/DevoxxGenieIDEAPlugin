@@ -41,6 +41,10 @@ public class WebViewSleepWakeRecoveryHandler {
     // Sleep detection threshold (3 minutes of inactivity suggests sleep)
     private static final long SLEEP_DETECTION_THRESHOLD = 3 * 60 * 1000; // 3 minutes
     
+    // Component event debouncing to reduce aggressive recovery attempts
+    private static final long COMPONENT_EVENT_DEBOUNCE_MS = 1000; // 1 second
+    private final AtomicLong lastComponentEventTime = new AtomicLong(0);
+    
     private final AtomicBoolean recoveryInProgress = new AtomicBoolean(false);
 
     public WebViewSleepWakeRecoveryHandler(JBCefBrowser browser) {
@@ -153,13 +157,13 @@ public class WebViewSleepWakeRecoveryHandler {
             @Override
             public void componentResized(ComponentEvent e) {
                 debugLogger.debug("Component resized - potential wake event");
-                checkForPotentialWakeEvent("Component resized");
+                checkForPotentialWakeEventWithDebounce("Component resized");
             }
             
             @Override
             public void componentMoved(ComponentEvent e) {
                 debugLogger.debug("Component moved - potential wake event");
-                checkForPotentialWakeEvent("Component moved");
+                checkForPotentialWakeEventWithDebounce("Component moved");
             }
         });
         
@@ -229,18 +233,98 @@ public class WebViewSleepWakeRecoveryHandler {
     
     /**
      * Check if this might be a wake event and trigger recovery if needed.
+     * Made less aggressive to avoid unnecessary recoveries during normal UI operations.
      */
     private void checkForPotentialWakeEvent(String reason) {
         debugLogger.debug("Checking for potential wake event - reason: {}", reason);
         
+        // Only trigger recovery if explicitly flagged as needed or if we have clear indicators of issues
         if (needsRecovery.get()) {
             debugLogger.debug("Recovery already flagged as needed");
             scheduleRecovery(reason);
-        } else if (shouldAttemptRecovery()) {
-            debugLogger.debug("Recovery determined to be needed based on current state");
-            scheduleRecovery(reason);
         } else {
-            debugLogger.debug("No recovery needed at this time");
+            // Be more conservative - only trigger recovery if we have actual issues
+            boolean hasActualIssues = shouldAttemptRecoveryConservatively();
+            if (hasActualIssues) {
+                debugLogger.debug("Recovery determined to be needed based on actual detected issues");
+                scheduleRecovery(reason);
+            } else {
+                debugLogger.debug("No recovery needed - component operations appear normal");
+            }
+        }
+    }
+    
+    /**
+     * Debounced version of checkForPotentialWakeEvent for component move/resize events.
+     * This prevents excessive recovery attempts during normal UI operations like resizing.
+     */
+    private void checkForPotentialWakeEventWithDebounce(String reason) {
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastEvent = currentTime - lastComponentEventTime.get();
+        
+        // Update the last event time
+        lastComponentEventTime.set(currentTime);
+        
+        // If this is happening too frequently, it's likely normal UI operations, not a wake event
+        if (timeSinceLastEvent < COMPONENT_EVENT_DEBOUNCE_MS) {
+            debugLogger.debug("Component event debounced - too frequent ({}ms since last), likely normal UI operation: {}", 
+                             timeSinceLastEvent, reason);
+            return;
+        }
+        
+        debugLogger.debug("Component event passed debounce check - proceeding with wake event check: {}", reason);
+        checkForPotentialWakeEvent(reason);
+    }
+    
+    /**
+     * Conservative recovery check - only triggers recovery for actual detected issues,
+     * not just component movements or normal UI operations.
+     */
+    private boolean shouldAttemptRecoveryConservatively() {
+        debugLogger.debug("Evaluating if conservative recovery should be attempted");
+        
+        if (!JCEFChecker.isJCEFAvailable() || browser == null) {
+            debugLogger.debug("JCEF not available or browser is null - no recovery needed");
+            return false;
+        }
+        
+        try {
+            JComponent component = browser.getComponent();
+            if (component == null || !component.isDisplayable()) {
+                debugLogger.debug("Component is null or not displayable - no recovery needed");
+                return false;
+            }
+            
+            // Only check for actual issues, not potential ones
+            boolean browserStateIssue = browserStateMonitor != null && browserStateMonitor.hasIssues();
+            boolean renderingIssue = renderingDetector != null && renderingDetector.hasIssues();
+            
+            // Additional conservative checks - only recover if we have strong indicators of problems
+            boolean hasStrongIndicators = false;
+            
+            // Check if browser is showing but has suspicious size (could indicate black rectangle)
+            if (component.isShowing() && (component.getWidth() <= 0 || component.getHeight() <= 0)) {
+                debugLogger.debug("Component showing but has invalid size - strong indicator of issues");
+                hasStrongIndicators = true;
+            }
+            
+            // Check if component background is black (potential black rectangle)
+            Color backgroundColor = component.getBackground();
+            if (backgroundColor != null && backgroundColor.equals(Color.BLACK) && component.isShowing()) {
+                debugLogger.debug("Component has black background while showing - potential black rectangle");
+                hasStrongIndicators = true;
+            }
+            
+            boolean shouldRecover = browserStateIssue || renderingIssue || hasStrongIndicators;
+            
+            debugLogger.debug("Conservative recovery evaluation - browserStateIssue: {}, renderingIssue: {}, strongIndicators: {}, shouldRecover: {}", 
+                             browserStateIssue, renderingIssue, hasStrongIndicators, shouldRecover);
+            
+            return shouldRecover;
+            
+        } catch (Exception e) {
+            debugLogger.error("Exception during conservative recovery check - being cautious, not recovering", e);
+            return false; // Be conservative - if we can't check properly, don't recover
         }
     }
     
