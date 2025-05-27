@@ -45,6 +45,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private final WebViewMCPLogHandler mcpLogHandler;
     private final WebViewBrowserInitializer browserInitializer;
     private final WebViewSleepWakeRecoveryHandler sleepWakeRecoveryHandler;
+    private final WebViewExternalLinkHandler externalLinkHandler;
 
     /**
      * Creates a new ConversationWebViewController with a fresh browser.
@@ -97,6 +98,11 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                         jsExecutor.setLoaded(true);
                         initialized.set(true);
                         log.info("ConversationWebView loaded with status: " + httpStatusCode);
+                        
+                        // Initialize external link handling after page load
+                        if (externalLinkHandler != null) {
+                            externalLinkHandler.injectLinkHandlingScript();
+                        }
                     }
                 }, browser.getCefBrowser());
             } catch (Exception e) {
@@ -141,6 +147,17 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         browserInitializer = new WebViewBrowserInitializer(initialized, jsExecutor);
         themeManager = new WebViewThemeManager(browser, webServer, jsExecutor, this::showWelcomeContent);
         sleepWakeRecoveryHandler = new WebViewSleepWakeRecoveryHandler(browser);
+        
+        // Initialize external link handler
+        externalLinkHandler = new WebViewExternalLinkHandler(webServer.getServerUrl(), jsExecutor);
+        
+        // Setup external link handling if JCEF is available
+        if (jcefAvailable && browser != null) {
+            setupExternalLinkHandling();
+            log.debug("External link handler initialized for webview");
+        } else {
+            log.warn("External link handler not initialized - JCEF not available or browser is null");
+        }
     }
 
     /**
@@ -249,6 +266,30 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                 }
             }
         });
+    }
+    
+    /**
+     * Setup external link handling.
+     * Should only be called if JCEF is available.
+     */
+    private void setupExternalLinkHandling() {
+        // Skip if JCEF is not available
+        if (!JCEFChecker.isJCEFAvailable() || browser == null) {
+            log.warn("Cannot setup external link handling - JCEF not available or browser is null");
+            return;
+        }
+        
+        try {
+            // Add the request handler to intercept navigation requests
+            browser.getJBCefClient().addRequestHandler(externalLinkHandler, browser.getCefBrowser());
+            
+            // Setup the JavaScript bridge for external link handling (visual indicators only)
+            externalLinkHandler.setupExternalLinkBridge(browser);
+            
+            log.info("External link handling setup completed");
+        } catch (Exception e) {
+            log.error("Error setting up external link handling", e);
+        }
     }
 
     /**

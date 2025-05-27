@@ -49,6 +49,7 @@ public class ConversationTemplate extends HtmlTemplate {
         String cssTemplate = ResourceLoader.loadResource("webview/css/conversation.css");
         String appearanceTemplate = ResourceLoader.loadResource("webview/css/appearance-custom.css");
         String mcpFormatting = ResourceLoader.loadResource("webview/css/mcp-formatting.css");
+        String externalLinksStyles = ResourceLoader.loadResource("webview/css/external-links.css");
         
         // Apply font size variables to the CSS template
         String css = cssTemplate
@@ -97,8 +98,10 @@ public class ConversationTemplate extends HtmlTemplate {
         }
         
         // Apply MCP formatting styles
-        styleBuilder.append("<style>\n");
         styleBuilder.append(mcpFormatting).append("\n");
+        
+        // Apply external links styles
+        styleBuilder.append(externalLinksStyles).append("\n");
         styleBuilder.append("</style>");
         
         return styleBuilder.toString();
@@ -129,6 +132,7 @@ public class ConversationTemplate extends HtmlTemplate {
         String conversationJs = ResourceLoader.loadResource("webview/js/conversation.js");
         String fileReferencesJs = ResourceLoader.loadResource("webview/js/file-references.js");
         String mcpHandlerJs = ResourceLoader.loadResource("webview/js/mcp-handler.js");
+        String externalLinkHandlerJs = ResourceLoader.loadResource("webview/js/external-link-handler.js");
         
         // Add script to load the JavaScript dynamically
         scripts.append("<script>\n")
@@ -143,6 +147,10 @@ public class ConversationTemplate extends HtmlTemplate {
                .append("  // Load the MCP handler JavaScript\n")
                .append("  loadScriptContent('mcp-handler-script', `")
                .append(escapeJS(mcpHandlerJs))
+               .append("`);\n\n")
+               .append("  // Load the external link handler JavaScript\n")
+               .append("  loadScriptContent('external-link-handler-script', `")
+               .append(escapeJS(externalLinkHandlerJs))
                .append("`);\n\n")
                .append("  // Initialize theme for file references\n")
                .append("  document.addEventListener('DOMContentLoaded', function() {\n")
