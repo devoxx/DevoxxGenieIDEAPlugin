@@ -65,10 +65,15 @@ public class ChatMessageTemplate extends HtmlTemplate {
             node = node.getNext();
         }
         
+        // Parse and render the user message as markdown
+        String userPrompt = chatMessageContext.getUserPrompt() == null ? "" : chatMessageContext.getUserPrompt();
+        Node userDocument = markdownParser.parse(userPrompt);
+        String userMessageContent = htmlRenderer.render(userDocument);
+        
         // Replace the template variables with actual content
         return messageTemplate
                 .replace("${messageId}", chatMessageContext.getId())
-                .replace("${userPrompt}", escapeHtml(chatMessageContext.getUserPrompt()))
+                .replace("${userPrompt}", userMessageContent)
                 .replace("${metadata}", formatMetadata())
                 .replace("${assistantContent}", assistantContentBuilder.toString());
     }

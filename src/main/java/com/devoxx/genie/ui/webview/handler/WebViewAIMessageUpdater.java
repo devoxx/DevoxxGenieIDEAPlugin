@@ -176,8 +176,14 @@ public class WebViewAIMessageUpdater {
         
         String userPrompt = chatMessageContext.getUserPrompt() == null ? "" : chatMessageContext.getUserPrompt();
         
-        // Format the user message as HTML with proper escaping
-        String userMessage = "<div class=\"user-message\">" + jsExecutor.escapeHtml(userPrompt) + "</div>";
+        // Parse and render the user message as markdown
+        Parser markdownParser = Parser.builder().build();
+        HtmlRenderer htmlRenderer = HtmlRenderer.builder().escapeHtml(true).build();
+        Node userDocument = markdownParser.parse(userPrompt);
+        String userMessageContent = htmlRenderer.render(userDocument);
+        
+        // Format the user message as HTML
+        String userMessage = "<div class=\"user-message\">" + userMessageContent + "</div>";
         
         // Format the AI message placeholder with a loading indicator that shows MCP will be displayed
         String aiMessagePlaceholder = "<div class=\"assistant-message\"><div class=\"loading-indicator\" id=\"loading-" 
