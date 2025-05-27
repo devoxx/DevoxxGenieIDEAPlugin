@@ -38,7 +38,6 @@ public class ChatMessageContext {
     private double cost;
     private boolean mcpActivated;
     private boolean ragActivated;
-    private boolean gitDiffActivated;
     private boolean webSearchActivated;
 
     @Builder.Default

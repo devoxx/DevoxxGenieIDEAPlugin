@@ -33,9 +33,6 @@ public class AppTopics {
     public static final Topic<WebSearchStateListener> WEB_SEARCH_STATE_TOPIC =
             Topic.create("WebSearchState", WebSearchStateListener.class);
 
-    public static final Topic<GitDiffStateListener> GITDIFF_STATE_TOPIC =
-            Topic.create("GitDiffState", GitDiffStateListener.class);
-
     public static final Topic<RAGStateListener> RAG_ACTIVATED_CHANGED_TOPIC =
             Topic.create("RagStateActivated", RAGStateListener.class);
 

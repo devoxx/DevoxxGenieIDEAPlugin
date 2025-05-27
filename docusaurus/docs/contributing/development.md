@@ -21,7 +21,6 @@ src/main/java/com/devoxx/genie/
 ├── model/          # Data models and DTOs
 ├── service/        # Business logic services
 │   ├── chromadb/   # ChromaDB integration for RAG
-│   ├── gitdiff/    # Git diff functionality
 │   ├── mcp/        # MCP implementation
 │   ├── prompt/     # Prompt handling services
 │   ├── rag/        # RAG implementation

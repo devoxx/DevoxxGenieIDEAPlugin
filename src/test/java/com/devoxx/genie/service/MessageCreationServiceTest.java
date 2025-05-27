@@ -109,7 +109,6 @@ class MessageCreationServiceTest {
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
-            when(mockStateService.getUseSimpleDiff()).thenReturn(false);
 
             try (MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
                 fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
@@ -137,7 +136,6 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getGitDiffActivated()).thenReturn(false);
             when(mockStateService.getRagActivated()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
 
@@ -170,7 +168,6 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             // Setup state service behaviors
-            when(mockStateService.getGitDiffActivated()).thenReturn(false);
             when(mockStateService.getRagActivated()).thenReturn(false);
             
             // Initially return no images, then return our test image when called later
@@ -215,25 +212,6 @@ class MessageCreationServiceTest {
         }
     }
 
-    @Test
-    void testConstructUserMessageWithFullContextWithGitDiff() {
-        String context = "Full context content";
-        when(mockChatMessageContext.getFilesContext()).thenReturn(context);
-
-        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
-             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
-
-            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
-            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
-
-            when(mockStateService.getUseSimpleDiff()).thenReturn(true);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
-
-            messageCreationService.addUserMessageToContext(mockChatMessageContext);
-
-            verify(mockChatMessageContext).setUserMessage(any(UserMessage.class));
-        }
-    }
 
     @Test
     void testConstructUserMessageWithCombinedContextWithRag() {
@@ -258,7 +236,6 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
-            when(mockStateService.getGitDiffActivated()).thenReturn(false);
             when(mockStateService.getRagActivated()).thenReturn(true);
             when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
             when(mockSemanticSearchService.search(any(), any())).thenReturn(searchResults);
@@ -290,7 +267,6 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getGitDiffActivated()).thenReturn(false);
             when(mockStateService.getRagActivated()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
 
@@ -318,7 +294,6 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getGitDiffActivated()).thenReturn(false);
             when(mockStateService.getRagActivated()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
 

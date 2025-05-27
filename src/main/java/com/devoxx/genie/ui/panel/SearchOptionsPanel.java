@@ -28,11 +28,6 @@ public class SearchOptionsPanel extends JPanel {
                 "Enable RAG-enabled code search"
         );
 
-        InputSwitch gitDiffSwitch = new InputSwitch(
-                "Git Diff",
-                "Show Git diff window to compare and merge code suggestions"
-        );
-
         InputSwitch webSearchSwitch = new InputSwitch(
                 "Web",
                 "Search the web for additional information"
@@ -40,7 +35,6 @@ public class SearchOptionsPanel extends JPanel {
 
         // Add switches to our list for tracking
         switches.add(ragSwitch);
-        switches.add(gitDiffSwitch);
         switches.add(webSearchSwitch);
 
         // Initialize visibility based on state service
@@ -48,7 +42,6 @@ public class SearchOptionsPanel extends JPanel {
 
         // Load saved states for enabled switches
         ragSwitch.setSelected(stateService.getRagActivated());
-        gitDiffSwitch.setSelected(stateService.getGitDiffActivated());
         webSearchSwitch.setSelected(stateService.getWebSearchActivated());
 
         // Ensure only one switch is initially active
@@ -69,14 +62,6 @@ public class SearchOptionsPanel extends JPanel {
             updatePanelVisibility();
         });
 
-        gitDiffSwitch.addEventSelected(selected -> {
-            if (selected) {
-                deactivateOtherSwitches(gitDiffSwitch);
-            }
-            stateService.setGitDiffActivated(selected);
-            updatePanelVisibility();
-        });
-
         webSearchSwitch.addEventSelected(selected -> {
             if (selected) {
                 deactivateOtherSwitches(webSearchSwitch);
@@ -87,7 +72,6 @@ public class SearchOptionsPanel extends JPanel {
 
         // Add components
         add(ragSwitch);
-        add(gitDiffSwitch);
         add(webSearchSwitch);
 
         // Add some padding
@@ -124,8 +108,7 @@ public class SearchOptionsPanel extends JPanel {
     private void updateInitialVisibility(@NotNull DevoxxGenieStateService stateService) {
         // Set initial visibility based on state service
         switches.get(0).setVisible(stateService.getRagEnabled());
-        switches.get(1).setVisible(stateService.getGitDiffEnabled());
-        switches.get(2).setVisible(stateService.getIsWebSearchEnabled());
+        switches.get(1).setVisible(stateService.getIsWebSearchEnabled());
 
         // Update panel visibility
         updatePanelVisibility();

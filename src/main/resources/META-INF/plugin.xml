@@ -43,6 +43,7 @@
             <LI>Fix #717: User prompts should rendered as markdown</LI>
             <LI>Feat #700: Conversation history returns full conversation</LI>
             <LI>Fix #685: Open browser when links are clicked in conversation webview</LI>
+            <LI>Fix #705: Removed obsolete GitDiff/Merge replaced by MCP</LI>
         </UL>
         <h2>v0.6.6</h2>
         <UL>
@@ -162,11 +163,6 @@
                              instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
                              displayName="Scan &amp; Copy Project"/>
 
-        <projectConfigurable id="com.devoxx.genie.DiffSettings"
-                             parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.gitdiff.GitDiffSettingsConfigurable"
-                             displayName="LLM Git Diff View"/>
-
         <projectConfigurable id="com.devoxx.genie.RAG"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.rag.RAGSettingsConfigurable"
@@ -221,7 +217,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPExecutionService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.gitdiff.GitMergeService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
         <!-- New service for WebView implementation -->

@@ -11,7 +11,6 @@ import ChatMemoryIcon from './icons/ChatMemory';
 import ProjectScannerIcon from './icons/ProjectScanner';
 import TokenCostIcon from './icons/TokenCost';
 import WebSearchIcon from './icons/WebSearch';
-import GitDiffIcon from './icons/GitDiff';
 import DragDropIcon from './icons/DragDrop';
 import NaiveRAGIcon from './icons/NaiveRAG';
 
@@ -73,16 +72,6 @@ const FeatureList = [
     description: (
       <>
         Integrate web search functionality using Google or Tavily to find relevant information for your programming questions.
-      </>
-    ),
-  },
-  {
-    title: 'Git Diff/Merge',
-    icon: GitDiffIcon,
-    link: '/docs/features/git-diff',
-    description: (
-      <>
-        Show Git Diff/Merge dialog to review and accept LLM suggestions directly without copying and pasting code.
       </>
     ),
   },

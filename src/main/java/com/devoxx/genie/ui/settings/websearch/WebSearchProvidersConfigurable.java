@@ -58,9 +58,6 @@ public class WebSearchProvidersConfigurable implements Configurable {
             stateService.setIsWebSearchEnabled(text.equalsIgnoreCase("true"));
         });
 
-        boolean oldValue = stateService.getGitDiffEnabled();
-        boolean newValue = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected();
-
         isModified |= webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != stateService.getIsWebSearchEnabled();
         isModified |= stateService.isTavilySearchEnabled() != webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected();
         isModified |= isFieldModified(webSearchProvidersComponent.getTavilySearchApiKeyField(), stateService.getTavilySearchKey());
@@ -70,12 +67,6 @@ public class WebSearchProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(webSearchProvidersComponent.getGoogleCSIApiKeyField(), stateService.getGoogleCSIKey());
 
         isModified |= webSearchProvidersComponent.getMaxSearchResults().getNumber() != stateService.getMaxSearchResults();
-
-        if (oldValue != newValue) {
-            project.getMessageBus()
-                    .syncPublisher(AppTopics.WEB_SEARCH_STATE_TOPIC)
-                    .onWebSearchStateChange(newValue);
-        }
 
         return isModified;
     }
