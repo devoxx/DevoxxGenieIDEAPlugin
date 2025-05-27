@@ -32,8 +32,9 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     
     @Getter
     private final ConversationPanel conversationPanel;
-    
+
     // Flag to track if we're in a new conversation (no messages sent yet)
+    @Getter
     private boolean isNewConversation = true;
 
     /**
@@ -219,17 +220,7 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         // Defer to the conversation panel which contains the WebViewController
         ApplicationManager.getApplication().invokeLater(conversationPanel::scrollToBottom);
     }
-    
-    /**
-     * Checks if this is a new conversation (no messages sent yet).
-     * This is used to determine if we should clear the welcome screen when the first prompt is submitted.
-     * 
-     * @return true if this is a new conversation with no previous messages
-     */
-    public boolean isNewConversation() {
-        return isNewConversation;
-    }
-    
+
     /**
      * Marks the conversation as no longer new after the first prompt is submitted.
      * This is called from the controller after processing the first prompt.
