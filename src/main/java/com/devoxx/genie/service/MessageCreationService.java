@@ -42,13 +42,6 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 @Slf4j
 public class MessageCreationService {
 
-    private static final String GIT_DIFF_INSTRUCTIONS = """
-            Please analyze the code and provide ONLY the modified code in your response.
-            Do not include any explanations or comments.
-            The response should contain just the modified code wrapped in a code block using the appropriate language identifier.
-            If multiple files need to be modified, provide each file's content in a separate code block.
-            """;
-
     public static final String SEMANTIC_RESULT = """
             File: %s
             Score: %.2f
@@ -120,11 +113,6 @@ public class MessageCreationService {
         log.debug("Constructing user message with full context");
         StringBuilder stringBuilder = new StringBuilder();
 
-        // If git diff is enabled, add special instructions at the beginning
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseSimpleDiff())) {
-            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n");
-        }
-
         if (!context.isEmpty()) {
             stringBuilder.append("<Context>");
             stringBuilder.append(context);
@@ -160,11 +148,7 @@ public class MessageCreationService {
             }
         }
 
-        // If git diff is enabled, add special instructions
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getGitDiffActivated())) {
-            // Git diff is enabled, add special instructions at the beginning
-            stringBuilder.append("<DiffInstructions>").append(GIT_DIFF_INSTRUCTIONS).append("</DiffInstructions>\n\n");
-        } else if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
             // Semantic search is enabled, add search results
             String semanticContext = addSemanticSearchResults(chatMessageContext);
             if (!semanticContext.isEmpty()) {

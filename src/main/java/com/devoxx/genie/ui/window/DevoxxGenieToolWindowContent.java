@@ -181,14 +181,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                 ragSwitch.setSelected(enabled);
                 submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
             });
-            MessageBusUtil.subscribe(connection, AppTopics.GITDIFF_STATE_TOPIC, enabled -> {
-                InputSwitch gitDiffSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(1);
-                gitDiffSwitch.setVisible(enabled);
-                gitDiffSwitch.setSelected(enabled);
-                submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
-            });
             MessageBusUtil.subscribe(connection, AppTopics.WEB_SEARCH_STATE_TOPIC, enabled -> {
-                InputSwitch webSearchSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(2);
+                InputSwitch webSearchSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(1);
                 webSearchSwitch.setVisible(enabled);
                 webSearchSwitch.setSelected(enabled);
                 submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();

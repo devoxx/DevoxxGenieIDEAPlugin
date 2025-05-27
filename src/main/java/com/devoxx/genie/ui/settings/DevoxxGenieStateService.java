@@ -65,20 +65,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // Settings panel
     private Boolean ragEnabled = false;
-    private Boolean gitDiffEnabled = false;
 
     // Search panel
     private Boolean ragActivated = false;
-    private Boolean gitDiffActivated = false;
     private Boolean webSearchActivated = false;
 
     // Indexer
     private Integer indexerPort = 8000;
     private Integer indexerMaxResults = 10;
     private Double indexerMinScore = 0.7;
-
-    // Git Diff features
-    private Boolean useSimpleDiff = false;
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;

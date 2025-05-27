@@ -41,7 +41,6 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images**: You can now DnD images with multimodal LLM's.
 - **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
-- **💪🏻 Git Diff/Merge** : Show Git Diff/Merge dialog to accept LLM suggestions.
 - **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
 - **💰 Token Cost Calculator**: Calculate the cost when using Cloud LLM providers.
@@ -201,17 +200,6 @@ Right-click to add only the most relevant parts of your project to the context.
 
 ![RightClick](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/a86c311a-4589-41f9-bb4a-c8c4f0b884ee)
 
-## Git Diff viewer
-Starting from v0.3.0, you can enable a Git diff/merge viewer to directly review and accept LLM-generated code changes without needing to copy and paste them from the LLM's response.
-To activate this feature, navigate to Settings and select "LLM Git Diff Merge." You can then choose between a two-panel or three-panel Git diff view.
-
-![git_diff](https://github.com/user-attachments/assets/114bb3cf-2824-442b-bdd3-483fb0d58983)
-![diff_merge](https://github.com/user-attachments/assets/eec2d6c8-5145-4729-8962-7033807018b1)
-
-For example, the two-panel Git diff view works seamlessly with the local Ollama LLM provider and the Llama 3.2 3B model.
-
-https://github.com/user-attachments/assets/817159ab-586f-4d46-bd46-bc0097805aed
-
 ## The Power of Full Context: A Real-World Example
 The DevoxxGenie project itself, at about 70K tokens, fits comfortably within most high-end LLM context windows. 
 This allows for incredibly nuanced interactions – we're talking advanced queries and feature requests that leave tools like GitHub Copilot scratching their virtual heads!
@@ -329,7 +317,7 @@ The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
   - [`PromptExecutionService.executeQuery()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/PromptExecutionService.java) → Formats the full response.
   - [`ChatResponsePanel.displayResponse()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/ChatResponsePanel.java) → Renders the text and code blocks.
 
-### 5️⃣ Enhancements (RAG & Git Diff)
+### 5️⃣ Enhancements (RAG)
 #### **RAG (Retrieval-Augmented Generation)**
 - **Indexing Source Code for Retrieval**
   - [`ProjectIndexerService.indexFiles()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/ProjectIndexerService.java) → Indexes project files
@@ -338,9 +326,6 @@ The DevoxxGenie IDEA Plugin processes user prompts through the following steps:
 - **Retrieval & Augmentation**
   - [`SemanticSearchService.search()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/rag/SemanticSearchService.java) → Fetches relevant indexed code.
   - [`SemanticSearchReferencesPanel`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/ui/panel/chatresponse/SemanticSearchReferencesPanel.java) → Displays retrieved results.
-
-- **Git Diff Integration**
-  - [`GitMergeService.showDiffView()`](https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/src/main/java/com/devoxx/genie/service/gitdiff/GitMergeService.java) → Displays AI-generated code diffs.
 
 ### 6️⃣ Final Display
 - The response is rendered in `ChatResponsePanel` with:
