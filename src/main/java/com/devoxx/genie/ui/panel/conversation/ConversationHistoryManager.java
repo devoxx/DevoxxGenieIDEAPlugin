@@ -89,10 +89,14 @@ public class ConversationHistoryManager {
     public void restoreConversation(@NotNull Conversation conversation) {
         log.debug("Starting conversation restoration for ID: {}", conversation.getId());
 
+        // Set restoration flag to prevent welcome content from showing
+        messageRenderer.setRestorationInProgress(true);
+
         // Check if conversation has any messages
         List<ChatMessage> messages = conversation.getMessages();
         if (messages == null || messages.isEmpty()) {
             log.warn("Selected conversation has no messages to restore");
+            messageRenderer.setRestorationInProgress(false);
             return;
         }
         
@@ -115,14 +119,18 @@ public class ConversationHistoryManager {
      */
     private void processConversationMessages(Conversation conversation,
                                             @NotNull List<ChatMessage> messages) {
-        // Check if the conversation has any messages
-        if (messages.isEmpty()) {
-            log.warn("No messages to restore");
-            return;
-        }
+        try {
+            // Check if the conversation has any messages
+            if (messages.isEmpty()) {
+                log.warn("No messages to restore");
+                messageRenderer.setRestorationInProgress(false);
+                return;
+            }
+
+            log.debug("Starting to process {} messages for conversation restoration", messages.size());
 
         // Clear any existing DOM content first to prevent duplicate messages
-        messageRenderer.clear();
+        messageRenderer.clearWithoutWelcome();
         
         // Process all messages
         int messageIndex = 0;
@@ -209,8 +217,21 @@ public class ConversationHistoryManager {
             }
         }
             
-        // After adding all messages, scroll to the top
-        messageRenderer.scrollToTop();
+            // After adding all messages, scroll to the top
+            messageRenderer.scrollToTop();
+            
+            // Clear the restoration flag now that we're done
+            messageRenderer.clearRestorationFlag();
+            messageRenderer.setRestorationInProgress(false);
+            
+            log.debug("Completed conversation restoration for ID: {} with {} messages", conversation.getId(), messages.size());
+        } catch (Exception e) {
+            log.error("Error during conversation restoration", e);
+            // Always clear the restoration flag on error
+            messageRenderer.setRestorationInProgress(false);
+            messageRenderer.clearRestorationFlag();
+            throw e; // Re-throw to maintain existing error handling
+        }
     }
 
     /**

@@ -35,6 +35,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private JBCefBrowser browser;
     private JComponent fallbackComponent;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean restoringConversation = new AtomicBoolean(false);
 
     // Specialized handlers
     private WebViewJavaScriptExecutor jsExecutor;
@@ -321,6 +322,11 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
      * @param resourceBundle The resource bundle for i18n
      */
     private void showWelcomeContent(ResourceBundle resourceBundle) {
+        // Don't show welcome content if we're currently restoring a conversation
+        if (restoringConversation.get()) {
+            log.debug("Skipping welcome content during conversation restoration");
+            return;
+        }
         messageRenderer.loadWelcomeContent(resourceBundle);
     }
 
@@ -638,6 +644,15 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         if (sleepWakeRecoveryHandler != null) {
             sleepWakeRecoveryHandler.triggerRecovery();
         }
+    }
+    
+    /**
+     * Mark that conversation restoration is starting.
+     * This prevents automatic welcome content loading during restoration.
+     */
+    public void setRestoringConversation(boolean restoring) {
+        restoringConversation.set(restoring);
+        log.debug("Conversation restoration flag set to: {}", restoring);
     }
     
     /**

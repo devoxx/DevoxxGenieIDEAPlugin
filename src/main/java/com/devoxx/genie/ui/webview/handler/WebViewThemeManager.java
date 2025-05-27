@@ -117,7 +117,9 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
                     public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
                         if (!welcomeReloaded[0]) {
                             welcomeReloaded[0] = true;
-                            log.info("Browser reloaded after theme change, restoring welcome content");
+                            log.info("Browser reloaded after theme change");
+                            // Only load welcome content if not restoring a conversation
+                            // The welcomeContentLoader should check if restoration is in progress
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
                                 welcomeContentLoader.accept(resourceBundle);
