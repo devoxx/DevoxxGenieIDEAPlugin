@@ -141,9 +141,14 @@ public class ChatMessageContextUtil {
             originalFile.putUserData(SELECTION_END_KEY, endOffset);
             originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
             originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
-            FileListManager.getInstance().addFile(chatMessageContext.getProject(), editor.getVirtualFile());
+            // When text is selected, always add the file to FileListManager
+            FileListManager.getInstance().addFile(chatMessageContext.getProject(), originalFile);
         } else {
             originalFile.putUserData(SELECTED_TEXT_KEY, "");
+            // When no text is selected, only add file if useFileInEditor is enabled
+            if (originalFile != null && Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+                FileListManager.getInstance().addFile(chatMessageContext.getProject(), originalFile);
+            }
         }
 
     }

@@ -44,6 +44,7 @@
             <LI>Feat #700: Conversation history returns full conversation</LI>
             <LI>Fix #685: Open browser when links are clicked in conversation webview</LI>
             <LI>Fix #705: Removed obsolete GitDiff/Merge replaced by MCP</LI>
+            <LI>Feat #723: Show msg when default file is included in context</LI>
         </UL>
         <h2>v0.6.6</h2>
         <UL>
