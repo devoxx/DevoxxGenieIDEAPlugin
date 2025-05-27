@@ -180,6 +180,21 @@ public class MessageRenderer implements FileReferencesListener {
     }
     
     /**
+     * Check if there are black screen issues with the webview.
+     * This delegates to the webview controller to check for rendering problems.
+     * 
+     * @return true if black screen issues are detected, false otherwise
+     */
+    public boolean hasBlackScreenIssues() {
+        try {
+            return webViewController.hasBlackScreenIssues();
+        } catch (Exception e) {
+            log.error("Error checking for black screen issues", e);
+            return false;
+        }
+    }
+    
+    /**
      * Ensure the browser is initialized before executing a runnable
      */
     public void ensureBrowserInitialized(Runnable runnable) {

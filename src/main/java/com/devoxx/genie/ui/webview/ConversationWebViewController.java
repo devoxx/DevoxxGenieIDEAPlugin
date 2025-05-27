@@ -524,6 +524,72 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     }
     
     /**
+     * Check if there are black screen issues with the webview.
+     * This checks various indicators to determine if the webview is showing a black screen.
+     * 
+     * @return true if black screen issues are detected, false otherwise
+     */
+    public boolean hasBlackScreenIssues() {
+        if (!JCEFChecker.isJCEFAvailable() || browser == null) {
+            return false; // Can't have black screen if JCEF isn't available
+        }
+        
+        try {
+            JComponent component = browser.getComponent();
+            if (component == null) {
+                return true; // Null component is definitely an issue
+            }
+            
+            // Check if component is showing but has suspicious properties
+            if (component.isShowing()) {
+                // Check for invalid size
+                if (component.getWidth() <= 0 || component.getHeight() <= 0) {
+                    log.debug("Black screen suspected: component showing but has invalid size {}x{}", 
+                             component.getWidth(), component.getHeight());
+                    return true;
+                }
+                
+                // Check for black background
+                Color background = component.getBackground();
+                if (background != null && background.equals(Color.BLACK)) {
+                    log.debug("Black screen suspected: component has black background");
+                    return true;
+                }
+            }
+            
+            // Check rendering detector if available
+            if (sleepWakeRecoveryHandler != null) {
+                // Access the rendering detector through the recovery handler
+                // We can check the detector's hasIssues method indirectly
+                try {
+                    // Use reflection to access the renderingDetector field
+                    java.lang.reflect.Field field = sleepWakeRecoveryHandler.getClass().getDeclaredField("renderingDetector");
+                    field.setAccessible(true);
+                    Object renderingDetector = field.get(sleepWakeRecoveryHandler);
+                    
+                    if (renderingDetector != null) {
+                        java.lang.reflect.Method hasIssuesMethod = renderingDetector.getClass().getMethod("hasIssues");
+                        Boolean hasIssues = (Boolean) hasIssuesMethod.invoke(renderingDetector);
+                        if (hasIssues != null && hasIssues) {
+                            log.debug("Black screen suspected: rendering detector reports issues");
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("Could not check rendering detector: {}", e.getMessage());
+                    // Continue with other checks
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            log.error("Error checking for black screen issues", e);
+            return false; // If we can't check, assume no issues
+        }
+    }
+    
+    /**
      * Manually trigger recovery from sleep/wake issues.
      * This can be called when the webview appears to be in a corrupted state.
      */

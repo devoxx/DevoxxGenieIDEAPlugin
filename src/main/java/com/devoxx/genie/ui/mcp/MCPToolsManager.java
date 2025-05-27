@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import lombok.Getter;
@@ -152,9 +153,7 @@ public class MCPToolsManager {
         List<MCPServer> serverList = new ArrayList<>(mcpServers.values());
         // Sort alphabetically by name
         serverList.sort(Comparator.comparing(MCPServer::getName));
-        
-        List<JCheckBox> serverCheckboxes = new ArrayList<>();
-        
+
         for (MCPServer server : serverList) {
             JPanel serverPanel = new JPanel(new BorderLayout());
             serverPanel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
@@ -167,14 +166,12 @@ public class MCPToolsManager {
             int toolCount = server.getAvailableTools().size();
             enabledCheckbox.setToolTipText(String.format("%s - %d tool%s available", 
                     server.getName(), toolCount, toolCount == 1 ? "" : "s"));
-            
-            serverCheckboxes.add(enabledCheckbox);
-            
+
             // Add label with tool count
             JLabel toolCountLabel = new JLabel(String.format("(%d tool%s)", 
                     toolCount, toolCount == 1 ? "" : "s"));
             toolCountLabel.setFont(toolCountLabel.getFont().deriveFont(Font.PLAIN));
-            toolCountLabel.setForeground(Color.GRAY);
+            toolCountLabel.setForeground(JBColor.GRAY);
             
             serverPanel.add(enabledCheckbox, BorderLayout.WEST);
             serverPanel.add(toolCountLabel, BorderLayout.EAST);
@@ -227,7 +224,7 @@ public class MCPToolsManager {
      */
     private record ToolInfo(String serverName, String toolName, String description) {
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return toolName;
         }
     }

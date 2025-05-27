@@ -78,6 +78,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
     /**
      * Start a new conversation.
      * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
+     * Also check for and recover from black screen issues.
      */
     @Override
     public void startNewConversation() {
@@ -87,15 +88,32 @@ public class ConversationManager implements ConversationEventListener, Conversat
 
         chatService.startNewConversation("");
 
-        // Only trigger webview refresh if we suspect there might be rendering issues
-        // This is more conservative to avoid interfering with normal operation
-        // The callback can still be used manually if needed
+        // Check for black screen issues and recover if needed before showing new content
         ApplicationManager.getApplication().invokeLater(() -> {
             updateNewConversationLabel();
-            messageRenderer.clear();
-            // Use ResourceBundle.getBundle to get the resource bundle
-            ResourceBundle resourceBundle = ResourceBundle.getBundle(Constant.MESSAGES);
-            messageRenderer.showWelcome(resourceBundle);
+            
+            // Check if we need to recover from black screen before proceeding
+            boolean needsRecovery = checkForBlackScreenAndRecover();
+            
+            if (needsRecovery) {
+                log.info("Black screen detected, performing recovery before starting new conversation");
+                // Recovery will refresh the webview and then show welcome content
+                triggerWebViewRefresh();
+                
+                // Schedule welcome content after recovery completes
+                Timer welcomeTimer = new Timer(2000, e -> {
+                    messageRenderer.clear();
+                    ResourceBundle resourceBundle = ResourceBundle.getBundle(Constant.MESSAGES);
+                    messageRenderer.showWelcome(resourceBundle);
+                });
+                welcomeTimer.setRepeats(false);
+                welcomeTimer.start();
+            } else {
+                // Normal flow - no recovery needed
+                messageRenderer.clear();
+                ResourceBundle resourceBundle = ResourceBundle.getBundle(Constant.MESSAGES);
+                messageRenderer.showWelcome(resourceBundle);
+            }
             
             // Make sure all panels know this is a new conversation
             for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
@@ -150,6 +168,30 @@ public class ConversationManager implements ConversationEventListener, Conversat
             historyManager.loadConversationHistory();
             log.debug("Conversation history reloaded after new conversation event");
         });
+    }
+    
+    /**
+     * Check for black screen issues and determine if recovery is needed.
+     * This is called when starting a new conversation to ensure the webview is in a good state.
+     * 
+     * @return true if recovery was needed and triggered, false if no issues detected
+     */
+    private boolean checkForBlackScreenAndRecover() {
+        try {
+            // Ask the message renderer to check for black screen issues
+            if (messageRenderer != null && messageRenderer.hasBlackScreenIssues()) {
+                log.warn("Black screen issues detected, recovery needed");
+                return true;
+            }
+            
+            log.debug("No black screen issues detected");
+            return false;
+            
+        } catch (Exception e) {
+            log.error("Error checking for black screen issues", e);
+            // If we can't check properly, assume recovery is needed to be safe
+            return true;
+        }
     }
     
     /**
