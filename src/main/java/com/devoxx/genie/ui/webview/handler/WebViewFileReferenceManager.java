@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.ThemeDetector;
 import com.devoxx.genie.ui.webview.template.ResourceLoader;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -51,8 +52,18 @@ public class WebViewFileReferenceManager {
                 .append("  </div>\n");
                 
         // Add the file list container (initially collapsed)
-        fileReferencesHtml.append("  <div class=\"file-references-content\" style=\"display: none;\">\n")
-                .append("    <ul class=\"file-list\">\n");
+        fileReferencesHtml.append("  <div class=\"file-references-content\" style=\"display: none;\">\n");
+        
+        // Add info message about including currently open file if the setting is enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+            fileReferencesHtml.append("    <div class=\"file-references-info\">\n")
+                    .append("      <span class=\"info-icon\">ℹ️</span>\n")
+                    .append("      <span class=\"info-text\">The currently open file in the editor is automatically included in the context. ")
+                    .append("You can disable this in Settings → LLM Settings.</span>\n")
+                    .append("    </div>\n");
+        }
+        
+        fileReferencesHtml.append("    <ul class=\"file-list\">\n");
                 
         // Add each file as a list item - make items clickable with data attributes to store path
         for (int i = 0; i < files.size(); i++) {

@@ -10,6 +10,7 @@ function openFile(fileId) {
     }
 }
 
+
 /**
  * Toggles the visibility of file references section
  * @param {HTMLElement} header - The header element that was clicked
@@ -106,6 +107,23 @@ function addFileReferencesStyles(isDarkTheme) {
                 color: var(--file-path-color); 
                 font-style: italic; 
                 font-size: 0.9em; 
+            }
+            .file-references-info {
+                display: flex;
+                align-items: flex-start;
+                padding: 8px;
+                margin-bottom: 10px;
+                background-color: var(--info-bg-color, rgba(33, 150, 243, 0.1));
+                border-radius: 4px;
+                border: 1px solid var(--info-border-color, rgba(33, 150, 243, 0.3));
+            }
+            .info-icon {
+                margin-right: 8px;
+                flex-shrink: 0;
+            }
+            .info-text {
+                font-size: 0.9em;
+                line-height: 1.4;
             }
         `;
         
