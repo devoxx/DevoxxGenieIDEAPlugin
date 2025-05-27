@@ -87,6 +87,36 @@ public class MessageRenderer implements FileReferencesListener {
     }
 
     /**
+     * Clear the conversation content without showing welcome message.
+     * Used when restoring conversation history.
+     */
+    public void clearWithoutWelcome() {
+        // Set the restoration flag to prevent welcome content during theme changes
+        webViewController.setRestoringConversation(true);
+        webViewController.clearConversation();
+    }
+
+    /**
+     * Clear the restoration flag after conversation restoration is complete.
+     * This allows normal welcome content loading to resume.
+     */
+    public void clearRestorationFlag() {
+        webViewController.setRestoringConversation(false);
+        log.debug("Cleared conversation restoration flag");
+    }
+    
+    /**
+     * Set whether a conversation restoration is in progress.
+     * This prevents welcome content from being shown during restoration.
+     * 
+     * @param inProgress true if restoration is in progress, false otherwise
+     */
+    public void setRestorationInProgress(boolean inProgress) {
+        webViewController.setRestoringConversation(inProgress);
+        log.debug("Set conversation restoration in progress: {}", inProgress);
+    }
+
+    /**
      * Update custom prompts in the welcome screen.
      */
     public void updateCustomPrompts(ResourceBundle resourceBundle) {

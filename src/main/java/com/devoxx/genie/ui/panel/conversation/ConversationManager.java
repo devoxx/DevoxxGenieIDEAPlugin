@@ -164,7 +164,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
         conversationLabel.setText(displayTitle);
 
         // Clear the current conversation in the web view without showing welcome screen
-        messageRenderer.clear();
+        messageRenderer.clearWithoutWelcome();
 
         // Mark this as not a new conversation in any panel that might be registered
         for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
