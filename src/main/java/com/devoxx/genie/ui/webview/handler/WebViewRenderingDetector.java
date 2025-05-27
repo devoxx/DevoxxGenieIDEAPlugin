@@ -28,7 +28,7 @@ public class WebViewRenderingDetector {
     private Timer renderCheckTimer;
     
     // Black rectangle detection
-    private static final long RENDER_CHECK_INTERVAL = 10000; // 10 seconds
+    private static final long RENDER_CHECK_INTERVAL = 30000; // 30 seconds - reduced frequency
     private static final int MAX_CONSECUTIVE_RENDER_ISSUES = 3;
     private static final long COMPONENT_VISIBILITY_TIMEOUT = 30000; // 30 seconds
     

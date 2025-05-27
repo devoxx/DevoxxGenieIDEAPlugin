@@ -187,8 +187,8 @@ public class WebViewSleepWakeRecoveryHandler {
     private void setupSleepDetectionMonitoring() {
         debugLogger.debug("Setting up sleep detection monitoring");
         
-        // Monitor system time jumps that might indicate sleep/wake
-        monitoringTimer = new Timer(2000, e -> {
+        // Monitor system time jumps that might indicate sleep/wake - reduced frequency
+        monitoringTimer = new Timer(5000, e -> {
             long currentTime = System.currentTimeMillis();
             long timeSinceLastCheck = currentTime - lastActiveTime.get();
             
@@ -202,7 +202,7 @@ public class WebViewSleepWakeRecoveryHandler {
         });
         
         monitoringTimer.start();
-        debugLogger.debug("Sleep detection monitoring started with {}ms interval", 2000);
+        debugLogger.debug("Sleep detection monitoring started with {}ms interval", 5000);
     }
     
     /**

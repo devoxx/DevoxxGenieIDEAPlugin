@@ -32,7 +32,7 @@ public class WebViewBrowserStateMonitor {
     private Timer healthCheckTimer;
     
     private static final int MAX_CONSECUTIVE_ERRORS = 3;
-    private static final long HEALTH_CHECK_INTERVAL = 15000; // 15 seconds
+    private static final long HEALTH_CHECK_INTERVAL = 30000; // 30 seconds - reduced frequency
     private static final long MAX_TIME_SINCE_SUCCESSFUL_LOAD = 5 * 60 * 1000; // 5 minutes
     
     public WebViewBrowserStateMonitor(JBCefBrowser browser, WebViewDebugLogger debugLogger) {
