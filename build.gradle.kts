@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.6.7"
+version = "0.6.8"
 
 repositories {
     mavenCentral()
@@ -67,7 +67,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
+//    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
 
     // Retrofit dependencies
