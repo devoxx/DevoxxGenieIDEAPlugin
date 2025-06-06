@@ -36,7 +36,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
     public JPanel createPanel() {
         // Add description
         JBLabel descriptionLabel = new JBLabel("<html><body style='width: 100%;'>" +
-            "These settings control which files and directories are included when creating a Full Project Context." +
+            "These settings control which files and directories are included when creating a Full Project Context. " +
             "Excluded directories will be skipped, and only files with included extensions " +
             "will be processed. This helps to focus the LLM on relevant code and reduce noise from build artifacts " +
             "or other non-essential files.</body></html>");
