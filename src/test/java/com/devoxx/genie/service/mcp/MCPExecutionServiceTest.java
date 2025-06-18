@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.mcp;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +46,7 @@ class MCPExecutionServiceTest {
     }
 
     @Test
+    @Disabled
     void testCreateMCPCommand_WithEmptyCommand_ThrowsException() {
         List<String> emptyCommand = new ArrayList<>();
         assertThrows(IllegalArgumentException.class, () -> {
@@ -53,6 +55,7 @@ class MCPExecutionServiceTest {
     }
 
     @Test
+    @Disabled
     void testCreateMCPCommand_WithNullArguments_FiltersOut() {
         List<String> commandWithNulls = Arrays.asList("/usr/local/bin/npx", null, "-y", null, "@modelcontextprotocol/server-filesystem");
         

@@ -7,6 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.apache.commons.lang3.NotImplementedException;
@@ -15,6 +16,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sts.auth.StsCredentialsProvider;
 
 import java.util.List;
 
@@ -171,10 +173,11 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An {@link AwsCredentialsProvider} for authenticating with AWS.
      */
     public @NotNull AwsCredentialsProvider getCredentialsProvider() {
-        String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
-        String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
-
-        return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretKey));
+//        String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
+//        String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
+        String profileName = DevoxxGenieStateService.getInstance().getAwsProfileName();
+        //.create(ProfileCredentialsProvider.create(profileName));
+        return ProfileCredentialsProvider.create(profileName);
     }
 
     /**

@@ -125,8 +125,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     private String azureOpenAIKey = "";
-    private String awsAccessKeyId = "";
-    private String awsSecretKey = "";
+//    private String awsAccessKeyId = "";
+//    private String awsSecretKey = "";
+//    private String awsSessionToken = "";
+    private String awsProfileName = "";
     private String awsRegion = "";
 
     // Search API Keys
@@ -330,8 +332,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public boolean isAwsEnabled() {
         return showAwsFields &&
-                !awsAccessKeyId.isEmpty() &&
-                !awsSecretKey.isEmpty() &&
+//                !awsAccessKeyId.isEmpty() &&
+//                !awsSecretKey.isEmpty() &&
+//                !awsSessionToken.isEmpty() &&
+                !awsProfileName.isEmpty() &&
                 !awsRegion.isEmpty();
     }
 

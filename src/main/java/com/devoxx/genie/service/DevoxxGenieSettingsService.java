@@ -27,9 +27,9 @@ public interface DevoxxGenieSettingsService {
 
     String getAzureOpenAIKey();
 
-    String getAwsSecretKey();
-
-    String getAwsAccessKeyId();
+//    String getAwsSecretKey();
+//
+//    String getAwsAccessKeyId();
 
     String getAwsRegion();
 
@@ -113,8 +113,10 @@ public interface DevoxxGenieSettingsService {
 
     void setAzureOpenAIKey(String key);
 
-    void setAwsAccessKeyId(String accessKeyId);
-    void setAwsSecretKey(String secretKey);
+//    void setAwsAccessKeyId(String accessKeyId);
+//    void setAwsSecretKey(String secretKey);
+
+    void setAwsProfileName(String profileName);
 
     void setAwsRegion(String region);
 

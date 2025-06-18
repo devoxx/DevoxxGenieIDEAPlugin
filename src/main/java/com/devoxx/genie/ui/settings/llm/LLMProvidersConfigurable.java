@@ -83,8 +83,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIKeyField(), stateService.getAzureOpenAIKey());
 
         isModified |= !stateService.getShowAwsFields().equals(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
-        isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
-        isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
+//        isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
+//        isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
+//        isModified |= isFieldModified(llmSettingsComponent.getAwsSessionTokenField(), stateService.getAwsSessionToken());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsProfileName(), stateService.getAwsProfileName());
         isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
 
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
@@ -150,8 +152,10 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAzureOpenAIKey(new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()));
 
         settings.setShowAwsFields(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
-        settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
-        settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
+//        settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
+//        settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
+//        settings.setAwsSessionToken(new String(llmSettingsComponent.getAwsSessionTokenField().getPassword()));
+        settings.setAwsProfileName(llmSettingsComponent.getAwsProfileName().getText());
         settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
@@ -186,8 +190,8 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
                     (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
-                    (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
-                    (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
+                    (!settings.getAwsProfileName().isBlank() && settings.isAwsEnabled()) ||
+                    (!settings.getAwsProfileName().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
 

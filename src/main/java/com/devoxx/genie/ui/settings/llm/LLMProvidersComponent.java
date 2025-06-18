@@ -57,10 +57,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
     private final JPasswordField grokApiKeyField = new JPasswordField(stateService.getGrokKey());
+//    @Getter
+//    private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
+//    @Getter
+//    private final JPasswordField awsSessionTokenField = new JPasswordField(stateService.getAwsSessionToken());
     @Getter
-    private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
-    @Getter
-    private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
+    private final JTextField awsProfileName = new JTextField(stateService.getAwsProfileName());
+//    @Getter
+//    private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
     @Getter
     private final JTextField awsRegion = new JTextField(stateService.getAwsRegion());
     @Getter
@@ -234,10 +238,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         final String bedrockURL = "https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html";
         addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
 
-        addNestedSettingsRow(panel, gbc, "AWS Access Key ID",
-                createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsComponents);
-        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key",
-                createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsComponents);
+//        addNestedSettingsRow(panel, gbc, "AWS Access Key ID",
+//                createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsComponents);
+//        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key",
+//                createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsComponents);
+//        addNestedSettingsRow(panel, gbc, "AWS Session Token",
+//                createTextWithLinkButton(awsSessionTokenField, bedrockURL), awsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Profile Name",
+                createTextWithLinkButton(awsProfileName, bedrockURL), awsComponents);
         addNestedSettingsRow(panel, gbc, "AWS region",
                 createTextWithPasswordButton(awsRegion, bedrockURL), awsComponents);
 

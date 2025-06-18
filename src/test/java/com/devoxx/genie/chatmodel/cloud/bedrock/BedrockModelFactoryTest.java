@@ -8,6 +8,7 @@ import com.intellij.testFramework.ServiceContainerUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 
 import java.util.List;
 
@@ -29,8 +30,9 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         super.setUp();
         // Mock SettingsState
         settingsStateMock = mock(DevoxxGenieStateService.class);
-        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
-        when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
+//        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
+//        when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
+
         when(settingsStateMock.getAwsRegion()).thenReturn(US_EAST_1);
 
         // Replace the service instance with the mock
@@ -59,8 +61,8 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     void getCredentialsProvider() {
         BedrockModelFactory factory = new BedrockModelFactory();
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
-
-        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
-        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
+        assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
+//        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
+//        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
     }
 }
