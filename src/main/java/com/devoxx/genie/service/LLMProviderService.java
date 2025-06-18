@@ -31,7 +31,7 @@ public class LLMProviderService {
         providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
         providerKeyMap.put(Grok, stateService::getGrokKey);
         providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
-//        providerKeyMap.put(Bedrock, stateService::getAwsSecretKey);
+        providerKeyMap.put(Bedrock, stateService::getAwsSecretKey);
     }
 
     @NotNull
