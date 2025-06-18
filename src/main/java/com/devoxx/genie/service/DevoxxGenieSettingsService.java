@@ -113,8 +113,9 @@ public interface DevoxxGenieSettingsService {
 
     void setAzureOpenAIKey(String key);
 
-//    void setAwsAccessKeyId(String accessKeyId);
-//    void setAwsSecretKey(String secretKey);
+    void setAwsAccessKeyId(String accessKeyId);
+
+    void setAwsSecretKey(String secretKey);
 
     void setAwsProfileName(String profileName);
 
