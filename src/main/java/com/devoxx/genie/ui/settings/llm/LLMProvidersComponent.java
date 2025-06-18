@@ -57,14 +57,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
     @Getter
     private final JPasswordField grokApiKeyField = new JPasswordField(stateService.getGrokKey());
-//    @Getter
-//    private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
-//    @Getter
-//    private final JPasswordField awsSessionTokenField = new JPasswordField(stateService.getAwsSessionToken());
+    @Getter
+    private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JTextField awsProfileName = new JTextField(stateService.getAwsProfileName());
-//    @Getter
-//    private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
+    @Getter
+    private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
     @Getter
     private final JTextField awsRegion = new JTextField(stateService.getAwsRegion());
     @Getter
@@ -109,10 +107,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
     private final JCheckBox enableAWSCheckBox = new JCheckBox("", stateService.getShowAwsFields());
+    @Getter
+    private final JCheckBox enableAWSProfileCheckBox = new JCheckBox("", stateService.getShouldPowerFromAWSProfile());
 
     private final List<JComponent> azureComponents = new ArrayList<>();
 
-    private final List<JComponent> awsComponents = new ArrayList<>();
+    private final List<JComponent> awsCommonComponents = new ArrayList<>();
+    private final List<JComponent> awsDirectCredentialsComponents = new ArrayList<>();
+    private final List<JComponent> awsProfileCredentialsComponents = new ArrayList<>();
 
     public LLMProvidersComponent() {
         addListeners();
@@ -193,7 +195,13 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             setNestedComponentsVisibility(azureComponents, event.getStateChange() == ItemEvent.SELECTED, true);
         });
         enableAWSCheckBox.addItemListener(event -> {
-            setNestedComponentsVisibility(awsComponents, event.getStateChange() == ItemEvent.SELECTED, true);
+            setNestedComponentsVisibility(awsCommonComponents, event.getStateChange() == ItemEvent.SELECTED, true);
+            setNestedComponentsVisibility(awsDirectCredentialsComponents, event.getStateChange() == ItemEvent.SELECTED && !enableAWSProfileCheckBox.isSelected(), true);
+            setNestedComponentsVisibility(awsProfileCredentialsComponents, event.getStateChange() == ItemEvent.SELECTED && enableAWSProfileCheckBox.isSelected(), true);
+        });
+        enableAWSProfileCheckBox.addItemListener(event -> {
+            setNestedComponentsVisibility(awsDirectCredentialsComponents, enableAWSCheckBox.isSelected() && event.getStateChange() != ItemEvent.SELECTED, true);
+            setNestedComponentsVisibility(awsProfileCredentialsComponents, enableAWSCheckBox.isSelected() && event.getStateChange() == ItemEvent.SELECTED, true);
         });
 
         // Add new listeners for enable/disable checkboxes
@@ -238,19 +246,19 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         final String bedrockURL = "https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html";
         addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
 
-//        addNestedSettingsRow(panel, gbc, "AWS Access Key ID",
-//                createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsComponents);
-//        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key",
-//                createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsComponents);
-//        addNestedSettingsRow(panel, gbc, "AWS Session Token",
-//                createTextWithLinkButton(awsSessionTokenField, bedrockURL), awsComponents);
-        addNestedSettingsRow(panel, gbc, "AWS Profile Name",
-                createTextWithLinkButton(awsProfileName, bedrockURL), awsComponents);
-        addNestedSettingsRow(panel, gbc, "AWS region",
-                createTextWithPasswordButton(awsRegion, bedrockURL), awsComponents);
+        addNestedSettingsRow(panel, gbc, "Power from AWS Profile", enableAWSProfileCheckBox, awsCommonComponents);
+        addNestedSettingsRow(panel, gbc, "AWS region", createTextWithPasswordButton(awsRegion, bedrockURL), awsCommonComponents);
+
+        addNestedSettingsRow(panel, gbc, "AWS Access Key ID", createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsDirectCredentialsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key", createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsDirectCredentialsComponents);
+
+        addNestedSettingsRow(panel, gbc, "AWS Profile Name", createTextWithLinkButton(awsProfileName, bedrockURL), awsProfileCredentialsComponents);
+
 
         // Set initial visibility
-        setNestedComponentsVisibility(awsComponents, enableAWSCheckBox.isSelected(), false);
+        setNestedComponentsVisibility(awsCommonComponents, enableAWSCheckBox.isSelected(), false);
+        setNestedComponentsVisibility(awsDirectCredentialsComponents, enableAWSCheckBox.isSelected() && !enableAWSProfileCheckBox.isSelected(), false);
+        setNestedComponentsVisibility(awsProfileCredentialsComponents, enableAWSCheckBox.isSelected() && enableAWSProfileCheckBox.isSelected(), false);
     }
 
     /**

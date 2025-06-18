@@ -7,6 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -173,11 +174,14 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An {@link AwsCredentialsProvider} for authenticating with AWS.
      */
     public @NotNull AwsCredentialsProvider getCredentialsProvider() {
-//        String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
-//        String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
+        String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
+        String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
+
+        boolean shouldPowerFromProfile = DevoxxGenieStateService.getInstance().getShouldPowerFromAWSProfile();
         String profileName = DevoxxGenieStateService.getInstance().getAwsProfileName();
-        //.create(ProfileCredentialsProvider.create(profileName));
-        return ProfileCredentialsProvider.create(profileName);
+
+        return shouldPowerFromProfile ? ProfileCredentialsProvider.create(profileName) :
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretKey));
     }
 
     /**

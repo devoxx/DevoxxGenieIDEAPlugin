@@ -30,9 +30,8 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         super.setUp();
         // Mock SettingsState
         settingsStateMock = mock(DevoxxGenieStateService.class);
-//        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
-//        when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
-
+        when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
+        when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
         when(settingsStateMock.getAwsRegion()).thenReturn(US_EAST_1);
 
         // Replace the service instance with the mock
@@ -58,11 +57,19 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    void getCredentialsProvider() {
+    void getCredentialsProviderForBasicCredentials() {
         BedrockModelFactory factory = new BedrockModelFactory();
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
+        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
+        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
+    }
+
+    @Test
+    void getCredentialsProviderForProfile() {
+        BedrockModelFactory factory = new BedrockModelFactory();
+        when(settingsStateMock.getShouldPowerFromAWSProfile()).thenReturn(true);
+        when(settingsStateMock.getAwsProfileName()).thenReturn("bedrock");
+        AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
         assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
-//        assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
-//        assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
     }
 }
