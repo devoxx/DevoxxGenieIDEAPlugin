@@ -85,6 +85,8 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= !stateService.getShowAwsFields().equals(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
         isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
+        isModified |= !stateService.getShouldPowerFromAWSProfile().equals(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsProfileName(), stateService.getAwsProfileName());
         isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
 
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
@@ -153,6 +155,8 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
         settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
         settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
+        settings.setShouldPowerFromAWSProfile(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        settings.setAwsProfileName(llmSettingsComponent.getAwsProfileName().getText());
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
@@ -188,6 +192,7 @@ public class LLMProvidersConfigurable implements Configurable {
                     (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
                     (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
                     (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
+                    (!settings.getAwsProfileName().isBlank() && settings.getShowAwsFields() && settings.getShouldPowerFromAWSProfile()) ||
                     (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
                     (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
 

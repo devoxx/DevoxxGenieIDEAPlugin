@@ -8,6 +8,7 @@ import com.intellij.testFramework.ServiceContainerUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 
 import java.util.List;
 
@@ -56,11 +57,19 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    void getCredentialsProvider() {
+    void getCredentialsProviderForBasicCredentials() {
         BedrockModelFactory factory = new BedrockModelFactory();
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
-
         assertThat(awsCredentialsProvider.resolveCredentials().secretAccessKey()).isEqualTo(DUMMY_AWS_SECRET_KEY);
         assertThat(awsCredentialsProvider.resolveCredentials().accessKeyId()).isEqualTo(DUMMY_AWS_ACCESS_KEY);
+    }
+
+    @Test
+    void getCredentialsProviderForProfile() {
+        BedrockModelFactory factory = new BedrockModelFactory();
+        when(settingsStateMock.getShouldPowerFromAWSProfile()).thenReturn(true);
+        when(settingsStateMock.getAwsProfileName()).thenReturn("bedrock");
+        AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
+        assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
     }
 }

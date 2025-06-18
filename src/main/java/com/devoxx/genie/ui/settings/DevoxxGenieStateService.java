@@ -110,7 +110,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
     private boolean isGrokEnabled = false;
-    private boolean isAWSEnabled = false;
 
     // LLM API Keys
     private String openAIKey = "";
@@ -127,6 +126,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIKey = "";
     private String awsAccessKeyId = "";
     private String awsSecretKey = "";
+    private String awsProfileName = "";
     private String awsRegion = "";
 
     // Search API Keys
@@ -171,6 +171,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Boolean showAzureOpenAIFields = false;
     private Boolean showAwsFields = false;
+    private Boolean shouldPowerFromAWSProfile = false;
 
     @Setter
     private Boolean useGitIgnore = true;
@@ -330,9 +331,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public boolean isAwsEnabled() {
         return showAwsFields &&
-                !awsAccessKeyId.isEmpty() &&
-                !awsSecretKey.isEmpty() &&
-                !awsRegion.isEmpty();
+                ((!awsAccessKeyId.isEmpty() && !awsSecretKey.isEmpty())
+                || (shouldPowerFromAWSProfile && !awsProfileName.isEmpty()))
+                && !awsRegion.isEmpty();
     }
 
     public @Nullable String getConfigValue(@NotNull String key) {

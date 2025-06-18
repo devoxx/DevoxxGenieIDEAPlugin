@@ -32,6 +32,8 @@ public interface DevoxxGenieSettingsService {
 
     String getAwsAccessKeyId();
 
+    String getAwsProfileName();
+
     String getAwsRegion();
 
     String getMistralKey();
