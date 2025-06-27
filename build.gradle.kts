@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.6.8"
+version = "0.6.9"
 
 repositories {
     mavenCentral()
@@ -69,6 +69,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
+    implementation("software.amazon.awssdk:sts:2.25.6")
+    implementation("software.amazon.awssdk:sso:2.31.64")
+    implementation("software.amazon.awssdk:ssooidc:2.31.64")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
