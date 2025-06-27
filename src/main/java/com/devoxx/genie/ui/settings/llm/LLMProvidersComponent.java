@@ -244,6 +244,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
     private void addAWSPanel(JPanel panel, GridBagConstraints gbc) {
         final String bedrockURL = "https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started-api.html";
+        final String awsProfileURL = "https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html";
         addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
 
         addNestedSettingsRow(panel, gbc, "Power from AWS Profile", enableAWSProfileCheckBox, awsCommonComponents);
@@ -252,7 +253,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addNestedSettingsRow(panel, gbc, "AWS Access Key ID", createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsDirectCredentialsComponents);
         addNestedSettingsRow(panel, gbc, "AWS Secret Access Key", createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsDirectCredentialsComponents);
 
-        addNestedSettingsRow(panel, gbc, "AWS Profile Name", createTextWithLinkButton(awsProfileName, bedrockURL), awsProfileCredentialsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Profile Name", createTextWithLinkButton(awsProfileName, awsProfileURL), awsProfileCredentialsComponents);
 
 
         // Set initial visibility
