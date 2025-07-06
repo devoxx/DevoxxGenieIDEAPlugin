@@ -35,6 +35,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     private boolean isModified = false;
     private final JCheckBox enableMcpCheckbox;
     private final JCheckBox enableDebugLogsCheckbox;
+    private final JCheckBox enableApprovalRequiredCheckbox;
 
     public MCPSettingsComponent() {
 
@@ -47,6 +48,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         
         enableDebugLogsCheckbox = new JCheckBox("Enable MCP Logging");
         enableDebugLogsCheckbox.addActionListener(e -> isModified = true);
+
+        enableApprovalRequiredCheckbox = new JCheckBox("Enable Approval Required");
+        enableApprovalRequiredCheckbox.addActionListener(e -> isModified = true);
         
         setupTable();
 
@@ -67,6 +71,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         checkboxPanel.add(enableMcpCheckbox);
         checkboxPanel.add(enableDebugLogsCheckbox);
+        checkboxPanel.add(enableApprovalRequiredCheckbox);
         
         // Create the top panel that combines both
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -87,6 +92,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
             enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
             enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
+            enableApprovalRequiredCheckbox.setSelected(stateService.getMcpApprovalRequired());
             // Reset modified flag if needed, as initial load shouldn't count as modification
             isModified = false;
         });
@@ -215,6 +221,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             // Save checkbox settings
             stateService.setMcpEnabled(enableMcpCheckbox.isSelected());
             stateService.setMcpDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
+            stateService.setMcpApprovalRequired(enableApprovalRequiredCheckbox.isSelected());
             
             // Refresh the tool window visibility if MCP enabled state changed
             if (oldMcpEnabled != enableMcpCheckbox.isSelected()) {
@@ -251,7 +258,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         return isModified || 
                enableMcpCheckbox.isSelected() != stateService.getMcpEnabled() ||
-               enableDebugLogsCheckbox.isSelected() != stateService.getMcpDebugLogsEnabled();
+               enableDebugLogsCheckbox.isSelected() != stateService.getMcpDebugLogsEnabled() ||
+               enableApprovalRequiredCheckbox.isSelected() != stateService.getMcpApprovalRequired();
     }
     
     /**
@@ -429,6 +437,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         loadCurrentSettings();
         enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
         enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
+        enableApprovalRequiredCheckbox.setSelected(stateService.getMcpApprovalRequired());
         isModified = false;
         
         // Find and update the Open MCP Log Panel button if it exists
