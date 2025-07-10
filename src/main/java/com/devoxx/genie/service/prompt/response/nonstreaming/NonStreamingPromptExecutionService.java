@@ -155,7 +155,7 @@ public class NonStreamingPromptExecutionService {
                     MCPService.logDebug("MCP is enabled and we have active tools. Creating MCP tool provider");
 
                     // Use project-specific tool provider with filesystem access
-                    ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider();
+                    ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
 
                     if (mcpToolProvider != null) {
                         MCPService.logDebug("Successfully created MCP tool provider with filesystem access");

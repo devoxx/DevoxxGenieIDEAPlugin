@@ -4,6 +4,8 @@ import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
+
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -76,10 +78,11 @@ public class MCPExecutionService implements Disposable {
     
     /**
      * Creates tool providers for all configured MCP servers
-     * 
+     *
+     * @param project Holds the project information
      * @return A ToolProvider that includes all enabled MCP tools, or null if MCP is disabled or no servers are configured
      */
-    public ToolProvider createMCPToolProvider() {
+    public ToolProvider createMCPToolProvider(Project project) {
         log.debug("Creating MCP Tool Provider");
 
         // Get all configured MCP servers
@@ -107,9 +110,13 @@ public class MCPExecutionService implements Disposable {
         }
 
         MCPService.logDebug("Creating MCP Tool Provider with " + mcpClients.size() + " clients");
-        return McpToolProvider.builder()
+        // Create the original MCP tool provider
+        ToolProvider originalProvider = McpToolProvider.builder()
                 .mcpClients(mcpClients)
                 .build();
+
+        // Wrap it with the custom approval-requiring provider
+        return new ApprovalRequiredToolProvider(originalProvider, project);
     }
 
     /**

@@ -159,7 +159,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
                 Assistant assistant;
 
-                ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider();
+                ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
                 if (mcpToolProvider != null) {
                     MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
 

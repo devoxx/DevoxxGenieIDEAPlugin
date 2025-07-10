@@ -200,6 +200,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter
     @Getter
     private Boolean mcpDebugLogsEnabled = false;
+    @Getter
+    @Setter
+    private Boolean mcpApprovalRequired = true;
 
     // Appearance settings
     private Double lineHeight = 1.6;  // Default line height multiplier
