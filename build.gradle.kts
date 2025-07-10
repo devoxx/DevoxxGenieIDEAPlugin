@@ -127,7 +127,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("233")
-        untilBuild.set("251.*")
+        untilBuild.set("252.*")
     }
 
     shadowJar {
