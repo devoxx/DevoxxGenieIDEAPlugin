@@ -35,7 +35,7 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
     
     @Spy
     @InjectMocks
-    private MessageCreationService messageCreationService;
+    private MessageCreationService spyMessageCreationService;
     
     @Captor
     private ArgumentCaptor<ChatMessageContext> contextCaptor;
@@ -59,7 +59,7 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
                     .thenReturn(mockChatMemoryManager);
                     
             messageCreationServiceStaticMock.when(MessageCreationService::getInstance)
-                    .thenReturn(messageCreationService);
+                    .thenReturn(spyMessageCreationService);
         }
         
         // Set up a strategy with mocked dependencies using anonymous class for test
@@ -67,7 +67,7 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
             {
                 // Manually inject mocked dependencies
                 this.chatMemoryManager = mockChatMemoryManager;
-                this.messageCreationService = messageCreationService;
+                this.messageCreationService = spyMessageCreationService;
                 // For this test we don't need to mock ThreadPoolManager or PromptExecutionService
                 // since we're only testing prepareMemory
             }
@@ -117,7 +117,7 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
         verify(mockChatMemoryManager).prepareMemory(testContext);
         
         // Verify MessageCreationService.addUserMessageToContext was called
-        verify(messageCreationService).addUserMessageToContext(testContext);
+        verify(spyMessageCreationService).addUserMessageToContext(testContext);
         
         // Verify addUserMessage was called after context enrichment
         verify(mockChatMemoryManager).addUserMessage(testContext);
@@ -142,7 +142,7 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
         testContext.setUserMessage(existingMessage);
         
         // Act - call the context enrichment method directly
-        messageCreationService.addUserMessageToContext(testContext);
+        spyMessageCreationService.addUserMessageToContext(testContext);
         
         // Assert - verify the existing message wasn't changed
         assertSame(String.valueOf(existingMessage), testContext.getUserMessage(),
