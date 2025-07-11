@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 public class AzureOpenAIChatModelFactory implements ChatModelFactory {
 
-    private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;;
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {

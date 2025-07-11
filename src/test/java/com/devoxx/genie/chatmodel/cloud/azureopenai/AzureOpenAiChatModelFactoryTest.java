@@ -6,6 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
+import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,12 +39,13 @@ class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
         AzureOpenAIChatModelFactory factory = new AzureOpenAIChatModelFactory();
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName("gpt-3.5-turbo");
-        chatModel.setTemperature(0.7);
+        chatModel.setTemperature(0.6);
         chatModel.setMaxTokens(100);
 
         ChatLanguageModel result = factory.createChatModel(chatModel);
 
-        assertThat(result).isNotNull();
+        // cannot verify more because model does not offer more access to data inside
+        assertThat(result).isInstanceOf(AzureOpenAiChatModel.class);
     }
 
     @Test
