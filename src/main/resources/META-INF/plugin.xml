@@ -38,6 +38,9 @@
         <h2>v0.6.9</h2>
         <UL>
             <LI>Issue #725: Langchain4J MCP ToolSpecificationHelper fix</LI>
+            <LI>Feat: Added support for SSO login (AWS Profile)</LI>
+            <LI>Feat #741: Add human-in-the-loop for MCP</LI>
+            <LI>Fix #745: Support IntelliJ Platform version 2025.2</LI>
         </UL>
         <h2>v0.6.7</h2>
         <UL>
