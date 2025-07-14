@@ -18,22 +18,44 @@ import java.util.function.Function;
 
 public class AzureOpenAIChatModelFactory implements ChatModelFactory {
 
-    private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;;
+    private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;
 
     @Override
     public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        boolean isO1 = chatModel.getModelName().startsWith("o1-");
+        String modelName = chatModel.getModelName();
+
+        boolean isReasoningModel = isReasoningModelWithLimitedParameters(modelName);
 
         final var builder = AzureOpenAiChatModel.builder()
                 .apiKey(getApiKey(MODEL_PROVIDER))
                 .deploymentName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
                 .maxRetries(chatModel.getMaxRetries())
+                .temperature(isReasoningModel ? 1.0 : chatModel.getTemperature())
                 .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .topP(isO1 ? 1.0 : chatModel.getTopP())
+                .topP(isReasoningModel ? 1.0 : chatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint())
                 .listeners(getListener());
 
         return builder.build();
+    }
+
+    /**
+     * Returns whether the model is a reasoning model with limited parameter support, in order to provide default
+     * values instead of given configuration.
+     * <p>
+     * @see <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/reasoning?tabs=python-secure%2Cpy#not-supported">Azure OpenAI reasoning models - parameters not supported</a>
+     * for details on parameter support for reasoning models.
+     *
+     * @param modelName name of the model to check
+     * @return true if the model name indicates a reasoning model
+     */
+    static boolean isReasoningModelWithLimitedParameters(String modelName) {
+        boolean isO1 = modelName.startsWith("o1");
+        boolean isO3 = modelName.startsWith("o3");
+        boolean isO4 = modelName.startsWith("o4-mini");
+        boolean isCodex = modelName.equalsIgnoreCase("codex-mini");
+
+        return isO1 || isO3 || isO4 || isCodex;
     }
 
     @Override
