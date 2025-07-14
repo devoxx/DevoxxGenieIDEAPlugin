@@ -14,6 +14,7 @@ import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
@@ -79,9 +80,6 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
         // Prepare memory which already adds the user message
         prepareMemory(context);
-
-        // We need to add this to chat memory when streaming response
-        chatMemoryManager.addUserMessage(context);
 
         // Create the streaming handler that will process chunks of response
         StreamingResponseHandler streamingResponseHandler;
@@ -181,7 +179,10 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                             .build();
                 }
 
-                TokenStream chat = assistant.chat(context.getUserPrompt());
+                String userMessage = context.getUserMessage().singleText();
+                String cleanText = TemplateVariableEscaper.escape(userMessage);
+
+                TokenStream chat = assistant.chat(cleanText);
 
                 chat.onPartialResponse(streamingResponseHandler::onPartialResponse)
                     .onToolExecuted(ToolExecution::request)
