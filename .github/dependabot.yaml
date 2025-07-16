@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Group all Gradle updates into a single PR
+    groups:
+      gradle-dependencies:
+        patterns:
+          - "*"
