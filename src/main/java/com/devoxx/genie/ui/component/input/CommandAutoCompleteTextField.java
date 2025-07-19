@@ -108,6 +108,13 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
                 newlineShortcutString = stateService.getNewlineShortcutWindows();
             }
 
+            if (submitShortcutString == null || submitShortcutString.isEmpty()) {
+                submitShortcutString = "shift ENTER";
+            }
+            if (newlineShortcutString == null || newlineShortcutString.isEmpty()) {
+                newlineShortcutString = SystemInfo.isMac ? "meta ENTER" : "ctrl ENTER";
+            }
+
             KeyStroke submitKeyStroke = KeyStroke.getKeyStroke(submitShortcutString);
             KeyStroke newlineKeyStroke = KeyStroke.getKeyStroke(newlineShortcutString);
             
