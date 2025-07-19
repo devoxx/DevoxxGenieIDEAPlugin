@@ -142,6 +142,9 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
     }
 
     private void setPlaceholderWithKeyboardShortcut(String shortcut) {
+        if (shortcut == null || shortcut.isEmpty()) {
+            shortcut = "shift Enter";
+        }
         // Clean up the shortcut text
         shortcut = shortcut.replace("pressed", "+")
                 .replace("meta", "command");
@@ -160,6 +163,10 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
             newlineShortcut = DevoxxGenieStateService.getInstance().getNewlineShortcutLinux();
         } else {
             newlineShortcut = DevoxxGenieStateService.getInstance().getNewlineShortcutMac();
+        }
+
+        if (newlineShortcut == null || newlineShortcut.isEmpty()) {
+            newlineShortcut = SystemInfo.isMac ? "meta Enter" : "ctrl Enter";
         }
         
         // Format the newline shortcut text
