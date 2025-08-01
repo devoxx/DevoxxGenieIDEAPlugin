@@ -203,12 +203,18 @@ public class BedrockModelFactory implements ChatModelFactory {
     private @NotNull String getModelId(String modelName) {
         Region userProvidedRegion = getRegion();
         String strRegion = userProvidedRegion.toString().toLowerCase();
-        if (strRegion.startsWith("eu")) {
-            return "eu." + modelName;
-        } else if (strRegion.startsWith("ap")) {
-            return "apac." + modelName;
-        } else {
-            return "us." + modelName;
+        String strPrefix = "";
+
+        if (DevoxxGenieStateService.getInstance().getShouldEnableAWSRegionalInference()) {
+            if (strRegion.startsWith("eu")) {
+                strPrefix = "eu.";
+            } else if (strRegion.startsWith("ap")) {
+                strPrefix = "apac.";
+            } else if (strRegion.startsWith("us")) {
+                strPrefix = "us.";
+            }
         }
+
+        return strPrefix + modelName;
     }
 }
