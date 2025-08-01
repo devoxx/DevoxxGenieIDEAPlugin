@@ -109,12 +109,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox enableAWSCheckBox = new JCheckBox("", stateService.getShowAwsFields());
     @Getter
     private final JCheckBox enableAWSProfileCheckBox = new JCheckBox("", stateService.getShouldPowerFromAWSProfile());
-    //@Getter
+    @Getter
     private final JCheckBox enableAWSRegionalInferenceCheckBox = new JCheckBox("", stateService.getShouldEnableAWSRegionalInference());
-
-    public JCheckBox getEnableAWSRegionalInferenceCheckBox() {
-        return enableAWSRegionalInferenceCheckBox;
-    }
 
     private final List<JComponent> azureComponents = new ArrayList<>();
 
