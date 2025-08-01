@@ -86,6 +86,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
         isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
         isModified |= !stateService.getShouldPowerFromAWSProfile().equals(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        isModified |= !stateService.getShouldEnableAWSRegionalInference().equals(llmSettingsComponent.getEnableAWSRegionalInferenceCheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAwsProfileName(), stateService.getAwsProfileName());
         isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
 
@@ -156,6 +157,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
         settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
         settings.setShouldPowerFromAWSProfile(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        settings.setShouldEnableAWSRegionalInference(llmSettingsComponent.getEnableAWSRegionalInferenceCheckBox().isSelected());
         settings.setAwsProfileName(llmSettingsComponent.getAwsProfileName().getText());
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());

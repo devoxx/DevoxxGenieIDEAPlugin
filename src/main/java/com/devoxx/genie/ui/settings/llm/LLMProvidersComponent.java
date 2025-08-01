@@ -109,6 +109,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox enableAWSCheckBox = new JCheckBox("", stateService.getShowAwsFields());
     @Getter
     private final JCheckBox enableAWSProfileCheckBox = new JCheckBox("", stateService.getShouldPowerFromAWSProfile());
+    //@Getter
+    private final JCheckBox enableAWSRegionalInferenceCheckBox = new JCheckBox("", stateService.getShouldEnableAWSRegionalInference());
+
+    public JCheckBox getEnableAWSRegionalInferenceCheckBox() {
+        return enableAWSRegionalInferenceCheckBox;
+    }
 
     private final List<JComponent> azureComponents = new ArrayList<>();
 
@@ -248,6 +254,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
 
         addNestedSettingsRow(panel, gbc, "Power from AWS Profile", enableAWSProfileCheckBox, awsCommonComponents);
+        addNestedSettingsRow(panel, gbc, "Enable Regional Inference", enableAWSRegionalInferenceCheckBox, awsCommonComponents);
         addNestedSettingsRow(panel, gbc, "AWS region", createTextWithPasswordButton(awsRegion, bedrockURL), awsCommonComponents);
 
         addNestedSettingsRow(panel, gbc, "AWS Access Key ID", createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsDirectCredentialsComponents);

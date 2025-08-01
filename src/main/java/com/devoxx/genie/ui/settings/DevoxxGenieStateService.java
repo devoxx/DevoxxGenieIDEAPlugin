@@ -172,6 +172,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean showAzureOpenAIFields = false;
     private Boolean showAwsFields = false;
     private Boolean shouldPowerFromAWSProfile = false;
+    private Boolean shouldEnableAWSRegionalInference = true;
 
     @Setter
     private Boolean useGitIgnore = true;
