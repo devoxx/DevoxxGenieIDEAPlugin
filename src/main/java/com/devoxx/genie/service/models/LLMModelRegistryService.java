@@ -838,18 +838,6 @@ public final class LLMModelRegistryService {
                         .inputMaxTokens(200_000)
                         .build());
 
-        // Anthropic - Claude 3.5 Sonnet v2 - anthropic.claude-3-5-sonnet-20241022-v2:0
-        String claude3dot5v2 = "anthropic.claude-3-5-sonnet-20241022-v2:0";
-        models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5v2,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Bedrock)
-                        .modelName(claude3dot5v2)
-                        .displayName("Claude 3.5 Sonnet v2")
-                        .inputCost(3)
-                        .outputCost(15)
-                        .inputMaxTokens(200_000)
-                        .build());
-
         // Anthropic - Claude 3.5 Sonnet - anthropic.claude-3-5-sonnet-20240620-v1:0
         String claude3dot5v1 = "anthropic.claude-3-5-sonnet-20240620-v1:0";
         models.put(ModelProvider.Bedrock.getName() + ":" + claude3dot5v1,
