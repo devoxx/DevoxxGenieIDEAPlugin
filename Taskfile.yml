@@ -1,0 +1,275 @@
+version: '3'
+
+vars:
+  CHANGELOG_FILE: CHANGELOG.md
+  PLUGIN_XML: src/main/resources/META-INF/plugin.xml
+
+tasks:
+  generate-changelog:
+    desc: Generate changelog for a new version
+    summary: |
+      Generates changelog entries by fetching recent merged PRs and updating both CHANGELOG.md and plugin.xml.
+      Usage: task generate-changelog VERSION=0.8.0 [LIMIT=10]
+    vars:
+      VERSION: '{{.VERSION | default "0.0.0"}}'
+      LIMIT: '{{.LIMIT | default "10"}}'
+    requires:
+      vars: [VERSION]
+    deps:
+      - check-tools
+    cmds:
+      - echo "Generating changelog for version {{.VERSION}}"
+      - task: fetch-recent-prs
+        vars: {VERSION: "{{.VERSION}}", LIMIT: "{{.LIMIT}}"}
+      - task: update-changelog
+        vars: {VERSION: "{{.VERSION}}"}
+      - task: update-plugin-xml
+        vars: {VERSION: "{{.VERSION}}"}
+      - echo "✅ Changelog generated successfully for version {{.VERSION}}"
+      - echo "📝 Please review the changes in {{.CHANGELOG_FILE}} and {{.PLUGIN_XML}}"
+
+  fetch-recent-prs:
+    desc: Fetch recent merged PRs and generate changelog content
+    internal: true
+    vars:
+      VERSION: '{{.VERSION}}'
+      LIMIT: '{{.LIMIT | default "10"}}'
+    cmds:
+      - |
+        echo "Fetching last {{.LIMIT}} merged PRs..."
+        gh pr list --state merged --limit {{.LIMIT}} --json number,title,mergedAt,author,body > /tmp/recent-prs.json
+        
+        echo "Generating changelog content..."
+        cat > /tmp/changelog-content.md << 'EOF'
+        ## [{{.VERSION}}] - $(date +%Y-%m-%d)
+        
+        ### Added
+        EOF
+        
+        # Parse PRs and categorize changes
+        jq -r '.[] | select(.title | test("^[Ff]eat|^[Aa]dd")) | "- " + .title + " (#" + (.number | tostring) + ")"' /tmp/recent-prs.json >> /tmp/changelog-content.md
+        
+        echo "" >> /tmp/changelog-content.md
+        echo "### Fixed" >> /tmp/changelog-content.md
+        jq -r '.[] | select(.title | test("^[Ff]ix")) | "- " + .title + " (#" + (.number | tostring) + ")"' /tmp/recent-prs.json >> /tmp/changelog-content.md
+        
+        echo "" >> /tmp/changelog-content.md
+        echo "### Dependencies" >> /tmp/changelog-content.md
+        jq -r '.[] | select(.title | test("^[Bb]ump|^[Uu]pdate")) | "- " + .title + " (#" + (.number | tostring) + ")"' /tmp/changelog-content.md >> /tmp/changelog-content.md
+        
+        echo "" >> /tmp/changelog-content.md
+        echo "### Contributors" >> /tmp/changelog-content.md
+        jq -r '[.[] | .author.login] | unique | .[] | "- @" + .' /tmp/recent-prs.json >> /tmp/changelog-content.md
+
+  update-changelog:
+    desc: Update CHANGELOG.md with new version
+    internal: true
+    vars:
+      VERSION: '{{.VERSION}}'
+    cmds:
+      - |
+        if [ ! -f {{.CHANGELOG_FILE}} ]; then
+          echo "# Changelog" > {{.CHANGELOG_FILE}}
+          echo "" >> {{.CHANGELOG_FILE}}
+          echo "All notable changes to this project will be documented in this file." >> {{.CHANGELOG_FILE}}
+          echo "" >> {{.CHANGELOG_FILE}}
+        fi
+        
+        # Insert new changelog content after the header
+        sed -i.bak '/^All notable changes/r /tmp/changelog-content.md' {{.CHANGELOG_FILE}}
+        rm {{.CHANGELOG_FILE}}.bak
+        
+        echo "✅ Updated {{.CHANGELOG_FILE}}"
+
+  update-plugin-xml:
+    desc: Update plugin.xml change-notes with new version
+    internal: true
+    vars:
+      VERSION: '{{.VERSION}}'
+    cmds:
+      - |
+        # Generate HTML list items from recent PRs
+        echo "Generating plugin.xml change notes..."
+        
+        # Create temporary change notes in HTML format
+        cat > /tmp/plugin-changes.html << EOF
+                <h2>v{{.VERSION}}</h2>
+                <UL>
+        EOF
+        
+        # Add features
+        jq -r '.[] | select(.title | test("^[Ff]eat|^[Aa]dd")) | "                    <LI>" + .title + "</LI>"' /tmp/recent-prs.json >> /tmp/plugin-changes.html
+        
+        # Add fixes
+        jq -r '.[] | select(.title | test("^[Ff]ix")) | "                    <LI>" + .title + "</LI>"' /tmp/recent-prs.json >> /tmp/plugin-changes.html
+        
+        # Add major dependency updates (limit to avoid clutter)
+        jq -r '.[] | select(.title | test("^[Bb]ump.*gradle-dependencies|^[Uu]pdate.*dependencies")) | "                    <LI>" + .title + "</LI>"' /tmp/recent-prs.json | head -3 >> /tmp/plugin-changes.html
+        
+        echo "                </UL>" >> /tmp/plugin-changes.html
+        
+        # Update plugin.xml by replacing the current version section
+        # First, backup the file
+        cp {{.PLUGIN_XML}} {{.PLUGIN_XML}}.bak
+        
+        # Use a more sophisticated approach to replace the version section
+        python3 << 'PYTHON'
+        import re
+        import sys
+        
+        with open('{{.PLUGIN_XML}}', 'r') as f:
+            content = f.read()
+        
+        with open('/tmp/plugin-changes.html', 'r') as f:
+            new_changes = f.read()
+        
+        # Pattern to match the current version section (assuming it's the first one)
+        pattern = r'(<change-notes><!\[CDATA\[\s*)(.*?)(\s*<h2>v[0-9]+\.[0-9]+\.[0-9]+</h2>)'
+        
+        if re.search(pattern, content, re.DOTALL):
+            # Replace existing first version
+            content = re.sub(pattern, r'\1' + new_changes + r'\3', content, count=1, flags=re.DOTALL)
+        else:
+            # Insert as first version if no versions exist
+            pattern = r'(<change-notes><!\[CDATA\[\s*)'
+            content = re.sub(pattern, r'\1        ' + new_changes + '\n        ', content)
+        
+        with open('{{.PLUGIN_XML}}', 'w') as f:
+            f.write(content)
+        PYTHON
+        
+        echo "✅ Updated {{.PLUGIN_XML}}"
+
+  check-tools:
+    desc: Check if required tools are available
+    internal: true
+    cmds:
+      - |
+        command -v gh >/dev/null 2>&1 || { echo "❌ GitHub CLI (gh) is required but not installed. Install from: https://cli.github.com/"; exit 1; }
+        command -v jq >/dev/null 2>&1 || { echo "❌ jq is required but not installed. Install with: brew install jq"; exit 1; }
+        command -v python3 >/dev/null 2>&1 || { echo "❌ python3 is required but not installed."; exit 1; }
+        echo "✅ All required tools are available"
+
+  clean-temp:
+    desc: Clean temporary files
+    silent: true
+    cmds:
+      - rm -f /tmp/recent-prs.json /tmp/changelog-content.md /tmp/plugin-changes.html
+      - echo "✅ Temporary files cleaned"
+
+  build:
+    desc: Build the plugin using Gradle
+    cmds:
+      - ./gradlew buildPlugin
+      - echo "✅ Plugin built successfully"
+
+  test:
+    desc: Run all tests
+    cmds:
+      - ./gradlew test
+      - echo "✅ Tests completed"
+
+  verify:
+    desc: Verify the plugin (includes tests and plugin verification)
+    cmds:
+      - ./gradlew verifyPlugin
+      - echo "✅ Plugin verification completed"
+
+  run-ide:
+    desc: Run IntelliJ IDEA with the plugin for testing
+    cmds:
+      - ./gradlew runIde
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - ./gradlew clean
+      - echo "✅ Build artifacts cleaned"
+
+  publish:
+    desc: Publish plugin to JetBrains Marketplace
+    summary: |
+      Publishes the plugin to JetBrains Marketplace.
+      Requires PUBLISH_TOKEN environment variable to be set.
+    cmds:
+      - |
+        if [ -z "$PUBLISH_TOKEN" ]; then
+          echo "❌ PUBLISH_TOKEN environment variable is required"
+          echo "Set it with: export PUBLISH_TOKEN=your_token"
+          exit 1
+        fi
+      - ./gradlew publishPlugin
+      - echo "✅ Plugin published successfully"
+
+  build-and-test:
+    desc: Build and run all tests
+    deps:
+      - build
+      - test
+
+  preview-changes:
+    desc: Preview what changes would be made without updating files
+    summary: |
+      Shows what PRs would be included in the changelog without making changes.
+      Usage: task preview-changes VERSION=0.8.0 [LIMIT=10]
+    vars:
+      VERSION: '{{.VERSION | default "0.0.0"}}'
+      LIMIT: '{{.LIMIT | default "10"}}'
+    requires:
+      vars: [VERSION]
+    deps:
+      - check-tools
+    cmds:
+      - echo "Preview of changes for version {{.VERSION}}"
+      - echo "=========================================="
+      - |
+        gh pr list --state merged --limit {{.LIMIT}} --json number,title,mergedAt,author --template '
+        {{range .}}
+        📝 #{{.number}}: {{.title}} (@{{.author.login}})
+        {{end}}'
+      - echo "=========================================="
+      - echo "Use 'task generate-changelog VERSION={{.VERSION}}' to apply these changes"
+
+  help:
+    desc: Show available tasks and usage examples
+    silent: true
+    cmds:
+      - |
+        cat << 'EOF'
+        DevoxxGenie Development & Release Automation
+        ============================================
+
+        🔨 Build & Test Tasks:
+          build              - Build the plugin using Gradle
+          test               - Run all tests
+          verify             - Verify the plugin (includes tests and verification)
+          build-and-test     - Build and run all tests
+          run-ide            - Run IntelliJ IDEA with the plugin for testing
+          clean              - Clean build artifacts
+          publish            - Publish plugin to JetBrains Marketplace
+
+        📝 Changelog Tasks:
+          generate-changelog - Generate changelog for a new version
+          preview-changes    - Preview changes without updating files
+          clean-temp         - Clean temporary files
+
+        Examples:
+          # Development
+          task build
+          task test
+          task run-ide
+          
+          # Release
+          task generate-changelog VERSION=0.8.0
+          task verify
+          PUBLISH_TOKEN=xxx task publish
+
+        Requirements:
+          - GitHub CLI (gh) - https://cli.github.com/
+          - jq - brew install jq
+          - python3
+          - Java/Gradle (for build tasks)
+        EOF
+
+  default:
+    deps: [help]
