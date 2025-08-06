@@ -2,7 +2,7 @@ import java.util.*
 
 plugins {
     java
-    id("org.jetbrains.intellij") version "1.17.2"
+    id("org.jetbrains.intellij") version "1.17.4"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -69,47 +69,47 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.25.6")
-    implementation("software.amazon.awssdk:sso:2.31.64")
-    implementation("software.amazon.awssdk:ssooidc:2.31.64")
+    implementation("software.amazon.awssdk:sts:2.32.16")
+    implementation("software.amazon.awssdk:sso:2.32.16")
+    implementation("software.amazon.awssdk:ssooidc:2.32.16")
 
     // Retrofit dependencies
-    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
-    implementation("org.xerial:sqlite-jdbc:3.48.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation("org.xerial:sqlite-jdbc:3.50.3.0")
 
     // Docker dependencies
-    implementation("com.github.docker-java:docker-java:3.4.0")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.0")
+    implementation("com.github.docker-java:docker-java:3.5.3")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.5.3")
 
     // JTokkit dependencies
-    implementation("com.knuddels:jtokkit:1.0.0")
-    implementation("org.commonmark:commonmark:0.22.0")
-    implementation("io.netty:netty-all:4.1.100.Final")
+    implementation("com.knuddels:jtokkit:1.1.0")
+    implementation("org.commonmark:commonmark:0.25.1")
+    implementation("io.netty:netty-all:4.2.3.Final")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.4.12")
+    implementation("ch.qos.logback:logback-classic:1.5.18")
 
     // GitIgnore Reader
-    implementation("nl.basjes.gitignore:gitignore-reader:1.6.0")
+    implementation("nl.basjes.gitignore:gitignore-reader:1.12.0")
 
     // TDG : Add other TDG dependencies
-    implementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
-    implementation("org.junit.jupiter:junit-jupiter-engine:5.11.3")
-    implementation("org.junit.platform:junit-platform-launcher:1.11.3")
+    implementation("org.junit.jupiter:junit-jupiter-api:6.0.0-M2")
+    implementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-M2")
+    implementation("org.junit.platform:junit-platform-launcher:1.13.4")
 
-    compileOnly("org.projectlombok:lombok:1.18.34")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.0-M2")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.3")
-    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-M2")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.13.4")
+    testImplementation("org.mockito:mockito-core:5.18.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.15.2")
-    testImplementation("org.assertj:assertj-core:3.26.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
+    testImplementation("org.assertj:assertj-core:3.27.3")
     testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.0-M2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.0-M2")
 }
 
 // Configure Gradle IntelliJ Plugin
