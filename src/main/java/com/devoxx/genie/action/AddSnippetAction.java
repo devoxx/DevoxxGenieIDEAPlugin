@@ -13,6 +13,8 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.LightVirtualFile;
+
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,18 +93,21 @@ public class AddSnippetAction extends DumbAwareAction {
         SelectionModel selectionModel = editor.getSelectionModel();
         Document document = editor.getDocument();
 
+        LightVirtualFile virtualFile = new LightVirtualFile(originalFile.getName(), selectedText);
+        virtualFile.setFileType(fileType);
+
         int startOffset = selectionModel.getSelectionStart();
         int endOffset = selectionModel.getSelectionEnd();
         int startLine = document.getLineNumber(startOffset);
         int endLine = document.getLineNumber(endOffset);
-        originalFile.putUserData(ORIGINAL_FILE_KEY, originalFile);
-        originalFile.putUserData(SELECTED_TEXT_KEY, selectedText);
-        originalFile.putUserData(SELECTION_START_KEY, startOffset);
-        originalFile.putUserData(SELECTION_END_KEY, endOffset);
-        originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
-        originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
+        virtualFile.putUserData(ORIGINAL_FILE_KEY, originalFile);
+        virtualFile.putUserData(SELECTED_TEXT_KEY, selectedText);
+        virtualFile.putUserData(SELECTION_START_KEY, startOffset);
+        virtualFile.putUserData(SELECTION_END_KEY, endOffset);
+        virtualFile.putUserData(SELECTION_START_LINE_KEY, startLine);
+        virtualFile.putUserData(SELECTION_END_LINE_KEY, endLine);
 
-        FileListManager.getInstance().addFile(project, originalFile);
+        FileListManager.getInstance().addFile(project, virtualFile);
     }
 
     @Override
