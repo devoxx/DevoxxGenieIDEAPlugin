@@ -6,9 +6,11 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
@@ -36,13 +38,14 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox enableMcpCheckbox;
     private final JCheckBox enableDebugLogsCheckbox;
     private final JCheckBox enableApprovalRequiredCheckbox;
+    private final JBIntSpinner approvalTimeoutField;
 
     public MCPSettingsComponent() {
 
         tableModel = new MCPServerTableModel();
         mcpTable = new JBTable(tableModel);
         
-        // Initialize checkboxes
+        // Initialize settings
         enableMcpCheckbox = new JCheckBox("Enable MCP Support");
         enableMcpCheckbox.addActionListener(e -> isModified = true);
         
@@ -51,6 +54,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
 
         enableApprovalRequiredCheckbox = new JCheckBox("Enable Approval Required");
         enableApprovalRequiredCheckbox.addActionListener(e -> isModified = true);
+
+        approvalTimeoutField =new JBIntSpinner(new UINumericRange(60,1, Integer.MAX_VALUE));
+        approvalTimeoutField.addChangeListener(e -> isModified = true);
         
         setupTable();
 
@@ -72,11 +78,17 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         checkboxPanel.add(enableMcpCheckbox);
         checkboxPanel.add(enableDebugLogsCheckbox);
         checkboxPanel.add(enableApprovalRequiredCheckbox);
+
+        // Create the settings panel
+        JPanel settingsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        settingsPanel.add(new JLabel("Approval timeout (in secs)"));
+        settingsPanel.add(approvalTimeoutField);
         
         // Create the top panel that combines both
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(infoPanel, BorderLayout.NORTH);
         topPanel.add(checkboxPanel, BorderLayout.CENTER);
+        topPanel.add(settingsPanel, BorderLayout.SOUTH);
 
         JPanel buttonPanel = getButtonPanel();
 
@@ -93,6 +105,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
             enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
             enableApprovalRequiredCheckbox.setSelected(stateService.getMcpApprovalRequired());
+            approvalTimeoutField.setNumber(stateService.getMcpApprovalTimeout());
             // Reset modified flag if needed, as initial load shouldn't count as modification
             isModified = false;
         });
@@ -222,6 +235,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             stateService.setMcpEnabled(enableMcpCheckbox.isSelected());
             stateService.setMcpDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
             stateService.setMcpApprovalRequired(enableApprovalRequiredCheckbox.isSelected());
+
+            // Save MCP settings
+            stateService.setMcpApprovalTimeout(approvalTimeoutField.getNumber());
             
             // Refresh the tool window visibility if MCP enabled state changed
             if (oldMcpEnabled != enableMcpCheckbox.isSelected()) {
@@ -259,7 +275,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         return isModified || 
                enableMcpCheckbox.isSelected() != stateService.getMcpEnabled() ||
                enableDebugLogsCheckbox.isSelected() != stateService.getMcpDebugLogsEnabled() ||
-               enableApprovalRequiredCheckbox.isSelected() != stateService.getMcpApprovalRequired();
+               enableApprovalRequiredCheckbox.isSelected() != stateService.getMcpApprovalRequired() ||
+               approvalTimeoutField.getNumber() != stateService.getMcpApprovalTimeout() ;
     }
     
     /**
@@ -438,6 +455,7 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         enableMcpCheckbox.setSelected(stateService.getMcpEnabled());
         enableDebugLogsCheckbox.setSelected(stateService.getMcpDebugLogsEnabled());
         enableApprovalRequiredCheckbox.setSelected(stateService.getMcpApprovalRequired());
+        approvalTimeoutField.setNumber(stateService.getMcpApprovalTimeout());
         isModified = false;
         
         // Find and update the Open MCP Log Panel button if it exists

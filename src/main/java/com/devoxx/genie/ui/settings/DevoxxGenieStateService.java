@@ -192,18 +192,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer defaultWindowContext = 8000;
     
     // MCP settings
-    @Setter
-    @Getter
     private MCPSettings mcpSettings = new MCPSettings();
-    @Setter
-    @Getter
     private Boolean mcpEnabled = false;
-    @Setter
-    @Getter
     private Boolean mcpDebugLogsEnabled = false;
-    @Getter
-    @Setter
     private Boolean mcpApprovalRequired = true;
+    private Integer mcpApprovalTimeout = MCP_APPROVAL_TIMEOUT;
 
     // Appearance settings
     private Double lineHeight = 1.6;  // Default line height multiplier
