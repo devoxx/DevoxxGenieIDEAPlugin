@@ -36,8 +36,6 @@ import org.jetbrains.annotations.Nullable;
 @Slf4j
 public class MCPApprovalService {
 
-    private static final int APPROVAL_TIMEOUT_SECONDS = 30;
-
     /**
      * Request user approval for an MCP tool execution
      *
@@ -47,9 +45,10 @@ public class MCPApprovalService {
      * @return true if approved, false if denied or timed out
      */
     public static boolean requestApproval(@Nullable Project project, @NotNull String toolName, @NotNull String arguments) {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         // Skip approval if running in headless mode or if approval is not required
         if (ApplicationManager.getApplication().isHeadlessEnvironment() ||
-                !DevoxxGenieStateService.getInstance().getMcpApprovalRequired()) {
+                !stateService.getMcpApprovalRequired()) {
             return true;
         }
 
@@ -63,7 +62,7 @@ public class MCPApprovalService {
 
         try {
             // Wait for user response with timeout
-            return approvalFuture.get(APPROVAL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return approvalFuture.get(stateService.getMcpApprovalTimeout(), TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.warn("MCP approval request timed out or was interrupted", e);
             NotificationUtil.sendNotification(project, "MCP tool execution was cancelled due to timeout");

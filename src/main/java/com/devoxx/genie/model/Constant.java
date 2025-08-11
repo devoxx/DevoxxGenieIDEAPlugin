@@ -56,6 +56,9 @@ public class Constant {
     public static final Integer TIMEOUT = 500;
     public static final Integer MAX_MEMORY = 50;
 
+    // The MCP settings
+    public static final Integer MCP_APPROVAL_TIMEOUT = 60;
+
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;
     public static final Integer MAX_SEARCH_RESULTS = 3;
