@@ -14,7 +14,7 @@ In addition to Git Dif viewer and LLM-driven web search with [Google](https://de
 With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie isn’t just another developer tool — it’s a glimpse into the future of agentic programming. One thing’s clear: we’re in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-25K+ Downloads
+29.5K+ Downloads
 
 ### Agentic Programming with DevoxxGenie
 
