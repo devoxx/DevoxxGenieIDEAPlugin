@@ -23,7 +23,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.38")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-M2")
-    testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.mockito:mockito-core:5.19.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.assertj:assertj-core:3.27.4")
 
