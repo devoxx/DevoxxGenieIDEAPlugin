@@ -6,9 +6,11 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
+import dev.langchain4j.model.bedrock.BedrockStreamingChatModel;
+import dev.langchain4j.model.chat.StreamingChatLanguageModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.apache.commons.lang3.NotImplementedException;
@@ -17,7 +19,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sts.auth.StsCredentialsProvider;
 
 import java.util.List;
 
@@ -64,16 +65,54 @@ public class BedrockModelFactory implements ChatModelFactory {
     }
 
     /**
+     * Creates a {@link StreamingChatLanguageModel} based on the provided {@link ChatModel}.
+     *
+     * @param chatModel The configuration for the chat model.
+     * @return  An instance of {@link StreamingChatLanguageModel} configured with the provided settings.
+     * @throws NotImplementedException if the requested model is not supported.
+     */
+    @Override
+    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+        final String modelName = chatModel.getModelName().toLowerCase();
+
+        if (modelName.contains(MODEL_PREFIX_ANTHROPIC)) {
+            return createAnthropicStreamingChatModel(chatModel);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Creates a {@link ChatLanguageModel} for Anthropic models on AWS Bedrock.
      *
      * @param chatModel The configuration for the chat model.
      * @return An instance of {@link ChatLanguageModel} configured for Anthropic models.
      */
     private ChatLanguageModel createAnthropicChatModel(@NotNull ChatModel chatModel) {
-
         return BedrockChatModel.builder()
                 .modelId(getModelId(chatModel.getModelName()))
                 .client(BedrockRuntimeClient.builder()
+                        .region(getRegion())
+                        .credentialsProvider(getCredentialsProvider())
+                        .build())
+                .defaultRequestParameters(ChatRequestParameters.builder()
+                        .temperature(chatModel.getTemperature())
+                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .build())
+                .build();
+    }
+
+    /**
+     * Creates a {@link StreamingChatLanguageModel} for Anthropic models on AWS Bedrock.
+     * All Bedrock Anthropic models currently support streaming responses.
+     *
+     * @param chatModel The configuration for the chat model.
+     * @return An instance of {@link StreamingChatLanguageModel} configured for Anthropic models.
+     */
+    private BedrockStreamingChatModel createAnthropicStreamingChatModel(@NotNull ChatModel chatModel) {
+        return BedrockStreamingChatModel.builder()
+                .modelId(getModelId(chatModel.getModelName()))
+                .client(BedrockRuntimeAsyncClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
