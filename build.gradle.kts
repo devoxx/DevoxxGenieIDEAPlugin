@@ -69,17 +69,17 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.32.23")
-    implementation("software.amazon.awssdk:sso:2.32.23")
-    implementation("software.amazon.awssdk:ssooidc:2.32.23")
+    implementation("software.amazon.awssdk:sts:2.32.26")
+    implementation("software.amazon.awssdk:sso:2.32.26")
+    implementation("software.amazon.awssdk:ssooidc:2.32.26")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
 
     // Docker dependencies
-    implementation("com.github.docker-java:docker-java:3.5.3")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.5.3")
+    implementation("com.github.docker-java:docker-java:3.6.0")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.6.0")
 
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
