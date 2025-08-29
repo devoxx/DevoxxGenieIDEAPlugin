@@ -132,7 +132,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = JBUI.insets(5);
 
-        addSection(panel, gbc, "Local Large Language Response");
+        addSection(panel, gbc, "Large Language Model Response");
         addSettingRow(panel, gbc, "Enable Stream Mode", streamModeCheckBox);
 
         // Local LLM Providers section
