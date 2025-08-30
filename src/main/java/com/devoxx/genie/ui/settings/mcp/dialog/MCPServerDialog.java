@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.mcp.client.McpClient;
@@ -145,7 +146,7 @@ public class MCPServerDialog extends DialogWrapper {
         gbc.weighty = 0.4;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(cardPanel, gbc);
-        
+
         // Add environment variables section
         gbc.gridx = 0;
         gbc.gridy = 3;
@@ -154,29 +155,32 @@ public class MCPServerDialog extends DialogWrapper {
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(new JLabel("Environment Variables:"), gbc);
-        
+
         // Create toolbar decorator for the environment variables table
         ToolbarDecorator envVarDecorator = ToolbarDecorator.createDecorator(envVarTable)
                 .setAddAction(button -> addEnvVar())
                 .setEditAction(button -> editEnvVar())
                 .setRemoveAction(button -> removeEnvVar());
-        
+
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.weighty = 0.6;
         gbc.fill = GridBagConstraints.BOTH;
         mainPanel.add(envVarDecorator.createPanel(), gbc);
-        
+
+        // The main panel should have scrollbars
+        JBScrollPane scrollPane = new JBScrollPane(mainPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel wrapperPanel = new JPanel();
+        wrapperPanel.setLayout(new BoxLayout(wrapperPanel, BoxLayout.Y_AXIS));
+        wrapperPanel.add(scrollPane);
+
         // Add test connection button
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
-        mainPanel.add(testConnectionButton, gbc);
-        
-        return mainPanel;
+        testConnectionButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        wrapperPanel.add(testConnectionButton);
+        return wrapperPanel;
     }
     
     /**

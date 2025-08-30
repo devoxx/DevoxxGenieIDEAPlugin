@@ -18,7 +18,7 @@ import java.util.ResourceBundle;
 @Slf4j
 public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListener {
 
-    private static final int MIN_INPUT_HEIGHT = 200;
+    private static final int MIN_INPUT_HEIGHT = 300;
 
     private final Project project;
     private final DevoxxGenieToolWindowContent toolWindowContent;
