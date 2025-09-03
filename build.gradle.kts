@@ -69,9 +69,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.32.27")
-    implementation("software.amazon.awssdk:sso:2.32.27")
-    implementation("software.amazon.awssdk:ssooidc:2.32.27")
+    implementation("software.amazon.awssdk:sts:2.33.0")
+    implementation("software.amazon.awssdk:sso:2.33.0")
+    implementation("software.amazon.awssdk:ssooidc:2.33.0")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
@@ -93,14 +93,14 @@ dependencies {
     implementation("nl.basjes.gitignore:gitignore-reader:1.12.0")
 
     // TDG : Add other TDG dependencies
-    implementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC1")
-    implementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC1")
+    implementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC2")
+    implementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC2")
     implementation("org.junit.platform:junit-platform-launcher:1.13.4")
 
     compileOnly("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC2")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.13.4")
     testImplementation("org.mockito:mockito-core:5.19.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
@@ -109,7 +109,7 @@ dependencies {
     testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC2")
 }
 
 // Configure Gradle IntelliJ Plugin
