@@ -69,9 +69,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.33.0")
-    implementation("software.amazon.awssdk:sso:2.33.0")
-    implementation("software.amazon.awssdk:ssooidc:2.33.0")
+    implementation("software.amazon.awssdk:sts:2.33.2")
+    implementation("software.amazon.awssdk:sso:2.33.2")
+    implementation("software.amazon.awssdk:ssooidc:2.33.2")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
@@ -84,7 +84,7 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("org.commonmark:commonmark:0.25.1")
-    implementation("io.netty:netty-all:4.2.4.Final")
+    implementation("io.netty:netty-all:4.2.5.Final")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")
