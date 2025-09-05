@@ -19,8 +19,8 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.25.1")
 
-    compileOnly("org.projectlombok:lombok:1.18.38")
-    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    compileOnly("org.projectlombok:lombok:1.18.40")
+    annotationProcessor("org.projectlombok:lombok:1.18.40")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC2")
     testImplementation("org.mockito:mockito-core:5.19.0")
