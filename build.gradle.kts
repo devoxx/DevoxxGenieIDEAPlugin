@@ -69,9 +69,9 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.33.0")
-    implementation("software.amazon.awssdk:sso:2.33.0")
-    implementation("software.amazon.awssdk:ssooidc:2.33.0")
+    implementation("software.amazon.awssdk:sts:2.33.3")
+    implementation("software.amazon.awssdk:sso:2.33.3")
+    implementation("software.amazon.awssdk:ssooidc:2.33.3")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
@@ -84,7 +84,7 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("org.commonmark:commonmark:0.25.1")
-    implementation("io.netty:netty-all:4.2.4.Final")
+    implementation("io.netty:netty-all:4.2.5.Final")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")
@@ -97,8 +97,8 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC2")
     implementation("org.junit.platform:junit-platform-launcher:1.13.4")
 
-    compileOnly("org.projectlombok:lombok:1.18.38")
-    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    compileOnly("org.projectlombok:lombok:1.18.40")
+    annotationProcessor("org.projectlombok:lombok:1.18.40")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC2")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.13.4")
