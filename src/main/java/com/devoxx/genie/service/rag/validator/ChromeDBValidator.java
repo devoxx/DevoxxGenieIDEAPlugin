@@ -76,7 +76,7 @@ public class ChromeDBValidator implements Validator {
         try {
             dockerClient.pingCmd().exec();
             return true;
-        } catch (Exception e) {
+        } catch (Throwable t) {
             return false;
         }
     }
