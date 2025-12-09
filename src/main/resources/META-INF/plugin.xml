@@ -35,6 +35,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.7.1</h2>
+        <UL>
+            <LI>Issue #767: MCP approval timeout should be configurable</LI>
+            <LI>Issue #771: Enable streaming responses for Bedrock Anthropic models</LI>
+            <LI>Added Claude Sonnet 4 to the available Amazon Bedrock models</LI>
+            <LI>Issue #806: Plugin 'DevoxxGenie' (version '0.7.0') is not compatible with the current version of the IDE</LI>
+            <LI>Bump the gradle-dependencies</LI>
+        </UL>
         <h2>v0.7.0</h2>
         <UL>
             <LI>Added Claude Sonnet 3.5 v2 to Amazon Bedrock models</LI>
