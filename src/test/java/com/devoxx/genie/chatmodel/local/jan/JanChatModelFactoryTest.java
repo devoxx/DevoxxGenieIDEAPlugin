@@ -1,8 +1,9 @@
 package com.devoxx.genie.chatmodel.local.jan;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.mockito.MockedStatic;
@@ -36,12 +37,12 @@ class JanChatModelFactoryTest {
             JanChatModelFactory factory = new JanChatModelFactory();
 
             // Create a dummy ChatModel
-            ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("jan");
-            chatModel.setBaseUrl("http://localhost:8080");
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("jan");
+            customChatModel.setBaseUrl("http://localhost:8080");
 
             // Call the method
-            ChatLanguageModel result = factory.createChatModel(chatModel);
+            ChatModel result = factory.createChatModel(customChatModel);
             assertThat(result).isNotNull();
         }
     }
@@ -58,9 +59,9 @@ class JanChatModelFactoryTest {
             // Instance of the class containing the method to be tested
             JanChatModelFactory factory = new JanChatModelFactory();
 
-            ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("mistral-ins-7b-q4");
-            ChatLanguageModel chatLanguageModel = factory.createChatModel(chatModel);
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("mistral-ins-7b-q4");
+            ChatModel chatLanguageModel = factory.createChatModel(customChatModel);
             String hello = chatLanguageModel.chat("Hello");
             assertThat(hello).isNotNull();
         }

@@ -1,16 +1,15 @@
 package com.devoxx.genie.chatmodel.cloud.anthropic;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.service.mcp.MCPListenerService;
-import com.devoxx.genie.service.mcp.MCPService;
+
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.anthropic.AnthropicStreamingChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.chat.listener.ChatModelListener;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,27 +21,27 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
     private static final ModelProvider MODEL_PROVIDER = ModelProvider.Anthropic;
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
 
         return AnthropicChatModel.builder()
             .apiKey(getApiKey(MODEL_PROVIDER))
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .maxTokens(chatModel.getMaxTokens())
-            .maxRetries(chatModel.getMaxRetries())
+            .modelName(customChatModel.getModelName())
+            .temperature(customChatModel.getTemperature())
+            .topP(customChatModel.getTopP())
+            .maxTokens(customChatModel.getMaxTokens())
+            .maxRetries(customChatModel.getMaxRetries())
             .listeners(getListener())
             .build();
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return AnthropicStreamingChatModel.builder()
             .apiKey(getApiKey(MODEL_PROVIDER))
-            .modelName(chatModel.getModelName())
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .maxTokens(chatModel.getMaxTokens())
+            .modelName(customChatModel.getModelName())
+            .temperature(customChatModel.getTemperature())
+            .topP(customChatModel.getTopP())
+            .maxTokens(customChatModel.getMaxTokens())
             .listeners(getListener())
             .build();
     }

@@ -1,8 +1,9 @@
 package com.devoxx.genie.chatmodel.local.lmstudio;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -25,11 +26,11 @@ class LMStudioChatModelFactoryTest {
             LMStudioChatModelFactory factory = new LMStudioChatModelFactory();
 
             // Create a dummy ChatModel
-            ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("lmstudio");
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("lmstudio");
 
             // Call the method
-            ChatLanguageModel result = factory.createChatModel(chatModel);
+            ChatModel result = factory.createChatModel(customChatModel);
             assertThat(result).isNotNull();
         }
     }

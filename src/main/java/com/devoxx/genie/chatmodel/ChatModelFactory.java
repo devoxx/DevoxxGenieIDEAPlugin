@@ -1,14 +1,14 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.mcp.MCPListenerService;
 import com.devoxx.genie.service.mcp.MCPService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 
 import java.util.List;
@@ -20,18 +20,18 @@ public interface ChatModelFactory {
     /**
      * Create a chat model with the given parameters.
      *
-     * @param chatModel the chat model
+     * @param customChatModel the chat model
      * @return the chat model
      */
-    ChatLanguageModel createChatModel(ChatModel chatModel);
+    ChatModel createChatModel(CustomChatModel customChatModel);
 
     /**
      * Create a streaming chat model with the given parameters.
      *
-     * @param chatModel the chat model
+     * @param customChatModel the chat model
      * @return the streaming chat model
      */
-    default StreamingChatLanguageModel createStreamingChatModel(ChatModel chatModel) {
+    default StreamingChatModel createStreamingChatModel(CustomChatModel customChatModel) {
         return null;
     }
 

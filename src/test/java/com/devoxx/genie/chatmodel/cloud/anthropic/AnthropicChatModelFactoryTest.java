@@ -1,33 +1,25 @@
 package com.devoxx.genie.chatmodel.cloud.anthropic;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
-import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.TextContent;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import io.github.cdimascio.dotenv.Dotenv;
+
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
+public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @Override
     @BeforeEach
@@ -42,26 +34,26 @@ class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    void testCreateChatModel() {
+    public void testCreateChatModel() {
         // Instance of the class containing the method to be tested
         var factory = new AnthropicChatModelFactory();
 
         // Create a dummy ChatModel
-        ChatModel chatModel = new ChatModel();
-        chatModel.setModelName("dummy-model");
-        chatModel.setTemperature(0.7);
-        chatModel.setTopP(0.9);
-        chatModel.setMaxTokens(256);
-        chatModel.setMaxRetries(3);
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("dummy-model");
+        customChatModel.setTemperature(0.7);
+        customChatModel.setTopP(0.9);
+        customChatModel.setMaxTokens(256);
+        customChatModel.setMaxRetries(3);
 
         // Call the method
-        ChatLanguageModel result = factory.createChatModel(chatModel);
+        ChatModel result = factory.createChatModel(customChatModel);
         assertThat(result).isNotNull();
     }
 
 
     @Test
-    void testModelNames() {
+    public void testModelNames() {
         AnthropicChatModelFactory factory = new AnthropicChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 

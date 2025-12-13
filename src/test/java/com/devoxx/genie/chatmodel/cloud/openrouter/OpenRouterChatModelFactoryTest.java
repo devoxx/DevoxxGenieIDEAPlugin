@@ -1,6 +1,6 @@
 package com.devoxx.genie.chatmodel.cloud.openrouter;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.openrouter.Data;
@@ -12,8 +12,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
+public class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
 
     private OpenRouterChatModelFactory factory;
 
@@ -40,7 +40,7 @@ class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
     private OpenRouterService openRouterService;
 
     @Mock
-    private ChatModel chatModel;
+    private CustomChatModel customChatModel;
 
     @Mock
     private Project defaultProject;
@@ -67,11 +67,11 @@ class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
         factory = new OpenRouterChatModelFactory();
 
         // Set up common mocks for ChatModel
-        when(chatModel.getModelName()).thenReturn("test-model");
-        when(chatModel.getMaxRetries()).thenReturn(3);
-        when(chatModel.getTemperature()).thenReturn(0.7);
-        when(chatModel.getTimeout()).thenReturn(60);
-        when(chatModel.getTopP()).thenReturn(0.95);
+        when(customChatModel.getModelName()).thenReturn("test-model");
+        when(customChatModel.getMaxRetries()).thenReturn(3);
+        when(customChatModel.getTemperature()).thenReturn(0.7);
+        when(customChatModel.getTimeout()).thenReturn(60);
+        when(customChatModel.getTopP()).thenReturn(0.95);
 
         // Mock ProjectManager
         try (MockedStatic<ProjectManager> mockedProjectManager = mockStatic(ProjectManager.class)) {
@@ -82,7 +82,7 @@ class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
 
     @Test
     public void testCreateChatModel() {
-        ChatLanguageModel model = factory.createChatModel(chatModel);
+        ChatModel model = factory.createChatModel(customChatModel);
 
         assertNotNull(model);
         assertTrue(model instanceof OpenAiChatModel);
@@ -90,7 +90,7 @@ class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
 
     @Test
     public void testCreateStreamingChatModel() {
-        StreamingChatLanguageModel model = factory.createStreamingChatModel(chatModel);
+        StreamingChatModel model = factory.createStreamingChatModel(customChatModel);
 
         assertNotNull(model);
         assertTrue(model instanceof OpenAiStreamingChatModel);

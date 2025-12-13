@@ -50,28 +50,33 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
-    val lg4j_version = "1.0.0-beta3"
+    val lg4j_version = "1.9.1"
+    var lg4j_beta_version = "1.9.1-beta17"
 
     // Add the dependencies for the core module
     implementation(project(":core"))
 
     // Langchain4J dependencies
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-core:${lg4j_version}")
+    implementation("dev.langchain4j:langchain4j-http-client-jdk:${lg4j_version}")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-bedrock:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-mistral-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-google-ai-gemini:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_beta_version")
+    implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-chroma:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
 //    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-reactor:$lg4j_version")
-    implementation("software.amazon.awssdk:sts:2.33.0")
-    implementation("software.amazon.awssdk:sso:2.33.0")
-    implementation("software.amazon.awssdk:ssooidc:2.33.0")
+    implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
+    implementation(platform("software.amazon.awssdk:bom:2.35.5"))
+    implementation("software.amazon.awssdk:bedrock")
+    implementation("software.amazon.awssdk:sts")
+    implementation("software.amazon.awssdk:sso")
+    implementation("software.amazon.awssdk:ssooidc")
 
     // Retrofit dependencies
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")

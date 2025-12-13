@@ -1,7 +1,7 @@
 package com.devoxx.genie.chatmodel.local;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -10,8 +10,8 @@ import com.intellij.util.concurrency.AppExecutorUtil;
 
 import dev.langchain4j.http.client.jdk.JdkHttpClient;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
@@ -43,37 +43,37 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public abstract ChatLanguageModel createChatModel(@NotNull ChatModel chatModel);
+    public abstract ChatModel createChatModel(@NotNull CustomChatModel customChatModel);
 
     @Override
-    public abstract StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel);
+    public abstract StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel);
 
     protected abstract String getModelUrl();
 
-    protected ChatLanguageModel createOpenAiChatModel(@NotNull ChatModel chatModel) {
+    protected ChatModel createOpenAiChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiChatModel.builder()
                 .baseUrl(getModelUrl())
                 .httpClientBuilder(jdkHttpClientBuilder)
                 .apiKey("na")
-                .modelName(chatModel.getModelName())
-                .maxRetries(chatModel.getMaxRetries())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .topP(chatModel.getTopP())
+                .modelName(customChatModel.getModelName())
+                .maxRetries(customChatModel.getMaxRetries())
+                .temperature(customChatModel.getTemperature())
+                .maxTokens(customChatModel.getMaxTokens())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .topP(customChatModel.getTopP())
                 .listeners(getListener())
                 .build();
     }
 
-    protected StreamingChatLanguageModel createOpenAiStreamingChatModel(@NotNull ChatModel chatModel) {
+    protected StreamingChatModel createOpenAiStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(getModelUrl())
                 .httpClientBuilder(jdkHttpClientBuilder)
                 .apiKey("na")
-                .modelName(chatModel.getModelName())
-                .temperature(chatModel.getTemperature())
-                .topP(chatModel.getTopP())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .modelName(customChatModel.getModelName())
+                .temperature(customChatModel.getTemperature())
+                .topP(customChatModel.getTopP())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .listeners(getListener())
                 .build();
     }

@@ -64,7 +64,7 @@ public class WebSearchPromptExecutionService {
             .build();
 
         SearchWebsite website = AiServices.builder(SearchWebsite.class)
-            .chatLanguageModel(chatMessageContext.getChatLanguageModel())
+            .chatModel(chatMessageContext.getChatModel())
             .contentRetriever(contentRetriever)
             .build();
 

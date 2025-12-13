@@ -1,13 +1,14 @@
 package com.devoxx.genie.chatmodel.cloud.azureopenai;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
+public class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @Override
     @BeforeEach
@@ -37,12 +38,12 @@ class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     @Test
     void createChatModel() {
         AzureOpenAIChatModelFactory factory = new AzureOpenAIChatModelFactory();
-        ChatModel chatModel = new ChatModel();
-        chatModel.setModelName("gpt-3.5-turbo");
-        chatModel.setTemperature(0.6);
-        chatModel.setMaxTokens(100);
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("gpt-3.5-turbo");
+        customChatModel.setTemperature(0.6);
+        customChatModel.setMaxTokens(100);
 
-        ChatLanguageModel result = factory.createChatModel(chatModel);
+        ChatModel result = factory.createChatModel(customChatModel);
 
         // cannot verify more because model does not offer more access to data inside
         assertThat(result).isInstanceOf(AzureOpenAiChatModel.class);
