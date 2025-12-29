@@ -1,6 +1,5 @@
 package com.devoxx.genie.service.models;
 
-import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelName;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -41,19 +40,6 @@ public final class LLMModelRegistryService {
 
     private void addAnthropicModels() {
 
-        // Available until March 2025
-        String claudeHaiku3 = CLAUDE_3_HAIKU_20240307.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku3,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claudeHaiku3)
-                        .displayName("Claude 3 Haiku (20240307)")
-                        .inputCost(0.25)
-                        .outputCost(1.25)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
         // Available until October 2025
         String claudeHaiku35 = CLAUDE_3_5_HAIKU_20241022.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku35,
@@ -67,38 +53,86 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String claudeSonnet37 = "claude-3-7-sonnet-latest";
+        String claudeSonnet37 = CLAUDE_3_7_SONNET_20250219.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet37,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claudeSonnet37)
-                        .displayName("Claude 3.7 Sonnet")
+                        .displayName("Claude 3.7 Sonnet (20250219)")
                         .inputCost(3)
                         .outputCost(15)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
-        String claude4Opus = "claude-opus-4-20250514";
+        String claude4Opus = CLAUDE_OPUS_4_20250514.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claude4Opus,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claude4Opus)
-                        .displayName("Claude 4 Opus")
+                        .displayName("Claude 4 Opus (20250514)")
                         .inputCost(15)
                         .outputCost(75)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
 
-        String claude4Sonnet = "claude-sonnet-4-20250514";
+        String claude4Sonnet = CLAUDE_SONNET_4_20250514.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claude4Sonnet,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
                         .modelName(claude4Sonnet)
-                        .displayName("Claude 4 Sonnet")
+                        .displayName("Claude 4 Sonnet (20250514)")
                         .inputCost(3)
                         .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude41Opus = CLAUDE_OPUS_4_1_20250805.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude41Opus,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude41Opus)
+                        .displayName("Claude 4.1 Opus (20250514)")
+                        .inputCost(15)
+                        .outputCost(75)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude45Haiku = CLAUDE_HAIKU_4_5_20251001.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude45Haiku,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude45Haiku)
+                        .displayName("Claude 4.5 Haiku (20251001)")
+                        .inputCost(1)
+                        .outputCost(5)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude45Sonnet = CLAUDE_SONNET_4_5_20250929.toString();
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude45Sonnet,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude45Sonnet)
+                        .displayName("Claude 4.5 Sonnet (20250929)")
+                        .inputCost(3)
+                        .outputCost(15)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude45Opus = "claude-opus-4-5-20251101";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude45Opus,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude45Opus)
+                        .displayName("Claude 4.5 Opus (20251101)")
+                        .inputCost(5)
+                        .outputCost(25)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
@@ -106,7 +140,7 @@ public final class LLMModelRegistryService {
 
     private void addOpenAiModels() {
 
-        String gpt41Model = "gpt-4.1-2025-04-14";
+        String gpt41Model = GPT_4_1.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt41Model,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -119,7 +153,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gpt41MiniModel = "gpt-4.1-mini-2025-04-14";
+        String gpt41MiniModel = GPT_4_1_MINI.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt41MiniModel,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -132,7 +166,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String gpt41NanoModel = "gpt-4.1-nano-2025-04-14";
+        String gpt41NanoModel = GPT_4_1_NANO.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt41NanoModel,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -145,7 +179,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o3MiniModel = OpenAIChatModelName.O3_MINI.toString();
+        String o3MiniModel = O3_MINI.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o3MiniModel,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -158,7 +192,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Model = OpenAIChatModelName.O1.toString();
+        String o1Model = O1.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Model,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -171,7 +205,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Mini = OpenAIChatModelName.O1_MINI.toString();
+        String o1Mini = O1_MINI.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + o1Mini,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -184,33 +218,7 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Preview = OpenAIChatModelName.O1_PREVIEW.toString();
-        models.put(ModelProvider.OpenAI.getName() + ":" + o1Preview,
-                LanguageModel.builder()
-                        .provider(ModelProvider.OpenAI)
-                        .modelName(o1Preview)
-                        .displayName("o1 preview")
-                        .inputCost(10)
-                        .outputCost(30)
-                        .inputMaxTokens(128_000)
-                        .outputMaxTokens(32_768)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gpt4dot5 = OpenAIChatModelName.GPT_4_5.toString();
-        models.put(ModelProvider.OpenAI.getName() + ":" + gpt4dot5,
-                LanguageModel.builder()
-                        .provider(ModelProvider.OpenAI)
-                        .modelName(gpt4dot5)
-                        .displayName("GPT 4.5 Preview")
-                        .inputCost(75)
-                        .outputCost(150)
-                        .inputMaxTokens(128_000)
-                        .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gpt4 = OpenAIChatModelName.GPT_4.toString();
+        String gpt4 = GPT_4.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt4,
                 LanguageModel.builder()
                         .provider(ModelProvider.OpenAI)
@@ -271,6 +279,110 @@ public final class LLMModelRegistryService {
                         .outputCost(1.5)
                         .inputMaxTokens(16_385)
                         .outputMaxTokens(4_096)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt41 = GPT_4_1.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41)
+                        .displayName("GPT 4.1")
+                        .inputCost(2)
+                        .outputCost(8)
+                        .inputMaxTokens(1_047_576)
+                        .outputMaxTokens(32_768)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt41mini = GPT_4_1_MINI.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41mini,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41mini)
+                        .displayName("GPT 4.1 mini")
+                        .inputCost(0.40)
+                        .outputCost(1.60)
+                        .inputMaxTokens(1_047_576)
+                        .outputMaxTokens(32_768)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt41nano = GPT_4_1_NANO.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt41nano,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt41nano)
+                        .displayName("GPT 4.1 nano")
+                        .inputCost(0.10)
+                        .outputCost(0.40)
+                        .inputMaxTokens(1_047_576)
+                        .outputMaxTokens(32_768)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt5 = GPT_5.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt5,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt5)
+                        .displayName("GPT 5")
+                        .inputCost(1.25)
+                        .outputCost(10)
+                        .inputMaxTokens(400_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt5mini = GPT_5_MINI.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt5mini,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt5mini)
+                        .displayName("GPT 5 mini")
+                        .inputCost(0.25)
+                        .outputCost(2)
+                        .inputMaxTokens(400_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt5nano = GPT_5_NANO.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt5nano,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt5nano)
+                        .displayName("GPT 5 nano")
+                        .inputCost(0.05)
+                        .outputCost(0.40)
+                        .inputMaxTokens(400_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt51 = GPT_5_1.toString();
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt51,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt51)
+                        .displayName("GPT 5.1")
+                        .inputCost(1.25)
+                        .outputCost(10)
+                        .inputMaxTokens(400_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gpt52 = "gpt-5.2";
+        models.put(ModelProvider.OpenAI.getName() + ":" + gpt52,
+                LanguageModel.builder()
+                        .provider(ModelProvider.OpenAI)
+                        .modelName(gpt52)
+                        .displayName("GPT 5.2")
+                        .inputCost(1.75)
+                        .outputCost(14)
+                        .inputMaxTokens(400_000)
+                        .outputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
     }
@@ -415,106 +527,67 @@ public final class LLMModelRegistryService {
      * @see <a href="https://ai.google.dev/gemini-api/docs/models/gemini">V1 Gemini models</a>
      */
     private void addGeminiModels() {
-        String gemini15Flash = "gemini-1.5-flash";
-        models.put(ModelProvider.Google.getName() + ":" + gemini15Flash,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini15Flash)
-                        .displayName("Gemini 1.5 Flash")
-                        .inputCost(0.15)
-                        .outputCost(0.6)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
 
-        String gemini15Flash8B = "gemini-1.5-flash-8b";
-        models.put(ModelProvider.Google.getName() + ":" + gemini15Flash8B,
+        String gemini2dot5Pro = "gemini-2.5-pro";
+        models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Pro,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
-                        .modelName(gemini15Flash8B)
-                        .displayName("Gemini 1.5 Flash 8B")
-                        .inputCost(0.0375)
-                        .outputCost(0.6)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gemini15ProExp0801 = "gemini-1.5-pro";
-        models.put(ModelProvider.Google.getName() + ":" + gemini15ProExp0801,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini15ProExp0801)
-                        .displayName("Gemini 1.5 Pro")
+                        .modelName(gemini2dot5Pro)
+                        .displayName("Gemini 2.5 Pro")
                         .inputCost(1.25)
-                        .outputCost(5)
-                        .inputMaxTokens(2_000_000)
+                        .outputCost(10)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(65_536)
                         .apiKeyUsed(true)
                         .build());
 
-        String gemini2FlashExp = "gemini-2.0-flash-001";
-        models.put(ModelProvider.Google.getName() + ":" + gemini2FlashExp,
+        String gemini2dot5FlashLite = "gemini-2.5-flash-lite";
+        models.put(ModelProvider.Google.getName() + ":" + gemini2dot5FlashLite,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
-                        .modelName(gemini2FlashExp)
-                        .displayName("Gemini 2.0 Flash")
+                        .modelName(gemini2dot5FlashLite)
+                        .displayName("Gemini 2.5 Flash-Lite")
                         .inputCost(0.10)
                         .outputCost(0.40)
                         .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(8_192)
+                        .outputMaxTokens(65_536)
                         .apiKeyUsed(true)
                         .build());
 
-        String geminiFlashThinking = "gemini-2.0-flash-thinking-exp-01-21";
-        models.put(ModelProvider.Google.getName() + ":" + geminiFlashThinking,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(geminiFlashThinking)
-                        .displayName("Gemini 2.0 Flash Thinking Exp. 01-21")
-                        .inputCost(0)
-                        .outputCost(0)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(64_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String gemini2FlashLite = " gemini-2.0-flash-lite-001";
-        models.put(ModelProvider.Google.getName() + ":" + gemini2FlashLite,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini2FlashLite)
-                        .displayName("Gemini 2.0 Flash Lite")
-                        .inputCost(0.075)
-                        .outputCost(0.30)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(8_192)
-                        .apiKeyUsed(true)
-                        .build());
-
-        // gemini-2.5-pro-preview-05-06
-        String gemini2dot5Pro0506 = "gemini-2.5-pro-preview-05-06";
-        models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Pro0506,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Google)
-                        .modelName(gemini2dot5Pro0506)
-                        .displayName("Gemini 2.5 Pro Preview 05-06")
-                        .inputCost(2.50)
-                        .outputCost(15.0)
-                        .inputMaxTokens(1_048_576)
-                        .outputMaxTokens(64_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        // gemini-2.5-flash-preview-04-17
-        String gemini2dot5Flash = "gemini-2.5-flash-preview-04-17";
+        String gemini2dot5Flash = "gemini-2.5-flash";
         models.put(ModelProvider.Google.getName() + ":" + gemini2dot5Flash,
                 LanguageModel.builder()
                         .provider(ModelProvider.Google)
                         .modelName(gemini2dot5Flash)
-                        .displayName("Gemini 2.5 Flash Preview 04-17")
-                        .inputCost(0.15)
-                        .outputCost(3.50)
+                        .displayName("Gemini 2.5 Flash")
+                        .inputCost(0.30)
+                        .outputCost(2.50)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(65_536)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gemini3FlashPreview = "gemini-3-flash-preview";
+        models.put(ModelProvider.Google.getName() + ":" + gemini3FlashPreview,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(gemini3FlashPreview)
+                        .displayName("Gemini 3 Flash Preview")
+                        .inputCost(0.5)
+                        .outputCost(3)
+                        .inputMaxTokens(1_048_576)
+                        .outputMaxTokens(65_536)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String gemini3ProPreview = "gemini-3-pro-preview";
+        models.put(ModelProvider.Google.getName() + ":" + gemini3ProPreview,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Google)
+                        .modelName(gemini3ProPreview)
+                        .displayName("Gemini 3 Pro Preview")
+                        .inputCost(2)
+                        .outputCost(12)
                         .inputMaxTokens(1_048_576)
                         .outputMaxTokens(65_536)
                         .apiKeyUsed(true)

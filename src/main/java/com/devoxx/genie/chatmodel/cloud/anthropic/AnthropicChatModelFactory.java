@@ -27,7 +27,6 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(customChatModel.getModelName())
             .temperature(customChatModel.getTemperature())
-            .topP(customChatModel.getTopP())
             .maxTokens(customChatModel.getMaxTokens())
             .maxRetries(customChatModel.getMaxRetries())
             .listeners(getListener())
@@ -40,7 +39,6 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             .apiKey(getApiKey(MODEL_PROVIDER))
             .modelName(customChatModel.getModelName())
             .temperature(customChatModel.getTemperature())
-            .topP(customChatModel.getTopP())
             .maxTokens(customChatModel.getMaxTokens())
             .listeners(getListener())
             .build();
