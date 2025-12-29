@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class ChatModel {
+public class CustomChatModel {
 
     private String baseUrl;
     private String modelName;

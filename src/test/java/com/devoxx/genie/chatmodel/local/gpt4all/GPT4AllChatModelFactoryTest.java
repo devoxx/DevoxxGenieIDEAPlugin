@@ -1,13 +1,13 @@
 package com.devoxx.genie.chatmodel.local.gpt4all;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.gpt4all.Model;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
+public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
 
     private GPT4AllChatModelFactory factory;
 
@@ -34,7 +34,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
     private GPT4AllModelService modelService;
 
     @Mock
-    private ChatModel chatModel;
+    private CustomChatModel customChatModel;
 
     // Test models
     private final Model model1 = createTestModel("model1", "Model One");
@@ -56,17 +56,17 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
         };
 
         // Setup ChatModel mock
-        when(chatModel.getModelName()).thenReturn("gpt4all-model");
-        when(chatModel.getMaxRetries()).thenReturn(3);
-        when(chatModel.getTemperature()).thenReturn(0.7);
-        when(chatModel.getMaxTokens()).thenReturn(4096);
-        when(chatModel.getTimeout()).thenReturn(60);
-        when(chatModel.getTopP()).thenReturn(0.95);
+        when(customChatModel.getModelName()).thenReturn("gpt4all-model");
+        when(customChatModel.getMaxRetries()).thenReturn(3);
+        when(customChatModel.getTemperature()).thenReturn(0.7);
+        when(customChatModel.getMaxTokens()).thenReturn(4096);
+        when(customChatModel.getTimeout()).thenReturn(60);
+        when(customChatModel.getTopP()).thenReturn(0.95);
     }
 
     @Test
     public void testCreateChatModel() {
-        ChatLanguageModel model = factory.createChatModel(chatModel);
+        ChatModel model = factory.createChatModel(customChatModel);
 
         assertNotNull(model);
         assertTrue(model instanceof OpenAiChatModel);
@@ -74,7 +74,7 @@ class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
 
     @Test
     public void testCreateStreamingChatModel() {
-        StreamingChatLanguageModel model = factory.createStreamingChatModel(chatModel);
+        StreamingChatModel model = factory.createStreamingChatModel(customChatModel);
 
         assertNotNull(model);
         assertTrue(model instanceof OpenAiStreamingChatModel);

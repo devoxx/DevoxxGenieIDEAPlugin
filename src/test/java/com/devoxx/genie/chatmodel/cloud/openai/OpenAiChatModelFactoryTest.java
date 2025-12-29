@@ -1,12 +1,13 @@
 package com.devoxx.genie.chatmodel.cloud.openai;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
+public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -32,12 +33,12 @@ class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     @Test
     void createChatModel() {
         OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
-        ChatModel chatModel = new ChatModel();
-        chatModel.setModelName("gpt-3.5-turbo");
-        chatModel.setTemperature(0.7);
-        chatModel.setMaxTokens(100);
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("gpt-3.5-turbo");
+        customChatModel.setTemperature(0.7);
+        customChatModel.setMaxTokens(100);
 
-        ChatLanguageModel result = factory.createChatModel(chatModel);
+        ChatModel result = factory.createChatModel(customChatModel);
 
         assertThat(result).isNotNull();
     }

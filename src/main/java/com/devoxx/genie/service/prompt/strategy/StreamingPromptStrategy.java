@@ -13,11 +13,10 @@ import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
@@ -68,7 +67,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             @NotNull PromptOutputPanel panel,
             @NotNull PromptTask<PromptResult> resultTask) {
         
-        StreamingChatLanguageModel streamingModel = context.getStreamingChatLanguageModel();
+        StreamingChatModel streamingModel = context.getStreamingChatModel();
         if (streamingModel == null) {
             NotificationUtil.sendNotification(project, 
                 "Streaming model not available, please select another provider or turn off streaming mode.");
@@ -168,13 +167,13 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                                 FileListManager.getInstance().getFiles(project).size() + " files");
                     }
                     assistant = AiServices.builder(Assistant.class)
-                            .streamingChatLanguageModel(streamingModel)
+                            .streamingChatModel(streamingModel)
                             .toolProvider(mcpToolProvider)
                             .chatMemoryProvider(memoryId -> chatMemory)
                             .build();
                 } else {
                     assistant = AiServices.builder(Assistant.class)
-                            .streamingChatLanguageModel(streamingModel)
+                            .streamingChatModel(streamingModel)
                             .chatMemoryProvider(memoryId -> chatMemory)
                             .build();
                 }

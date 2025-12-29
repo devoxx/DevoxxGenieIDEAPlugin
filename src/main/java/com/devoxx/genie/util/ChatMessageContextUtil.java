@@ -8,7 +8,6 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
-import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
@@ -16,7 +15,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -46,9 +44,9 @@ public class ChatMessageContextUtil {
                 .build();
 
         if (Boolean.TRUE.equals(stateService.getStreamMode())) {
-            chatMessageContext.setStreamingChatLanguageModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
+            chatMessageContext.setStreamingChatModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
         } else {
-            chatMessageContext.setChatLanguageModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
+            chatMessageContext.setChatModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
         }
 
         chatMessageContext.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());

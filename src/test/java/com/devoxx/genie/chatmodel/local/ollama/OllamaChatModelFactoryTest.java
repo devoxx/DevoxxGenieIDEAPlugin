@@ -1,8 +1,9 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -25,12 +26,12 @@ class OllamaChatModelFactoryTest {
             OllamaChatModelFactory factory = new OllamaChatModelFactory();
 
             // Create a dummy ChatModel
-            ChatModel chatModel = new ChatModel();
-            chatModel.setModelName("ollama");
-            chatModel.setBaseUrl("http://localhost:8080");
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+            customChatModel.setBaseUrl("http://localhost:8080");
 
             // Call the method
-            ChatLanguageModel result = factory.createChatModel(chatModel);
+            ChatModel result = factory.createChatModel(customChatModel);
             assertThat(result).isNotNull();
         }
     }

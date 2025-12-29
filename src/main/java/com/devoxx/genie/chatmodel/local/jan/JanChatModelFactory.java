@@ -1,13 +1,14 @@
 package com.devoxx.genie.chatmodel.local.jan;
 
 import com.devoxx.genie.chatmodel.local.LocalChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.jan.Data;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -19,13 +20,13 @@ public class JanChatModelFactory extends LocalChatModelFactory {
     }
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        return createOpenAiChatModel(chatModel);
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
+        return createOpenAiChatModel(customChatModel);
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        return createOpenAiStreamingChatModel(chatModel);
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
+        return createOpenAiStreamingChatModel(customChatModel);
     }
 
     @Override

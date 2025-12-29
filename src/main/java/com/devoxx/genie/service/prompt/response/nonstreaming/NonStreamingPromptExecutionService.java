@@ -17,7 +17,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
 
@@ -135,13 +135,13 @@ public class NonStreamingPromptExecutionService {
     private @NotNull ChatResponse processChatMessage(ChatMessageContext chatMessageContext) {
         try {
             Project project = chatMessageContext.getProject();
-            ChatLanguageModel chatLanguageModel = chatMessageContext.getChatLanguageModel();
+            ChatModel chatModel = chatMessageContext.getChatModel();
 
             String projectId = project.getLocationHash();
 
             ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
 
-            Assistant assistant = buildAssistant(chatLanguageModel, chatMemory);
+            Assistant assistant = buildAssistant(chatModel, chatMemory);
 
             if (MCPService.isMCPEnabled()) {
                 Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
@@ -168,7 +168,7 @@ public class NonStreamingPromptExecutionService {
 //                        }
 
                         assistant = AiServices.builder(Assistant.class)
-                                .chatLanguageModel(chatLanguageModel)
+                                .chatModel(chatModel)
                                 .chatMemoryProvider(memoryId -> chatMemory)
                                 .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
                                 .toolProvider(mcpToolProvider)
@@ -207,9 +207,9 @@ public class NonStreamingPromptExecutionService {
         }
     }
 
-    private static Assistant buildAssistant(ChatLanguageModel chatLanguageModel, ChatMemory chatMemory) {
+    private static Assistant buildAssistant(ChatModel chatModel, ChatMemory chatMemory) {
         return AiServices.builder(Assistant.class)
-                .chatLanguageModel(chatLanguageModel)
+                .chatModel(chatModel)
                 .chatMemoryProvider(memoryId -> chatMemory)
                 .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
                 .build();

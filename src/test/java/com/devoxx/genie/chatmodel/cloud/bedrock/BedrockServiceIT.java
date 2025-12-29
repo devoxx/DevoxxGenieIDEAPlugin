@@ -5,7 +5,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import java.util.List;
 
 import dev.langchain4j.model.bedrock.BedrockChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.service.AiServices;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -114,7 +114,7 @@ class BedrockServiceIT {
                     .build();
 
             Assistant build = AiServices.builder(Assistant.class)
-                    .chatLanguageModel(model)
+                    .chatModel(model)
                     .systemMessageProvider(m -> "You are a helpful assistant")
                     .build();
 
@@ -173,7 +173,7 @@ class BedrockServiceIT {
             return;
         }
 
-        ChatLanguageModel model = BedrockChatModel.builder()
+        ChatModel model = BedrockChatModel.builder()
                 .modelId("us.anthropic.claude-3-7-sonnet-20250219-v1:0")
                 .maxRetries(1)
         .region(Region.US_EAST_1)
@@ -202,7 +202,7 @@ class BedrockServiceIT {
             return;
         }
 
-        ChatLanguageModel model = BedrockChatModel.builder()
+        ChatModel model = BedrockChatModel.builder()
                 .modelId("eu.anthropic.claude-3-7-sonnet-20250219-v1:0")
                 .maxRetries(1)
                 .region(Region.EU_CENTRAL_1)
@@ -235,7 +235,6 @@ class BedrockServiceIT {
 
         AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
         StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsBasicCredentials);
-        BedrockRuntimeClientBuilder bedrockRuntimeClientBuilder = BedrockRuntimeClient.builder().credentialsProvider(credentialsProvider);
 
         try (BedrockClient bedrockClient = BedrockClient.builder()
                 .region(Region.of(regionName))

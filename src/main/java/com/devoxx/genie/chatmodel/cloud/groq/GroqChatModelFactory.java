@@ -1,11 +1,11 @@
 package com.devoxx.genie.chatmodel.cloud.groq;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,22 +17,22 @@ public class GroqChatModelFactory implements ChatModelFactory {
     private final ModelProvider MODEL_PROVIDER = ModelProvider.Groq;
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://api.groq.com/openai/v1")
             .apiKey(getApiKey(MODEL_PROVIDER))
-            .modelName(chatModel.getModelName())
-            .maxRetries(chatModel.getMaxRetries())
-            .maxTokens(chatModel.getMaxTokens())
-            .temperature(chatModel.getTemperature())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .topP(chatModel.getTopP())
+            .modelName(customChatModel.getModelName())
+            .maxRetries(customChatModel.getMaxRetries())
+            .maxTokens(customChatModel.getMaxTokens())
+            .temperature(customChatModel.getTemperature())
+            .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .topP(customChatModel.getTopP())
             .listeners(getListener())
             .build();
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         throw new UnsupportedOperationException("Streaming not supported by Groq");
     }
 

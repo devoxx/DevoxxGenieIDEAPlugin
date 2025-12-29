@@ -1,14 +1,15 @@
 package com.devoxx.genie.chatmodel;
 
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,14 +22,14 @@ public class ChatModelProvider {
 
     private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI;
 
-    public ChatLanguageModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
-        ChatModel chatModel = initChatModel(chatMessageContext);
-        return getFactory(chatMessageContext).createChatModel(chatModel);
+    public ChatModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        CustomChatModel customChatModel = initChatModel(chatMessageContext);
+        return getFactory(chatMessageContext).createChatModel(customChatModel);
     }
 
-    public StreamingChatLanguageModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
-        ChatModel chatModel = initChatModel(chatMessageContext);
-        return getFactory(chatMessageContext).createStreamingChatModel(chatModel);
+    public StreamingChatModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        CustomChatModel customChatModel = initChatModel(chatMessageContext);
+        return getFactory(chatMessageContext).createStreamingChatModel(customChatModel);
     }
 
     private @NotNull ChatModelFactory getFactory(@NotNull ChatMessageContext chatMessageContext) {
@@ -40,51 +41,51 @@ public class ChatModelProvider {
             .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + provider));
     }
 
-    public @NotNull ChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
-        ChatModel chatModel = new ChatModel();
+    public @NotNull CustomChatModel initChatModel(@NotNull ChatMessageContext chatMessageContext) {
+        CustomChatModel customChatModel = new CustomChatModel();
         DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
-        setMaxOutputTokens(stateService, chatModel);
+        setMaxOutputTokens(stateService, customChatModel);
 
-        chatModel.setTemperature(stateService.getTemperature());
-        chatModel.setMaxRetries(stateService.getMaxRetries());
-        chatModel.setTopP(stateService.getTopP());
-        chatModel.setTimeout(stateService.getTimeout());
+        customChatModel.setTemperature(stateService.getTemperature());
+        customChatModel.setMaxRetries(stateService.getMaxRetries());
+        customChatModel.setTopP(stateService.getTopP());
+        customChatModel.setTimeout(stateService.getTimeout());
 
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
-        chatModel.setModelName(languageModel.getModelName() == null ? TEST_MODEL : languageModel.getModelName());
+        customChatModel.setModelName(languageModel.getModelName() == null ? TEST_MODEL : languageModel.getModelName());
 
-        setLocalBaseUrl(languageModel, chatModel, stateService);
+        setLocalBaseUrl(languageModel, customChatModel, stateService);
 
-        return chatModel;
+        return customChatModel;
     }
 
     private void setLocalBaseUrl(@NotNull LanguageModel languageModel,
-                                 ChatModel chatModel,
+                                 CustomChatModel customChatModel,
                                  DevoxxGenieSettingsService stateService) {
         // Set base URL for local providers
         switch (languageModel.getProvider()) {
             case LMStudio:
-                chatModel.setBaseUrl(stateService.getLmstudioModelUrl());
+                customChatModel.setBaseUrl(stateService.getLmstudioModelUrl());
                 break;
             case Ollama:
-                chatModel.setBaseUrl(stateService.getOllamaModelUrl());
+                customChatModel.setBaseUrl(stateService.getOllamaModelUrl());
                 break;
             case GPT4All:
-                chatModel.setBaseUrl(stateService.getGpt4allModelUrl());
+                customChatModel.setBaseUrl(stateService.getGpt4allModelUrl());
                 break;
             case LLaMA:
-                chatModel.setBaseUrl(stateService.getLlamaCPPUrl());
+                customChatModel.setBaseUrl(stateService.getLlamaCPPUrl());
                 break;
             case CustomOpenAI:
-                chatModel.setBaseUrl(stateService.getCustomOpenAIUrl());
+                customChatModel.setBaseUrl(stateService.getCustomOpenAIUrl());
                 break;
             // Add other local providers as needed
         }
     }
 
     private static void setMaxOutputTokens(@NotNull DevoxxGenieSettingsService settingsState,
-                                           @NotNull ChatModel chatModel) {
+                                           @NotNull CustomChatModel customChatModel) {
         Integer maxOutputTokens = settingsState.getMaxOutputTokens();
-        chatModel.setMaxTokens(maxOutputTokens != null ? maxOutputTokens : Constant.MAX_OUTPUT_TOKENS);
+        customChatModel.setMaxTokens(maxOutputTokens != null ? maxOutputTokens : Constant.MAX_OUTPUT_TOKENS);
     }
 }
