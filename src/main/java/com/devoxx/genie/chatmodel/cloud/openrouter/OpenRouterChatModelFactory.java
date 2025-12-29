@@ -1,15 +1,15 @@
 package com.devoxx.genie.chatmodel.cloud.openrouter;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.openrouter.Data;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.concurrency.AppExecutorUtil;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
@@ -30,30 +30,30 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
     private static final int PRICE_SCALING_FACTOR = 1_000_000; // To convert to per million tokens
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiChatModel.builder()
             .baseUrl("https://openrouter.ai/api/v1/")
             .apiKey(getApiKey(MODEL_PROVIDER))
-            .modelName(chatModel.getModelName())
-            .maxRetries(chatModel.getMaxRetries())
-            .temperature(chatModel.getTemperature())
+            .modelName(customChatModel.getModelName())
+            .maxRetries(customChatModel.getMaxRetries())
+            .temperature(customChatModel.getTemperature())
             .maxTokens(4_000)
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-            .topP(chatModel.getTopP())
+            .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .topP(customChatModel.getTopP())
             .listeners(getListener())
             .build();
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiStreamingChatModel.builder()
             .baseUrl("https://openrouter.ai/api/v1/")
             .apiKey(getApiKey(MODEL_PROVIDER))
-            .modelName(chatModel.getModelName())
+            .modelName(customChatModel.getModelName())
             .maxTokens(4_000)
-            .temperature(chatModel.getTemperature())
-            .topP(chatModel.getTopP())
-            .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+            .temperature(customChatModel.getTemperature())
+            .topP(customChatModel.getTopP())
+            .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .listeners(getListener())
             .build();
     }

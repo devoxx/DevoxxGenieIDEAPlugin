@@ -1,18 +1,18 @@
 package com.devoxx.genie.chatmodel.cloud.bedrock;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.bedrock.BedrockStreamingChatModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -37,158 +37,158 @@ public class BedrockModelFactory implements ChatModelFactory {
     private static final String MODEL_PREFIX_AMAZON = "amazon";
 
     /**
-     * Creates a {@link ChatLanguageModel} based on the provided {@link ChatModel}.
+     * Creates a {@link ChatModel} based on the provided {@link CustomChatModel}.
      *
-     * @param chatModel The configuration for the chat model.
-     * @return An instance of {@link ChatLanguageModel} configured with the provided settings.
+     * @param customChatModel The configuration for the chat model.
+     * @return An instance of {@link ChatModel} configured with the provided settings.
      * @throws NotImplementedException if the requested model is not supported.
      */
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        final String modelName = chatModel.getModelName().toLowerCase();
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
+        final String modelName = customChatModel.getModelName().toLowerCase();
 
         if (modelName.contains(MODEL_PREFIX_ANTHROPIC)) {
-            return createAnthropicChatModel(chatModel);
+            return createAnthropicChatModel(customChatModel);
         } else if (modelName.contains(MODEL_PREFIX_MISTRAL)) {
-            return createMistralChatModel(chatModel);
+            return createMistralChatModel(customChatModel);
         } else if (modelName.contains(MODEL_PREFIX_COHERE)) {
-            return createCohereChatModel(chatModel);
+            return createCohereChatModel(customChatModel);
         } else if (modelName.contains(MODEL_PREFIX_META)) {
-            return createLamaChatModel(chatModel);
+            return createLamaChatModel(customChatModel);
         } else if (modelName.contains(MODEL_PREFIX_AI21)) {
-            return createAI21ChatModel(chatModel);
+            return createAI21ChatModel(customChatModel);
         } else if (modelName.contains(MODEL_PREFIX_STABILITY)) {
-            return createStabilityChatModel(chatModel);
+            return createStabilityChatModel(customChatModel);
         } else {
             throw new NotImplementedException(modelName + " not yet supported.");
         }
     }
 
     /**
-     * Creates a {@link StreamingChatLanguageModel} based on the provided {@link ChatModel}.
+     * Creates a {@link StreamingChatModel} based on the provided {@link CustomChatModel}.
      *
-     * @param chatModel The configuration for the chat model.
-     * @return  An instance of {@link StreamingChatLanguageModel} configured with the provided settings.
+     * @param customChatModel The configuration for the chat model.
+     * @return  An instance of {@link StreamingChatModel} configured with the provided settings.
      * @throws NotImplementedException if the requested model is not supported.
      */
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        final String modelName = chatModel.getModelName().toLowerCase();
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
+        final String modelName = customChatModel.getModelName().toLowerCase();
 
         if (modelName.contains(MODEL_PREFIX_ANTHROPIC)) {
-            return createAnthropicStreamingChatModel(chatModel);
+            return createAnthropicStreamingChatModel(customChatModel);
         } else {
             return null;
         }
     }
 
     /**
-     * Creates a {@link ChatLanguageModel} for Anthropic models on AWS Bedrock.
+     * Creates a {@link ChatModel} for Anthropic models on AWS Bedrock.
      *
-     * @param chatModel The configuration for the chat model.
-     * @return An instance of {@link ChatLanguageModel} configured for Anthropic models.
+     * @param customChatModel The configuration for the chat model.
+     * @return An instance of {@link ChatModel} configured for Anthropic models.
      */
-    private ChatLanguageModel createAnthropicChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createAnthropicChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(getModelId(chatModel.getModelName()))
+                .modelId(getModelId(customChatModel.getModelName()))
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
     /**
-     * Creates a {@link StreamingChatLanguageModel} for Anthropic models on AWS Bedrock.
+     * Creates a {@link StreamingChatModel} for Anthropic models on AWS Bedrock.
      * All Bedrock Anthropic models currently support streaming responses.
      *
-     * @param chatModel The configuration for the chat model.
-     * @return An instance of {@link StreamingChatLanguageModel} configured for Anthropic models.
+     * @param customChatModel The configuration for the chat model.
+     * @return An instance of {@link StreamingChatModel} configured for Anthropic models.
      */
-    private BedrockStreamingChatModel createAnthropicStreamingChatModel(@NotNull ChatModel chatModel) {
+    private BedrockStreamingChatModel createAnthropicStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockStreamingChatModel.builder()
-                .modelId(getModelId(chatModel.getModelName()))
+                .modelId(getModelId(customChatModel.getModelName()))
                 .client(BedrockRuntimeAsyncClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
-    private ChatLanguageModel createMistralChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createMistralChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(customChatModel.getModelName())
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
-    private ChatLanguageModel createCohereChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createCohereChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(customChatModel.getModelName())
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
-    private ChatLanguageModel createLamaChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createLamaChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(getModelId(chatModel.getModelName()))
+                .modelId(getModelId(customChatModel.getModelName()))
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
-    private ChatLanguageModel createAI21ChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createAI21ChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(customChatModel.getModelName())
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }
 
-    private ChatLanguageModel createStabilityChatModel(@NotNull ChatModel chatModel) {
+    private ChatModel createStabilityChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
-                .modelId(chatModel.getModelName())
+                .modelId(customChatModel.getModelName())
                 .client(BedrockRuntimeClient.builder()
                         .region(getRegion())
                         .credentialsProvider(getCredentialsProvider())
                         .build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(chatModel.getTemperature())
-                        .maxOutputTokens(chatModel.getMaxTokens())
+                        .temperature(customChatModel.getTemperature())
+                        .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
                 .build();
     }

@@ -1,11 +1,11 @@
 package com.devoxx.genie.chatmodel.local.customopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.http.client.jdk.JdkHttpClient;
@@ -20,34 +20,34 @@ import java.net.http.HttpClient;
 public class CustomOpenAIChatModelFactory implements ChatModelFactory {
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
         return OpenAiChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
                 .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
                         (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
-                .maxRetries(chatModel.getMaxRetries())
-                .temperature(chatModel.getTemperature())
-                .maxTokens(chatModel.getMaxTokens())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .topP(chatModel.getTopP())
+                .maxRetries(customChatModel.getMaxRetries())
+                .temperature(customChatModel.getTemperature())
+                .maxTokens(customChatModel.getMaxTokens())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .topP(customChatModel.getTopP())
                 .listeners(getListener())
                 .httpClientBuilder(getHttpClientBuilder())
                 .build();
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
                 .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
                         (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
-                .temperature(chatModel.getTemperature())
-                .topP(chatModel.getTopP())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
+                .temperature(customChatModel.getTemperature())
+                .topP(customChatModel.getTopP())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .listeners(getListener())
                 .httpClientBuilder(getHttpClientBuilder())
                 .build();

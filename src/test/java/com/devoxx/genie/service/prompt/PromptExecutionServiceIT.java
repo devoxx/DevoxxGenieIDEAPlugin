@@ -6,7 +6,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *     <li>{@link #testExecuteQueryDeepInfra()} requires `DEEPINFRA_API_KEY`</li>
  * </ul>
  */
-class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
+public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     private NonStreamingPromptExecutionService promptExecutionService;
 
@@ -45,7 +45,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = "^sk-.*")
-    void testExecuteQueryOpenAI() {
+    public void testExecuteQueryOpenAI() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.OpenAI)
             .modelName("gpt-3.5-turbo")
@@ -60,7 +60,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "ANTHROPIC_API_KEY", matches = ".+")
-    void testExecuteQueryAnthropic() {
+    public void testExecuteQueryAnthropic() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Anthropic)
             .modelName("claude-3-5-sonnet-20240620")
@@ -75,7 +75,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-    void testExecuteQueryGemini() {
+    public void testExecuteQueryGemini() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Google)
             .modelName("gemini-1.5-flash")
@@ -90,7 +90,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "MISTRAL_API_KEY", matches = ".+")
-    void testExecuteQueryMistral() {
+    public void testExecuteQueryMistral() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.Mistral)
             .modelName("mistral-medium")
@@ -105,7 +105,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "DEEPINFRA_API_KEY", matches = ".+")
-    void testExecuteQueryDeepInfra() {
+    public void testExecuteQueryDeepInfra() {
         LanguageModel model = LanguageModel.builder()
             .provider(ModelProvider.DeepInfra)
             .modelName("mistralai/Mixtral-8x7B-Instruct-v0.1")
@@ -118,7 +118,7 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
         verifyResponse(createChatModel(model), model);
     }
 
-    private ChatLanguageModel createChatModel(@NotNull LanguageModel languageModel) {
+    private ChatModel createChatModel(@NotNull LanguageModel languageModel) {
         return switch (languageModel.getProvider()) {
             case OpenAI -> OpenAiChatModel.builder()
                 .apiKey(System.getenv("OPENAI_API_KEY"))
@@ -145,10 +145,10 @@ class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
         };
     }
 
-    private void verifyResponse(ChatLanguageModel chatModel, LanguageModel languageModel) {
+    private void verifyResponse(ChatModel chatModel, LanguageModel languageModel) {
         ChatMessageContext context = ChatMessageContext.builder()
             .userPrompt("What is the capital of Belgium?")
-            .chatLanguageModel(chatModel)
+            .chatModel(chatModel)
             .languageModel(languageModel)
             .project(getProject())
             .executionTimeMs(0)

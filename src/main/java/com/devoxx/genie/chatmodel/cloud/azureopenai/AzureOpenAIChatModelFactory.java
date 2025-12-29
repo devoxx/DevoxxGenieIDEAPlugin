@@ -1,15 +1,16 @@
 package com.devoxx.genie.chatmodel.cloud.azureopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
-import com.devoxx.genie.model.ChatModel;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -21,18 +22,18 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
     private final ModelProvider MODEL_PROVIDER = ModelProvider.AzureOpenAI;
 
     @Override
-    public ChatLanguageModel createChatModel(@NotNull ChatModel chatModel) {
-        String modelName = chatModel.getModelName();
+    public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
+        String modelName = customChatModel.getModelName();
 
         boolean isReasoningModel = isReasoningModelWithLimitedParameters(modelName);
 
         final var builder = AzureOpenAiChatModel.builder()
                 .apiKey(getApiKey(MODEL_PROVIDER))
                 .deploymentName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
-                .maxRetries(chatModel.getMaxRetries())
-                .temperature(isReasoningModel ? 1.0 : chatModel.getTemperature())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .topP(isReasoningModel ? 1.0 : chatModel.getTopP())
+                .maxRetries(customChatModel.getMaxRetries())
+                .temperature(isReasoningModel ? 1.0 : customChatModel.getTemperature())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .topP(isReasoningModel ? 1.0 : customChatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint())
                 .listeners(getListener());
 
@@ -59,14 +60,14 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
     }
 
     @Override
-    public StreamingChatLanguageModel createStreamingChatModel(@NotNull ChatModel chatModel) {
-        boolean isO1 = chatModel.getModelName().startsWith("o1-");
+    public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
+        boolean isO1 = customChatModel.getModelName().startsWith("o1-");
 
         final var builder = AzureOpenAiStreamingChatModel.builder()
                 .apiKey(getApiKey(MODEL_PROVIDER))
                 .deploymentName(DevoxxGenieStateService.getInstance().getAzureOpenAIDeployment())
-                .timeout(Duration.ofSeconds(chatModel.getTimeout()))
-                .topP(isO1 ? 1.0 : chatModel.getTopP())
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .topP(isO1 ? 1.0 : customChatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint())
                 .listeners(getListener());
 

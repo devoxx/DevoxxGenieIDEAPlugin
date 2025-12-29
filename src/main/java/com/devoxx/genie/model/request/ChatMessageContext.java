@@ -4,8 +4,8 @@ import com.devoxx.genie.model.LanguageModel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.output.TokenUsage;
 import lombok.*;
 
@@ -30,8 +30,8 @@ public class ChatMessageContext {
     private String filesContext;             // The context of the prompt
     private EditorInfo editorInfo;      // The editor info
     private LanguageModel languageModel;
-    private ChatLanguageModel chatLanguageModel;
-    private StreamingChatLanguageModel streamingChatLanguageModel;
+    private ChatModel chatModel;
+    private StreamingChatModel streamingChatModel;
     private long executionTimeMs;
     private TokenUsage tokenUsage;
     private String commandName;     // Custom command name for the prompt, for example /test, /review etc.
