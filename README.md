@@ -18,7 +18,11 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 
 ### Agentic Programming with DevoxxGenie
 
-[![DevoxxGenie Demo](https://github.com/user-attachments/assets/94358040-e129-4534-8430-b02c63dc1b27)](https://www.youtube.com/watch?v=I4qPgRHCLBY)
+#### Unlocking AI Coding Assistants: Real World Use Cases by Gunter Rotsaert
+[![DevoxxGenie Deep Dive](https://github.com/user-attachments/assets/ce9eda57-95df-4ba1-bceb-9075e8765d7f)](https://youtu.be/LtAe8EB72OI?si=wVfqa_2CUt5ZtQSO)
+
+#### Building full-stack AI agents: From project generation to code execution by Stephan Janssen
+[![DevoxxGenie Demo](https://github.com/user-attachments/assets/56c786fc-281d-4d1e-a6e3-294dfb8799df)](https://www.youtube.com/watch?v=I4qPgRHCLBY)
 
 ### 🗂️ Video Tutorials:
 - [Building full-stack AI agents: From project generation to code execution (Devoxx France 2025)](https://www.youtube.com/watch?v=I4qPgRHCLBY)
