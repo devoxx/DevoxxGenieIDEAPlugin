@@ -566,8 +566,8 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         }
 
         private String getConnectionInfo(@NotNull MCPServer server) {
-            if (server.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
-                return server.getSseUrl();
+            if (server.getTransportType() == MCPServer.TransportType.HTTP_SSE || server.getTransportType() == MCPServer.TransportType.HTTP) {
+                return server.getUrl();
             } else {
                 // STDIO transport
                 return server.getCommand();

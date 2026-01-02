@@ -9,7 +9,9 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -144,6 +146,9 @@ public class MCPExecutionService implements Disposable {
             if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
                 // Create HTTP SSE client
                 client = initHttpSseClient(mcpServer);
+            } else if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP) {
+                // Create Streamable HTTP client
+                client = initStreamableHttpClient(mcpServer);
             } else {
                 // Default to STDIO transport
                 // Handle bash commands differently based on working implementation
@@ -180,7 +185,7 @@ public class MCPExecutionService implements Disposable {
     @Nullable
     private static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
         try {
-            String sseUrl = mcpServer.getSseUrl();
+            String sseUrl = mcpServer.getUrl();
             if (sseUrl == null || sseUrl.trim().isEmpty()) {
                 log.error("SSE URL cannot be empty for HTTP SSE transport");
                 MCPService.logDebug("SSE URL cannot be empty for HTTP SSE transport");
@@ -206,8 +211,49 @@ public class MCPExecutionService implements Disposable {
                     .build();
 
         } catch (Exception e) {
-            log.error("Failed to initialize HTTP SSE client with URL: {}", mcpServer.getSseUrl(), e);
-            MCPService.logDebug("Failed to initialize HTTP SSE client with URL: " + mcpServer.getSseUrl() + " - " + e.getMessage());
+            log.error("Failed to initialize HTTP SSE client with URL: {}", mcpServer.getUrl(), e);
+            MCPService.logDebug("Failed to initialize HTTP SSE client with URL: " + mcpServer.getUrl() + " - " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Helper method to initialize a streamable HTTP client with error handling
+     *
+     * @param mcpServer The MCP server configuration
+     * @return An initialized MCP client or null if creation fails
+     */
+    @Nullable
+    private static McpClient initStreamableHttpClient(@NotNull MCPServer mcpServer) {
+        try {
+            String url = mcpServer.getUrl();
+            if (url == null || url.trim().isEmpty()) {
+                log.error("HTTP URL cannot be empty for streamable HTTP transport");
+                MCPService.logDebug("HTTP URL cannot be empty for streamable HTTP transport");
+                return null;
+            }
+
+            MCPService.logDebug("Initializing streamable HTTP transport with URL: " + url);
+
+            // Create the transport
+            McpTransport transport = new StreamableHttpMcpTransport.Builder()
+                    .url(url)
+                    .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
+                    .logRequests(MCPService.isDebugLogsEnabled())
+                    .logResponses(MCPService.isDebugLogsEnabled())
+                    .build();
+
+            // Create and return the client
+            return new DefaultMcpClient.Builder()
+                    .clientName("DevoxxGenie")
+                    .protocolVersion("2024-11-05")
+                    .transport(transport)
+                    .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Failed to initialize streamable HTTP client with URL: {}", mcpServer.getUrl(), e);
+            MCPService.logDebug("Failed to initialize streamable HTTP client with URL: " + mcpServer.getUrl() + " - " + e.getMessage());
             return null;
         }
     }

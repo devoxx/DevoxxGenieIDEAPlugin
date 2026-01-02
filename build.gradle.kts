@@ -70,7 +70,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-azure-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
-//    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
     implementation(platform("software.amazon.awssdk:bom:2.40.5"))
     implementation("software.amazon.awssdk:bedrock")

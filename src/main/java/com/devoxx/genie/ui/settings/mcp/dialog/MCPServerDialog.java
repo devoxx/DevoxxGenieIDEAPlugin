@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings.mcp.dialog;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.HttpSseTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.StdioTransportPanel;
+import com.devoxx.genie.ui.settings.mcp.dialog.transport.StreamableHttpTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.TransportPanel;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
@@ -53,6 +54,7 @@ public class MCPServerDialog extends DialogWrapper {
         // Initialize transport panels
         transportPanels.put(MCPServer.TransportType.STDIO, new StdioTransportPanel());
         transportPanels.put(MCPServer.TransportType.HTTP_SSE, new HttpSseTransportPanel());
+        transportPanels.put(MCPServer.TransportType.HTTP, new StreamableHttpTransportPanel());
         
         // Initialize UI components
         initUI();
