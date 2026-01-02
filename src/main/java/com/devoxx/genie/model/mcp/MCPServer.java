@@ -23,7 +23,8 @@ public class MCPServer {
      */
     public enum TransportType {
         STDIO,    // Standard I/O communication with a subprocess
-        HTTP_SSE  // HTTP Server-Sent Events for communication
+        HTTP_SSE, // HTTP Server-Sent Events for communication (deprecated)
+        HTTP      // Streamable HTTP
     }
     
     @Builder.Default
@@ -34,8 +35,8 @@ public class MCPServer {
     private String command;
     private List<String> args;
     
-    // HTTP SSE transport properties
-    private String sseUrl;
+    // HTTP transport properties
+    private String url;
     
     @Builder.Default
     private Map<String, String> env = new HashMap<>();

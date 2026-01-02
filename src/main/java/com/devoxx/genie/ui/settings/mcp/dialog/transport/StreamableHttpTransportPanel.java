@@ -15,17 +15,19 @@ import lombok.extern.slf4j.Slf4j;
 
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 
 /**
- * Panel for configuring HTTP SSE MCP transport
+ * Panel for configuring Streamable HTTP MCP transport
  */
 @Slf4j
-public class HttpSseTransportPanel implements TransportPanel {
+public class StreamableHttpTransportPanel implements TransportPanel {
     private final JPanel panel;
-    private final JTextField sseUrlField = new JTextField();
-    
-    public HttpSseTransportPanel() {
+    private final JTextField urlField = new JTextField();
+
+    public StreamableHttpTransportPanel() {
         panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -33,27 +35,27 @@ public class HttpSseTransportPanel implements TransportPanel {
         gbc.gridwidth = 1;
         int row = 0;
         
-        // SSE URL field
+        // HTTP URL field
         gbc.gridx = 0;
         gbc.gridy = row++;
         gbc.weightx = 0.0;
-        panel.add(new JLabel("SSE URL:"), gbc);
+        panel.add(new JLabel("HTTP URL:"), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        panel.add(sseUrlField, gbc);
+        panel.add(urlField, gbc);
 
         // Help text
         gbc.gridx = 1;
         gbc.gridy = row++;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(new JLabel("<html>Enter the SSE endpoint URL for the MCP server.</html>"), gbc);
+        panel.add(new JLabel("<html>Enter the HTTP endpoint URL for the MCP server.</html>"), gbc);
 
         gbc.gridx = 1;
         gbc.gridy = row++;
         gbc.weightx = 0.0;
-        panel.add(new JLabel("For example: http://localhost:3000/mcp/sse"), gbc);
+        panel.add(new JLabel("For example: http://localhost:3000/mcp"), gbc);
 
         gbc.gridx = 1;
         gbc.gridy = row++;
@@ -70,44 +72,44 @@ public class HttpSseTransportPanel implements TransportPanel {
 
     @Override
     public void loadSettings(MCPServer server) {
-        sseUrlField.setText(server.getUrl());
+        urlField.setText(server.getUrl());
     }
 
     @Override
     public boolean isValid() {
-        String url = sseUrlField.getText().trim();
+        String url = urlField.getText().trim();
         return !url.isEmpty() && (url.startsWith("http://") || url.startsWith("https://"));
     }
 
     @Override
     public String getErrorMessage() {
-        String url = sseUrlField.getText().trim();
+        String url = urlField.getText().trim();
         if (url.isEmpty()) {
-            return "SSE URL cannot be empty";
+            return "HTTP URL cannot be empty";
         } else if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            return "SSE URL must start with http:// or https://";
+            return "HTTP URL must start with http:// or https://";
         }
         return null;
     }
 
     @Override
     public McpClient createClient() throws Exception {
-        String sseUrl = sseUrlField.getText().trim();
+        String url = urlField.getText().trim();
         
         // Validate URL
-        if (sseUrl.isEmpty()) {
-            throw new IllegalArgumentException("SSE URL cannot be empty");
+        if (url.isEmpty()) {
+            throw new IllegalArgumentException("HTTP URL cannot be empty");
         }
         
-        if (!sseUrl.startsWith("http://") && !sseUrl.startsWith("https://")) {
-            throw new IllegalArgumentException("SSE URL must start with http:// or https://");
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            throw new IllegalArgumentException("HTTP URL must start with http:// or https://");
         }
         
-        log.debug("Creating HTTP SSE transport with URL: {}", sseUrl);
+        log.debug("Creating Streamable HTTP transport with URL: {}", url);
         
         // Create the transport
-        HttpMcpTransport transport = new HttpMcpTransport.Builder()
-                .sseUrl(sseUrl)
+        McpTransport transport = new StreamableHttpMcpTransport.Builder()
+                .url(url)
                 .timeout(Duration.ofSeconds(60))
                 .logRequests(true)
                 .logResponses(true)
@@ -123,7 +125,7 @@ public class HttpSseTransportPanel implements TransportPanel {
 
     @Override
     public void applySettings(MCPServer.MCPServerBuilder builder) {
-        builder.url(sseUrlField.getText().trim())
-               .transportType(MCPServer.TransportType.HTTP_SSE);
+        builder.url(urlField.getText().trim())
+               .transportType(MCPServer.TransportType.HTTP);
     }
 }
