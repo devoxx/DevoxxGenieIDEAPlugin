@@ -72,7 +72,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.40.5"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.0"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
@@ -89,13 +89,13 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("org.commonmark:commonmark:0.27.0")
-    implementation("io.netty:netty-all:4.2.7.Final")
+    implementation("io.netty:netty-all:4.2.9.Final")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.21")
+    implementation("ch.qos.logback:logback-classic:1.5.23")
 
     // GitIgnore Reader
-    implementation("nl.basjes.gitignore:gitignore-reader:1.13.0")
+    implementation("nl.basjes.gitignore:gitignore-reader:1.14.1")
 
     // TDG : Add other TDG dependencies
     implementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
