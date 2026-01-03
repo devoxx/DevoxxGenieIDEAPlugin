@@ -35,6 +35,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.8.0</h2>
+        <UL>
+            <LI>Update models for Anthropic, OpenAI and Gemini</LI>
+            <LI>Add support for MCP streamable HTTP</LI>
+            <LI>Issue #689: Upgrade to langchain4j 1.10.0(-beta18)</LI>
+            <LI>Issue #796: Web search doesn't work (null error)</LI>
+            <LI>Bump the gradle-dependencies</LI>
+        </UL>
         <h2>v0.7.1</h2>
         <UL>
             <LI>Issue #767: MCP approval timeout should be configurable</LI>
