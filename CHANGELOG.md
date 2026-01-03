@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 - Update models for Anthropic, OpenAI and Gemini
 - Add support for MCP streamable HTTP
 
+### Fixed
+- Issue #796: Web search doesn't work (null error)
+
 ### Dependencies
 - Issue #689: Upgrade to langchain4j 1.10.0(-beta18)
 
