@@ -2,7 +2,29 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.0] - Unreleased
+### [0.8.0]
+
+### Added
+- Update models for Anthropic, OpenAI and Gemini
+- Add support for MCP streamable HTTP
+
+### Dependencies
+- Issue #689: Upgrade to langchain4j 1.10.0(-beta18)
+
+## [0.7.1]
+
+### Added
+- Issue #767: MCP approval timeout should be configurable
+- Issue #771: Enable streaming responses for Bedrock Anthropic models
+- Added Claude Sonnet 4 to the available Amazon Bedrock models
+
+### Fixed
+- Issue #806: Plugin 'DevoxxGenie' (version '0.7.0') is not compatible with the current version of the IDE
+
+### Dependencies
+- Bump the gradle-dependencies
+
+## [0.7.0]
 
 ### Added
 - Added Claude Sonnet 3.5 v2 to Amazon Bedrock models (#761)
