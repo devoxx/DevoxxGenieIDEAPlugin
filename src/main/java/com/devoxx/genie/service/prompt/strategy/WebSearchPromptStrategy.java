@@ -32,7 +32,7 @@ public class WebSearchPromptStrategy extends AbstractPromptExecutionStrategy {
             @NotNull PromptOutputPanel panel,
             @NotNull PromptTask<PromptResult> resultTask) {
         
-        log.debug("Web search with query: {}", context.getUserMessage().singleText());
+        log.debug("Web search with query: {}", context.getUserPrompt());
 
         // Add user message to context and memory
         // prepareMemory(context);
