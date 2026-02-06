@@ -301,6 +301,6 @@ public class ChatMemoryManager {
             MCPService.logDebug("Added MCP instructions to system prompt");
         }
 
-        return systemPrompt;
+        return TemplateVariableEscaper.escape(systemPrompt);
     }
 }
