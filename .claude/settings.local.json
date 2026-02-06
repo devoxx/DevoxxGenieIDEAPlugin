@@ -4,7 +4,10 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(gh pr list:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(gh issue view:*)",
+      "Bash(git checkout:*)",
+      "Bash(JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home ./gradlew test:*)"
     ],
     "deny": []
   }

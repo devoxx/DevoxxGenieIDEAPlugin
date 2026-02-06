@@ -13,3 +13,4 @@ gradle/**
 .DS_Store
 **/.DS_Store
 .aider*
+.claude/settings.local.json
