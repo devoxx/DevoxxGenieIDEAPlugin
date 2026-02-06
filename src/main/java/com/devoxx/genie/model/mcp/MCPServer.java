@@ -40,6 +40,9 @@ public class MCPServer {
     
     @Builder.Default
     private Map<String, String> env = new HashMap<>();
+
+    @Builder.Default
+    private Map<String, String> headers = new HashMap<>();
     
     @Builder.Default
     private List<String> environment = new java.util.ArrayList<>();
