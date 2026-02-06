@@ -12,7 +12,9 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import lombok.extern.slf4j.Slf4j;
@@ -153,8 +155,23 @@ public class ChatMemoryManager {
             if (context.getUserMessage() != null) {
                 log.debug("Adding user message to memory for context ID: {}", context.getId());
                 UserMessage userMessage = context.getUserMessage();
-                String cleanValue = TemplateVariableEscaper.escape(userMessage.singleText());
-                chatMemoryService.addMessage(context.getProject(), UserMessage.from(cleanValue));
+
+                if (!userMessage.hasSingleText()) {
+                    // Multimodal message (contains images) — preserve all content types
+                    List<Content> escapedContents = new ArrayList<>();
+                    for (Content content : userMessage.contents()) {
+                        if (content instanceof TextContent textContent) {
+                            escapedContents.add(TextContent.from(TemplateVariableEscaper.escape(textContent.text())));
+                        } else {
+                            escapedContents.add(content);
+                        }
+                    }
+                    chatMemoryService.addMessage(context.getProject(), UserMessage.from(escapedContents));
+                } else {
+                    String cleanValue = TemplateVariableEscaper.escape(userMessage.singleText());
+                    chatMemoryService.addMessage(context.getProject(), UserMessage.from(cleanValue));
+                }
+
                 log.debug("Successfully added user message to memory");
             } else {
                 log.warn("Attempted to add null user message to memory for context ID: {}", context.getId());

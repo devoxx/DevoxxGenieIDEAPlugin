@@ -6,6 +6,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
+import dev.langchain4j.data.message.UserMessage;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
@@ -15,12 +16,14 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.vfs.VirtualFile;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
 
+@Slf4j
 public class ChatMessageContextUtil {
 
     public static final int ZERO_SECONDS = 0;
@@ -93,13 +96,19 @@ public class ChatMessageContextUtil {
 
     /**
      * Process attached files.
-     * Include all files that have been added to the current conversation.
+     * Include all non-image files that have been added to the current conversation.
+     * Image files are handled separately by MessageCreationService.addImages().
      * Files are only cleared when starting a new conversation.
      * @param chatMessageContext the chat message context
      */
     private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext) {
         FileListManager fileListManager = FileListManager.getInstance();
-        List<VirtualFile> files = fileListManager.getFiles(chatMessageContext.getProject());
+        // Only process non-image files for text context; images are handled by addImages()
+        List<VirtualFile> files = fileListManager.getNonImageFiles(chatMessageContext.getProject());
+
+        log.debug("processAttachedFiles: {} non-image files, {} image files",
+                files.size(),
+                fileListManager.getImageFiles(chatMessageContext.getProject()).size());
 
         if (!files.isEmpty()) {
             try {
@@ -117,7 +126,8 @@ public class ChatMessageContextUtil {
     private static void addDefaultEditorInfoToMessageContext(Editor editor,
                                                              @NotNull ChatMessageContext chatMessageContext) {
 
-        FileListManager.getInstance().clear(chatMessageContext.getProject());
+        // Only clear non-image files; image files are preserved for addImages() processing
+        FileListManager.getInstance().clearNonImageFiles(chatMessageContext.getProject());
 
         EditorInfo editorInfo = EditorUtil.getEditorInfo(editor);
         chatMessageContext.setEditorInfo(editorInfo);
@@ -149,6 +159,17 @@ public class ChatMessageContextUtil {
             }
         }
 
+    }
+
+    /**
+     * Check if the chat message context contains multimodal content (e.g., images).
+     *
+     * @param context the chat message context
+     * @return true if the user message contains non-text content
+     */
+    public static boolean hasMultimodalContent(@NotNull ChatMessageContext context) {
+        UserMessage userMessage = context.getUserMessage();
+        return userMessage != null && !userMessage.hasSingleText();
     }
 
     /**
