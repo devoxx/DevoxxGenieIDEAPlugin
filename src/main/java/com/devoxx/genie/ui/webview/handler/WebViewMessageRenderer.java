@@ -22,6 +22,7 @@ public class WebViewMessageRenderer {
     private final WebServer webServer;
     private final WebViewJavaScriptExecutor jsExecutor;
     private final AtomicBoolean initialized;
+    private final AtomicBoolean welcomeLoadCancelled = new AtomicBoolean(false);
     
     public WebViewMessageRenderer(WebServer webServer, WebViewJavaScriptExecutor jsExecutor, AtomicBoolean initialized) {
         this.webServer = webServer;
@@ -35,13 +36,18 @@ public class WebViewMessageRenderer {
      * @param resourceBundle The resource bundle for i18n
      */
     public void loadWelcomeContent(ResourceBundle resourceBundle) {
+        welcomeLoadCancelled.set(false);
         if (!jsExecutor.isLoaded()) {
             // Wait for browser to load before injecting content
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                while (!initialized.get()) {
+                while (!initialized.get() && !welcomeLoadCancelled.get()) {
                     ThreadUtils.sleep(100);
                 }
-                showWelcomeContent(resourceBundle);
+                if (!welcomeLoadCancelled.get()) {
+                    showWelcomeContent(resourceBundle);
+                } else {
+                    log.debug("Welcome content load cancelled before browser initialized");
+                }
             });
         } else {
             showWelcomeContent(resourceBundle);
@@ -54,15 +60,35 @@ public class WebViewMessageRenderer {
      * @param resourceBundle The resource bundle for i18n
      */
     private void showWelcomeContent(ResourceBundle resourceBundle) {
+        if (welcomeLoadCancelled.get()) {
+            log.debug("Welcome content load cancelled, skipping injection");
+            return;
+        }
+
         // Use the WelcomeTemplate to generate HTML
         WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle);
         String welcomeContent = welcomeTemplate.generate();
-        
-        // Execute JavaScript to update the content
-        jsExecutor.executeJavaScript("document.getElementById('conversation-container').innerHTML = `" + 
-                jsExecutor.escapeJS(welcomeContent) + "`;");
-        jsExecutor.executeJavaScript("if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }");
-        jsExecutor.executeJavaScript("window.scrollTo(0, 0);");
+
+        // Only inject welcome content if no chat messages are already present (defense-in-depth).
+        // Content is from trusted internal WelcomeTemplate, not user input.
+        jsExecutor.executeJavaScript(
+                "(function() {" +
+                "  var container = document.getElementById('conversation-container');" +
+                "  if (container && container.querySelectorAll('.message-pair').length === 0) {" +
+                "    container.innerHTML = `" + jsExecutor.escapeJS(welcomeContent) + "`;" +
+                "    if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                "    window.scrollTo(0, 0);" +
+                "  }" +
+                "})();");
+    }
+
+    /**
+     * Cancel any pending welcome content load.
+     * This prevents a deferred welcome load from overwriting chat messages.
+     */
+    public void cancelPendingWelcomeLoad() {
+        welcomeLoadCancelled.set(true);
+        log.debug("Pending welcome content load cancelled");
     }
     
     /**

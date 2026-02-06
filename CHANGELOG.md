@@ -2,7 +2,13 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
-### [0.8.0]
+## [0.8.1]
+
+### Fixed
+- Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal
+- MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error
+
+## [0.8.0]
 
 ### Added
 - Update models for Anthropic, OpenAI and Gemini

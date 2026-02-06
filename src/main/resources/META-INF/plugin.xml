@@ -35,6 +35,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.8.1</h2>
+        <UL>
+            <LI>Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal</LI>
+            <LI>MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error</LI>
+        </UL>
         <h2>v0.8.0</h2>
         <UL>
             <LI>Update models for Anthropic, OpenAI and Gemini</LI>
@@ -186,7 +191,7 @@
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
-                             displayName="MCP Settings (BETA)"/>
+                             displayName="MCP Settings"/>
 
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"

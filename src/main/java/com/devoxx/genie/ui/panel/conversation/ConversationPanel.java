@@ -18,6 +18,8 @@ import com.intellij.util.messages.MessageBusConnection;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import com.intellij.util.ui.UIUtil;
+
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.Field;
@@ -36,7 +38,8 @@ public class ConversationPanel
     private final MessageRenderer messageRenderer;
     private final ConversationManager conversationManager;
     private final ConversationUIController uiController;
-    
+    private final MessageBusConnection messageBusConnection;
+
     public final ConversationWebViewController webViewController;
 
     /**
@@ -90,23 +93,24 @@ public class ConversationPanel
         // Set component layout and sizing
         JComponent displayComponent = webViewController.getComponent();
         displayComponent.setOpaque(true);
-        displayComponent.setBackground(Color.BLACK);
+        Color editorBg = UIUtil.getPanelBackground();
+        displayComponent.setBackground(editorBg);
         add(displayComponent, BorderLayout.CENTER);
-        
+
         // Set sizes for the panel to ensure proper display
         setMinimumSize(new Dimension(400, 300));
         setPreferredSize(new Dimension(800, 600));
-        
+
         // Ensure the component is visible
         setOpaque(true);
-        setBackground(Color.BLACK);
+        setBackground(editorBg);
         setVisible(true);
         
         // Subscribe to the relevant topics
-        MessageBusConnection msgBusConnection = project.getMessageBus().connect();
-        msgBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
-        msgBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
-        msgBusConnection.subscribe(AppTopics.MCP_LOGGING_MSG, webViewController);
+        messageBusConnection = project.getMessageBus().connect();
+        messageBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
+        messageBusConnection.subscribe(AppTopics.MCP_LOGGING_MSG, webViewController);
     }
 
     /**
@@ -206,6 +210,9 @@ public class ConversationPanel
      * This should be called when the panel is being removed or when the project closes.
      */
     public void dispose() {
+        if (messageBusConnection != null) {
+            messageBusConnection.disconnect();
+        }
         if (webViewController != null) {
             webViewController.dispose();
         }

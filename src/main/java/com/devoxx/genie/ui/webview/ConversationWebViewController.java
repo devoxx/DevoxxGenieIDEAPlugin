@@ -36,6 +36,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private JComponent fallbackComponent;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean restoringConversation = new AtomicBoolean(false);
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     // Specialized handlers
     private WebViewJavaScriptExecutor jsExecutor;
@@ -218,18 +219,21 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         }
         
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            while (true) {
+            while (!disposed.get()) {
                 try {
-                    ThreadUtils.sleep(50);
-                    
+                    ThreadUtils.sleep(250);
+
+                    if (disposed.get()) {
+                        break;
+                    }
+
                     // Check if JCEF is still available - exit thread if not
                     if (!JCEFChecker.isJCEFAvailable()) {
                         log.warn("JCEF became unavailable, stopping file opening polling");
                         break;
                     }
 
-                    // Create a mechanism to store the file path in a global variable
-                    // that we can poll for
+                    // Check if there's a file to open via the JS bridge
                     String checkJs =
                             "var path = null;" +
                                     "if (window.fileToOpen) {" +
@@ -240,14 +244,12 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                                     "return path;";
 
                     try {
-                        // Execute the JavaScript to check for a file to open and capture the result as a string
                         browser.getCefBrowser().executeJavaScript(
                                 "(() => { " + checkJs + " })();",
                                 browser.getCefBrowser().getURL(),
                                 0
                         );
-    
-                        // After executing, check if there's a window.lastFoundPath that might have been set
+
                         browser.getCefBrowser().executeJavaScript(
                                 "if (window.lastFoundPath) { " +
                                         "  const path = window.lastFoundPath; " +
@@ -266,6 +268,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                     break;
                 }
             }
+            log.info("File opening polling thread stopped");
         });
     }
     
@@ -591,15 +594,8 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
             if (component.isShowing()) {
                 // Check for invalid size
                 if (component.getWidth() <= 0 || component.getHeight() <= 0) {
-                    log.debug("Black screen suspected: component showing but has invalid size {}x{}", 
+                    log.debug("Black screen suspected: component showing but has invalid size {}x{}",
                              component.getWidth(), component.getHeight());
-                    return true;
-                }
-                
-                // Check for black background
-                Color background = component.getBackground();
-                if (background != null && background.equals(Color.BLACK)) {
-                    log.debug("Black screen suspected: component has black background");
                     return true;
                 }
             }
@@ -647,6 +643,14 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     }
     
     /**
+     * Cancel any pending welcome content load.
+     * This prevents a deferred welcome load from overwriting chat messages.
+     */
+    public void cancelPendingWelcomeLoad() {
+        messageRenderer.cancelPendingWelcomeLoad();
+    }
+
+    /**
      * Mark that conversation restoration is starting.
      * This prevents automatic welcome content loading during restoration.
      */
@@ -659,7 +663,11 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
      * Dispose of resources when the controller is no longer needed.
      */
     public void dispose() {
+        disposed.set(true);
         if (sleepWakeRecoveryHandler != null) {
             sleepWakeRecoveryHandler.dispose();
+        }
+        if (themeManager != null) {
+            themeManager.dispose();
         }
     }}

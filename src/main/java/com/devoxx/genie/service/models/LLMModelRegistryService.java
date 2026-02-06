@@ -136,6 +136,18 @@ public final class LLMModelRegistryService {
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
+
+        String claude46 = "claude-opus-4-6";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude46,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude45Opus)
+                        .displayName("Claude 4.6 Opus")
+                        .inputCost(5)
+                        .outputCost(25)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
     }
 
     private void addOpenAiModels() {

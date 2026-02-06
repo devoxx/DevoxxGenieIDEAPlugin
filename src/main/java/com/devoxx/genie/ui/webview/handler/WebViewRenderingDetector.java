@@ -26,6 +26,7 @@ public class WebViewRenderingDetector {
     
     private Consumer<String> recoveryCallback;
     private Timer renderCheckTimer;
+    private Timer resultTimer;
     
     // Black rectangle detection
     private static final long RENDER_CHECK_INTERVAL = 30000; // 30 seconds - reduced frequency
@@ -202,8 +203,11 @@ public class WebViewRenderingDetector {
             browser.getCefBrowser().executeJavaScript(renderCheckJs, "", 0);
             debugLogger.debug("Content render check JavaScript injected");
             
-            // Schedule evaluation of results
-            Timer resultTimer = new Timer(3000, evt -> evaluateRenderCheckResults());
+            // Cancel any previous pending result timer before starting a new one
+            if (resultTimer != null) {
+                resultTimer.stop();
+            }
+            resultTimer = new Timer(3000, evt -> evaluateRenderCheckResults());
             resultTimer.setRepeats(false);
             resultTimer.start();
             
@@ -252,36 +256,26 @@ public class WebViewRenderingDetector {
      */
     private boolean checkComponentForRenderingIssues(JComponent component) {
         try {
-            // Get component properties
-            boolean isOpaque = component.isOpaque();
-            Color background = component.getBackground();
             boolean isVisible = component.isVisible();
             boolean isDisplayable = component.isDisplayable();
-            
-            debugLogger.logComponentInfo("renderIssueCheck", 
-                                        isVisible, isDisplayable, 
+
+            debugLogger.logComponentInfo("renderIssueCheck",
+                                        isVisible, isDisplayable,
                                         component.getWidth(), component.getHeight(),
-                                        "opaque=" + isOpaque + ", bg=" + background);
-            
-            // Check for suspicious background color (potential black rectangle)
-            if (background != null && background.equals(Color.BLACK)) {
-                debugLogger.warn("Component has black background - potential black rectangle");
-                suspectedBlackRectangle.set(true);
-                return true;
-            }
-            
+                                        "opaque=" + component.isOpaque());
+
             // Check for component that should be visible but appears problematic
             if (isVisible && isDisplayable && component.getWidth() > 0 && component.getHeight() > 0) {
                 // Component appears normal at this level
                 return false;
             } else if (isVisible) {
-                // Component is visible but has issues
+                // Component is visible but has issues (zero size, not displayable)
                 debugLogger.warn("Component is visible but has rendering issues");
                 return true;
             }
-            
+
             return false;
-            
+
         } catch (Exception e) {
             debugLogger.error("Failed to check component for rendering issues", e);
             return true; // Assume issue if we can't check
@@ -303,17 +297,15 @@ public class WebViewRenderingDetector {
     }
     
     /**
-     * Increment render issues counter but don't trigger automatic recovery.
-     * Recovery will only happen when creating a new conversation.
+     * Increment render issues counter and trigger recovery when threshold is reached.
      */
     private void incrementRenderIssues(String reason) {
         int issueCount = consecutiveRenderIssues.incrementAndGet();
         debugLogger.warn("Render issue detected: {} (consecutive issues: {})", reason, issueCount);
-        
+
         if (issueCount >= MAX_CONSECUTIVE_RENDER_ISSUES) {
-            debugLogger.warn("Max consecutive render issues reached - will recover on next new conversation");
-            // Don't trigger automatic recovery - let the new conversation flow handle it
-            // triggerRecovery("Render issues: " + reason + " (consecutive: " + issueCount + ")");
+            debugLogger.warn("Max consecutive render issues reached - triggering recovery");
+            triggerRecovery("Render issues: " + reason + " (consecutive: " + issueCount + ")");
         }
     }
     
@@ -391,6 +383,11 @@ public class WebViewRenderingDetector {
             renderCheckTimer.stop();
             renderCheckTimer = null;
             debugLogger.debug("Render check timer stopped");
+        }
+        if (resultTimer != null) {
+            resultTimer.stop();
+            resultTimer = null;
+            debugLogger.debug("Render result timer stopped");
         }
         
         debugLogger.info("WebViewRenderingDetector disposed successfully");
