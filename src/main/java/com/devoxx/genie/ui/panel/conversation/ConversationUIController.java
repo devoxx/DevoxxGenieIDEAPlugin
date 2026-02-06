@@ -109,7 +109,7 @@ public class ConversationUIController implements CustomPromptChangeListener {
      * Used when restoring conversation history or submitting the first prompt.
      */
     public void clearWithoutWelcome() {
-        messageRenderer.clear();
+        messageRenderer.clearWithoutWelcome();
     }
 
     /**

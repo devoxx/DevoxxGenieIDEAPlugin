@@ -91,6 +91,8 @@ public class MessageRenderer implements FileReferencesListener {
      * Used when restoring conversation history.
      */
     public void clearWithoutWelcome() {
+        // Cancel any pending deferred welcome load to prevent it from overwriting chat messages
+        webViewController.cancelPendingWelcomeLoad();
         // Set the restoration flag to prevent welcome content during theme changes
         webViewController.setRestoringConversation(true);
         webViewController.clearConversation();

@@ -647,6 +647,14 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     }
     
     /**
+     * Cancel any pending welcome content load.
+     * This prevents a deferred welcome load from overwriting chat messages.
+     */
+    public void cancelPendingWelcomeLoad() {
+        messageRenderer.cancelPendingWelcomeLoad();
+    }
+
+    /**
      * Mark that conversation restoration is starting.
      * This prevents automatic welcome content loading during restoration.
      */
