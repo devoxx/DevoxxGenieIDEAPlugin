@@ -35,6 +35,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.1</h2>
+        <UL>
+            <LI>Issue #791: Fix exception when attaching source code containing triple braces ({{{ }}})</LI>
+        </UL>
         <h2>v0.9.0</h2>
         <UL>
             <LI>Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal</LI>
