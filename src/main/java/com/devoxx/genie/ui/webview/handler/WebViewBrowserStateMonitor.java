@@ -29,11 +29,13 @@ public class WebViewBrowserStateMonitor {
     private final AtomicInteger consecutiveLoadErrors = new AtomicInteger(0);
     private final AtomicLong lastSuccessfulLoad = new AtomicLong(System.currentTimeMillis());
 
+    private Consumer<String> recoveryCallback;
     private Timer healthCheckTimer;
-    
+    private Timer jsResultTimer;
+
     private static final int MAX_CONSECUTIVE_ERRORS = 3;
     private static final long HEALTH_CHECK_INTERVAL = 30000; // 30 seconds - reduced frequency
-    private static final long MAX_TIME_SINCE_SUCCESSFUL_LOAD = 5 * 60 * 1000; // 5 minutes
+    private static final long MAX_TIME_SINCE_SUCCESSFUL_LOAD = 30 * 60 * 1000; // 30 minutes
     
     public WebViewBrowserStateMonitor(JBCefBrowser browser, WebViewDebugLogger debugLogger) {
         this.browser = browser;
@@ -51,6 +53,7 @@ public class WebViewBrowserStateMonitor {
      * Set callback to be called when recovery is needed.
      */
     public void setRecoveryCallback(Consumer<String> callback) {
+        this.recoveryCallback = callback;
         debugLogger.debug("Recovery callback set");
     }
     
@@ -255,8 +258,11 @@ public class WebViewBrowserStateMonitor {
             browser.getCefBrowser().executeJavaScript(healthCheckJs, "", 0);
             debugLogger.debug("Health check JavaScript injected successfully");
             
-            // Schedule a check to evaluate the results
-            Timer jsResultTimer = new Timer(2000, evt -> evaluateHealthCheckResults());
+            // Cancel any previous pending result timer before starting a new one
+            if (jsResultTimer != null) {
+                jsResultTimer.stop();
+            }
+            jsResultTimer = new Timer(2000, evt -> evaluateHealthCheckResults());
             jsResultTimer.setRepeats(false);
             jsResultTimer.start();
             
@@ -278,17 +284,15 @@ public class WebViewBrowserStateMonitor {
     }
 
     /**
-     * Trigger recovery callback - disabled to prevent automatic recovery.
-     * Recovery will only happen when creating a new conversation.
+     * Trigger recovery callback when browser state issues are detected.
      */
     private void triggerRecovery(String reason) {
-        debugLogger.warn("Browser state issues detected: {} - will recover on next new conversation", reason);
-        // Don't trigger automatic recovery - let the new conversation flow handle it
-        // if (recoveryCallback != null) {
-        //     recoveryCallback.accept("BrowserStateMonitor: " + reason);
-        // } else {
-        //     debugLogger.warn("Recovery callback is null - cannot trigger recovery");
-        // }
+        debugLogger.warn("Browser state issues detected: {}", reason);
+        if (recoveryCallback != null) {
+            recoveryCallback.accept("BrowserStateMonitor: " + reason);
+        } else {
+            debugLogger.warn("Recovery callback is null - cannot trigger recovery");
+        }
     }
     
     /**
@@ -301,6 +305,11 @@ public class WebViewBrowserStateMonitor {
             healthCheckTimer.stop();
             healthCheckTimer = null;
             debugLogger.debug("Health check timer stopped");
+        }
+        if (jsResultTimer != null) {
+            jsResultTimer.stop();
+            jsResultTimer = null;
+            debugLogger.debug("JS result timer stopped");
         }
         
         debugLogger.info("WebViewBrowserStateMonitor disposed successfully");

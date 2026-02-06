@@ -57,9 +57,9 @@ public class WebViewMessageRenderer {
         // Use the WelcomeTemplate to generate HTML
         WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle);
         String welcomeContent = welcomeTemplate.generate();
-        
+
         // Execute JavaScript to update the content
-        jsExecutor.executeJavaScript("document.getElementById('conversation-container').innerHTML = `" + 
+        jsExecutor.executeJavaScript("document.getElementById('conversation-container').innerHTML = `" +
                 jsExecutor.escapeJS(welcomeContent) + "`;");
         jsExecutor.executeJavaScript("if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }");
         jsExecutor.executeJavaScript("window.scrollTo(0, 0);");

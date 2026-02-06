@@ -209,6 +209,10 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     public void removeNotify() {
         // Unregister from the registry when removed from the UI
         PromptPanelRegistry.getInstance().unregisterPanel(project, this);
+        // Cascade disposal to the conversation panel to clean up browser, timers, and bus connections
+        if (conversationPanel != null) {
+            conversationPanel.dispose();
+        }
         super.removeNotify();
     }
     

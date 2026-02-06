@@ -6,7 +6,6 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.HierarchyEvent;
@@ -301,23 +300,16 @@ public class WebViewSleepWakeRecoveryHandler {
             
             // Additional conservative checks - only recover if we have strong indicators of problems
             boolean hasStrongIndicators = false;
-            
+
             // Check if browser is showing but has suspicious size (could indicate black rectangle)
             if (component.isShowing() && (component.getWidth() <= 0 || component.getHeight() <= 0)) {
                 debugLogger.debug("Component showing but has invalid size - strong indicator of issues");
                 hasStrongIndicators = true;
             }
-            
-            // Check if component background is black (potential black rectangle)
-            Color backgroundColor = component.getBackground();
-            if (backgroundColor != null && backgroundColor.equals(Color.BLACK) && component.isShowing()) {
-                debugLogger.debug("Component has black background while showing - potential black rectangle");
-                hasStrongIndicators = true;
-            }
-            
+
             boolean shouldRecover = browserStateIssue || renderingIssue || hasStrongIndicators;
-            
-            debugLogger.debug("Conservative recovery evaluation - browserStateIssue: {}, renderingIssue: {}, strongIndicators: {}, shouldRecover: {}", 
+
+            debugLogger.debug("Conservative recovery evaluation - browserStateIssue: {}, renderingIssue: {}, strongIndicators: {}, shouldRecover: {}",
                              browserStateIssue, renderingIssue, hasStrongIndicators, shouldRecover);
             
             return shouldRecover;

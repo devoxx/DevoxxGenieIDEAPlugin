@@ -43,6 +43,10 @@ public class ThemeDetector {
         themeChangeListeners.add(listener);
     }
 
+    public static void removeThemeChangeListener(ThemeChangeListener listener) {
+        themeChangeListeners.remove(listener);
+    }
+
     /**
      * Check if the current IDE theme is dark.
      * 

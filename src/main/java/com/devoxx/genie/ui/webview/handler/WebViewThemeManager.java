@@ -30,23 +30,27 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
     private final WebServer webServer;
     private final WebViewJavaScriptExecutor jsExecutor;
     private final Consumer<ResourceBundle> welcomeContentLoader;
-    
-    public WebViewThemeManager(JBCefBrowser browser, WebServer webServer, 
+    private final MessageBusConnection messageBusConnection;
+    private final ThemeDetector.ThemeChangeListener themeChangeListener;
+    private CefLoadHandlerAdapter currentThemeLoadHandler;
+
+    public WebViewThemeManager(JBCefBrowser browser, WebServer webServer,
                               WebViewJavaScriptExecutor jsExecutor,
                               Consumer<ResourceBundle> welcomeContentLoader) {
         this.browser = browser;
         this.webServer = webServer;
         this.jsExecutor = jsExecutor;
         this.welcomeContentLoader = welcomeContentLoader;
-        
-        // Register for theme change notifications
-        ThemeDetector.addThemeChangeListener(this::themeChanged);
-        
-        // Register for appearance settings changes
-        MessageBusConnection connection = ApplicationManager.getApplication().getMessageBus().connect();
-        connection.subscribe(APPEARANCE_SETTINGS_TOPIC, this);
-        
-        // Initialize the appearance refresh handler 
+
+        // Register for theme change notifications (store reference for removal)
+        themeChangeListener = this::themeChanged;
+        ThemeDetector.addThemeChangeListener(themeChangeListener);
+
+        // Register for appearance settings changes (store connection for disposal)
+        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        messageBusConnection.subscribe(APPEARANCE_SETTINGS_TOPIC, this);
+
+        // Initialize the appearance refresh handler
         AppearanceRefreshHandler.getInstance();
     }
     
@@ -107,27 +111,29 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
                 // Create a new resource with the updated HTML content
                 String resourceId = webServer.addDynamicResource(htmlContent);
                 String resourceUrl = webServer.getResourceUrl(resourceId);
-                
-                // Set a flag to indicate that we should reload welcome content after the browser loads
-                final boolean[] welcomeReloaded = {false};
-                
+
+                // Remove previous theme load handler if it exists to prevent accumulation
+                if (currentThemeLoadHandler != null) {
+                    browser.getJBCefClient().removeLoadHandler(currentThemeLoadHandler, browser.getCefBrowser());
+                }
+
                 // Add a temporary load handler to reload the welcome content after the theme change
-                browser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
+                final boolean[] welcomeReloaded = {false};
+                currentThemeLoadHandler = new CefLoadHandlerAdapter() {
                     @Override
                     public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
                         if (!welcomeReloaded[0]) {
                             welcomeReloaded[0] = true;
                             log.info("Browser reloaded after theme change");
-                            // Only load welcome content if not restoring a conversation
-                            // The welcomeContentLoader should check if restoration is in progress
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 ResourceBundle resourceBundle = ResourceBundle.getBundle("messages");
                                 welcomeContentLoader.accept(resourceBundle);
                             });
                         }
                     }
-                }, browser.getCefBrowser());
-                
+                };
+                browser.getJBCefClient().addLoadHandler(currentThemeLoadHandler, browser.getCefBrowser());
+
                 // Reload the browser with the new content
                 browser.loadURL(resourceUrl);
             } catch (Exception e) {
@@ -139,5 +145,23 @@ public class WebViewThemeManager implements ThemeChangeNotifier, AppearanceSetti
     @Override
     public void appearanceSettingsChanged() {
         applyAppearanceChanges();
+    }
+
+    /**
+     * Dispose of resources when this manager is no longer needed.
+     */
+    public void dispose() {
+        ThemeDetector.removeThemeChangeListener(themeChangeListener);
+        if (messageBusConnection != null) {
+            messageBusConnection.disconnect();
+        }
+        if (currentThemeLoadHandler != null && browser != null) {
+            try {
+                browser.getJBCefClient().removeLoadHandler(currentThemeLoadHandler, browser.getCefBrowser());
+            } catch (Exception e) {
+                log.debug("Error removing theme load handler during disposal: {}", e.getMessage());
+            }
+            currentThemeLoadHandler = null;
+        }
     }
 }

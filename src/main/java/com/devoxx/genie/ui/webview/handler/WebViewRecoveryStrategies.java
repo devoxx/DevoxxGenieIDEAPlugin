@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.ui.webview.JCEFChecker;
 import com.devoxx.genie.ui.webview.WebServer;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.jcef.JBCefBrowser;
 import lombok.extern.slf4j.Slf4j;
 
@@ -107,35 +108,47 @@ public class WebViewRecoveryStrategies {
     private boolean attemptWebServerRestart() {
         long startTime = System.currentTimeMillis();
         debugLogger.debug("Attempting WebServer restart recovery");
-        
+
         try {
             WebServer webServer = WebServer.getInstance();
             if (webServer == null || !webServer.isRunning()) {
                 debugLogger.warn("WebServer not running, cannot restart");
                 return false;
             }
-            
+
             String currentUrl = browser.getCefBrowser() != null ? browser.getCefBrowser().getURL() : null;
             debugLogger.debug("Current URL before restart: {}", currentUrl);
-            
-            // Stop and restart the web server
-            webServer.stop();
-            debugLogger.debug("WebServer stopped, waiting for cleanup");
-            Thread.sleep(1000);
-            
-            webServer.start();
-            debugLogger.debug("WebServer restarted, waiting for readiness");
-            Thread.sleep(2000);
-            
-            // Reload the page if we have a URL
-            if (currentUrl != null && !currentUrl.isEmpty() && browser.getCefBrowser() != null) {
-                browser.getCefBrowser().loadURL(currentUrl);
-                debugLogger.debug("Page reloaded after WebServer restart");
-            }
-            
-            debugLogger.logRecoveryAttempt("webServerRestart", "connection", true, "Server restarted successfully");
+
+            // Stop and restart the web server on a pooled thread to avoid blocking EDT
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    webServer.stop();
+                    debugLogger.debug("WebServer stopped, waiting for cleanup");
+                    Thread.sleep(1000);
+
+                    webServer.start();
+                    debugLogger.debug("WebServer restarted, waiting for readiness");
+                    Thread.sleep(2000);
+
+                    // Reload the page on EDT
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            if (currentUrl != null && !currentUrl.isEmpty() && browser.getCefBrowser() != null) {
+                                browser.getCefBrowser().loadURL(currentUrl);
+                                debugLogger.debug("Page reloaded after WebServer restart");
+                            }
+                        } catch (Exception e) {
+                            debugLogger.error("Page reload after WebServer restart failed", e);
+                        }
+                    });
+                } catch (Exception e) {
+                    debugLogger.error("WebServer restart recovery failed in background", e);
+                }
+            });
+
+            debugLogger.logRecoveryAttempt("webServerRestart", "connection", true, "Server restart initiated");
             return true;
-            
+
         } catch (Exception e) {
             debugLogger.error("WebServer restart recovery failed", e);
             debugLogger.logRecoveryAttempt("webServerRestart", "connection", false, e.getMessage());
@@ -410,18 +423,21 @@ public class WebViewRecoveryStrategies {
     private boolean attemptForceRefresh() {
         long startTime = System.currentTimeMillis();
         debugLogger.debug("Attempting force refresh recovery (last resort)");
-        
+
         try {
-            // Combine multiple approaches
             boolean repaintResult = attemptRepaintRecovery();
-            Thread.sleep(500);
-            boolean reloadResult = attemptReloadRecovery();
-            
-            boolean success = repaintResult || reloadResult;
-            debugLogger.logRecoveryAttempt("forceRefresh", "lastResort", success, 
-                                          "repaint=" + repaintResult + ", reload=" + reloadResult);
-            return success;
-            
+
+            // Schedule reload after a short delay using a timer instead of Thread.sleep
+            Timer delayedReload = new Timer(500, e -> {
+                boolean reloadResult = attemptReloadRecovery();
+                debugLogger.logRecoveryAttempt("forceRefresh", "lastResort", repaintResult || reloadResult,
+                                              "repaint=" + repaintResult + ", reload=" + reloadResult);
+            });
+            delayedReload.setRepeats(false);
+            delayedReload.start();
+
+            return repaintResult; // Return immediate repaint result; reload is async
+
         } catch (Exception e) {
             debugLogger.error("Force refresh recovery failed", e);
             debugLogger.logRecoveryAttempt("forceRefresh", "lastResort", false, e.getMessage());
