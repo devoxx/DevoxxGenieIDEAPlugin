@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -16,6 +17,11 @@ class McpRequestLoggingInterceptor implements Interceptor {
 
     private static final Logger log = LoggerFactory.getLogger(McpRequestLoggingInterceptor.class);
     private static final Logger trafficLog = LoggerFactory.getLogger("MCP");
+    private final Consumer<String> trafficConsumer;
+
+    McpRequestLoggingInterceptor(Consumer<String> trafficConsumer) {
+        this.trafficConsumer = trafficConsumer;
+    }
 
     @Override
     public Response intercept(Chain chain) throws IOException {
@@ -32,6 +38,9 @@ class McpRequestLoggingInterceptor implements Interceptor {
                     request.url(),
                     getHeaders(request.headers()),
                     getBody(request));
+            if (trafficConsumer != null) {
+                trafficConsumer.accept("> " + getBody(request));
+            }
         } catch (Exception e) {
             log.warn("Error while logging request: {}", e.getMessage());
         }

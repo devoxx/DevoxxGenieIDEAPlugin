@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class SseEventListener extends EventSourceListener {
 
@@ -22,16 +23,19 @@ public class SseEventListener extends EventSourceListener {
     private final CompletableFuture<String> initializationFinished;
     private final McpOperationHandler messageHandler;
     private final Runnable onFailure;
+    private final Consumer<String> trafficConsumer;
 
     public SseEventListener(
             McpOperationHandler messageHandler,
             boolean logEvents,
             CompletableFuture initializationFinished,
-            Runnable onFailure) {
+            Runnable onFailure,
+            Consumer<String> trafficConsumer) {
         this.messageHandler = messageHandler;
         this.logEvents = logEvents;
         this.initializationFinished = initializationFinished;
         this.onFailure = onFailure;
+        this.trafficConsumer = trafficConsumer;
     }
 
     @Override
@@ -44,6 +48,9 @@ public class SseEventListener extends EventSourceListener {
         if (type.equals("message")) {
             if (logEvents) {
                 trafficLog.info("< {}", data);
+                if (trafficConsumer != null) {
+                    trafficConsumer.accept("< " + data);
+                }
             }
             try {
                 JsonNode jsonNode = OBJECT_MAPPER.readTree(data);

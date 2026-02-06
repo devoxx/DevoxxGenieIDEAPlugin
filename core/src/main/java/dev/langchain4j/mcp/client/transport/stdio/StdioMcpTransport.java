@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class StdioMcpTransport implements McpTransport {
 
@@ -23,6 +24,7 @@ public class StdioMcpTransport implements McpTransport {
     private Process process;
     private ProcessIOHandler processIOHandler;
     private final boolean logEvents;
+    private final Consumer<String> trafficConsumer;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(StdioMcpTransport.class);
     private volatile McpOperationHandler messageHandler;
@@ -31,6 +33,7 @@ public class StdioMcpTransport implements McpTransport {
         this.command = builder.command;
         this.environment = builder.environment;
         this.logEvents = builder.logEvents;
+        this.trafficConsumer = builder.trafficConsumer;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class StdioMcpTransport implements McpTransport {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        processIOHandler = new ProcessIOHandler(process, messageHandler, logEvents);
+        processIOHandler = new ProcessIOHandler(process, messageHandler, logEvents, trafficConsumer);
         // FIXME: where should we obtain the thread?
         new Thread(processIOHandler).start();
         new Thread(new ProcessStderrHandler(process)).start();
@@ -130,6 +133,7 @@ public class StdioMcpTransport implements McpTransport {
         private List<String> command;
         private Map<String, String> environment;
         private boolean logEvents;
+        private Consumer<String> trafficConsumer;
 
         public Builder command(List<String> command) {
             this.command = command;
@@ -143,6 +147,11 @@ public class StdioMcpTransport implements McpTransport {
 
         public Builder logEvents(boolean logEvents) {
             this.logEvents = logEvents;
+            return this;
+        }
+
+        public Builder trafficConsumer(Consumer<String> trafficConsumer) {
+            this.trafficConsumer = trafficConsumer;
             return this;
         }
 

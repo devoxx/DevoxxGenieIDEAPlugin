@@ -19,6 +19,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static dev.langchain4j.internal.Utils.getOrDefault;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
@@ -30,6 +31,7 @@ public class HttpMcpTransport implements McpTransport {
     private final OkHttpClient client;
     private final boolean logResponses;
     private final boolean logRequests;
+    private final Consumer<String> trafficConsumer;
     private EventSource mcpSseEventListener;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private volatile Runnable onFailure;
@@ -46,8 +48,9 @@ public class HttpMcpTransport implements McpTransport {
         httpClientBuilder.readTimeout(timeout);
         httpClientBuilder.writeTimeout(timeout);
         this.logRequests = builder.logRequests;
+        this.trafficConsumer = builder.trafficConsumer;
         if (builder.logRequests) {
-            httpClientBuilder.addInterceptor(new McpRequestLoggingInterceptor());
+            httpClientBuilder.addInterceptor(new McpRequestLoggingInterceptor(trafficConsumer));
         }
         this.logResponses = builder.logResponses;
         sseUrl = ensureNotNull(builder.sseUrl, "Missing SSE endpoint URL");
@@ -140,7 +143,7 @@ public class HttpMcpTransport implements McpTransport {
         Request request = new Request.Builder().url(sseUrl).build();
         CompletableFuture<String> initializationFinished = new CompletableFuture<>();
         SseEventListener listener =
-                new SseEventListener(messageHandler, logResponses, initializationFinished, onFailure);
+                new SseEventListener(messageHandler, logResponses, initializationFinished, onFailure, trafficConsumer);
         EventSource eventSource = EventSources.createFactory(client).newEventSource(request, listener);
         // wait for the SSE channel to be created, receive the POST url from the server, throw an exception if that
         // failed
@@ -187,6 +190,7 @@ public class HttpMcpTransport implements McpTransport {
         private Duration timeout;
         private boolean logRequests = false;
         private boolean logResponses = false;
+        private Consumer<String> trafficConsumer;
 
         /**
          * The initial URL where to connect to the server and request a SSE
@@ -209,6 +213,11 @@ public class HttpMcpTransport implements McpTransport {
 
         public Builder logResponses(boolean logResponses) {
             this.logResponses = logResponses;
+            return this;
+        }
+
+        public Builder trafficConsumer(Consumer<String> trafficConsumer) {
+            this.trafficConsumer = trafficConsumer;
             return this;
         }
 

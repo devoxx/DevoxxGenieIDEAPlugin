@@ -1,10 +1,14 @@
 package com.devoxx.genie.service.mcp;
 
+import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
@@ -22,6 +26,7 @@ import java.io.File;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -200,13 +205,15 @@ public class MCPExecutionService implements Disposable {
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
+                    .trafficConsumer(createTrafficConsumer())
                     .build();
-            
+
             // Create and return the client
             return new DefaultMcpClient.Builder()
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
                     .transport(transport)
+                    .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .build();
 
@@ -241,6 +248,7 @@ public class MCPExecutionService implements Disposable {
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
+                    .logger(new MCPTrafficLogger(createTrafficConsumer()))
                     .build();
 
             // Create and return the client
@@ -248,6 +256,7 @@ public class MCPExecutionService implements Disposable {
                     .clientName("DevoxxGenie")
                     .protocolVersion("2024-11-05")
                     .transport(transport)
+                    .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .build();
 
@@ -293,6 +302,7 @@ public class MCPExecutionService implements Disposable {
                     .command(mcpCommand)
                     .environment(env)
                     .logEvents(MCPService.isDebugLogsEnabled())
+                    .trafficConsumer(createTrafficConsumer())
                     .build();
 
             // Create and return the client
@@ -309,6 +319,32 @@ public class MCPExecutionService implements Disposable {
             MCPService.logDebug("Failed to initialize stdio client with command: " + command + " - " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Creates a consumer that publishes raw JSON-RPC traffic lines to the
+     * MCP Log Panel via the application message bus.
+     * <p>
+     * Lines prefixed with {@code "> "} are outgoing requests (blue in the panel),
+     * lines prefixed with {@code "< "} are incoming responses (green in the panel).
+     */
+    private static Consumer<String> createTrafficConsumer() {
+        return line -> {
+            if (!MCPService.isDebugLogsEnabled()) {
+                return;
+            }
+            try {
+                MCPType type = line.startsWith("> ") ? MCPType.TOOL_MSG : MCPType.AI_MSG;
+                MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+                messageBus.syncPublisher(AppTopics.MCP_TRAFFIC_MSG)
+                        .onMCPLoggingMessage(MCPMessage.builder()
+                                .type(type)
+                                .content(line)
+                                .build());
+            } catch (Exception e) {
+                log.error("Error publishing MCP traffic to message bus", e);
+            }
+        };
     }
 
     public static @NotNull List<String> createMCPCommand(@NotNull List<String> command) {
