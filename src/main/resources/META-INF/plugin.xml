@@ -35,7 +35,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v0.8.1</h2>
+        <h2>v0.9.0</h2>
         <UL>
             <LI>Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal</LI>
             <LI>MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error</LI>
