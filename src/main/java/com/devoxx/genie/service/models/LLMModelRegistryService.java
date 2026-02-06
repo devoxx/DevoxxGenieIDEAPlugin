@@ -40,67 +40,6 @@ public final class LLMModelRegistryService {
 
     private void addAnthropicModels() {
 
-        // Available until October 2025
-        String claudeHaiku35 = CLAUDE_3_5_HAIKU_20241022.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claudeHaiku35,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claudeHaiku35)
-                        .displayName("Claude 3.5 Haiku (20241022)")
-                        .inputCost(1)
-                        .outputCost(5)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String claudeSonnet37 = CLAUDE_3_7_SONNET_20250219.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claudeSonnet37,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claudeSonnet37)
-                        .displayName("Claude 3.7 Sonnet (20250219)")
-                        .inputCost(3)
-                        .outputCost(15)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String claude4Opus = CLAUDE_OPUS_4_20250514.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude4Opus,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claude4Opus)
-                        .displayName("Claude 4 Opus (20250514)")
-                        .inputCost(15)
-                        .outputCost(75)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String claude4Sonnet = CLAUDE_SONNET_4_20250514.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude4Sonnet,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claude4Sonnet)
-                        .displayName("Claude 4 Sonnet (20250514)")
-                        .inputCost(3)
-                        .outputCost(15)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
-        String claude41Opus = CLAUDE_OPUS_4_1_20250805.toString();
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude41Opus,
-                LanguageModel.builder()
-                        .provider(ModelProvider.Anthropic)
-                        .modelName(claude41Opus)
-                        .displayName("Claude 4.1 Opus (20250514)")
-                        .inputCost(15)
-                        .outputCost(75)
-                        .inputMaxTokens(200_000)
-                        .apiKeyUsed(true)
-                        .build());
-
         String claude45Haiku = CLAUDE_HAIKU_4_5_20251001.toString();
         models.put(ModelProvider.Anthropic.getName() + "-" + claude45Haiku,
                 LanguageModel.builder()
