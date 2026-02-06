@@ -5,6 +5,9 @@ import com.devoxx.genie.ui.settings.mcp.dialog.transport.HttpSseTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.StdioTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.StreamableHttpTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.TransportPanel;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -248,17 +251,19 @@ public class MCPServerDialog extends DialogWrapper {
     }
     
     /**
-     * Test the connection to the MCP server and fetch tools
+     * Test the connection to the MCP server and fetch tools.
+     * Runs in a background thread with a cancellable progress dialog
+     * so the IDE stays responsive during potentially long-running connections.
      */
     private void testConnection() {
         // Get the current transport panel
         MCPServer.TransportType selectedTransport = (MCPServer.TransportType) transportTypeCombo.getSelectedItem();
         TransportPanel panel = transportPanels.get(selectedTransport);
-        
+
         if (panel == null) {
             return;
         }
-        
+
         // Validate required fields
         if (!panel.isValid()) {
             ErrorDialogUtil.showErrorDialog(
@@ -269,59 +274,91 @@ public class MCPServerDialog extends DialogWrapper {
             );
             return;
         }
-        
-        // Disable button and show connecting status
+
+        // Disable button while test is in progress
         testConnectionButton.setEnabled(false);
         testConnectionButton.setText("Connecting...");
-        
-        // Try to connect and fetch tools
+
+        // Capture field values on EDT before background work
+        String serverName = nameField.getText().trim();
+
+        // Use single-element arrays to pass results out of the background runnable
+        final MCPServer[] result = {null};
+        final Exception[] error = {null};
+        final int[] toolCount = {0};
+        boolean cancelled = false;
+
         try {
-            // Create client
-            McpClient mcpClient = panel.createClient();
-            
-            // Get available tools
-            List<ToolSpecification> tools = mcpClient.listTools();
-            
-            // Create server builder
-            MCPServer.MCPServerBuilder builder = MCPServer.builder()
-                    .name(nameField.getText().trim());
-            
-            // Apply settings from transport panel
-            panel.applySettings(builder);
-            
-            // Process tool specifications
-            panel.processTools(tools, builder);
-            
-            // Build the server
-            if (existingServer != null) {
-                // Preserve environment variables from existing server
-                builder.env(new HashMap<>(existingServer.getEnv()));
-            }
-            
-            // Save the server
-            server = builder.build();
-            
-            // Close the client
-            mcpClient.close();
-            
-            // Show success message
-            testConnectionButton.setText("Connection Successful! " + tools.size() + " tools found");
-            
-        } catch (Exception ex) {
-            log.error("Failed to connect to MCP server", ex);
-            
-            // Show error message
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+                ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+                McpClient mcpClient = null;
+
+                try {
+                    // Step 1: Create client
+                    indicator.setText("Connecting to MCP server...");
+                    indicator.setIndeterminate(true);
+                    mcpClient = panel.createClient();
+
+                    indicator.checkCanceled();
+
+                    // Step 2: Fetch tools
+                    indicator.setText("Fetching available tools...");
+                    List<ToolSpecification> tools = mcpClient.listTools();
+
+                    indicator.checkCanceled();
+
+                    // Step 3: Build server configuration
+                    indicator.setText("Processing tool specifications...");
+                    MCPServer.MCPServerBuilder builder = MCPServer.builder()
+                            .name(serverName);
+
+                    panel.applySettings(builder);
+                    panel.processTools(tools, builder);
+
+                    if (existingServer != null) {
+                        builder.env(new HashMap<>(existingServer.getEnv()));
+                    }
+
+                    result[0] = builder.build();
+                    toolCount[0] = tools.size();
+
+                } catch (ProcessCanceledException e) {
+                    throw e; // Let ProgressManager handle cancellation
+                } catch (Exception ex) {
+                    error[0] = ex;
+                } finally {
+                    // Always close the client to prevent resource leaks
+                    if (mcpClient != null) {
+                        try {
+                            mcpClient.close();
+                        } catch (Exception closeEx) {
+                            log.warn("Failed to close MCP client", closeEx);
+                        }
+                    }
+                }
+            }, "Testing MCP Connection", true, null);
+        } catch (ProcessCanceledException e) {
+            cancelled = true;
+        }
+
+        // Back on EDT — update UI based on outcome
+        if (cancelled) {
+            testConnectionButton.setText("Connection Test Cancelled");
+        } else if (error[0] != null) {
+            log.error("Failed to connect to MCP server", error[0]);
             ErrorDialogUtil.showErrorDialog(
                     getContentPanel(),
                     "Connection Failed",
                     "Failed to connect to MCP server",
-                    ex
+                    error[0]
             );
-            
             testConnectionButton.setText("Connection Failed - Try Again");
-        } finally {
-            testConnectionButton.setEnabled(true);
+        } else {
+            server = result[0];
+            testConnectionButton.setText("Connection Successful! " + toolCount[0] + " tools found");
         }
+
+        testConnectionButton.setEnabled(true);
     }
     
     /**
