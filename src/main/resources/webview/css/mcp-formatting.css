@@ -195,6 +195,42 @@
     color: var(--thinking-text, #e0e0e0);
 }
 
+/* =============================================
+   MCP Activity Section Positioning Styles
+   ============================================= */
+
+/* Non-streaming mode: MCP activity section between user prompt and AI response */
+.mcp-activity-section {
+    display: none; /* Hidden when empty */
+    margin: 8px 0;
+    border-left: 3px solid #FF5400;
+    border-radius: 4px;
+}
+
+.mcp-activity-section:not(:empty) {
+    display: block;
+}
+
+/* Streaming mode: MCP activity inline at top of assistant message */
+.mcp-inline {
+    border-bottom: 2px solid #FF5400;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+/* Completed MCP logs - both modes */
+.mcp-completed {
+    padding-top: 8px;
+    opacity: 0.85;
+}
+
+.mcp-completed .mcp-header::after {
+    content: " (completed)";
+    font-size: 0.85em;
+    font-weight: normal;
+    color: #757575;
+}
+
 /* Variable colors based on theme */
 :root {
     --tool-msg-bg: #f8f9fa;

@@ -350,6 +350,15 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     public void updateAiMessageContent(ChatMessageContext chatMessageContext) {
         aiMessageUpdater.updateAiMessageContent(chatMessageContext);
     }
+
+    /**
+     * Mark MCP logs as completed for the given message.
+     *
+     * @param messageId The ID of the message
+     */
+    public void markMCPLogsAsCompleted(String messageId) {
+        WebViewUIHelper.markMCPLogsAsCompleted(jsExecutor, messageId);
+    }
     
     /**
      * Execute JavaScript in the browser.

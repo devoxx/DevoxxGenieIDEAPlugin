@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.webview.handler;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,10 +11,12 @@ import org.jetbrains.annotations.Nullable;
  */
 @Slf4j
 public class WebViewUIHelper {
-    
+
     /**
      * Marks the MCP logs as completed but keeps them visible.
-     * Instead of hiding the loading indicator, this method adds a CSS class to indicate completion.
+     * Handles both streaming and non-streaming modes:
+     * - Non-streaming: adds .mcp-completed class to mcp-{messageId} (separate section between user and assistant)
+     * - Streaming: adds .mcp-completed class to the loading indicator (at top of assistant-message)
      *
      * @param jsExecutor The JavaScript executor used to run the JavaScript code
      * @param messageId The ID of the message
@@ -22,38 +25,50 @@ public class WebViewUIHelper {
         if (!jsExecutor.isLoaded() || messageId == null) {
             return;
         }
-        
+
         log.debug("Marking MCP logs as completed for message ID: {}", messageId);
-        
-        // We're not hiding the indicator anymore, as we want to preserve MCP logs
-        // Instead, we'll just mark it as completed and ensure it's properly positioned
-        String js = "try {\n" +
-                    "  const indicator = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');\n" +
-                    "  if (indicator) {\n" +
+
+        boolean isStreaming = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode());
+        String escapedMessageId = jsExecutor.escapeJS(messageId);
+
+        String js;
+        if (isStreaming) {
+            // Streaming: mark the loading indicator (which has mcp-inline class) as completed
+            // Keep it at the top of assistant-message, do NOT reposition
+            js = "try {\n" +
+                    "  const indicator = document.getElementById('loading-" + escapedMessageId + "');\n" +
+                    "  if (indicator && indicator.querySelector('.mcp-outer-container')) {\n" +
                     "    indicator.classList.add('mcp-completed');\n" +
-                    "    // Ensure the MCP logs are properly positioned after the AI response content\n" +
-                    "    const assistantMessage = indicator.parentElement;\n" +
-                    "    if (assistantMessage) {\n" +
-                    "      assistantMessage.appendChild(indicator);\n" +
-                    "    }\n" +
-                    "  } else {\n" +
-                    "    const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');\n" +
+                    "  }\n" +
+                    "  if (!indicator) {\n" +
+                    "    const messagePair = document.getElementById('" + escapedMessageId + "');\n" +
                     "    if (messagePair) {\n" +
-                    "      const loadingIndicator = messagePair.querySelector('.loading-indicator');\n" +
-                    "      if (loadingIndicator) {\n" +
-                    "        loadingIndicator.classList.add('mcp-completed');\n" +
-                    "        // Ensure the MCP logs are properly positioned after the AI response content\n" +
-                    "        const assistantMessage = loadingIndicator.parentElement;\n" +
-                    "        if (assistantMessage) {\n" +
-                    "          assistantMessage.appendChild(loadingIndicator);\n" +
-                    "        }\n" +
+                    "      const li = messagePair.querySelector('.loading-indicator');\n" +
+                    "      if (li && li.querySelector('.mcp-outer-container')) {\n" +
+                    "        li.classList.add('mcp-completed');\n" +
                     "      }\n" +
                     "    }\n" +
                     "  }\n" +
                     "} catch (error) {\n" +
                     "  console.error('Error updating loading indicator:', error);\n" +
                     "}\n";
-        
+        } else {
+            // Non-streaming: mark the separate mcp-{messageId} section as completed
+            js = "try {\n" +
+                    "  const mcpSection = document.getElementById('mcp-" + escapedMessageId + "');\n" +
+                    "  if (mcpSection && mcpSection.querySelector('.mcp-outer-container')) {\n" +
+                    "    mcpSection.classList.add('mcp-completed');\n" +
+                    "  }\n" +
+                    "  // Also hide the loading indicator since MCP is in separate section\n" +
+                    "  const indicator = document.getElementById('loading-" + escapedMessageId + "');\n" +
+                    "  if (indicator) {\n" +
+                    "    indicator.style.display = 'none';\n" +
+                    "  }\n" +
+                    "} catch (error) {\n" +
+                    "  console.error('Error updating MCP section:', error);\n" +
+                    "}\n";
+        }
+
         jsExecutor.executeJavaScript(js);
     }
 }
