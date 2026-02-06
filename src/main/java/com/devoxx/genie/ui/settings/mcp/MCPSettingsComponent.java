@@ -134,29 +134,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
         });
 
-        JButton githubMCPButton = new JButton("GitHub MCP", AllIcons.Vcs.Vendors.Github);
-        githubMCPButton.addActionListener(e -> {
-            try {
-                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/GitHubMCP"));
-            } catch (Exception ex) {
-                log.error(ex.getMessage());
-            }
-        });
-
-        JButton fileSystemMCPButton = new JButton("FileSystem MCP", AllIcons.General.OpenDisk);
-        fileSystemMCPButton.addActionListener(e -> {
-            try {
-                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/MCPJavaFileSystem"));
-            } catch (Exception ex) {
-                log.error(ex.getMessage());
-            }
-        });
-
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.add(marketplaceButton);
         buttonPanel.add(infoButton);
-        buttonPanel.add(githubMCPButton);
-        buttonPanel.add(fileSystemMCPButton);
         return buttonPanel;
     }
 
