@@ -13,6 +13,18 @@ All notable changes to this project will be documented in this file.
 - Fix MCP debug logging: show JSON-RPC traffic in MCP Logs panel (#829)
 - Fix welcome text not cleared on first chat message (#825)
 
+### Dependencies
+- Bump gradle-dependencies group with 12 updates (#823)
+  - dev.langchain4j beta dependencies from 1.10.0-beta18 to 1.11.0-beta19 (web-search-engine-google-custom, web-search-engine-tavily, chroma, mcp, reactor)
+  - software.amazon.awssdk:bom from 2.41.0 to 2.41.23
+  - org.commonmark:commonmark from 0.27.0 to 0.27.1
+  - io.netty:netty-all from 4.2.9.Final to 4.2.10.Final
+  - ch.qos.logback:logback-classic from 1.5.23 to 1.5.27
+  - org.junit.platform:junit-platform-launcher from 6.0.1 to 6.0.2
+  - org.junit.jupiter:junit-jupiter-params from 6.0.1 to 6.0.2
+  - org.assertj:assertj-core from 3.27.6 to 3.27.7
+  - gradle-wrapper from 8.11.1 to 8.13
+
 ## [0.8.0]
 
 ### Added
