@@ -99,7 +99,7 @@ When configured correctly you can see the tools that the MCP brings to your LLM 
 
 [Agentic Magic in action](https://www.youtube.com/watch?v=T3o6t8tjoq4) 👀✨🧠
 
-### 🗂️ DEVOXXGENIE.md (from v0.5.0 onwards)
+### 🗂️ DEVOXXGENIE.md
 
 You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page or just use /init in the prompt input field.
 
