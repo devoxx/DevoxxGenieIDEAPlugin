@@ -184,7 +184,7 @@ public class NonStreamingPromptExecutionService {
                         assistant = AiServices.builder(Assistant.class)
                                 .chatModel(chatModel)
                                 .chatMemoryProvider(memoryId -> chatMemory)
-                                .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
+                                .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
                                 .toolProvider(mcpToolProvider)
                                 .build();
                     }
@@ -225,7 +225,7 @@ public class NonStreamingPromptExecutionService {
         return AiServices.builder(Assistant.class)
                 .chatModel(chatModel)
                 .chatMemoryProvider(memoryId -> chatMemory)
-                .systemMessageProvider(memoryId -> DevoxxGenieStateService.getInstance().getSystemPrompt())
+                .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
                 .build();
     }
 
