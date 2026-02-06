@@ -38,6 +38,11 @@
         <h2>v0.9.1</h2>
         <UL>
             <LI>Issue #791: Fix exception when attaching source code containing triple braces ({{{ }}})</LI>
+            <LI>Add MCP server marketplace for browsing and installing MCP servers</LI>
+            <LI>Add location and type filters to the MCP marketplace dialog</LI>
+            <LI>Add support for custom headers in HTTP MCP transports for authentication</LI>
+            <LI>Refactor MCP integration to use the official langchain4j-mcp artifact (remove core sub-module)</LI>
+            <LI>Remove legacy GitHub MCP and FileSystem MCP quick-action buttons from settings</LI>
         </UL>
         <h2>v0.9.0</h2>
         <UL>

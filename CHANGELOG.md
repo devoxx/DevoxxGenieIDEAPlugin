@@ -2,6 +2,20 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1]
+
+### Added
+- Add MCP server marketplace for browsing and installing MCP servers (#835)
+- Add location and type filters to the MCP marketplace dialog (#835)
+- Add support for custom headers in HTTP MCP transports for authentication (#835)
+
+### Changed
+- Refactor MCP integration to remove the core sub-module and use the official `langchain4j-mcp` artifact (#835)
+- Remove legacy GitHub MCP and FileSystem MCP quick-action buttons from settings in favor of marketplace-driven setup (#835)
+
+### Fixed
+- Issue #791: Escape triple braces in user content to prevent template variable exception (#834)
+
 ## [0.9.0]
 
 ### Added
