@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.CodeLanguageUtil;
 import com.devoxx.genie.util.ThreadUtils;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,12 +26,12 @@ public class WebViewAIMessageUpdater {
 
     private final WebViewJavaScriptExecutor jsExecutor;
     private final AtomicBoolean initialized;
-    
+
     public WebViewAIMessageUpdater(WebViewJavaScriptExecutor jsExecutor, AtomicBoolean initialized) {
         this.jsExecutor = jsExecutor;
         this.initialized = initialized;
     }
-    
+
     /**
      * Updates just the AI response part of an existing message in the conversation view.
      * Used for streaming responses to avoid creating multiple message pairs.
@@ -42,7 +43,7 @@ public class WebViewAIMessageUpdater {
             log.warn("No AI message to update for context: {}", chatMessageContext.getId());
             return;
         }
-        
+
         if (!jsExecutor.isLoaded()) {
             log.warn("Browser not loaded yet, waiting before updating message");
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -51,39 +52,39 @@ public class WebViewAIMessageUpdater {
             });
         } else {
             doUpdateAiMessageContent(chatMessageContext);
-            
-            // Mark MCP logs as completed but keep them visible
-            WebViewUIHelper.markMCPLogsAsCompleted(jsExecutor, chatMessageContext.getId());
         }
     }
-    
+
     /**
      * Performs the actual update of just the AI response content.
-     * 
+     * Handles streaming and non-streaming modes differently:
+     * - Non-streaming: MCP activity is in a separate sibling div (mcp-{id}), just set assistant content
+     * - Streaming: Put MCP activity at top of assistant-message with mcp-inline class
+     *
      * @param chatMessageContext The chat message context
      */
     private void doUpdateAiMessageContent(@NotNull ChatMessageContext chatMessageContext) {
         String messageId = chatMessageContext.getId();
-        
+
         // Parse and render the markdown content
         Parser markdownParser = Parser.builder().build();
         HtmlRenderer htmlRenderer = HtmlRenderer.builder().escapeHtml(true).build();
-        
+
         String aiMessageText = chatMessageContext.getAiMessage() == null ? "" : chatMessageContext.getAiMessage().text();
         Node document = markdownParser.parse(aiMessageText);
-        
+
         StringBuilder contentHtml = new StringBuilder();
-        
+
         // Format metadata information
         LocalDateTime dateTime = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM ''yy HH:mm");
         String timestamp = dateTime.format(formatter);
-        
+
         String modelName = "Unknown";
         if (chatMessageContext.getLanguageModel() != null) {
             modelName = chatMessageContext.getLanguageModel().getModelName();
         }
-        
+
         // Add metadata div
         contentHtml.append("<div class=\"metadata-info\">")
                 .append(timestamp)
@@ -94,7 +95,7 @@ public class WebViewAIMessageUpdater {
                 )
                 .append("</div>")
                 .append("<button class=\"copy-response-button\" onclick=\"copyMessageResponse(this)\"><img src=\"/icons/copy.svg\" alt=\"Copy\" class=\"copy-icon\"></button>");
-        
+
         // Add content
         Node node = document.getFirstChild();
         while (node != null) {
@@ -116,29 +117,56 @@ public class WebViewAIMessageUpdater {
             }
             node = node.getNext();
         }
-        
-        // JavaScript to update just the assistant message content
-        String js = "try {" +
-                "  const thinkingText = document.getElementById('loading-" + jsExecutor.escapeJS(messageId) + "');" +
-                "  if (thinkingText) thinkingText.style.display = 'none';" +
-                "  const messagePair = document.getElementById('" + jsExecutor.escapeJS(messageId) + "');" +
-                   "  if (messagePair) {" +
-                   "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
-                   "    if (assistantMessage) {" +
-                   "      const loadingIndicator = assistantMessage.querySelector('.loading-indicator');" +
-                   "      const loadingIndicatorHtml = loadingIndicator ? loadingIndicator.outerHTML : '';" +
-                   "      assistantMessage.innerHTML = `" + jsExecutor.escapeJS(contentHtml.toString()) + "` + loadingIndicatorHtml;" +
-                   "      window.scrollTo(0, document.body.scrollHeight);" +
-                   "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
-                   "    } else {" +
-                   "      console.error('Assistant message element not found in message pair');" +
-                   "    }" +
-                   "  } else {" +
-                   "    console.error('Message pair not found: " + jsExecutor.escapeJS(messageId) + "');" +
-                   "  }" +
-                   "} catch (error) {" +
-                   "  console.error('Error updating AI message:', error);" +
-                   "}";
+
+        boolean isStreaming = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode());
+        String escapedContent = jsExecutor.escapeJS(contentHtml.toString());
+        String escapedMessageId = jsExecutor.escapeJS(messageId);
+
+        // Build mode-aware JavaScript to update the assistant message content
+        String js;
+        if (isStreaming) {
+            // Streaming: preserve MCP activity at top of assistant-message with mcp-inline class
+            js = "try {" +
+                    "  const messagePair = document.getElementById('" + escapedMessageId + "');" +
+                    "  if (messagePair) {" +
+                    "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
+                    "    if (assistantMessage) {" +
+                    "      const loadingIndicator = assistantMessage.querySelector('.loading-indicator');" +
+                    "      const hasMcpContent = loadingIndicator && loadingIndicator.querySelector('.mcp-outer-container');" +
+                    "      if (hasMcpContent) {" +
+                    "        loadingIndicator.classList.add('mcp-inline');" +
+                    "        loadingIndicator.style.display = 'block';" +
+                    "        const mcpHtml = loadingIndicator.outerHTML;" +
+                    "        assistantMessage.innerHTML = mcpHtml + `" + escapedContent + "`;" +
+                    "      } else {" +
+                    "        if (loadingIndicator) loadingIndicator.style.display = 'none';" +
+                    "        assistantMessage.innerHTML = `" + escapedContent + "`;" +
+                    "      }" +
+                    "      window.scrollTo(0, document.body.scrollHeight);" +
+                    "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                    "    }" +
+                    "  }" +
+                    "} catch (error) {" +
+                    "  console.error('Error updating AI message:', error);" +
+                    "}";
+        } else {
+            // Non-streaming: MCP activity is in separate mcp-{id} div, just set content directly
+            js = "try {" +
+                    "  const thinkingText = document.getElementById('loading-" + escapedMessageId + "');" +
+                    "  if (thinkingText) thinkingText.style.display = 'none';" +
+                    "  const messagePair = document.getElementById('" + escapedMessageId + "');" +
+                    "  if (messagePair) {" +
+                    "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
+                    "    if (assistantMessage) {" +
+                    "      assistantMessage.innerHTML = `" + escapedContent + "`;" +
+                    "      window.scrollTo(0, document.body.scrollHeight);" +
+                    "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
+                    "    }" +
+                    "  }" +
+                    "} catch (error) {" +
+                    "  console.error('Error updating AI message:', error);" +
+                    "}";
+        }
 
         log.info("Executing JavaScript to update AI message");
         jsExecutor.executeJavaScript(js);
@@ -167,37 +195,45 @@ public class WebViewAIMessageUpdater {
     /**
      * Performs the actual operation of adding a user message to the conversation.
      * This creates a message pair with just the user's message and a loading indicator for the AI response.
+     * In non-streaming mode, a separate MCP activity section is added between user and assistant messages.
      *
      * @param chatMessageContext The chat message context
      */
     private void doAddUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
         // Create a div for the message pair with the user message and an empty assistant message
         String messageId = chatMessageContext.getId();
-        
+
         String userPrompt = chatMessageContext.getUserPrompt() == null ? "" : chatMessageContext.getUserPrompt();
-        
+
         // Parse and render the user message as markdown
         Parser markdownParser = Parser.builder().build();
         HtmlRenderer htmlRenderer = HtmlRenderer.builder().escapeHtml(true).build();
         Node userDocument = markdownParser.parse(userPrompt);
         String userMessageContent = htmlRenderer.render(userDocument);
-        
+
         // Format the user message as HTML
         String userMessage = "<div class=\"user-message\">" + userMessageContent + "</div>";
-        
+
+        boolean isStreaming = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode());
+
         // Format the AI message placeholder with a loading indicator that shows MCP will be displayed
-        String aiMessagePlaceholder = "<div class=\"assistant-message\"><div class=\"loading-indicator\" id=\"loading-" 
+        String aiMessagePlaceholder = "<div class=\"assistant-message\"><div class=\"loading-indicator\" id=\"loading-"
                 + jsExecutor.escapeHtml(messageId) + "\">Thinking...</div></div>";
-        
+
+        // For non-streaming mode, add a separate MCP activity section between user and assistant messages
+        String mcpSection = "";
+        if (!isStreaming) {
+            mcpSection = "<div class=\"mcp-activity-section\" id=\"mcp-" + jsExecutor.escapeHtml(messageId) + "\"></div>";
+        }
+
         // Create the complete message pair HTML
-        String messagePairHtml = 
+        String messagePairHtml =
                 "<div class=\"message-pair\" id=\"" + jsExecutor.escapeHtml(messageId) + "\">\n" +
                 userMessage + "\n" +
+                mcpSection + "\n" +
                 aiMessagePlaceholder + "\n" +
                 "</div>";
-                
-        // Apply a CSS class to ensure proper spacing when this is the first message
-        
+
         // JavaScript to add the message to the conversation
         // First check if the message ID already exists to avoid duplicates
         String js = "try {\n" +

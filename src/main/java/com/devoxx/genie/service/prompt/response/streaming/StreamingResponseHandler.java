@@ -111,6 +111,8 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
                     } else {
                         conversationWebViewController.addChatMessage(context);
                     }
+                    // Mark MCP logs as completed now that streaming is finished
+                    conversationWebViewController.markMCPLogsAsCompleted(context.getId());
                 });
             }
 

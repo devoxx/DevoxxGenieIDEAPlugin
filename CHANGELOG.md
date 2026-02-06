@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Add Claude Code GitHub Workflow (#827)
 
+### Improved
+- Reposition MCP Activity in conversation view: shown between user prompt and AI response in non-streaming mode, at the top of the response in streaming mode
+- Filter MCP Activity to only show tool calls and log messages, excluding redundant full AI responses
+
 ### Fixed
 - Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal (#824)
 - MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error (#826)
