@@ -53,9 +53,6 @@ dependencies {
     val lg4j_version = "1.10.0"
     var lg4j_beta_version = "1.11.0-beta19"
 
-    // Add the dependencies for the core module
-    implementation(project(":core"))
-
     // Langchain4J dependencies
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-core:${lg4j_version}")
