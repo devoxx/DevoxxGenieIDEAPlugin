@@ -2,6 +2,20 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.2]
+
+### Added
+- Add dedicated **Skills** settings dialog for custom user-defined skills
+- Add `$ARGUMENT` placeholder support in custom skill templates (injects everything typed after `/skill-name`)
+
+### Changed
+- Keep **Prompts** settings focused on system instruction, DEVOXXGENIE.md options, and keyboard shortcuts
+- Update welcome screen wording to Skills terminology and highlight MCP Marketplace first
+
+### Fixed
+- Show resolved custom skill prompt in the user message bubble instead of raw `/command`
+- Migrate legacy HTTP/SSE MCP transport usage to `StreamableHttpMcpTransport` (removes deprecated-for-removal API usage)
+
 ## [0.9.1]
 
 ### Added
