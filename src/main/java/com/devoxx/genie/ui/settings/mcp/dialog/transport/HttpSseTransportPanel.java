@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.Duration;
+import java.util.Map;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -91,28 +92,33 @@ public class HttpSseTransportPanel implements TransportPanel {
     }
 
     @Override
-    public McpClient createClient() throws Exception {
+    public McpClient createClient(Map<String, String> headers) throws Exception {
         String sseUrl = sseUrlField.getText().trim();
-        
+
         // Validate URL
         if (sseUrl.isEmpty()) {
             throw new IllegalArgumentException("SSE URL cannot be empty");
         }
-        
+
         if (!sseUrl.startsWith("http://") && !sseUrl.startsWith("https://")) {
             throw new IllegalArgumentException("SSE URL must start with http:// or https://");
         }
-        
+
         log.debug("Creating HTTP SSE transport with URL: {}", sseUrl);
-        
+
         // Create the transport
-        HttpMcpTransport transport = new HttpMcpTransport.Builder()
+        HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
                 .sseUrl(sseUrl)
                 .timeout(Duration.ofSeconds(60))
                 .logRequests(true)
-                .logResponses(true)
-                .build();
-        
+                .logResponses(true);
+
+        if (headers != null && !headers.isEmpty()) {
+            transportBuilder.customHeaders(headers);
+        }
+
+        HttpMcpTransport transport = transportBuilder.build();
+
         // Create and return the client
         return new DefaultMcpClient.Builder()
                 .clientName("DevoxxGenie")

@@ -4,6 +4,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.Duration;
+import java.util.Map;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 
 /**
@@ -93,28 +93,33 @@ public class StreamableHttpTransportPanel implements TransportPanel {
     }
 
     @Override
-    public McpClient createClient() throws Exception {
+    public McpClient createClient(Map<String, String> headers) throws Exception {
         String url = urlField.getText().trim();
-        
+
         // Validate URL
         if (url.isEmpty()) {
             throw new IllegalArgumentException("HTTP URL cannot be empty");
         }
-        
+
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             throw new IllegalArgumentException("HTTP URL must start with http:// or https://");
         }
-        
+
         log.debug("Creating Streamable HTTP transport with URL: {}", url);
-        
+
         // Create the transport
-        McpTransport transport = new StreamableHttpMcpTransport.Builder()
+        StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
                 .url(url)
                 .timeout(Duration.ofSeconds(60))
                 .logRequests(true)
-                .logResponses(true)
-                .build();
-        
+                .logResponses(true);
+
+        if (headers != null && !headers.isEmpty()) {
+            transportBuilder.customHeaders(headers);
+        }
+
+        McpTransport transport = transportBuilder.build();
+
         // Create and return the client
         return new DefaultMcpClient.Builder()
                 .clientName("DevoxxGenie")

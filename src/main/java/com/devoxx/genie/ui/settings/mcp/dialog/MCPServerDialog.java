@@ -294,10 +294,12 @@ public class MCPServerDialog extends DialogWrapper {
                 McpClient mcpClient = null;
 
                 try {
-                    // Step 1: Create client
+                    // Step 1: Create client (pass headers from existing server for auth)
                     indicator.setText("Connecting to MCP server...");
                     indicator.setIndeterminate(true);
-                    mcpClient = panel.createClient();
+                    Map<String, String> headers = existingServer != null && existingServer.getHeaders() != null
+                            ? existingServer.getHeaders() : Map.of();
+                    mcpClient = panel.createClient(headers);
 
                     indicator.checkCanceled();
 
@@ -317,6 +319,9 @@ public class MCPServerDialog extends DialogWrapper {
 
                     if (existingServer != null) {
                         builder.env(new HashMap<>(existingServer.getEnv()));
+                        if (existingServer.getHeaders() != null && !existingServer.getHeaders().isEmpty()) {
+                            builder.headers(new HashMap<>(existingServer.getHeaders()));
+                        }
                     }
 
                     result[0] = builder.build();
@@ -377,19 +382,24 @@ public class MCPServerDialog extends DialogWrapper {
         // Otherwise create a new server from the UI fields
         MCPServer.TransportType selectedTransport = (MCPServer.TransportType) transportTypeCombo.getSelectedItem();
         TransportPanel panel = transportPanels.get(selectedTransport);
-        
+
         // Create builder with name
         MCPServer.MCPServerBuilder builder = MCPServer.builder()
                 .name(nameField.getText().trim());
-        
+
         // Apply transport settings
         if (panel != null) {
             panel.applySettings(builder);
         }
-        
+
         // Apply environment variables from the table
         builder.env(envVarTableModel.getEnvVars());
-        
+
+        // Preserve headers from existing server
+        if (existingServer != null && existingServer.getHeaders() != null && !existingServer.getHeaders().isEmpty()) {
+            builder.headers(new HashMap<>(existingServer.getHeaders()));
+        }
+
         return builder.build();
     }
     
