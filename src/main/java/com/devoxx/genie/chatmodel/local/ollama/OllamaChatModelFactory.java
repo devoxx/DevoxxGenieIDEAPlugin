@@ -24,26 +24,38 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
 
-        return OllamaChatModel.builder()
+        var builder = OllamaChatModel.builder()
                 .baseUrl(DevoxxGenieStateService.getInstance().getOllamaModelUrl())
                 .modelName(customChatModel.getModelName())
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
                 .maxRetries(customChatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .listeners(getListener())
-                .build();
+                .listeners(getListener());
+
+        // Pass context window to Ollama if available (fixes issue #804)
+        if (customChatModel.getContextWindow() != null) {
+            builder.numCtx(customChatModel.getContextWindow());
+        }
+
+        return builder.build();
     }
 
     @Override
     public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
-        return OllamaStreamingChatModel.builder()
+        var builder = OllamaStreamingChatModel.builder()
                 .baseUrl(DevoxxGenieStateService.getInstance().getOllamaModelUrl())
                 .modelName(customChatModel.getModelName())
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
-                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .build();
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()));
+
+        // Pass context window to Ollama if available (fixes issue #804)
+        if (customChatModel.getContextWindow() != null) {
+            builder.numCtx(customChatModel.getContextWindow());
+        }
+
+        return builder.build();
     }
 
     @Override

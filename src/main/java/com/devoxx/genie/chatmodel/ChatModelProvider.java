@@ -54,6 +54,11 @@ public class ChatModelProvider {
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
         customChatModel.setModelName(languageModel.getModelName() == null ? TEST_MODEL : languageModel.getModelName());
 
+        // Set context window if available (for providers like Ollama that support it)
+        if (languageModel.getInputMaxTokens() > 0) {
+            customChatModel.setContextWindow(languageModel.getInputMaxTokens());
+        }
+
         setLocalBaseUrl(languageModel, customChatModel, stateService);
 
         return customChatModel;
