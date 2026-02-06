@@ -35,6 +35,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.2</h2>
+        <UL>
+            <LI>Add dedicated Skills settings dialog for custom user-defined skills</LI>
+            <LI>Add $ARGUMENT placeholder support in custom skill templates</LI>
+            <LI>Keep Prompts settings focused on system instruction, DEVOXXGENIE.md options, and keyboard shortcuts</LI>
+            <LI>Show resolved custom skill prompt in user message instead of raw /command</LI>
+            <LI>Migrate legacy HTTP/SSE MCP transport usage to StreamableHttpMcpTransport</LI>
+            <LI>Update welcome wording to Skills terminology and highlight MCP Marketplace first</LI>
+        </UL>
         <h2>v0.9.1</h2>
         <UL>
             <LI>Issue #791: Fix exception when attaching source code containing triple braces ({{{ }}})</LI>

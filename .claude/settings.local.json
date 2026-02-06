@@ -10,5 +10,9 @@
       "Bash(JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home ./gradlew test:*)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "playwright"
+  ],
+  "enableAllProjectMcpServers": true
 }
