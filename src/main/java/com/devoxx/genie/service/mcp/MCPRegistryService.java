@@ -24,9 +24,36 @@ public class MCPRegistryService {
     private final OkHttpClient client = HttpClientProvider.getClient();
     private final Gson gson = new GsonBuilder().create();
 
+    private List<MCPRegistryServerEntry> cachedServers = null;
+
     @NotNull
     public static MCPRegistryService getInstance() {
         return ApplicationManager.getApplication().getService(MCPRegistryService.class);
+    }
+
+    /**
+     * Fetch all servers from the registry and cache them in memory.
+     *
+     * @param forceRefresh if true, re-fetches from the registry even if cached
+     * @return the complete list of servers
+     * @throws IOException if any network request fails
+     */
+    @NotNull
+    public List<MCPRegistryServerEntry> fetchAllServers(boolean forceRefresh) throws IOException {
+        if (cachedServers != null && !forceRefresh) {
+            return cachedServers;
+        }
+        List<MCPRegistryServerEntry> allServers = new ArrayList<>();
+        String cursor = null;
+        do {
+            MCPRegistryResponse response = searchServers(null, cursor, 100);
+            if (response.getServers() != null) {
+                allServers.addAll(response.getServers());
+            }
+            cursor = (response.getMetadata() != null) ? response.getMetadata().getNextCursor() : null;
+        } while (cursor != null && !cursor.isBlank());
+        cachedServers = allServers;
+        return cachedServers;
     }
 
     /**

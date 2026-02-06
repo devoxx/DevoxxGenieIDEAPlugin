@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.mcp.dialog;
 
 import com.devoxx.genie.model.mcp.MCPServer;
-import com.devoxx.genie.model.mcp.registry.MCPRegistryResponse;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerEntry;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerInfo;
 import com.devoxx.genie.service.mcp.MCPRegistryService;
@@ -20,25 +19,29 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 @Slf4j
 public class MCPMarketplaceDialog extends DialogWrapper {
 
-    private static final int PAGE_SIZE = 20;
+    private static final String ALL_FILTER = "All";
+    private static final String LOCAL_FILTER = "Local";
+    private static final String REMOTE_FILTER = "Remote";
 
     private final SearchTextField searchField = new SearchTextField();
+    private final JComboBox<String> locationFilter = new JComboBox<>(new String[]{ALL_FILTER, LOCAL_FILTER, REMOTE_FILTER});
+    private final JComboBox<String> typeFilter = new JComboBox<>(new String[]{ALL_FILTER});
     private final ServerTableModel tableModel = new ServerTableModel();
     private final JBTable serverTable = new JBTable(tableModel);
-    private final JButton loadMoreButton = new JButton("Load More");
+    private final JButton refreshButton = new JButton("Refresh");
     private final JLabel statusLabel = new JLabel("Loading...");
 
     @Getter
     private MCPServer selectedMcpServer;
 
-    private String nextCursor;
-    private Timer debounceTimer;
+    private List<MCPRegistryServerEntry> allServers = new ArrayList<>();
+    private boolean populatingFilters;
 
     public MCPMarketplaceDialog() {
         super(true);
@@ -48,24 +51,18 @@ public class MCPMarketplaceDialog extends DialogWrapper {
 
         init();
 
-        // Initial load
-        loadServers(null, null, false);
+        // Initial load (uses cache if available)
+        loadAllServers(false);
 
-        // Debounced search
+        // Search field and filter combos all trigger the same local filter
         searchField.addDocumentListener(new com.intellij.ui.DocumentAdapter() {
             @Override
             protected void textChanged(javax.swing.event.@NotNull DocumentEvent e) {
-                if (debounceTimer != null) {
-                    debounceTimer.stop();
-                }
-                debounceTimer = new Timer(300, evt -> {
-                    nextCursor = null;
-                    loadServers(searchField.getText().trim(), null, false);
-                });
-                debounceTimer.setRepeats(false);
-                debounceTimer.start();
+                applyFilters();
             }
         });
+        locationFilter.addActionListener(e -> applyFilters());
+        typeFilter.addActionListener(e -> applyFilters());
     }
 
     @Override
@@ -73,11 +70,22 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         JPanel mainPanel = new JPanel(new BorderLayout(0, 8));
         mainPanel.setPreferredSize(new Dimension(880, 520));
 
-        // Search bar
+        // Top panel with search bar and filters
+        JPanel topPanel = new JPanel(new BorderLayout(0, 4));
+
         JPanel searchPanel = new JPanel(new BorderLayout());
         searchPanel.add(new JLabel("Search: "), BorderLayout.WEST);
         searchPanel.add(searchField, BorderLayout.CENTER);
-        mainPanel.add(searchPanel, BorderLayout.NORTH);
+        topPanel.add(searchPanel, BorderLayout.NORTH);
+
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        filterPanel.add(new JLabel("Location:"));
+        filterPanel.add(locationFilter);
+        filterPanel.add(new JLabel("Type:"));
+        filterPanel.add(typeFilter);
+        topPanel.add(filterPanel, BorderLayout.SOUTH);
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // Server table
         serverTable.setRowHeight(24);
@@ -91,15 +99,10 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         JBScrollPane scrollPane = new JBScrollPane(serverTable);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Bottom panel with Load More and status
+        // Bottom panel with Refresh and status
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        loadMoreButton.addActionListener(e -> {
-            if (nextCursor != null) {
-                loadServers(searchField.getText().trim(), nextCursor, true);
-            }
-        });
-        loadMoreButton.setEnabled(false);
-        bottomPanel.add(loadMoreButton, BorderLayout.WEST);
+        refreshButton.addActionListener(e -> loadAllServers(true));
+        bottomPanel.add(refreshButton, BorderLayout.WEST);
         bottomPanel.add(statusLabel, BorderLayout.EAST);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -134,11 +137,12 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         setOKActionEnabled(serverTable.getSelectedRow() >= 0);
     }
 
-    private void loadServers(@Nullable String query, @Nullable String cursor, boolean append) {
-        loadMoreButton.setEnabled(false);
+    @SuppressWarnings("unchecked")
+    private void loadAllServers(boolean forceRefresh) {
+        refreshButton.setEnabled(false);
         statusLabel.setText("Loading...");
 
-        final MCPRegistryResponse[] result = {null};
+        final List<MCPRegistryServerEntry>[] result = new List[]{null};
         final Exception[] error = {null};
         boolean cancelled = false;
 
@@ -148,7 +152,7 @@ public class MCPMarketplaceDialog extends DialogWrapper {
                 indicator.setIndeterminate(true);
                 indicator.setText("Fetching servers from MCP registry...");
                 try {
-                    result[0] = MCPRegistryService.getInstance().searchServers(query, cursor, PAGE_SIZE);
+                    result[0] = MCPRegistryService.getInstance().fetchAllServers(forceRefresh);
                 } catch (ProcessCanceledException e) {
                     throw e;
                 } catch (Exception e) {
@@ -159,43 +163,92 @@ public class MCPMarketplaceDialog extends DialogWrapper {
             cancelled = true;
         }
 
+        refreshButton.setEnabled(true);
+
         if (cancelled) {
             statusLabel.setText("Cancelled");
-            loadMoreButton.setEnabled(nextCursor != null);
             return;
         }
 
         if (error[0] != null) {
             log.error("Failed to fetch MCP servers from registry", error[0]);
             statusLabel.setText("Error: " + error[0].getMessage());
-            loadMoreButton.setEnabled(false);
             return;
         }
 
-        if (result[0] == null || result[0].getServers() == null) {
-            statusLabel.setText("No servers found");
-            if (!append) {
-                tableModel.setServers(new ArrayList<>());
+        if (result[0] == null) {
+            allServers = new ArrayList<>();
+        } else {
+            allServers = new ArrayList<>(result[0]);
+        }
+
+        populateTypeFilter();
+        applyFilters();
+    }
+
+    private void populateTypeFilter() {
+        populatingFilters = true;
+        try {
+            MCPRegistryService registryService = MCPRegistryService.getInstance();
+            Set<String> types = new TreeSet<>();
+            for (MCPRegistryServerEntry entry : allServers) {
+                if (entry.getServer() != null) {
+                    types.add(registryService.getServerType(entry.getServer()));
+                }
             }
-            loadMoreButton.setEnabled(false);
+            typeFilter.removeAllItems();
+            typeFilter.addItem(ALL_FILTER);
+            for (String type : types) {
+                typeFilter.addItem(type);
+            }
+        } finally {
+            populatingFilters = false;
+        }
+    }
+
+    private void applyFilters() {
+        if (populatingFilters) {
             return;
         }
+        String query = searchField.getText().trim();
+        String selectedLocation = (String) locationFilter.getSelectedItem();
+        String selectedType = (String) typeFilter.getSelectedItem();
+        MCPRegistryService registryService = MCPRegistryService.getInstance();
 
-        if (append) {
-            tableModel.addServers(result[0].getServers());
-        } else {
-            tableModel.setServers(result[0].getServers());
-        }
+        List<MCPRegistryServerEntry> filtered = allServers.stream()
+                .filter(entry -> {
+                    MCPRegistryServerInfo info = entry.getServer();
+                    if (info == null) return false;
 
-        // Update pagination
-        if (result[0].getMetadata() != null) {
-            nextCursor = result[0].getMetadata().getNextCursor();
-        } else {
-            nextCursor = null;
-        }
+                    // Text search
+                    if (!query.isEmpty()) {
+                        String lowerQuery = query.toLowerCase(Locale.ROOT);
+                        String name = info.getName() != null ? info.getName().toLowerCase(Locale.ROOT) : "";
+                        String desc = info.getDescription() != null ? info.getDescription().toLowerCase(Locale.ROOT) : "";
+                        if (!name.contains(lowerQuery) && !desc.contains(lowerQuery)) {
+                            return false;
+                        }
+                    }
 
-        loadMoreButton.setEnabled(nextCursor != null && !nextCursor.isBlank());
-        statusLabel.setText("Showing " + tableModel.getRowCount() + " servers");
+                    // Location filter
+                    if (selectedLocation != null && !ALL_FILTER.equals(selectedLocation)) {
+                        boolean isRemote = info.getRemotes() != null && !info.getRemotes().isEmpty();
+                        if (REMOTE_FILTER.equals(selectedLocation) && !isRemote) return false;
+                        if (LOCAL_FILTER.equals(selectedLocation) && isRemote) return false;
+                    }
+
+                    // Type filter
+                    if (selectedType != null && !ALL_FILTER.equals(selectedType)) {
+                        String serverType = registryService.getServerType(info);
+                        if (!selectedType.equals(serverType)) return false;
+                    }
+
+                    return true;
+                })
+                .toList();
+
+        tableModel.setServers(filtered);
+        statusLabel.setText("Showing " + filtered.size() + " of " + allServers.size() + " servers");
         updateOkAction();
     }
 
@@ -210,12 +263,6 @@ public class MCPMarketplaceDialog extends DialogWrapper {
             entries.clear();
             entries.addAll(servers);
             fireTableDataChanged();
-        }
-
-        public void addServers(List<MCPRegistryServerEntry> servers) {
-            int firstRow = entries.size();
-            entries.addAll(servers);
-            fireTableRowsInserted(firstRow, entries.size() - 1);
         }
 
         public @Nullable MCPRegistryServerInfo getServerInfoAt(int row) {
