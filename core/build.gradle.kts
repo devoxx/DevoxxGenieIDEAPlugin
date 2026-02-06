@@ -17,7 +17,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-web-search-engine-google-custom:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-web-search-engine-tavily:$lg4j_version")
 
-    implementation("org.commonmark:commonmark:0.27.0")
+    implementation("org.commonmark:commonmark:0.27.1")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
@@ -25,7 +25,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
     testImplementation("org.mockito:mockito-core:5.21.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
-    testImplementation("org.assertj:assertj-core:3.27.6")
+    testImplementation("org.assertj:assertj-core:3.27.7")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.0-M1")
 }
