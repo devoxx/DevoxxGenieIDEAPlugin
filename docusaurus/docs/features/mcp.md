@@ -38,10 +38,23 @@ DevoxxGenie implements MCP server support, allowing you to connect to various MC
 
 ### Adding an MCP Server
 
+You can add MCP servers in two ways:
+
+#### Via the MCP Marketplace (Recommended)
+
+1. Click the "Browse Marketplace" button in the MCP Settings panel
+2. Browse available MCP servers with filters for location (Local/Remote) and type (npm/Docker/Remote)
+3. Select a server and click "Add Server"
+4. Configure any required environment variables or authentication headers
+5. The server will be added and ready to use
+
+#### Manual Configuration
+
 1. Click the "Add" button in the MCP Settings panel
 2. Enter the server details:
    - Name: A descriptive name for the server
-   - URL: The endpoint URL for the MCP server
+   - Transport Type: Choose STDIO, HTTP, or HTTP SSE
+   - Connection details (command/args for STDIO, URL for HTTP)
    - Optional: Environment variables if required
 3. Click "OK" to add the server
 4. Enable the server by checking its checkbox in the list
