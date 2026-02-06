@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Filter MCP Activity to only show tool calls and log messages, excluding redundant full AI responses
 
 ### Fixed
+- Fix image attachments not sent to LLM: images were stripped at multiple points (FileListManager cleared prematurely, multimodal content dropped by chat memory and AiServices text-only interface)
 - Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal (#824)
 - Issue #804: Pass context window (numCtx) to Ollama to use model's full context instead of 4096 default
 - MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error (#826)

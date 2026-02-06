@@ -12,10 +12,12 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -26,6 +28,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -140,6 +143,17 @@ public class NonStreamingPromptExecutionService {
             String projectId = project.getLocationHash();
 
             ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
+
+            // When images are present, bypass AiServices (which only supports text)
+            // and call chatModel directly with the multimodal UserMessage
+            if (ChatMessageContextUtil.hasMultimodalContent(chatMessageContext)) {
+                log.info("Multimodal content detected — using direct chat model call (bypassing AiServices)");
+                chatMemory.add(chatMessageContext.getUserMessage());
+                List<ChatMessage> messages = chatMemory.messages();
+                ChatResponse response = chatModel.chat(messages);
+                chatMemory.add(response.aiMessage());
+                return response;
+            }
 
             Assistant assistant = buildAssistant(chatModel, chatMemory);
 

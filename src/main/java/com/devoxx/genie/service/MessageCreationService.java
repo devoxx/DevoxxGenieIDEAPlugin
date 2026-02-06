@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import dev.langchain4j.data.message.Content;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -82,23 +84,27 @@ public class MessageCreationService {
 
     private void addImages(@NotNull ChatMessageContext chatMessageContext) {
         List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject());
+        log.debug("addImages: found {} image files in FileListManager", imageFiles.size());
+
         if (!imageFiles.isEmpty()) {
-            // Add each image as content
-            for (VirtualFile imageFile: imageFiles) {
+            List<Content> contents = new ArrayList<>();
+            contents.add(TextContent.from(chatMessageContext.getUserMessage().singleText()));
+
+            for (VirtualFile imageFile : imageFiles) {
                 try {
                     byte[] imageData = imageFile.contentsToByteArray();
                     String base64Image = Base64.getEncoder().encodeToString(imageData);
-
-                    UserMessage userMessage = UserMessage.from(
-                            TextContent.from(chatMessageContext.getUserMessage().singleText()),
-                            ImageContent.from(base64Image, ImageUtil.getImageMimeType(imageFile))
-                    );
-
-                    chatMessageContext.setUserMessage(userMessage);
+                    String mimeType = ImageUtil.getImageMimeType(imageFile);
+                    contents.add(ImageContent.from(base64Image, mimeType));
+                    log.debug("addImages: added image {} ({}, {} bytes)", imageFile.getName(), mimeType, imageData.length);
                 } catch (IOException e) {
-                    log.error("Failed to read image file");
+                    log.error("Failed to read image file: {}", imageFile.getName());
                 }
             }
+
+            chatMessageContext.setUserMessage(UserMessage.from(contents));
+            log.debug("addImages: created multimodal UserMessage with {} contents (hasSingleText={})",
+                    contents.size(), chatMessageContext.getUserMessage().hasSingleText());
         }
     }
 

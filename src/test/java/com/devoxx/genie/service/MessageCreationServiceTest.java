@@ -15,6 +15,9 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -499,6 +502,129 @@ class MessageCreationServiceTest {
             // Should be empty as file type is not supported and notification was sent
             assertEquals("", result);
             notificationUtilMockedStatic.verify(() -> NotificationUtil.sendNotification(mockProject, "File type not supported: Binary.bin"));
+        }
+    }
+
+    @Test
+    void testAddMultipleImagesPreservesAll() throws IOException {
+        // Setup basic context with no files context
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn(null);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+
+        // Create two mock image files
+        VirtualFile mockImage1 = mock(VirtualFile.class);
+        VirtualFile mockImage2 = mock(VirtualFile.class);
+        byte[] imageData1 = "image-data-1".getBytes(StandardCharsets.UTF_8);
+        byte[] imageData2 = "image-data-2".getBytes(StandardCharsets.UTF_8);
+        when(mockImage1.contentsToByteArray()).thenReturn(imageData1);
+        when(mockImage2.contentsToByteArray()).thenReturn(imageData2);
+        when(mockImage1.getName()).thenReturn("photo1.png");
+        when(mockImage2.getName()).thenReturn("photo2.jpeg");
+
+        List<VirtualFile> imageFiles = List.of(mockImage1, mockImage2);
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
+             MockedStatic<ImageUtil> imageUtilMockedStatic = Mockito.mockStatic(ImageUtil.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+
+            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(imageFiles);
+
+            imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(mockImage1)).thenReturn("image/png");
+            imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(mockImage2)).thenReturn("image/jpeg");
+
+            // Make getUserMessage() return the last value set via setUserMessage()
+            final UserMessage[] lastMessage = {null};
+            doAnswer(invocation -> {
+                lastMessage[0] = invocation.getArgument(0);
+                return null;
+            }).when(mockChatMessageContext).setUserMessage(any(UserMessage.class));
+            when(mockChatMessageContext.getUserMessage()).thenAnswer(inv -> lastMessage[0]);
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            UserMessage finalMessage = lastMessage[0];
+            assertNotNull(finalMessage);
+
+            // Should NOT be single text (it's multimodal)
+            assertFalse(finalMessage.hasSingleText());
+
+            // Should contain 1 TextContent + 2 ImageContent = 3 contents
+            List<Content> contents = finalMessage.contents();
+            assertEquals(3, contents.size());
+
+            // First content should be TextContent
+            assertInstanceOf(TextContent.class, contents.get(0));
+
+            // Second and third should be ImageContent
+            assertInstanceOf(ImageContent.class, contents.get(1));
+            assertInstanceOf(ImageContent.class, contents.get(2));
+
+            // Verify Base64 data and MIME types
+            ImageContent img1 = (ImageContent) contents.get(1);
+            ImageContent img2 = (ImageContent) contents.get(2);
+            assertEquals("image/png", img1.image().mimeType());
+            assertEquals("image/jpeg", img2.image().mimeType());
+            assertEquals(Base64.getEncoder().encodeToString(imageData1), img1.image().base64Data());
+            assertEquals(Base64.getEncoder().encodeToString(imageData2), img2.image().base64Data());
+        }
+    }
+
+    @Test
+    void testAddSingleImageCreatesMultimodalMessage() throws IOException {
+        // Setup basic context
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn(null);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+
+        byte[] testImageData = "test-image".getBytes(StandardCharsets.UTF_8);
+        when(mockVirtualFile.contentsToByteArray()).thenReturn(testImageData);
+        when(mockVirtualFile.getName()).thenReturn("screenshot.png");
+
+        List<VirtualFile> imageFiles = List.of(mockVirtualFile);
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
+             MockedStatic<ImageUtil> imageUtilMockedStatic = Mockito.mockStatic(ImageUtil.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+
+            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(imageFiles);
+            imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(any())).thenReturn("image/png");
+
+            // Make getUserMessage() return the last value set via setUserMessage()
+            final UserMessage[] lastMessage = {null};
+            doAnswer(invocation -> {
+                lastMessage[0] = invocation.getArgument(0);
+                return null;
+            }).when(mockChatMessageContext).setUserMessage(any(UserMessage.class));
+            when(mockChatMessageContext.getUserMessage()).thenAnswer(inv -> lastMessage[0]);
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            UserMessage finalMessage = lastMessage[0];
+            assertNotNull(finalMessage);
+
+            // Should be multimodal
+            assertFalse(finalMessage.hasSingleText());
+
+            // Should have TextContent + ImageContent
+            List<Content> contents = finalMessage.contents();
+            assertEquals(2, contents.size());
+            assertInstanceOf(TextContent.class, contents.get(0));
+            assertInstanceOf(ImageContent.class, contents.get(1));
         }
     }
 

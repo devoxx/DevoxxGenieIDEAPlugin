@@ -98,6 +98,10 @@ public final class FileListManager {
         return allFiles;
     }
 
+    public @NotNull List<VirtualFile> getNonImageFiles(@NotNull Project project) {
+        return Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
+    }
+
     public @NotNull List<VirtualFile> getImageFiles(@NotNull Project project) {
         return Collections.unmodifiableList(imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
     }
@@ -152,6 +156,17 @@ public final class FileListManager {
         String projectHash = project.getLocationHash();
         filesMap.remove(projectHash);
         imageFilesMap.remove(projectHash);
+        notifyAllObservers(project);
+    }
+
+    /**
+     * Clear only non-image files and previously added files, preserving image files.
+     * Used when switching to editor context to avoid destroying attached images.
+     */
+    public void clearNonImageFiles(@NotNull Project project) {
+        String projectHash = project.getLocationHash();
+        filesMap.remove(projectHash);
+        previouslyAddedFiles.remove(projectHash);
         notifyAllObservers(project);
     }
 

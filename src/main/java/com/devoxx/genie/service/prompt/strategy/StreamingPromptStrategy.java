@@ -13,8 +13,10 @@ import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -25,6 +27,7 @@ import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -153,6 +156,16 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                 String projectId = project.getLocationHash();
 
                 ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
+
+                // When images are present, bypass AiServices (which only supports text)
+                // and call streamingModel directly with the multimodal UserMessage
+                if (ChatMessageContextUtil.hasMultimodalContent(context)) {
+                    log.info("Multimodal content detected — using direct streaming model call (bypassing AiServices)");
+                    chatMemory.add(context.getUserMessage());
+                    List<ChatMessage> messages = chatMemory.messages();
+                    streamingModel.chat(messages, streamingResponseHandler);
+                    return;
+                }
 
                 Assistant assistant;
 
