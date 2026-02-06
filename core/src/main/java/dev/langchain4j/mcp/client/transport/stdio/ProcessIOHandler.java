@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.function.Consumer;
 
 class ProcessIOHandler implements Runnable {
 
@@ -19,12 +20,15 @@ class ProcessIOHandler implements Runnable {
     private final boolean logEvents;
     private final McpOperationHandler messageHandler;
     private final PrintStream out;
+    private final Consumer<String> trafficConsumer;
 
-    public ProcessIOHandler(Process process, McpOperationHandler messageHandler, boolean logEvents) {
+    public ProcessIOHandler(Process process, McpOperationHandler messageHandler, boolean logEvents,
+                            Consumer<String> trafficConsumer) {
         this.process = process;
         this.logEvents = logEvents;
         this.messageHandler = messageHandler;
         this.out = new PrintStream(process.getOutputStream(), true);
+        this.trafficConsumer = trafficConsumer;
     }
 
     @Override
@@ -34,6 +38,9 @@ class ProcessIOHandler implements Runnable {
             while ((line = reader.readLine()) != null) {
                 if (logEvents) {
                     trafficLog.debug("< {}", line);
+                    if (trafficConsumer != null) {
+                        trafficConsumer.accept("< " + line);
+                    }
                 }
                 messageHandler.handle(OBJECT_MAPPER.readTree(line));
             }
@@ -46,6 +53,9 @@ class ProcessIOHandler implements Runnable {
     public void submit(String message) throws IOException {
         if (logEvents) {
             trafficLog.debug("> {}", message);
+            if (trafficConsumer != null) {
+                trafficConsumer.accept("> " + message);
+            }
         }
         out.println(message);
     }

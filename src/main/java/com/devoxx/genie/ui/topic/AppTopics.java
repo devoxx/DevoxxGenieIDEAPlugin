@@ -45,6 +45,9 @@ public class AppTopics {
     public static final Topic<MCPLoggingMessage> MCP_LOGGING_MSG =
             Topic.create("mcpLoggingMessage", MCPLoggingMessage.class);
 
+    public static final Topic<MCPLoggingMessage> MCP_TRAFFIC_MSG =
+            Topic.create("mcpTrafficMessage", MCPLoggingMessage.class);
+
     public static final Topic<FileReferencesListener> FILE_REFERENCES_TOPIC =
             Topic.create("fileReferences", FileReferencesListener.class);
 

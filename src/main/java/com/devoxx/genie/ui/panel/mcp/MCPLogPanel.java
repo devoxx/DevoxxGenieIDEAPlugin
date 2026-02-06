@@ -21,6 +21,8 @@ import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,6 +53,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     private final List<LogEntry> pendingLogs = new ArrayList<>(); // Buffer for batching logs
     private static final int BATCH_SIZE = 20; // Process logs in batches for better performance
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     private final transient Project project;
     private final DefaultListModel<LogEntry> logListModel;
@@ -114,6 +117,7 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         ApplicationManager.getApplication().invokeLater(() ->
                 MessageBusUtil.connect(project, connection -> {
                     MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
+                    MessageBusUtil.subscribe(connection, AppTopics.MCP_TRAFFIC_MSG, this);
                     Disposer.register(this, connection);
                 }));
     }
@@ -370,6 +374,14 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             // Create a filename based on the timestamp
             String fileName = "MCPLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".json";
             
+            // Pretty-print JSON content for readability
+            try {
+                Object json = JSON_MAPPER.readValue(content, Object.class);
+                content = JSON_MAPPER.writeValueAsString(json);
+            } catch (Exception ignored) {
+                // Not valid JSON, use content as-is
+            }
+
             // Create a virtual file and open it in the editor using invokeLater to avoid threading issues
             String finalContent = content;
             ApplicationManager.getApplication().invokeLater(() -> {
