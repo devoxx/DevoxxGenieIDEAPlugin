@@ -43,6 +43,8 @@
             <LI>Show resolved custom skill prompt in user message instead of raw /command</LI>
             <LI>Migrate legacy HTTP/SSE MCP transport usage to StreamableHttpMcpTransport</LI>
             <LI>Update welcome wording to Skills terminology and highlight MCP Marketplace first</LI>
+            <LI>Issue #809: Fix LM Studio context length detection to use model metadata instead of defaulting to 8K</LI>
+            <LI>Issue #809: Add optional LM Studio fallback context setting in the GUI</LI>
         </UL>
         <h2>v0.9.1</h2>
         <UL>

@@ -78,6 +78,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
+    private Integer lmStudioFallbackContextLength;
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
