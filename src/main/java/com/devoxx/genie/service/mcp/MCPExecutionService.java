@@ -198,15 +198,20 @@ public class MCPExecutionService implements Disposable {
             }
             
             MCPService.logDebug("Initializing HTTP SSE transport with URL: " + sseUrl);
-            
-            // Create the transport
-            HttpMcpTransport transport = new HttpMcpTransport.Builder()
+
+            // Create the transport using the official langchain4j-mcp API
+            HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
                     .sseUrl(sseUrl)
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
-                    .trafficConsumer(createTrafficConsumer())
-                    .build();
+                    .logger(new MCPTrafficLogger(createTrafficConsumer()));
+
+            if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
+                transportBuilder.customHeaders(mcpServer.getHeaders());
+            }
+
+            HttpMcpTransport transport = transportBuilder.build();
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
@@ -243,13 +248,18 @@ public class MCPExecutionService implements Disposable {
             MCPService.logDebug("Initializing streamable HTTP transport with URL: " + url);
 
             // Create the transport
-            McpTransport transport = new StreamableHttpMcpTransport.Builder()
+            StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
                     .url(url)
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
-                    .logger(new MCPTrafficLogger(createTrafficConsumer()))
-                    .build();
+                    .logger(new MCPTrafficLogger(createTrafficConsumer()));
+
+            if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
+                transportBuilder.customHeaders(mcpServer.getHeaders());
+            }
+
+            McpTransport transport = transportBuilder.build();
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
@@ -302,7 +312,7 @@ public class MCPExecutionService implements Disposable {
                     .command(mcpCommand)
                     .environment(env)
                     .logEvents(MCPService.isDebugLogsEnabled())
-                    .trafficConsumer(createTrafficConsumer())
+                    .logger(new MCPTrafficLogger(createTrafficConsumer()))
                     .build();
 
             // Create and return the client

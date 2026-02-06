@@ -41,7 +41,7 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 
 ### Key Features:
 
-- **🔥️ MCP Support**: You can now add MCP servers and use them in your conversations</LI>
+- **🔥️ MCP Support with Marketplace**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images**: You can now DnD images with multimodal LLM's.
 - **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
@@ -79,7 +79,7 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 
 Initial support for Model Context Protocol (MCP) server tools including debugging of MCP requests & responses!
 MCP support is a crucial feature towards ful Agentic support within DevoxxGenie.
-Watch [short demo](https://www.youtube.com/watch?v=zOPhYvgJKJU) of MCP in action using DevoxxGenie 
+Watch [short demo](https://www.youtube.com/watch?v=zOPhYvgJKJU) of MCP in action using DevoxxGenie
 
 <img width="1399" alt="Screenshot 2025-03-22 at 17 29 33" src="https://github.com/user-attachments/assets/0f8f75c9-ce85-43e8-a244-aa796c85681a" />
 
@@ -89,7 +89,7 @@ Example of the Filesystem-server MCP which allows you to interact with the given
 
 <img width="1399" alt="Screenshot 2025-03-22 at 17 29 48" src="https://github.com/user-attachments/assets/db27a7c3-622a-4d9a-9635-5561836d28c7" />
 
-Go to the DevoxxGenie settings to enable and add your MCP servers.
+Go to the DevoxxGenie settings to enable and add your MCP servers. Browse the **MCP Marketplace** to discover and install servers with just a few clicks!
 
 <img width="1038" alt="Screenshot 2025-03-22 at 17 30 12" src="https://github.com/user-attachments/assets/40752703-fb8c-4098-a046-38c33ff16031" />
 

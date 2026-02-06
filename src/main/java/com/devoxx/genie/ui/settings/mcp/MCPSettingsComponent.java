@@ -4,6 +4,7 @@ import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.mcp.dialog.MCPMarketplaceDialog;
 import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.ui.UINumericRange;
@@ -111,10 +112,21 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         });
     }
 
-    private static @NotNull JPanel getButtonPanel() {
+    private @NotNull JPanel getButtonPanel() {
+        JButton marketplaceButton = new JButton("Browse Marketplace", AllIcons.Actions.Download);
+        marketplaceButton.addActionListener(e -> {
+            MCPMarketplaceDialog dialog = new MCPMarketplaceDialog();
+            if (dialog.showAndGet()) {
+                MCPServer server = dialog.getSelectedMcpServer();
+                if (server != null) {
+                    tableModel.addMcpServer(server);
+                    isModified = true;
+                }
+            }
+        });
+
         JButton infoButton = new JButton("What is MCP", AllIcons.Actions.Help);
         infoButton.addActionListener(e -> {
-            // Open browser
             try {
                 Desktop.getDesktop().browse(new URI("https://modelcontextprotocol.io/introduction"));
             } catch (Exception ex) {
@@ -122,28 +134,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
         });
 
-        JButton githubMCPButton = new JButton("GitHub MCP", AllIcons.Vcs.Vendors.Github);
-        githubMCPButton.addActionListener(e -> {
-            try {
-                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/GitHubMCP"));
-            } catch (Exception ex) {
-                log.error(ex.getMessage());
-            }
-        });
-
-        JButton fileSystemMCPButton = new JButton("FileSystem MCP", AllIcons.General.OpenDisk);
-        fileSystemMCPButton.addActionListener(e -> {
-            try {
-                Desktop.getDesktop().browse(new URI("https://github.com/stephanj/MCPJavaFileSystem"));
-            } catch (Exception ex) {
-                log.error(ex.getMessage());
-            }
-        });
-
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.add(marketplaceButton);
         buttonPanel.add(infoButton);
-        buttonPanel.add(githubMCPButton);
-        buttonPanel.add(fileSystemMCPButton);
         return buttonPanel;
     }
 

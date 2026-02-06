@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,25 @@ public interface TransportPanel {
     
     /**
      * Create an MCP client for testing the connection
-     * 
+     *
      * @return The created MCP client
      * @throws Exception If client creation fails
      */
-    McpClient createClient() throws Exception;
+    default McpClient createClient() throws Exception {
+        return createClient(Collections.emptyMap());
+    }
+
+    /**
+     * Create an MCP client for testing the connection, with custom headers
+     * for HTTP-based transports.
+     *
+     * @param headers custom headers to include in HTTP requests
+     * @return The created MCP client
+     * @throws Exception If client creation fails
+     */
+    default McpClient createClient(Map<String, String> headers) throws Exception {
+        return createClient();
+    }
     
     /**
      * Apply settings to a server builder
