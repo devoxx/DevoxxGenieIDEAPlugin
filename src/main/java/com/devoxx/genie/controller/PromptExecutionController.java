@@ -58,20 +58,19 @@ public class PromptExecutionController implements PromptExecutionListener {
             promptOutputPanel.markConversationAsStarted();
         }
         
-        // Check if this is a help command before showing the user message
-        String prompt = currentChatMessageContext.getUserPrompt().trim();
-        boolean isHelpCommand = prompt.startsWith("/help");
-        
-        if (!isHelpCommand) {
-            // Only show user message if it's not a help command
-            promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
-        }
-
         AtomicBoolean response = new AtomicBoolean(true);
+        String originalPrompt = currentChatMessageContext.getUserPrompt().trim();
+        boolean isHelpCommand = originalPrompt.startsWith("/help");
         Optional<String> processedPrompt = commandProcessor.processCommands(currentChatMessageContext, promptOutputPanel);
         
         processedPrompt.ifPresentOrElse(
-                command -> executePromptWithContext(),
+                command -> {
+                    if (!isHelpCommand) {
+                        // Show the resolved prompt (e.g. expanded custom skill), not the raw /command
+                        promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
+                    }
+                    executePromptWithContext();
+                },
                 () -> {
                     // Command handling indicated execution should stop
                     response.set(false);

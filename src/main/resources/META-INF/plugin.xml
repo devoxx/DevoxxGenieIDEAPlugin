@@ -29,7 +29,7 @@
             <LI>Install the plugin</LI>
             <LI>Make sure you have Ollama, LMStudio or GPT4All running</LI>
             <LI>Optional: Add API Keys for Cloud based LLM providers</LI>
-            <LI>Optional: Update the command prompts in the Settings</LI>
+            <LI>Optional: Update the command skills in the Settings</LI>
             <LI>Start using the plugin</LI>
         </UL>
     ]]></description>
@@ -196,6 +196,11 @@
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="Prompts"/>
+
+        <projectConfigurable id="com.devoxx.genie.SkillSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.skill.SkillSettingsConfigurable"
+                             displayName="Skills"/>
 
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"

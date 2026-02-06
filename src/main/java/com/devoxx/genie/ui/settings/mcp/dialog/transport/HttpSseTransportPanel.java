@@ -16,7 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 
 /**
  * Panel for configuring HTTP SSE MCP transport
@@ -106,9 +107,9 @@ public class HttpSseTransportPanel implements TransportPanel {
 
         log.debug("Creating HTTP SSE transport with URL: {}", sseUrl);
 
-        // Create the transport
-        HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
-                .sseUrl(sseUrl)
+        // Use Streamable HTTP transport (recommended replacement for legacy HTTP/SSE transport)
+        StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
+                .url(sseUrl)
                 .timeout(Duration.ofSeconds(60))
                 .logRequests(true)
                 .logResponses(true);
@@ -117,7 +118,7 @@ public class HttpSseTransportPanel implements TransportPanel {
             transportBuilder.customHeaders(headers);
         }
 
-        HttpMcpTransport transport = transportBuilder.build();
+        McpTransport transport = transportBuilder.build();
 
         // Create and return the client
         return new DefaultMcpClient.Builder()
