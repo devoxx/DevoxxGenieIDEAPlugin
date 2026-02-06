@@ -69,6 +69,11 @@ public class LLMProvidersConfigurable implements Configurable {
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), stateService.getLmstudioModelUrl());
+        isModified |= (stateService.getLmStudioFallbackContextLength() != null) != llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected();
+        if (llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected()) {
+            Integer savedFallback = stateService.getLmStudioFallbackContextLength();
+            isModified |= savedFallback == null || !savedFallback.equals(llmSettingsComponent.getLmStudioFallbackContextField().getNumber());
+        }
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
 
@@ -127,6 +132,11 @@ public class LLMProvidersConfigurable implements Configurable {
 
         settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
         settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
+        settings.setLmStudioFallbackContextLength(
+                llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected()
+                        ? llmSettingsComponent.getLmStudioFallbackContextField().getNumber()
+                        : null
+        );
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
@@ -215,6 +225,11 @@ public class LLMProvidersConfigurable implements Configurable {
 
         llmSettingsComponent.getOllamaModelUrlField().setText(settings.getOllamaModelUrl());
         llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
+        llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().setSelected(settings.getLmStudioFallbackContextLength() != null);
+        llmSettingsComponent.getLmStudioFallbackContextField().setNumber(
+                settings.getLmStudioFallbackContextLength() != null ? settings.getLmStudioFallbackContextLength() : 8000
+        );
+        llmSettingsComponent.getLmStudioFallbackContextField().setEnabled(settings.getLmStudioFallbackContextLength() != null);
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());

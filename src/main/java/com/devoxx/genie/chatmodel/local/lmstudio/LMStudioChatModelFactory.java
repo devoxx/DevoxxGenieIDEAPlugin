@@ -44,13 +44,15 @@ public class LMStudioChatModelFactory extends LocalChatModelFactory {
     @Override
     protected LanguageModel buildLanguageModel(Object model) {
         LMStudioModelEntryDTO lmStudioModel = (LMStudioModelEntryDTO) model;
+        Integer configuredFallbackContextLength = DevoxxGenieStateService.getInstance().getLmStudioFallbackContextLength();
+        int fallbackContextLength = configuredFallbackContextLength != null ? configuredFallbackContextLength : DEFAULT_CONTEXT_LENGTH;
         return LanguageModel.builder()
                 .provider(modelProvider)
-                .modelName(lmStudioModel.getId())
-                .displayName(lmStudioModel.getId())
+                .modelName(lmStudioModel.resolveModelName())
+                .displayName(lmStudioModel.resolveDisplayName())
                 .inputCost(0)
                 .outputCost(0)
-                .inputMaxTokens(lmStudioModel.getMax_context_length()!=null?lmStudioModel.getMax_context_length():DEFAULT_CONTEXT_LENGTH)
+                .inputMaxTokens(lmStudioModel.resolveContextLengthOrDefault(fallbackContextLength))
                 .apiKeyUsed(false)
                 .build();
     }

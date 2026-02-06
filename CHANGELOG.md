@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Show resolved custom skill prompt in the user message bubble instead of raw `/command`
 - Migrate legacy HTTP/SSE MCP transport usage to `StreamableHttpMcpTransport` (removes deprecated-for-removal API usage)
+- Issue #809: Fix LM Studio API URL compatibility - changed default from `http://localhost:1234/api/v1/` to `http://localhost:1234/v1/` to match OpenAI-compatible chat completions endpoint, while preserving rich metadata endpoint access for context length detection
+- Issue #809: Fix LM Studio context length detection so model metadata no longer defaults to 8K when larger context values are available
+- Issue #809: Add optional LM Studio fallback context setting in the GUI when model metadata does not expose context length
 
 ## [0.9.1]
 

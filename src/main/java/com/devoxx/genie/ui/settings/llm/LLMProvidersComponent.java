@@ -2,6 +2,8 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.intellij.ide.ui.UINumericRange;
+import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
@@ -21,6 +23,16 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JTextField ollamaModelUrlField = new JTextField(stateService.getOllamaModelUrl());
     @Getter
     private final JTextField lmStudioModelUrlField = new JTextField(stateService.getLmstudioModelUrl());
+    @Getter
+    private final JCheckBox lmStudioFallbackContextEnabledCheckBox = new JCheckBox("", stateService.getLmStudioFallbackContextLength() != null);
+    @Getter
+    private final JBIntSpinner lmStudioFallbackContextField = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getLmStudioFallbackContextLength() != null ? stateService.getLmStudioFallbackContextLength() : 8000,
+                    1,
+                    2_000_000
+            )
+    );
     @Getter
     private final JTextField gpt4AllModelUrlField = new JTextField(stateService.getGpt4allModelUrl());
     @Getter
@@ -143,7 +155,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
                 createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         // Add hint text for LMStudio URL
-        addHintText(panel, gbc, "Use \"http://localhost:1234/api/v0\" to get the correct window context");
+        addHintText(panel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
+        addProviderSettingRow(panel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
+        addHintText(panel, gbc, "Used only when LMStudio model metadata does not expose context length");
         addProviderSettingRow(panel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
                 createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addProviderSettingRow(panel, gbc, "Jan URL", janEnabledCheckBox,
@@ -209,6 +223,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         // Add new listeners for enable/disable checkboxes
         ollamaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(ollamaEnabledCheckBox, ollamaModelUrlField));
         lmStudioEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioEnabledCheckBox, lmStudioModelUrlField));
+        lmStudioFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField));
         gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
@@ -227,6 +242,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         openRouterEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openRouterEnabledCheckBox, openRouterApiKeyField));
         grokEnabledCheckBox.addItemListener(e -> updateUrlFieldState(grokEnabledCheckBox, grokApiKeyField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
+
+        updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
     }
 
     private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {

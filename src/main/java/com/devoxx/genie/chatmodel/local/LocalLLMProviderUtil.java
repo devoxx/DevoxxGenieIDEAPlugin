@@ -27,9 +27,23 @@ public class LocalLLMProviderUtil {
         }
 
         String baseUrl = ensureEndsWithSlash(Objects.requireNonNull(configValue));
+        String url = endpoint == null || endpoint.isBlank() ? Objects.requireNonNull(configValue) : baseUrl + endpoint;
 
+        return fetchModels(url, responseType);
+    }
+
+    /**
+     * Fetches models from a fully-qualified URL.
+     * Use this when the models endpoint URL differs from the chat base URL
+     * (e.g., LMStudio uses /v1/ for chat but /api/v1/models for rich metadata).
+     */
+    public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType) throws IOException {
+        return fetchModels(fullUrl, responseType);
+    }
+
+    private static <T> T fetchModels(String url, Class<T> responseType) throws IOException {
         Request request = new Request.Builder()
-                .url(baseUrl + endpoint)
+                .url(url)
                 .build();
 
         try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
@@ -48,6 +62,10 @@ public class LocalLLMProviderUtil {
                 JsonElement jsonElement = gson.fromJson(json, JsonElement.class);
                 if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("data")) {
                     return gson.fromJson(jsonElement.getAsJsonObject().get("data"), responseType);
+                } else if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("models")) {
+                    return gson.fromJson(jsonElement.getAsJsonObject().get("models"), responseType);
+                } else if (jsonElement.isJsonArray()) {
+                    return gson.fromJson(jsonElement, responseType);
                 } else {
                     return responseType.cast(new LMStudioModelEntryDTO[0]);
                 }
