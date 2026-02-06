@@ -37,6 +37,7 @@ class CustomPromptCommandTest {
     
     private final CustomPrompt testPrompt1 = new CustomPrompt("test", "This is a test prompt template");
     private final CustomPrompt testPrompt2 = new CustomPrompt("debug", "Debug the following code:");
+    private final CustomPrompt testPromptWithArgument = new CustomPrompt("ralph-runners", "You are a product manager. Task: $ARGUMENT");
 
     @BeforeEach
     public void setUp() {
@@ -48,7 +49,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2));
+            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2, testPromptWithArgument));
             
             // Test with exact custom commands
             assertTrue(command.matches(Constant.COMMAND_PREFIX + "test"));
@@ -56,6 +57,7 @@ class CustomPromptCommandTest {
             
             // Test with custom command and args
             assertTrue(command.matches(Constant.COMMAND_PREFIX + "test argument"));
+            assertTrue(command.matches(Constant.COMMAND_PREFIX + "ralph-runners create a PRD.json for my project"));
             
             // Test with custom command and leading/trailing whitespace
             assertTrue(command.matches("  " + Constant.COMMAND_PREFIX + "debug  "));
@@ -77,6 +79,20 @@ class CustomPromptCommandTest {
             
             // Test with help command (should be handled by HelpCommand)
             assertFalse(command.matches(Constant.COMMAND_PREFIX + Constant.HELP_COMMAND));
+        }
+    }
+
+    @Test
+    void testMatches_WithPrefixCollision() {
+        CustomPrompt shortName = new CustomPrompt("ralph", "short");
+        CustomPrompt longName = new CustomPrompt("ralph-runners", "long");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            when(stateService.getCustomPrompts()).thenReturn(List.of(shortName, longName));
+
+            assertTrue(command.matches(Constant.COMMAND_PREFIX + "ralph-runners create a PRD.json"));
+            assertFalse(command.matches(Constant.COMMAND_PREFIX + "ral"));
         }
     }
     
@@ -113,6 +129,22 @@ class CustomPromptCommandTest {
             verify(context).setCommandName("test");
         }
     }
+
+    @Test
+    void testProcess_WithArgumentPlaceholder() {
+        when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + "ralph-runners create a PRD.json for my project");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            when(stateService.getCustomPrompts()).thenReturn(List.of(testPromptWithArgument));
+
+            Optional<String> result = command.process(context, panel);
+
+            assertTrue(result.isPresent());
+            assertEquals("You are a product manager. Task: create a PRD.json for my project", result.get());
+            verify(context).setCommandName("ralph-runners");
+        }
+    }
     
     @Test
     void testProcess_WithNoMatchingCommand() {
@@ -147,12 +179,28 @@ class CustomPromptCommandTest {
             // Process the command
             Optional<String> result = command.process(context, panel);
             
-            // Verify result contains just the template prompt with a trailing space
+            // Verify result contains just the template prompt
             assertTrue(result.isPresent());
-            assertEquals("Debug the following code: ", result.get());
+            assertEquals("Debug the following code:", result.get());
             
             // Verify context was updated with command name
             verify(context).setCommandName("debug");
+        }
+    }
+
+    @Test
+    void testProcess_WithArgumentPlaceholderAndEmptyArgs() {
+        when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + "ralph-runners");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            when(stateService.getCustomPrompts()).thenReturn(List.of(testPromptWithArgument));
+
+            Optional<String> result = command.process(context, panel);
+
+            assertTrue(result.isPresent());
+            assertEquals("You are a product manager. Task: ", result.get());
+            verify(context).setCommandName("ralph-runners");
         }
     }
 }

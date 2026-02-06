@@ -23,7 +23,7 @@ public class CustomPromptDialog extends DialogWrapper {
     // New constructor for editing existing prompts
     public CustomPromptDialog(Project project, @NotNull String initialCommand, String initialPrompt) {
         super(project);
-        setTitle(initialCommand.isEmpty() ? "Add Custom Prompt" : "Edit Custom Prompt");
+        setTitle(initialCommand.isEmpty() ? "Add Custom Skill" : "Edit Custom Skill");
 
         nameField = new JBTextField(20);
         promptArea = new JBTextArea(10, 40);
@@ -47,9 +47,9 @@ public class CustomPromptDialog extends DialogWrapper {
         namePanel.add(new JLabel("Command Name:"), BorderLayout.WEST);
         namePanel.add(nameField, BorderLayout.CENTER);
 
-        // Prompt input
+        // Skill input
         JPanel promptPanel = new JPanel(new BorderLayout());
-        promptPanel.add(new JLabel("Prompt:"), BorderLayout.NORTH);
+        promptPanel.add(new JLabel("Skill:"), BorderLayout.NORTH);
         JBScrollPane scrollPane = new JBScrollPane(promptArea);
         promptPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -72,7 +72,7 @@ public class CustomPromptDialog extends DialogWrapper {
             return false;
         }
         if (promptArea.getText().trim().isEmpty()) {
-            Messages.showErrorDialog("The prompt cannot be empty.", "Invalid Prompt");
+            Messages.showErrorDialog("The skill cannot be empty.", "Invalid Skill");
             return false;
         }
         return true;

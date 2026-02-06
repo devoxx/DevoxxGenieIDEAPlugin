@@ -14,7 +14,6 @@ import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -197,11 +196,11 @@ public class MCPExecutionService implements Disposable {
                 return null;
             }
             
-            MCPService.logDebug("Initializing HTTP SSE transport with URL: " + sseUrl);
+            MCPService.logDebug("Initializing streamable HTTP transport for HTTP_SSE config with URL: " + sseUrl);
 
-            // Create the transport using the official langchain4j-mcp API
-            HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
-                    .sseUrl(sseUrl)
+            // Use Streamable HTTP transport as replacement for legacy HTTP/SSE transport
+            StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
+                    .url(sseUrl)
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
@@ -211,7 +210,7 @@ public class MCPExecutionService implements Disposable {
                 transportBuilder.customHeaders(mcpServer.getHeaders());
             }
 
-            HttpMcpTransport transport = transportBuilder.build();
+            McpTransport transport = transportBuilder.build();
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
