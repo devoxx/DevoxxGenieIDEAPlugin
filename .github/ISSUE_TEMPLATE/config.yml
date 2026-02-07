@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://genie.devoxx.com
+    about: Check our comprehensive documentation for guides and troubleshooting
+  - name: 💬 GitHub Discussions
+    url: https://github.com/devoxx/DevoxxGenieIDEAPlugin/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🐦 Follow on X/Twitter
+    url: https://x.com/devoxxgenie
+    about: Stay updated with the latest news and announcements

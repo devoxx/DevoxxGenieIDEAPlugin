@@ -17,21 +17,31 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-        <p>Devoxx Genie IDEA Plugin</p>
+        <p>Devoxx Genie - Your AI-powered coding assistant for IntelliJ IDEA</p>
+
+        <p><strong><a href="https://genie.devoxx.com">📖 Full Documentation at genie.devoxx.com</a></strong></p>
 
         <h3>Key Features</h3>
         <UL>
-            <LI>Support for local and cloud based language models: Ollama, OpenAI, Anthropic, Groq, ...</LI>
-            <LI>User defined prompts for selected code snippets</LI>
+            <LI><strong>Local & Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, OpenAI, Anthropic, Gemini, Groq, and more</LI>
+            <LI><strong>MCP Support:</strong> Model Context Protocol with integrated marketplace for installing servers</LI>
+            <LI><strong>RAG:</strong> Retrieval-Augmented Generation for semantic code search</LI>
+            <LI><strong>Web Search:</strong> Integrate Google and Tavily search into your prompts</LI>
+            <LI><strong>Custom Skills:</strong> User-defined prompts and commands</LI>
+            <LI><strong>Chat History:</strong> Locally stored conversations</LI>
+            <LI><strong>Token Cost Calculator:</strong> Real-time cost estimation for cloud providers</LI>
+            <LI><strong>Multi-modal Support:</strong> Drag & drop images for vision models</LI>
         </UL>
-        <h3>Set-Up</h3>
+        <h3>Quick Start</h3>
         <UL>
             <LI>Install the plugin</LI>
-            <LI>Make sure you have Ollama, LMStudio or GPT4All running</LI>
-            <LI>Optional: Add API Keys for Cloud based LLM providers</LI>
-            <LI>Optional: Update the command skills in the Settings</LI>
-            <LI>Start using the plugin</LI>
+            <LI>For local LLMs: Install Ollama, LMStudio, or GPT4All</LI>
+            <LI>For cloud LLMs: Add your API keys in Settings</LI>
+            <LI>Optional: Configure MCP servers from the marketplace</LI>
+            <LI>Start prompting!</LI>
         </UL>
+
+        <p>Need help? Visit our <a href="https://genie.devoxx.com/docs/intro">Getting Started Guide</a> or check the <a href="https://genie.devoxx.com/docs/troubleshooting">Troubleshooting</a> page.</p>
     ]]></description>
 
     <change-notes><![CDATA[

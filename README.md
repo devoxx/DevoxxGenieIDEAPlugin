@@ -5,16 +5,30 @@
 [![X](https://img.shields.io/twitter/follow/DevoxxGenie)](https://x.com/devoxxgenie)
 ![GitHub Repo stars](https://img.shields.io/github/stars/devoxx/DevoxxGenieIDEAPlugin)
 ![JetBrains Plugin Rating](https://img.shields.io/jetbrains/plugin/r/stars/24169-devoxxgenie)
+[![Documentation](https://img.shields.io/badge/docs-genie.devoxx.com-blue)](https://genie.devoxx.com)
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
 We now also support RAG-based prompt context based on your vectorized project files. 
 In addition to Git Dif viewer and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
-With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie isn’t just another developer tool — it’s a glimpse into the future of agentic programming. One thing’s clear: we’re in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
+With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 41.9K+ Downloads
+
+## 📚 Documentation
+
+**[📖 Visit our comprehensive documentation at genie.devoxx.com](https://genie.devoxx.com)**
+
+Quick links:
+- [Getting Started](https://genie.devoxx.com/docs/intro) - Start using DevoxxGenie in minutes
+- [Installation Guide](https://genie.devoxx.com/docs/category/installation) - Local and cloud LLM setup
+- [Configuration](https://genie.devoxx.com/docs/category/configuration) - API keys, settings, and customization
+- [Features](https://genie.devoxx.com/docs/category/features) - Explore all capabilities
+- [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
+- [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
+- [Troubleshooting](https://genie.devoxx.com/docs/troubleshooting) - Common issues and solutions
 
 ### Agentic Programming with DevoxxGenie
 
@@ -77,6 +91,8 @@ With MCPs and frontier models like Claude Sonnet 3.7, Gemini Pro, DevoxxGenie is
 
 ### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
 
+**[📖 Full MCP Documentation](https://genie.devoxx.com/docs/mcp-support)**
+
 Initial support for Model Context Protocol (MCP) server tools including debugging of MCP requests & responses!
 MCP support is a crucial feature towards ful Agentic support within DevoxxGenie.
 Watch [short demo](https://www.youtube.com/watch?v=zOPhYvgJKJU) of MCP in action using DevoxxGenie
@@ -101,6 +117,8 @@ When configured correctly you can see the tools that the MCP brings to your LLM 
 
 ### 🗂️ DEVOXXGENIE.md
 
+**[📖 DEVOXXGENIE.md Documentation](https://genie.devoxx.com/docs/devoxxgenie-md)**
+
 You can now generate a **DEVOXXGENIE.md** file directly from the "Prompts" plugin settings page or just use /init in the prompt input field.
 
 <img width="998" alt="Screenshot 2025-03-14 at 17 26 43" src="https://github.com/user-attachments/assets/95f7fc0e-3764-48f9-9d3c-dc19ee4ae258" />
@@ -122,7 +140,9 @@ or even local models such as [LLaVA](https://ollama.com/library/llava)
 
 You can even combine screenshots together with some code and then ask related questions!
 
-### 🔥 RAG Feature 
+### 🔥 RAG Feature
+
+**[📖 Full RAG Documentation](https://genie.devoxx.com/docs/rag)**
 
 <img width="749" alt="RAG" src="https://github.com/user-attachments/assets/ea34247a-b33d-40a2-b96a-d10de0868dfa">
 
@@ -250,6 +270,8 @@ Create an account on [Grok](https://console.x.ai/) and generated an API Key.  No
 
 ### Installation:
 
+**[📖 Full Installation Guide](https://genie.devoxx.com/docs/category/installation)**
+
 - **From IntelliJ IDEA**: Go to `Settings` -> `Plugins` -> `Marketplace` -> Enter 'Devoxx' to find [plugin](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) OR Install plugin from Disk
 - **From Source Code**: Clone the repository, build the plugin using `./gradlew buildPlugin`, and install the plugin from the `build/distributions` directory and select file 'DevoxxGenie-X.Y.Z.zip'
 
@@ -285,6 +307,8 @@ Enjoy!
 
 
 ## Contribute
+
+**[📖 Contributing Guide](https://genie.devoxx.com/docs/contributing)**
 
 ### Understanding the Prompt Flow
 
