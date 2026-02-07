@@ -99,7 +99,10 @@ export default function Home() {
                 DevoxxGenie implements Model Context Protocol (MCP) support, which enables advanced agent-like capabilities, allowing the LLM to access external tools and services to provide more comprehensive and accurate responses.
               </p>
               <p>
-                The MCP feature is a significant enhancement to DevoxxGenie's AI assistant capabilities, enabling developers to leverage specialized tools directly from their LLM conversations and perform complex tasks that go beyond text generation.
+                <strong>Built-in MCP Marketplace:</strong> Browse, search, and install MCP servers directly from within IntelliJ IDEA. Discover tools for filesystem access, databases, web browsing, and more — all without leaving your IDE.
+              </p>
+              <p>
+                <strong>MCP Debugging:</strong> Built-in debugging panel lets you monitor MCP requests and responses in real-time, making it easy to understand how the LLM interacts with external tools and troubleshoot any issues.
               </p>
             </div>
           </div>
