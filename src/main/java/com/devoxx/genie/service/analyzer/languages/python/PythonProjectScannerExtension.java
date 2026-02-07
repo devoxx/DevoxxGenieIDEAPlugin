@@ -2,6 +2,7 @@ package com.devoxx.genie.service.analyzer.languages.python;
 
 import com.devoxx.genie.service.analyzer.ProjectAnalyzerExtension;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,7 @@ public class PythonProjectScannerExtension implements ProjectAnalyzerExtension {
         }
 
         // Get project base directory
-        VirtualFile baseDir = project.getBaseDir();
+        VirtualFile baseDir = ProjectUtil.guessProjectDir(project);
         if (baseDir == null) {
             return;
         }

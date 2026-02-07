@@ -10,6 +10,7 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +51,7 @@ public class DevoxxGenieGenerator {
                                 ProgressIndicator indicator) {
         this.project = project;
         this.includeTree = includeTree;
-        this.baseDir = project.getBaseDir();
+        this.baseDir = ProjectUtil.guessProjectDir(project);
         this.indicator = indicator;
         
         // Initialize components
