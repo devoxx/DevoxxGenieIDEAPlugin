@@ -9,6 +9,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.*;
 
+import static com.devoxx.genie.action.AddSnippetAction.*;
 import static com.devoxx.genie.util.ImageUtil.isImageFile;
 
 @Service
@@ -88,6 +89,7 @@ public final class FileListManager {
             List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
             currentFiles.remove(file);
         }
+        clearSelectionMetadata(file);
     }
 
     public @NotNull List<VirtualFile> getFiles(@NotNull Project project) {
@@ -131,6 +133,9 @@ public final class FileListManager {
     public void clear(@NotNull Project project) {
         String projectHash = project.getLocationHash();
 
+        // Clear selection metadata from all files before removing them
+        clearSelectionMetadataForProject(projectHash);
+
         // Remove the entries for this project
         filesMap.remove(projectHash);
         imageFilesMap.remove(projectHash);
@@ -154,6 +159,7 @@ public final class FileListManager {
      */
     public void clearCurrentFiles(@NotNull Project project) {
         String projectHash = project.getLocationHash();
+        clearSelectionMetadataForProject(projectHash);
         filesMap.remove(projectHash);
         imageFilesMap.remove(projectHash);
         notifyAllObservers(project);
@@ -165,9 +171,42 @@ public final class FileListManager {
      */
     public void clearNonImageFiles(@NotNull Project project) {
         String projectHash = project.getLocationHash();
+        List<VirtualFile> files = filesMap.get(projectHash);
+        if (files != null) {
+            files.forEach(FileListManager::clearSelectionMetadata);
+        }
         filesMap.remove(projectHash);
         previouslyAddedFiles.remove(projectHash);
         notifyAllObservers(project);
+    }
+
+    /**
+     * Clear selection metadata from all files (both regular and image) for a project.
+     * Must be called before removing the file lists from the maps.
+     */
+    private void clearSelectionMetadataForProject(String projectHash) {
+        List<VirtualFile> files = filesMap.get(projectHash);
+        if (files != null) {
+            files.forEach(FileListManager::clearSelectionMetadata);
+        }
+        List<VirtualFile> images = imageFilesMap.get(projectHash);
+        if (images != null) {
+            images.forEach(FileListManager::clearSelectionMetadata);
+        }
+    }
+
+    /**
+     * Clear snippet/selection UserData keys from a VirtualFile.
+     * Fixes issue #783: stale selection metadata caused re-added files
+     * to still display as code snippets with old line numbers.
+     */
+    private static void clearSelectionMetadata(VirtualFile file) {
+        file.putUserData(ORIGINAL_FILE_KEY, null);
+        file.putUserData(SELECTED_TEXT_KEY, null);
+        file.putUserData(SELECTION_START_KEY, null);
+        file.putUserData(SELECTION_END_KEY, null);
+        file.putUserData(SELECTION_START_LINE_KEY, null);
+        file.putUserData(SELECTION_END_LINE_KEY, null);
     }
 
     private void notifyObservers(@NotNull Project project, VirtualFile file) {
