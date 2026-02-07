@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.util.ImageUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.LightVirtualFile;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +17,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import static com.devoxx.genie.action.AddSnippetAction.*;
 import static org.mockito.Mockito.*;
 
 class FileListManagerTest extends AbstractLightPlatformTestCase {
@@ -299,6 +301,92 @@ class FileListManagerTest extends AbstractLightPlatformTestCase {
             fileListManager.clear(mockProject);
             verify(mockObserver, times(1)).allFilesRemoved();
             verify(mockObserver2, times(1)).allFilesRemoved();
+        }
+    }
+
+    /**
+     * Reproduces issue #783: Adding text selection to prompt context doesn't reset.
+     *
+     * Scenario:
+     * 1. User selects code lines 10-20 from a file and adds it to context
+     *    → selection metadata (SELECTED_TEXT_KEY, line numbers) is stored on the VirtualFile
+     * 2. User removes the file from context
+     * 3. User re-adds the complete file (no selection)
+     * 4. BUG: The file still shows old line numbers because userData was never cleared
+     */
+    @Test
+    void testRemoveFile_shouldClearSelectionMetadata_issue783() {
+        try (MockedStatic<ImageUtil> imageUtilMock = Mockito.mockStatic(ImageUtil.class)) {
+            // Use a real LightVirtualFile so putUserData/getUserData works
+            LightVirtualFile realFile = new LightVirtualFile("MyFile.java", "public class MyFile {}");
+            imageUtilMock.when(() -> ImageUtil.isImageFile(realFile)).thenReturn(false);
+
+            // Step 1: Simulate adding a code selection — this is what
+            // ChatMessageContextUtil.addDefaultEditorInfoToMessageContext() does
+            realFile.putUserData(ORIGINAL_FILE_KEY, realFile);
+            realFile.putUserData(SELECTED_TEXT_KEY, "selected code");
+            realFile.putUserData(SELECTION_START_KEY, 0);
+            realFile.putUserData(SELECTION_END_KEY, 13);
+            realFile.putUserData(SELECTION_START_LINE_KEY, 10);
+            realFile.putUserData(SELECTION_END_LINE_KEY, 20);
+
+            fileListManager.addFile(mockProject, realFile);
+
+            // Verify the selection metadata is present
+            assertNotNull("Selection text should be set", realFile.getUserData(SELECTED_TEXT_KEY));
+            assertEquals("Start line should be 10", Integer.valueOf(10), realFile.getUserData(SELECTION_START_LINE_KEY));
+            assertEquals("End line should be 20", Integer.valueOf(20), realFile.getUserData(SELECTION_END_LINE_KEY));
+
+            // Step 2: Remove the file from context
+            fileListManager.removeFile(mockProject, realFile);
+            assertTrue("File should be removed from list", fileListManager.isEmpty(mockProject));
+
+            // Step 3: Verify selection metadata is cleared after removal
+            // This is the core assertion for issue #783:
+            // After removing a file from context, the selection metadata should be cleared
+            // so that re-adding the file shows it as a complete file, not a code snippet
+            assertNull("SELECTED_TEXT_KEY should be cleared after removeFile",
+                    realFile.getUserData(SELECTED_TEXT_KEY));
+            assertNull("SELECTION_START_LINE_KEY should be cleared after removeFile",
+                    realFile.getUserData(SELECTION_START_LINE_KEY));
+            assertNull("SELECTION_END_LINE_KEY should be cleared after removeFile",
+                    realFile.getUserData(SELECTION_END_LINE_KEY));
+            assertNull("SELECTION_START_KEY should be cleared after removeFile",
+                    realFile.getUserData(SELECTION_START_KEY));
+            assertNull("SELECTION_END_KEY should be cleared after removeFile",
+                    realFile.getUserData(SELECTION_END_KEY));
+            assertNull("ORIGINAL_FILE_KEY should be cleared after removeFile",
+                    realFile.getUserData(ORIGINAL_FILE_KEY));
+        }
+    }
+
+    /**
+     * Reproduces the second part of issue #783: clearing all files should also
+     * clear selection metadata from each file.
+     */
+    @Test
+    void testClear_shouldClearSelectionMetadata_issue783() {
+        try (MockedStatic<ImageUtil> imageUtilMock = Mockito.mockStatic(ImageUtil.class)) {
+            LightVirtualFile realFile = new LightVirtualFile("MyFile.java", "public class MyFile {}");
+            imageUtilMock.when(() -> ImageUtil.isImageFile(realFile)).thenReturn(false);
+
+            // Add file with selection metadata
+            realFile.putUserData(SELECTED_TEXT_KEY, "selected code");
+            realFile.putUserData(SELECTION_START_LINE_KEY, 5);
+            realFile.putUserData(SELECTION_END_LINE_KEY, 15);
+
+            fileListManager.addFile(mockProject, realFile);
+
+            // Clear all files
+            fileListManager.clear(mockProject);
+
+            // Selection metadata should be gone
+            assertNull("SELECTED_TEXT_KEY should be cleared after clear()",
+                    realFile.getUserData(SELECTED_TEXT_KEY));
+            assertNull("SELECTION_START_LINE_KEY should be cleared after clear()",
+                    realFile.getUserData(SELECTION_START_LINE_KEY));
+            assertNull("SELECTION_END_LINE_KEY should be cleared after clear()",
+                    realFile.getUserData(SELECTION_END_LINE_KEY));
         }
     }
 }

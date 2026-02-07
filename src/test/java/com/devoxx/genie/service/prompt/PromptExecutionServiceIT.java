@@ -8,7 +8,6 @@ import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptE
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.mistralai.MistralAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
  * <ul>
  *     <li>{@link #testExecuteQueryOpenAI()} requires `OPENAI_API_KEY`</li>
  *     <li>{@link #testExecuteQueryAnthropic()} requires `ANTHROPIC_API_KEY`</li>
- *     <li>{@link #testExecuteQueryGemini()} requires `GEMINI_API_KEY`</li>
  *     <li>{@link #testExecuteQueryMistral()} requires `MISTRAL_API_KEY`</li>
  *     <li>{@link #testExecuteQueryDeepInfra()} requires `DEEPINFRA_API_KEY`</li>
  * </ul>
@@ -74,21 +72,6 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
     }
 
     @Test
-    @EnabledIfEnvironmentVariable(named = "GEMINI_API_KEY", matches = ".+")
-    public void testExecuteQueryGemini() {
-        LanguageModel model = LanguageModel.builder()
-            .provider(ModelProvider.Google)
-            .modelName("gemini-1.5-flash")
-            .displayName("Gemini 1.5 Flash")
-            .apiKeyUsed(true)
-            .inputCost(0.0)
-            .outputCost(0.0)
-            .inputMaxTokens(32768)
-            .build();
-        verifyResponse(createChatModel(model), model);
-    }
-
-    @Test
     @EnabledIfEnvironmentVariable(named = "MISTRAL_API_KEY", matches = ".+")
     public void testExecuteQueryMistral() {
         LanguageModel model = LanguageModel.builder()
@@ -126,10 +109,6 @@ public class PromptExecutionServiceIT extends AbstractLightPlatformTestCase {
                 .build();
             case Anthropic -> AnthropicChatModel.builder()
                 .apiKey(System.getenv("ANTHROPIC_API_KEY"))
-                .modelName(languageModel.getModelName())
-                .build();
-            case Google -> GoogleAiGeminiChatModel.builder()
-                .apiKey(System.getenv("GEMINI_API_KEY"))
                 .modelName(languageModel.getModelName())
                 .build();
             case Mistral -> MistralAiChatModel.builder()
