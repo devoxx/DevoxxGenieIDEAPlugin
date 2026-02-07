@@ -9,8 +9,8 @@ import org.cef.handler.CefRequestHandlerAdapter;
 import org.cef.network.CefRequest;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Handler for managing external links in the webview.
@@ -95,13 +95,14 @@ public class WebViewExternalLinkHandler extends CefRequestHandlerAdapter {
      */
     private boolean isExternalUrl(@NotNull String url) {
         try {
-            URL parsedUrl = new URL(url);
-            String protocol = parsedUrl.getProtocol().toLowerCase();
-            
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+
             // Consider HTTP and HTTPS URLs as external if they're not from our internal server
-            return ("http".equals(protocol) || "https".equals(protocol)) && 
+            return scheme != null &&
+                   ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) &&
                    !url.startsWith(internalServerUrl);
-        } catch (MalformedURLException e) {
+        } catch (URISyntaxException e) {
             log.debug("Malformed URL, treating as internal: {}", url);
             return false;
         }
