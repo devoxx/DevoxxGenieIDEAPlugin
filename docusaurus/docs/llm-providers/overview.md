@@ -2,7 +2,7 @@
 sidebar_position: 1
 title: LLM Providers Overview - DevoxxGenie Documentation
 description: A comprehensive guide to all LLM providers supported by DevoxxGenie, including local and cloud-based options, with comparison of features and capabilities.
-keywords: [devoxxgenie, intellij plugin, llm providers, openai, anthropic, local llm, cloud llm, mistral, ollama]
+keywords: [devoxxgenie, intellij plugin, llm providers, openai, anthropic, local llm, cloud llm, grok, mistral, ollama]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -23,14 +23,13 @@ Local providers run models directly on your machine, offering:
 - **Offline usage**: Work without internet connection
 - **Customization**: Fine-tune models for your specific needs
 
-Popular local LLM providers supported by DevoxxGenie include:
+Supported local providers:
 - [Ollama](local-models.md#ollama)
 - [LMStudio](local-models.md#lmstudio)
 - [GPT4All](local-models.md#gpt4all)
 - [Llama.cpp](local-models.md#llamacpp)
-- [Exo](local-models.md#exo)
-- [JLama](local-models.md#jlama)
 - [Jan](local-models.md#jan)
+- [Custom OpenAI-compatible](local-models.md#custom-openai-compatible-providers)
 
 ### Cloud LLM Providers
 
@@ -41,10 +40,11 @@ Cloud providers offer powerful models as a service:
 - **Easy setup**: No model downloads or configuration
 - **Regular updates**: Always use the latest models
 
-Cloud LLM providers supported by DevoxxGenie include:
-- [OpenAI](cloud-models.md#openai) (GPT-4, GPT-3.5, etc.)
+Supported cloud providers:
+- [OpenAI](cloud-models.md#openai) (GPT-4o, O-series, etc.)
 - [Anthropic](cloud-models.md#anthropic) (Claude models)
 - [Google](cloud-models.md#google) (Gemini models)
+- [Grok](cloud-models.md#grok) (xAI)
 - [Mistral](cloud-models.md#mistral)
 - [Groq](cloud-models.md#groq)
 - [DeepInfra](cloud-models.md#deepinfra)
@@ -60,8 +60,6 @@ You can select and configure LLM providers in two ways:
 1. **From the DevoxxGenie Panel**: Use the dropdown in the top-right corner of the DevoxxGenie window
 2. **From Settings**: Go to Settings > Tools > DevoxxGenie
 
-![Provider Selection](/img/provider-selection.png)
-
 ## Provider Comparison
 
 | Provider | Privacy | Setup Complexity | Cost | Performance | Multimodal |
@@ -71,13 +69,12 @@ You can select and configure LLM providers in two ways:
 | LMStudio | High | Medium | Free | Varies by hardware | Some models |
 | GPT4All | High | Low | Free | Basic | No |
 | Llama.cpp | High | High | Free | Varies by hardware | Some models |
-| Exo | High | Medium | Free | Good on Apple Silicon | Some models |
-| JLama | High | Medium | Free | Good for Java models | No |
 | Jan | High | Low | Free | Basic | No |
 | **Cloud Providers** |
 | OpenAI | Low | Low | Pay-per-token | Excellent | GPT-4V+ |
 | Anthropic | Low | Low | Pay-per-token | Excellent | Claude 3+ |
 | Google | Low | Low | Pay-per-token | Excellent | Yes |
+| Grok | Low | Low | Pay-per-token | Very Good | Varies |
 | Mistral | Low | Low | Pay-per-token | Very Good | No |
 | Groq | Low | Low | Pay-per-token | Very Good | No |
 | DeepSeek | Low | Low | Pay-per-token | Good | No |
@@ -85,8 +82,6 @@ You can select and configure LLM providers in two ways:
 | Amazon Bedrock | Medium | High | Pay-per-token | Very Good | Some models |
 
 ## Choosing the Right Provider
-
-When selecting an LLM provider, consider:
 
 ### For Local Providers
 
@@ -102,8 +97,6 @@ When selecting an LLM provider, consider:
 - **Specific Features**: Some providers offer unique capabilities
 
 ## Provider Configuration
-
-Each provider requires specific configuration:
 
 ### Local Providers
 
@@ -121,15 +114,6 @@ For detailed configuration instructions, see:
 - [Local Models Configuration](local-models.md)
 - [Cloud Models Configuration](cloud-models.md)
 - [Custom Providers](custom-providers.md)
-
-## Provider-Specific Features
-
-Some features in DevoxxGenie are provider-dependent:
-
-- **Multimodal Support**: Image support requires compatible providers like OpenAI GPT-4V, Claude 3, or Gemini
-- **Window Context Size**: Varies by provider and model
-- **Streaming Support**: Not all providers support token streaming
-- **Cost Calculation**: Only available for cloud providers
 
 ## Troubleshooting Provider Issues
 

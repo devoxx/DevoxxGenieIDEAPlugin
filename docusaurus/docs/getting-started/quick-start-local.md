@@ -20,8 +20,7 @@ DevoxxGenie supports several local LLM providers:
 - [LMStudio](https://lmstudio.ai/)
 - [GPT4All](https://gpt4all.io/index.html)
 - [Llama.cpp](https://github.com/ggerganov/llama.cpp)
-- [Exo](https://github.com/exo-explore/exo)
-- [JLama](https://github.com/tjake/Jlama)
+- [Jan](https://jan.ai/)
 - Custom OpenAI-compatible providers
 
 ## Setting Up with Ollama (Recommended)

@@ -2,7 +2,7 @@
 sidebar_position: 1
 title: Features Overview - DevoxxGenie Documentation
 description: An overview of all features available in DevoxxGenie, including core features, LLM provider support, and advanced capabilities for IntelliJ IDEA.
-keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag, mcp, git diff]
+keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag, mcp, skills]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -16,8 +16,8 @@ DevoxxGenie offers a comprehensive set of features designed to enhance your deve
 
 Connect to a wide range of LLM providers:
 
-- **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Exo, Jan, and custom OpenAI-compatible providers
-- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), DeepInfra, DeepSeek, OpenRouter, Azure OpenAI, and Amazon Bedrock
+- **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, and custom OpenAI-compatible providers
+- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, OpenRouter, Azure OpenAI, and Amazon Bedrock
 
 ### Chat Interface
 
@@ -35,10 +35,10 @@ Connect to a wide range of LLM providers:
 
 ### Developer Tools
 
-- **Git Diff/Merge**: Review and accept LLM-generated code changes with a Git diff interface
+- **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
+- **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
 - **Web Search**: Augment LLM knowledge with web search results from Google or Tavily
 - **Token Cost Calculator**: Calculate token usage and cost before sending prompts
-- **MCP Support**: Model Context Protocol servers for extended capabilities
 
 ### Multimodal Capabilities
 
@@ -53,7 +53,8 @@ Connect to a wide range of LLM providers:
 | Streaming | ✅ | ✅ | ✅ | ✅ | Varies |
 | RAG Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Project Context | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Git Diff | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MCP Support | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Skills | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Web Search | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Multimodal | Varies* | GPT-4V+ | Claude 3+ | Gemini Pro+ | Varies |
 
@@ -64,17 +65,16 @@ Connect to a wide range of LLM providers:
 DevoxxGenie also includes experimental features that are being developed and refined:
 
 - **Test Driven Generation (TDG)**: Write tests and generate implementation code
-- **GraphRAG**: Enhanced RAG capabilities using knowledge graphs (coming soon)
 
 ## Feature Details
 
 For detailed information about specific features, check out the dedicated pages:
 
 - [Chat Interface](chat-interface.md)
-- [RAG Support](/docs/features/rag)
-- [MCP Support](mcp.md)
+- [MCP Support](mcp_expanded.md)
+- [Skills](skills.md)
 - [Web Search](web-search.md)
-- [Git Diff](git-diff.md)
+- [RAG Support](rag.md)
 - [Drag & Drop Images](dnd-images.md)
 - [Project Scanner](project-scanner.md)
 - [Chat Memory](chat-memory.md)

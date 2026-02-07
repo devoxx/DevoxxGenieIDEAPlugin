@@ -1,5 +1,8 @@
 ---
 sidebar_position: 2
+title: Local LLM Providers
+description: Guide to all local LLM providers supported by DevoxxGenie, including setup instructions and configuration.
+keywords: [devoxxgenie, ollama, lmstudio, gpt4all, llama.cpp, jan, local llm, privacy]
 ---
 
 # Local LLM Providers
@@ -14,10 +17,8 @@ DevoxxGenie integrates with these local LLM providers:
 2. [LMStudio](#lmstudio)
 3. [GPT4All](#gpt4all)
 4. [Llama.cpp](#llamacpp)
-5. [Exo](#exo)
-6. [JLama](#jlama)
-7. [Jan](#jan)
-8. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
+5. [Jan](#jan)
+6. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
 
 ## Ollama
 
@@ -33,18 +34,9 @@ DevoxxGenie integrates with these local LLM providers:
 3. In DevoxxGenie settings, select "Ollama" as the provider
 4. Choose your downloaded model from the dropdown
 
-### Available Models
-
-Ollama supports a wide range of models:
-
-- **Llama 3.2**: Latest Meta Llama model in various sizes (70B, 8B, 1B)
-- **Phi-3**: Microsoft's efficient models (Mini, Small)
-- **CodeLlama**: Specialized for code generation
-- **LLaVA**: Multimodal model with image support
-- **Mistral**: Efficient open models
-- **And many more**: New models are regularly added
-
-Use `ollama list` to see all downloaded models.
+:::tip
+Available models are **automatically fetched** from your running Ollama instance. Any model you've pulled with `ollama pull` will appear in the model dropdown.
+:::
 
 ### Configuration
 
@@ -52,7 +44,7 @@ In DevoxxGenie settings, you can configure:
 
 - **Endpoint URL**: Default is `http://localhost:11434`
 - **Model**: Select from available downloaded models
-- **Parameters**: 
+- **Parameters**:
   - Temperature (creativity vs. predictability)
   - Top P (diversity of responses)
   - Context window (varies by model)
@@ -75,6 +67,10 @@ In DevoxxGenie settings, you can configure:
 3. Start the local server in LM Studio
 4. In DevoxxGenie settings, select "LMStudio" as the provider
 5. Configure the endpoint (default: `http://localhost:1234/v1`)
+
+:::tip
+Available models are **automatically fetched** from the running LM Studio server.
+:::
 
 ### Configuration
 
@@ -150,59 +146,6 @@ Llama.cpp offers advanced configuration:
 - Support for many model architectures
 - Active development community
 
-## Exo
-
-[Exo](https://github.com/exo-explore/exo) is a local LLM cluster optimized for Apple Silicon, allowing powerful inference on Mac computers.
-
-### Setup
-
-1. Follow the installation instructions from the [Exo repository](https://github.com/exo-explore/exo)
-2. Start the Exo service
-3. In DevoxxGenie settings, select "Custom OpenAI" as the provider
-4. Configure the URL to point to your Exo instance
-
-### Configuration
-
-Exo provides specialized features for Apple Silicon:
-
-- **Apple Silicon Optimization**: Leverages Metal performance
-- **Model Scaling**: Can run large models across multiple Macs
-- **REST API**: OpenAI-compatible API for easy integration
-
-### Advantages of Exo
-
-- Optimized for Apple Silicon
-- Can run very large models efficiently
-- Support for clustering across multiple Macs
-- Good performance-to-resource ratio
-
-## JLama
-
-[JLama](https://github.com/tjake/Jlama) is a 100% Modern Java LLM inference engine, making it particularly well-suited for Java developers.
-
-### Setup
-
-1. Clone the [JLama repository](https://github.com/tjake/Jlama)
-2. Build the project following the repository instructions
-3. Start the server with your chosen model
-4. In DevoxxGenie settings, select "Custom OpenAI" as the provider
-5. Configure the URL to point to your JLama server
-
-### Configuration
-
-JLama offers Java-specific options:
-
-- **Native Java Implementation**: No JNI or external dependencies
-- **Quantization**: Support for various quantization schemes
-- **REST API**: OpenAI-compatible API for integration
-
-### Advantages of JLama
-
-- Pure Java implementation
-- Good integration with Java ecosystem
-- Familiar for Java developers
-- No need for C++ toolchains
-
 ## Jan
 
 [Jan](https://jan.ai/) is an open-source alternative to ChatGPT that runs locally on your computer.
@@ -263,12 +206,6 @@ Many local servers support the OpenAI API format:
 
 When using local LLM providers, consider your hardware:
 
-### CPU
-
-- Most models can run on CPU, but performance will vary
-- More cores and higher clock speeds improve performance
-- Modern CPUs with AVX2/AVX512 provide better performance
-
 ### RAM
 
 - Minimum: 8GB for small models (1-3B parameters)
@@ -279,7 +216,7 @@ When using local LLM providers, consider your hardware:
 
 - NVIDIA GPUs: CUDA acceleration for most providers
 - AMD GPUs: ROCm support in some providers
-- Apple Silicon: Metal acceleration (especially with Exo)
+- Apple Silicon: Metal acceleration for excellent performance
 
 ### Disk Space
 
@@ -294,21 +231,14 @@ When using local LLM providers, consider your hardware:
 - **Specialized models**: Use code-specific models for programming tasks
 - **Quantized models**: Lower precision models use less memory with minimal quality loss
 
-### Performance Optimization
-
-- **Adjust context size**: Smaller context windows use less memory
-- **Batch requests**: When possible, batch multiple requests
-- **GPU offloading**: Enable GPU acceleration when available
-- **Close other applications**: Free up memory for model inference
-
 ### Provider Selection
 
 Choose the provider that best matches your needs:
 
 - **Ease of use**: Ollama and GPT4All are simplest to set up
-- **Performance**: Llama.cpp and Exo offer highest performance
-- **Customization**: LM Studio and Llama.cpp provide most options
-- **Java integration**: JLama is ideal for Java developers
+- **Performance**: Llama.cpp offers the most control over optimization
+- **Customization**: LM Studio and Llama.cpp provide the most options
+- **All-in-one**: Jan provides model management + chat in a single app
 
 ## Troubleshooting
 
@@ -325,7 +255,6 @@ Choose the provider that best matches your needs:
 - Lower the context window size
 - Use a smaller or more quantized model
 - Enable GPU acceleration if available
-- Increase thread count (CPU inference)
 
 #### Connection Errors
 
@@ -333,22 +262,3 @@ Choose the provider that best matches your needs:
 - Check the endpoint URL in DevoxxGenie settings
 - Ensure no firewall is blocking the connection
 - Verify the correct port is configured
-
-#### Out of Memory
-
-- Close other memory-intensive applications
-- Try a more heavily quantized model
-- Reduce the context window size
-- Use a smaller model
-
-## Future Directions
-
-Local LLM technology is rapidly evolving:
-
-- **Smaller, more efficient models**: Better performance on consumer hardware
-- **Improved quantization**: Higher quality with lower precision
-- **Better GPU utilization**: More efficient acceleration
-- **Specialized models**: Models optimized for specific tasks like coding
-- **Fine-tuning tools**: Easier customization of models for specific domains
-
-Stay updated with the latest developments by checking provider websites and GitHub repositories regularly.
