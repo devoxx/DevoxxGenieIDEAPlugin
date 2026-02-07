@@ -23,6 +23,9 @@ const config = {
   // For custom domain, use '/'
   baseUrl: '/',
 
+  // Trailing slash behavior for canonical URLs
+  trailingSlash: false,
+
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'devoxx', // Usually your GitHub org/user name.
@@ -59,8 +62,8 @@ const config = {
               'priceCurrency': 'USD'
             },
             'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
-            'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-demo.gif',
-            'softwareVersion': '1.0.0',
+            'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
+            'softwareVersion': '0.9.2',
             'author': {
               '@type': 'Organization',
               'name': 'Devoxx',
@@ -115,11 +118,16 @@ const config = {
       // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
       metadata: [
-        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, rag, ai coding, local llm, cloud llm'},
+        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
+        {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for IntelliJ IDEA. Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, and custom skills.'},
         {name: 'og:type', content: 'website'},
+        {name: 'og:site_name', content: 'DevoxxGenie'},
         {name: 'twitter:card', content: 'summary_large_image'},
+        {name: 'twitter:site', content: '@DevoxxGenie'},
         {name: 'twitter:creator', content: '@DevoxxGenie'},
         {name: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
+        {name: 'og:image:width', content: '1200'},
+        {name: 'og:image:height', content: '630'},
       ],
       navbar: {
         title: 'DevoxxGenie',
