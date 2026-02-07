@@ -45,6 +45,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.3</h2>
+        <UL>
+            <LI>Externalize welcome text with remote fetching from genie.devoxx.com</LI>
+            <LI>Support announcements, dynamic feature lists, and social links without plugin release</LI>
+            <LI>Add analytics tracking pixel for welcome view metrics via Cloudflare Worker + GA4</LI>
+            <LI>Schema versioning for remote welcome content with graceful local fallback</LI>
+        </UL>
         <h2>v0.9.2</h2>
         <UL>
             <LI>Add dedicated Skills settings dialog for custom user-defined skills</LI>

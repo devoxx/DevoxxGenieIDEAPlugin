@@ -2,6 +2,14 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.3]
+
+### Added
+- Externalize welcome text with remote fetching from `genie.devoxx.com/api/welcome.json` (#845)
+- Support for announcements, dynamic feature lists, and social links in welcome screen without plugin release (#845)
+- Analytics tracking pixel for welcome view metrics via Cloudflare Worker + GA4 Measurement Protocol (#845)
+- Schema versioning for remote welcome content with graceful local fallback (#845)
+
 ## [0.9.2]
 
 ### Added
