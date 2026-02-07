@@ -199,6 +199,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean mcpApprovalRequired = true;
     private Integer mcpApprovalTimeout = MCP_APPROVAL_TIMEOUT;
 
+    // Welcome content cache
+    private String welcomeContentCachedJson = "";
+    private long welcomeContentLastFetchTimestamp = 0L;
+    private String welcomeContentPluginVersion = "";
+
     // Appearance settings
     private Double lineHeight = 1.6;  // Default line height multiplier
     private Integer messagePadding = 10;  // Padding inside messages in px
