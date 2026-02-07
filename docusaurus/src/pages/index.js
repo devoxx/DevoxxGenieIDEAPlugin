@@ -63,19 +63,19 @@ export default function Home() {
             </div>
             <div className="col col--6">
               <div className={styles.videoContainer}>
-                <video 
+                <iframe
                   className={styles.demoVideo}
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  controls={false}
-                >
-                  <source src={useBaseUrl('/videos/devoxxgenie-demo.mp4')} type="video/mp4" />
-                  {/* Fallback to GIF if video fails to load */}
-                  Your browser does not support the video tag. 
-                  <img src={useBaseUrl('/img/devoxxgenie-demo.gif')} alt="DevoxxGenie in action" className="feature-image" />
-                </video>
+                  src="https://www.youtube.com/embed/LtAe8EB72OI"
+                  title="DevoxxGenie Demo"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    width: '100%',
+                    aspectRatio: '16/9',
+                    borderRadius: '8px'
+                  }}
+                />
               </div>
             </div>
           </div>
