@@ -25,7 +25,8 @@ import java.util.List;
 public class WebViewMCPLogHandler implements MCPLoggingMessage {
 
     private final WebViewJavaScriptExecutor jsExecutor;
-    private String activeMessageId;
+    private volatile String activeMessageId;
+    private volatile boolean deactivated = false;
     private final List<MCPMessage> mcpLogs = new ArrayList<>();
     private boolean hasToolActivity;
 
@@ -35,13 +36,25 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
 
     /**
      * Set the active message ID that will receive MCP logs.
+     * Resets the deactivated flag so the handler is ready for a new message.
      *
      * @param messageId The ID of the active message
      */
     public void setActiveMessageId(String messageId) {
         this.activeMessageId = messageId;
+        this.deactivated = false;
         mcpLogs.clear();
         hasToolActivity = false;
+    }
+
+    /**
+     * Deactivates this handler so it ignores any further log messages.
+     * Called during cancel/stop to prevent stale events from re-showing the indicator.
+     */
+    public void deactivate() {
+        this.deactivated = true;
+        this.activeMessageId = null;
+        log.info("MCP log handler deactivated");
     }
 
     /**
@@ -54,6 +67,10 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
      */
     @Override
     public void onMCPLoggingMessage(@NotNull MCPMessage message) {
+        if (deactivated) {
+            log.debug("MCP log handler deactivated, ignoring message: {}", message.getType());
+            return;
+        }
         log.info(">>> MCP message (type={}): {}", message.getType(), message.getContent());
 
         // Skip AI_MSG — these are full AI responses from MCPListenerService (redundant

@@ -29,6 +29,7 @@ public final class DevoxxGenieIconsUtil {
     public static final Icon RefreshIcon = load("/icons/refresh.svg");
     public static final Icon CreateIcon = load("/icons/event.svg");
     public static final Icon HammerIcon = load("/icons/hammer.svg");
+    public static final Icon AgentIcon = load("/icons/agent.svg");
 
     private DevoxxGenieIconsUtil() {
     }

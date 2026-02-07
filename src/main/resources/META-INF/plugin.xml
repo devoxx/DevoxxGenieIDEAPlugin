@@ -240,6 +240,11 @@
                              instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
                              displayName="MCP Settings"/>
 
+        <projectConfigurable id="com.devoxx.genie.agentsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.agent.AgentSettingsConfigurable"
+                             displayName="Agent Mode (BETA)"/>
+
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"
@@ -277,6 +282,14 @@
                     doNotActivateOnStart="true"
                     canCloseContents="true"
                     factoryClass="com.devoxx.genie.ui.window.MCPLogToolWindowFactory"/>
+
+        <toolWindow id="DevoxxGenieAgentLogs"
+                    anchor="bottom"
+                    icon="/icons/agent.svg"
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    canCloseContents="true"
+                    factoryClass="com.devoxx.genie.ui.window.AgentLogToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>

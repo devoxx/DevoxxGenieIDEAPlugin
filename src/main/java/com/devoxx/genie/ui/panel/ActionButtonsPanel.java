@@ -6,6 +6,7 @@ import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.ui.agent.AgentToggleManager;
 import com.devoxx.genie.ui.mcp.MCPToolsManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
@@ -63,6 +64,9 @@ public class ActionButtonsPanel extends JPanel
     // The MCP tools manager
     private final transient MCPToolsManager mcpToolsManager;
 
+    // The Agent toggle manager
+    private final transient AgentToggleManager agentToggleManager;
+
     public ActionButtonsPanel(Project project,
                               SubmitPanel submitPanel,
                               PromptInputArea promptInputArea,
@@ -89,6 +93,9 @@ public class ActionButtonsPanel extends JPanel
         
         // Initialize the MCP tools manager
         this.mcpToolsManager = new MCPToolsManager(project);
+
+        // Initialize the Agent toggle manager
+        this.agentToggleManager = new AgentToggleManager(project);
 
         llmProvidersComboBox.addActionListener(e -> controller.updateButtonVisibility());
 
@@ -122,12 +129,13 @@ public class ActionButtonsPanel extends JPanel
         mainButtons.add(addFileBtn);
         buttonPanel.add(mainButtons, BorderLayout.CENTER);
         
-        // MCP Tools counter on the right
-        JPanel mcpPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        mcpPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        mcpPanel.add(mcpToolsManager.getMcpToolsCountLabel());
-        
-        buttonPanel.add(mcpPanel, BorderLayout.EAST);
+        // Agent toggle and MCP Tools counter on the right
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        rightPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        rightPanel.add(agentToggleManager.getAgentToggleLabel());
+        rightPanel.add(mcpToolsManager.getMcpToolsCountLabel());
+
+        buttonPanel.add(rightPanel, BorderLayout.EAST);
         
         return buttonPanel;
     }
@@ -273,6 +281,7 @@ public class ActionButtonsPanel extends JPanel
         calcProjectPanel.setVisible(hasKey && projectContextController.isProjectContextSupportedProvider());
         controller.updateButtonVisibility();
         mcpToolsManager.updateMCPToolsCounter();
+        agentToggleManager.updateAgentToggle();
     }
 
     public void updateTokenUsage(int maxTokens) {

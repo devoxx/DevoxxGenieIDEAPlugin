@@ -1,7 +1,9 @@
 package com.devoxx.genie.ui.webview;
 
+import com.devoxx.genie.model.agent.AgentMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.webview.handler.*;
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * new content to the conversation without creating new WebView instances.
  */
 @Slf4j
-public class ConversationWebViewController implements ThemeChangeNotifier, MCPLoggingMessage {
+public class ConversationWebViewController implements ThemeChangeNotifier, MCPLoggingMessage, AgentLoggingMessage {
 
     @Getter
     private JBCefBrowser browser;
@@ -45,6 +47,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private final WebViewAIMessageUpdater aiMessageUpdater;
     private final WebViewFileReferenceManager fileReferenceManager;
     private final WebViewMCPLogHandler mcpLogHandler;
+    private final WebViewAgentActivityHandler agentActivityHandler;
     private final WebViewBrowserInitializer browserInitializer;
     private final WebViewSleepWakeRecoveryHandler sleepWakeRecoveryHandler;
     private final WebViewExternalLinkHandler externalLinkHandler;
@@ -146,6 +149,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         aiMessageUpdater = new WebViewAIMessageUpdater(jsExecutor, initialized);
         fileReferenceManager = new WebViewFileReferenceManager(jsExecutor);
         mcpLogHandler = new WebViewMCPLogHandler(jsExecutor);
+        agentActivityHandler = new WebViewAgentActivityHandler(jsExecutor);
         browserInitializer = new WebViewBrowserInitializer(initialized, jsExecutor);
         themeManager = new WebViewThemeManager(browser, webServer, jsExecutor, this::showWelcomeContent);
         sleepWakeRecoveryHandler = new WebViewSleepWakeRecoveryHandler(browser);
@@ -538,6 +542,8 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         aiMessageUpdater.addUserPromptMessage(chatMessageContext);
         // Set the active message ID for MCP logging
         mcpLogHandler.setActiveMessageId(chatMessageContext.getId());
+        // Set the active message ID for agent activity display
+        agentActivityHandler.setActiveMessageId(chatMessageContext.getId());
     }
 
     /**
@@ -550,6 +556,51 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     public void onMCPLoggingMessage(@NotNull MCPMessage message) {
         log.info("Received MCP logging message: {}", message.getContent());
         mcpLogHandler.onMCPLoggingMessage(message);
+    }
+
+    @Override
+    public void onAgentLoggingMessage(@NotNull AgentMessage message) {
+        log.info("Received agent logging message: {} - {}", message.getType(), message.getToolName());
+        agentActivityHandler.onAgentLoggingMessage(message);
+    }
+
+    /**
+     * Deactivates both activity handlers so stale events from cancelled tool calls
+     * cannot re-show the loading indicator. Must be called BEFORE hiding the indicator.
+     */
+    public void deactivateActivityHandlers() {
+        agentActivityHandler.deactivate();
+        mcpLogHandler.deactivate();
+    }
+
+    /**
+     * Hides the "Thinking..." loading indicator and any agent/MCP activity sections
+     * for the given message ID. Used during cancellation to clean up the UI.
+     *
+     * @param messageId The ID of the message whose loading indicator should be hidden
+     */
+    public void hideLoadingIndicator(@NotNull String messageId) {
+        log.info("Hiding loading indicator for message {}", messageId);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            String escapedId = messageId.replace("'", "\\'");
+            String js = "try {" +
+                    "  var indicator = document.getElementById('loading-" + escapedId + "');" +
+                    "  if (indicator) {" +
+                    "    indicator.style.setProperty('display', 'none', 'important');" +
+                    "    indicator.classList.remove('agent-active');" +
+                    "    while (indicator.firstChild) { indicator.removeChild(indicator.firstChild); }" +
+                    // Also hide the parent assistant-message container (the blue-bordered bar)
+                    "    var assistantMsg = indicator.closest('.assistant-message');" +
+                    "    if (assistantMsg) { assistantMsg.style.setProperty('display', 'none', 'important'); }" +
+                    "  }" +
+                    "  var messagePair = document.getElementById('" + escapedId + "');" +
+                    "  if (messagePair) {" +
+                    "    var mcpSection = messagePair.querySelector('.mcp-activity-section');" +
+                    "    if (mcpSection) { mcpSection.style.setProperty('display', 'none', 'important'); }" +
+                    "  }" +
+                    "} catch(e) { console.error('Error hiding loading indicator:', e); }";
+            jsExecutor.executeJavaScript(js);
+        });
     }
 
     /**

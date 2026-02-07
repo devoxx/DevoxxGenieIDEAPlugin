@@ -142,6 +142,15 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     @Override
     public void onError(@NotNull Throwable error) {
         log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
+
+        // Deactivate activity handlers BEFORE hiding to prevent race condition
+        if (conversationWebViewController != null) {
+            conversationWebViewController.deactivateActivityHandlers();
+        }
+
+        // Hide the loading indicator in the WebView
+        hideLoadingIndicator();
+
         StreamingException streamingError = new StreamingException(
             "Error during streaming response", error);
         PromptErrorHandler.handleException(context.getProject(), streamingError, context);
@@ -149,19 +158,39 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     }
 
     /**
-     * Stops the streaming response handler
+     * Hides the "Thinking..." loading indicator and any agent activity in the WebView.
+     * Delegates to ConversationWebViewController.hideLoadingIndicator().
+     */
+    private void hideLoadingIndicator() {
+        if (conversationWebViewController == null) {
+            return;
+        }
+        conversationWebViewController.hideLoadingIndicator(context.getId());
+    }
+
+    /**
+     * Stops the streaming response handler.
+     * Deactivates activity handlers before hiding the indicator to prevent
+     * stale events from re-showing it (EDT queue race condition).
      */
     public void stop() {
         if (!isStopped) {
             isStopped = true;
-            
+            log.info("Stopping streaming handler for context {}, deactivating activity handlers", context.getId());
+
             // Clean up partial response from memory
             if (context.getAiMessage() != null) {
                 ChatMemoryService.getInstance().removeLastMessage(context.getProject());
                 log.debug("Cleaned up partial AI response from memory");
             }
-            
-            log.debug("Stopped streaming handler for context {}", context.getId());
+
+            // Deactivate activity handlers BEFORE hiding to prevent race condition
+            if (conversationWebViewController != null) {
+                conversationWebViewController.deactivateActivityHandlers();
+            }
+
+            // Hide the loading indicator in the WebView
+            hideLoadingIndicator();
         }
     }
 }

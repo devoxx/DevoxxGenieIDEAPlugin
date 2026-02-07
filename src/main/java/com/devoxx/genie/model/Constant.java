@@ -59,6 +59,9 @@ public class Constant {
     // The MCP settings
     public static final Integer MCP_APPROVAL_TIMEOUT = 60;
 
+    // Agent mode settings
+    public static final int AGENT_MAX_TOOL_CALLS = 25;
+
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;
     public static final Integer MAX_SEARCH_RESULTS = 3;

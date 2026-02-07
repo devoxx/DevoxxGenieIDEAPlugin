@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.topic;
 
+import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.listener.*;
 import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
@@ -56,5 +57,8 @@ public class AppTopics {
 
     public static final Topic<AppearanceSettingsEvents> APPEARANCE_SETTINGS_TOPIC =
             Topic.create("DevoxxGenie Appearance Settings", AppearanceSettingsEvents.class);
+
+    public static final Topic<AgentLoggingMessage> AGENT_LOG_MSG =
+            Topic.create("agentLoggingMessage", AgentLoggingMessage.class);
 
 }
