@@ -10,13 +10,13 @@ DevoxxGenie offers a comprehensive settings interface that allows you to customi
 
 There are several ways to access the DevoxxGenie settings:
 
-1. **From the DevoxxGenie Window**: Click the gear icon (⚙️) in the top-right corner of the DevoxxGenie tool window
-2. **From IDE Settings**: Navigate to `Settings` (or `Preferences` on macOS) → `Tools` → `DevoxxGenie`
-3. **Using Keyboard Shortcut**: Press `Ctrl+Alt+S` (or `⌘,` on macOS) to open settings, then navigate to `Tools` → `DevoxxGenie`
+1. **From the DevoxxGenie Window**: Click the gear icon in the top-right corner of the DevoxxGenie tool window
+2. **From IDE Settings**: Navigate to `Settings` (or `Preferences` on macOS) > `Tools` > `DevoxxGenie`
+3. **Using Keyboard Shortcut**: Press `Ctrl+Alt+S` (or `Cmd+,` on macOS) to open settings, then navigate to `Tools` > `DevoxxGenie`
 
 ## Settings Categories
 
-DevoxxGenie's settings are organized into several categories:
+DevoxxGenie's settings are organized into the following categories:
 
 ### LLM Providers
 
@@ -25,9 +25,7 @@ This is the main settings page where you can:
 - Select and configure LLM providers
 - Enter API keys for cloud providers
 - Configure endpoints for local providers
-- Access provider-specific settings
-
-![LLM Providers Settings](/img/settings-llm-providers.png)
+- Enable optional providers (Azure OpenAI, Amazon Bedrock)
 
 ### LLM Settings
 
@@ -40,21 +38,35 @@ Configure general settings for LLM interactions:
 
 ### Prompts
 
-Configure prompt templates and custom commands:
+Configure the system prompt and keyboard shortcuts:
 
-- Define custom prompt templates
-- Generate the DEVOXXGENIE.md file
-- Configure keyboard shortcuts for prompts
-- Set up system prompts
+- Customize the system prompt that sets LLM behavior
+- Configure keyboard shortcuts for prompt submission
+- Generate and manage the DEVOXXGENIE.md project description file
+
+See [Prompts Configuration](prompts.md) for details.
+
+### Skills
+
+Configure slash commands that trigger predefined prompts:
+
+- View and manage built-in skills (`/test`, `/explain`, `/review`, `/find`, etc.)
+- Create custom skills with `$ARGUMENT` placeholder support
+- Restore default skills
+
+See [Skills](../features/skills.md) for details.
 
 ### MCP Settings
 
-Configure Model Context Protocol (MCP) settings:
+Configure Model Context Protocol (MCP) servers:
 
 - Enable/disable MCP support
-- Add and configure MCP servers
-- Set up environment variables for MCP
-- Configure MCP logging
+- Browse and install servers from the MCP Marketplace
+- Add and configure MCP servers manually (STDIO, HTTP, HTTP SSE transports)
+- Enable human-in-the-loop approval with configurable timeout
+- Enable MCP logging for debugging
+
+See [MCP Support](../features/mcp_expanded.md) for details.
 
 ### Web Search
 
@@ -74,23 +86,25 @@ Configure project scanning options:
 - Configure handling of large files
 - Set up code extraction preferences
 
-### LLM Git Diff View
-
-Configure the Git diff integration:
-
-- Enable/disable Git diff
-- Choose between two-panel and three-panel views
-- Configure diff visualization options
-- Set up keyboard shortcuts for diff actions
-
 ### RAG
 
 Configure Retrieval-Augmented Generation:
 
-- Set up local embeddings
-- Configure ChromaDB
-- Set indexing parameters
-- Configure document retrieval settings
+- Set up ChromaDB connection (port)
+- Configure max results and min similarity score
+- Manage project indexing
+
+See [RAG Support](../features/rag.md) for details.
+
+### Appearance
+
+Customize the visual appearance of the chat interface:
+
+- Override theme colors for user and assistant messages
+- Adjust spacing (line height, padding, margin, border width, corner radius)
+- Override font sizes for message text and code blocks
+
+See [Appearance Settings](appearance.md) for details.
 
 ### Token Cost & Context Window
 
@@ -110,21 +124,6 @@ At the bottom of each settings page, you'll find common actions:
 - **Cancel**: Discard changes and close the settings dialog
 - **Reset**: Reset settings to their default values
 
-## Importing and Exporting Settings
-
-To backup or transfer your settings:
-
-1. Go to `File` → `Manage IDE Settings` → `Export Settings`
-2. Check the box for "DevoxxGenie" settings
-3. Choose a location to save the settings file
-
-To import settings:
-
-1. Go to `File` → `Manage IDE Settings` → `Import Settings`
-2. Select a settings file to import
-3. Ensure the "DevoxxGenie" settings are checked
-4. Click "OK" to import
-
 ## Settings Storage
 
 DevoxxGenie settings are stored using the IntelliJ Platform's built-in settings framework:
@@ -143,7 +142,7 @@ If you encounter issues with DevoxxGenie settings:
 4. **Missing Settings**: Ensure you're using a compatible version of IntelliJ and DevoxxGenie
 
 If problems persist, consider:
-- Invalidating caches and restarting IntelliJ (File → Invalidate Caches / Restart...)
+- Invalidating caches and restarting IntelliJ (File > Invalidate Caches / Restart...)
 - Reinstalling the DevoxxGenie plugin
 - Checking for conflicting plugins
 

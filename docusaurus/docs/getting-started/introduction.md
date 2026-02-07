@@ -21,8 +21,9 @@ With DevoxxGenie, developers can leverage the power of artificial intelligence t
 
 DevoxxGenie provides a rich set of features to enhance your development workflow:
 
-- **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Mistral, Groq, and more.
-- **MCP Support**: Model Context Protocol (MCP) support for advanced agent-like capabilities, allowing the LLM to access external tools and services.
+- **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, and more.
+- **MCP Support**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
+- **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
 - **Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **Project Scanner**: Add source code (full project or by package) to prompt context when using compatible LLM providers.
@@ -30,6 +31,7 @@ DevoxxGenie provides a rich set of features to enhance your development workflow
 - **Web Search**: Search the web for a given query using Google or Tavily.
 - **Streaming responses**: See each token as it's received from the LLM in real-time.
 - **DnD Images**: Drag and drop images with multimodal LLM support.
+- **Appearance Customization**: Customize chat interface colors, spacing, and font sizes.
 - **100% Java**: Built entirely in Java using the Langchain4J library.
 
 ## Why Use DevoxxGenie?

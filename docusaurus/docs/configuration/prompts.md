@@ -4,67 +4,12 @@ sidebar_position: 2
 
 # Prompts Configuration
 
-DevoxxGenie allows you to configure custom prompts and command shortcuts to streamline your AI interactions. This page explains how to set up and use custom prompts effectively.
+DevoxxGenie allows you to configure the system prompt, keyboard shortcuts, and project description file. Slash commands (like `/test`, `/explain`) are now managed separately under **Skills** — see the [Skills](../features/skills.md) page.
 
 ## Accessing Prompt Settings
 
 1. Open IntelliJ IDEA settings
-2. Navigate to `Tools` → `DevoxxGenie` → `Prompts`
-
-![Prompts Settings](/img/prompts-settings.png)
-
-## Custom Commands
-
-Custom commands allow you to define shortcuts that expand into full prompts when typed in the DevoxxGenie input field.
-
-### Default Custom Commands
-
-DevoxxGenie comes with several built-in command shortcuts:
-
-| Command | Description |
-|---------|-------------|
-| `/explain` | Explain the selected code |
-| `/review` | Review the selected code and suggest improvements |
-| `/refactor` | Suggest refactoring options for the selected code |
-| `/unittest` | Generate unit tests for the selected code |
-| `/find` | Search for code in your project (used with RAG) |
-| `/help` | Show available commands |
-
-### Creating Custom Commands
-
-To create a new custom command:
-
-1. In the Prompts settings, click `Add` in the Custom Commands section
-2. Enter a command name (starting with `/`)
-3. Enter the prompt template that will be used when the command is triggered
-4. Click `OK` to save
-
-For example:
-- Command: `/docstring`
-- Prompt: `Write comprehensive JavaDoc for the following code:\n\n{code}`
-
-### Using Variables in Custom Commands
-
-You can use special placeholders in your custom commands:
-
-- `{code}`: Will be replaced with the currently selected code
-- `{className}`: Will be replaced with the current class name
-- `{methodName}`: Will be replaced with the current method name
-- `{package}`: Will be replaced with the current package name
-
-### Using Custom Commands
-
-To use a custom command:
-
-1. Select code in the editor (optional, depending on the command)
-2. Open the DevoxxGenie window
-3. Type the command (e.g., `/explain`) in the input field
-4. Press Enter to execute
-
-You can also add additional text after a command to provide more context, for example:
-```
-/explain and focus on the concurrency aspects
-```
+2. Navigate to `Tools` > `DevoxxGenie` > `Prompts`
 
 ## System Prompt
 
@@ -95,7 +40,7 @@ You are an AI programming assistant for Java development. You help with coding t
 
 ## Keyboard Shortcuts
 
-You can configure keyboard shortcuts for submitting prompts and custom commands.
+You can configure keyboard shortcuts for submitting prompts.
 
 ### Setting Up Shortcuts
 
@@ -110,37 +55,21 @@ You can configure keyboard shortcuts for submitting prompts and custom commands.
 
 ## DEVOXXGENIE.md File
 
-From the Prompts settings, you can generate a DEVOXXGENIE.md file for your project.
+From the Prompts settings, you can generate a DEVOXXGENIE.md file for your project. This file is automatically included in the system prompt and gives the LLM context about your project.
 
 ### Generating DEVOXXGENIE.md
 
 1. Click the "Generate DEVOXXGENIE.md" button
 2. The file will be created in your project root directory
 
+You can also generate this file by typing `/init` in the DevoxxGenie input field.
+
 For more information about DEVOXXGENIE.md, see the [DEVOXXGENIE.md Configuration](devoxxgenie-md.md) page.
 
-## Prompt Input Options
+## Skills (Slash Commands)
 
-Additional settings to customize prompt input behavior:
+Slash commands like `/test`, `/explain`, `/review`, and custom commands are now configured in a dedicated **Skills** settings page.
 
-- **Auto-complete Commands**: Enable/disable command auto-completion in the input field
-- **Clear After Submit**: Automatically clear the input field after submitting a prompt
-- **Remember History**: Keep track of your recent prompts for easy reuse
+To manage skills, go to **Settings** > **Tools** > **DevoxxGenie** > **Skills**.
 
-## Troubleshooting Custom Commands
-
-If your custom commands aren't working as expected:
-
-- **Command Not Recognized**: Ensure the command starts with `/` and is exactly as defined in settings
-- **Variables Not Expanding**: Check that you're using the correct variable names (`{code}`, etc.)
-- **Command Too Generic**: Make your prompt templates more specific to get better results
-- **Command Too Complex**: Break down complex tasks into simpler commands
-
-## Command Usage Tips
-
-- **Chain Commands**: Create a workflow of commands for complex tasks
-- **Specialized Commands**: Create commands for specific frameworks or libraries you use
-- **Documentation Commands**: Create commands focused on generating documentation
-- **Testing Commands**: Create commands for generating different types of tests
-
-By configuring custom prompts effectively, you can significantly streamline your development workflow and get more consistent results from DevoxxGenie.
+See the [Skills](../features/skills.md) page for full documentation on creating and using skills.

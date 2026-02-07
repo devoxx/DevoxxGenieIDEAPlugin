@@ -31,8 +31,9 @@ const sidebars = {
         'features/overview',
         'features/chat-interface',
         'features/mcp_expanded',
+        'features/skills',
         'features/web-search',
-        'features/git-diff',
+        'features/rag',
         'features/dnd-images',
         'features/project-scanner',
         'features/chat-memory',
@@ -54,6 +55,7 @@ const sidebars = {
       items: [
         'configuration/settings',
         'configuration/prompts',
+        'configuration/appearance',
         'configuration/token-cost',
         'configuration/devoxxgenie-md',
       ],

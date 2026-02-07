@@ -28,7 +28,7 @@ const FeatureList = [
   {
     title: 'MCP Support',
     icon: MCPSupportIcon,
-    link: '/docs/features/mcp',
+    link: '/docs/features/mcp_expanded',
     description: (
       <>
         Model Context Protocol (MCP) support for advanced agent-like capabilities, allowing the LLM to access external tools and services for more comprehensive responses.

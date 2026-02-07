@@ -1,218 +1,110 @@
 ---
-sidebar_position: 3
-title: RAG Support - Retrieval-Augmented Generation for Code Understanding
+sidebar_position: 6
+title: RAG Support - Retrieval-Augmented Generation
 description: Learn how DevoxxGenie uses Retrieval-Augmented Generation (RAG) to improve AI assistance by automatically finding and incorporating relevant code from your project.
-keywords: [rag, retrieval augmented generation, context-aware coding, code search, intellij, ai coding, java]
-image: /img/rag-feature.png
+keywords: [rag, retrieval augmented generation, chromadb, ollama, code search, intellij, ai coding]
 slug: /features/rag
 ---
 
 # RAG Support
 
-Retrieval-Augmented Generation (RAG) is one of DevoxxGenie's most powerful features, enhancing the LLM's ability to understand and interact with your codebase by automatically finding and incorporating relevant code from your project.
+Retrieval-Augmented Generation (RAG) enhances the LLM's ability to understand and interact with your codebase by automatically finding and incorporating relevant code from your project.
 
 ## What is RAG?
 
-Retrieval-Augmented Generation combines retrieval of information with text generation. In the context of DevoxxGenie:
+RAG combines retrieval of information with text generation:
 
 1. **Retrieval**: When you ask a question, DevoxxGenie searches your codebase to find the most relevant files and code snippets
 2. **Augmentation**: These relevant code snippets are added to the prompt context
 3. **Generation**: The LLM then generates a response informed by this contextual information
 
-This approach dramatically improves the quality of responses about your specific codebase, enabling the LLM to provide more accurate code suggestions, explanations, and fixes.
+This dramatically improves response quality for questions about your specific codebase.
 
-## Benefits of RAG in DevoxxGenie
+## Prerequisites
 
-- **Better code understanding**: The LLM has access to your specific implementation details
-- **Project-aware responses**: Recommendations align with your existing coding style and patterns
-- **Contextual debugging**: The LLM can refer to relevant parts of your codebase when helping debug issues
-- **More accurate code generation**: Generated code is compatible with your existing architecture
-- **Reduced hallucinations**: The LLM has real data to reference instead of guessing about your implementation
+RAG requires the following components to be installed and running:
 
-## Using RAG in DevoxxGenie
+### 1. Docker
 
-### Enabling RAG
+Docker must be installed and running on your machine. RAG uses Docker to run the ChromaDB vector database.
 
-RAG is enabled by default in DevoxxGenie. To configure or adjust RAG settings:
+- [Install Docker](https://docs.docker.com/get-docker/)
 
-1. Click the settings (gear) icon in the DevoxxGenie window
-2. Navigate to the "RAG Settings" section
-3. Adjust parameters as needed (see Configuration Options below)
+### 2. ChromaDB
 
-### In Your Workflow
+DevoxxGenie uses [ChromaDB](https://www.trychroma.com/) (v0.6.2) as the vector database for storing code embeddings. The ChromaDB container is managed automatically via Docker.
 
-When RAG is enabled, you can:
+### 3. Ollama with nomic-embed-text
 
-1. Ask questions directly about your code without explicitly providing context
-2. Request explanations of specific components or functionality
-3. Ask for code improvements while leveraging existing patterns
+An embedding model is required to generate vector representations of your code. DevoxxGenie uses the `nomic-embed-text` model via Ollama:
 
-For example, queries like these will automatically trigger RAG retrieval:
+```bash
+ollama pull nomic-embed-text
+```
+
+Make sure Ollama is running before enabling RAG.
+
+## Setup
+
+1. Ensure Docker is running
+2. Ensure Ollama is running with `nomic-embed-text` pulled
+3. Open **Settings** > **Tools** > **DevoxxGenie** > **RAG**
+4. Configure the settings (see below)
+5. Index your project files
+
+DevoxxGenie will validate that Docker, ChromaDB, and Ollama are all available before enabling RAG. If any prerequisite is missing, you'll see a notification explaining what needs to be set up.
+
+## Configuration Options
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| ChromaDB port | Port for the ChromaDB container | `8000` |
+| Max results | Maximum number of relevant documents to retrieve | `5` |
+| Min score | Minimum similarity score for including a result | `0.7` |
+
+## Using RAG
+
+### Indexing Your Project
+
+Before RAG can search your code, you need to index your project:
+
+1. Use the **Index Files** action in the DevoxxGenie panel
+2. DevoxxGenie will scan your project, generate embeddings, and store them in ChromaDB
+3. Indexing runs in the background — you can continue working
+
+### Searching with RAG
+
+Once indexed, you can use RAG in two ways:
+
+1. **Automatic**: When RAG is enabled, relevant code context is automatically added to your prompts
+2. **Explicit**: Use the `/find` command to search for specific code:
+   ```
+   /find authentication flow
+   ```
+
+### Example Queries
+
+These types of queries benefit most from RAG:
 
 - "How does the authentication flow work in this project?"
 - "Explain the data model for users"
 - "Generate a new service method that follows our existing patterns"
 
-### Configuration Options
-
-DevoxxGenie offers several configuration options for RAG:
-
-- **Maximum documents**: Control how many relevant files are included in the context
-- **Chunk size**: Adjust how code is broken down for retrieval (smaller chunks for more precise matching)
-- **Search strategy**: Choose between different search algorithms
-- **Similarity threshold**: Set the minimum relevance score for including a document
-- **File type filters**: Include or exclude specific file types from the RAG index
-
-![RAG Settings](../../static/img/rag-setup.png)
-
-## Advanced RAG Features
-
-### Retrieval Methods
-
-DevoxxGenie implements several retrieval methods:
-
-- **Semantic search**: Find contextually similar code using vector embeddings
-- **Keyword search**: Match specific terms and patterns
-- **Hybrid search**: Combine both approaches for better results
-
-### Custom Index Management
-
-For larger projects, DevoxxGenie allows you to:
-
-- Manually build and update the RAG index
-- Select specific packages or directories to include
-- Exclude specific files or patterns (e.g., generated code, tests)
-- Save and load index configurations
-
-## Examples
-
-### Example 1: Understanding Existing Code
-
-**User Query**: 
-```
-How does our application handle database connections?
-```
-
-**DevoxxGenie Response**:
-```
-Based on the code in your project, database connections are managed through a connection pool implemented in `DatabaseConnectionManager.java`.
-
-The key components are:
-
-1. Connection pooling using HikariCP:
-   ```java
-   public class DatabaseConnectionManager {
-       private static HikariDataSource dataSource;
-       
-       static {
-           HikariConfig config = new HikariConfig();
-           config.setJdbcUrl(DatabaseProperties.getUrl());
-           config.setUsername(DatabaseProperties.getUsername());
-           config.setPassword(DatabaseProperties.getPassword());
-           config.setMaximumPoolSize(10);
-           dataSource = new HikariDataSource(config);
-       }
-       
-       public static Connection getConnection() throws SQLException {
-           return dataSource.getConnection();
-       }
-       
-       // Other methods...
-   }
-   ```
-
-2. Connection usage pattern in repositories:
-   ```java
-   public List<User> findAllUsers() {
-       try (Connection conn = DatabaseConnectionManager.getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users")) {
-            ResultSet rs = stmt.executeQuery()) {
-           // Process results...
-       }
-   }
-   ```
-
-The application follows a proper resource management pattern with try-with-resources to ensure connections are always returned to the pool.
-```
-
-### Example 2: Generating Compatible Code
-
-**User Query**: 
-```
-Generate a new repository method to find users by email domain
-```
-
-**DevoxxGenie Response** (after analyzing your codebase):
-```
-Based on your existing code patterns, here's a method to find users by email domain:
-
-```java
-/**
- * Finds all users with email addresses from a specific domain
- * 
- * @param domain The email domain to search for (e.g., "example.com")
- * @return List of User objects matching the domain
- * @throws RepositoryException if a database error occurs
- */
-public List<User> findUsersByEmailDomain(String domain) throws RepositoryException {
-    List<User> users = new ArrayList<>();
-    
-    try (Connection conn = DatabaseConnectionManager.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(
-             "SELECT * FROM users WHERE email LIKE ?")) {
-        
-        stmt.setString(1, "%" + domain);
-        
-        try (ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                User user = new User();
-                user.setId(rs.getLong("id"));
-                user.setUsername(rs.getString("username"));
-                user.setEmail(rs.getString("email"));
-                user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-                users.add(user);
-            }
-        }
-        
-        return users;
-    } catch (SQLException e) {
-        logger.error("Error finding users by email domain: " + domain, e);
-        throw new RepositoryException("Failed to find users by email domain", e);
-    }
-}
-```
-
-This follows your existing pattern of:
-1. Using try-with-resources for connection management
-2. Following your error handling approach with RepositoryException
-3. Using the User mapping pattern consistent with other repository methods
-```
-
 ## Troubleshooting
 
-### Common Issues
+### RAG Not Returning Relevant Context
 
-**RAG not returning relevant context:**
-- Ensure your search query is specific enough
-- Try rebuilding the RAG index
-- Check file type filters to ensure relevant files are included
+- Ensure your project has been indexed
+- Try rebuilding the index
+- Check that your search query is specific enough
 
-**Performance issues:**
-- Reduce the maximum number of documents
-- Increase chunk size to reduce the number of chunks
-- Exclude large generated files from indexing
+### Docker or ChromaDB Issues
 
-**Out of memory errors:**
-- Reduce context window size in settings
-- Index only specific packages instead of the entire project
+- Verify Docker is running: `docker ps`
+- Check if ChromaDB container is healthy
+- Try restarting Docker and re-indexing
 
-## Coming Soon: GraphRAG
+### Ollama Issues
 
-In future updates, DevoxxGenie will introduce GraphRAG, an enhanced RAG implementation that:
-
-1. Creates a knowledge graph of your codebase
-2. Maps relationships between classes, methods, and other components
-3. Provides more accurate retrieval based on code structure
-4. Enables more sophisticated reasoning about code architecture
-
-Stay tuned for updates on this exciting feature!
+- Verify Ollama is running: `ollama list`
+- Ensure `nomic-embed-text` is pulled: `ollama pull nomic-embed-text`

@@ -1,10 +1,13 @@
 ---
 sidebar_position: 3
+title: MCP Support - Model Context Protocol
+description: Learn how DevoxxGenie integrates with MCP servers to give your LLM access to external tools, files, databases, and APIs.
+keywords: [devoxxgenie, mcp, model context protocol, tools, agents, intellij plugin, marketplace]
 ---
 
 # MCP Support
 
-Model Context Protocol (MCP) is one of the most powerful features in DevoxxGenie. It enables advanced agent-like capabilities, allowing the LLM to access external tools and services to provide more comprehensive and accurate responses.
+Model Context Protocol (MCP) is one of the most powerful features in DevoxxGenie. It enables agent-like capabilities, allowing the LLM to access external tools and services to provide more comprehensive and accurate responses.
 
 ## What is MCP?
 
@@ -14,56 +17,104 @@ Model Context Protocol (MCP) is a protocol for integrating external capabilities
 2. **Perform Actions**: Execute tasks outside of the chat environment
 3. **Use Specialized Tools**: Leverage purpose-built tools for specific domains
 
-In DevoxxGenie, MCP support is a crucial step toward full Agentic AI capabilities, where the LLM can actively assist with complex development tasks.
+In DevoxxGenie, MCP support enables full agentic AI capabilities where the LLM can actively assist with complex development tasks by calling tools, reading files, querying databases, and more.
 
-## Benefits of MCP
-
-- **Extended Capabilities**: Enables the LLM to perform actions beyond text generation
-- **Real-time Information**: Access up-to-date information from external sources
-- **Tool Integration**: Connect specialized tools to enhance LLM capabilities
-- **Improved Accuracy**: More accurate responses by accessing required information or services
-
-## How It Works in DevoxxGenie
-
-DevoxxGenie implements MCP server support, allowing you to connect to various MCP servers that provide specialized tools for your LLM conversations. For example:
-
-- **Filesystem MCP**: Interact with files and directories
-- **Database MCP**: Query databases directly
-- **API MCP**: Make API calls to external services
-- **Custom Tool MCP**: Execute specialized tools
+## How It Works
 
 When you use MCP in DevoxxGenie:
 
 1. The LLM recognizes when external tools would be helpful
-2. It calls the appropriate MCP tool with necessary parameters
+2. It calls the appropriate MCP tool with the necessary parameters
 3. The tool executes and returns results to the LLM
 4. The LLM incorporates the results into its response
 
+Common MCP server categories include:
+
+- **Filesystem**: Interact with files and directories
+- **Database**: Query databases directly
+- **API**: Make API calls to external services
+- **Browser**: Web browsing and scraping
+- **Custom Tools**: Domain-specific tools tailored to your workflow
+
+## MCP Marketplace
+
+DevoxxGenie includes a built-in **MCP Marketplace** that lets you browse, search, and install MCP servers directly from the settings UI.
+
+### Browsing the Marketplace
+
+1. Open **Settings** > **Tools** > **DevoxxGenie** > **MCP**
+2. Click the **Browse Marketplace** button
+3. Browse or search for servers by name or keyword
+4. Click a server to see its details and available tools
+5. Click **Install** to add it to your configuration
+
+The Marketplace pulls from the official [MCP server registry](https://modelcontextprotocol.io/) and supports filtering by server type (npm, Docker, remote).
+
 ## Setting Up MCP
-
-### Prerequisites
-
-- Access to MCP servers (local or remote)
-- Understanding of which MCP tools are appropriate for your use case
 
 ### Enabling MCP
 
-1. In IntelliJ IDEA, open DevoxxGenie settings
-2. Navigate to the "MCP Settings (BETA)" section
-3. Enable MCP support by checking the appropriate option
-4. Add your MCP servers and configure them as needed
+1. Open **Settings** > **Tools** > **DevoxxGenie** > **MCP**
+2. Check **Enable MCP Support**
+3. Add MCP servers via the Marketplace or manually
 
-![MCP Settings](/img/mcp-settings.png)
+### Transport Types
 
-### Using MCP in Conversations
+DevoxxGenie supports three MCP transport types:
 
-When MCP is configured correctly, you'll see the tools that the MCP brings to your conversations in the DevoxxGenie interface. To use these tools:
+| Transport | Description | Use Case |
+|-----------|-------------|----------|
+| **STDIO** | Communicates via standard input/output with a local process | npm packages, Docker containers, local scripts |
+| **HTTP SSE** | HTTP with Server-Sent Events for streaming | Remote servers with streaming support |
+| **HTTP** | Standard HTTP requests | Simple remote servers |
+
+### Adding a Server Manually
+
+1. Click the **+** (Add) button in the MCP settings
+2. Choose a transport type
+3. For **STDIO** servers: enter the command, arguments, and optional environment variables
+4. For **HTTP/HTTP SSE** servers: enter the server URL and optional custom headers
+5. Click **OK**
+
+### Custom HTTP Headers
+
+For HTTP and HTTP SSE transport types, you can configure custom HTTP headers. This is useful for authenticated MCP servers that require API keys or bearer tokens:
+
+```
+Authorization: Bearer your-api-key
+X-Custom-Header: value
+```
+
+### Environment Variables
+
+STDIO servers often need environment variables (e.g., API keys). You can configure these per server in the MCP settings dialog.
+
+## Human-in-the-Loop Approval
+
+DevoxxGenie supports a configurable approval workflow for MCP tool executions. When enabled, you'll be prompted to approve or deny each tool call before it runs.
+
+### Enabling Approval
+
+1. In **MCP Settings**, check **Enable Approval Required**
+2. Set the **Approval Timeout** (default: 60 seconds)
+
+When the LLM tries to call an MCP tool, a dialog appears showing:
+- The tool name
+- The arguments being passed
+
+You can **Approve** or **Deny** the execution. If the timeout expires without a response, the call is denied by default.
+
+This feature is recommended when using MCP servers that can modify files, send messages, or perform other side-effect actions.
+
+## Using MCP in Conversations
+
+When MCP is configured, the available tools are shown in the DevoxxGenie interface. To use them:
 
 1. Start a conversation with your LLM provider
 2. Ask questions or give instructions that might require external tools
 3. The LLM will automatically use the available MCP tools when appropriate
 
-For example, with Filesystem MCP enabled, you might ask:
+For example, with a Filesystem MCP server enabled:
 
 ```
 Can you list all Java files in the src/main directory that implement the Observer pattern?
@@ -71,42 +122,29 @@ Can you list all Java files in the src/main directory that implement the Observe
 
 ## MCP Debugging
 
-DevoxxGenie includes a debugging feature for MCP requests and responses:
+DevoxxGenie includes a debugging panel for MCP requests and responses:
 
-1. Open the "DevoxxGenieMCPLogs" tool window from the bottom panel
-2. Observe the requests sent to and responses received from MCP servers
-3. Use this information to troubleshoot issues or understand how the LLM is using the tools
+1. Enable **MCP Logging** in the MCP settings
+2. Open the **DevoxxGenieMCPLogs** tool window from the bottom panel
+3. Observe the requests sent to and responses received from MCP servers
+4. Use this information to troubleshoot issues or understand how the LLM is using the tools
 
-![MCP Logs](/img/mcp-logs.png)
+## Viewing Available Tools
 
-## Available MCP Servers
+Each MCP server exposes a set of tools. To see what tools a server provides:
 
-Here are some MCP servers that work well with DevoxxGenie:
+1. In the MCP settings table, click the **View** button for a server
+2. A dialog shows a table of tool names and their descriptions
+3. The tools column in the main table also shows a summary count
 
-### Filesystem MCP
-
-- **Purpose**: Interact with the file system
-- **Capabilities**: List directories, read files, search code, create files
-- **GitHub**: [mcp-plugins/filesystem](https://github.com/mcp-plugins/filesystem)
-
-### Browser MCP
-
-- **Purpose**: Web browsing capabilities
-- **Capabilities**: Search the web, read webpage content, navigate sites
-- **GitHub**: [mcp-plugins/browser](https://github.com/mcp-plugins/browser)
-
-### Custom MCPs
-
-You can also create your own MCP servers using the [MCP specification](https://github.com/s-macke/mcp-spec). This allows you to extend DevoxxGenie with domain-specific tools tailored to your development needs.
-
-## Troubleshooting MCP Issues
+## Troubleshooting
 
 ### Connection Problems
 
 If you're having trouble connecting to an MCP server:
 
 1. Verify the server is running and accessible
-2. Check the URL in the MCP settings
+2. Check the URL or command in the MCP settings
 3. Ensure any required environment variables are set correctly
 4. Check the MCP logs for error messages
 
@@ -116,14 +154,16 @@ If the LLM isn't using the MCP tools as expected:
 
 1. Be more explicit in your instructions
 2. Check if the tools are showing up in the interface
-3. Verify the LLM provider you're using supports MCP adequately
+3. Verify the LLM provider you're using supports tool calling
 4. Review the MCP logs to see if there are any issues with the tool invocation
 
-## Future MCP Enhancements
+### STDIO Servers Not Starting
 
-The DevoxxGenie team is continuously working on enhancing MCP capabilities:
+1. Verify the command is installed and available in your PATH (e.g., `npx`, `docker`)
+2. Check that all required arguments are configured
+3. Look at MCP logs for startup errors
 
-- **More pre-configured MCP servers**
-- **Improved debugging and visualization of MCP interactions**
-- **Enhanced integration with project-specific tools**
-- **Support for more complex workflows and multi-step operations**
+## Learn More
+
+- [Model Context Protocol specification](https://modelcontextprotocol.io/)
+- [MCP Server Registry](https://modelcontextprotocol.io/)

@@ -17,10 +17,11 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://devoxx.github.io',
+  url: 'https://genie.devoxx.com',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/DevoxxGenieIDEAPlugin/',
+  // For custom domain, use '/'
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -58,7 +59,7 @@ const config = {
               'priceCurrency': 'USD'
             },
             'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
-            'screenshot': 'https://devoxx.github.io/img/devoxxgenie-demo.gif',
+            'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-demo.gif',
             'softwareVersion': '1.0.0',
             'author': {
               '@type': 'Organization',
