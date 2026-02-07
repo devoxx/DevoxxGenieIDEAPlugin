@@ -14,3 +14,6 @@ gradle/**
 **/.DS_Store
 .aider*
 .claude/settings.local.json
+.playwright-mcp/
+docusaurus/static/img/git-diff-settings.png
+docusaurus/static/img/git-diff-viewer.png
