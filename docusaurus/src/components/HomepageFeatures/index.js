@@ -7,6 +7,7 @@ import styles from './styles.module.css';
 // Import our custom icons
 import MultipleLLMIcon from './icons/MultipleLLM';
 import MCPSupportIcon from './icons/MCPSupport';
+import MCPMarketplaceIcon from './icons/MCPMarketplace';
 import ChatMemoryIcon from './icons/ChatMemory';
 import ProjectScannerIcon from './icons/ProjectScanner';
 import TokenCostIcon from './icons/TokenCost';
@@ -32,6 +33,16 @@ const FeatureList = [
     description: (
       <>
         Model Context Protocol (MCP) support for advanced agent-like capabilities, allowing the LLM to access external tools and services for more comprehensive responses.
+      </>
+    ),
+  },
+  {
+    title: 'MCP Marketplace',
+    icon: MCPMarketplaceIcon,
+    link: '/docs/features/mcp_expanded',
+    description: (
+      <>
+        Browse, search, and install MCP servers directly from within IntelliJ IDEA. Discover tools for filesystem, databases, web browsing, and more without leaving your IDE.
       </>
     ),
   },
