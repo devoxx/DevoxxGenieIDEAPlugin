@@ -160,6 +160,17 @@ tasks {
         }
     }
 
+    runPluginVerifier {
+        ideVersions.set(listOf(
+            "IC-2023.3.8",
+            "IC-2024.1.7",
+            "IC-2024.2.6",
+            "IC-2024.3.7",
+            "IC-2025.1.7",
+            "IC-2025.2.6.1"
+        ))
+    }
+
     signPlugin {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))

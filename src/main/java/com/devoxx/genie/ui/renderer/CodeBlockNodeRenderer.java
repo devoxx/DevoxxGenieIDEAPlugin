@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.renderer;
 
 import com.devoxx.genie.ui.util.LanguageGuesser;
 import com.intellij.lang.Language;
-import com.intellij.lang.documentation.DocumentationSettings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.richcopy.HtmlSyntaxInfoUtil;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
@@ -35,6 +34,7 @@ import java.util.Set;
  * String html = renderer.render(node);
  */
 public class CodeBlockNodeRenderer implements NodeRenderer {
+    private static final float DEFAULT_HIGHLIGHTING_SATURATION = 1.0f;
     private final Project project;
     private final HtmlWriter htmlOutputWriter;
 
@@ -125,7 +125,7 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
                             language,
                             codeSnippet,
                             false,
-                            DocumentationSettings.getHighlightingSaturation(true)
+                            DEFAULT_HIGHLIGHTING_SATURATION
                     )
             );
         } else {
@@ -135,10 +135,8 @@ public class CodeBlockNodeRenderer implements NodeRenderer {
     }
 
     private HighlightingMode determineHighlightingMode(boolean block) {
-        if (block && DocumentationSettings.isHighlightingOfCodeBlocksEnabled()) {
+        if (block) {
             return HighlightingMode.SEMANTIC_HIGHLIGHTING;
-        } else if (block) {
-            return HighlightingMode.NO_HIGHLIGHTING;
         } else {
             return HighlightingMode.INLINE_HIGHLIGHTING;
         }

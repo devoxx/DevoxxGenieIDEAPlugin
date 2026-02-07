@@ -311,6 +311,11 @@
         <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
     </extensions>
 
+    <!-- Declare K2 Kotlin plugin mode compatibility (required since IntelliJ IDEA 2024.2.1) -->
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
+
     <actions>
 
         <action id="DevoxxGenie.AddSnippetAction"
