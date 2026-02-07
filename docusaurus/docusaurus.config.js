@@ -108,6 +108,10 @@ const config = {
           priority: 0.5,
           ignorePatterns: ['/tags/**'],
         },
+        gtag: {
+          trackingID: 'G-HFMW39MG3G',
+          anonymizeIP: true,
+        },
       }),
     ],
   ],
