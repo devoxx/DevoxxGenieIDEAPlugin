@@ -89,7 +89,7 @@ Quick links:
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
 
-### 🗂️ Model Context Protocol servers support (from v0.5.0 onwards)
+### 🗂️ Model Context Protocol servers support
 
 **[📖 Full MCP Documentation](https://genie.devoxx.com/docs/mcp-support)**
 
@@ -107,7 +107,9 @@ Example of the Filesystem-server MCP which allows you to interact with the given
 
 Go to the DevoxxGenie settings to enable and add your MCP servers. Browse the **MCP Marketplace** to discover and install servers with just a few clicks!
 
-<img width="1038" alt="Screenshot 2025-03-22 at 17 30 12" src="https://github.com/user-attachments/assets/40752703-fb8c-4098-a046-38c33ff16031" />
+<img width="663" height="685" alt="MCP" src="https://github.com/user-attachments/assets/cb1c62c3-7ac4-4c90-936b-c3f58deaeabf" />
+
+<img width="901" height="596" alt="MCPMarketplace" src="https://github.com/user-attachments/assets/95298cf1-04e0-439a-86ea-db821e8565a5" />
 
 When configured correctly you can see the tools that the MCP brings to your LLM conversations
 
@@ -175,7 +177,7 @@ We now also support Cloud based LLMs, you can paste the API keys on the Settings
 ### Smart Model Selection and Cost Estimation
 The language model dropdown is not just a list anymore, it's your compass for smart model selection.
 
-![Models](https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1924a967-37c3-400c-bac4-fc1a678aeec5)
+<img width="698" height="295" alt="Opus46" src="https://github.com/user-attachments/assets/8174c0ad-3943-4c4c-aebd-4ba50c90d015" />
 
 See available context window sizes for each cloud model
 View associated costs upfront
