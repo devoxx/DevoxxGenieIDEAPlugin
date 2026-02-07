@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
 - Analytics tracking pixel for welcome view metrics via Cloudflare Worker + GA4 Measurement Protocol (#845)
 - Schema versioning for remote welcome content with graceful local fallback (#845)
 
+### Fixed
+- Replace deprecated `URL(String)` constructor with `java.net.URI` in `WebViewExternalLinkHandler` (#841)
+
+### Documentation
+- Refresh documentation for v0.9.2 and deploy to `genie.devoxx.com` (#842)
+
 ## [0.9.2]
 
 ### Added
