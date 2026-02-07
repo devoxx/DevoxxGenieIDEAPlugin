@@ -45,6 +45,10 @@
             <LI>Update welcome wording to Skills terminology and highlight MCP Marketplace first</LI>
             <LI>Issue #809: Fix LM Studio context length detection to use model metadata instead of defaulting to 8K</LI>
             <LI>Issue #809: Add optional LM Studio fallback context setting in the GUI</LI>
+            <LI>Replace deprecated Project.getBaseDir() with ProjectUtil.guessProjectDir()</LI>
+            <LI>Replace deprecated NioEventLoopGroup with MultiThreadIoEventLoopGroup for Netty 4.2.x</LI>
+            <LI>Resolve plugin verifier warnings for experimental and deprecated API usage</LI>
+            <LI>Add Kotlin K2 plugin mode declaration (supportsKotlinPluginMode)</LI>
         </UL>
         <h2>v0.9.1</h2>
         <UL>

@@ -18,6 +18,10 @@ All notable changes to this project will be documented in this file.
 - Issue #809: Fix LM Studio API URL compatibility - changed default from `http://localhost:1234/api/v1/` to `http://localhost:1234/v1/` to match OpenAI-compatible chat completions endpoint, while preserving rich metadata endpoint access for context length detection
 - Issue #809: Fix LM Studio context length detection so model metadata no longer defaults to 8K when larger context values are available
 - Issue #809: Add optional LM Studio fallback context setting in the GUI when model metadata does not expose context length
+- Replace deprecated `Project.getBaseDir()` with `ProjectUtil.guessProjectDir()` across all scanner extensions (#838)
+- Replace deprecated `NioEventLoopGroup` with `MultiThreadIoEventLoopGroup` + `NioIoHandler` for Netty 4.2.x compatibility (#839)
+- Resolve plugin verifier warnings for experimental and deprecated API usage (#840)
+- Add Kotlin K2 plugin mode declaration (`supportsKotlinPluginMode`) in plugin.xml, required since IntelliJ 2024.2.1 (#840)
 
 ## [0.9.1]
 
