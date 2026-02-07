@@ -1,6 +1,8 @@
 package com.devoxx.genie.ui.webview.handler;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.welcome.WelcomeContent;
+import com.devoxx.genie.service.welcome.WelcomeContentService;
 import com.devoxx.genie.ui.webview.WebServer;
 import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
@@ -65,8 +67,9 @@ public class WebViewMessageRenderer {
             return;
         }
 
-        // Use the WelcomeTemplate to generate HTML
-        WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle);
+        // Use the WelcomeTemplate to generate HTML, with remote content if available
+        WelcomeContent remoteContent = WelcomeContentService.getInstance().getWelcomeContent();
+        WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle, remoteContent);
         String welcomeContent = welcomeTemplate.generate();
 
         // Only inject welcome content if no chat messages are already present (defense-in-depth).

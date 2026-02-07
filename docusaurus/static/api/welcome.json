@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "lastUpdated": "2026-02-07",
+  "title": "Welcome to Devoxx Genie",
+  "description": "The Devoxx Genie plugin allows you to interact with Local & Cloud Large Language Models (LLMs). The remote LLM's do require an API key in the Settings page",
+  "instructions": "Start by selecting a language model provider. Select some code, or add some files, type your prompt, and click submit button. Discover and install MCP servers from the MCP Marketplace in Settings!",
+  "features": [
+    { "emoji": "\uD83D\uDECD\uFE0F", "name": "MCP Marketplace", "description": "Discover and install MCP servers directly from Settings." },
+    { "emoji": "\uD83D\uDCC2", "name": "@ Opens Files Popup", "description": "Type @ in your prompt to open the file selection dialog." },
+    { "emoji": "\uD83C\uDFA8", "name": "Appearance", "description": "Change the conversation appearances" },
+    { "emoji": "\uD83D\uDD25", "name": "MCP Support", "description": "You can now add MCP servers!" },
+    { "emoji": "\uD83D\uDDC4\uFE0F", "name": "DEVOXXGENIE.md", "description": "Generate project info for extra system instructions" },
+    { "emoji": "\uD83C\uDFB9", "name": "Define submit shortcode", "description": "You can now define the keyboard shortcode to submit a prompt in settings." },
+    { "emoji": "\uD83D\uDCF8", "name": "DnD images", "description": "You can now DnD images with multimodal LLM's." },
+    { "emoji": "\uD83E\uDDD0", "name": "RAG Support", "description": "Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts." },
+    { "emoji": "\u274C", "name": ".gitignore", "description": "Exclude files and directories based on .gitignore file" },
+    { "emoji": "\uD83D\uDC40", "name": "Chat History", "description": "All chats are saved and can be restored or removed" },
+    { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." }
+  ],
+  "announcements": [],
+  "tip": "You can modify the endpoints for different LLM providers and the default command skills in the plugin settings.",
+  "enjoy": "Enjoy!",
+  "socialLinks": [
+    { "platform": "Bluesky", "url": "https://bsky.app/profile/devoxxgenie.bsky.social", "label": "@DevoxxGenie.bsky.social" }
+  ],
+  "reviewUrl": "https://plugins.jetbrains.com/plugin/24169-devoxxgenie/reviews?noRedirect=true",
+  "trackingPixelUrl": "https://dry-voice-8e11.devoxx.workers.dev/"
+}
