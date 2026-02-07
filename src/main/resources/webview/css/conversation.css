@@ -154,10 +154,36 @@ code {
     }
 }
 
+/* Loading / Thinking indicator */
+.loading-indicator {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--devoxx-orange);
+    background: linear-gradient(
+        90deg,
+        var(--devoxx-orange) 0%,
+        #ff9a5c 40%,
+        #ffffff 50%,
+        #ff9a5c 60%,
+        var(--devoxx-orange) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* Typography */
-a { 
-    color: var(--link-color); 
-    text-decoration: none; 
+a {
+    color: var(--link-color);
+    text-decoration: none;
 }
 
 a:hover { 

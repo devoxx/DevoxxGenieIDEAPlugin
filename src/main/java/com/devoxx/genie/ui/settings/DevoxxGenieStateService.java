@@ -199,6 +199,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean mcpApprovalRequired = true;
     private Integer mcpApprovalTimeout = MCP_APPROVAL_TIMEOUT;
 
+    // Agent mode settings
+    private Boolean agentModeEnabled = false;
+    private Integer agentMaxToolCalls = AGENT_MAX_TOOL_CALLS;
+    private Boolean agentAutoApproveReadOnly = false;
+    private Boolean agentWriteApprovalRequired = true;
+    private Boolean agentDebugLogsEnabled = false;
+
     // Welcome content cache
     private String welcomeContentCachedJson = "";
     private long welcomeContentLastFetchTimestamp = 0L;

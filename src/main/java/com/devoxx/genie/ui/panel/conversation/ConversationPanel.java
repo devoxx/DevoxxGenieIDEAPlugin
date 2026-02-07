@@ -111,6 +111,7 @@ public class ConversationPanel
         messageBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.MCP_LOGGING_MSG, webViewController);
+        messageBusConnection.subscribe(AppTopics.AGENT_LOG_MSG, webViewController);
     }
 
     /**

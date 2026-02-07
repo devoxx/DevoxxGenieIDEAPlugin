@@ -3,6 +3,8 @@ package com.devoxx.genie.service.prompt.strategy;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.agent.AgentLoopTracker;
+import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ModelException;
@@ -38,6 +40,7 @@ import java.util.function.Consumer;
 public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
     private final AtomicReference<StreamingResponseHandler> currentHandler = new AtomicReference<>();
+    private final AtomicReference<AgentLoopTracker> currentTracker = new AtomicReference<>();
 
     public StreamingPromptStrategy(Project project) {
         super(project);
@@ -169,19 +172,25 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
                 Assistant assistant;
 
-                ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
-                if (mcpToolProvider != null) {
-                    MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
+                // Try agent mode first, then fall back to MCP-only
+                ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+                if (toolProvider instanceof AgentLoopTracker tracker) {
+                    currentTracker.set(tracker);
+                }
+                if (toolProvider == null) {
+                    toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
+                }
+
+                if (toolProvider != null) {
+                    log.debug("Tool provider created for streaming prompt");
 
                     // Add file references to context before processing if we have them
                     if (!FileListManager.getInstance().isEmpty(project)) {
                         context.setFileReferences(FileListManager.getInstance().getFiles(project));
-                        MCPService.logDebug("Added file references to MCP context: " +
-                                FileListManager.getInstance().getFiles(project).size() + " files");
                     }
                     assistant = AiServices.builder(Assistant.class)
                             .streamingChatModel(streamingModel)
-                            .toolProvider(mcpToolProvider)
+                            .toolProvider(toolProvider)
                             .chatMemoryProvider(memoryId -> chatMemory)
                             .build();
                 } else {
@@ -197,7 +206,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                 TokenStream chat = assistant.chat(cleanText);
 
                 chat.onPartialResponse(streamingResponseHandler::onPartialResponse)
-                    .onToolExecuted(ToolExecution::request)
+                    .onToolExecuted(toolExecution ->
+                        log.debug("Tool executed: {} -> {}", toolExecution.request().name(),
+                                toolExecution.result() != null ? toolExecution.result().substring(0, Math.min(100, toolExecution.result().length())) : "null"))
                     .onCompleteResponse(streamingResponseHandler::onCompleteResponse)
                     .onError(streamingResponseHandler::onError)
                     .start();
@@ -221,9 +232,18 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
     /**
      * Cancel the streaming execution.
+     * Stops the response handler AND cancels the agent loop tracker
+     * so tool executors stop immediately.
      */
     @Override
     public void cancel() {
+        log.info("Cancelling streaming strategy");
+        // Cancel the agent loop tracker first so tool executors stop
+        AgentLoopTracker tracker = currentTracker.getAndSet(null);
+        if (tracker != null) {
+            tracker.cancel();
+        }
+
         StreamingResponseHandler handler = currentHandler.getAndSet(null);
         if (handler != null) {
             handler.stop();

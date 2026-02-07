@@ -4,6 +4,8 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.agent.AgentLoopTracker;
+import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -44,6 +46,7 @@ public class NonStreamingPromptExecutionService {
     private final ChatMemoryManager chatMemoryManager;
     private final ThreadPoolManager threadPoolManager;
     private final AtomicReference<CompletableFuture<ChatResponse>> currentQueryFuture = new AtomicReference<>();
+    private final AtomicReference<AgentLoopTracker> currentTracker = new AtomicReference<>();
 
     public NonStreamingPromptExecutionService() {
         this.chatMemoryManager = ChatMemoryManager.getInstance();
@@ -121,6 +124,12 @@ public class NonStreamingPromptExecutionService {
      * Cancel the currently executing query if one exists.
      */
     public void cancelExecutingQuery() {
+        // Cancel the agent loop tracker so tool executors stop immediately
+        AgentLoopTracker tracker = currentTracker.getAndSet(null);
+        if (tracker != null) {
+            tracker.cancel();
+        }
+
         CompletableFuture<ChatResponse> future = currentQueryFuture.get();
         if (future != null && !future.isDone()) {
             future.cancel(true);
@@ -157,38 +166,31 @@ public class NonStreamingPromptExecutionService {
 
             Assistant assistant = buildAssistant(chatModel, chatMemory);
 
-            if (MCPService.isMCPEnabled()) {
+            // Try agent mode first, then fall back to MCP-only
+            ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+            if (toolProvider instanceof AgentLoopTracker tracker) {
+                currentTracker.set(tracker);
+            }
+            if (toolProvider == null && MCPService.isMCPEnabled()) {
                 Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
                 int totalActiveMCPTools = mcpServers.values().stream()
                         .filter(MCPServer::isEnabled)
                         .mapToInt(server -> server.getAvailableTools().size())
                         .sum();
 
-                // If MCP is enable and we active tools then recreate assistant
                 if (totalActiveMCPTools > 0) {
-                    MCPService.logDebug("MCP is enabled and we have active tools. Creating MCP tool provider");
-
-                    // Use project-specific tool provider with filesystem access
-                    ToolProvider mcpToolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
-
-                    if (mcpToolProvider != null) {
-                        MCPService.logDebug("Successfully created MCP tool provider with filesystem access");
-
-//                        // Add file references to context before processing if we have them
-//                        if (!FileListManager.getInstance().isEmpty(project)) {
-//                            chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
-//                            MCPService.logDebug("Added file references to MCP context: " +
-//                                    FileListManager.getInstance().getFiles(project).size() + " files");
-//                        }
-
-                        assistant = AiServices.builder(Assistant.class)
-                                .chatModel(chatModel)
-                                .chatMemoryProvider(memoryId -> chatMemory)
-                                .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
-                                .toolProvider(mcpToolProvider)
-                                .build();
-                    }
+                    toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
                 }
+            }
+
+            if (toolProvider != null) {
+                log.debug("Tool provider created for non-streaming prompt");
+                assistant = AiServices.builder(Assistant.class)
+                        .chatModel(chatModel)
+                        .chatMemoryProvider(memoryId -> chatMemory)
+                        .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
+                        .toolProvider(toolProvider)
+                        .build();
             }
 
             String userMessage = chatMessageContext.getUserMessage().singleText();

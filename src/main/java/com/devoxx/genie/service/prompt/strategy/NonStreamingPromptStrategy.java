@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.model.Constant.FIND_COMMAND;
 import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
@@ -33,6 +34,8 @@ import static com.devoxx.genie.service.MessageCreationService.extractFileReferen
 public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
     protected NonStreamingPromptExecutionService promptExecutionService;
+    private final AtomicReference<PromptOutputPanel> currentPanel = new AtomicReference<>();
+    private final AtomicReference<String> currentMessageId = new AtomicReference<>();
 
     public NonStreamingPromptStrategy(Project project) {
         super(project);
@@ -66,7 +69,11 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             @NotNull ChatMessageContext context,
             @NotNull PromptOutputPanel panel,
             @NotNull PromptTask<PromptResult> resultTask) {
-            
+
+        // Store references for cancellation
+        currentPanel.set(panel);
+        currentMessageId.set(context.getId());
+
         // Handle FIND command separately
         if (FIND_COMMAND.equalsIgnoreCase(context.getCommandName())) {
             log.debug("Executing find command");
@@ -136,10 +143,26 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
 
     /**
      * Cancel the current prompt execution.
+     * Deactivates activity handlers and hides the loading indicator to prevent
+     * stale events from re-showing the "Thinking..." indicator.
      */
     @Override
     public void cancel() {
+        log.info("Cancelling non-streaming strategy");
         promptExecutionService.cancelExecutingQuery();
+
+        PromptOutputPanel panel = currentPanel.get();
+        if (panel != null && panel.getConversationPanel() != null
+                && panel.getConversationPanel().webViewController != null) {
+            var webViewController = panel.getConversationPanel().webViewController;
+            // Deactivate handlers first to prevent stale events from re-showing indicator
+            webViewController.deactivateActivityHandlers();
+            // Then hide the loading indicator
+            String messageId = currentMessageId.get();
+            if (messageId != null) {
+                webViewController.hideLoadingIndicator(messageId);
+            }
+        }
     }
 
     /**
