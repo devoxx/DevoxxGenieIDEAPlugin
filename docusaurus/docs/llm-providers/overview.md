@@ -2,7 +2,7 @@
 sidebar_position: 1
 title: LLM Providers Overview - DevoxxGenie Documentation
 description: A comprehensive guide to all LLM providers supported by DevoxxGenie, including local and cloud-based options, with comparison of features and capabilities.
-keywords: [devoxxgenie, intellij plugin, llm providers, openai, anthropic, local llm, cloud llm, grok, mistral, ollama]
+keywords: [devoxxgenie, intellij plugin, llm providers, openai, anthropic, local llm, cloud llm, grok, mistral, ollama, kimi, glm, zhipu]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -49,6 +49,8 @@ Supported cloud providers:
 - [Groq](cloud-models.md#groq)
 - [DeepInfra](cloud-models.md#deepinfra)
 - [DeepSeek](cloud-models.md#deepseek)
+- [Kimi](cloud-models.md#kimi)
+- [GLM](cloud-models.md#glm) (Zhipu AI)
 - [OpenRouter](cloud-models.md#openrouter)
 - [Azure OpenAI](cloud-models.md#azure-openai)
 - [Amazon Bedrock](cloud-models.md#amazon-bedrock)
@@ -78,6 +80,8 @@ You can select and configure LLM providers in two ways:
 | Mistral | Low | Low | Pay-per-token | Very Good | No |
 | Groq | Low | Low | Pay-per-token | Very Good | No |
 | DeepSeek | Low | Low | Pay-per-token | Good | No |
+| Kimi | Low | Low | Pay-per-token | Very Good | No |
+| GLM | Low | Low | Pay-per-token | Very Good | No |
 | Azure OpenAI | Medium | Medium | Pay-per-token | Excellent | Depends |
 | Amazon Bedrock | Medium | High | Pay-per-token | Very Good | Some models |
 

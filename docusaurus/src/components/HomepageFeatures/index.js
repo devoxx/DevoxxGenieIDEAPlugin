@@ -8,7 +8,7 @@ import styles from './styles.module.css';
 import MultipleLLMIcon from './icons/MultipleLLM';
 import MCPSupportIcon from './icons/MCPSupport';
 import MCPMarketplaceIcon from './icons/MCPMarketplace';
-import ChatMemoryIcon from './icons/ChatMemory';
+import SubAgentsIcon from './icons/SubAgents';
 import ProjectScannerIcon from './icons/ProjectScanner';
 import TokenCostIcon from './icons/TokenCost';
 import WebSearchIcon from './icons/WebSearch';
@@ -17,12 +17,12 @@ import NaiveRAGIcon from './icons/NaiveRAG';
 
 const FeatureList = [
   {
-    title: 'Multiple LLM Providers',
-    icon: MultipleLLMIcon,
-    link: '/docs/llm-providers/overview',
+    title: 'SubAgents',
+    icon: SubAgentsIcon,
+    link: '/docs/features/sub-agents',
     description: (
       <>
-        Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Mistral, Groq, and more.
+        Available from v0.9.4. Spawn specialized subagents to handle complex tasks in parallel. Each sub-agent can use a different LLM from any provider. Delegate code analysis, research, and problem-solving to focused agents for more efficient development workflows.
       </>
     ),
   },
@@ -47,12 +47,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Chat Memory',
-    icon: ChatMemoryIcon,
-    link: '/docs/features/chat-memory',
+    title: 'Multiple LLM Providers',
+    icon: MultipleLLMIcon,
+    link: '/docs/llm-providers/overview',
     description: (
       <>
-        Your chats are stored locally, allowing you to easily restore them in the future. Set your preferred chat memory size for efficient context management.
+        Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Mistral, Groq, Kimi, GLM, Gemini, and more.
       </>
     ),
   },

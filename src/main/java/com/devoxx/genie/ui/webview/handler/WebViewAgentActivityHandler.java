@@ -8,14 +8,13 @@ import com.devoxx.genie.ui.util.ThemeDetector;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Handles displaying agent tool execution activity in the WebView.
  * Updates the "Thinking..." loading indicator with real-time tool call info
  * so users can see what the agent is doing.
- *
  * Note: All content inserted into the DOM is HTML-escaped via escapeHtml()
  * to prevent XSS. The HTML structure itself uses only hardcoded class names
  * and trusted static content. This follows the same pattern as WebViewMCPLogHandler.
@@ -23,11 +22,27 @@ import java.util.List;
 @Slf4j
 public class WebViewAgentActivityHandler implements AgentLoggingMessage {
 
+    private static final String ICON_PLAY = "&#9654;";
+    private static final String ICON_CHECKMARK = "&#10004;";
+    private static final String ICON_X_MARK = "&#10006;";
+    private static final String ICON_WARNING = "&#9888;";
+    private static final String ICON_QUESTION = "&#10067;";
+    private static final String ICON_SPEECH = "&#128172;";
+
+    private static final String COLOR_GREEN_DARK = "#81C784";
+    private static final String COLOR_GREEN_LIGHT = "#388E3C";
+    private static final String COLOR_RED_DARK = "#FF8A80";
+    private static final String COLOR_RED_LIGHT = "#D32F2F";
+    private static final String COLOR_BLUE_DARK = "#64B5F6";
+    private static final String COLOR_BLUE_LIGHT = "#1976D2";
+
+    private static final String STRONG_OPEN = "<strong>";
+    private static final String STRONG_CLOSE = "</strong>";
+
     private final WebViewJavaScriptExecutor jsExecutor;
     private volatile String activeMessageId;
     private volatile boolean deactivated = false;
-    private final List<AgentMessage> agentLogs = new ArrayList<>();
-    private boolean hasToolActivity;
+    private final List<AgentMessage> agentLogs = new CopyOnWriteArrayList<>();
 
     public WebViewAgentActivityHandler(WebViewJavaScriptExecutor jsExecutor) {
         this.jsExecutor = jsExecutor;
@@ -41,7 +56,6 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         this.activeMessageId = messageId;
         this.deactivated = false;
         agentLogs.clear();
-        hasToolActivity = false;
     }
 
     /**
@@ -62,7 +76,6 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         }
         log.debug(">>> Agent message (type={}): {} - {}", message.getType(), message.getToolName(), message.getCallNumber());
 
-        hasToolActivity = true;
         agentLogs.add(message);
 
         String formattedHtml = buildFormattedLogsHtml();
@@ -80,57 +93,74 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         html.append("<div class=\"agent-header\">Agent Activity</div>");
 
         for (AgentMessage entry : agentLogs) {
-            String cssClass = getCssClass(entry.getType());
-            String icon = getIcon(entry.getType());
-
-            html.append("<div class=\"agent-log-entry ").append(cssClass).append("\">");
+            html.append("<div class=\"agent-log-entry ").append(getCssClass(entry.getType())).append("\">");
             html.append("<span class=\"agent-counter\">[").append(entry.getCallNumber())
                     .append("/").append(entry.getMaxCalls()).append("]</span> ");
-            html.append(icon).append(" ");
-
-            switch (entry.getType()) {
-                case TOOL_REQUEST:
-                    html.append("<strong>").append(escapeHtml(entry.getToolName())).append("</strong>");
-                    if (entry.getArguments() != null) {
-                        String args = truncate(entry.getArguments(), 500);
-                        html.append("<div class=\"agent-args\">").append(escapeHtml(args)).append("</div>");
-                    }
-                    break;
-                case TOOL_RESPONSE:
-                    html.append("<strong>").append(escapeHtml(entry.getToolName())).append("</strong> completed");
-                    if (entry.getResult() != null) {
-                        String result = truncate(entry.getResult(), 500);
-                        html.append("<div class=\"agent-result\">").append(escapeHtml(result)).append("</div>");
-                    }
-                    break;
-                case TOOL_ERROR:
-                    html.append("<strong>").append(escapeHtml(entry.getToolName())).append("</strong> failed");
-                    if (entry.getResult() != null) {
-                        html.append("<div class=\"agent-error\">").append(escapeHtml(entry.getResult())).append("</div>");
-                    }
-                    break;
-                case LOOP_LIMIT:
-                    html.append("<strong>Loop limit reached</strong> (").append(entry.getMaxCalls()).append(" calls)");
-                    break;
-                case APPROVAL_REQUESTED:
-                    html.append("Waiting for approval: <strong>").append(escapeHtml(entry.getToolName())).append("</strong>");
-                    break;
-                case APPROVAL_GRANTED:
-                    html.append("Approved: <strong>").append(escapeHtml(entry.getToolName())).append("</strong>");
-                    break;
-                case APPROVAL_DENIED:
-                    html.append("Denied: <strong>").append(escapeHtml(entry.getToolName())).append("</strong>");
-                    break;
-                case INTERMEDIATE_RESPONSE:
-                    html.append("LLM intermediate response");
-                    break;
+            if (entry.getSubAgentId() != null) {
+                html.append("<span class=\"agent-subagent-id\">[").append(escapeHtml(entry.getSubAgentId())).append("]</span> ");
             }
-
+            html.append(getIcon(entry.getType())).append(" ");
+            appendEntryContent(html, entry);
             html.append("</div>\n");
         }
 
         html.append("</div>");
         return html.toString();
+    }
+
+    private void appendEntryContent(@NotNull StringBuilder html, @NotNull AgentMessage entry) {
+        switch (entry.getType()) {
+            case TOOL_REQUEST:
+                appendBoldToolName(html, "", entry.getToolName(), "");
+                appendDetail(html, entry.getArguments(), "agent-args");
+                break;
+            case TOOL_RESPONSE:
+                appendBoldToolName(html, "", entry.getToolName(), " completed");
+                appendDetail(html, entry.getResult(), "agent-result");
+                break;
+            case TOOL_ERROR:
+                appendBoldToolName(html, "", entry.getToolName(), " failed");
+                appendDetail(html, entry.getResult(), "agent-error");
+                break;
+            case LOOP_LIMIT:
+                html.append(STRONG_OPEN).append("Loop limit reached").append(STRONG_CLOSE)
+                        .append(" (").append(entry.getMaxCalls()).append(" calls)");
+                break;
+            case APPROVAL_REQUESTED:
+                appendBoldToolName(html, "Waiting for approval: ", entry.getToolName(), "");
+                break;
+            case APPROVAL_GRANTED:
+                appendBoldToolName(html, "Approved: ", entry.getToolName(), "");
+                break;
+            case APPROVAL_DENIED:
+                appendBoldToolName(html, "Denied: ", entry.getToolName(), "");
+                break;
+            case INTERMEDIATE_RESPONSE:
+                html.append("LLM intermediate response");
+                break;
+            case SUB_AGENT_STARTED:
+                appendBoldToolName(html, "Sub-agent started: ", entry.getToolName(), "");
+                break;
+            case SUB_AGENT_COMPLETED:
+                appendBoldToolName(html, "Sub-agent completed: ", entry.getToolName(), "");
+                appendDetail(html, entry.getResult(), "agent-result");
+                break;
+            case SUB_AGENT_ERROR:
+                appendBoldToolName(html, "Sub-agent failed: ", entry.getToolName(), "");
+                appendDetail(html, entry.getResult(), "agent-error");
+                break;
+        }
+    }
+
+    private void appendBoldToolName(@NotNull StringBuilder html, String prefix, String toolName, String suffix) {
+        html.append(prefix).append(STRONG_OPEN).append(escapeHtml(toolName)).append(STRONG_CLOSE).append(suffix);
+    }
+
+    private void appendDetail(@NotNull StringBuilder html, String text, String cssClass) {
+        if (text != null) {
+            html.append("<div class=\"").append(cssClass).append("\">")
+                    .append(escapeHtml(truncate(text))).append("</div>");
+        }
     }
 
     private String getCssClass(AgentType type) {
@@ -143,19 +173,20 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
             case APPROVAL_GRANTED -> "agent-approved";
             case APPROVAL_DENIED -> "agent-denied";
             case INTERMEDIATE_RESPONSE -> "agent-intermediate";
+            case SUB_AGENT_STARTED -> "agent-subagent-started";
+            case SUB_AGENT_COMPLETED -> "agent-subagent-completed";
+            case SUB_AGENT_ERROR -> "agent-subagent-error";
         };
     }
 
     private String getIcon(AgentType type) {
         return switch (type) {
-            case TOOL_REQUEST -> "&#9654;";        // play triangle
-            case TOOL_RESPONSE -> "&#10004;";      // checkmark
-            case TOOL_ERROR -> "&#10006;";         // X mark
-            case LOOP_LIMIT -> "&#9888;";          // warning triangle
-            case APPROVAL_REQUESTED -> "&#10067;"; // question mark
-            case APPROVAL_GRANTED -> "&#10004;";
-            case APPROVAL_DENIED -> "&#10006;";
-            case INTERMEDIATE_RESPONSE -> "&#128172;"; // speech bubble
+            case TOOL_REQUEST, SUB_AGENT_STARTED -> ICON_PLAY;
+            case TOOL_RESPONSE, APPROVAL_GRANTED, SUB_AGENT_COMPLETED -> ICON_CHECKMARK;
+            case TOOL_ERROR, APPROVAL_DENIED, SUB_AGENT_ERROR -> ICON_X_MARK;
+            case LOOP_LIMIT -> ICON_WARNING;
+            case APPROVAL_REQUESTED -> ICON_QUESTION;
+            case INTERMEDIATE_RESPONSE -> ICON_SPEECH;
         };
     }
 
@@ -240,13 +271,16 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "          color: #757575;\n" +
                 "          font-style: italic;\n" +
                 "        }\n" +
-                "        .agent-request { color: " + (isDark ? "#64B5F6" : "#1976D2") + "; }\n" +
-                "        .agent-response { color: " + (isDark ? "#81C784" : "#388E3C") + "; }\n" +
-                "        .agent-error-entry { color: " + (isDark ? "#FF8A80" : "#D32F2F") + "; }\n" +
+                "        .agent-subagent-id {\n" +
+                "          color: #FF5400;\n" +
+                "          font-weight: bold;\n" +
+                "          font-size: 11px;\n" +
+                "        }\n" +
+                "        .agent-request, .agent-subagent-started { color: " + (isDark ? COLOR_BLUE_DARK : COLOR_BLUE_LIGHT) + "; }\n" +
+                "        .agent-response, .agent-approved, .agent-subagent-completed { color: " + (isDark ? COLOR_GREEN_DARK : COLOR_GREEN_LIGHT) + "; }\n" +
+                "        .agent-error-entry, .agent-denied, .agent-subagent-error { color: " + (isDark ? COLOR_RED_DARK : COLOR_RED_LIGHT) + "; }\n" +
                 "        .agent-limit { color: " + (isDark ? "#FFB74D" : "#F57C00") + "; }\n" +
                 "        .agent-approval { color: " + (isDark ? "#CE93D8" : "#7B1FA2") + "; }\n" +
-                "        .agent-approved { color: " + (isDark ? "#81C784" : "#388E3C") + "; }\n" +
-                "        .agent-denied { color: " + (isDark ? "#FF8A80" : "#D32F2F") + "; }\n" +
                 "        .agent-intermediate { color: " + (isDark ? "#B0BEC5" : "#546E7A") + "; }\n" +
                 "        .agent-args, .agent-result, .agent-error {\n" +
                 "          font-family: monospace;\n" +
@@ -264,6 +298,8 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "      `;\n" +
                 "      document.head.appendChild(styleEl);\n" +
                 "    }\n" +
+                "    var agentContainer = target.querySelector('.agent-outer-container');\n" +
+                "    if (agentContainer) { agentContainer.scrollTop = agentContainer.scrollHeight; }\n" +
                 "    window.scrollTo(0, document.body.scrollHeight);\n" +
                 "  }\n" +
                 "} catch (error) {\n" +
@@ -284,9 +320,9 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                    .replace("'", "&#39;");
     }
 
-    private @NotNull String truncate(@NotNull String text, int maxLength) {
-        if (text.length() > maxLength) {
-            return text.substring(0, maxLength) + "...";
+    private @NotNull String truncate(@NotNull String text) {
+        if (text.length() > 500) {
+            return text.substring(0, 500) + "...";
         }
         return text;
     }

@@ -166,11 +166,11 @@ Configuration for DevoxxGenie:
 
 ## Recent Cloud Providers with Custom Integration
 
-Several newer cloud providers may be used via the Custom OpenAI integration:
+Several newer cloud providers may be used via the Custom OpenAI integration. Note that DeepSeek, Grok, and Kimi are now available as native providers in DevoxxGenie. Use Custom OpenAI only if you need to connect to alternative endpoints.
 
 ### DeepSeek R1 (via Nvidia/Chutes)
 
-To connect to DeepSeek R1 model via Nvidia or Chutes:
+To connect to DeepSeek R1 model via Nvidia or Chutes (when not using the native DeepSeek provider):
 
 Configuration for DevoxxGenie:
 - URL: `https://chutes-deepseek-ai-deepseek-r1.chutes.ai/v1/` (Chutes) or `https://integrate.api.nvidia.com/v1` (Nvidia)
@@ -179,12 +179,21 @@ Configuration for DevoxxGenie:
 
 ### Grok
 
-To connect to Grok:
+To connect to Grok (when not using the native Grok provider):
 
 Configuration for DevoxxGenie:
 - URL: `https://console.x.ai/` (Check the latest URL)
 - API Key: Your Grok API key
 - Model: The Grok model name
+
+### Kimi (Moonshot AI)
+
+To connect to Kimi via Custom OpenAI (when not using the native Kimi provider):
+
+Configuration for DevoxxGenie:
+- URL: `https://api.moonshot.ai/v1`
+- API Key: Your Kimi API key from [platform.moonshot.ai](https://platform.moonshot.ai/)
+- Model: `moonshot-v1-8k`, `moonshot-v1-32k`, `moonshot-v1-128k`, or `kimi-k2-turbo-preview`
 
 ## OpenAI API Compatibility
 

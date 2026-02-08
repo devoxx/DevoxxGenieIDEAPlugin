@@ -17,7 +17,7 @@ DevoxxGenie offers a comprehensive set of features designed to enhance your deve
 Connect to a wide range of LLM providers:
 
 - **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, and custom OpenAI-compatible providers
-- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, OpenRouter, Azure OpenAI, and Amazon Bedrock
+- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), OpenRouter, Azure OpenAI, and Amazon Bedrock
 
 ### Chat Interface
 
@@ -37,6 +37,7 @@ Connect to a wide range of LLM providers:
 
 - **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
 - **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
+- **Sub-Agents** *(v0.9.4+)*: Parallel codebase exploration using multiple read-only sub-agents that can concurrently investigate different parts of your project, each configurable with a different LLM from any provider
 - **Web Search**: Augment LLM knowledge with web search results from Google or Tavily
 - **Token Cost Calculator**: Calculate token usage and cost before sending prompts
 
@@ -72,6 +73,7 @@ For detailed information about specific features, check out the dedicated pages:
 
 - [Chat Interface](chat-interface.md)
 - [MCP Support](mcp_expanded.md)
+- [Sub-Agents](sub-agents.md)
 - [Skills](skills.md)
 - [Web Search](web-search.md)
 - [RAG Support](rag.md)

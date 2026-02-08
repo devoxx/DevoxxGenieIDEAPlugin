@@ -1,24 +1,29 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.model.chat.request.json.JsonArraySchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Provides built-in IDE tools for agentic interactions:
- * read_file, write_file, edit_file, list_files, search_files, run_command.
+ * read_file, write_file, edit_file, list_files, search_files, run_command, parallel_explore.
  */
 public class BuiltInToolProvider implements ToolProvider {
 
     private final Map<ToolSpecification, ToolExecutor> tools;
+    private @Nullable ParallelExploreToolExecutor parallelExploreExecutor;
 
     public BuiltInToolProvider(@NotNull Project project) {
         tools = new LinkedHashMap<>();
@@ -110,6 +115,41 @@ public class BuiltInToolProvider implements ToolProvider {
                         .build(),
                 new RunCommandToolExecutor(project)
         );
+
+        // parallel_explore — only when enabled in settings
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getParallelExploreEnabled())) {
+            parallelExploreExecutor = new ParallelExploreToolExecutor(project);
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("parallel_explore")
+                            .description("Launch multiple sub-agents in parallel to explore different aspects " +
+                                    "of the codebase simultaneously. Each sub-agent has its own model and read-only " +
+                                    "tool access (read_file, list_files, search_files). Use this for broad exploration " +
+                                    "tasks that benefit from investigating multiple angles at once. " +
+                                    "Provide 2-5 focused exploration queries.")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addProperty("queries", JsonArraySchema.builder()
+                                            .items(JsonStringSchema.builder()
+                                                    .description("An exploration query for a sub-agent")
+                                                    .build())
+                                            .description("List of exploration queries, one per sub-agent (2-5 queries)")
+                                            .build())
+                                    .required("queries")
+                                    .build())
+                            .build(),
+                    parallelExploreExecutor
+            );
+        }
+    }
+
+    /**
+     * Returns the ParallelExploreToolExecutor if it was created (i.e. parallel explore is enabled).
+     * Used by {@link com.devoxx.genie.service.agent.AgentToolProviderFactory} to register
+     * it as a cancellable child of the AgentLoopTracker.
+     */
+    @Nullable
+    public ParallelExploreToolExecutor getParallelExploreExecutor() {
+        return parallelExploreExecutor;
     }
 
     @Override

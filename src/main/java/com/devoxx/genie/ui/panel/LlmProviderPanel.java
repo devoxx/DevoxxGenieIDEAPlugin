@@ -136,6 +136,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case DeepSeek -> stateService.isDeepSeekEnabled();
                     case OpenRouter -> stateService.isOpenRouterEnabled();
                     case Grok -> stateService.isGrokEnabled();
+                    case Kimi -> stateService.isKimiEnabled();
+                    case GLM -> stateService.isGlmEnabled();
                     case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                     case Bedrock -> stateService.isAwsEnabled();
                 })

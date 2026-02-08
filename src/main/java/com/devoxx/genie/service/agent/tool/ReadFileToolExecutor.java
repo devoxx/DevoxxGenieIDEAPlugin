@@ -2,7 +2,7 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
+
+import static com.intellij.openapi.vfs.VfsUtilCore.isAncestor;
 
 @Slf4j
 public class ReadFileToolExecutor implements ToolExecutor {
@@ -29,7 +31,8 @@ public class ReadFileToolExecutor implements ToolExecutor {
             }
 
             return ReadAction.compute(() -> {
-                VirtualFile projectBase = project.getBaseDir();
+                VirtualFile[] contentRoots = ProjectRootManager.getInstance(project).getContentRoots();
+                VirtualFile projectBase = contentRoots.length > 0 ? contentRoots[0] : null;
                 if (projectBase == null) {
                     return "Error: Project base directory not found.";
                 }
@@ -39,7 +42,7 @@ public class ReadFileToolExecutor implements ToolExecutor {
                     return "Error: File not found: " + path;
                 }
 
-                if (!VfsUtil.isAncestor(projectBase, file, false)) {
+                if (!isAncestor(projectBase, file, false)) {
                     return "Error: Access denied - path is outside the project root.";
                 }
 

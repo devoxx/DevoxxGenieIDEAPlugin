@@ -7,7 +7,7 @@
 ![JetBrains Plugin Rating](https://img.shields.io/jetbrains/plugin/r/stars/24169-devoxxgenie)
 [![Documentation](https://img.shields.io/badge/docs-genie.devoxx.com-blue)](https://genie.devoxx.com)
 
-Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
+Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
 We now also support RAG-based prompt context based on your vectorized project files. 
 In addition to Git Dif viewer and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
@@ -55,6 +55,7 @@ Quick links:
 
 ### Key Features:
 
+- **🤖 Sub-Agents** *(v0.9.4+)*: Parallel codebase exploration using multiple sub-agents. The LLM can spawn read-only sub-agents that concurrently investigate different aspects of your codebase, each with configurable provider/model. Enable in Agent Settings!
 - **🔥️ MCP Support with Marketplace**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images**: You can now DnD images with multimodal LLM's.

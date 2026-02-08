@@ -40,6 +40,14 @@ message, and show me a summary of what you changed and why.
 
 ## Build & Development Commands
 
+### Java Version Requirement
+
+**IMPORTANT**: This project requires **JDK 21** for building. JDK 25 causes Gradle build script failures. Always set `JAVA_HOME` before running Gradle commands:
+
+```bash
+export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home
+```
+
 ### Building
 
 ```bash
@@ -121,8 +129,7 @@ The plugin processes user prompts through a layered architecture:
     - `chatmodel/cloud/` - Cloud providers (OpenAI, Anthropic, Gemini, etc.)
     - `chatmodel/local/` - Local providers (Ollama, GPT4All, LMStudio, etc.)
 
-**Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, google, grok, groq, mistral, openai,
-openrouter
+**Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, glm, google, grok, groq, kimi, mistral, openai, openrouter
 
 **Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, customopenai
 

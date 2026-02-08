@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Cloud LLM Providers
 description: Guide to all cloud-based LLM providers supported by DevoxxGenie, including setup instructions and configuration.
-keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, cloud llm]
+keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloud llm]
 ---
 
 # Cloud LLM Providers
@@ -23,9 +23,11 @@ For all cloud providers, available models are **automatically fetched** from the
 6. [Groq](#groq)
 7. [DeepInfra](#deepinfra)
 8. [DeepSeek](#deepseek)
-9. [OpenRouter](#openrouter)
-10. [Azure OpenAI](#azure-openai)
-11. [Amazon Bedrock](#amazon-bedrock)
+9. [Kimi](#kimi)
+10. [GLM](#glm)
+11. [OpenRouter](#openrouter)
+12. [Azure OpenAI](#azure-openai)
+13. [Amazon Bedrock](#amazon-bedrock)
 
 ## OpenAI
 
@@ -239,6 +241,70 @@ Google provides the Gemini family of models through Google AI Studio.
 - Strong understanding of programming concepts
 - Competitive pricing
 
+## Kimi
+
+[Kimi](https://platform.moonshot.ai/) (Moonshot AI) provides powerful language models with long context windows and strong performance on code-related tasks.
+
+### Setup
+
+1. Create an account at [Moonshot AI](https://platform.moonshot.ai/)
+2. Generate an API key from your account dashboard
+3. In DevoxxGenie settings, select "Kimi" as the provider
+4. Paste your API key
+5. Select your preferred Kimi model
+
+### Configuration
+
+- **API Key**: Your Kimi API key
+- **Model**: Select from available models (Moonshot v1 8K/32K/128K, Kimi K2 Turbo Preview, etc.)
+- **Parameters**: Temperature (0.0-1.0), Top P, Maximum tokens
+
+### Advantages
+
+- Long context windows (up to 128K tokens, 256K for K2)
+- Strong code understanding and generation
+- Competitive pricing
+- Fast response times
+- Good support for Chinese and English
+
+*Check [Moonshot AI's pricing page](https://platform.moonshot.ai/) for current rates.*
+
+## GLM
+
+[GLM](https://open.bigmodel.cn/) (Zhipu AI / Z.AI) provides the ChatGLM family of models, offering strong performance on code-related tasks with competitive pricing.
+
+### Setup
+
+1. Create an account at [Zhipu AI (Z.AI)](https://z.ai/)
+2. Generate an API key from [your account dashboard](https://z.ai/manage-apikey/apikey-list)
+3. In DevoxxGenie settings, select "GLM" as the provider
+4. Paste your API key
+5. Select your preferred GLM model
+
+### Configuration
+
+- **API Key**: Your GLM API key
+- **Model**: Select from available models (GLM-4.7, GLM-4.7 Flash, GLM-4.5)
+- **Parameters**: Temperature, Top P, Maximum tokens
+
+### Available Models
+
+| Model | Context Window | Input Cost | Output Cost |
+|-------|---------------|------------|-------------|
+| GLM-4.7 | 200K tokens | $0.60/1M tokens | $2.20/1M tokens |
+| GLM-4.7 Flash | 200K tokens | $0.06/1M tokens | $0.40/1M tokens |
+| GLM-4.5 | 128K tokens | $0.35/1M tokens | $1.55/1M tokens |
+
+### Advantages
+
+- Large context windows (up to 200K tokens)
+- Very competitive pricing, especially the Flash variant
+- Strong code understanding and generation
+- OpenAI-compatible API for seamless integration
+- Good support for Chinese and English
+
+*Check [Zhipu AI's pricing page](https://open.bigmodel.cn/) for current rates.*
+
 ## OpenRouter
 
 [OpenRouter](https://openrouter.ai/) is a unified API that provides access to many different models from various providers.
@@ -334,7 +400,7 @@ When selecting a cloud provider, consider:
 - **Code generation**: DeepSeek, OpenAI, Anthropic Claude
 - **Speed priority**: Groq, Google Gemini Flash
 - **Large context**: Google Gemini (1M+ tokens), Anthropic Claude (200K tokens)
-- **Budget-friendly**: Groq, Mistral Small, DeepSeek
+- **Budget-friendly**: Groq, Mistral Small, DeepSeek, Kimi, GLM Flash
 - **Enterprise**: Azure OpenAI, Amazon Bedrock
 - **European data residency**: Mistral
 

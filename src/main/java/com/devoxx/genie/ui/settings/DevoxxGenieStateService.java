@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
@@ -111,6 +112,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
     private boolean isGrokEnabled = false;
+    private boolean isKimiEnabled = false;
+    private boolean isGlmEnabled = false;
 
     // LLM API Keys
     private String openAIKey = "";
@@ -122,6 +125,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String deepSeekKey = "";
     private String openRouterKey = "";
     private String grokKey = "";
+    private String kimiKey = "";
+    private String glmKey = "";
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     private String azureOpenAIKey = "";
@@ -205,6 +210,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
+
+    // Parallel exploration (sub-agent) settings
+    private Boolean parallelExploreEnabled = true;
+    private Integer subAgentMaxToolCalls = SUB_AGENT_MAX_TOOL_CALLS;
+    private Integer subAgentParallelism = SUB_AGENT_DEFAULT_PARALLELISM;
+    private Integer subAgentTimeoutSeconds = SUB_AGENT_TIMEOUT_SECONDS;
+    private String subAgentModelProvider = "";
+    private String subAgentModelName = "";
+    private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
     // Welcome content cache
     private String welcomeContentCachedJson = "";
@@ -344,6 +358,24 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                 ((!awsAccessKeyId.isEmpty() && !awsSecretKey.isEmpty())
                 || (shouldPowerFromAWSProfile && !awsProfileName.isEmpty()))
                 && !awsRegion.isEmpty();
+    }
+
+    /**
+     * Returns the SubAgentConfig for the given agent index.
+     * Falls back to the default provider/model if no per-agent config exists or the config is empty.
+     */
+    public @NotNull SubAgentConfig getEffectiveSubAgentConfig(int index) {
+        if (subAgentConfigs != null && index >= 0 && index < subAgentConfigs.size()) {
+            SubAgentConfig cfg = subAgentConfigs.get(index);
+            if (cfg != null && cfg.getModelProvider() != null && !cfg.getModelProvider().isEmpty()) {
+                return cfg;
+            }
+        }
+        // Fall back to default
+        return new SubAgentConfig(
+                subAgentModelProvider != null ? subAgentModelProvider : "",
+                subAgentModelName != null ? subAgentModelName : ""
+        );
     }
 
     public @Nullable String getConfigValue(@NotNull String key) {
