@@ -1,14 +1,17 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -29,14 +32,26 @@ class BuiltInToolProviderTest {
     private VirtualFile projectBase;
     @Mock
     private ToolProviderRequest request;
+    @Mock
+    private DevoxxGenieStateService stateService;
 
+    private MockedStatic<DevoxxGenieStateService> stateServiceMock;
     private BuiltInToolProvider provider;
 
     @BeforeEach
     void setUp() {
+        stateServiceMock = mockStatic(DevoxxGenieStateService.class);
+        stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+        when(stateService.getParallelExploreEnabled()).thenReturn(false);
+
         when(project.getBaseDir()).thenReturn(projectBase);
         when(project.getBasePath()).thenReturn("/tmp/test-project");
         provider = new BuiltInToolProvider(project);
+    }
+
+    @AfterEach
+    void tearDown() {
+        stateServiceMock.close();
     }
 
     @Test
