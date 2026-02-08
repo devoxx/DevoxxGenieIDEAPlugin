@@ -24,6 +24,8 @@ public enum ModelProvider {
     OpenRouter("OpenRouter", Type.CLOUD),
     DeepSeek("DeepSeek", Type.CLOUD),
     Grok("Grok", Type.CLOUD),
+    Kimi("Kimi", Type.CLOUD),
+    GLM("GLM", Type.CLOUD),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);

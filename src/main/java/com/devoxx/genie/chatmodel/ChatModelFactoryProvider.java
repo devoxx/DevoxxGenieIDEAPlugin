@@ -7,6 +7,8 @@ import com.devoxx.genie.chatmodel.cloud.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.google.GoogleChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.grok.GrokChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.glm.GLMChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.kimi.KimiChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
@@ -61,6 +63,8 @@ public class ChatModelFactoryProvider {
             case "OpenAI" -> new OpenAIChatModelFactory();
             case "OpenRouter" -> new OpenRouterChatModelFactory();
             case "Grok" -> new GrokChatModelFactory();
+            case "Kimi" -> new KimiChatModelFactory();
+            case "GLM" -> new GLMChatModelFactory();
             default -> null;
         };
     }

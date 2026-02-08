@@ -70,6 +70,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField grokApiKeyField = new JPasswordField(stateService.getGrokKey());
     @Getter
+    private final JPasswordField kimiApiKeyField = new JPasswordField(stateService.getKimiKey());
+    @Getter
+    private final JPasswordField glmApiKeyField = new JPasswordField(stateService.getGlmKey());
+    @Getter
     private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JTextField awsProfileName = new JTextField(stateService.getAwsProfileName());
@@ -115,6 +119,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isOpenRouterEnabled());
     @Getter
     private final JCheckBox grokEnabledCheckBox = new JCheckBox("", stateService.isGrokEnabled());
+    @Getter
+    private final JCheckBox kimiEnabledCheckBox = new JCheckBox("", stateService.isKimiEnabled());
+    @Getter
+    private final JCheckBox glmEnabledCheckBox = new JCheckBox("", stateService.isGlmEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
@@ -189,6 +197,12 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
         addProviderSettingRow(panel, gbc, "Grok API Key", grokEnabledCheckBox,
                 createTextWithPasswordButton(grokApiKeyField, "https://accounts.x.ai/sign-in"));
+        addProviderSettingRow(panel, gbc, "Kimi API Key", kimiEnabledCheckBox,
+                createTextWithPasswordButton(kimiApiKeyField, "https://platform.moonshot.ai/console/api-keys"));
+        addHintText(panel, gbc, "Uses Moonshot AI platform API; get your key at platform.moonshot.ai");
+        addProviderSettingRow(panel, gbc, "GLM API Key", glmEnabledCheckBox,
+                createTextWithPasswordButton(glmApiKeyField, "https://z.ai/manage-apikey/apikey-list"));
+        addHintText(panel, gbc, "Uses Zhipu AI (Z.AI) platform API; get your key at z.ai");
 
         addAzureOpenAIPanel(panel, gbc);
         addAWSPanel(panel, gbc);
@@ -241,6 +255,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         deepSeekEnabledCheckBox.addItemListener(e -> updateUrlFieldState(deepSeekEnabledCheckBox, deepSeekApiKeyField));
         openRouterEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openRouterEnabledCheckBox, openRouterApiKeyField));
         grokEnabledCheckBox.addItemListener(e -> updateUrlFieldState(grokEnabledCheckBox, grokApiKeyField));
+        kimiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(kimiEnabledCheckBox, kimiApiKeyField));
+        glmEnabledCheckBox.addItemListener(e -> updateUrlFieldState(glmEnabledCheckBox, glmApiKeyField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
