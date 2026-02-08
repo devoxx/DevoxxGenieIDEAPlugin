@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.mcp;
 
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.service.mcp.MCPConfigurationParser;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -9,8 +10,11 @@ import com.devoxx.genie.ui.settings.mcp.dialog.MCPServerDialog;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserFactory;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBScrollPane;
@@ -25,7 +29,11 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +133,14 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             }
         });
 
+        JButton importButton = new JButton("Import from JSON", AllIcons.Actions.Upload);
+        importButton.setToolTipText("Import MCP server configuration from Anthropic standard JSON format");
+        importButton.addActionListener(e -> importFromJson());
+
+        JButton exportButton = new JButton("Export to JSON", AllIcons.ToolbarDecorator.Export);
+        exportButton.setToolTipText("Export MCP server configuration to Anthropic standard JSON format");
+        exportButton.addActionListener(e -> exportToJson());
+
         JButton infoButton = new JButton("What is MCP", AllIcons.Actions.Help);
         infoButton.addActionListener(e -> {
             try {
@@ -136,8 +152,166 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.add(marketplaceButton);
+        buttonPanel.add(importButton);
+        buttonPanel.add(exportButton);
         buttonPanel.add(infoButton);
         return buttonPanel;
+    }
+
+    private void importFromJson() {
+        FileChooserDescriptor descriptor = new FileChooserDescriptor(true, false, false, false, false, false)
+                .withFileFilter(file -> file.getName().endsWith(".json"))
+                .withTitle("Select MCP Configuration File")
+                .withDescription("Select a JSON file containing MCP server configuration");
+
+        VirtualFile[] files = FileChooserFactory.getInstance().createFileChooser(descriptor, null, panel).choose(null);
+
+        if (files.length > 0) {
+            VirtualFile file = files[0];
+            try {
+                String json = Files.readString(Paths.get(file.getPath()));
+                MCPConfigurationParser parser = new MCPConfigurationParser();
+                Map<String, MCPServer> importedServers = parser.parseFromJson(json);
+
+                if (importedServers.isEmpty()) {
+                    Messages.showWarningDialog(
+                            "The selected file contains no MCP server configurations.",
+                            "Import Warning"
+                    );
+                    return;
+                }
+
+                // Ask user if they want to merge or replace
+                int choice = Messages.showYesNoCancelDialog(
+                        "Import " + importedServers.size() + " server(s). Replace existing servers or merge?\n\n" +
+                        "Yes = Replace all existing servers\n" +
+                        "No = Merge (add new servers, update existing ones)",
+                        "Import MCP Configuration",
+                        "Replace",
+                        "Merge",
+                        "Cancel",
+                        Messages.getQuestionIcon()
+                );
+
+                if (choice == Messages.CANCEL) {
+                    return;
+                }
+
+                if (choice == Messages.YES) {
+                    // Replace all servers
+                    tableModel.setMcpServers(new ArrayList<>(importedServers.values()));
+                } else {
+                    // Merge servers
+                    for (MCPServer server : importedServers.values()) {
+                        // Check if server with same name exists
+                        boolean found = false;
+                        List<MCPServer> currentServers = tableModel.getMcpServers();
+                        for (int i = 0; i < currentServers.size(); i++) {
+                            if (currentServers.get(i).getName().equals(server.getName())) {
+                                tableModel.updateMcpServer(i, server);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            tableModel.addMcpServer(server);
+                        }
+                    }
+                }
+
+                isModified = true;
+                Messages.showInfoMessage(
+                        "Successfully imported " + importedServers.size() + " MCP server configuration(s).",
+                        "Import Successful"
+                );
+
+            } catch (IOException ex) {
+                log.error("Error reading file: " + ex.getMessage(), ex);
+                Messages.showErrorDialog(
+                        "Failed to read file: " + ex.getMessage(),
+                        "Import Error"
+                );
+            } catch (MCPConfigurationParser.MCPConfigurationException ex) {
+                log.error("Error parsing MCP configuration: " + ex.getMessage(), ex);
+                Messages.showErrorDialog(
+                        "Failed to parse MCP configuration:\n" + ex.getMessage(),
+                        "Import Error"
+                );
+            }
+        }
+    }
+
+    private void exportToJson() {
+        List<MCPServer> servers = tableModel.getMcpServers();
+
+        if (servers.isEmpty()) {
+            Messages.showWarningDialog(
+                    "No MCP servers to export.",
+                    "Export Warning"
+            );
+            return;
+        }
+
+        // Ask user if they want to include DevoxxGenie extensions
+        int choice = Messages.showYesNoDialog(
+                "Include DevoxxGenie-specific extensions?\n\n" +
+                "Yes = Include enabled flag, HTTP transport settings\n" +
+                "No = Standard format only (compatible with Claude Desktop)",
+                "Export Options",
+                Messages.getQuestionIcon()
+        );
+
+        boolean includeExtensions = (choice == Messages.YES);
+
+        FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false)
+                .withTitle("Select Export Location")
+                .withDescription("Select a directory to save the MCP configuration file");
+
+        VirtualFile[] files = FileChooserFactory.getInstance().createFileChooser(descriptor, null, panel).choose(null);
+
+        if (files.length > 0) {
+            VirtualFile directory = files[0];
+
+            String fileName = Messages.showInputDialog(
+                    "Enter filename for the exported configuration:",
+                    "Export Filename",
+                    Messages.getQuestionIcon(),
+                    "mcp-config.json",
+                    null
+            );
+
+            if (fileName == null || fileName.trim().isEmpty()) {
+                return;
+            }
+
+            if (!fileName.endsWith(".json")) {
+                fileName += ".json";
+            }
+
+            try {
+                MCPConfigurationParser parser = new MCPConfigurationParser();
+                Map<String, MCPServer> serverMap = servers.stream()
+                        .collect(Collectors.toMap(MCPServer::getName, server -> server));
+
+                String json = parser.exportToJson(serverMap, includeExtensions);
+
+                Path outputPath = Paths.get(directory.getPath(), fileName);
+                Files.writeString(outputPath, json);
+
+                Messages.showInfoMessage(
+                        "Successfully exported " + servers.size() + " MCP server configuration(s) to:\n" +
+                        outputPath.toString(),
+                        "Export Successful"
+                );
+
+            } catch (IOException ex) {
+                log.error("Error writing file: " + ex.getMessage(), ex);
+                Messages.showErrorDialog(
+                        "Failed to write file: " + ex.getMessage(),
+                        "Export Error"
+                );
+            }
+        }
     }
 
     private void setupTable() {
@@ -148,16 +322,16 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         mcpTable.getColumnModel().getColumn(4).setPreferredWidth(80);   // Env Count
         mcpTable.getColumnModel().getColumn(5).setPreferredWidth(230);  // Tools
         mcpTable.getColumnModel().getColumn(6).setPreferredWidth(70);   // View Button
-        
+
         // Create button renderer and editor for the view button column
         mcpTable.getColumnModel().getColumn(6).setCellRenderer(new ButtonRenderer());
         mcpTable.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new JCheckBox()));
-        
+
         // Center align the environment count column
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         mcpTable.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
-        
+
         // Add listener for checkbox changes
         tableModel.addTableModelListener(e -> {
             if (e.getColumn() == 0) { // Enabled column
