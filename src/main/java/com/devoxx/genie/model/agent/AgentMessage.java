@@ -16,4 +16,5 @@ public class AgentMessage {
     private String result;
     private int callNumber;
     private int maxCalls;
+    private String subAgentId;
 }

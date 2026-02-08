@@ -202,6 +202,15 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
             }
         });
         
+        // Copy all logs to clipboard
+        actionGroup.add(new AnAction("Copy All Logs", "Copy all log entries to clipboard",
+                IconLoader.getIcon("/actions/copy.svg", MCPLogPanel.class)) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                copyLogsToClipboard();
+            }
+        });
+
         // Settings action for log retention
         actionGroup.add(new AnAction("Settings", "Configure log retention",
                 IconLoader.getIcon("/general/settings.svg", MCPLogPanel.class)) {
@@ -406,6 +415,20 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
     /**
      * Clear all logs
      */
+    private void copyLogsToClipboard() {
+        StringBuilder sb = new StringBuilder();
+        for (LogEntry entry : fullLogs) {
+            sb.append(entry.timestamp()).append(" ").append(entry.logMessage()).append("\n");
+        }
+        if (sb.isEmpty()) {
+            NotificationUtil.sendNotification(project, "No MCP logs to copy.");
+            return;
+        }
+        java.awt.datatransfer.StringSelection selection = new java.awt.datatransfer.StringSelection(sb.toString());
+        java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+        NotificationUtil.sendNotification(project, "MCP logs copied to clipboard (" + fullLogs.size() + " entries).");
+    }
+
     private void clearLogs() {
         // Clear pending logs first
         synchronized (pendingLogs) {

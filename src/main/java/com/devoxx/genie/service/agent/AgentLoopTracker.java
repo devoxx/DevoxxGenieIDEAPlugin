@@ -35,16 +35,23 @@ public class AgentLoopTracker implements ToolProvider {
     private final AtomicInteger callCount = new AtomicInteger(0);
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final @Nullable Project project;
+    private final @Nullable String subAgentId;
     private final List<Cancellable> children = new CopyOnWriteArrayList<>();
 
     public AgentLoopTracker(@NotNull ToolProvider delegate, int maxToolCalls) {
-        this(delegate, maxToolCalls, null);
+        this(delegate, maxToolCalls, null, null);
     }
 
     public AgentLoopTracker(@NotNull ToolProvider delegate, int maxToolCalls, @Nullable Project project) {
+        this(delegate, maxToolCalls, project, null);
+    }
+
+    public AgentLoopTracker(@NotNull ToolProvider delegate, int maxToolCalls,
+                            @Nullable Project project, @Nullable String subAgentId) {
         this.delegate = delegate;
         this.maxToolCalls = maxToolCalls;
         this.project = project;
+        this.subAgentId = subAgentId;
     }
 
     @Override
@@ -107,6 +114,7 @@ public class AgentLoopTracker implements ToolProvider {
                     .result(result)
                     .callNumber(callNumber)
                     .maxCalls(maxToolCalls)
+                    .subAgentId(subAgentId)
                     .build();
 
             ApplicationManager.getApplication().getMessageBus()

@@ -3,6 +3,7 @@ package com.devoxx.genie.service.agent;
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.CustomChatModel;
+import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.service.agent.tool.ReadOnlyToolProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
@@ -39,6 +40,8 @@ public class SubAgentRunner {
     private final int agentIndex;
     private final AtomicBoolean cancelled;
     private @Nullable AgentLoopTracker tracker;
+    private String resolvedProviderName;
+    private String resolvedModelName;
 
     public SubAgentRunner(@NotNull Project project, int agentIndex, @NotNull AtomicBoolean cancelled) {
         this.project = project;
@@ -76,7 +79,8 @@ public class SubAgentRunner {
                     : SUB_AGENT_MAX_TOOL_CALLS;
 
             ToolProvider readOnlyTools = new ReadOnlyToolProvider(project);
-            tracker = new AgentLoopTracker(readOnlyTools, maxToolCalls, project);
+            String subAgentLabel = buildSubAgentLabel();
+            tracker = new AgentLoopTracker(readOnlyTools, maxToolCalls, project, subAgentLabel);
 
             // Share cancellation state
             if (cancelled.get()) {
@@ -118,21 +122,40 @@ public class SubAgentRunner {
     }
 
     /**
+     * Builds a label like "sub-agent-1:Anthropic:claude-sonnet" for log output.
+     */
+    @NotNull
+    private String buildSubAgentLabel() {
+        StringBuilder label = new StringBuilder("sub-agent-").append(agentIndex + 1);
+        if (resolvedProviderName != null && !resolvedProviderName.isEmpty()) {
+            label.append(":").append(resolvedProviderName);
+            if (resolvedModelName != null && !resolvedModelName.isEmpty()) {
+                label.append(":").append(resolvedModelName);
+            }
+        }
+        return label.toString();
+    }
+
+    /**
      * Resolves the ChatModel for this sub-agent.
-     * Uses the configured sub-agent model, or falls back to the main agent's provider.
+     * Checks per-agent config first, then falls back to default provider/model.
      */
     @Nullable
     private ChatModel resolveModel() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        String providerName = settings.getSubAgentModelProvider();
-        String modelName = settings.getSubAgentModelName();
+        SubAgentConfig config = settings.getEffectiveSubAgentConfig(agentIndex);
 
-        // If no sub-agent model configured, try to use a sensible default
+        String providerName = config.getModelProvider();
+        String modelName = config.getModelName();
+
+        // If no provider configured, try to use a sensible default
         if (providerName == null || providerName.isBlank()) {
-            log.debug("No sub-agent model configured, attempting to use Ollama or OpenAI");
+            log.debug("No sub-agent model configured for agent #{}, attempting auto-detect", agentIndex + 1);
             return tryDefaultModel();
         }
 
+        resolvedProviderName = providerName;
+        resolvedModelName = modelName;
         return createModelForProvider(providerName, modelName);
     }
 
@@ -140,8 +163,15 @@ public class SubAgentRunner {
     private ChatModel tryDefaultModel() {
         // Try Ollama first (free, local), then OpenAI
         ChatModel model = createModelForProvider("Ollama", null);
-        if (model != null) return model;
-        return createModelForProvider("OpenAI", null);
+        if (model != null) {
+            resolvedProviderName = "Ollama";
+            return model;
+        }
+        model = createModelForProvider("OpenAI", null);
+        if (model != null) {
+            resolvedProviderName = "OpenAI";
+        }
+        return model;
     }
 
     @Nullable
@@ -150,6 +180,10 @@ public class SubAgentRunner {
             return ChatModelFactoryProvider.getFactoryByProvider(providerName)
                     .map(factory -> {
                         CustomChatModel config = buildModelConfig(factory, modelName);
+                        // Track the actual model name used (may differ from requested if auto-selected)
+                        if (resolvedModelName == null || resolvedModelName.isEmpty()) {
+                            resolvedModelName = config.getModelName();
+                        }
                         return factory.createChatModel(config);
                     })
                     .orElse(null);
@@ -186,10 +220,9 @@ public class SubAgentRunner {
     }
 
     private void setBaseUrlIfLocal(@NotNull CustomChatModel config, @NotNull DevoxxGenieStateService settings) {
-        String providerName = settings.getSubAgentModelProvider();
-        if (providerName == null) return;
+        if (resolvedProviderName == null) return;
 
-        switch (providerName) {
+        switch (resolvedProviderName) {
             case "Ollama" -> config.setBaseUrl(settings.getOllamaModelUrl());
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
             case "GPT4All" -> config.setBaseUrl(settings.getGpt4allModelUrl());
