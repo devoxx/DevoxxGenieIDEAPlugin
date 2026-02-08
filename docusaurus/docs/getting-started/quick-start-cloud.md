@@ -24,6 +24,8 @@ DevoxxGenie supports several cloud LLM providers:
 - [Google](https://aistudio.google.com/app/apikey) (Gemini models)
 - [DeepInfra](https://deepinfra.com/dash/deployments)
 - [DeepSeek](https://www.deepseek.com/)
+- [Kimi](https://platform.moonshot.ai/)
+- [GLM](https://open.bigmodel.cn/) (Zhipu AI)
 - [OpenRouter](https://www.openrouter.ai/)
 - [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - [Amazon Bedrock](https://aws.amazon.com/bedrock)

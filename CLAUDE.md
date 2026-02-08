@@ -76,7 +76,7 @@ The plugin processes user prompts through a layered architecture:
   - `chatmodel/cloud/` - Cloud providers (OpenAI, Anthropic, Gemini, etc.)
   - `chatmodel/local/` - Local providers (Ollama, GPT4All, LMStudio, etc.)
 
-**Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, google, grok, groq, mistral, openai, openrouter
+**Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, glm, google, grok, groq, kimi, mistral, openai, openrouter
 
 **Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, customopenai
 

@@ -17,7 +17,7 @@ DevoxxGenie offers a comprehensive set of features designed to enhance your deve
 Connect to a wide range of LLM providers:
 
 - **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, and custom OpenAI-compatible providers
-- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, OpenRouter, Azure OpenAI, and Amazon Bedrock
+- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), OpenRouter, Azure OpenAI, and Amazon Bedrock
 
 ### Chat Interface
 

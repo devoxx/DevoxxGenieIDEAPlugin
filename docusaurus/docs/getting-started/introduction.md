@@ -21,7 +21,7 @@ With DevoxxGenie, developers can leverage the power of artificial intelligence t
 
 DevoxxGenie provides a rich set of features to enhance your development workflow:
 
-- **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, and more.
+- **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
 - **MCP Support**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
 - **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
