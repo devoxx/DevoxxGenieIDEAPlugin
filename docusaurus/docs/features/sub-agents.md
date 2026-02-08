@@ -7,6 +7,10 @@ keywords: [devoxxgenie, sub-agents, parallel explore, agent mode, codebase explo
 
 # Sub-Agents
 
+:::info Available from v0.9.4
+Sub-agents require DevoxxGenie **v0.9.4** or later.
+:::
+
 Sub-agents enable **parallel codebase exploration** by spawning multiple read-only AI assistants that concurrently investigate different aspects of your project. This is especially useful for large codebases where you need to understand multiple components at once.
 
 ## How It Works

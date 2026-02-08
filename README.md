@@ -55,7 +55,7 @@ Quick links:
 
 ### Key Features:
 
-- **🤖 Sub-Agents**: Parallel codebase exploration using multiple sub-agents. The LLM can spawn read-only sub-agents that concurrently investigate different aspects of your codebase, each with configurable provider/model. Enable in Agent Settings!
+- **🤖 Sub-Agents** *(v0.9.4+)*: Parallel codebase exploration using multiple sub-agents. The LLM can spawn read-only sub-agents that concurrently investigate different aspects of your codebase, each with configurable provider/model. Enable in Agent Settings!
 - **🔥️ MCP Support with Marketplace**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
 - **📸 DnD images**: You can now DnD images with multimodal LLM's.

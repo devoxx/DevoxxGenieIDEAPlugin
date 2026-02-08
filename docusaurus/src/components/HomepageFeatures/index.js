@@ -22,7 +22,7 @@ const FeatureList = [
     link: '/docs/features/sub-agents',
     description: (
       <>
-        Spawn specialized subagents to handle complex tasks in parallel. Delegate code analysis, research, and problem-solving to focused agents for more efficient development workflows.
+        Available from v0.9.4. Spawn specialized subagents to handle complex tasks in parallel. Each sub-agent can use a different LLM from any provider. Delegate code analysis, research, and problem-solving to focused agents for more efficient development workflows.
       </>
     ),
   },

@@ -23,7 +23,7 @@ DevoxxGenie provides a rich set of features to enhance your development workflow
 
 - **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
 - **MCP Support**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
-- **Sub-Agents**: Parallel codebase exploration using multiple read-only sub-agents that concurrently investigate different parts of your project with configurable models.
+- **Sub-Agents** *(v0.9.4+)*: Parallel codebase exploration using multiple read-only sub-agents that concurrently investigate different parts of your project, each configurable with a different LLM from any provider.
 - **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
 - **Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
