@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,6 +35,7 @@ public class AgentLoopTracker implements ToolProvider {
     private final AtomicInteger callCount = new AtomicInteger(0);
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
     private final @Nullable Project project;
+    private final List<Cancellable> children = new CopyOnWriteArrayList<>();
 
     public AgentLoopTracker(@NotNull ToolProvider delegate, int maxToolCalls) {
         this(delegate, maxToolCalls, null);
@@ -115,12 +118,36 @@ public class AgentLoopTracker implements ToolProvider {
     }
 
     /**
+     * Registers a child cancellable that will be cancelled when this tracker is cancelled.
+     * Used to propagate cancellation to sub-agents running inside parallel_explore.
+     */
+    public void registerChild(@NotNull Cancellable child) {
+        children.add(child);
+        // If already cancelled, cancel the child immediately
+        if (cancelled.get()) {
+            child.cancel();
+        }
+    }
+
+    /**
      * Cancels the agent loop. Any subsequent tool calls will be short-circuited
      * with an error message telling the LLM to stop.
+     * Also cancels all registered child cancellables (e.g. sub-agent runners).
      */
     public void cancel() {
         cancelled.set(true);
+        for (Cancellable child : children) {
+            child.cancel();
+        }
+        children.clear();
         log.info("Agent loop tracker cancelled");
+    }
+
+    /**
+     * Interface for cancellable children of this tracker.
+     */
+    public interface Cancellable {
+        void cancel();
     }
 
     public boolean isCancelled() {

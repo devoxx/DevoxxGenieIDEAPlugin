@@ -206,6 +206,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
 
+    // Parallel exploration (sub-agent) settings
+    private Boolean parallelExploreEnabled = true;
+    private Integer subAgentMaxToolCalls = SUB_AGENT_MAX_TOOL_CALLS;
+    private Integer subAgentParallelism = SUB_AGENT_DEFAULT_PARALLELISM;
+    private Integer subAgentTimeoutSeconds = SUB_AGENT_TIMEOUT_SECONDS;
+    private String subAgentModelProvider = "";
+    private String subAgentModelName = "";
+
     // Welcome content cache
     private String welcomeContentCachedJson = "";
     private long welcomeContentLastFetchTimestamp = 0L;

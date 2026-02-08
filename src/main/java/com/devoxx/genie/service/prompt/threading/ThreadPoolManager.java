@@ -18,6 +18,8 @@ public class ThreadPoolManager {
 
     private final ExecutorService promptExecutionPool;
 
+    private final ExecutorService subAgentPool;
+
     private final ScheduledExecutorService scheduledTaskPool;
     
     public static ThreadPoolManager getInstance() {
@@ -28,12 +30,15 @@ public class ThreadPoolManager {
         int cores = Runtime.getRuntime().availableProcessors();
         
         // Create thread pools with custom thread factories for better naming
-        promptExecutionPool = Executors.newFixedThreadPool(cores, 
+        promptExecutionPool = Executors.newFixedThreadPool(cores,
             new NamedThreadFactory("prompt-exec"));
+        // Dedicated pool for parallel sub-agents (max 5 concurrent sub-agents)
+        subAgentPool = Executors.newFixedThreadPool(5,
+            new NamedThreadFactory("sub-agent"));
         scheduledTaskPool = Executors.newScheduledThreadPool(2,
             new NamedThreadFactory("scheduled-task"));
-            
-        log.info("ThreadPoolManager initialized with " + cores + " threads for prompt execution");
+
+        log.info("ThreadPoolManager initialized with {} threads for prompt execution, 5 for sub-agents", cores);
     }
     
     /**
@@ -43,12 +48,17 @@ public class ThreadPoolManager {
     public void shutdown() {
         log.info("Shutting down thread pools");
         promptExecutionPool.shutdown();
+        subAgentPool.shutdown();
         scheduledTaskPool.shutdown();
-        
+
         try {
             if (!promptExecutionPool.awaitTermination(5, TimeUnit.SECONDS)) {
                 log.warn("Prompt execution pool did not terminate in time, forcing shutdown");
                 promptExecutionPool.shutdownNow();
+            }
+            if (!subAgentPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Sub-agent pool did not terminate in time, forcing shutdown");
+                subAgentPool.shutdownNow();
             }
             if (!scheduledTaskPool.awaitTermination(5, TimeUnit.SECONDS)) {
                 log.warn("Scheduled task pool did not terminate in time, forcing shutdown");

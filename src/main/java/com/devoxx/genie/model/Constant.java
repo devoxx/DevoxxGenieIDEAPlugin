@@ -61,6 +61,10 @@ public class Constant {
 
     // Agent mode settings
     public static final int AGENT_MAX_TOOL_CALLS = 25;
+    public static final int SUB_AGENT_MAX_TOOL_CALLS = 10;
+    public static final int SUB_AGENT_DEFAULT_PARALLELISM = 3;
+    public static final int SUB_AGENT_TIMEOUT_SECONDS = 120;
+    public static final int SUB_AGENT_MEMORY_SIZE = 10;
 
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;

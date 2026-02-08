@@ -43,8 +43,9 @@ public class AgentToolProviderFactory {
 
         List<ToolProvider> providers = new ArrayList<>();
 
-        // Add built-in IDE tools
-        providers.add(new BuiltInToolProvider(project));
+        // Add built-in IDE tools (including parallel_explore if enabled)
+        BuiltInToolProvider builtInToolProvider = new BuiltInToolProvider(project);
+        providers.add(builtInToolProvider);
 
         // Add MCP tools if MCP is also enabled
         if (MCPService.isMCPEnabled()) {
@@ -69,7 +70,15 @@ public class AgentToolProviderFactory {
                 ? settings.getAgentMaxToolCalls()
                 : 25;
 
-        return new AgentLoopTracker(approvedProvider, maxToolCalls, project);
+        AgentLoopTracker tracker = new AgentLoopTracker(approvedProvider, maxToolCalls, project);
+
+        // Register the parallel explore executor as a cancellable child so user cancellation
+        // propagates to any running sub-agents
+        if (builtInToolProvider.getParallelExploreExecutor() != null) {
+            tracker.registerChild(builtInToolProvider.getParallelExploreExecutor());
+        }
+
+        return tracker;
     }
 
     /**
