@@ -8,6 +8,14 @@ DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that int
 
 ## Build & Development Commands
 
+### Java Version Requirement
+
+**IMPORTANT**: This project requires **JDK 21** for building. JDK 25 causes Gradle build script failures. Always set `JAVA_HOME` before running Gradle commands:
+
+```bash
+export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home
+```
+
 ### Building
 ```bash
 ./gradlew buildPlugin              # Build plugin (creates ZIP in build/distributions/)
