@@ -94,6 +94,9 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 var response = promptExecutionService.executeQuery(context).get();
                 
                 if (response == null) {
+                    // Error was already handled by executeQuery()'s exceptionally() handler
+                    // which swallows the exception and returns null - hide loading indicator
+                    hideLoadingIndicator(panel, context.getId());
                     resultTask.complete(PromptResult.failure(context, new ExecutionException("Null response received")));
                     return;
                 }
@@ -127,7 +130,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                     log.info("Prompt execution cancelled for context {}", context.getId());
                     resultTask.cancel(true);
                 } else {
-                    handleExecutionError(e, context, resultTask);
+                    handleExecutionError(e, context, resultTask, panel);
                 }
             }
         });

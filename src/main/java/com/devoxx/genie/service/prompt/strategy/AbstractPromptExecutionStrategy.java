@@ -93,11 +93,11 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         try {
             executeStrategySpecific(context, panel, resultTask);
         } catch (Exception e) {
-            handleExecutionError(e, context, resultTask);
+            handleExecutionError(e, context, resultTask, panel);
         }
         
         // Common post-execution handling
-        handleTaskCompletion(resultTask, context);
+        handleTaskCompletion(resultTask, context, panel);
         
         return resultTask;
     }
@@ -144,14 +144,17 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
     
     /**
      * Standardized error handling for execution exceptions.
+     * Hides the "Thinking..." loading indicator when an error occurs.
      *
      * @param error The exception thrown
      * @param context The chat message context
      * @param resultTask The task to complete with error result
+     * @param panel The UI panel to hide the loading indicator
      */
     protected void handleExecutionError(@NotNull Throwable error, 
                                      @NotNull ChatMessageContext context,
-                                     @NotNull PromptTask<PromptResult> resultTask) {
+                                     @NotNull PromptTask<PromptResult> resultTask,
+                                     @NotNull PromptOutputPanel panel) {
         if (error instanceof CancellationException || 
             Thread.currentThread().isInterrupted()) {
             resultTask.cancel(true);
@@ -159,6 +162,10 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         }
         
         log.error("Error in {} execution: {}", getStrategyName(), error.getMessage(), error);
+        
+        // Hide the "Thinking..." loading indicator to prevent it from staying active
+        hideLoadingIndicator(panel, context.getId());
+        
         ExecutionException executionError = new ExecutionException(
             "Error in " + getStrategyName() + " execution", error);
         PromptErrorHandler.handleException(context.getProject(), executionError, context);
@@ -166,19 +173,43 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
     }
     
     /**
-     * Handles task completion and cleanup for cancelled tasks.
+     * Helper method to hide the "Thinking..." loading indicator.
+     *
+     * @param panel The UI panel containing the web view
+     * @param messageId The message ID for the loading indicator to hide
+     */
+    protected void hideLoadingIndicator(@NotNull PromptOutputPanel panel, @NotNull String messageId) {
+        if (panel.getConversationPanel() != null 
+                && panel.getConversationPanel().webViewController != null) {
+            var webViewController = panel.getConversationPanel().webViewController;
+            // Deactivate handlers first to prevent stale events from re-showing indicator
+            webViewController.deactivateActivityHandlers();
+            // Then hide the loading indicator
+            webViewController.hideLoadingIndicator(messageId);
+        }
+    }
+    
+    /**
+     * Handles task completion and cleanup for cancelled or failed tasks.
+     * Hides the "Thinking..." loading indicator when the task fails.
      *
      * @param task The prompt task
      * @param context The chat message context
+     * @param panel The UI panel to hide the loading indicator on error
      */
     protected void handleTaskCompletion(@NotNull PromptTask<PromptResult> task, 
-                                     @NotNull ChatMessageContext context) {
+                                     @NotNull ChatMessageContext context,
+                                     @NotNull PromptOutputPanel panel) {
         task.whenComplete((result, error) -> {
             if (task.isCancelled()) {
                 // TODO Check if we can actually remove context from memory?!
                 // panel.removeLastUserPrompt(context);
                 chatMemoryManager.removeLastUserMessage(context);
                 log.debug("Task for context {} was cancelled, cleaned up UI and memory", context.getId());
+            } else if (error != null) {
+                // Hide the loading indicator when task completes with an error
+                hideLoadingIndicator(panel, context.getId());
+                log.debug("Task for context {} completed with error, hid loading indicator", context.getId());
             }
         });
     }
