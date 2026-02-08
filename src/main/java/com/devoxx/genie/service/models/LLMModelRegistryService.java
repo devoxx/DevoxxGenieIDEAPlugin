@@ -36,6 +36,8 @@ public final class LLMModelRegistryService {
         addDeepSeekModels();
         addBedrockModels();
         addGrokModels();
+        addKimiModels();
+        addGLMModels();
     }
 
     private void addAnthropicModels() {
@@ -136,8 +138,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.OpenAI)
                         .modelName(o3MiniModel)
                         .displayName("o3-mini")
-                        .inputCost(5)
-                        .outputCost(15)
+                        .inputCost(1.10)
+                        .outputCost(4.40)
                         .inputMaxTokens(200_000)
                         .outputMaxTokens(100_000)
                         .apiKeyUsed(true)
@@ -149,8 +151,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.OpenAI)
                         .modelName(o1Model)
                         .displayName("o1")
-                        .inputCost(5)
-                        .outputCost(15)
+                        .inputCost(15.00)
+                        .outputCost(60.00)
                         .inputMaxTokens(200_000)
                         .outputMaxTokens(100_000)
                         .apiKeyUsed(true)
@@ -162,8 +164,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.OpenAI)
                         .modelName(o1Mini)
                         .displayName("o1-mini")
-                        .inputCost(5)
-                        .outputCost(15)
+                        .inputCost(1.10)
+                        .outputCost(4.40)
                         .inputMaxTokens(128_000)
                         .outputMaxTokens(65_536)
                         .apiKeyUsed(true)
@@ -188,8 +190,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.OpenAI)
                         .modelName(gpt4o)
                         .displayName("GPT 4o")
-                        .inputCost(5)
-                        .outputCost(15)
+                        .inputCost(2.50)
+                        .outputCost(10.00)
                         .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
@@ -676,7 +678,7 @@ public final class LLMModelRegistryService {
                         .modelName(mistralMediumLatest)
                         .displayName("Mistral Medium")
                         .inputCost(2.7)
-                        .outputCost(0.1)
+                        .outputCost(8.1)
                         .inputMaxTokens(32_000)
                         .apiKeyUsed(true)
                         .build());
@@ -713,8 +715,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.DeepSeek)
                         .modelName(coder)
                         .displayName("DeepSeek Coder")
-                        .inputCost(0.14)
-                        .outputCost(0.28)
+                        .inputCost(0.28)
+                        .outputCost(0.42)
                         .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
@@ -725,8 +727,8 @@ public final class LLMModelRegistryService {
                         .provider(ModelProvider.DeepSeek)
                         .modelName(chat)
                         .displayName("DeepSeek Chat")
-                        .inputCost(0.14)
-                        .outputCost(0.28)
+                        .inputCost(0.28)
+                        .outputCost(0.42)
                         .inputMaxTokens(128_000)
                         .apiKeyUsed(true)
                         .build());
@@ -1097,6 +1099,94 @@ public final class LLMModelRegistryService {
                         .outputCost(10.00)
                         .inputMaxTokens(131_072)
                         .outputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+    }
+
+    private void addGLMModels() {
+        String glm47 = "glm-4.7";
+        models.put(ModelProvider.GLM.getName() + ":" + glm47,
+                LanguageModel.builder()
+                        .provider(ModelProvider.GLM)
+                        .modelName(glm47)
+                        .displayName("GLM-4.7")
+                        .inputCost(0.60)
+                        .outputCost(2.20)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String glm47Flash = "glm-4.7-flash";
+        models.put(ModelProvider.GLM.getName() + ":" + glm47Flash,
+                LanguageModel.builder()
+                        .provider(ModelProvider.GLM)
+                        .modelName(glm47Flash)
+                        .displayName("GLM-4.7 Flash")
+                        .inputCost(0.06)
+                        .outputCost(0.40)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String glm45 = "glm-4.5";
+        models.put(ModelProvider.GLM.getName() + ":" + glm45,
+                LanguageModel.builder()
+                        .provider(ModelProvider.GLM)
+                        .modelName(glm45)
+                        .displayName("GLM-4.5")
+                        .inputCost(0.35)
+                        .outputCost(1.55)
+                        .inputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+    }
+
+    private void addKimiModels() {
+        String moonshotV1_8k = "moonshot-v1-8k";
+        models.put(ModelProvider.Kimi.getName() + ":" + moonshotV1_8k,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Kimi)
+                        .modelName(moonshotV1_8k)
+                        .displayName("Moonshot v1 8K")
+                        .inputCost(0.84)
+                        .outputCost(0.84)
+                        .inputMaxTokens(8_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String moonshotV1_32k = "moonshot-v1-32k";
+        models.put(ModelProvider.Kimi.getName() + ":" + moonshotV1_32k,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Kimi)
+                        .modelName(moonshotV1_32k)
+                        .displayName("Moonshot v1 32K")
+                        .inputCost(1.68)
+                        .outputCost(1.68)
+                        .inputMaxTokens(32_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String moonshotV1_128k = "moonshot-v1-128k";
+        models.put(ModelProvider.Kimi.getName() + ":" + moonshotV1_128k,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Kimi)
+                        .modelName(moonshotV1_128k)
+                        .displayName("Moonshot v1 128K")
+                        .inputCost(8.40)
+                        .outputCost(8.40)
+                        .inputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String kimiK2TurboPreview = "kimi-k2-turbo-preview";
+        models.put(ModelProvider.Kimi.getName() + ":" + kimiK2TurboPreview,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Kimi)
+                        .modelName(kimiK2TurboPreview)
+                        .displayName("Kimi K2 Turbo Preview")
+                        .inputCost(0.55)
+                        .outputCost(2.19)
+                        .inputMaxTokens(131_072)
                         .apiKeyUsed(true)
                         .build());
     }
