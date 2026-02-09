@@ -45,6 +45,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.5</h2>
+        <UL>
+            <LI>Improve agent logging and MCP tool provider integration (#855)</LI>
+            <LI>Replace parallelism spinner with dynamic add/remove sub-agent rows (#855)</LI>
+            <LI>Fix: add null-safety to welcome template rendering with fallback to local content</LI>
+            <LI>Fix: use correct announcement fields (type/message) in welcome.json</LI>
+        </UL>
         <h2>v0.9.4</h2>
         <UL>
             <LI>Agent mode with built-in tool execution (read, write, edit, search, list files, run commands) (#849)</LI>

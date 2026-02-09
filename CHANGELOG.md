@@ -2,6 +2,21 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.5]
+
+### Added
+- Improve agent logging and MCP tool provider integration (#855)
+- Replace parallelism spinner with dynamic add/remove sub-agent rows for more flexible agent configuration (#855)
+
+### Fixed
+- Add null-safety to welcome template rendering with fallback to local content
+- Use correct announcement fields (type/message) in welcome.json
+
+### Documentation
+- Update Agent Mode docs to reflect add/remove sub-agent UI
+- Add Agent Mode and Parallel Sub-Agents sections to homepage and README
+- Update MCP documentation and fix GitHub issue template links
+
 ## [0.9.4]
 
 ### Added
