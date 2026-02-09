@@ -72,7 +72,7 @@ const FeatureList = [
     link: '/docs/features/inline-completion',
     description: (
       <>
-        AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio. Context-aware completions using code before and after your cursor.
+        Available from v0.9.5. AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio. Context-aware completions using code before and after your cursor.
       </>
     ),
   },
