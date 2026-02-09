@@ -1,6 +1,7 @@
 .env
 build/**
 .gradle
+.intellijPlatform
 .idea
 *.iml
 /core/build/**
