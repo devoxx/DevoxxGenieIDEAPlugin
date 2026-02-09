@@ -42,7 +42,7 @@ This launches IntelliJ IDEA with the plugin installed for testing.
 - Use meaningful variable and method names
 - Add comments for complex logic
 - Keep methods focused and concise
-- See [CLAUDE.md](./CLAUDE.md) for detailed architectural guidelines
+- See [CLAUDE.md](CLAUDE.md) for detailed architectural guidelines
 
 ## Submitting Changes
 
@@ -88,7 +88,7 @@ To add a new LLM provider:
 2. Place it in `chatmodel/cloud/` or `chatmodel/local/`
 3. Register in `ChatModelFactoryProvider`
 4. Add to `ModelProvider` enum
-5. See [CLAUDE.md](./CLAUDE.md) for detailed instructions
+5. See [CLAUDE.md](CLAUDE.md) for detailed instructions
 
 ## Community
 
