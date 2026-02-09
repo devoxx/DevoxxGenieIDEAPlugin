@@ -202,6 +202,7 @@ public class WelcomeTemplate extends HtmlTemplate {
                 <li><span class="feature-emoji">👀</span><span class="feature-name">Chat History:</span> All chats are saved and can be restored or removed</li>
                 <li><span class="feature-emoji">🧠</span><span class="feature-name">Project Scanner:</span> Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini.</li>
                 <li><span class="feature-emoji">🤖</span><span class="feature-name">Sub-Agents:</span> Parallel codebase exploration using multiple sub-agents. Enable in Agent Settings and ask the LLM to explore your project!</li>
+                <li><span class="feature-emoji">✨</span><span class="feature-name">Inline Completion:</span> AI-powered inline code completion using Fill-in-the-Middle (FIM) models. Configure your preferred provider and model in Inline Completion settings.</li>
                 """;
     }
 

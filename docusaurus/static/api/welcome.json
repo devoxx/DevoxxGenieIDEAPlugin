@@ -16,7 +16,8 @@
     { "emoji": "\uD83E\uDDD0", "name": "RAG Support", "description": "Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts." },
     { "emoji": "\u274C", "name": ".gitignore", "description": "Exclude files and directories based on .gitignore file" },
     { "emoji": "\uD83D\uDC40", "name": "Chat History", "description": "All chats are saved and can be restored or removed" },
-    { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." }
+    { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." },
+    { "emoji": "\u2728", "name": "Inline Completion", "description": "AI-powered inline code completion using Fill-in-the-Middle (FIM) models. Configure your preferred provider and model in Inline Completion settings." }
   ],
   "announcements": [],
   "tip": "You can modify the endpoints for different LLM providers and the default command skills in the plugin settings.",
