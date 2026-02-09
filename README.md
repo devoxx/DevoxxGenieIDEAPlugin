@@ -57,21 +57,21 @@ Quick links:
 ### Key Features:
 
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
-- **🔥️ MCP Support with Marketplace**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
-- **🗂️ DEVOXXGENIE.md**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses. 
-- **📸 DnD images**: You can now DnD images with multimodal LLM's.
-- **🧐 RAG Support**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
-- **👀 Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
-- **🧠 Project Scanner**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
-- **💰 Token Cost Calculator**: Calculate the cost when using Cloud LLM providers.
-- **🔍 Web Search** : Search the web for a given query using Google or Tavily.
-- **🏎️ Streaming responses**: See each token as it's received from the LLM in real-time.
-- **🧐 Abstract Syntax Tree (AST) context**: Automatically include parent class and class/field references in the prompt for better code analysis.
-- **💬 Chat Memory Size**: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs).
+- **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
+- **🗂️ [DEVOXXGENIE.md](https://genie.devoxx.com/docs/configuration/devoxxgenie-md)**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses.
+- **📸 [DnD images](https://genie.devoxx.com/docs/features/dnd-images)**: You can now DnD images with multimodal LLM's.
+- **🧐 [RAG Support](https://genie.devoxx.com/docs/features/rag)**: Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts.
+- **👀 [Chat History](https://genie.devoxx.com/docs/features/chat-interface)**: Your chats are stored locally, allowing you to easily restore them in the future.
+- **🧠 [Project Scanner](https://genie.devoxx.com/docs/features/project-scanner)**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
+- **💰 [Token Cost Calculator](https://genie.devoxx.com/docs/configuration/token-cost)**: Calculate the cost when using Cloud LLM providers.
+- **🔍 [Web Search](https://genie.devoxx.com/docs/features/web-search)**: Search the web for a given query using Google or Tavily.
+- **🏎️ [Streaming responses](https://genie.devoxx.com/docs/features/chat-interface)**: See each token as it's received from the LLM in real-time.
+- **🧐 [Abstract Syntax Tree (AST) context](https://genie.devoxx.com/docs/features/project-scanner)**: Automatically include parent class and class/field references in the prompt for better code analysis.
+- **💬 [Chat Memory Size](https://genie.devoxx.com/docs/features/chat-memory)**: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs).
 - **☕️ 100% Java**: An IDEA plugin using local and cloud based LLM models. Fully developed in Java using [Langchain4J](https://github.com/langchain4j/langchain4j)
-- **👀 Code Highlighting**: Supports highlighting of code blocks.
-- **💬 Chat conversations**: Supports chat conversations with configurable memory size.
-- **📁 Add files & code snippets to context**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
+- **👀 [Code Highlighting](https://genie.devoxx.com/docs/features/chat-interface)**: Supports highlighting of code blocks.
+- **💬 [Chat conversations](https://genie.devoxx.com/docs/features/chat-memory)**: Supports chat conversations with configurable memory size.
+- **📁 [Add files & code snippets to context](https://genie.devoxx.com/docs/features/chat-interface)**: You can add open files to the chat window context for producing better answers or code snippets if you want to have a super focused window
 
 ### Start in 5 Minutes with local LLM
 
