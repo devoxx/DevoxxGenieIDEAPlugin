@@ -214,10 +214,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Parallel exploration (sub-agent) settings
     private Boolean parallelExploreEnabled = true;
     private Integer subAgentMaxToolCalls = SUB_AGENT_MAX_TOOL_CALLS;
+    @Getter(AccessLevel.NONE)
     private Integer subAgentParallelism = SUB_AGENT_DEFAULT_PARALLELISM;
     private Integer subAgentTimeoutSeconds = SUB_AGENT_TIMEOUT_SECONDS;
     private String subAgentModelProvider = "";
     private String subAgentModelName = "";
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
     // Welcome content cache
@@ -358,6 +361,29 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                 ((!awsAccessKeyId.isEmpty() && !awsSecretKey.isEmpty())
                 || (shouldPowerFromAWSProfile && !awsProfileName.isEmpty()))
                 && !awsRegion.isEmpty();
+    }
+
+    public List<SubAgentConfig> getSubAgentConfigs() {
+        return subAgentConfigs;
+    }
+
+    /**
+     * Sets the sub-agent configs and syncs the parallelism field to match the config count.
+     */
+    public void setSubAgentConfigs(List<SubAgentConfig> configs) {
+        this.subAgentConfigs = configs != null ? new ArrayList<>(configs) : new ArrayList<>();
+        this.subAgentParallelism = Math.max(1, this.subAgentConfigs.size());
+    }
+
+    /**
+     * Returns the effective parallelism: driven by configs size when configs exist,
+     * otherwise falls back to the stored field value.
+     */
+    public Integer getSubAgentParallelism() {
+        if (subAgentConfigs != null && !subAgentConfigs.isEmpty()) {
+            return subAgentConfigs.size();
+        }
+        return subAgentParallelism != null ? subAgentParallelism : SUB_AGENT_DEFAULT_PARALLELISM;
     }
 
     /**
