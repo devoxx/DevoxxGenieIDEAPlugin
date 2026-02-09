@@ -96,9 +96,12 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | Setting | Default | Range | Description |
 |---------|---------|-------|-------------|
 | **Enable Parallel Explore tool** | Enabled | On/Off | Enables or disables the `parallel_explore` tool |
-| **Max concurrent sub-agents** | 3 | 1-5 | Maximum number of sub-agents running in parallel |
 | **Max tool calls per sub-agent** | 200 | 1-200 | How many file reads/searches each sub-agent can perform |
 | **Sub-agent timeout** | 120s | 10-600s | Maximum time each sub-agent can run before being stopped |
+
+:::note
+The number of concurrent sub-agents is determined by the number of rows in the **Per-Agent Model Overrides** section below (up to 10). There is no separate parallelism spinner — simply add or remove sub-agent rows to control parallelism.
+:::
 
 ### Default Sub-Agent Model
 
@@ -115,7 +118,11 @@ For the **main agent coordinator**, `glm-4.7-flash` via Ollama is a very powerfu
 
 ### Per-Agent Model Overrides
 
-For advanced users, you can assign a **specific model to each sub-agent slot**. This appears as a dynamic list based on your parallelism setting. Each row lets you select a different provider/model, or leave it as *"Use default"* to inherit the default sub-agent model.
+You can dynamically **add and remove sub-agent slots** using the **"+ Add"** and **"-"** buttons. The number of rows directly controls how many sub-agents can run in parallel (from 1 to 10). Each row lets you select a different provider/model, or leave it as *"Use default"* to inherit the default sub-agent model.
+
+- Click **"+ Add"** to add a new sub-agent slot (up to 10)
+- Click **"-"** on any row to remove that sub-agent slot (minimum 1 must remain)
+- Row labels automatically re-number when a row is removed
 
 This enables scenarios like:
 - Sub-agent #1: Uses a powerful model for complex analysis
