@@ -31,7 +31,7 @@ const sidebars = {
         'features/overview',
         'features/chat-interface',
         'features/mcp_expanded',
-        'features/sub-agents',
+        'features/agent-mode',
         'features/skills',
         'features/web-search',
         'features/rag',

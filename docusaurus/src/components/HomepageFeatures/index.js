@@ -17,12 +17,12 @@ import NaiveRAGIcon from './icons/NaiveRAG';
 
 const FeatureList = [
   {
-    title: 'SubAgents',
+    title: 'Agent Mode',
     icon: SubAgentsIcon,
-    link: '/docs/features/sub-agents',
+    link: '/docs/features/agent-mode',
     description: (
       <>
-        Available from v0.9.4. Spawn specialized subagents to handle complex tasks in parallel. Each sub-agent can use a different LLM from any provider. Delegate code analysis, research, and problem-solving to focused agents for more efficient development workflows.
+        Available from v0.9.4. Enable agent mode for autonomous codebase exploration with read-only tools. Use parallel sub-agents to investigate multiple aspects concurrently, each configurable with a different LLM from any provider.
       </>
     ),
   },
