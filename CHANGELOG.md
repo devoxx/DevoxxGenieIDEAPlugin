@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [0.9.5]
 
 ### Added
+- Add CLAUDE.md and AGENTS.md support: automatically include project instructions in prompts with priority logic (CLAUDE.md first, then AGENTS.md) (#856, #854)
 - Improve agent logging and MCP tool provider integration (#855)
 - Replace parallelism spinner with dynamic add/remove sub-agent rows for more flexible agent configuration (#855)
 

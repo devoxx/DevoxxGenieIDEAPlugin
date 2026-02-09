@@ -47,6 +47,7 @@
     <change-notes><![CDATA[
         <h2>v0.9.5</h2>
         <UL>
+            <LI>Add CLAUDE.md and AGENTS.md support: automatically include project instructions in prompts with priority logic (#856, #854)</LI>
             <LI>Improve agent logging and MCP tool provider integration (#855)</LI>
             <LI>Replace parallelism spinner with dynamic add/remove sub-agent rows (#855)</LI>
             <LI>Fix: add null-safety to welcome template rendering with fallback to local content</LI>
