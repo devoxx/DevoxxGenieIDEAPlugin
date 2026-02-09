@@ -7,10 +7,6 @@ keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase explo
 
 # Agent Mode
 
-:::info Available from v0.9.4
-Agent Mode requires DevoxxGenie **v0.9.4** or later.
-:::
-
 Agent Mode enables the LLM to autonomously explore and modify your codebase using built-in tools. Instead of relying solely on the context you provide, the agent can investigate your project on-demand—reading files, listing directories, searching for patterns, and even making changes to help you develop faster.
 
 ![Agent Mode Settings](/img/agent-mode-top.jpg)

@@ -22,7 +22,7 @@ const FeatureList = [
     link: '/docs/features/agent-mode',
     description: (
       <>
-        Available from v0.9.4. Enable agent mode for autonomous codebase exploration with read-only tools. Use parallel sub-agents to investigate multiple aspects concurrently, each configurable with a different LLM from any provider.
+        Enable agent mode for autonomous codebase exploration with read-only tools. Use parallel sub-agents to investigate multiple aspects concurrently, each configurable with a different LLM from any provider.
       </>
     ),
   },
@@ -72,7 +72,7 @@ const FeatureList = [
     link: '/docs/features/inline-completion',
     description: (
       <>
-        Available from v0.9.6. AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio. Context-aware completions using code before and after your cursor.
+        AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio. Context-aware completions using code before and after your cursor.
       </>
     ),
   },
