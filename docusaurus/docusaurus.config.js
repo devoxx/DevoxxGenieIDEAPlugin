@@ -119,6 +119,10 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        defaultMode: 'dark',
+        respectPrefersColorScheme: true,
+      },
       // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
       metadata: [
