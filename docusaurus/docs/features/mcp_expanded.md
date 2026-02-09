@@ -40,6 +40,8 @@ Common MCP server categories include:
 
 DevoxxGenie includes a built-in **MCP Marketplace** that lets you browse, search, and install MCP servers directly from the settings UI.
 
+![MCP Marketplace](/img/MCPMarketPlace.jpg)
+
 ### Browsing the Marketplace
 
 1. Open **Settings** > **Tools** > **DevoxxGenie** > **MCP**
@@ -75,6 +77,50 @@ DevoxxGenie supports three MCP transport types:
 3. For **STDIO** servers: enter the command, arguments, and optional environment variables
 4. For **HTTP/HTTP SSE** servers: enter the server URL and optional custom headers
 5. Click **OK**
+
+### Importing and Exporting Configuration
+
+![MCP Import Export](/img/MCPImportExport.jpg)
+
+DevoxxGenie supports importing and exporting MCP server configurations in JSON format. This is useful for:
+- **Sharing configurations** with your team
+- **Backing up** your MCP setup
+- **Migrating** between machines
+- **Using configurations** from other MCP-compatible tools
+
+#### Import from JSON
+
+1. Click the **Import from JSON** button in the MCP settings
+2. Select a JSON file containing MCP server configurations
+3. Choose whether to **Replace** existing servers or **Merge** with them
+4. The servers will be added to your configuration
+
+#### Export to JSON
+
+1. Click the **Export to JSON** button in the MCP settings
+2. Choose whether to include DevoxxGenie-specific extensions (transport type, enabled status, headers)
+3. Select a location and filename for the export
+4. The configuration will be saved in Anthropic standard format
+
+#### JSON Format
+
+The import/export follows the Anthropic/Claude Desktop standard format:
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+      "env": {
+        "API_KEY": "value"
+      }
+    }
+  }
+}
+```
+
+DevoxxGenie also supports extensions for transport type (`stdio`, `http`, `http-sse`), enabled status, custom headers, and URLs for HTTP transports.
 
 ### Custom HTTP Headers
 
@@ -129,7 +175,8 @@ DevoxxGenie includes a debugging panel for MCP requests and responses:
 1. Enable **MCP Logging** in the MCP settings
 2. Open the **DevoxxGenieMCPLogs** tool window from the bottom panel
 3. Observe the requests sent to and responses received from MCP servers
-4. Use this information to troubleshoot issues or understand how the LLM is using the tools
+4. **Double-click any log entry** to view the full JSON formatted output in a dialog
+5. Use this information to troubleshoot issues or understand how the LLM is using the tools
 
 ## Viewing Available Tools
 

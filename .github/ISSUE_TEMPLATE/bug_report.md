@@ -8,9 +8,9 @@ assignees: ''
 
 ## 📚 Before Submitting
 
-**Please check our [documentation](https://genie.devoxx.com/docs/troubleshooting) first!**
+**Please check our [documentation](https://genie.devoxx.com/docs/getting-started/introduction) first!**
 
-Many common issues are covered in our [Troubleshooting Guide](https://genie.devoxx.com/docs/troubleshooting).
+You may also find helpful information in our [Features Overview](https://genie.devoxx.com/docs/features/overview) or search [existing issues](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues).
 
 ## Bug Description
 
@@ -54,6 +54,6 @@ Add any other context about the problem here. For example:
 ## Configuration (if relevant)
 
 If the issue is related to configuration:
-- Are you using MCP servers?
-- Is RAG enabled?
-- Any custom prompts or skills configured?
+- Are you using MCP servers? See [MCP Support](https://genie.devoxx.com/docs/features/mcp_expanded)
+- Is RAG enabled? See [RAG Support](https://genie.devoxx.com/docs/features/rag)
+- Any custom prompts or skills configured? See [Skills](https://genie.devoxx.com/docs/features/skills)

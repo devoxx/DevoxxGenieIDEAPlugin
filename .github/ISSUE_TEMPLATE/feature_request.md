@@ -8,7 +8,7 @@ assignees: ''
 
 ## 📚 Documentation Check
 
-Have you checked if this feature already exists? See our [documentation](https://genie.devoxx.com/docs/category/features).
+Have you checked if this feature already exists? See our [Features Overview](https://genie.devoxx.com/docs/features/overview) or browse all [documentation](https://genie.devoxx.com/docs/getting-started/introduction).
 
 ## Feature Description
 
