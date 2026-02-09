@@ -60,6 +60,9 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox useDevoxxGenieMdInPromptCheckbox = new JCheckBox("Use DEVOXXGENIE.md in prompt", stateService.getUseDevoxxGenieMdInPrompt());
 
     @Getter
+    private final JCheckBox useClaudeOrAgentsMdInPromptCheckbox = new JCheckBox("Use CLAUDE.md or AGENTS.md in prompt", stateService.getUseClaudeOrAgentsMdInPrompt());
+
+    @Getter
     private final JButton createDevoxxGenieMdButton = new JButton("Create DEVOXXGENIE.md");
 
     private final Project project;
@@ -112,6 +115,23 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         explanationPane.setBackground(null);
         explanationPane.setBorder(null);
         panel.add(explanationPane, gbc);
+
+        addSection(panel, gbc, "CLAUDE.md / AGENTS.md Inclusion");
+
+        gbc.gridy++;
+        panel.add(useClaudeOrAgentsMdInPromptCheckbox, gbc);
+
+        gbc.gridy++;
+        JEditorPane claudeExplanationPane = new JEditorPane(
+                "text/html",
+                "<html><body style='margin: 5px'>When enabled, if CLAUDE.md or AGENTS.md exists in the project root, "
+                        + "its content will be included in the prompt to provide AI-specific instructions. "
+                        + "Files are checked in order: CLAUDE.md, then AGENTS.md (first found will be used).</body></html>"
+        );
+        claudeExplanationPane.setEditable(false);
+        claudeExplanationPane.setBackground(null);
+        claudeExplanationPane.setBorder(null);
+        panel.add(claudeExplanationPane, gbc);
 
         gbc.gridy++;
         gbc.weighty = 0.0;

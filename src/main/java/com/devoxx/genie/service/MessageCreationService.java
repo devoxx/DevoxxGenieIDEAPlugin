@@ -143,6 +143,16 @@ public class MessageCreationService {
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
         
+        // Check if CLAUDE.md or AGENTS.md should be included in the prompt
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseClaudeOrAgentsMdInPrompt())) {
+            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(chatMessageContext.getProject());
+            if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
+                stringBuilder.append("<ProjectContext>\n");
+                stringBuilder.append(claudeOrAgentsMdContent);
+                stringBuilder.append("\n</ProjectContext>\n\n");
+            }
+        }
+
         // Check if DEVOXXGENIE.md should be included in the prompt
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
             // Try to read DEVOXXGENIE.md from project root
@@ -295,6 +305,42 @@ public class MessageCreationService {
     }
     
     /**
+     * Read the content of CLAUDE.md or AGENTS.md file from the project root directory.
+     * Checks files in order: CLAUDE.md, AGENTS.md (first found will be used).
+     *
+     * @param project the project
+     * @return the content of CLAUDE.md or AGENTS.md file or null if not found or can't be read
+     */
+    private @Nullable String readClaudeOrAgentsMdFile(Project project) {
+        try {
+            if (project == null || project.getBasePath() == null) {
+                log.warn("Project or base path is null");
+                return null;
+            }
+
+            // Check for CLAUDE.md first
+            Path claudeMdPath = Paths.get(project.getBasePath(), "CLAUDE.md");
+            if (Files.exists(claudeMdPath)) {
+                log.debug("Found CLAUDE.md file in project root: " + claudeMdPath);
+                return Files.readString(claudeMdPath, StandardCharsets.UTF_8);
+            }
+
+            // Check for AGENTS.md second
+            Path agentsMdPath = Paths.get(project.getBasePath(), "AGENTS.md");
+            if (Files.exists(agentsMdPath)) {
+                log.debug("Found AGENTS.md file in project root: " + agentsMdPath);
+                return Files.readString(agentsMdPath, StandardCharsets.UTF_8);
+            }
+
+            log.debug("Neither CLAUDE.md nor AGENTS.md file found in project root");
+            return null;
+        } catch (IOException e) {
+            log.warn("Failed to read CLAUDE.md or AGENTS.md file: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Read the content of DEVOXXGENIE.md file from the project root directory.
      *
      * @param project the project
@@ -306,13 +352,13 @@ public class MessageCreationService {
                 log.warn("Project or base path is null");
                 return null;
             }
-            
+
             Path devoxxGenieMdPath = Paths.get(project.getBasePath(), "DEVOXXGENIE.md");
             if (!Files.exists(devoxxGenieMdPath)) {
                 log.debug("DEVOXXGENIE.md file not found in project root: " + devoxxGenieMdPath);
                 return null;
             }
-            
+
             return Files.readString(devoxxGenieMdPath, StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.warn("Failed to read DEVOXXGENIE.md file: " + e.getMessage());
