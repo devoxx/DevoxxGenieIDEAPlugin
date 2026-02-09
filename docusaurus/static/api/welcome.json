@@ -19,7 +19,7 @@
     { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." }
   ],
   "announcements": [
-    { "emoji": "\uD83C\uDF89", "text": "New in v0.9.4: Agent Mode with parallel sub-agents! Enable in Agent Settings to let the LLM autonomously read, write, and edit files in your project." }
+    { "type": "success", "message": "\uD83C\uDF89 New in v0.9.4: Agent Mode with parallel sub-agents! Enable in Agent Settings to let the LLM autonomously read, write, and edit files in your project." }
   ],
   "tip": "You can modify the endpoints for different LLM providers and the default command skills in the plugin settings.",
   "enjoy": "Enjoy!",
