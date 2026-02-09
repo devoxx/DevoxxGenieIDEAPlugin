@@ -11,18 +11,21 @@ import styles from './index.module.css';
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <img 
-          src={useBaseUrl('/img/genie.svg')}
-          alt="DevoxxGenie Logo"
-          style={{width: '128px', height: '128px', marginBottom: '1rem'}} 
-        />
+    <header className={styles.heroBanner}>
+      <video
+        src={useBaseUrl('/img/DevoxxGenie.mp4')}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className={styles.heroVideo}
+      />
+      <div className={styles.heroOverlay}>
         <h1 className="hero__title">{siteConfig.title}</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
-          className="button button--secondary button--lg"
+          className="button button--primary button--lg"
           to={useBaseUrl('/docs/getting-started/introduction')}>
           Get Started with DevoxxGenie
           </Link>
