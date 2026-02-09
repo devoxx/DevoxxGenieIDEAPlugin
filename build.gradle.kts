@@ -1,11 +1,11 @@
 import java.util.*
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java
     kotlin("jvm") version "2.1.0"
     kotlin("plugin.lombok") version "2.1.0"
-    id("org.jetbrains.intellij") version "1.17.4"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("org.jetbrains.intellij.platform") version "2.10.5"
 }
 
 group = "com.devoxx.genie"
@@ -13,8 +13,9 @@ version = "0.9.5"
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
-    maven { url = uri("https://cache-redirector.jetbrains.com/intellij-dependencies") }
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 tasks.register("updateProperties") {
@@ -52,6 +53,12 @@ tasks.named("buildPlugin") {
 }
 
 dependencies {
+    intellijPlatform {
+        create("IC", "2024.3")
+        bundledPlugin("com.intellij.java")
+        testFramework(TestFrameworkType.Platform)
+    }
+
     val lg4j_version = "1.10.0"
     var lg4j_beta_version = "1.11.0-beta19"
 
@@ -112,37 +119,41 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
+    testImplementation("org.opentest4j:opentest4j:1.3.0")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.0-M1")
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-intellij {
-    version.set("2024.3")
-    type.set("IC")
-    plugins.set(listOf("com.intellij.java"))
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "243"
+            untilBuild = "253.*"
+        }
+    }
+
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+
+    pluginVerification {
+        ides {
+            create("IC", "2024.3.7")
+            create("IC", "2025.1.7")
+            create("IC", "2025.2.6.1")
+        }
+    }
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
-    }
-
-    patchPluginXml {
-        sinceBuild.set("243")
-        untilBuild.set("253.*")
-    }
-
-    shadowJar {
-        mergeServiceFiles()
-        manifest {
-            attributes(
-                "Implementation-Title" to "DevoxxGenie",
-                "Implementation-Version" to version,
-            )
-        }
     }
 
     test {
@@ -161,24 +172,6 @@ tasks {
             junitXml.required.set(true)
             html.required.set(true)
         }
-    }
-
-    runPluginVerifier {
-        ideVersions.set(listOf(
-            "IC-2024.3.7",
-            "IC-2025.1.7",
-            "IC-2025.2.6.1"
-        ))
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
     }
 }
 
