@@ -175,6 +175,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer projectTreeDepth = 3;
     private Boolean useDevoxxGenieMdInPrompt = false;
 
+    // CLAUDE.md / AGENTS.md inclusion option
+    private Boolean useClaudeOrAgentsMdInPrompt = true;
+
     private Boolean showAzureOpenAIFields = false;
     private Boolean showAwsFields = false;
     private Boolean shouldPowerFromAWSProfile = false;

@@ -154,6 +154,17 @@ public class MessageCreationService {
             }
         }
 
+        // Check if CLAUDE.md or AGENTS.md should be included in the prompt
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseClaudeOrAgentsMdInPrompt())) {
+            // Try to read CLAUDE.md or AGENTS.md from project root (CLAUDE.md has priority)
+            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(chatMessageContext.getProject());
+            if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
+                stringBuilder.append("<ProjectContext>\n");
+                stringBuilder.append(claudeOrAgentsMdContent);
+                stringBuilder.append("\n</ProjectContext>\n\n");
+            }
+        }
+
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
             // Semantic search is enabled, add search results
             String semanticContext = addSemanticSearchResults(chatMessageContext);
@@ -306,16 +317,52 @@ public class MessageCreationService {
                 log.warn("Project or base path is null");
                 return null;
             }
-            
+
             Path devoxxGenieMdPath = Paths.get(project.getBasePath(), "DEVOXXGENIE.md");
             if (!Files.exists(devoxxGenieMdPath)) {
                 log.debug("DEVOXXGENIE.md file not found in project root: " + devoxxGenieMdPath);
                 return null;
             }
-            
+
             return Files.readString(devoxxGenieMdPath, StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.warn("Failed to read DEVOXXGENIE.md file: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Read the content of CLAUDE.md or AGENTS.md file from the project root directory.
+     * CLAUDE.md has priority - if both files exist, only CLAUDE.md is read and AGENTS.md is skipped.
+     *
+     * @param project the project
+     * @return the content of CLAUDE.md or AGENTS.md file or null if neither file is found or can't be read
+     */
+    private @Nullable String readClaudeOrAgentsMdFile(Project project) {
+        try {
+            if (project == null || project.getBasePath() == null) {
+                log.warn("Project or base path is null");
+                return null;
+            }
+
+            // Try CLAUDE.md first (priority)
+            Path claudeMdPath = Paths.get(project.getBasePath(), "CLAUDE.md");
+            if (Files.exists(claudeMdPath)) {
+                log.debug("Found CLAUDE.md file in project root, using it (AGENTS.md will be skipped if present)");
+                return Files.readString(claudeMdPath, StandardCharsets.UTF_8);
+            }
+
+            // If CLAUDE.md doesn't exist, try AGENTS.md
+            Path agentsMdPath = Paths.get(project.getBasePath(), "AGENTS.md");
+            if (Files.exists(agentsMdPath)) {
+                log.debug("Found AGENTS.md file in project root");
+                return Files.readString(agentsMdPath, StandardCharsets.UTF_8);
+            }
+
+            log.debug("Neither CLAUDE.md nor AGENTS.md file found in project root");
+            return null;
+        } catch (IOException e) {
+            log.warn("Failed to read CLAUDE.md or AGENTS.md file: " + e.getMessage());
             return null;
         }
     }

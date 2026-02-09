@@ -48,6 +48,7 @@ public class PromptSettingsConfigurable implements Configurable {
         isModified |= settings.getIncludeProjectTree() != promptSettingsComponent.getIncludeProjectTreeCheckbox().isSelected();
         isModified |= !Objects.equals(settings.getProjectTreeDepth(), promptSettingsComponent.getProjectTreeDepthSpinner().getValue());
         isModified |= settings.getUseDevoxxGenieMdInPrompt() != promptSettingsComponent.getUseDevoxxGenieMdInPromptCheckbox().isSelected();
+        isModified |= settings.getUseClaudeOrAgentsMdInPrompt() != promptSettingsComponent.getUseClaudeOrAgentsMdInPromptCheckbox().isSelected();
 
         isModified |= !settings.getSubmitShortcutWindows().equals(promptSettingsComponent.getSubmitShortcutWindows());
         isModified |= !settings.getSubmitShortcutMac().equals(promptSettingsComponent.getSubmitShortcutMac());
@@ -69,6 +70,7 @@ public class PromptSettingsConfigurable implements Configurable {
         settings.setIncludeProjectTree(promptSettingsComponent.getIncludeProjectTreeCheckbox().isSelected());
         settings.setProjectTreeDepth((Integer) promptSettingsComponent.getProjectTreeDepthSpinner().getValue());
         settings.setUseDevoxxGenieMdInPrompt(promptSettingsComponent.getUseDevoxxGenieMdInPromptCheckbox().isSelected());
+        settings.setUseClaudeOrAgentsMdInPrompt(promptSettingsComponent.getUseClaudeOrAgentsMdInPromptCheckbox().isSelected());
 
         String newShortcut;
         if (SystemInfo.isWindows) {
@@ -116,6 +118,7 @@ public class PromptSettingsConfigurable implements Configurable {
         promptSettingsComponent.getIncludeProjectTreeCheckbox().setSelected(settings.getIncludeProjectTree());
         promptSettingsComponent.getProjectTreeDepthSpinner().setValue(settings.getProjectTreeDepth());
         promptSettingsComponent.getUseDevoxxGenieMdInPromptCheckbox().setSelected(settings.getUseDevoxxGenieMdInPrompt());
+        promptSettingsComponent.getUseClaudeOrAgentsMdInPromptCheckbox().setSelected(settings.getUseClaudeOrAgentsMdInPrompt());
 
         boolean createMdEnabled = settings.getCreateDevoxxGenieMd();
         promptSettingsComponent.getIncludeProjectTreeCheckbox().setEnabled(createMdEnabled);
