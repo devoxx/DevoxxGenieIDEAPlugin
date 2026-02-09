@@ -58,7 +58,7 @@ Quick links:
 
 ### Key Features:
 
-- **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
+- **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: (v0.9.6+) AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
 - **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ [DEVOXXGENIE.md](https://genie.devoxx.com/docs/configuration/devoxxgenie-md)**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses.
