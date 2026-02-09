@@ -15,7 +15,7 @@ In addition to Git Dif viewer and LLM-driven web search with [Google](https://de
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-41.9K+ Downloads
+42K+ Downloads
 
 ## 📚 Documentation
 
