@@ -45,6 +45,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.4</h2>
+        <UL>
+            <LI>Agent mode with built-in tool execution (read, write, edit, search, list files, run commands) (#849)</LI>
+            <LI>Parallel sub-agents for concurrent codebase exploration with per-agent LLM configuration (#850)</LI>
+            <LI>MCP configuration JSON import/export for easy sharing of MCP server setups (#852, #786)</LI>
+            <LI>Fix: clear selection metadata when removing files from context (#847, #783)</LI>
+            <LI>Rename Sub-Agents documentation to Agent Mode</LI>
+        </UL>
         <h2>v0.9.3</h2>
         <UL>
             <LI>Externalize welcome text with remote fetching from genie.devoxx.com</LI>

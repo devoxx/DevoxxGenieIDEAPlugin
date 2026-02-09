@@ -2,6 +2,19 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.4]
+
+### Added
+- Agent mode with built-in tool execution: read_file, write_file, edit_file, list_files, search_files, run_command, parallel_explore (#849)
+- Parallel sub-agents for concurrent codebase exploration, each configurable with a different LLM provider/model (#850)
+- MCP configuration JSON import/export for easy sharing of MCP server setups (#852, #786)
+
+### Fixed
+- Clear selection metadata when removing files from context (#847, #783)
+
+### Documentation
+- Rename Sub-Agents documentation to Agent Mode
+
 ## [0.9.3]
 
 ### Added
