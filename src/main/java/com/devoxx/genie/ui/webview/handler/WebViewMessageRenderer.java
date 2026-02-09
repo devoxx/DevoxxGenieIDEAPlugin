@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.webview.handler;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.welcome.WelcomeContent;
 import com.devoxx.genie.service.welcome.WelcomeContentService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.webview.WebServer;
 import com.devoxx.genie.ui.webview.template.ChatMessageTemplate;
 import com.devoxx.genie.ui.webview.template.WelcomeTemplate;
@@ -67,13 +68,23 @@ public class WebViewMessageRenderer {
             return;
         }
 
-        // Use the WelcomeTemplate to generate HTML, with remote content if available
-        WelcomeContent remoteContent = WelcomeContentService.getInstance().getWelcomeContent();
-        WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle, remoteContent);
-        String welcomeContent = welcomeTemplate.generate();
+        String welcomeContent;
+        try {
+            // Use the WelcomeTemplate to generate HTML, with remote content if available
+            WelcomeContent remoteContent = WelcomeContentService.getInstance().getWelcomeContent();
+            WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle, remoteContent);
+            welcomeContent = welcomeTemplate.generate();
+        } catch (Exception e) {
+            log.warn("Failed to generate welcome content from remote, falling back to local", e);
+            // Clear stale cached content that may have caused the error
+            DevoxxGenieStateService.getInstance().setWelcomeContentCachedJson("");
+            WelcomeTemplate welcomeTemplate = new WelcomeTemplate(webServer, resourceBundle);
+            welcomeContent = welcomeTemplate.generate();
+        }
 
         // Only inject welcome content if no chat messages are already present (defense-in-depth).
-        // Content is from trusted internal WelcomeTemplate, not user input.
+        // Content is from trusted internal WelcomeTemplate, not user input — all values are
+        // from the plugin's own ResourceBundle or the remote welcome.json with escapeHtml applied.
         jsExecutor.executeJavaScript(
                 "(function() {" +
                 "  var container = document.getElementById('conversation-container');" +

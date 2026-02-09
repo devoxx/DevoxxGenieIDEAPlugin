@@ -50,11 +50,11 @@ public class WelcomeTemplate extends HtmlTemplate {
 
     @NotNull
     private String generateFromRemoteContent(@NotNull String htmlTemplate, @NotNull String customPromptCommands) {
-        String title = escapeHtml(remoteContent.getTitle());
-        String description = escapeHtml(remoteContent.getDescription());
-        String instructions = escapeHtml(remoteContent.getInstructions());
-        String tip = escapeHtml(remoteContent.getTip());
-        String enjoy = escapeHtml(remoteContent.getEnjoy());
+        String title = escapeHtml(nullSafe(remoteContent.getTitle(), resourceBundle.getString("welcome.title")));
+        String description = escapeHtml(nullSafe(remoteContent.getDescription(), resourceBundle.getString("welcome.description")));
+        String instructions = escapeHtml(nullSafe(remoteContent.getInstructions(), resourceBundle.getString("welcome.instructions")));
+        String tip = escapeHtml(nullSafe(remoteContent.getTip(), resourceBundle.getString("welcome.tip")));
+        String enjoy = escapeHtml(nullSafe(remoteContent.getEnjoy(), resourceBundle.getString("welcome.enjoy")));
         String featuresHtml = buildFeaturesHtml(remoteContent.getFeatures());
         String announcementsHtml = buildAnnouncementsHtml(remoteContent.getAnnouncements());
         String socialLinksHtml = buildSocialLinksHtml(remoteContent.getSocialLinks());
@@ -122,11 +122,15 @@ public class WelcomeTemplate extends HtmlTemplate {
         }
         StringBuilder sb = new StringBuilder();
         for (WelcomeAnnouncement announcement : announcements) {
+            String message = announcement.getMessage();
+            if (message == null || message.isEmpty()) {
+                continue;
+            }
             String type = announcement.getType() != null ? announcement.getType() : "info";
             sb.append("<div class=\"announcement announcement-")
                     .append(escapeHtml(type))
                     .append("\">")
-                    .append(escapeHtml(announcement.getMessage()))
+                    .append(escapeHtml(message))
                     .append("</div>\n");
         }
         return sb.toString();
@@ -204,5 +208,10 @@ public class WelcomeTemplate extends HtmlTemplate {
     @NotNull
     private String getDefaultSocialLinksHtml() {
         return "<p>Follow us on Bluesky : <a href=\"https://bsky.app/profile/devoxxgenie.bsky.social\">@DevoxxGenie.bsky.social</a></p>";
+    }
+
+    @NotNull
+    private static String nullSafe(@Nullable String value, @NotNull String fallback) {
+        return value != null && !value.isEmpty() ? value : fallback;
     }
 }

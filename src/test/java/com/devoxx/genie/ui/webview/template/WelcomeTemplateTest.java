@@ -205,6 +205,91 @@ class WelcomeTemplateTest {
         assertTrue(html.contains("Welcome to DevoxxGenie"));
     }
 
+    @Test
+    void generate_withNullAnnouncementMessage_skipsAnnouncement() {
+        WelcomeContent content = createRemoteContent();
+        WelcomeAnnouncement announcement = new WelcomeAnnouncement();
+        announcement.setType("info");
+        announcement.setMessage(null); // null message — should be skipped
+        content.setAnnouncements(List.of(announcement));
+
+        WelcomeTemplate template = new WelcomeTemplate(webServer, resourceBundle, content);
+
+        String html = template.generate();
+
+        assertNotNull(html);
+        assertFalse(html.contains("announcement-info"), "Announcement with null message should be skipped");
+        assertFalse(html.contains("${"), "No unresolved placeholders should remain");
+    }
+
+    @Test
+    void generate_withEmptyAnnouncementMessage_skipsAnnouncement() {
+        WelcomeContent content = createRemoteContent();
+        WelcomeAnnouncement announcement = new WelcomeAnnouncement();
+        announcement.setType("warning");
+        announcement.setMessage(""); // empty message — should be skipped
+        content.setAnnouncements(List.of(announcement));
+
+        WelcomeTemplate template = new WelcomeTemplate(webServer, resourceBundle, content);
+
+        String html = template.generate();
+
+        assertNotNull(html);
+        assertFalse(html.contains("announcement-warning"), "Announcement with empty message should be skipped");
+    }
+
+    @Test
+    void generate_withNullTitle_fallsBackToResourceBundle() {
+        WelcomeContent content = createRemoteContent();
+        content.setTitle(null); // null field — should fall back to resource bundle
+
+        WelcomeTemplate template = new WelcomeTemplate(webServer, resourceBundle, content);
+
+        String html = template.generate();
+
+        assertNotNull(html);
+        assertTrue(html.contains("Welcome to DevoxxGenie"), "Null remote title should fall back to resource bundle");
+        assertFalse(html.contains("${"), "No unresolved placeholders should remain");
+    }
+
+    @Test
+    void generate_withAllNullRemoteFields_fallsBackToResourceBundle() {
+        WelcomeContent content = new WelcomeContent();
+        content.setSchemaVersion(1);
+        // All text fields are null
+
+        WelcomeTemplate template = new WelcomeTemplate(webServer, resourceBundle, content);
+
+        String html = template.generate();
+
+        assertNotNull(html);
+        assertTrue(html.contains("Welcome to DevoxxGenie"));
+        assertTrue(html.contains("Test description"));
+        assertTrue(html.contains("Test instructions"));
+        assertFalse(html.contains("${"), "No unresolved placeholders should remain");
+    }
+
+    @Test
+    void generate_withMixedNullAndValidAnnouncements_rendersOnlyValid() {
+        WelcomeContent content = createRemoteContent();
+        WelcomeAnnouncement nullMsg = new WelcomeAnnouncement();
+        nullMsg.setType("info");
+        nullMsg.setMessage(null);
+        WelcomeAnnouncement validMsg = new WelcomeAnnouncement();
+        validMsg.setType("success");
+        validMsg.setMessage("This one is valid!");
+        content.setAnnouncements(List.of(nullMsg, validMsg));
+
+        WelcomeTemplate template = new WelcomeTemplate(webServer, resourceBundle, content);
+
+        String html = template.generate();
+
+        assertNotNull(html);
+        assertFalse(html.contains("announcement-info"), "Null message announcement should be skipped");
+        assertTrue(html.contains("announcement-success"), "Valid announcement should be rendered");
+        assertTrue(html.contains("This one is valid!"));
+    }
+
     private WelcomeContent createRemoteContent() {
         WelcomeContent content = new WelcomeContent();
         content.setSchemaVersion(1);
