@@ -2,6 +2,18 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.6]
+
+### Added
+- Inline code completion using Fill-in-the-Middle (FIM) models with configurable provider/model settings (#857)
+
+### Changed
+- Migrate Gradle IntelliJ Plugin from 1.x to 2.x (#858)
+
+### Documentation
+- Update contributing guidelines
+- Add CLAUDE.md/AGENTS.md feature to v0.9.5 changelog
+
 ## [0.9.5]
 
 ### Added

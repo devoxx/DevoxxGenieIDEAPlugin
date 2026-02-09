@@ -45,6 +45,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.6</h2>
+        <UL>
+            <LI>Inline code completion using Fill-in-the-Middle (FIM) models with configurable provider/model settings (#857)</LI>
+            <LI>Migrate Gradle IntelliJ Plugin from 1.x to 2.x (#858)</LI>
+        </UL>
         <h2>v0.9.5</h2>
         <UL>
             <LI>Add CLAUDE.md and AGENTS.md support: automatically include project instructions in prompts with priority logic (#856, #854)</LI>
