@@ -1,10 +1,11 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-02-07",
+  "lastUpdated": "2026-02-09",
   "title": "Welcome to Devoxx Genie",
   "description": "The Devoxx Genie plugin allows you to interact with Local & Cloud Large Language Models (LLMs). The remote LLM's do require an API key in the Settings page",
   "instructions": "Start by selecting a language model provider. Select some code, or add some files, type your prompt, and click submit button. Discover and install MCP servers from the MCP Marketplace in Settings!",
   "features": [
+    { "emoji": "\uD83E\uDD16", "name": "Agent Mode", "description": "Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas concurrently. Configure in Agent Settings!" },
     { "emoji": "\uD83D\uDECD\uFE0F", "name": "MCP Marketplace", "description": "Discover and install MCP servers directly from Settings." },
     { "emoji": "\uD83D\uDCC2", "name": "@ Opens Files Popup", "description": "Type @ in your prompt to open the file selection dialog." },
     { "emoji": "\uD83C\uDFA8", "name": "Appearance", "description": "Change the conversation appearances" },
@@ -15,10 +16,11 @@
     { "emoji": "\uD83E\uDDD0", "name": "RAG Support", "description": "Retrieval-Augmented Generation (RAG) support for automatically incorporating project context into your prompts." },
     { "emoji": "\u274C", "name": ".gitignore", "description": "Exclude files and directories based on .gitignore file" },
     { "emoji": "\uD83D\uDC40", "name": "Chat History", "description": "All chats are saved and can be restored or removed" },
-    { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." },
-    { "emoji": "\uD83E\uDD16", "name": "Agent Mode", "description": "Enable agent mode for autonomous codebase exploration with read-only tools. Use parallel sub-agents for concurrent investigation. Configure in Agent Settings!" }
+    { "emoji": "\uD83E\uDDE0", "name": "Project Scanner", "description": "Add source code (full project or by package) to prompt context (or clipboard) when using Anthropic, OpenAI or Gemini." }
   ],
-  "announcements": [],
+  "announcements": [
+    { "emoji": "\uD83C\uDF89", "text": "New in v0.9.4: Agent Mode with parallel sub-agents! Enable in Agent Settings to let the LLM autonomously read, write, and edit files in your project." }
+  ],
   "tip": "You can modify the endpoints for different LLM providers and the default command skills in the plugin settings.",
   "enjoy": "Enjoy!",
   "socialLinks": [
