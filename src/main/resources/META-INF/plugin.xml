@@ -256,6 +256,11 @@
                              instance="com.devoxx.genie.ui.settings.skill.SkillSettingsConfigurable"
                              displayName="Skills"/>
 
+        <projectConfigurable id="com.devoxx.genie.acpsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.acp.ACPSettingsConfigurable"
+                             displayName="ACP Settings"/>
+
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
@@ -318,6 +323,7 @@
                     factoryClass="com.devoxx.genie.ui.window.AgentLogToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.acp.ACPSessionManager"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryService"/>

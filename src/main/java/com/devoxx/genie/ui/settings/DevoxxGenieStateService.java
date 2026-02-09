@@ -4,6 +4,7 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.acp.ACPSettings;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
@@ -200,6 +201,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
     
+    // ACP (Agent Client Protocol) settings
+    private ACPSettings acpSettings = new ACPSettings();
+    private Boolean acpEnabled = false;
+
     // MCP settings
     private MCPSettings mcpSettings = new MCPSettings();
     private Boolean mcpEnabled = false;
