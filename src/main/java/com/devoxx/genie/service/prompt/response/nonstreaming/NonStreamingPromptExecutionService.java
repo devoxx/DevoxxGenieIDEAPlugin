@@ -1,7 +1,6 @@
 package com.devoxx.genie.service.prompt.response.nonstreaming;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
@@ -31,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -172,23 +170,16 @@ public class NonStreamingPromptExecutionService {
                 currentTracker.set(tracker);
             }
             if (toolProvider == null && MCPService.isMCPEnabled()) {
-                Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
-                int totalActiveMCPTools = mcpServers.values().stream()
-                        .filter(MCPServer::isEnabled)
-                        .mapToInt(server -> server.getAvailableTools().size())
-                        .sum();
-
-                if (totalActiveMCPTools > 0) {
-                    toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
-                }
+                toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
             }
 
             if (toolProvider != null) {
                 log.debug("Tool provider created for non-streaming prompt");
+                String basePath = project.getBasePath();
                 assistant = AiServices.builder(Assistant.class)
                         .chatModel(chatModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
-                        .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
+                        .systemMessageProvider(memoryId -> buildToolSystemPrompt(basePath))
                         .toolProvider(toolProvider)
                         .build();
             }
@@ -221,6 +212,19 @@ public class NonStreamingPromptExecutionService {
             // Use our own ModelException instead of the generic ProviderUnavailableException
             throw new ModelException("Provider unavailable: " + e.getMessage(), e);
         }
+    }
+
+    private static @NotNull String buildToolSystemPrompt(String projectBasePath) {
+        StringBuilder sb = new StringBuilder(DevoxxGenieStateService.getInstance().getSystemPrompt());
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()) && projectBasePath != null) {
+            sb.append("\n<PROJECT_ROOT>").append(projectBasePath).append("</PROJECT_ROOT>")
+              .append("\nAll file paths in tool calls are relative to this project root directory.\n");
+        }
+        if (MCPService.isMCPEnabled() && projectBasePath != null) {
+            sb.append("<MCP_INSTRUCTION>The project base directory is ").append(projectBasePath)
+              .append("\nMake sure to use this information for your MCP tooling calls\n</MCP_INSTRUCTION>");
+        }
+        return TemplateVariableEscaper.escape(sb.toString());
     }
 
     private static Assistant buildAssistant(ChatModel chatModel, ChatMemory chatMemory) {

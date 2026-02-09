@@ -83,13 +83,30 @@ public class MCPExecutionService implements Disposable {
     }
     
     /**
-     * Creates tool providers for all configured MCP servers
+     * Creates tool providers for all configured MCP servers, wrapped with approval UI.
+     * Use this for standalone MCP (non-agent) callers.
      *
      * @param project Holds the project information
      * @return A ToolProvider that includes all enabled MCP tools, or null if MCP is disabled or no servers are configured
      */
     public ToolProvider createMCPToolProvider(Project project) {
-        log.debug("Creating MCP Tool Provider");
+        ToolProvider rawProvider = createRawMCPToolProvider();
+        if (rawProvider == null) {
+            return null;
+        }
+        // Wrap it with the custom approval-requiring provider
+        return new ApprovalRequiredToolProvider(rawProvider, project);
+    }
+
+    /**
+     * Creates the raw MCP tool provider without the ApprovalRequiredToolProvider wrapper.
+     * Use this when the caller provides its own approval mechanism (e.g. Agent mode).
+     *
+     * @return A raw McpToolProvider, or null if no MCP clients could be created
+     */
+    @Nullable
+    public ToolProvider createRawMCPToolProvider() {
+        log.debug("Creating raw MCP Tool Provider");
 
         // Get all configured MCP servers
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
@@ -116,13 +133,9 @@ public class MCPExecutionService implements Disposable {
         }
 
         MCPService.logDebug("Creating MCP Tool Provider with " + mcpClients.size() + " clients");
-        // Create the original MCP tool provider
-        ToolProvider originalProvider = McpToolProvider.builder()
+        return McpToolProvider.builder()
                 .mcpClients(mcpClients)
                 .build();
-
-        // Wrap it with the custom approval-requiring provider
-        return new ApprovalRequiredToolProvider(originalProvider, project);
     }
 
     /**

@@ -154,7 +154,7 @@ export default function Home() {
                 <strong>Cost Optimization:</strong> Use smaller, faster models for sub-agents (e.g., <code>gpt-4o-mini</code>, <code>gemini-flash</code>) while keeping a powerful model for the main agent coordinator.
               </p>
               <p>
-                <strong>Per-Agent Model Overrides:</strong> Assign a specific model to each sub-agent slot for maximum flexibility — mix cloud and local providers as needed.
+                <strong>Per-Agent Model Overrides:</strong> Dynamically add or remove sub-agent slots (up to 10) and assign a specific model to each one — mix cloud and local providers as needed.
               </p>
               <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
                 <Link

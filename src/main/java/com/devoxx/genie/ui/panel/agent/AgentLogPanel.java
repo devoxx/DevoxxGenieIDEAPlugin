@@ -64,10 +64,10 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
         logListModel = new DefaultListModel<>();
 
         if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
-            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_DISABLED_MESSAGE));
+            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_DISABLED_MESSAGE, AGENT_DISABLED_MESSAGE));
         } else {
-            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, WELCOME_MESSAGE));
-            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_EMPTY_LOGS_MESSAGE));
+            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, WELCOME_MESSAGE, WELCOME_MESSAGE));
+            logListModel.addElement(new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_EMPTY_LOGS_MESSAGE, AGENT_EMPTY_LOGS_MESSAGE));
         }
 
         logList = new JBList<>(logListModel);
@@ -118,11 +118,11 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
                 ApplicationManager.getApplication().invokeLater(() -> {
                     clearLogs();
                     if (!state) {
-                        LogEntry entry = new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_DISABLED_MESSAGE);
+                        LogEntry entry = new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_DISABLED_MESSAGE, AGENT_DISABLED_MESSAGE);
                         logListModel.addElement(entry);
                         fullLogs.add(entry);
                     } else {
-                        LogEntry entry = new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_EMPTY_LOGS_MESSAGE);
+                        LogEntry entry = new LogEntry(LocalDateTime.now().format(TIME_FORMATTER), AgentType.TOOL_REQUEST, AGENT_EMPTY_LOGS_MESSAGE, AGENT_EMPTY_LOGS_MESSAGE);
                         logListModel.addElement(entry);
                         fullLogs.add(entry);
                     }
@@ -286,10 +286,12 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
         }
 
         String logText = formatAgentMessage(message);
+        String fullContent = buildFullContent(message);
         LogEntry entry = new LogEntry(
                 LocalDateTime.now().format(TIME_FORMATTER),
                 message.getType(),
-                logText
+                logText,
+                fullContent
         );
 
         synchronized (pendingLogs) {
@@ -307,7 +309,11 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
 
     private @NotNull String formatAgentMessage(@NotNull AgentMessage message) {
         StringBuilder sb = new StringBuilder();
-        sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
+
+        // Intermediate responses don't have a call counter — skip the [n/m] prefix
+        if (message.getType() != AgentType.INTERMEDIATE_RESPONSE) {
+            sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
+        }
 
         // Prefix with sub-agent ID when present (e.g. "[1/100] [sub-agent-1] ▶ search_files")
         if (message.getSubAgentId() != null) {
@@ -354,8 +360,39 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
                 sb.append("\u2716 Approval denied for ").append(message.getToolName());
                 break;
             case INTERMEDIATE_RESPONSE:
-                sb.append("\uD83D\uDCAC LLM intermediate response");
+                sb.append("\uD83D\uDCAC ");
+                if (message.getResult() != null) {
+                    String text = message.getResult().replace("\n", " ");
+                    if (text.length() > 150) {
+                        text = text.substring(0, 150) + "...";
+                    }
+                    sb.append(text);
+                } else {
+                    sb.append("LLM intermediate response");
+                }
                 break;
+        }
+        return sb.toString();
+    }
+
+    private @NotNull String buildFullContent(@NotNull AgentMessage message) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Type: ").append(message.getType()).append("\n");
+        if (message.getToolName() != null) {
+            sb.append("Tool: ").append(message.getToolName()).append("\n");
+        }
+        if (message.getCallNumber() > 0) {
+            sb.append("Call: ").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("\n");
+        }
+        if (message.getSubAgentId() != null) {
+            sb.append("Sub-agent: ").append(message.getSubAgentId()).append("\n");
+        }
+        sb.append("\n");
+        if (message.getArguments() != null) {
+            sb.append("--- Arguments ---\n").append(message.getArguments()).append("\n\n");
+        }
+        if (message.getResult() != null) {
+            sb.append("--- Result ---\n").append(message.getResult()).append("\n");
         }
         return sb.toString();
     }
@@ -367,8 +404,7 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
 
         try {
             String content = "Timestamp: " + logEntry.timestamp() + "\n" +
-                    "Type: " + logEntry.type() + "\n\n" +
-                    logEntry.message();
+                    logEntry.fullContent();
 
             String fileName = "AgentLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".txt";
 
@@ -385,7 +421,7 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
     private void copyLogsToClipboard() {
         StringBuilder sb = new StringBuilder();
         for (LogEntry entry : fullLogs) {
-            sb.append(entry.timestamp()).append(" ").append(entry.message()).append("\n");
+            sb.append(entry.timestamp()).append("\n").append(entry.fullContent()).append("\n---\n");
         }
         if (sb.isEmpty()) {
             NotificationUtil.sendNotification(project, "No agent logs to copy.");
@@ -415,7 +451,7 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
         logListModel.clear();
     }
 
-    private record LogEntry(String timestamp, AgentType type, String message) {
+    private record LogEntry(String timestamp, AgentType type, String message, String fullContent) {
         @Override
         public String toString() {
             return timestamp + " " + message;

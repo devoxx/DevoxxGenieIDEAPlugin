@@ -1,6 +1,5 @@
 package com.devoxx.genie.service.agent;
 
-import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
@@ -14,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Factory that assembles the agent tool provider chain:
@@ -82,28 +80,21 @@ public class AgentToolProviderFactory {
     }
 
     /**
-     * Gets the MCP tool provider without the existing ApprovalRequiredToolProvider wrapper,
+     * Gets the raw MCP tool provider (without ApprovalRequiredToolProvider wrapper),
      * since AgentApprovalProvider handles approval uniformly for all tools.
+     * Does not pre-check cached tool metadata — the actual MCP client connection
+     * determines available tools at runtime.
      */
     @Nullable
     private static ToolProvider getMcpToolProviderWithoutApproval(@NotNull Project project) {
         try {
-            Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
-                    .getMcpSettings().getMcpServers();
-
-            if (mcpServers.isEmpty()) return null;
-
-            int totalActiveMCPTools = mcpServers.values().stream()
-                    .filter(MCPServer::isEnabled)
-                    .mapToInt(server -> server.getAvailableTools().size())
-                    .sum();
-
-            if (totalActiveMCPTools == 0) return null;
-
-            // Get the MCP provider - it comes with ApprovalRequiredToolProvider wrapper,
-            // but we still use it since our AgentApprovalProvider handles the approval
-            // uniformly. The MCP approval will be auto-approved when headless or not required.
-            return MCPExecutionService.getInstance().createMCPToolProvider(project);
+            ToolProvider provider = MCPExecutionService.getInstance().createRawMCPToolProvider();
+            if (provider != null) {
+                log.info("MCP tool provider included in agent tool chain");
+            } else {
+                log.debug("MCP tool provider not available (no enabled servers or clients)");
+            }
+            return provider;
         } catch (Exception e) {
             log.warn("Failed to create MCP tool provider for agent mode", e);
             return null;
