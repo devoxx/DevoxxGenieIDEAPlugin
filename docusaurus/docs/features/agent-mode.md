@@ -63,9 +63,7 @@ Agent mode works best for exploratory questions where the LLM needs to discover 
 
 ---
 
-# Parallel Sub-Agents
-
-## Parallel Codebase Exploration
+## Parallel Sub-Agents
 
 **Parallel Sub-Agents** extend Agent Mode by spawning multiple read-only AI assistants that concurrently investigate different aspects of your project. This is especially useful for large codebases where you need to understand multiple components at once.
 

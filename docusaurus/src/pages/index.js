@@ -104,6 +104,65 @@ export default function Home() {
               <p>
                 <strong>MCP Debugging:</strong> Built-in debugging panel lets you monitor MCP requests and responses in real-time, making it easy to understand how the LLM interacts with external tools and troubleshoot any issues.
               </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/mcp_expanded')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container home-section home-section-alternate">
+          <div className="row">
+            <div className="col col--6">
+              <h2>Agent Mode</h2>
+              <p>
+                Agent Mode enables the LLM to autonomously explore and modify your codebase using built-in tools — reading files, listing directories, searching for patterns, and making targeted edits.
+              </p>
+              <p>
+                <strong>Works with Local Models:</strong> Run Agent Mode entirely on your machine using powerful local models like <code>GLM-4.7-flash</code> via Ollama — no cloud API keys required.
+              </p>
+              <p>
+                <strong>Built-in Tools:</strong> <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_files</code>, <code>search_files</code>, and <code>run_command</code> — all managed by the LLM with safety approvals for write operations.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/agent-mode')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+            <div className="col col--6">
+              <img src={useBaseUrl('/img/agent-mode-top.jpg')} alt="Agent Mode settings" className="feature-image" />
+            </div>
+          </div>
+        </div>
+        <div className="container home-section">
+          <div className="row">
+            <div className="col col--6">
+              <img src={useBaseUrl('/img/agent-mode-parallel.jpg')} alt="Parallel sub-agents configuration" className="feature-image" />
+            </div>
+            <div className="col col--6">
+              <h2>Parallel Sub-Agents</h2>
+              <p>
+                Spawn multiple read-only AI assistants that concurrently investigate different aspects of your project. Each sub-agent can use a different LLM provider/model and runs with its own isolated context and tool call budget.
+              </p>
+              <p>
+                <strong>Cost Optimization:</strong> Use smaller, faster models for sub-agents (e.g., <code>gpt-4o-mini</code>, <code>gemini-flash</code>) while keeping a powerful model for the main agent coordinator.
+              </p>
+              <p>
+                <strong>Per-Agent Model Overrides:</strong> Assign a specific model to each sub-agent slot for maximum flexibility — mix cloud and local providers as needed.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/agent-mode#parallel-sub-agents')}>
+                  Learn More
+                </Link>
+              </div>
             </div>
           </div>
         </div>

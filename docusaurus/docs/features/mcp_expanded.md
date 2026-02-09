@@ -124,6 +124,8 @@ Can you list all Java files in the src/main directory that implement the Observe
 
 DevoxxGenie includes a debugging panel for MCP requests and responses:
 
+![MCP Debugging](/img/MCPDebug.jpg)
+
 1. Enable **MCP Logging** in the MCP settings
 2. Open the **DevoxxGenieMCPLogs** tool window from the bottom panel
 3. Observe the requests sent to and responses received from MCP servers
