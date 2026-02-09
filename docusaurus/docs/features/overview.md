@@ -26,6 +26,13 @@ Connect to a wide range of LLM providers:
 - **Chat memory**: Configurable conversation history to maintain context
 - **Context files**: Add files and code snippets to the chat context
 
+### Code Completion
+
+- **Inline Completion**: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio
+- **Context-aware**: Uses code before and after your cursor for intelligent suggestions
+- **Ghost text**: Suggestions appear as gray text inline with your code
+- **Partial acceptance**: Accept full suggestions, single words, or just the current line
+
 ### Advanced Context Features
 
 - **RAG Support**: Retrieval-Augmented Generation for automatically finding and incorporating relevant code from your project
@@ -35,6 +42,7 @@ Connect to a wide range of LLM providers:
 
 ### Developer Tools
 
+- **Inline Completion**: AI-powered code completion using Fill-in-the-Middle (FIM) models via Ollama or LM Studio, providing context-aware suggestions as you type
 - **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
 - **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
 - **Agent Mode** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider
@@ -52,14 +60,17 @@ Connect to a wide range of LLM providers:
 |---------|------------|--------|-----------|--------|-------------|
 | Chat Interface | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Streaming | ✅ | ✅ | ✅ | ✅ | Varies |
+| Inline Completion | ✅* | ❌ | ❌ | ❌ | ❌ |
 | RAG Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Project Context | ✅ | ✅ | ✅ | ✅ | ✅ |
 | MCP Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Skills | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Web Search | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Multimodal | Varies* | GPT-4V+ | Claude 3+ | Gemini Pro+ | Varies |
+| Multimodal | Varies** | GPT-4V+ | Claude 3+ | Gemini Pro+ | Varies |
 
-*Depends on the model you're using locally (e.g., LLaVA supports images)
+\* Ollama or LM Studio with FIM-capable models (e.g., starcoder2, qwen2.5-coder)
+
+\*\*Depends on the model you're using locally (e.g., LLaVA supports images)
 
 ## Experimental Features
 
@@ -80,3 +91,4 @@ For detailed information about specific features, check out the dedicated pages:
 - [Drag & Drop Images](dnd-images.md)
 - [Project Scanner](project-scanner.md)
 - [Chat Memory](chat-memory.md)
+- [Inline Completion](inline-completion.md)

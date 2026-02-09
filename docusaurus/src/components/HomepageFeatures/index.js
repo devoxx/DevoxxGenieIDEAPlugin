@@ -10,7 +10,7 @@ import MCPSupportIcon from './icons/MCPSupport';
 import MCPMarketplaceIcon from './icons/MCPMarketplace';
 import SubAgentsIcon from './icons/SubAgents';
 import ProjectScannerIcon from './icons/ProjectScanner';
-import TokenCostIcon from './icons/TokenCost';
+import InlineCompletionIcon from './icons/InlineCompletion';
 import WebSearchIcon from './icons/WebSearch';
 import DragDropIcon from './icons/DragDrop';
 import NaiveRAGIcon from './icons/NaiveRAG';
@@ -67,12 +67,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Token Cost Calculator',
-    icon: TokenCostIcon,
-    link: '/docs/features/overview',
+    title: 'Inline Code Completion',
+    icon: InlineCompletionIcon,
+    link: '/docs/features/inline-completion',
     description: (
       <>
-        Calculate the token usage and cost when using Cloud LLM providers to help manage your API usage efficiently.
+        AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio. Context-aware completions using code before and after your cursor.
       </>
     ),
   },

@@ -55,6 +55,18 @@ In DevoxxGenie settings, you can configure:
 - Wide variety of models
 - Good performance on consumer hardware
 - Support for multimodal models
+- **Fill-in-the-Middle (FIM) support** for inline code completion
+
+### Inline Code Completion with Ollama
+
+Ollama supports **Fill-in-the-Middle (FIM)** models that enable DevoxxGenie's inline code completion feature. This provides context-aware suggestions as you type, using both the code before and after your cursor.
+
+**Recommended FIM models:**
+- `starcoder2:3b` - Fast, lightweight option
+- `qwen2.5-coder:7b` - Better quality, balanced performance
+- `deepseek-coder:6.7b-base` - Code-specific training
+
+See the [Inline Completion documentation](/docs/features/inline-completion) for detailed setup instructions.
 
 ## LMStudio
 
@@ -81,12 +93,24 @@ LM Studio allows extensive configuration:
 - **Quantization**: Run models with reduced precision for better performance
 - **Server Settings**: Configure the OpenAI-compatible API server
 
+### Inline Code Completion with LM Studio
+
+LM Studio also supports **Fill-in-the-Middle (FIM)** models for inline code completion. The desktop GUI makes it easy to manage and load FIM-capable models.
+
+**Recommended FIM models:**
+- `starcoder2-3b` - Fast, lightweight option
+- `qwen2.5-coder-7b` - Better quality, balanced performance
+- `deepseek-coder-6.7b-base` - Code-specific training
+
+See the [Inline Completion documentation](/docs/features/inline-completion) for detailed setup instructions.
+
 ### Advantages of LM Studio
 
 - Excellent UI for model management
 - Advanced configuration options
 - Built-in chat interface for testing
 - Model comparison tools
+- **Fill-in-the-Middle (FIM) support** for inline code completion
 
 ## GPT4All
 

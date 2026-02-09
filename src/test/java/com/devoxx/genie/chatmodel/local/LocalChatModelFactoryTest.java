@@ -44,6 +44,7 @@ public class LocalChatModelFactoryTest extends BasePlatformTestCase {
             };
         }
 
+
         @Override
         public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
             return createOpenAiChatModel(customChatModel);

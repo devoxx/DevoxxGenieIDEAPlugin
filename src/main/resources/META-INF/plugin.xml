@@ -11,7 +11,7 @@
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
 
-    <idea-version since-build="233"/>
+    <idea-version since-build="243"/>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -281,6 +281,11 @@
                              instance="com.devoxx.genie.ui.settings.appearance.AppearanceSettingsConfigurable"
                              displayName="Appearance"/>
 
+        <projectConfigurable id="com.devoxx.genie.InlineCompletion"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
+                             displayName="Inline Completion"/>
+
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
@@ -341,6 +346,11 @@
         <applicationService serviceImplementation="com.devoxx.genie.ui.webview.WebServer"/>
         <!-- Appearance settings handler -->
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.appearance.AppearanceRefreshHandler"/>
+        <!-- Inline completion service -->
+        <applicationService serviceImplementation="com.devoxx.genie.completion.InlineCompletionService"/>
+        <!-- Inline completion provider -->
+        <inline.completion.provider
+            implementation="com.devoxx.genie.completion.DevoxxGenieInlineCompletionProvider"/>
     </extensions>
 
     <extensionPoints>

@@ -38,6 +38,7 @@ const sidebars = {
         'features/dnd-images',
         'features/project-scanner',
         'features/chat-memory',
+        'features/inline-completion',
       ],
     },
     {
