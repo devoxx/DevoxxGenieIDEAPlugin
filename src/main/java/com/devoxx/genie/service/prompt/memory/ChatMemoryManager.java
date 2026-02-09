@@ -291,11 +291,18 @@ public class ChatMemoryManager {
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
         String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + MARKDOWN;
+        String projectPath = context.getProject().getBasePath();
+
+        // Always tell the LLM the project root when tools are active
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())) {
+            systemPrompt += "\n<PROJECT_ROOT>" + projectPath + "</PROJECT_ROOT>" +
+                    "\nAll file paths in tool calls are relative to this project root directory.\n";
+        }
 
         // Add MCP instructions to system prompt if MCP is enabled
         if (MCPService.isMCPEnabled()) {
             systemPrompt += "<MCP_INSTRUCTION>The project base directory is " +
-                    context.getProject().getBasePath() +
+                    projectPath +
                     "\nMake sure to use this information for your MCP tooling calls\n" +
                     "</MCP_INSTRUCTION>";
             MCPService.logDebug("Added MCP instructions to system prompt");
