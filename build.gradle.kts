@@ -3,9 +3,9 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java
-    kotlin("jvm") version "2.1.0"
-    kotlin("plugin.lombok") version "2.1.0"
-    id("org.jetbrains.intellij.platform") version "2.10.5"
+    kotlin("jvm") version "2.3.10"
+    kotlin("plugin.lombok") version "2.3.10"
+    id("org.jetbrains.intellij.platform") version "2.11.0"
 }
 
 group = "com.devoxx.genie"
@@ -59,7 +59,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
-    val lg4j_version = "1.10.0"
+    val lg4j_version = "1.11.0"
     var lg4j_beta_version = "1.11.0-beta19"
 
     // Langchain4J dependencies
@@ -78,7 +78,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.23"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.24"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
@@ -98,7 +98,7 @@ dependencies {
     implementation("io.netty:netty-all:4.2.10.Final")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.27")
+    implementation("ch.qos.logback:logback-classic:1.5.28")
 
     // GitIgnore Reader
     implementation("nl.basjes.gitignore:gitignore-reader:1.14.1")
@@ -117,7 +117,7 @@ dependencies {
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
     testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
     testImplementation("org.opentest4j:opentest4j:1.3.0")
 
