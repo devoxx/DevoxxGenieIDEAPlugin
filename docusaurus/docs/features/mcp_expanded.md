@@ -40,7 +40,7 @@ Common MCP server categories include:
 
 DevoxxGenie includes a built-in **MCP Marketplace** that lets you browse, search, and install MCP servers directly from the settings UI.
 
-![MCP Marketplace](/img/MCPMarketPlace.jpg)
+![MCP Marketplace](/img/MCPMarketplace.jpg)
 
 ### Browsing the Marketplace
 
