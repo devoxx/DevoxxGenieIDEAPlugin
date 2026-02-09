@@ -60,6 +60,9 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox useDevoxxGenieMdInPromptCheckbox = new JCheckBox("Use DEVOXXGENIE.md in prompt", stateService.getUseDevoxxGenieMdInPrompt());
 
     @Getter
+    private final JCheckBox useClaudeOrAgentsMdInPromptCheckbox = new JCheckBox("Use CLAUDE.md or AGENTS.md in prompt", stateService.getUseClaudeOrAgentsMdInPrompt());
+
+    @Getter
     private final JButton createDevoxxGenieMdButton = new JButton("Create DEVOXXGENIE.md");
 
     private final Project project;
@@ -121,6 +124,26 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
 
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // CLAUDE.md / AGENTS.md Inclusion Section
+        addSection(panel, gbc, "CLAUDE.md / AGENTS.md Inclusion");
+
+        gbc.gridy++;
+        gbc.weighty = 0.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(useClaudeOrAgentsMdInPromptCheckbox, gbc);
+
+        gbc.gridy++;
+        JEditorPane claudeAgentsExplanationPane = new JEditorPane(
+                "text/html",
+                "<html><body style='margin: 5px'>When enabled, the plugin will check for CLAUDE.md or AGENTS.md files in your project root. "
+                        + "If both files exist, <b>CLAUDE.md takes priority</b> and AGENTS.md is skipped. "
+                        + "The content will be included in the prompt to provide AI-specific context and instructions.</body></html>"
+        );
+        claudeAgentsExplanationPane.setEditable(false);
+        claudeAgentsExplanationPane.setBackground(null);
+        claudeAgentsExplanationPane.setBorder(null);
+        panel.add(claudeAgentsExplanationPane, gbc);
 
         createDevoxxGenieMdCheckbox.addChangeListener(e -> {
             boolean enabled = createDevoxxGenieMdCheckbox.isSelected();
