@@ -2,6 +2,8 @@ import java.util.*
 
 plugins {
     java
+    kotlin("jvm") version "2.1.0"
+    kotlin("plugin.lombok") version "2.1.0"
     id("org.jetbrains.intellij") version "1.17.4"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -108,6 +110,7 @@ dependencies {
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
     testImplementation("org.assertj:assertj-core:3.27.7")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -117,7 +120,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.3.4")
+    version.set("2024.3")
     type.set("IC")
     plugins.set(listOf("com.intellij.java"))
 }
@@ -128,7 +131,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("233")
+        sinceBuild.set("243")
         untilBuild.set("253.*")
     }
 
@@ -162,9 +165,6 @@ tasks {
 
     runPluginVerifier {
         ideVersions.set(listOf(
-            "IC-2023.3.8",
-            "IC-2024.1.7",
-            "IC-2024.2.6",
             "IC-2024.3.7",
             "IC-2025.1.7",
             "IC-2025.2.6.1"
@@ -185,4 +185,14 @@ tasks {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlinLombok {
+    lombokConfigurationFile(file("lombok.config"))
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }

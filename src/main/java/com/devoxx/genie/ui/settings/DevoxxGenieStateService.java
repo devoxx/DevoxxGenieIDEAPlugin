@@ -226,6 +226,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter(AccessLevel.NONE)
     private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
+    // Inline completion settings
+    private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
+    private String inlineCompletionModel = "";
+    private Integer inlineCompletionMaxTokens = 64;
+    private Integer inlineCompletionTimeoutMs = 5000;
+    private Double inlineCompletionTemperature = 0.0;
+    private Integer inlineCompletionDebounceMs = 300;
+
     // Welcome content cache
     private String welcomeContentCachedJson = "";
     private long welcomeContentLastFetchTimestamp = 0L;

@@ -9,13 +9,14 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
-We now also support RAG-based prompt context based on your vectorized project files. 
-In addition to Git Dif viewer and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
+**🆕 NEW: AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
+
+We also support RAG-based prompt context based on your vectorized project files, Git Diff viewer, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-41.9K+ Downloads
+42K+ Downloads
 
 ## 📚 Documentation
 
@@ -26,6 +27,7 @@ Quick links:
 - [Installation Guide](https://genie.devoxx.com/docs/category/installation) - Local and cloud LLM setup
 - [Configuration](https://genie.devoxx.com/docs/category/configuration) - API keys, settings, and customization
 - [Features](https://genie.devoxx.com/docs/category/features) - Explore all capabilities
+- [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion) - AI-powered code suggestions as you type
 - [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode) - Autonomous code tools with parallel sub-agents
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
 - [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
@@ -56,6 +58,7 @@ Quick links:
 
 ### Key Features:
 
+- **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
 - **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ [DEVOXXGENIE.md](https://genie.devoxx.com/docs/configuration/devoxxgenie-md)**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses.
