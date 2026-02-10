@@ -19,6 +19,7 @@ class BacklogToolSpecificationsTest {
         assertToolSpec(BacklogToolSpecifications.taskEdit(), "backlog_task_edit");
         assertToolSpec(BacklogToolSpecifications.taskComplete(), "backlog_task_complete");
         assertToolSpec(BacklogToolSpecifications.taskArchive(), "backlog_task_archive");
+        assertToolSpec(BacklogToolSpecifications.taskFindRelated(), "backlog_task_find_related");
     }
 
     @Test
@@ -82,6 +83,13 @@ class BacklogToolSpecificationsTest {
     }
 
     @Test
+    void taskFindRelatedShouldHaveIdAndQueryParams() {
+        ToolSpecification spec = BacklogToolSpecifications.taskFindRelated();
+        assertThat(spec.parameters()).isNotNull();
+        assertThat(spec.description()).contains("related");
+    }
+
+    @Test
     void milestoneRenameShouldRequireFromAndTo() {
         ToolSpecification spec = BacklogToolSpecifications.milestoneRename();
         assertThat(spec.parameters()).isNotNull();
@@ -89,8 +97,8 @@ class BacklogToolSpecificationsTest {
     }
 
     @Test
-    void totalToolCountShouldBe17() {
-        // 7 task + 5 document + 5 milestone = 17
+    void totalToolCountShouldBe18() {
+        // 8 task + 5 document + 5 milestone = 18
         int count = 0;
         count++; // taskCreate
         count++; // taskList
@@ -99,6 +107,7 @@ class BacklogToolSpecificationsTest {
         count++; // taskEdit
         count++; // taskComplete
         count++; // taskArchive
+        count++; // taskFindRelated
         count++; // documentList
         count++; // documentView
         count++; // documentCreate
@@ -109,7 +118,7 @@ class BacklogToolSpecificationsTest {
         count++; // milestoneRename
         count++; // milestoneRemove
         count++; // milestoneArchive
-        assertThat(count).isEqualTo(17);
+        assertThat(count).isEqualTo(18);
     }
 
     private void assertToolSpec(ToolSpecification spec, String expectedName) {

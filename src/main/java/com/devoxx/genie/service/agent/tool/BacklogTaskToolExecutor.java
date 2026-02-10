@@ -5,6 +5,7 @@ import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.service.spec.SpecContextBuilder;
 import com.devoxx.genie.service.spec.SpecService;
+import com.devoxx.genie.service.spec.search.SpecSearchService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -39,6 +40,7 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
                 case "backlog_task_edit" -> editTask(request.arguments());
                 case "backlog_task_complete" -> completeTask(request.arguments());
                 case "backlog_task_archive" -> archiveTask(request.arguments());
+                case "backlog_task_find_related" -> findRelated(request.arguments());
                 default -> "Error: Unknown task tool: " + request.name();
             };
         } catch (Exception e) {
@@ -318,5 +320,65 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
         SpecService specService = SpecService.getInstance(project);
         specService.archiveTask(id);
         return "Task " + id + " archived.";
+    }
+
+    private @NotNull String findRelated(@NotNull String arguments) {
+        String id = ToolArgumentParser.getString(arguments, "id");
+        String query = ToolArgumentParser.getString(arguments, "query");
+        int limit = ToolArgumentParser.getInt(arguments, "limit", 3);
+
+        if ((id == null || id.isEmpty()) && (query == null || query.isEmpty())) {
+            return "Error: Either 'id' or 'query' parameter is required.";
+        }
+
+        SpecSearchService searchService = new SpecSearchService(project);
+        List<SpecSearchService.ScoredSpec> results;
+
+        if (id != null && !id.isEmpty()) {
+            results = searchService.findRelatedByTaskId(id, limit);
+        } else {
+            results = searchService.findRelatedByQuery(query, limit);
+        }
+
+        if (results.isEmpty()) {
+            return id != null && !id.isEmpty()
+                    ? "No related tasks found for " + id + "."
+                    : "No tasks found matching query: " + query;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (id != null && !id.isEmpty()) {
+            sb.append("Tasks related to ").append(id).append(" (").append(results.size()).append(" results):\n\n");
+        } else {
+            sb.append("Tasks matching \"").append(query).append("\" (").append(results.size()).append(" results):\n\n");
+        }
+
+        for (int i = 0; i < results.size(); i++) {
+            SpecSearchService.ScoredSpec scored = results.get(i);
+            TaskSpec spec = scored.spec();
+            sb.append(i + 1).append(". **").append(spec.getDisplayLabel()).append("**");
+            sb.append(" (score: ").append(String.format("%.2f", scored.score())).append(")\n");
+            sb.append("   Status: ").append(spec.getStatus());
+            if (spec.getPriority() != null) {
+                sb.append(" | Priority: ").append(spec.getPriority());
+            }
+            if (spec.getMilestone() != null) {
+                sb.append(" | Milestone: ").append(spec.getMilestone());
+            }
+            sb.append("\n");
+            if (spec.getDescription() != null && !spec.getDescription().isEmpty()) {
+                String desc = spec.getDescription();
+                if (desc.length() > 150) {
+                    desc = desc.substring(0, 147) + "...";
+                }
+                sb.append("   ").append(desc).append("\n");
+            }
+            if (spec.getLabels() != null && !spec.getLabels().isEmpty()) {
+                sb.append("   Labels: ").append(String.join(", ", spec.getLabels())).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
     }
 }

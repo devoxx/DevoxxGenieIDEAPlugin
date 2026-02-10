@@ -184,6 +184,23 @@ public final class BacklogToolSpecifications {
                 .build();
     }
 
+    public static ToolSpecification taskFindRelated() {
+        return ToolSpecification.builder()
+                .name("backlog_task_find_related")
+                .description("Find tasks that are semantically related to a given task or query. " +
+                        "Uses BM25 ranking over task titles, descriptions, labels, and acceptance criteria. " +
+                        "Provide either a task ID (to find tasks related to that task) or a free-text query (to search by topic). " +
+                        "Returns ranked results with relevance scores.")
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("id", "Task ID to find related tasks for (searches by that task's content)")
+                        .addStringProperty("query", "Free-text query to find related tasks (alternative to id)")
+                        .addProperty("limit", JsonIntegerSchema.builder()
+                                .description("Maximum number of related tasks to return (default: 3)")
+                                .build())
+                        .build())
+                .build();
+    }
+
     // ===== Document Tools (5) =====
 
     public static ToolSpecification documentList() {

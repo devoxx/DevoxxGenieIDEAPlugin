@@ -174,7 +174,7 @@ public class BuiltInToolProvider implements ToolProvider {
         BacklogDocumentToolExecutor documentExecutor = new BacklogDocumentToolExecutor(project);
         BacklogMilestoneToolExecutor milestoneExecutor = new BacklogMilestoneToolExecutor(project);
 
-        // Task tools (7)
+        // Task tools (8)
         tools.put(BacklogToolSpecifications.taskCreate(), taskExecutor);
         tools.put(BacklogToolSpecifications.taskList(), taskExecutor);
         tools.put(BacklogToolSpecifications.taskSearch(), taskExecutor);
@@ -182,6 +182,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(BacklogToolSpecifications.taskEdit(), taskExecutor);
         tools.put(BacklogToolSpecifications.taskComplete(), taskExecutor);
         tools.put(BacklogToolSpecifications.taskArchive(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskFindRelated(), taskExecutor);
 
         // Document tools (5)
         tools.put(BacklogToolSpecifications.documentList(), documentExecutor);
