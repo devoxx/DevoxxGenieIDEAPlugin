@@ -2,7 +2,3 @@ User-agent: *
 Allow: /
 
 Sitemap: https://genie.devoxx.com/sitemap.xml
-
-# Allow all crawlers
-User-agent: *
-Disallow:
