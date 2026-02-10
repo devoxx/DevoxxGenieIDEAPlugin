@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  * Provides built-in IDE tools for agentic interactions:
- * read_file, write_file, edit_file, list_files, search_files, run_command, parallel_explore.
+ * read_file, write_file, edit_file, list_files, search_files, run_command, run_tests, parallel_explore.
  */
 public class BuiltInToolProvider implements ToolProvider {
 
@@ -115,6 +115,28 @@ public class BuiltInToolProvider implements ToolProvider {
                         .build(),
                 new RunCommandToolExecutor(project)
         );
+
+        // run_tests — only when test execution is enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("run_tests")
+                            .description("Run tests in the project. Auto-detects build system (Gradle/Maven/npm/etc.) " +
+                                    "and executes the appropriate test command. Returns structured results with pass/fail counts. " +
+                                    "Use this after modifying code to verify changes don't break existing tests. " +
+                                    "Has a configurable timeout (default 5 minutes).")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addStringProperty("test_target",
+                                            "Specific test class, method, or pattern to run (optional). " +
+                                            "Gradle: 'com.example.MyTest' or 'MyTest.testMethod'. " +
+                                            "Maven: 'MyTest' or 'MyTest#testMethod'. If omitted, runs all tests.")
+                                    .addStringProperty("working_dir",
+                                            "Working directory relative to project root (defaults to project root)")
+                                    .build())
+                            .build(),
+                    new RunTestsToolExecutor(project)
+            );
+        }
 
         // Backlog tools — only when SDD is enabled
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSpecBrowserEnabled())) {

@@ -66,6 +66,7 @@ public class Constant {
     public static final int SUB_AGENT_MAX_PARALLELISM = 10;
     public static final int SUB_AGENT_TIMEOUT_SECONDS = 120;
     public static final int SUB_AGENT_MEMORY_SIZE = 10;
+    public static final int TEST_EXECUTION_DEFAULT_TIMEOUT = 300;
 
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;

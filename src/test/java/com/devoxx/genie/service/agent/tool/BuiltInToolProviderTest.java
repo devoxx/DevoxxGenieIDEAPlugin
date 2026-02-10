@@ -75,6 +75,33 @@ class BuiltInToolProviderTest {
     }
 
     @Test
+    void provideTools_returnsSevenToolsWhenTestExecutionEnabled() {
+        when(stateService.getTestExecutionEnabled()).thenReturn(true);
+        BuiltInToolProvider providerWithTests = new BuiltInToolProvider(project);
+
+        ToolProviderResult result = providerWithTests.provideTools(request);
+
+        assertThat(result.tools()).hasSize(7);
+    }
+
+    @Test
+    void provideTools_containsRunTestsWhenEnabled() {
+        when(stateService.getTestExecutionEnabled()).thenReturn(true);
+        BuiltInToolProvider providerWithTests = new BuiltInToolProvider(project);
+
+        ToolProviderResult result = providerWithTests.provideTools(request);
+
+        Set<String> toolNames = result.tools().keySet().stream()
+                .map(ToolSpecification::name)
+                .collect(Collectors.toSet());
+
+        assertThat(toolNames).containsExactlyInAnyOrder(
+                "read_file", "write_file", "edit_file", "list_files", "search_files",
+                "run_command", "run_tests"
+        );
+    }
+
+    @Test
     void provideTools_allToolsHaveDescriptions() {
         ToolProviderResult result = provider.provideTools(request);
 

@@ -299,6 +299,15 @@ public class ChatMemoryManager {
                     "\nAll file paths in tool calls are relative to this project root directory.\n";
         }
 
+        // Add test execution instruction if enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
+            systemPrompt += "\n<TESTING_INSTRUCTION>" +
+                    "After modifying code using write_file or edit_file, run relevant tests " +
+                    "using the run_tests tool to verify your changes. If tests fail, analyze " +
+                    "the failures, fix the code, and re-run tests until they pass." +
+                    "</TESTING_INSTRUCTION>\n";
+        }
+
         // Add MCP instructions to system prompt if MCP is enabled
         if (MCPService.isMCPEnabled()) {
             systemPrompt += "<MCP_INSTRUCTION>The project base directory is " +

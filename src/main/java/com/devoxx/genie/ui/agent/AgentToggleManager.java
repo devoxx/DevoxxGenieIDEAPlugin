@@ -80,7 +80,7 @@ public class AgentToggleManager {
                     "Click to enable Agent Mode.<br>" +
                     "Gives the LLM built-in IDE tools:<br>" +
                     "read_file, write_file, list_files,<br>" +
-                    "search_files, run_command<br><br>" +
+                    "search_files, run_command, run_tests<br><br>" +
                     "Configure in Settings &rarr; DevoxxGenie &rarr; Agent Mode</html>");
         }
     }
@@ -91,7 +91,7 @@ public class AgentToggleManager {
 
         return "<html><b>Agent Mode: ON</b><br><br>" +
                 "Built-in tools: read_file, write_file, list_files,<br>" +
-                "search_files, run_command<br><br>" +
+                "search_files, run_command, run_tests<br><br>" +
                 "Max tool calls: " + maxCalls + "<br>" +
                 "Auto-approve read-only: " + (autoApprove ? "Yes" : "No") + "<br><br>" +
                 "Click to disable Agent Mode</html>";
