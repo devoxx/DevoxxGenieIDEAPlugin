@@ -226,6 +226,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter(AccessLevel.NONE)
     private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
+    // Test execution settings
+    private Boolean testExecutionEnabled = true;
+    private Integer testExecutionTimeoutSeconds = TEST_EXECUTION_DEFAULT_TIMEOUT;
+    private String testExecutionCustomCommand = "";
+
     // Spec Driven Development settings
     private Boolean specBrowserEnabled = false;
     private String specDirectory = "backlog";

@@ -1,8 +1,8 @@
 ---
 sidebar_position: 4
 title: Agent Mode
-description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Use parallel sub-agents for concurrent read-only exploration of multiple aspects.
-keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools]
+description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Run tests automatically after code changes. Use parallel sub-agents for concurrent read-only exploration of multiple aspects.
+keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution]
 ---
 
 # Agent Mode
@@ -30,8 +30,9 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `write_file` | Create new files with the specified content |
 | `edit_file` | Modify existing files by replacing text |
 | `run_command` | Execute terminal commands in the project directory (30s timeout) |
+| `run_tests` | Auto-detect build system and run tests with structured results (configurable timeout) |
 
-As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. For development tasks, it can create new files, edit existing code, or run commands to help you implement features.
+As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
 
 :::tip Safety
 Write operations require user approval by default. You'll see a diff preview before any changes are applied to your project.
@@ -55,6 +56,53 @@ Once enabled, simply ask the LLM questions about your codebase. The agent will a
 
 :::tip
 Agent mode works best for exploratory questions where the LLM needs to discover information across multiple files. For simple questions with provided context, regular chat mode may be more efficient.
+:::
+
+---
+
+## Automated Test Execution
+
+The `run_tests` tool gives the agent the ability to run your project's tests and inspect the results. After modifying code with `write_file` or `edit_file`, the agent automatically runs relevant tests, analyzes any failures, fixes the code, and re-runs until the tests pass.
+
+### Build System Auto-Detection
+
+The tool automatically detects your project's build system by looking for configuration files in the project root:
+
+| Build System | Detected By | Test Command |
+|-------------|-------------|--------------|
+| **Gradle** | `build.gradle` or `build.gradle.kts` | `./gradlew test` |
+| **Maven** | `pom.xml` | `mvn test` |
+| **npm** | `package.json` | `npm test` |
+| **Cargo** | `Cargo.toml` | `cargo test` |
+| **Go** | `go.mod` | `go test ./...` |
+| **Make** | `Makefile` | `make test` |
+
+The agent can also target specific tests (e.g., a single class or method) by passing a `test_target` parameter, which is translated into the appropriate flag for each build system.
+
+### Structured Results
+
+Unlike `run_command`, the `run_tests` tool parses test output and returns structured results to the LLM:
+
+- **Status**: PASSED, FAILED, ERROR, or TIMEOUT
+- **Counts**: tests run, passed, failed, skipped
+- **Failed test names**: extracted from the output for targeted debugging
+- **Raw output**: included on failure so the agent can diagnose the issue
+
+### Custom Test Command
+
+If auto-detection doesn't fit your project, you can set a custom test command in **Settings > Tools > DevoxxGenie > Agent > Test Execution**. Use `{target}` as a placeholder for specific test targets:
+
+```
+./gradlew test --tests "{target}"
+npm run test -- {target}
+```
+
+:::tip Test-Driven Development with Agent Mode
+Ask the agent to write tests first, then implement the code:
+
+*"Write a unit test for a `reverseString` method in StringUtils, then implement the method and run the tests to verify it works."*
+
+The agent will create the test, write the implementation, call `run_tests`, and iterate until everything passes.
 :::
 
 ---
@@ -86,6 +134,14 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 |---------|---------|-------------|
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
+
+### Test Execution Settings
+
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| **Enable Run Tests tool** | Enabled | On/Off | Enables or disables the `run_tests` tool |
+| **Test timeout** | 300s | 10-600s | Maximum time a test run can take before being stopped |
+| **Custom test command** | *(empty)* | — | Override auto-detected test command. Use `{target}` for specific test targets |
 
 ### Parallel Exploration Settings
 
@@ -175,7 +231,7 @@ User Prompt
 Main Agent (your configured LLM)
     |
     |--> read_file, write_file, edit_file
-    |--> list_files, search_files, run_command
+    |--> list_files, search_files, run_command, run_tests
     |         |
     |         v
     |    Tool Results
@@ -210,7 +266,9 @@ Final Response (synthesized by main agent)
 - **Start with single agent mode**: For simple questions, single agent mode is often sufficient and faster
 - **Use parallel sub-agents for complex exploration**: When you need to understand multiple unrelated aspects of your codebase
 - **Use cheaper models for sub-agents**: Sub-agents perform read-only exploration, so smaller models work well
-- **Set appropriate timeouts**: Increase the timeout for large codebases, decrease for quick scans
+- **Let the agent verify its own changes**: With `run_tests` enabled, the agent automatically runs tests after code modifications and iterates on failures
+- **Target specific tests**: For faster feedback, ask the agent to run a specific test class rather than the full suite
+- **Set appropriate timeouts**: Increase the test timeout for large test suites or integration tests, decrease for quick unit tests
 - **Be specific in prompts**: Mentioning multiple distinct topics encourages parallel exploration
 - **Monitor tool call limits**: If sub-agents hit their limit, increase the max tool calls setting
 - **Check the Agent Log**: If results seem incomplete, the Agent Log shows exactly what was investigated
@@ -239,6 +297,19 @@ Final Response (synthesized by main agent)
 
 - If you see "No sub-agent model configured", set a default provider in Agent Settings
 - Or enable Ollama/OpenAI for auto-detection to work
+
+### Tests not running or build system not detected
+
+- Ensure **Enable Run Tests tool** is checked in Agent Settings
+- Verify the project has a recognized build file (`build.gradle`, `pom.xml`, `package.json`, etc.) in the project root
+- For non-standard setups, configure a **Custom test command** in Agent Settings
+- On Unix/macOS, if the Gradle wrapper (`gradlew`) isn't executable, the tool will automatically use `bash` to run it
+
+### Test execution timing out
+
+- Increase the **Test timeout** setting (default: 300s)
+- Ask the agent to target specific test classes instead of running all tests
+- Check that your test suite doesn't have hanging tests or infinite loops
 
 ### Agent results are incomplete
 

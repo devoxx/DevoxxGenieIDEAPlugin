@@ -36,6 +36,14 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBCheckBox enableDebugLogsCheckbox =
             new JBCheckBox("Enable Agent Debug Logs", Boolean.TRUE.equals(stateService.getAgentDebugLogsEnabled()));
 
+    // Test execution settings
+    private final JBCheckBox enableTestExecutionCheckbox =
+            new JBCheckBox("Enable Run Tests tool", Boolean.TRUE.equals(stateService.getTestExecutionEnabled()));
+    private final JBIntSpinner testTimeoutSpinner =
+            new JBIntSpinner(stateService.getTestExecutionTimeoutSeconds() != null ? stateService.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT, 10, 600);
+    private final JTextField customTestCommandField = new JTextField(
+            stateService.getTestExecutionCustomCommand() != null ? stateService.getTestExecutionCustomCommand() : "", 30);
+
     // Parallel exploration settings
     private final JBCheckBox enableParallelExploreCheckbox =
             new JBCheckBox("Enable Parallel Explore tool", Boolean.TRUE.equals(stateService.getParallelExploreEnabled()));
@@ -96,6 +104,27 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "When enabled, a confirmation dialog is shown before executing write tools. " +
                 "You can also disable this from the approval dialog itself via the \"Don't ask again\" checkbox.");
+
+        // --- Test Execution ---
+        addSection(contentPanel, gbc, "Test Execution");
+
+        addFullWidthRow(contentPanel, gbc, enableTestExecutionCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, the agent gets a 'run_tests' tool that auto-detects the project's " +
+                "build system and runs tests. The agent is instructed to run tests after code changes.");
+
+        JPanel testTimeoutRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        testTimeoutRow.add(new JBLabel("Test timeout (seconds):"));
+        testTimeoutRow.add(testTimeoutSpinner);
+        addFullWidthRow(contentPanel, gbc, testTimeoutRow);
+
+        JPanel customCommandRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        customCommandRow.add(new JBLabel("Custom test command:"));
+        customCommandRow.add(customTestCommandField);
+        addFullWidthRow(contentPanel, gbc, customCommandRow);
+        addHelpText(contentPanel, gbc,
+                "Optional: override auto-detected test command. Use {target} as placeholder for specific test targets. " +
+                "Example: './gradlew test --tests \"{target}\"' or 'npm run test -- {target}'");
 
         // --- Parallel Exploration ---
         addSection(contentPanel, gbc, "Parallel Exploration");
@@ -609,6 +638,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
                 || enableDebugLogsCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled())
+                || enableTestExecutionCheckbox.isSelected() != Boolean.TRUE.equals(state.getTestExecutionEnabled())
+                || testTimeoutSpinner.getNumber() != (state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT)
+                || !Objects.equals(customTestCommandField.getText(), state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "")
                 || enableParallelExploreCheckbox.isSelected() != Boolean.TRUE.equals(state.getParallelExploreEnabled())
                 || subAgentMaxToolCallsSpinner.getNumber() != (state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS)
                 || subAgentTimeoutSpinner.getNumber() != (state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS)
@@ -623,6 +655,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
         stateService.setAgentDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
+        stateService.setTestExecutionEnabled(enableTestExecutionCheckbox.isSelected());
+        stateService.setTestExecutionTimeoutSeconds(testTimeoutSpinner.getNumber());
+        stateService.setTestExecutionCustomCommand(customTestCommandField.getText());
         stateService.setParallelExploreEnabled(enableParallelExploreCheckbox.isSelected());
         stateService.setSubAgentMaxToolCalls(subAgentMaxToolCallsSpinner.getNumber());
         stateService.setSubAgentTimeoutSeconds(subAgentTimeoutSpinner.getNumber());
@@ -639,6 +674,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
         enableDebugLogsCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentDebugLogsEnabled()));
+        enableTestExecutionCheckbox.setSelected(Boolean.TRUE.equals(state.getTestExecutionEnabled()));
+        testTimeoutSpinner.setNumber(state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT);
+        customTestCommandField.setText(state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "");
         enableParallelExploreCheckbox.setSelected(Boolean.TRUE.equals(state.getParallelExploreEnabled()));
         subAgentMaxToolCallsSpinner.setNumber(state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
         subAgentTimeoutSpinner.setNumber(state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS);

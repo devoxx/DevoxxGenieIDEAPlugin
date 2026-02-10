@@ -13,6 +13,8 @@ image: /img/devoxxgenie-social-card.jpg
 
 DevoxxGenie is a powerful AI-powered assistant for IntelliJ IDEA that helps developers be more productive by leveraging the capabilities of Large Language Models (LLMs). Unlike other code assistants, DevoxxGenie is built entirely in Java and offers unique flexibility by supporting both local and cloud-based LLM providers.
 
+<!-- truncate -->
+
 ## A New Approach to AI Code Assistance
 
 Most AI coding assistants lock you into a specific model or cloud provider. DevoxxGenie takes a different approach, giving you the freedom to choose how you want to use AI in your development workflow:
