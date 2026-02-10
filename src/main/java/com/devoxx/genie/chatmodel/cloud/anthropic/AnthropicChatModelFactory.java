@@ -29,7 +29,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .maxTokens(customChatModel.getMaxTokens())
             .maxRetries(customChatModel.getMaxRetries())
-            .listeners(getListener())
+            .listeners(getListener(customChatModel.getProject()))
             .build();
     }
 
@@ -40,7 +40,7 @@ public class AnthropicChatModelFactory implements ChatModelFactory {
             .modelName(customChatModel.getModelName())
             .temperature(customChatModel.getTemperature())
             .maxTokens(customChatModel.getMaxTokens())
-            .listeners(getListener())
+            .listeners(getListener(customChatModel.getProject()))
             .build();
     }
 

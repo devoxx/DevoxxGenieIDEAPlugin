@@ -35,7 +35,7 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .topP(isReasoningModel ? 1.0 : customChatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint())
-                .listeners(getListener());
+                .listeners(getListener(customChatModel.getProject()));
 
         return builder.build();
     }
@@ -69,7 +69,7 @@ public class AzureOpenAIChatModelFactory implements ChatModelFactory {
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .topP(isO1 ? 1.0 : customChatModel.getTopP())
                 .endpoint(DevoxxGenieStateService.getInstance().getAzureOpenAIEndpoint())
-                .listeners(getListener());
+                .listeners(getListener(customChatModel.getProject()));
 
         return builder.build();
     }

@@ -32,7 +32,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                 .maxTokens(customChatModel.getMaxTokens())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .topP(customChatModel.getTopP())
-                .listeners(getListener())
+                .listeners(getListener(customChatModel.getProject()))
                 .httpClientBuilder(getHttpClientBuilder())
                 .build();
     }
@@ -48,7 +48,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .listeners(getListener())
+                .listeners(getListener(customChatModel.getProject()))
                 .httpClientBuilder(getHttpClientBuilder())
                 .build();
     }

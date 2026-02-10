@@ -27,7 +27,7 @@ public class GrokChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(customChatModel))
                 .maxRetries(customChatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .listeners(getListener())
+                .listeners(getListener(customChatModel.getProject()))
                 .baseUrl(GROK_API_ENDPOINT)
                 .build();
     }
@@ -39,7 +39,7 @@ public class GrokChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(customChatModel))
                 .modelName(customChatModel.getModelName())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .listeners(getListener())
+                .listeners(getListener(customChatModel.getProject()))
                 .baseUrl(GROK_API_ENDPOINT)
                 .build();
     }

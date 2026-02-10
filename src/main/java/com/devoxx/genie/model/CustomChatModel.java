@@ -1,5 +1,6 @@
 package com.devoxx.genie.model;
 
+import com.intellij.openapi.project.Project;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,4 +16,5 @@ public class CustomChatModel {
     private int maxRetries = Constant.MAX_RETRIES;
     private int timeout = Constant.TIMEOUT;
     private Integer contextWindow; // Context window size (null = use provider default)
+    private Project project; // Project context for listeners
 }

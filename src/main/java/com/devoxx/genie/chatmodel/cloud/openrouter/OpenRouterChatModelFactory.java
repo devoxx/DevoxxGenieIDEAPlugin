@@ -40,7 +40,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             .maxTokens(4_000)
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
-            .listeners(getListener())
+            .listeners(getListener(customChatModel.getProject()))
             .build();
     }
 
@@ -54,7 +54,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .topP(customChatModel.getTopP())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-            .listeners(getListener())
+            .listeners(getListener(customChatModel.getProject()))
             .build();
     }
 

@@ -50,6 +50,7 @@ public class ChatModelProvider {
         customChatModel.setMaxRetries(stateService.getMaxRetries());
         customChatModel.setTopP(stateService.getTopP());
         customChatModel.setTimeout(stateService.getTimeout());
+        customChatModel.setProject(chatMessageContext.getProject());
 
         LanguageModel languageModel = chatMessageContext.getLanguageModel();
         customChatModel.setModelName(languageModel.getModelName() == null ? TEST_MODEL : languageModel.getModelName());

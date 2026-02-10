@@ -7,6 +7,7 @@ import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
@@ -21,6 +22,12 @@ import java.util.List;
 
 @Slf4j
 public class MCPListenerService implements ChatModelListener {
+
+    private final Project project;
+
+    public MCPListenerService(Project project) {
+        this.project = project;
+    }
 
     @Override
     public void onRequest(@NotNull ChatModelRequestContext requestContext) {
@@ -74,7 +81,7 @@ public class MCPListenerService implements ChatModelListener {
         }
     }
 
-    private static void postAgentMessage(@NotNull String text) {
+    private void postAgentMessage(@NotNull String text) {
         if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
             return;
         }
@@ -82,6 +89,7 @@ public class MCPListenerService implements ChatModelListener {
             AgentMessage message = AgentMessage.builder()
                     .type(AgentType.INTERMEDIATE_RESPONSE)
                     .result(text)
+                    .projectLocationHash(project != null ? project.getLocationHash() : null)
                     .build();
             ApplicationManager.getApplication().getMessageBus()
                     .syncPublisher(AppTopics.AGENT_LOG_MSG)

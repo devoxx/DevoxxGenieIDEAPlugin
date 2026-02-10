@@ -27,7 +27,7 @@ public class GroqChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
-            .listeners(getListener())
+            .listeners(getListener(customChatModel.getProject()))
             .build();
     }
 

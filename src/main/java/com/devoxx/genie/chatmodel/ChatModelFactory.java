@@ -8,6 +8,7 @@ import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.mcp.MCPListenerService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
@@ -64,12 +65,12 @@ public interface ChatModelFactory {
      */
     default void resetModels() {}
 
-    default List<ChatModelListener> getListener() {
+    default List<ChatModelListener> getListener(Project project) {
         // Attach MCPListenerService when MCP is enabled (for MCP tool logging)
         // or when agent mode is enabled (for intermediate response logging to Agent Logs)
         if (MCPService.isMCPEnabled() ||
                 Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())) {
-            return List.of(new MCPListenerService());
+            return List.of(new MCPListenerService(project));
         }
         return List.of();
     }

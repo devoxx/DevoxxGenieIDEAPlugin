@@ -31,7 +31,7 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .topP(customChatModel.getTopP())
                 .maxRetries(customChatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .listeners(getListener());
+                .listeners(getListener(customChatModel.getProject()));
 
         // Pass context window to Ollama if available (fixes issue #804)
         if (customChatModel.getContextWindow() != null) {
