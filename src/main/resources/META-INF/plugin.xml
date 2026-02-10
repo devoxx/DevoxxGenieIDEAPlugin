@@ -45,6 +45,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.8</h2>
+        <UL>
+            <LI>Automated test execution: new run_tests agent tool that auto-detects build systems (Gradle/Maven/npm/Cargo/Go/Make), runs tests, and returns structured results (#863)</LI>
+            <LI>Agent iterates on test failures: system prompt instructs the LLM to run tests after code changes and fix until they pass</LI>
+            <LI>Configurable test execution settings: timeout, custom test command with {target} placeholder</LI>
+        </UL>
         <h2>v0.9.7</h2>
         <UL>
             <LI>Spec Driven Development (SDD) feature with Backlog.md integration, Kanban board, and enhanced Spec Browser (#862)</LI>
