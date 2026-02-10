@@ -1,11 +1,13 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.spec.BacklogDocument;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.BulkFileListener;
@@ -21,14 +23,18 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Project-scoped service that discovers, parses, and caches Backlog.md task spec files.
+ * Project-scoped service that discovers, parses, and caches Backlog.md task spec files and documents.
  * Watches for file system changes in the spec directory (default: "backlog/").
+ * Provides write operations for creating, updating, completing, and archiving tasks and documents.
  */
 @Slf4j
 @Service(Service.Level.PROJECT)
@@ -36,7 +42,9 @@ public final class SpecService implements Disposable {
 
     private final Project project;
     private final Map<String, TaskSpec> specCache = new ConcurrentHashMap<>();
+    private final Map<String, BacklogDocument> documentCache = new ConcurrentHashMap<>();
     private final List<Runnable> changeListeners = new ArrayList<>();
+    private final ReentrantLock writeLock = new ReentrantLock();
     private MessageBusConnection messageBusConnection;
 
     public SpecService(@NotNull Project project) {
@@ -48,6 +56,8 @@ public final class SpecService implements Disposable {
     public static SpecService getInstance(@NotNull Project project) {
         return project.getService(SpecService.class);
     }
+
+    // ===== Task Read Operations =====
 
     /**
      * Returns all cached task specs.
@@ -95,22 +105,307 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Force a full refresh of the spec cache by re-scanning the spec directory.
+     * Returns specs matching the given filters.
      */
-    public void refresh() {
-        specCache.clear();
+    public @NotNull List<TaskSpec> getSpecsByFilters(@Nullable String status,
+                                                      @Nullable String assignee,
+                                                      @Nullable List<String> labels,
+                                                      @Nullable String search,
+                                                      int limit) {
+        Stream<TaskSpec> stream = specCache.values().stream();
 
-        Path specDir = getSpecDirectoryPath();
-        if (specDir == null || !Files.isDirectory(specDir)) {
-            log.debug("Spec directory not found for project: {}", project.getName());
-            return;
+        if (status != null && !status.isEmpty()) {
+            stream = stream.filter(s -> status.equalsIgnoreCase(s.getStatus()));
+        }
+        if (assignee != null && !assignee.isEmpty()) {
+            stream = stream.filter(s -> s.getAssignees() != null &&
+                    s.getAssignees().stream().anyMatch(a -> a.equalsIgnoreCase(assignee)));
+        }
+        if (labels != null && !labels.isEmpty()) {
+            stream = stream.filter(s -> s.getLabels() != null &&
+                    labels.stream().allMatch(l -> s.getLabels().stream().anyMatch(sl -> sl.equalsIgnoreCase(l))));
+        }
+        if (search != null && !search.isEmpty()) {
+            String lowerSearch = search.toLowerCase();
+            stream = stream.filter(s ->
+                    (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerSearch)) ||
+                    (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerSearch)) ||
+                    (s.getId() != null && s.getId().toLowerCase().contains(lowerSearch)));
         }
 
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+
+        return stream.collect(Collectors.toList());
+    }
+
+    /**
+     * Search specs by query string matching title and description.
+     */
+    public @NotNull List<TaskSpec> searchSpecs(@NotNull String query,
+                                                @Nullable String status,
+                                                @Nullable String priority,
+                                                int limit) {
+        String lowerQuery = query.toLowerCase();
+        Stream<TaskSpec> stream = specCache.values().stream()
+                .filter(s ->
+                        (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerQuery)) ||
+                        (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerQuery)));
+
+        if (status != null && !status.isEmpty()) {
+            stream = stream.filter(s -> status.equalsIgnoreCase(s.getStatus()));
+        }
+        if (priority != null && !priority.isEmpty()) {
+            stream = stream.filter(s -> priority.equalsIgnoreCase(s.getPriority()));
+        }
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+
+        return stream.collect(Collectors.toList());
+    }
+
+    // ===== Task Write Operations =====
+
+    /**
+     * Creates a new task file and returns the created spec.
+     */
+    public @NotNull TaskSpec createTask(@NotNull TaskSpec spec) throws IOException {
+        writeLock.lock();
         try {
-            discoverAndParseSpecs(specDir);
-            log.info("Loaded {} task specs from {}", specCache.size(), specDir);
-        } catch (IOException e) {
-            log.warn("Failed to scan spec directory: {}", e.getMessage());
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            if (spec.getId() == null || spec.getId().isEmpty()) {
+                spec.setId(configService.getNextTaskId());
+            }
+            if (spec.getCreatedAt() == null) {
+                spec.setCreatedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+
+            Path tasksDir = configService.getTasksDir();
+            if (tasksDir == null) {
+                throw new IOException("Cannot determine tasks directory");
+            }
+            Files.createDirectories(tasksDir);
+
+            String fileName = buildTaskFileName(spec.getId(), spec.getTitle());
+            Path filePath = tasksDir.resolve(fileName);
+            spec.setFilePath(filePath.toAbsolutePath().toString());
+
+            String content = SpecFrontmatterGenerator.generate(spec);
+            Files.writeString(filePath, content, StandardCharsets.UTF_8);
+            refreshVfs();
+            refresh();
+            return spec;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Updates an existing task file on disk.
+     */
+    public void updateTask(@NotNull TaskSpec spec) throws IOException {
+        writeLock.lock();
+        try {
+            if (spec.getFilePath() == null) {
+                throw new IOException("Task has no file path");
+            }
+            spec.setUpdatedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            String content = SpecFrontmatterGenerator.generate(spec);
+            Files.writeString(Paths.get(spec.getFilePath()), content, StandardCharsets.UTF_8);
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Completes a task by setting status to "Done". The file stays in place.
+     * Use archiveTask() to move it to the archive directory.
+     */
+    public void completeTask(@NotNull String id) throws IOException {
+        writeLock.lock();
+        try {
+            TaskSpec spec = getSpec(id);
+            if (spec == null) {
+                throw new IOException("Task not found: " + id);
+            }
+
+            spec.setStatus("Done");
+            spec.setUpdatedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+
+            String content = SpecFrontmatterGenerator.generate(spec);
+            Files.writeString(Paths.get(spec.getFilePath()), content, StandardCharsets.UTF_8);
+
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Archives a task by moving it to archive/tasks/ directory.
+     */
+    public void archiveTask(@NotNull String id) throws IOException {
+        writeLock.lock();
+        try {
+            TaskSpec spec = getSpec(id);
+            if (spec == null) {
+                throw new IOException("Task not found: " + id);
+            }
+
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            Path archiveDir = configService.getArchiveTasksDir();
+            if (archiveDir == null) {
+                throw new IOException("Cannot determine archive directory");
+            }
+            Files.createDirectories(archiveDir);
+
+            Path source = Paths.get(spec.getFilePath());
+            Path target = archiveDir.resolve(source.getFileName());
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    // ===== Document Operations =====
+
+    /**
+     * Returns all cached documents.
+     */
+    public @NotNull List<BacklogDocument> getAllDocuments() {
+        return new ArrayList<>(documentCache.values());
+    }
+
+    /**
+     * Returns a document by its ID.
+     */
+    public @Nullable BacklogDocument getDocument(@NotNull String id) {
+        return documentCache.values().stream()
+                .filter(doc -> id.equalsIgnoreCase(doc.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Creates a new document file.
+     */
+    public @NotNull BacklogDocument createDocument(@NotNull String title, @NotNull String content) throws IOException {
+        writeLock.lock();
+        try {
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            String id = configService.getNextDocumentId();
+
+            Path docsDir = configService.getDocsDir();
+            if (docsDir == null) {
+                throw new IOException("Cannot determine docs directory");
+            }
+            Files.createDirectories(docsDir);
+
+            BacklogDocument doc = BacklogDocument.builder()
+                    .id(id)
+                    .title(title)
+                    .content(content)
+                    .build();
+
+            String fileName = id.replace(' ', '-') + ".md";
+            Path filePath = docsDir.resolve(fileName);
+            doc.setFilePath(filePath.toAbsolutePath().toString());
+
+            String fileContent = SpecFrontmatterGenerator.generateDocument(doc);
+            Files.writeString(filePath, fileContent, StandardCharsets.UTF_8);
+            refreshVfs();
+            refresh();
+            return doc;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Updates an existing document.
+     */
+    public void updateDocument(@NotNull String id, @NotNull String content, @Nullable String title) throws IOException {
+        writeLock.lock();
+        try {
+            BacklogDocument doc = getDocument(id);
+            if (doc == null) {
+                throw new IOException("Document not found: " + id);
+            }
+            doc.setContent(content);
+            if (title != null && !title.isEmpty()) {
+                doc.setTitle(title);
+            }
+
+            String fileContent = SpecFrontmatterGenerator.generateDocument(doc);
+            Files.writeString(Paths.get(doc.getFilePath()), fileContent, StandardCharsets.UTF_8);
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Search documents by query string matching title and content.
+     */
+    public @NotNull List<BacklogDocument> searchDocuments(@NotNull String query, int limit) {
+        String lowerQuery = query.toLowerCase();
+        Stream<BacklogDocument> stream = documentCache.values().stream()
+                .filter(d ->
+                        (d.getTitle() != null && d.getTitle().toLowerCase().contains(lowerQuery)) ||
+                        (d.getContent() != null && d.getContent().toLowerCase().contains(lowerQuery)));
+
+        if (limit > 0) {
+            stream = stream.limit(limit);
+        }
+        return stream.collect(Collectors.toList());
+    }
+
+    /**
+     * List documents with optional search filter.
+     */
+    public @NotNull List<BacklogDocument> listDocuments(@Nullable String search) {
+        if (search == null || search.isEmpty()) {
+            return getAllDocuments();
+        }
+        return searchDocuments(search, 0);
+    }
+
+    // ===== Refresh & Listeners =====
+
+    /**
+     * Force a full refresh of all caches by re-scanning the spec directory.
+     * Uses writeLock to prevent race conditions between VFS watcher and explicit refreshes.
+     */
+    public void refresh() {
+        writeLock.lock();
+        try {
+            specCache.clear();
+            documentCache.clear();
+
+            Path specDir = getSpecDirectoryPath();
+            if (specDir == null || !Files.isDirectory(specDir)) {
+                log.debug("Spec directory not found for project: {}", project.getName());
+                return;
+            }
+
+            try {
+                discoverAndParseSpecs(specDir);
+                discoverAndParseDocs(specDir);
+                log.info("Loaded {} task specs and {} documents from {}", specCache.size(), documentCache.size(), specDir);
+            } catch (IOException e) {
+                log.warn("Failed to scan spec directory: {}", e.getMessage());
+            }
+        } finally {
+            writeLock.unlock();
         }
 
         notifyListeners();
@@ -124,11 +419,43 @@ public final class SpecService implements Disposable {
     }
 
     private void discoverAndParseSpecs(@NotNull Path specDir) throws IOException {
-        // Scan all .md files recursively in the backlog directory
-        try (Stream<Path> files = Files.walk(specDir)) {
+        // Scan .md files in tasks/, completed/, and root of spec dir (but not docs/)
+        Path tasksDir = specDir.resolve("tasks");
+        Path completedDir = specDir.resolve("completed");
+
+        scanTasksIn(tasksDir);
+        scanTasksIn(completedDir);
+
+        // Also scan root-level .md files (backward compatible with flat layout)
+        try (Stream<Path> files = Files.list(specDir)) {
             files.filter(p -> p.toString().endsWith(".md"))
                     .filter(Files::isRegularFile)
                     .forEach(this::parseAndCacheSpec);
+        }
+    }
+
+    private void scanTasksIn(@NotNull Path dir) {
+        if (!Files.isDirectory(dir)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(dir)) {
+            files.filter(p -> p.toString().endsWith(".md"))
+                    .filter(Files::isRegularFile)
+                    .forEach(this::parseAndCacheSpec);
+        } catch (IOException e) {
+            log.warn("Failed to scan tasks in: {}", dir);
+        }
+    }
+
+    private void discoverAndParseDocs(@NotNull Path specDir) throws IOException {
+        Path docsDir = specDir.resolve("docs");
+        if (!Files.isDirectory(docsDir)) {
+            return;
+        }
+        try (Stream<Path> files = Files.walk(docsDir)) {
+            files.filter(p -> p.toString().endsWith(".md"))
+                    .filter(Files::isRegularFile)
+                    .forEach(this::parseAndCacheDocument);
         }
     }
 
@@ -143,6 +470,52 @@ public final class SpecService implements Disposable {
         } catch (IOException e) {
             log.warn("Failed to read spec file: {}", file, e);
         }
+    }
+
+    private void parseAndCacheDocument(@NotNull Path file) {
+        try {
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            BacklogDocument doc = parseDocument(content, file.toAbsolutePath().toString());
+            if (doc != null && doc.getId() != null) {
+                doc.setLastModified(Files.getLastModifiedTime(file).toMillis());
+                documentCache.put(doc.getFilePath(), doc);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to read document file: {}", file, e);
+        }
+    }
+
+    private @Nullable BacklogDocument parseDocument(@NotNull String content, @NotNull String filePath) {
+        // Reuse frontmatter regex pattern
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(
+                "\\A---\\s*\\n(.*?)\\n---\\s*\\n?(.*)", java.util.regex.Pattern.DOTALL
+        ).matcher(content);
+
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        String frontmatter = matcher.group(1);
+        String body = matcher.group(2).trim();
+
+        BacklogDocument.BacklogDocumentBuilder builder = BacklogDocument.builder();
+        builder.filePath(filePath);
+        builder.content(body);
+
+        for (String line : frontmatter.split("\\n")) {
+            String trimmed = line.trim();
+            int colonIndex = trimmed.indexOf(':');
+            if (colonIndex > 0) {
+                String key = trimmed.substring(0, colonIndex).trim();
+                String value = SpecFrontmatterParser.stripQuotes(trimmed.substring(colonIndex + 1).trim());
+                switch (key.toLowerCase()) {
+                    case "id" -> builder.id(value);
+                    case "title" -> builder.title(value);
+                }
+            }
+        }
+
+        return builder.build();
     }
 
     private @Nullable Path getSpecDirectoryPath() {
@@ -199,6 +572,33 @@ public final class SpecService implements Disposable {
         return path.startsWith(specDir.toString()) && path.endsWith(".md");
     }
 
+    /**
+     * Builds a task filename like "task-3 - My-Task-Title.md" (lowercase filename, ID stays uppercase in frontmatter).
+     */
+    private static @NotNull String buildTaskFileName(@NotNull String id, @Nullable String title) {
+        String idPart = id.toLowerCase().replace(' ', '-');
+        if (title == null || title.isBlank()) {
+            return idPart + ".md";
+        }
+        String titlePart = title.trim()
+                .replaceAll("[^a-zA-Z0-9\\s-]", "")
+                .replaceAll("\\s+", "-");
+        return idPart + " - " + titlePart + ".md";
+    }
+
+    /**
+     * Triggers a VFS refresh for the spec directory so IntelliJ's VFS picks up changes
+     * made via java.nio.file operations.
+     */
+    private void refreshVfs() {
+        Path specDir = getSpecDirectoryPath();
+        if (specDir == null) return;
+        VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByPath(specDir.toAbsolutePath().toString());
+        if (vf != null) {
+            vf.refresh(false, true);
+        }
+    }
+
     private void notifyListeners() {
         for (Runnable listener : changeListeners) {
             listener.run();
@@ -211,6 +611,7 @@ public final class SpecService implements Disposable {
             messageBusConnection.disconnect();
         }
         specCache.clear();
+        documentCache.clear();
         changeListeners.clear();
     }
 }
