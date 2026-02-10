@@ -45,6 +45,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.7</h2>
+        <UL>
+            <LI>Spec Driven Development (SDD) feature with Backlog.md integration, Kanban board, and enhanced Spec Browser (#862)</LI>
+            <LI>17 granular backlog tools replacing manage_spec for full CRUD operations on tasks, documents, and milestones</LI>
+            <LI>Init Backlog button for quick project setup</LI>
+            <LI>Remove deprecated o1-mini model from OpenAI registry</LI>
+            <LI>Bump the gradle-dependencies group with 18 updates (#861)</LI>
+        </UL>
         <h2>v0.9.6</h2>
         <UL>
             <LI>Inline code completion using Fill-in-the-Middle (FIM) models with configurable provider/model settings (#857)</LI>

@@ -2,6 +2,19 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.7]
+
+### Added
+- Spec Driven Development (SDD) feature with Backlog.md integration, Kanban board, and enhanced Spec Browser (#862)
+- 17 granular backlog tools replacing manage_spec for full CRUD operations on tasks, documents, and milestones
+- Init Backlog button for quick project setup
+
+### Changed
+- Remove deprecated o1-mini model from OpenAI registry
+
+### Dependencies
+- Bump the gradle-dependencies group across 1 directory with 18 updates (#861)
+
 ## [0.9.6]
 
 ### Added
