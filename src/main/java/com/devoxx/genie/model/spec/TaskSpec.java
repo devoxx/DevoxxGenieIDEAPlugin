@@ -33,17 +33,39 @@ public class TaskSpec {
     @Builder.Default
     private List<AcceptanceCriterion> acceptanceCriteria = new ArrayList<>();
     @Builder.Default
-    private List<String> definitionOfDone = new ArrayList<>();
+    private List<DefinitionOfDoneItem> definitionOfDone = new ArrayList<>();
     private String description;
     private String filePath;
     private transient VirtualFile virtualFile;
     private long lastModified;
+
+    // New fields for full Backlog.md compatibility
+    private String milestone;
+    private String createdAt;
+    private String updatedAt;
+    private String parentTaskId;
+    @Builder.Default
+    private List<String> references = new ArrayList<>();
+    @Builder.Default
+    private List<String> documentation = new ArrayList<>();
+    private String implementationPlan;
+    private String implementationNotes;
+    private String finalSummary;
+    @Builder.Default
+    private int ordinal = 1000;
 
     /**
      * Returns the number of checked acceptance criteria.
      */
     public long getCheckedAcceptanceCriteriaCount() {
         return acceptanceCriteria.stream().filter(AcceptanceCriterion::isChecked).count();
+    }
+
+    /**
+     * Returns the number of checked definition-of-done items.
+     */
+    public long getCheckedDefinitionOfDoneCount() {
+        return definitionOfDone.stream().filter(DefinitionOfDoneItem::isChecked).count();
     }
 
     /**
