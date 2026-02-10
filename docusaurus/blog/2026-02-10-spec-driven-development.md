@@ -4,7 +4,7 @@ title: "Stop Prompting, Start Specifying: Introducing Spec Driven Development in
 authors: [stephanj]
 tags: [spec driven development, SDD, agent mode, backlog.md, kanban, agentic AI, IntelliJ IDEA, LLM, Java, open source]
 date: 2026-02-10
-description: "Introducing Spec Driven Development (SDD) in DevoxxGenie v0.9.7 — define tasks as structured specs with acceptance criteria, browse them in a Kanban board, and let the AI agent implement them autonomously."
+description: "Introducing Spec Driven Development (SDD) in DevoxxGenie v0.9.7 — define structured task specs with acceptance criteria and let the AI agent implement them."
 keywords: [devoxxgenie, spec driven development, sdd, backlog.md, task specs, kanban board, agent mode, acceptance criteria, milestones, agentic programming]
 image: /img/devoxxgenie-social-card.jpg
 ---
@@ -44,7 +44,7 @@ Most AI-assisted coding today is conversational. You describe what you want in n
 
 SDD flips the workflow. Instead of writing code instructions in chat, you write **task specifications** — structured markdown files with a title, description, acceptance criteria, priority, labels, dependencies, and milestones. These specs live in a `backlog/` directory alongside your code, version-controlled like everything else.
 
-I've intentionally aligned with the [Backlog.md](https://backlog.md) directory structure and workflow, so you can use their board or browser view side-by-side with the new IDEA SDD views that DevoxxGenie introduces.
+I've intentionally aligned with the [Backlog.md](https://github.com/backlog-md/backlog.md) directory structure and workflow, so you can use their board or browser view side-by-side with the new IDEA SDD views that DevoxxGenie introduces.
 
 The workflow is straightforward:
 

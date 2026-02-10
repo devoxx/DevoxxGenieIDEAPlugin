@@ -63,7 +63,7 @@ const config = {
             },
             'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
             'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
-            'softwareVersion': '0.9.2',
+            'softwareVersion': '0.9.7',
             'author': {
               '@type': 'Organization',
               'name': 'Devoxx',

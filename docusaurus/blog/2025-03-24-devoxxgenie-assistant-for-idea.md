@@ -5,6 +5,7 @@ authors: [devoxx]
 tags: [announcements, AI, IntelliJ IDEA, code assistant, LLM, Java]
 date: 2025-03-24
 description: DevoxxGenie is a powerful AI-powered assistant for IntelliJ IDEA that helps developers be more productive by offering both local and cloud-based LLM integration.
+keywords: [devoxxgenie, intellij plugin, ai assistant, code assistant, llm, java, ollama, openai, anthropic, open source]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
