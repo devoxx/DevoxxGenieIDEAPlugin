@@ -118,4 +118,59 @@ class SpecSearchServiceTest {
 
         assertThat(payload).contains("spring security");
     }
+
+    // === Fuzzy fallback integration tests (via BM25SearchEngine + FuzzySearchEngine directly) ===
+
+    @Test
+    void fuzzyEngineShouldFindTypoMatches() {
+        // Verify the fuzzy engine catches typos that BM25 misses entirely
+        BM25SearchEngine bm25 = new BM25SearchEngine();
+        FuzzySearchEngine fuzzy = new FuzzySearchEngine();
+
+        bm25.index("task-1", "implement authentication module");
+        fuzzy.index("task-1", "implement authentication module");
+
+        // BM25 requires exact token match — "authentcation" won't match "authentication"
+        List<BM25SearchEngine.ScoredResult> bm25Results = bm25.search("authentcation", 3);
+        assertThat(bm25Results).isEmpty();
+
+        // Fuzzy catches it
+        List<BM25SearchEngine.ScoredResult> fuzzyResults = fuzzy.search("authentcation", 3);
+        assertThat(fuzzyResults).isNotEmpty();
+        assertThat(fuzzyResults.get(0).docId()).isEqualTo("task-1");
+    }
+
+    @Test
+    void bm25AndFuzzyScoresCanBeMerged() {
+        BM25SearchEngine bm25 = new BM25SearchEngine();
+        FuzzySearchEngine fuzzy = new FuzzySearchEngine();
+
+        // Two docs: one with exact match, one with only fuzzy match
+        bm25.index("task-exact", "implement authentication service");
+        bm25.index("task-fuzzy-only", "implement authorization service");
+        fuzzy.index("task-exact", "implement authentication service");
+        fuzzy.index("task-fuzzy-only", "implement authorization service");
+
+        // BM25 finds only the exact match
+        List<BM25SearchEngine.ScoredResult> bm25Results = bm25.search("authentication", 3);
+        assertThat(bm25Results).hasSize(1);
+        assertThat(bm25Results.get(0).docId()).isEqualTo("task-exact");
+
+        // Fuzzy finds both (authorization is similar to authentication)
+        List<BM25SearchEngine.ScoredResult> fuzzyResults = fuzzy.search("authentication", 3);
+        assertThat(fuzzyResults).hasSizeGreaterThanOrEqualTo(2);
+
+        // Merged: both should appear, with exact match ranked higher
+        java.util.Map<String, Double> merged = new java.util.LinkedHashMap<>();
+        for (BM25SearchEngine.ScoredResult r : bm25Results) {
+            merged.put(r.docId(), r.score());
+        }
+        for (BM25SearchEngine.ScoredResult r : fuzzyResults) {
+            merged.merge(r.docId(), r.score() * 0.3, Double::sum);
+        }
+
+        assertThat(merged).containsKey("task-exact");
+        assertThat(merged).containsKey("task-fuzzy-only");
+        assertThat(merged.get("task-exact")).isGreaterThan(merged.get("task-fuzzy-only"));
+    }
 }

@@ -10,14 +10,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Finds semantically related task specs using BM25 ranking over the in-memory spec cache.
+ * Finds semantically related task specs using a two-pass ranking strategy:
+ * <ol>
+ *   <li><b>BM25</b> — ranks by term frequency-inverse document frequency with length normalization.
+ *       Catches exact and stemmed term overlap.</li>
+ *   <li><b>Fuzzy fallback</b> — when BM25 produces fewer results than requested, a Levenshtein
+ *       edit-distance scorer fills in matches where terminology differs slightly
+ *       (e.g. "auth" &rarr; "authentication", typos).</li>
+ * </ol>
  * <p>
- * This service builds a searchable text representation of each spec (title + description +
- * labels + acceptance criteria) and uses BM25 to rank specs against a query derived from
- * a source task or free-text query.
- * <p>
- * The index is rebuilt on each search call to ensure freshness against the live SpecService cache.
- * This is efficient because the number of specs in a typical backlog is small (tens to low hundreds).
+ * Both engines build a searchable text representation of each spec (title + description +
+ * labels + acceptance criteria) and the index is rebuilt on each search call to ensure
+ * freshness against the live SpecService cache.  This is efficient because the number of
+ * specs in a typical backlog is small (tens to low hundreds).
  */
 @Slf4j
 public class SpecSearchService {
@@ -63,6 +68,12 @@ public class SpecSearchService {
         return rankSpecs(query, allSpecs, null, limit);
     }
 
+    /**
+     * Weight applied to fuzzy scores when merging with BM25 scores.
+     * Fuzzy matches are less precise, so they contribute less to the final ranking.
+     */
+    private static final double FUZZY_WEIGHT = 0.3;
+
     private @NotNull List<ScoredSpec> rankSpecs(@NotNull String query,
                                                  @NotNull List<TaskSpec> specs,
                                                  String excludeId,
@@ -71,7 +82,8 @@ public class SpecSearchService {
             return Collections.emptyList();
         }
 
-        BM25SearchEngine engine = new BM25SearchEngine();
+        BM25SearchEngine bm25 = new BM25SearchEngine();
+        FuzzySearchEngine fuzzy = new FuzzySearchEngine();
         Map<String, TaskSpec> specById = new HashMap<>();
 
         for (TaskSpec spec : specs) {
@@ -79,14 +91,39 @@ public class SpecSearchService {
             if (excludeId != null && excludeId.equalsIgnoreCase(spec.getId())) continue;
 
             String docText = buildSearchPayload(spec);
-            engine.index(spec.getId(), docText);
+            bm25.index(spec.getId(), docText);
+            fuzzy.index(spec.getId(), docText);
             specById.put(spec.getId(), spec);
         }
 
-        List<BM25SearchEngine.ScoredResult> results = engine.search(query, limit);
+        // Pass 1: BM25 exact-term ranking
+        List<BM25SearchEngine.ScoredResult> bm25Results = bm25.search(query, limit);
 
-        return results.stream()
-                .map(r -> new ScoredSpec(specById.get(r.docId()), r.score()))
+        // If BM25 filled the requested limit, return those — no fallback needed
+        if (bm25Results.size() >= limit) {
+            return bm25Results.stream()
+                    .map(r -> new ScoredSpec(specById.get(r.docId()), r.score()))
+                    .filter(s -> s.spec() != null)
+                    .collect(Collectors.toList());
+        }
+
+        // Pass 2: Fuzzy fallback — find additional candidates
+        // Request more from fuzzy to have room after deduplication
+        List<BM25SearchEngine.ScoredResult> fuzzyResults = fuzzy.search(query, limit * 2);
+
+        // Merge: BM25 scores take priority, fuzzy fills gaps
+        Map<String, Double> mergedScores = new LinkedHashMap<>();
+        for (BM25SearchEngine.ScoredResult r : bm25Results) {
+            mergedScores.put(r.docId(), r.score());
+        }
+        for (BM25SearchEngine.ScoredResult r : fuzzyResults) {
+            mergedScores.merge(r.docId(), r.score() * FUZZY_WEIGHT, Double::sum);
+        }
+
+        return mergedScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(limit)
+                .map(e -> new ScoredSpec(specById.get(e.getKey()), e.getValue()))
                 .filter(s -> s.spec() != null)
                 .collect(Collectors.toList());
     }
