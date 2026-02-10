@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 - Configurable test execution settings: enable/disable toggle, timeout (default 5 min), custom test command with `{target}` placeholder
 - Test output parsing for Gradle, Maven Surefire, and Jest with pass/fail counts and failed test names
 
+### Fixed
+- Prevent agent and MCP logs from leaking across projects (#867)
+
 ### Documentation
 - Add "Automated Test Execution" section to Agent Mode docs with build system table, configuration, and troubleshooting
 
