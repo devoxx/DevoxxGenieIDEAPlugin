@@ -51,6 +51,27 @@ public final class ToolArgumentParser {
     }
 
     @NotNull
+    public static List<Integer> getIntArray(String arguments, String key) {
+        try {
+            JsonObject json = JsonParser.parseString(arguments).getAsJsonObject();
+            JsonElement element = json.get(key);
+            if (element == null || element.isJsonNull() || !element.isJsonArray()) {
+                return Collections.emptyList();
+            }
+            JsonArray array = element.getAsJsonArray();
+            List<Integer> result = new ArrayList<>(array.size());
+            for (JsonElement item : array) {
+                if (item != null && !item.isJsonNull()) {
+                    result.add(item.getAsInt());
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    @NotNull
     public static List<String> getStringArray(String arguments, String key) {
         try {
             JsonObject json = JsonParser.parseString(arguments).getAsJsonObject();

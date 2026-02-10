@@ -4,7 +4,6 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonArraySchema;
-import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -117,26 +116,9 @@ public class BuiltInToolProvider implements ToolProvider {
                 new RunCommandToolExecutor(project)
         );
 
-        // manage_spec — only when SDD is enabled
+        // Backlog tools — only when SDD is enabled
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSpecBrowserEnabled())) {
-            tools.put(
-                    ToolSpecification.builder()
-                            .name("manage_spec")
-                            .description("List, view, and update task specs in the project backlog. " +
-                                    "Operations: list_specs (no params), view_spec (task_id), " +
-                                    "update_spec_status (task_id, status), check_acceptance_criterion (task_id, criterion_index)")
-                            .parameters(JsonObjectSchema.builder()
-                                    .addStringProperty("operation", "The operation: list_specs, view_spec, update_spec_status, or check_acceptance_criterion")
-                                    .addStringProperty("task_id", "The task ID (required for view_spec, update_spec_status, check_acceptance_criterion)")
-                                    .addStringProperty("status", "New status value (required for update_spec_status)")
-                                    .addProperty("criterion_index", JsonIntegerSchema.builder()
-                                            .description("Zero-based index of the acceptance criterion to check (required for check_acceptance_criterion)")
-                                            .build())
-                                    .required("operation")
-                                    .build())
-                            .build(),
-                    new SpecToolExecutor(project)
-            );
+            registerBacklogTools(project);
         }
 
         // parallel_explore — only when enabled in settings
@@ -163,6 +145,35 @@ public class BuiltInToolProvider implements ToolProvider {
                     parallelExploreExecutor
             );
         }
+    }
+
+    private void registerBacklogTools(@NotNull Project project) {
+        BacklogTaskToolExecutor taskExecutor = new BacklogTaskToolExecutor(project);
+        BacklogDocumentToolExecutor documentExecutor = new BacklogDocumentToolExecutor(project);
+        BacklogMilestoneToolExecutor milestoneExecutor = new BacklogMilestoneToolExecutor(project);
+
+        // Task tools (7)
+        tools.put(BacklogToolSpecifications.taskCreate(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskList(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskSearch(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskView(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskEdit(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskComplete(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskArchive(), taskExecutor);
+
+        // Document tools (5)
+        tools.put(BacklogToolSpecifications.documentList(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentView(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentCreate(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentUpdate(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentSearch(), documentExecutor);
+
+        // Milestone tools (5)
+        tools.put(BacklogToolSpecifications.milestoneList(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneAdd(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneRename(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneRemove(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneArchive(), milestoneExecutor);
     }
 
     /**
