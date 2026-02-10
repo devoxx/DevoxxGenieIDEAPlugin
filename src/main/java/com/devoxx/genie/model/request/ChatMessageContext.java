@@ -1,6 +1,7 @@
 package com.devoxx.genie.model.request;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.spec.TaskSpec;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -50,6 +51,10 @@ public class ChatMessageContext {
     @Getter
     @Setter
     private List<VirtualFile> fileReferences;
+
+    @Getter
+    @Setter
+    private TaskSpec activeTaskSpec;
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;

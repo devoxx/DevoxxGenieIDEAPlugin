@@ -4,6 +4,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonArraySchema;
+import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -115,6 +116,28 @@ public class BuiltInToolProvider implements ToolProvider {
                         .build(),
                 new RunCommandToolExecutor(project)
         );
+
+        // manage_spec — only when SDD is enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSpecBrowserEnabled())) {
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("manage_spec")
+                            .description("List, view, and update task specs in the project backlog. " +
+                                    "Operations: list_specs (no params), view_spec (task_id), " +
+                                    "update_spec_status (task_id, status), check_acceptance_criterion (task_id, criterion_index)")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addStringProperty("operation", "The operation: list_specs, view_spec, update_spec_status, or check_acceptance_criterion")
+                                    .addStringProperty("task_id", "The task ID (required for view_spec, update_spec_status, check_acceptance_criterion)")
+                                    .addStringProperty("status", "New status value (required for update_spec_status)")
+                                    .addProperty("criterion_index", JsonIntegerSchema.builder()
+                                            .description("Zero-based index of the acceptance criterion to check (required for check_acceptance_criterion)")
+                                            .build())
+                                    .required("operation")
+                                    .build())
+                            .build(),
+                    new SpecToolExecutor(project)
+            );
+        }
 
         // parallel_explore — only when enabled in settings
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getParallelExploreEnabled())) {

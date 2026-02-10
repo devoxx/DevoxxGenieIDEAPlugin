@@ -226,6 +226,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter(AccessLevel.NONE)
     private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
+    // Spec Driven Development settings
+    private Boolean specBrowserEnabled = false;
+    private String specDirectory = "backlog";
+    private Boolean autoInjectSpecContext = true;
+
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
     private String inlineCompletionModel = "";
