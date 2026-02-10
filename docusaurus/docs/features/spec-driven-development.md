@@ -10,6 +10,18 @@ image: /img/devoxxgenie-social-card.jpg
 
 Spec Driven Development (SDD) is a workflow where you define **what** needs to be built as structured task specifications, and the LLM agent figures out **how** to build it. Instead of writing code instructions in chat, you write clear specs with acceptance criteria, and the agent implements them autonomously using its built-in tools.
 
+<div style={{textAlign: 'center', margin: '2rem 0'}}>
+<iframe
+  width="100%"
+  style={{aspectRatio: '16/9', maxWidth: '720px', borderRadius: '8px'}}
+  src="https://www.youtube.com/embed/kuicOEN4YMU"
+  title="Spec Driven Development Demo"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+</div>
+
 ## Why Spec Driven Development?
 
 Traditional AI-assisted coding relies on ad-hoc prompts: you describe what you want in natural language and hope the LLM understands. SDD takes a more disciplined approach:
