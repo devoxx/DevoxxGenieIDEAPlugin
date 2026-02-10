@@ -13,9 +13,10 @@ Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, 
 
 **🆕 AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
 
-We also support RAG-based prompt context based on your vectorized project files, Git Diff viewer, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
+
+We also support RAG-based prompt context based on your vectorized project files, Git Diff viewer, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 42K+ Downloads
