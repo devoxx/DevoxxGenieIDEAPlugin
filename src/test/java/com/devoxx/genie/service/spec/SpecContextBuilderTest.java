@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.spec;
 
 import com.devoxx.genie.model.spec.AcceptanceCriterion;
+import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,10 @@ class SpecContextBuilderTest {
                         AcceptanceCriterion.builder().index(0).text("Users can sign in with Google").checked(true).build(),
                         AcceptanceCriterion.builder().index(1).text("Users can sign in with GitHub").checked(false).build()
                 ))
-                .definitionOfDone(List.of("Unit tests pass", "No security issues"))
+                .definitionOfDone(List.of(
+                        DefinitionOfDoneItem.builder().index(0).text("Unit tests pass").checked(false).build(),
+                        DefinitionOfDoneItem.builder().index(1).text("No security issues").checked(false).build()
+                ))
                 .build();
 
         String context = SpecContextBuilder.buildContext(spec);

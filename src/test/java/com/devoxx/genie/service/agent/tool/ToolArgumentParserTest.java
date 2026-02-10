@@ -2,6 +2,8 @@ package com.devoxx.genie.service.agent.tool;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ToolArgumentParserTest {
@@ -58,5 +60,37 @@ class ToolArgumentParserTest {
     void getInt_missingKey_returnsDefault() {
         assertThat(ToolArgumentParser.getInt("{}", "count", 10))
                 .isEqualTo(10);
+    }
+
+    @Test
+    void getIntArray_validArray_returnsValues() {
+        List<Integer> result = ToolArgumentParser.getIntArray("{\"indices\": [1, 2, 3]}", "indices");
+        assertThat(result).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void getIntArray_missingKey_returnsEmptyList() {
+        assertThat(ToolArgumentParser.getIntArray("{}", "indices")).isEmpty();
+    }
+
+    @Test
+    void getIntArray_nullValue_returnsEmptyList() {
+        assertThat(ToolArgumentParser.getIntArray("{\"indices\": null}", "indices")).isEmpty();
+    }
+
+    @Test
+    void getIntArray_invalidJson_returnsEmptyList() {
+        assertThat(ToolArgumentParser.getIntArray("bad json", "indices")).isEmpty();
+    }
+
+    @Test
+    void getStringArray_validArray_returnsValues() {
+        List<String> result = ToolArgumentParser.getStringArray("{\"items\": [\"a\", \"b\"]}", "items");
+        assertThat(result).containsExactly("a", "b");
+    }
+
+    @Test
+    void getStringArray_missingKey_returnsEmptyList() {
+        assertThat(ToolArgumentParser.getStringArray("{}", "items")).isEmpty();
     }
 }
