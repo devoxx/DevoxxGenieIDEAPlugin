@@ -158,19 +158,6 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String o1Mini = O1_MINI.toString();
-        models.put(ModelProvider.OpenAI.getName() + ":" + o1Mini,
-                LanguageModel.builder()
-                        .provider(ModelProvider.OpenAI)
-                        .modelName(o1Mini)
-                        .displayName("o1-mini")
-                        .inputCost(1.10)
-                        .outputCost(4.40)
-                        .inputMaxTokens(128_000)
-                        .outputMaxTokens(65_536)
-                        .apiKeyUsed(true)
-                        .build());
-
         String gpt4 = GPT_4.toString();
         models.put(ModelProvider.OpenAI.getName() + ":" + gpt4,
                 LanguageModel.builder()
