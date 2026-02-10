@@ -6,7 +6,9 @@ import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.util.ProjectContextHolder;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
@@ -79,9 +81,14 @@ public class MCPListenerService implements ChatModelListener {
             return;
         }
         try {
+            // Get the current project context to properly scope the message
+            Project project = ProjectContextHolder.getCurrentProject();
+            String projectLocationHash = project != null ? project.getLocationHash() : null;
+
             AgentMessage message = AgentMessage.builder()
                     .type(AgentType.INTERMEDIATE_RESPONSE)
                     .result(text)
+                    .projectLocationHash(projectLocationHash)
                     .build();
             ApplicationManager.getApplication().getMessageBus()
                     .syncPublisher(AppTopics.AGENT_LOG_MSG)

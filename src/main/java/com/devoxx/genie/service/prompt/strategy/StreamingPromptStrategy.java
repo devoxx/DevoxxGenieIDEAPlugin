@@ -16,6 +16,7 @@ import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.ChatMessageContextUtil;
+import com.devoxx.genie.util.ProjectContextHolder;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.ChatMessage;
@@ -155,6 +156,8 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
         // Execute streaming using thread pool
         threadPoolManager.getPromptExecutionPool().execute(() -> {
+            // Set project context for MCPListenerService to properly scope agent messages
+            ProjectContextHolder.setCurrentProject(project);
             try {
                 String projectId = project.getLocationHash();
 
@@ -216,6 +219,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             } catch (Exception e) {
                 log.error("Error in streaming prompt execution", e);
                 streamingResponseHandler.onError(e);
+            } finally {
+                // Clear thread-local to prevent memory leaks
+                ProjectContextHolder.clear();
             }
         });
         

@@ -15,6 +15,7 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.ProjectContextHolder;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -86,6 +87,8 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
 
         // Execute the prompt using the centralized thread pool
         threadPoolManager.getPromptExecutionPool().execute(() -> {
+            // Set project context for MCPListenerService to properly scope agent messages
+            ProjectContextHolder.setCurrentProject(project);
             try {
                 // Record start time
                 long startTime = System.currentTimeMillis();
@@ -124,14 +127,17 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 
                 resultTask.complete(PromptResult.success(context));
             } catch (Exception e) {
-                if (e instanceof CancellationException || 
-                    e.getCause() instanceof CancellationException || 
+                if (e instanceof CancellationException ||
+                    e.getCause() instanceof CancellationException ||
                     Thread.currentThread().isInterrupted()) {
                     log.info("Prompt execution cancelled for context {}", context.getId());
                     resultTask.cancel(true);
                 } else {
                     handleExecutionError(e, context, resultTask, panel);
                 }
+            } finally {
+                // Clear thread-local to prevent memory leaks
+                ProjectContextHolder.clear();
             }
         });
         
@@ -177,6 +183,8 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             @NotNull PromptTask<PromptResult> resultTask) {
         
         threadPoolManager.getPromptExecutionPool().execute(() -> {
+            // Set project context for MCPListenerService to properly scope agent messages
+            ProjectContextHolder.setCurrentProject(project);
             try {
                 SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
                 Map<String, SearchResult> searchResults = semanticSearchService.search(
@@ -198,10 +206,13 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             } catch (Exception e) {
                 // Create a specific execution exception for semantic search errors
                 ExecutionException searchError = new ExecutionException(
-                    "Error performing semantic search", e, 
+                    "Error performing semantic search", e,
                     PromptException.ErrorSeverity.WARNING, true);
                 PromptErrorHandler.handleException(context.getProject(), searchError, context);
                 resultTask.complete(PromptResult.failure(context, searchError));
+            } finally {
+                // Clear thread-local to prevent memory leaks
+                ProjectContextHolder.clear();
             }
         });
     }
