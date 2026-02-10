@@ -116,6 +116,11 @@ public class BuiltInToolProvider implements ToolProvider {
                 new RunCommandToolExecutor(project)
         );
 
+        // Backlog tools — only when SDD is enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSpecBrowserEnabled())) {
+            registerBacklogTools(project);
+        }
+
         // parallel_explore — only when enabled in settings
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getParallelExploreEnabled())) {
             parallelExploreExecutor = new ParallelExploreToolExecutor(project);
@@ -140,6 +145,35 @@ public class BuiltInToolProvider implements ToolProvider {
                     parallelExploreExecutor
             );
         }
+    }
+
+    private void registerBacklogTools(@NotNull Project project) {
+        BacklogTaskToolExecutor taskExecutor = new BacklogTaskToolExecutor(project);
+        BacklogDocumentToolExecutor documentExecutor = new BacklogDocumentToolExecutor(project);
+        BacklogMilestoneToolExecutor milestoneExecutor = new BacklogMilestoneToolExecutor(project);
+
+        // Task tools (7)
+        tools.put(BacklogToolSpecifications.taskCreate(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskList(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskSearch(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskView(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskEdit(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskComplete(), taskExecutor);
+        tools.put(BacklogToolSpecifications.taskArchive(), taskExecutor);
+
+        // Document tools (5)
+        tools.put(BacklogToolSpecifications.documentList(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentView(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentCreate(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentUpdate(), documentExecutor);
+        tools.put(BacklogToolSpecifications.documentSearch(), documentExecutor);
+
+        // Milestone tools (5)
+        tools.put(BacklogToolSpecifications.milestoneList(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneAdd(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneRename(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneRemove(), milestoneExecutor);
+        tools.put(BacklogToolSpecifications.milestoneArchive(), milestoneExecutor);
     }
 
     /**

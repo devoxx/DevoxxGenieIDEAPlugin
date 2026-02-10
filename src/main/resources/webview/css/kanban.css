@@ -1,0 +1,325 @@
+/* Kanban Board Styles — uses theme-variables.css variables */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== Toolbar ===== */
+#kanban-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--light-file-refs-divider-color);
+    flex-shrink: 0;
+}
+
+.kanban-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--header-color);
+}
+
+#refresh-btn {
+    background: var(--button-bg);
+    color: var(--button-text-color);
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+#refresh-btn:hover {
+    background: var(--button-hover-bg);
+}
+
+#refresh-btn:active {
+    background: var(--button-active-bg);
+}
+
+/* ===== Board layout ===== */
+#kanban-board {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: 0;
+}
+
+/* ===== Column ===== */
+.kanban-column {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
+    background: var(--code-block-bg);
+    overflow: hidden;
+}
+
+.column-header {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 3px solid var(--devoxx-orange);
+}
+
+.column-header .column-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.column-header .task-count {
+    background: var(--button-bg);
+    color: var(--metadata-color);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Status-specific column border colors */
+.kanban-column[data-status="To Do"] .column-header {
+    border-bottom-color: #6b7280;
+}
+
+.kanban-column[data-status="In Progress"] .column-header {
+    border-bottom-color: var(--devoxx-blue);
+}
+
+.kanban-column[data-status="Done"] .column-header {
+    border-bottom-color: #22c55e;
+}
+
+.kanban-column[data-status="Draft"] .column-header {
+    border-bottom-color: #a78bfa;
+}
+
+.column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+    min-height: 60px;
+}
+
+/* Scrollbar styling */
+.column-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.column-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.column-body::-webkit-scrollbar-thumb {
+    background: var(--button-bg);
+    border-radius: 3px;
+}
+
+/* ===== Task card ===== */
+.task-card {
+    background: var(--bg-color);
+    border-radius: 5px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    cursor: grab;
+    border-left: 3px solid var(--metadata-color);
+    transition: box-shadow 0.15s, opacity 0.15s;
+    user-select: none;
+}
+
+.task-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.task-card:active {
+    cursor: grabbing;
+}
+
+/* Priority border colors */
+.task-card[data-priority="high"] {
+    border-left-color: #ef4444;
+}
+
+.task-card[data-priority="medium"] {
+    border-left-color: var(--devoxx-orange);
+}
+
+.task-card[data-priority="low"] {
+    border-left-color: #22c55e;
+}
+
+.task-card-id {
+    font-size: 11px;
+    color: var(--metadata-color);
+    margin-bottom: 3px;
+}
+
+.task-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+}
+
+/* Labels row */
+.task-card-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 5px;
+}
+
+.label-chip {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--button-bg);
+    color: var(--metadata-color);
+    white-space: nowrap;
+}
+
+/* Acceptance criteria progress */
+.task-card-progress {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--metadata-color);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--button-bg);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #22c55e;
+    border-radius: 2px;
+    transition: width 0.2s;
+}
+
+/* ===== Drag & Drop feedback ===== */
+.task-card.dragging {
+    opacity: 0.4;
+}
+
+.column-body.drag-over {
+    background: var(--button-bg);
+    border-radius: 4px;
+}
+
+.drag-ghost {
+    opacity: 0.85;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transform: rotate(2deg);
+}
+
+/* ===== Empty state ===== */
+.empty-column-msg {
+    text-align: center;
+    color: var(--metadata-color);
+    font-size: 12px;
+    padding: 20px 8px;
+    font-style: italic;
+}
+
+.empty-board-msg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--metadata-color);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px;
+}
+
+/* ===== Trash Bin ===== */
+#trash-bin {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 80px;
+    height: 80px;
+    background: var(--code-block-bg);
+    border: 2px dashed var(--metadata-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    opacity: 0.6;
+}
+
+#trash-bin:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+#trash-bin.drag-over-bin {
+    background: #ef4444;
+    border-color: #dc2626;
+    border-style: solid;
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.trash-icon {
+    font-size: 32px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.trash-label {
+    font-size: 9px;
+    color: var(--metadata-color);
+    text-align: center;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#trash-bin.drag-over-bin .trash-label {
+    color: white;
+}
+
+/* Hide trash bin when not dragging */
+#trash-bin.hidden {
+    display: none;
+}

@@ -20,7 +20,10 @@ import java.util.Set;
 public class AgentApprovalProvider implements ToolProvider {
 
     private static final Set<String> READ_ONLY_TOOLS = Set.of(
-            "read_file", "list_files", "search_files"
+            "read_file", "list_files", "search_files",
+            "backlog_task_list", "backlog_task_search", "backlog_task_view",
+            "backlog_document_list", "backlog_document_view", "backlog_document_search",
+            "backlog_milestone_list"
     );
 
     private final ToolProvider delegate;

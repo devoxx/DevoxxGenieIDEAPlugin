@@ -286,6 +286,11 @@
                              instance="com.devoxx.genie.ui.settings.appearance.AppearanceSettingsConfigurable"
                              displayName="Appearance"/>
 
+        <projectConfigurable id="com.devoxx.genie.specSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
+                             displayName="Spec Driven Development (BETA)"/>
+
         <projectConfigurable id="com.devoxx.genie.InlineCompletion"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
@@ -317,6 +322,13 @@
                     canCloseContents="true"
                     factoryClass="com.devoxx.genie.ui.window.AgentLogToolWindowFactory"/>
 
+        <toolWindow id="DevoxxGenieSpecs"
+                    anchor="right"
+                    icon="/icons/specIcon.svg"
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    factoryClass="com.devoxx.genie.ui.window.SpecBrowserToolWindowFactory"/>
+
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>
@@ -328,6 +340,8 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>

@@ -5,6 +5,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
 // Import our custom icons
+import SpecDrivenDevIcon from './icons/SpecDrivenDev';
 import MultipleLLMIcon from './icons/MultipleLLM';
 import MCPSupportIcon from './icons/MCPSupport';
 import MCPMarketplaceIcon from './icons/MCPMarketplace';
@@ -13,9 +14,18 @@ import ProjectScannerIcon from './icons/ProjectScanner';
 import InlineCompletionIcon from './icons/InlineCompletion';
 import WebSearchIcon from './icons/WebSearch';
 import DragDropIcon from './icons/DragDrop';
-import NaiveRAGIcon from './icons/NaiveRAG';
 
 const FeatureList = [
+  {
+    title: 'Spec Driven Development',
+    icon: SpecDrivenDevIcon,
+    link: '/docs/features/spec-driven-development',
+    description: (
+      <>
+        Type "Create a task for..." in the prompt to define structured specs with acceptance criteria, then let the agent implement them autonomously. Powered by Backlog.md with 17 built-in tools for full task lifecycle management.
+      </>
+    ),
+  },
   {
     title: 'Agent Mode',
     icon: SubAgentsIcon,
@@ -93,16 +103,6 @@ const FeatureList = [
     description: (
       <>
         Drag and drop images directly into the chat when working with multimodal LLMs for visual context in your conversations.
-      </>
-    ),
-  },
-  {
-    title: 'Naive RAG',
-    icon: NaiveRAGIcon,
-    link: '/docs/features/rag',
-    description: (
-      <>
-        Retrieval-Augmented Generation that automatically finds and incorporates relevant code from your project to enhance the LLM's understanding of your codebase.
       </>
     ),
   },
