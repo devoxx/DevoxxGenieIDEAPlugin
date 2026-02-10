@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevoxxGenie Kanban Board</title>
+    ${styles}
+</head>
+<body>
+<div id="kanban-toolbar">
+    <span class="kanban-title">Kanban Board</span>
+    <button id="refresh-btn" onclick="requestRefresh()" title="Refresh">&#x21bb;</button>
+</div>
+<div id="kanban-board"></div>
+<div id="trash-bin" title="Drag tasks here to delete">
+    <span class="trash-icon">🗑️</span>
+    <span class="trash-label">Drop to Delete</span>
+</div>
+
+${scripts}
+</body>
+</html>

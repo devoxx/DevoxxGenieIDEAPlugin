@@ -16,23 +16,25 @@ import javax.swing.*;
  */
 public class SpecSettingsConfigurable implements Configurable {
 
+    private final Project project;
     private final MessageBus messageBus;
     private SpecSettingsComponent specSettingsComponent;
 
     public SpecSettingsConfigurable(@NotNull Project project) {
+        this.project = project;
         this.messageBus = project.getMessageBus();
     }
 
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Spec Driven Dev";
+        return "Spec Driven Development (BETA)";
     }
 
     @Nullable
     @Override
     public JComponent createComponent() {
-        specSettingsComponent = new SpecSettingsComponent();
+        specSettingsComponent = new SpecSettingsComponent(project);
         return specSettingsComponent.createPanel();
     }
 

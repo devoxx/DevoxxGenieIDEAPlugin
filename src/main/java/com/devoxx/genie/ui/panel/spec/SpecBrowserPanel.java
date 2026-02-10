@@ -7,8 +7,11 @@ import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
@@ -18,6 +21,8 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.*;
 
 /**
@@ -29,11 +34,14 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
     // Preferred status ordering (others appended at end)
     private static final List<String> STATUS_ORDER = List.of("To Do", "In Progress", "Done");
 
+    private static final int HORIZONTAL_LAYOUT_MIN_WIDTH = 600;
+
     private final Project project;
     private final Tree specTree;
     private final DefaultMutableTreeNode rootNode;
     private final DefaultTreeModel treeModel;
     private final SpecPreviewPanel previewPanel;
+    private final JBSplitter splitter;
 
     public SpecBrowserPanel(@NotNull Project project) {
         super(true, true);
@@ -58,6 +66,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
                 if (node.getUserObject() instanceof TaskSpec spec) {
                     previewPanel.showSpec(spec);
+                    openTaskFile(spec);
                 } else {
                     previewPanel.showEmptyState();
                 }
@@ -66,15 +75,23 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
             }
         });
 
-        // Layout with splitter
-        JBSplitter splitter = new JBSplitter(true, 0.6f);
+        // Layout with splitter — orientation adapts to available width
+        splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(new JBScrollPane(specTree));
         splitter.setSecondComponent(previewPanel);
         setContent(splitter);
 
+        // Switch between vertical (narrow/sidebar) and horizontal (wide/bottom) layout
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateSplitterOrientation();
+            }
+        });
+
         // Toolbar
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new AnAction("Refresh", "Refresh specs from disk", null) {
+        actionGroup.add(new AnAction("Refresh", "Refresh specs from disk", com.intellij.icons.AllIcons.Actions.Refresh) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 refreshSpecs();
@@ -99,6 +116,21 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
         SpecService.getInstance(project).refresh();
     }
 
+    private void updateSplitterOrientation() {
+        int width = getWidth();
+        boolean shouldBeVertical = width < HORIZONTAL_LAYOUT_MIN_WIDTH;
+        if (splitter.getOrientation() != shouldBeVertical) {
+            splitter.setOrientation(shouldBeVertical);
+            if (!shouldBeVertical) {
+                // Horizontal: tree on left gets ~40%, details on right gets ~60%
+                splitter.setProportion(0.4f);
+            } else {
+                // Vertical: tree on top gets ~50%
+                splitter.setProportion(0.5f);
+            }
+        }
+    }
+
     private void refreshTree() {
         rootNode.removeAllChildren();
 
@@ -116,12 +148,14 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
             grouped.computeIfAbsent(status, k -> new ArrayList<>()).add(spec);
         }
 
-        // Build tree nodes
+        // Build tree nodes, sorting tasks by ID number within each status group
         for (Map.Entry<String, List<TaskSpec>> entry : grouped.entrySet()) {
             List<TaskSpec> statusSpecs = entry.getValue();
             if (statusSpecs.isEmpty()) {
                 continue;
             }
+
+            statusSpecs.sort((a, b) -> Integer.compare(extractTaskNumber(a.getId()), extractTaskNumber(b.getId())));
 
             DefaultMutableTreeNode statusNode = new DefaultMutableTreeNode(entry.getKey());
             for (TaskSpec spec : statusSpecs) {
@@ -138,15 +172,36 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
         }
     }
 
+    private static int extractTaskNumber(String id) {
+        if (id == null) return Integer.MAX_VALUE;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(id);
+        if (m.find()) {
+            try {
+                return Integer.parseInt(m.group(1));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private void openTaskFile(@NotNull TaskSpec spec) {
+        if (spec.getFilePath() == null) return;
+        VirtualFile vf = LocalFileSystem.getInstance().findFileByPath(spec.getFilePath());
+        if (vf != null) {
+            FileEditorManager.getInstance(project).openFile(vf, false);
+        }
+    }
+
     private void implementCurrentSpec() {
         TaskSpec spec = previewPanel.getCurrentSpec();
         if (spec == null) {
             return;
         }
 
-        // Build a prompt that includes the spec context and an implementation instruction
-        String specContext = SpecContextBuilder.buildAgentInstruction(spec);
-        String prompt = specContext + "\n\nPlease implement the task described above, satisfying all acceptance criteria.";
+        // Build a prompt that includes full task details and an implementation instruction
+        String taskDetails = SpecContextBuilder.buildContext(spec);
+        String instruction = SpecContextBuilder.buildAgentInstruction(spec);
+        String prompt = instruction + "\n\n" + taskDetails + "\n\nPlease implement the task described above, satisfying all acceptance criteria.";
 
         // Submit via the prompt submission topic
         project.getMessageBus()

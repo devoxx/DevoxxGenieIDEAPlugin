@@ -2,7 +2,9 @@ package com.devoxx.genie.ui.window;
 
 import com.devoxx.genie.service.spec.SpecService;
 import com.devoxx.genie.ui.panel.spec.SpecBrowserPanel;
+import com.devoxx.genie.ui.panel.spec.SpecKanbanPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -21,13 +23,24 @@ public class SpecBrowserToolWindowFactory implements ToolWindowFactory, DumbAwar
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ApplicationManager.getApplication().invokeLater(() -> {
+            // Tree view — primary/default tab
             SpecBrowserPanel specBrowserPanel = new SpecBrowserPanel(project);
-            Content content = ContentFactory.getInstance().createContent(
+            Content treeContent = ContentFactory.getInstance().createContent(
                     specBrowserPanel,
-                    "Task Specs",
+                    "Task List",
                     false
             );
-            toolWindow.getContentManager().addContent(content);
+            toolWindow.getContentManager().addContent(treeContent);
+
+            // Kanban board — second tab (JCEF browser initialized lazily)
+            SpecKanbanPanel kanbanPanel = new SpecKanbanPanel(project);
+            Content kanbanContent = ContentFactory.getInstance().createContent(
+                    kanbanPanel,
+                    "Kanban Board",
+                    false
+            );
+            toolWindow.getContentManager().addContent(kanbanContent);
+            Disposer.register(toolWindow.getDisposable(), kanbanPanel);
         });
     }
 

@@ -289,7 +289,7 @@
         <projectConfigurable id="com.devoxx.genie.specSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
-                             displayName="Spec Driven Dev"/>
+                             displayName="Spec Driven Development (BETA)"/>
 
         <projectConfigurable id="com.devoxx.genie.InlineCompletion"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -341,6 +341,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
