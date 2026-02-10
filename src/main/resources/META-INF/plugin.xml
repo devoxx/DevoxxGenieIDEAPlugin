@@ -50,6 +50,7 @@
             <LI>Automated test execution: new run_tests agent tool that auto-detects build systems (Gradle/Maven/npm/Cargo/Go/Make), runs tests, and returns structured results (#863)</LI>
             <LI>Agent iterates on test failures: system prompt instructs the LLM to run tests after code changes and fix until they pass</LI>
             <LI>Configurable test execution settings: timeout, custom test command with {target} placeholder</LI>
+            <LI>Fix: prevent agent and MCP logs from leaking across projects (#867)</LI>
         </UL>
         <h2>v0.9.7</h2>
         <UL>
