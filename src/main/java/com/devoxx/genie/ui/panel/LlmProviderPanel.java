@@ -159,6 +159,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             selectedProvider == ModelProvider.Ollama ||
             selectedProvider == ModelProvider.Jan ||
             selectedProvider == ModelProvider.GPT4All ||
+            selectedProvider == ModelProvider.CustomOpenAI ||
             selectedProvider == ModelProvider.OpenRouter ||
             selectedProvider == ModelProvider.Bedrock) {
             ApplicationManager.getApplication().invokeLater(() -> {
@@ -178,7 +179,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             });
         } else {
             NotificationUtil.sendNotification(project,
-                    "Model refresh is only available for LMStudio, Ollama, GPT4All and Jan providers.");
+                    "Model refresh is only available for LMStudio, Ollama, GPT4All, Jan and Custom OpenAI providers.");
         }
     }
 
