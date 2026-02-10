@@ -285,6 +285,12 @@ public class AgentLogPanel extends SimpleToolWindowPanel implements AgentLogging
             return;
         }
 
+        // Filter out messages from other projects
+        String hash = message.getProjectLocationHash();
+        if (hash != null && !hash.equals(project.getLocationHash())) {
+            return;
+        }
+
         String logText = formatAgentMessage(message);
         String fullContent = buildFullContent(message);
         LogEntry entry = new LogEntry(

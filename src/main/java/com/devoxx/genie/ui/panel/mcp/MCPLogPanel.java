@@ -334,6 +334,12 @@ public class MCPLogPanel extends SimpleToolWindowPanel implements MCPLoggingMess
         if (message == null || isPaused) {
             return;
         }
+
+        // Filter out messages from other projects
+        String hash = message.getProjectLocationHash();
+        if (hash != null && !hash.equals(project.getLocationHash())) {
+            return;
+        }
         
         // Create a new log entry with timestamp
         LogEntry entry = new LogEntry(

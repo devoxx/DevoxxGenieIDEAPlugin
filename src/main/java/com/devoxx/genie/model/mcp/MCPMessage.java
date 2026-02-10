@@ -15,4 +15,6 @@ public class MCPMessage {
     // STDIO transport properties
     private String content;
 
+    /** Identifies the project that produced this message; used to filter cross-project noise. */
+    private String projectLocationHash;
 }

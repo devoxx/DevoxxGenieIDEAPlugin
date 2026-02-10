@@ -170,6 +170,7 @@ public class ParallelExploreToolExecutor implements ToolExecutor, AgentLoopTrack
                     .result(result)
                     .callNumber(callNumber)
                     .maxCalls(0)
+                    .projectLocationHash(project.getLocationHash())
                     .build();
 
             ApplicationManager.getApplication().getMessageBus()
