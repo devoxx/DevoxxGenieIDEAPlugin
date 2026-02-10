@@ -68,8 +68,8 @@ export default function Home() {
               <div className={styles.videoContainer}>
                 <iframe
                   className={styles.demoVideo}
-                  src="https://www.youtube.com/embed/LtAe8EB72OI"
-                  title="DevoxxGenie Demo"
+                  src="https://www.youtube.com/embed/kuicOEN4YMU"
+                  title="Spec Driven Development Demo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -92,6 +92,50 @@ export default function Home() {
         </div>
         <HomepageFeatures />
         <div className="container home-section">
+          <div className="row">
+            <div className="col col--6">
+              <h2>Spec Driven Development</h2>
+              <p>
+                Define <strong>what</strong> needs to be built as structured task specs with acceptance criteria, and let the LLM agent figure out <strong>how</strong> to build it. Powered by <a href="https://backlog.md" target="_blank" rel="noopener noreferrer">Backlog.md</a> integration, SDD brings disciplined, traceable AI-assisted development to your IDE.
+              </p>
+              <p>
+                <strong>Backlog Browser:</strong> Browse tasks grouped by status (To Do, In Progress, Done) in a dedicated tool window. Select any task and click "Implement with Agent" to inject the full spec as structured context into the LLM prompt.
+              </p>
+              <p>
+                <strong>17 Built-in Backlog Tools:</strong> Just type "Create a task for..." in the prompt to create structured specs instantly. The agent can also edit, search, and complete tasks, manage documents and milestones — all from natural language. Acceptance criteria are checked off in real-time as the agent works.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/spec-driven-development')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+            <div className="col col--6">
+              <div style={{background: 'var(--ifm-background-surface-color)', borderRadius: '8px', padding: '1.5rem', border: '1px solid var(--ifm-color-emphasis-300)'}}>
+                <pre style={{margin: 0, fontSize: '0.85rem', lineHeight: '1.5', overflow: 'auto'}}>
+{`---
+id: TASK-42
+title: Add caching layer
+status: To Do
+priority: high
+milestone: v2.0
+---
+
+## Acceptance Criteria
+
+- [ ] Redis client configured
+- [ ] GET endpoints cached
+- [ ] Cache invalidation on writes
+- [ ] Metrics exposed
+- [ ] Graceful degradation`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container home-section home-section-alternate">
           <div className="row">
             <div className="col col--6">
               <img src={useBaseUrl('/img/mcp-logs.jpg')} alt="MCP feature" className="feature-image" />
@@ -117,7 +161,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="container home-section home-section-alternate">
+        <div className="container home-section">
           <div className="row">
             <div className="col col--6">
               <h2>Agent Mode</h2>
@@ -143,7 +187,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="container home-section">
+        <div className="container home-section home-section-alternate">
           <div className="row">
             <div className="col col--6">
               <img src={useBaseUrl('/img/agent-mode-parallel.jpg')} alt="Parallel sub-agents configuration" className="feature-image" />
@@ -169,7 +213,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="container home-section home-section-alternate">
+        <div className="container home-section">
           <div className="row">
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>

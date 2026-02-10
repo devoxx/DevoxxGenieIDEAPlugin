@@ -29,6 +29,7 @@ const sidebars = {
       label: 'Features',
       items: [
         'features/overview',
+        'features/spec-driven-development',
         'features/chat-interface',
         'features/mcp_expanded',
         'features/agent-mode',

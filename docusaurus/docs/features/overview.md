@@ -12,6 +12,15 @@ DevoxxGenie offers a comprehensive set of features designed to enhance your deve
 
 ## Core Features
 
+### Spec Driven Development (SDD)
+
+Define tasks as structured markdown specs with acceptance criteria, and let the LLM agent implement them autonomously:
+
+- **Backlog.md Integration**: Tasks are stored as version-controlled markdown files with YAML frontmatter
+- **Task List & Kanban Board**: Browse tasks in a tree view or manage them visually on a drag-and-drop Kanban board with archive-by-drag support
+- **Implement with Agent**: One-click task implementation — the agent reads the spec, makes code changes, and checks off acceptance criteria as it works
+- **17 Built-in Backlog Tools**: Create, edit, search, and complete tasks, documents, and milestones programmatically during agent execution
+
 ### Multi-Provider LLM Support
 
 Connect to a wide range of LLM providers:
@@ -60,6 +69,7 @@ Connect to a wide range of LLM providers:
 |---------|------------|--------|-----------|--------|-------------|
 | Chat Interface | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Streaming | ✅ | ✅ | ✅ | ✅ | Varies |
+| Spec Driven Dev | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Inline Completion | ✅* | ❌ | ❌ | ❌ | ❌ |
 | RAG Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Project Context | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -82,6 +92,7 @@ DevoxxGenie also includes experimental features that are being developed and ref
 
 For detailed information about specific features, check out the dedicated pages:
 
+- [Spec Driven Development](spec-driven-development.md)
 - [Chat Interface](chat-interface.md)
 - [MCP Support](mcp_expanded.md)
 - [Agent Mode](agent-mode.md)
