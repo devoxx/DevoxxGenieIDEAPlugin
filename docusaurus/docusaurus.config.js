@@ -104,9 +104,53 @@ const config = {
           customCss: './src/css/custom.css',
         },
         sitemap: {
+          lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
           ignorePatterns: ['/tags/**'],
+          createSitemapItems: async (params) => {
+            const {defaultCreateSitemapItems, ...rest} = params;
+            const items = await defaultCreateSitemapItems(rest);
+            return items.map((item) => {
+              // Homepage — highest priority
+              if (item.url === 'https://genie.devoxx.com/' || item.url === 'https://genie.devoxx.com') {
+                return {...item, priority: 1.0, changefreq: 'daily'};
+              }
+              // Getting started & installation — high priority
+              if (item.url.includes('/docs/intro') || item.url.includes('/docs/getting-started/')) {
+                return {...item, priority: 0.9, changefreq: 'weekly'};
+              }
+              // Feature pages — high priority
+              if (item.url.includes('/docs/features/')) {
+                return {...item, priority: 0.8, changefreq: 'weekly'};
+              }
+              // LLM providers — medium-high priority
+              if (item.url.includes('/docs/llm-providers/')) {
+                return {...item, priority: 0.7, changefreq: 'weekly'};
+              }
+              // Blog posts — medium-high priority
+              if (item.url.includes('/blog/') && !item.url.includes('/blog/tags') && !item.url.includes('/blog/archive')) {
+                return {...item, priority: 0.7, changefreq: 'monthly'};
+              }
+              // Configuration pages — medium priority
+              if (item.url.includes('/docs/configuration/')) {
+                return {...item, priority: 0.6, changefreq: 'monthly'};
+              }
+              // Category index pages — lower priority
+              if (item.url.includes('/docs/category/')) {
+                return {...item, priority: 0.4, changefreq: 'monthly'};
+              }
+              // Contributing pages — lower priority
+              if (item.url.includes('/docs/contributing/')) {
+                return {...item, priority: 0.4, changefreq: 'monthly'};
+              }
+              // Blog infrastructure (archive, tags index) — lowest
+              if (item.url.includes('/blog/archive') || item.url.includes('/blog/tags')) {
+                return {...item, priority: 0.3, changefreq: 'monthly'};
+              }
+              return item;
+            });
+          },
         },
         gtag: {
           trackingID: 'G-HFMW39MG3G',
