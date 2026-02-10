@@ -9,7 +9,9 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
-**🆕 NEW: AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
+**🆕 NEW: Spec Driven Development (SDD)** — Define tasks in `Backlog.md`, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously!
+
+**🆕 AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
 
 We also support RAG-based prompt context based on your vectorized project files, Git Diff viewer, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
@@ -27,11 +29,31 @@ Quick links:
 - [Installation Guide](https://genie.devoxx.com/docs/category/installation) - Local and cloud LLM setup
 - [Configuration](https://genie.devoxx.com/docs/category/configuration) - API keys, settings, and customization
 - [Features](https://genie.devoxx.com/docs/category/features) - Explore all capabilities
+- [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development) - Task management with Backlog.md, Kanban Board, and Agent implementation
 - [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion) - AI-powered code suggestions as you type
 - [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode) - Autonomous code tools with parallel sub-agents
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
 - [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
 - [Troubleshooting](https://genie.devoxx.com/docs/troubleshooting) - Common issues and solutions
+
+### Spec Driven Development (SDD)
+
+**[📖 Full SDD Documentation](https://genie.devoxx.com/docs/features/spec-driven-development)**
+
+Spec Driven Development brings structured task management directly into your IDE. Instead of ad-hoc prompts, define your tasks in `Backlog.md` files, browse them in the **Spec Browser**, and let the Agent implement them autonomously.
+
+**How it works:**
+1. **Create tasks** — Use natural language prompts or write Backlog.md task specs manually
+2. **Browse in Specs** — View tasks in a Task List or visual Kanban Board with drag-and-drop
+3. **Implement with Agent** — Click "Implement with Agent" and let the AI do the work
+
+<img width="800" alt="SDD Task List" src="docusaurus/static/img/SDD-TaskList.png" />
+
+The Kanban Board gives you a visual overview of task status with drag-and-drop support:
+
+<img width="800" alt="SDD Kanban Board" src="docusaurus/static/img/SDD-Kanban.png" />
+
+17 built-in backlog tools provide full CRUD operations on tasks, documents, and milestones — all accessible to the LLM agent for autonomous project management.
 
 ### Agentic Programming with DevoxxGenie
 
@@ -58,6 +80,7 @@ Quick links:
 
 ### Key Features:
 
+- **📋 [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser (Task List + Kanban Board), and let the Agent implement them. 17 built-in backlog tools for full CRUD on tasks, documents, and milestones.
 - **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: (v0.9.6+) AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
 - **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
