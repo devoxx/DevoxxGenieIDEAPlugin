@@ -2,6 +2,17 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.8]
+
+### Added
+- Automated test execution: new `run_tests` agent tool that auto-detects build systems (Gradle, Maven, npm, Cargo, Go, Make), runs tests, and returns structured results to the LLM (#863)
+- Agent iterates on test failures: system prompt instructs the LLM to run tests after code changes and fix until they pass
+- Configurable test execution settings: enable/disable toggle, timeout (default 5 min), custom test command with `{target}` placeholder
+- Test output parsing for Gradle, Maven Surefire, and Jest with pass/fail counts and failed test names
+
+### Documentation
+- Add "Automated Test Execution" section to Agent Mode docs with build system table, configuration, and troubleshooting
+
 ## [0.9.7]
 
 ### Added
