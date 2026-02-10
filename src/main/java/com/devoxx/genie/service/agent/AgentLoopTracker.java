@@ -115,6 +115,7 @@ public class AgentLoopTracker implements ToolProvider {
                     .callNumber(callNumber)
                     .maxCalls(maxToolCalls)
                     .subAgentId(subAgentId)
+                    .projectLocationHash(project.getLocationHash())
                     .build();
 
             ApplicationManager.getApplication().getMessageBus()

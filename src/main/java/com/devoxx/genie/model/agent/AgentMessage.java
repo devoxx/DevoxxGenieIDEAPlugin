@@ -17,4 +17,6 @@ public class AgentMessage {
     private int callNumber;
     private int maxCalls;
     private String subAgentId;
+    /** Identifies the project that produced this message; used to filter cross-project noise. */
+    private String projectLocationHash;
 }
