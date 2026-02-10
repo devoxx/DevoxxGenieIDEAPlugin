@@ -185,6 +185,7 @@ const config = {
         {name: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
         {name: 'og:image:width', content: '1200'},
         {name: 'og:image:height', content: '630'},
+        {name: 'msvalidate.01', content: 'DBDB8BF0B394F33D60BAB8AEE5DB11B3'},
       ],
       navbar: {
         title: 'DevoxxGenie',
