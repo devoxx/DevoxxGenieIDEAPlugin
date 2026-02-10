@@ -1,5 +1,9 @@
 ---
 sidebar_position: 5
+title: Web Search
+description: Augment LLM responses with real-time web search results using Google Custom Search or Tavily integration in DevoxxGenie.
+keywords: [devoxxgenie, web search, google custom search, tavily, search augmented, real-time search, llm web access]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Web Search

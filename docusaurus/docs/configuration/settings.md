@@ -1,5 +1,9 @@
 ---
 sidebar_position: 1
+title: Settings Configuration
+description: Comprehensive guide to configuring DevoxxGenie settings including LLM providers, API keys, endpoints, prompts, MCP, RAG, and appearance options.
+keywords: [devoxxgenie, settings, configuration, api keys, llm providers, intellij plugin, setup, preferences]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Settings Configuration

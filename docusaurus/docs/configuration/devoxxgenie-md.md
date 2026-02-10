@@ -1,5 +1,9 @@
 ---
 sidebar_position: 4
+title: DEVOXXGENIE.md Configuration
+description: Generate and configure a DEVOXXGENIE.md file to provide project-specific context to the LLM, including build commands, code style, and project structure.
+keywords: [devoxxgenie, devoxxgenie.md, project context, system prompt, project instructions, llm context, intellij plugin]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # DEVOXXGENIE.md Configuration

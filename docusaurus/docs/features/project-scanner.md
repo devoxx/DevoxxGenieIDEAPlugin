@@ -1,5 +1,9 @@
 ---
 sidebar_position: 7
+title: Project Scanner
+description: Add your project source code to the prompt context with DevoxxGenie's Project Scanner, including full project, directory, or individual file scanning with AST analysis.
+keywords: [devoxxgenie, project scanner, source code context, ast analysis, code analysis, project context, intellij plugin]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Project Scanner

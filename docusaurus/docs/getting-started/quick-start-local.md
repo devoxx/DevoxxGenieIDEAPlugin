@@ -1,5 +1,9 @@
 ---
 sidebar_position: 3
+title: Quick Start with Local LLMs
+description: Get started with DevoxxGenie using local LLM providers like Ollama, LM Studio, GPT4All, and Llama.cpp for private, API-key-free AI coding assistance.
+keywords: [devoxxgenie, quick start, local llm, ollama, lm studio, gpt4all, llama.cpp, jan, private ai, local models]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Quick Start with Local LLMs

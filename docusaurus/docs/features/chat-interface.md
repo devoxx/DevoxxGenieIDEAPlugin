@@ -1,5 +1,9 @@
 ---
 sidebar_position: 2
+title: Chat Interface
+description: Use the DevoxxGenie chat interface to have code-related conversations with LLMs, add files to context, stream responses, and manage conversation history.
+keywords: [devoxxgenie, chat interface, conversation, code assistant, streaming, context files, intellij plugin]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Chat Interface

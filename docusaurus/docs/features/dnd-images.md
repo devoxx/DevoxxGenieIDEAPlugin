@@ -1,5 +1,9 @@
 ---
 sidebar_position: 6
+title: Drag & Drop Images
+description: Drag and drop images into DevoxxGenie to use multimodal LLMs like Gemini, Claude, and GPT-4V for visual code analysis, UI review, and diagram interpretation.
+keywords: [devoxxgenie, drag and drop, images, multimodal, vision, gemini, claude, gpt-4v, llava, screenshot]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Drag & Drop Images

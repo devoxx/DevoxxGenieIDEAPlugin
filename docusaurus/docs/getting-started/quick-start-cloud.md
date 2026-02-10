@@ -1,5 +1,9 @@
 ---
 sidebar_position: 4
+title: Quick Start with Cloud LLMs
+description: Get started with DevoxxGenie using cloud LLM providers like OpenAI, Anthropic Claude, Google Gemini, Mistral, and more in under 2 minutes.
+keywords: [devoxxgenie, quick start, cloud llm, openai, anthropic, claude, gemini, mistral, groq, api key, setup]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Quick Start with Cloud LLMs

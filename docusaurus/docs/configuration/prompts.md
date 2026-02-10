@@ -1,5 +1,9 @@
 ---
 sidebar_position: 2
+title: Prompts Configuration
+description: Configure the system prompt, keyboard shortcuts, and DEVOXXGENIE.md settings in DevoxxGenie to customize how the LLM responds to your queries.
+keywords: [devoxxgenie, prompts, system prompt, keyboard shortcuts, configuration, intellij plugin, llm settings]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Prompts Configuration

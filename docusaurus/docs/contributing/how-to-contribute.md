@@ -1,5 +1,9 @@
 ---
 sidebar_position: 1
+title: How to Contribute
+description: Learn how to contribute to the DevoxxGenie open-source project — submit bug reports, feature requests, code contributions, and documentation improvements.
+keywords: [devoxxgenie, contributing, open source, bug reports, feature requests, pull requests, github]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # How to Contribute

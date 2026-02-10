@@ -1,5 +1,9 @@
 ---
 sidebar_position: 2
+title: Prompt Structure Architecture
+description: Technical overview of DevoxxGenie's prompt handling architecture, including the strategy, command, and factory patterns used for prompt execution.
+keywords: [devoxxgenie, prompt architecture, strategy pattern, command pattern, prompt execution, langchain4j, intellij plugin]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Prompt Structure Architecture

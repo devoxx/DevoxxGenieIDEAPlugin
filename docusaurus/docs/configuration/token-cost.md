@@ -1,5 +1,9 @@
 ---
 sidebar_position: 3
+title: Token Cost & Context Window
+description: Manage token usage, estimate costs, and optimize context window size when using cloud LLM providers with DevoxxGenie's built-in token calculator.
+keywords: [devoxxgenie, token cost, context window, token calculator, llm pricing, openai cost, anthropic cost, gemini cost]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Token Cost & Context Window

@@ -1,5 +1,9 @@
 ---
 sidebar_position: 3
+title: Development Guide
+description: Developer guide for contributing to DevoxxGenie, covering project architecture, build setup, module structure, and debugging the IntelliJ plugin.
+keywords: [devoxxgenie, development, contributing, intellij plugin development, java, architecture, build, gradle]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Development Guide
