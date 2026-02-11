@@ -75,75 +75,46 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
 
     @Override
     public JPanel createPanel() {
-        panel.setLayout(new GridBagLayout());
+        JPanel contentPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        gbc.insets = JBUI.insets(5);
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = JBUI.insets(4, 5);
+        gbc.gridy = 0;
 
-        addSection(panel, gbc, "Prompts");
-        addPromptArea(panel, gbc, systemPromptField);
+        // --- System Prompt ---
+        addSection(contentPanel, gbc, "Prompts");
+        addPromptArea(contentPanel, gbc, systemPromptField);
 
-        addSection(panel, gbc, "DEVOXXGENIE.md Generation");
+        // --- DEVOXXGENIE.md Generation ---
+        addSection(contentPanel, gbc, "DEVOXXGENIE.md Generation");
 
-        gbc.gridy++;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(createDevoxxGenieMdCheckbox, gbc);
+        addFullWidthRow(contentPanel, gbc, createDevoxxGenieMdCheckbox);
 
-        JPanel projectTreePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel projectTreePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         projectTreePanel.add(includeProjectTreeCheckbox);
         projectTreePanel.add(new JLabel("Tree depth:"));
         projectTreePanel.add(projectTreeDepthSpinner);
+        addFullWidthRow(contentPanel, gbc, projectTreePanel);
 
-        gbc.gridy++;
-        panel.add(projectTreePanel, gbc);
+        addFullWidthRow(contentPanel, gbc, useDevoxxGenieMdInPromptCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, the content of DEVOXXGENIE.md will be included in the prompt sent to the AI, " +
+                "providing it with context about your project structure and important files.");
 
-        gbc.gridy++;
-        panel.add(useDevoxxGenieMdInPromptCheckbox, gbc);
+        addFullWidthRow(contentPanel, gbc, createDevoxxGenieMdButton);
 
-        gbc.gridy++;
-        JEditorPane explanationPane = new JEditorPane(
-                "text/html",
-                "<html><body style='margin: 5px'>When enabled, the content of DEVOXXGENIE.md will be included in the prompt sent to the AI, "
-                        + "providing it with context about your project structure and important files.</body></html>"
-        );
-        explanationPane.setEditable(false);
-        explanationPane.setBackground(null);
-        explanationPane.setBorder(null);
-        panel.add(explanationPane, gbc);
+        // --- CLAUDE.md / AGENTS.md Inclusion ---
+        addSection(contentPanel, gbc, "CLAUDE.md / AGENTS.md Inclusion");
 
-        gbc.gridy++;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
-        panel.add(createDevoxxGenieMdButton, gbc);
-
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // CLAUDE.md / AGENTS.md Inclusion Section
-        addSection(panel, gbc, "CLAUDE.md / AGENTS.md Inclusion");
-
-        gbc.gridy++;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(useClaudeOrAgentsMdInPromptCheckbox, gbc);
-
-        gbc.gridy++;
-        JEditorPane claudeAgentsExplanationPane = new JEditorPane(
-                "text/html",
-                "<html><body style='margin: 5px'>When enabled, the plugin will check for CLAUDE.md or AGENTS.md files in your project root. "
-                        + "If both files exist, <b>CLAUDE.md takes priority</b> and AGENTS.md is skipped. "
-                        + "The content will be included in the prompt to provide AI-specific context and instructions.</body></html>"
-        );
-        claudeAgentsExplanationPane.setEditable(false);
-        claudeAgentsExplanationPane.setBackground(null);
-        claudeAgentsExplanationPane.setBorder(null);
-        panel.add(claudeAgentsExplanationPane, gbc);
+        addFullWidthRow(contentPanel, gbc, useClaudeOrAgentsMdInPromptCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, the plugin will check for CLAUDE.md or AGENTS.md files in your project root. " +
+                "If both files exist, CLAUDE.md takes priority and AGENTS.md is skipped. " +
+                "The content will be included in the prompt to provide AI-specific context and instructions.");
 
         createDevoxxGenieMdCheckbox.addChangeListener(e -> {
             boolean enabled = createDevoxxGenieMdCheckbox.isSelected();
@@ -162,46 +133,62 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         useDevoxxGenieMdInPromptCheckbox.setEnabled(createDevoxxGenieMdCheckbox.isSelected());
         createDevoxxGenieMdButton.setEnabled(createDevoxxGenieMdCheckbox.isSelected());
 
-        addSection(panel, gbc, "Configure keyboard submit shortcut");
-
-        gbc.gridy++;
-        gbc.weighty = 0.0;
-        gbc.fill = GridBagConstraints.BOTH;
+        // --- Keyboard Shortcuts ---
+        addSection(contentPanel, gbc, "Configure keyboard submit shortcut");
 
         if (SystemInfo.isWindows) {
-            panel.add(createShortcutPanel("Windows", stateService.getSubmitShortcutWindows(), true), gbc);
+            addFullWidthRow(contentPanel, gbc, createShortcutPanel("Windows", stateService.getSubmitShortcutWindows(), true));
         } else if (SystemInfo.isMac) {
-            panel.add(createShortcutPanel("Mac", stateService.getSubmitShortcutMac(), true), gbc);
+            addFullWidthRow(contentPanel, gbc, createShortcutPanel("Mac", stateService.getSubmitShortcutMac(), true));
         } else {
-            panel.add(createShortcutPanel("Linux", stateService.getSubmitShortcutLinux(), true), gbc);
+            addFullWidthRow(contentPanel, gbc, createShortcutPanel("Linux", stateService.getSubmitShortcutLinux(), true));
         }
 
-        addSection(panel, gbc, "Configure keyboard newline shortcut");
+        addSection(contentPanel, gbc, "Configure keyboard newline shortcut");
 
-        gbc.gridy++;
+        if (SystemInfo.isWindows) {
+            addFullWidthRow(contentPanel, gbc, createNewlineShortcutPanel("Windows", stateService.getNewlineShortcutWindows()));
+        } else if (SystemInfo.isMac) {
+            addFullWidthRow(contentPanel, gbc, createNewlineShortcutPanel("Mac", stateService.getNewlineShortcutMac()));
+        } else {
+            addFullWidthRow(contentPanel, gbc, createNewlineShortcutPanel("Linux", stateService.getNewlineShortcutLinux()));
+        }
+
+        addHelpText(contentPanel, gbc,
+                "You can also trigger the add files popup dialog using @ in the input field.");
+
+        // Filler
         gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-
-        if (SystemInfo.isWindows) {
-            panel.add(createNewlineShortcutPanel("Windows", stateService.getNewlineShortcutWindows()), gbc);
-        } else if (SystemInfo.isMac) {
-            panel.add(createNewlineShortcutPanel("Mac", stateService.getNewlineShortcutMac()), gbc);
-        } else {
-            panel.add(createNewlineShortcutPanel("Linux", stateService.getNewlineShortcutLinux()), gbc);
-        }
-
-        JEditorPane addFilesInfoPane = new JEditorPane(
-                "text/html",
-                "<html><body style='margin: 5px'>You can also trigger the add files popup dialog using @ in the input field.</body></html>"
-        );
-        addFilesInfoPane.setEditable(false);
-        addFilesInfoPane.setBackground(null);
-        addFilesInfoPane.setBorder(null);
-
         gbc.gridy++;
-        panel.add(addFilesInfoPane, gbc);
+        contentPanel.add(Box.createVerticalGlue(), gbc);
 
+        panel.add(contentPanel, BorderLayout.NORTH);
         return panel;
+    }
+
+    private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        panel.add(component, gbc);
+        gbc.gridy++;
+    }
+
+    private void addHelpText(JPanel panel, GridBagConstraints gbc, String text) {
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.insets = JBUI.insets(0, 25, 8, 5);
+        JTextArea helpArea = new JTextArea(text);
+        helpArea.setLineWrap(true);
+        helpArea.setWrapStyleWord(true);
+        helpArea.setEditable(false);
+        helpArea.setFocusable(false);
+        helpArea.setOpaque(false);
+        helpArea.setBorder(null);
+        helpArea.setFont(UIManager.getFont("Label.font").deriveFont((float) UIManager.getFont("Label.font").getSize() - 1));
+        helpArea.setForeground(UIManager.getColor("Label.disabledForeground"));
+        panel.add(helpArea, gbc);
+        gbc.insets = JBUI.insets(4, 5);
+        gbc.gridy++;
     }
 
     private @NotNull JPanel createShortcutPanel(String os, String initialShortcut, boolean isSubmitShortcut) {
