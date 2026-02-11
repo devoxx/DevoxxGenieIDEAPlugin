@@ -78,7 +78,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.25"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.26"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
