@@ -374,11 +374,86 @@ milestones:
     description: Bug fixes and improvements
 ```
 
+## Adding References and Documentation to Tasks
+
+Tasks support two fields for linking external information: **references** and **documentation**. When the agent implements a task, these are included in the prompt context so the LLM knows where to look for relevant code, APIs, or design docs.
+
+- **`references`**: Links to code paths, issues, or external resources related to the task (e.g., source files, GitHub issues, API endpoints)
+- **`documentation`**: Links to design specs, architecture docs, or guides that provide context for the implementation
+
+### From the DevoxxGenie Prompt
+
+Ask the agent to add references or documentation when creating or editing a task:
+
+> "Create a task to refactor the payment service, with references to src/main/java/com/example/payment/ and https://github.com/myproject/issues/42"
+
+> "Add documentation links to TASK-7: docs/payment-architecture.md and https://wiki.example.com/payment-flow"
+
+The agent uses `backlog_task_create` (with `references` and `documentation` fields) or `backlog_task_edit` (with `addReferences` and `addDocumentation`) to update the task file.
+
+### By Editing the Markdown File
+
+Click any task in the DevoxxGenie Specs to open its markdown file in the editor, then add the fields to the YAML frontmatter:
+
+```markdown
+---
+id: TASK-7
+title: Refactor payment service
+status: To Do
+priority: high
+references:
+  - src/main/java/com/example/payment/
+  - https://github.com/myproject/issues/42
+documentation:
+  - docs/payment-architecture.md
+  - https://wiki.example.com/payment-flow
+---
+```
+
+Save the file and the DevoxxGenie Specs will pick up the changes automatically via the file watcher.
+
+### How the Agent Uses Them
+
+When you click **"Implement with Agent"** or run a batch of tasks, the full task context sent to the LLM includes dedicated sections:
+
+```
+## References
+- src/main/java/com/example/payment/
+- https://github.com/myproject/issues/42
+
+## Documentation
+- docs/payment-architecture.md
+- https://wiki.example.com/payment-flow
+```
+
+This gives the agent clear pointers to the relevant code and design documents before it starts working.
+
+## Viewing Your Backlog Outside the IDE
+
+Since task specs are standard [Backlog.md](https://backlog.md)-compatible markdown files, you can also view and manage your backlog from the terminal using the Backlog.md CLI:
+
+```bash
+# Interactive Kanban board in the terminal
+backlog board
+
+# Web-based Kanban board in your browser (default: http://localhost:6420)
+backlog browser
+```
+
+The terminal board (`backlog board`) gives you a quick overview directly in your shell, while `backlog browser` launches a full web UI with drag-and-drop, task editing, and real-time updates. Both read from the same `backlog/` directory, so any changes made in DevoxxGenie, the CLI, or the web UI are reflected everywhere.
+
+To install the CLI:
+
+```bash
+npm i -g backlog.md
+```
+
 ## Tips and Best Practices
 
 - **Write clear acceptance criteria**: The more specific your criteria, the better the agent can implement and verify its work
 - **Use dependencies**: If Task B depends on Task A, add the dependency so the agent knows the order
 - **Break down large tasks**: Smaller, focused tasks with 3-5 acceptance criteria work better than large monolithic specs
+- **Add references and docs**: Link relevant source files, issues, and design documents so the agent has full context when implementing
 - **Review agent notes**: The implementation notes the agent writes help you understand what was changed and why
 - **Version control your specs**: Task specs are plain markdown files, so commit them alongside your code
 - **Use milestones for releases**: Group tasks by milestone to track progress toward releases
