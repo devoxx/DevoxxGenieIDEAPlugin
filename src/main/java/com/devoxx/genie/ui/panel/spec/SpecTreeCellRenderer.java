@@ -1,17 +1,22 @@
 package com.devoxx.genie.ui.panel.spec;
 
 import com.devoxx.genie.model.spec.TaskSpec;
+import com.intellij.icons.AllIcons;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Custom tree cell renderer for task specs that shows status icons, priority, and task labels.
+ * Optionally renders checkboxes for "To Do" tasks when a checked-set is provided.
  */
 public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
 
@@ -22,6 +27,15 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
     private static final Color STATUS_TODO_COLOR = new JBColor(new Color(100, 100, 200), new Color(130, 130, 230));
     private static final Color STATUS_IN_PROGRESS_COLOR = new JBColor(new Color(200, 150, 0), new Color(230, 180, 50));
     private static final Color STATUS_DONE_COLOR = new JBColor(new Color(50, 160, 50), new Color(80, 200, 80));
+
+    private Set<String> checkedTaskIds = Collections.emptySet();
+
+    /**
+     * Set the IDs of tasks that are currently checked (selected for batch run).
+     */
+    public void setCheckedTaskIds(@NotNull Set<String> checkedTaskIds) {
+        this.checkedTaskIds = checkedTaskIds;
+    }
 
     @Override
     public void customizeCellRenderer(@NotNull JTree tree,
@@ -45,6 +59,13 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
     }
 
     private void renderTaskSpec(@NotNull TaskSpec spec) {
+        // Checkbox icon for To Do tasks
+        if ("To Do".equalsIgnoreCase(spec.getStatus()) && spec.getId() != null) {
+            boolean checked = checkedTaskIds.contains(spec.getId());
+            Icon checkIcon = checked ? AllIcons.Actions.Checked : AllIcons.Actions.Unselectall;
+            setIcon(checkIcon);
+        }
+
         // Priority indicator
         SimpleTextAttributes priorityAttr = getPriorityAttributes(spec.getPriority());
 
@@ -76,7 +97,7 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
         append(" (" + childCount + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES);
     }
 
-    private @NotNull SimpleTextAttributes getPriorityAttributes(@org.jetbrains.annotations.Nullable String priority) {
+    private @NotNull SimpleTextAttributes getPriorityAttributes(@Nullable String priority) {
         if (priority == null) {
             return SimpleTextAttributes.REGULAR_ATTRIBUTES;
         }

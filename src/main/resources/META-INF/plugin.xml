@@ -357,6 +357,7 @@
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
