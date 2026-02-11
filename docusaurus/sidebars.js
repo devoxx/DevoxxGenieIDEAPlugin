@@ -29,11 +29,11 @@ const sidebars = {
       label: 'Features',
       items: [
         'features/overview',
+        'features/agent-mode',
         'features/spec-driven-development',
         'features/sdd-agent-loop',
         'features/chat-interface',
         'features/mcp_expanded',
-        'features/agent-mode',
         'features/skills',
         'features/web-search',
         'features/rag',

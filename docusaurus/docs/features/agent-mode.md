@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 2
 title: Agent Mode
 description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Run tests automatically after code changes. Use parallel sub-agents for concurrent read-only exploration of multiple aspects.
 keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution]
@@ -260,6 +260,10 @@ Main Agent (your configured LLM)
     v
 Final Response (synthesized by main agent)
 ```
+
+## Batch Task Execution (Agent Loop)
+
+Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multiple tasks sequentially in a single batch. Combined with [Spec Driven Development](spec-driven-development.md), you can define structured task specs and have the agent implement them one after another — with dependency ordering, progress tracking, and automatic advancement to the next task.
 
 ## Best Practices
 

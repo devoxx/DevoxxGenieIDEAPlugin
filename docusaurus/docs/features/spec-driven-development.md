@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: Spec Driven Development
 description: Use Spec Driven Development (SDD) with Backlog.md to define tasks as structured markdown specs, then let the LLM agent implement them autonomously within your IDE.
 keywords: [devoxxgenie, spec driven development, sdd, backlog.md, task specs, agent mode, acceptance criteria, milestones]

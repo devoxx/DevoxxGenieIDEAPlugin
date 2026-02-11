@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 title: Agent Loop — Batch Task Execution
 description: Run multiple SDD tasks sequentially with dependency ordering, progress tracking, and automatic task advancement. Each task gets a fresh conversation and the agent updates notes, summaries, and acceptance criteria as it works.
 keywords: [devoxxgenie, sdd, agent loop, batch execution, dependencies, task runner, spec driven development]
