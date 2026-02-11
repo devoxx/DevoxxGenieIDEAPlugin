@@ -9,12 +9,21 @@ All notable changes to this project will be documented in this file.
 - Agent iterates on test failures: system prompt instructs the LLM to run tests after code changes and fix until they pass
 - Configurable test execution settings: enable/disable toggle, timeout (default 5 min), custom test command with `{target}` placeholder
 - Test output parsing for Gradle, Maven Surefire, and Jest with pass/fail counts and failed test names
+- Agent Loop: batch task execution with dependency-aware topological sort, progress tracking, and automatic task advancement (#872)
+- Spec task runner service with batch execution UI for running selected or all To Do tasks
 
 ### Fixed
 - Prevent agent and MCP logs from leaking across projects (#867)
+- Defer task advancement until prompt execution completes (#872)
+- Downgrade Kotlin to 2.0.21 to match IDE runtime and remove dead activeTaskSpec code
+- Prompts settings dialog text overflows viewport
 
 ### Documentation
 - Add "Automated Test Execution" section to Agent Mode docs with build system table, configuration, and troubleshooting
+- Add Agent Loop batch task execution page for SDD
+- Add references, documentation, and CLI board sections to SDD docs
+- Reorder docs sidebar: Agent Mode after Features Overview, then Spec-driven Development, then Agent Loop
+- Add Agent Loop cross-references to Agent Mode and Spec-driven Development pages
 
 ## [0.9.7]
 
