@@ -68,7 +68,7 @@ export default function Home() {
               <div className={styles.videoContainer}>
                 <iframe
                   className={styles.demoVideo}
-                  src="https://www.youtube.com/embed/kuicOEN4YMU"
+                  src="https://www.youtube.com/embed/t1MOHCfsdvk"
                   title="Spec Driven Development Demo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
