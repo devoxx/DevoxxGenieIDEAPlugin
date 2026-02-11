@@ -14,7 +14,7 @@ Spec Driven Development (SDD) is a workflow where you define **what** needs to b
 <iframe
   width="100%"
   style={{aspectRatio: '16/9', maxWidth: '720px', borderRadius: '8px'}}
-  src="https://www.youtube.com/embed/kuicOEN4YMU"
+  src="https://www.youtube.com/embed/t1MOHCfsdvk"
   title="Spec Driven Development Demo"
   frameBorder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
