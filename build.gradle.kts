@@ -3,8 +3,8 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java
-    kotlin("jvm") version "2.3.10"
-    kotlin("plugin.lombok") version "2.3.10"
+    kotlin("jvm") version "2.0.21"
+    kotlin("plugin.lombok") version "2.0.21"
     id("org.jetbrains.intellij.platform") version "2.11.0"
 }
 
