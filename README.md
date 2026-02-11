@@ -61,6 +61,8 @@ The Kanban Board gives you a visual overview of task status with drag-and-drop s
 
 Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes them sequentially in a single batch. Tasks are automatically sorted by dependencies using topological ordering, and each task gets a fresh conversation. The agent implements each task autonomously, and when it marks a task as Done the runner advances to the next one — with progress tracking and notifications throughout.
 
+<img width="993" height="278" alt="weather-tasks-started" src="https://github.com/user-attachments/assets/d27617df-a403-4a27-bc63-31be9eb700d0" />
+
 **[📖 Agent Loop Documentation](https://genie.devoxx.com/docs/features/sdd-agent-loop)**
 
 ### Agentic Programming with DevoxxGenie
