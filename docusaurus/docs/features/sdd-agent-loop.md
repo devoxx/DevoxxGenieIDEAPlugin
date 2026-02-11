@@ -42,15 +42,29 @@ This is useful when you have a set of related tasks (e.g., "implement the auth m
    - When the agent sets the task status to "Done", the file watcher detects the change and queues the next task
 4. A progress bar and notifications keep you informed throughout
 
+## Before You Start
+
+For best results, create a **CLAUDE.md** or **AGENTS.md** file in your project root before running the agent loop. This file gives the LLM agent essential context about your project — build commands, architecture, conventions, and constraints — so it can make better decisions autonomously.
+
+Then open **Settings → DevoxxGenie → Prompts** and make sure the checkbox **"Use CLAUDE.md or AGENTS.md in prompt"** is enabled. When checked, the contents of your instructions file are automatically included in every task prompt sent to the agent.
+
+:::tip
+Without a CLAUDE.md / AGENTS.md file (or with the setting unchecked), the agent has no project-specific guidance and may make assumptions about your build system, coding style, or project structure that lead to incorrect implementations.
+:::
+
 ## Running Tasks
 
 ### Run Selected
+
+![Three weather tasks ready to run](/img/weather-tasks.png)
 
 1. Open the **DevoxxGenie Specs** tool window (Task List view)
 2. Check the boxes next to the tasks you want to run
 3. Click **"Run Selected"** in the toolbar
 
 Only checked tasks with status "To Do" are included. Tasks that are already "Done" or "In Progress" are skipped automatically.
+
+![Batch run started — notifications confirm the run and first task](/img/weather-tasks-started.png)
 
 ### Run All To Do
 
@@ -98,6 +112,8 @@ For each task in the sorted order, the runner:
 
 The agent then works autonomously:
 
+![TASK-1 now In Progress while TASK-2 and TASK-3 remain in To Do](/img/weather-task1-in-progress.png)
+
 1. Sets the task status to "In Progress"
 2. Reads files, makes edits, runs through the acceptance criteria
 3. Checks off each acceptance criterion as it's completed
@@ -106,6 +122,10 @@ The agent then works autonomously:
 6. Sets the task status to "Done"
 
 **Important**: Steps 4 and 5 (notes and summary) should happen before step 6 (marking Done). Once the status changes to "Done", the file watcher triggers advancement to the next task. Notes and summaries written after that point are still saved but won't block advancement.
+
+The Kanban Board reflects the same state — TASK-1 has moved to "In Progress" while the remaining tasks stay in "To Do":
+
+![Kanban Board showing TASK-1 In Progress](/img/weather-task-kanban-view.png)
 
 The full LLM response is visible for every task. Scroll up in the chat to review earlier task responses — output is not cleared between tasks.
 
