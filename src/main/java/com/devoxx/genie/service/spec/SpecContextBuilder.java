@@ -126,12 +126,13 @@ public final class SpecContextBuilder {
         }
         sb.append(".\n\n");
         sb.append("Follow the acceptance criteria exactly.\n\n");
-        sb.append("As you work, use the backlog tools to keep the task updated:\n");
-        sb.append("1. Use backlog_task_edit to set status to 'In Progress' when you start.\n");
+        sb.append("IMPORTANT: As you work, use backlog_task_edit (NOT backlog_task_complete) to keep the task updated:\n");
+        sb.append("1. FIRST, use backlog_task_edit to set status to 'In Progress' when you start.\n");
         sb.append("2. Use backlog_task_edit with acceptanceCriteriaCheck to check off each criterion as you complete it.\n");
-        sb.append("3. Use backlog_task_edit with notesAppend to record what you changed and why.\n");
-        sb.append("4. When finished, use backlog_task_edit to write a finalSummary describing what was done.\n");
-        sb.append("5. Use backlog_task_complete to mark the task as Done.\n");
+        sb.append("3. Use backlog_task_edit with notesAppend to record what you changed, which files were modified, and why.\n");
+        sb.append("4. When finished, use backlog_task_edit to write a detailed finalSummary of everything that was implemented.\n");
+        sb.append("5. LAST, use backlog_task_edit to set status to 'Done'. Do NOT use backlog_task_complete.\n");
+        sb.append("\nYou MUST complete steps 3 and 4 before step 5. The notes and final summary are essential for traceability.\n");
         return sb.toString();
     }
 }

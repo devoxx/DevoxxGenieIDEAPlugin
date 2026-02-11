@@ -175,6 +175,7 @@ public final class SpecService implements Disposable {
         writeLock.lock();
         try {
             BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            configService.ensureInitialized();
             if (spec.getId() == null || spec.getId().isEmpty()) {
                 spec.setId(configService.getNextTaskId());
             }
@@ -301,6 +302,7 @@ public final class SpecService implements Disposable {
         writeLock.lock();
         try {
             BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            configService.ensureInitialized();
             String id = configService.getNextDocumentId();
 
             Path docsDir = configService.getDocsDir();
@@ -416,6 +418,13 @@ public final class SpecService implements Disposable {
      */
     public void addChangeListener(@NotNull Runnable listener) {
         changeListeners.add(listener);
+    }
+
+    /**
+     * Remove a previously registered change listener.
+     */
+    public void removeChangeListener(@NotNull Runnable listener) {
+        changeListeners.remove(listener);
     }
 
     private void discoverAndParseSpecs(@NotNull Path specDir) throws IOException {

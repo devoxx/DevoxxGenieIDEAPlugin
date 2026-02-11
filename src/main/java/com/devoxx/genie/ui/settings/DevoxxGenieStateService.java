@@ -235,6 +235,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean specBrowserEnabled = false;
     private String specDirectory = "backlog";
     private Boolean autoInjectSpecContext = true;
+    private Integer specTaskRunnerTimeoutMinutes = 10;
 
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"

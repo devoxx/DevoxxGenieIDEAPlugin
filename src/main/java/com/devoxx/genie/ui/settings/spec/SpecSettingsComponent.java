@@ -36,6 +36,11 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
     private final JButton initBacklogButton = new JButton("Init Backlog");
     private final JBLabel statusLabel = new JBLabel();
 
+    private final JSpinner taskRunnerTimeoutSpinner = new JSpinner(
+            new SpinnerNumberModel(
+                    stateService.getSpecTaskRunnerTimeoutMinutes() != null ? stateService.getSpecTaskRunnerTimeoutMinutes() : 10,
+                    1, 60, 1));
+
     public SpecSettingsComponent(@NotNull Project project) {
         this.project = project;
         JPanel contentPanel = new JPanel(new GridBagLayout());
@@ -88,6 +93,19 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                 "or use the embedded backlog tools in agent mode to manage tasks programmatically. " +
                 "The IDE provides a dedicated Spec Browser tool window where you can view the progress " +
                 "of all tasks, inspect their details, and launch implementation directly with the AI agent.");
+
+        // --- Task Runner ---
+        addSection(contentPanel, gbc, "Task Runner");
+
+        JPanel timeoutRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        timeoutRow.add(new JBLabel("Task timeout (minutes):"));
+        taskRunnerTimeoutSpinner.setPreferredSize(new java.awt.Dimension(60, 25));
+        timeoutRow.add(taskRunnerTimeoutSpinner);
+        addFullWidthRow(contentPanel, gbc, timeoutRow);
+        addHelpText(contentPanel, gbc,
+                "When running multiple tasks sequentially, each task is given this amount of time " +
+                "to complete before being automatically skipped. The timeout resets if the agent " +
+                "starts working on the task (status changes to 'In Progress').");
 
         // Filler
         gbc.weighty = 1.0;
@@ -221,18 +239,21 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
     public boolean isModified() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
-                || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory());
+                || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory())
+                || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes());
     }
 
     public void apply() {
         stateService.setSpecBrowserEnabled(enableSpecBrowserCheckbox.isSelected());
         stateService.setSpecDirectory(specDirectoryField.getText().trim());
+        stateService.setSpecTaskRunnerTimeoutMinutes((Integer) taskRunnerTimeoutSpinner.getValue());
     }
 
     public void reset() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableSpecBrowserCheckbox.setSelected(Boolean.TRUE.equals(state.getSpecBrowserEnabled()));
         specDirectoryField.setText(state.getSpecDirectory() != null ? state.getSpecDirectory() : "backlog");
+        taskRunnerTimeoutSpinner.setValue(state.getSpecTaskRunnerTimeoutMinutes() != null ? state.getSpecTaskRunnerTimeoutMinutes() : 10);
     }
 
     @Override

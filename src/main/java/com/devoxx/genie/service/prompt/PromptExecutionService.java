@@ -57,11 +57,12 @@ public class PromptExecutionService {
                              @NotNull PromptOutputPanel panel,
                              @NotNull Runnable enableButtons) {
 
-        // Cancel any running executions for this project
-        if (cancellationService.cancelAllExecutions(project) > 0) {
-            log.debug("Cancelled all existing executions for project");
-            enableButtons.run();
-            return;
+        // Cancel any running executions for this project before starting a new one.
+        // We always proceed with the new execution rather than aborting — the caller
+        // (PromptExecutionController / task runner) has already decided to submit.
+        int cancelled = cancellationService.cancelAllExecutions(project);
+        if (cancelled > 0) {
+            log.debug("Cancelled {} existing execution(s) for project before starting new one", cancelled);
         }
 
         // Process commands

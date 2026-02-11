@@ -187,6 +187,23 @@ public final class BacklogConfigService {
     }
 
     /**
+     * Ensures the backlog directory structure and config.yml exist.
+     * If not yet initialized, performs initialization automatically.
+     * Safe to call multiple times (no-op when already initialized).
+     */
+    public void ensureInitialized() {
+        if (isBacklogInitialized()) {
+            return;
+        }
+        try {
+            log.info("Backlog not yet initialized — auto-initializing for project: {}", project.getName());
+            initBacklog(project.getName());
+        } catch (IOException e) {
+            log.error("Failed to auto-initialize backlog: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
      * Invalidate the cached config so it will be re-read from disk.
      */
     public void invalidateCache() {

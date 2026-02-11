@@ -1,10 +1,14 @@
 package com.devoxx.genie.ui.panel.spec;
 
 import com.devoxx.genie.model.spec.TaskSpec;
+import com.devoxx.genie.service.spec.CircularDependencyException;
 import com.devoxx.genie.service.spec.SpecContextBuilder;
 import com.devoxx.genie.service.spec.SpecService;
-import com.devoxx.genie.ui.listener.PromptSubmissionListener;
+import com.devoxx.genie.service.spec.SpecTaskRunnerListener;
+import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -21,15 +25,20 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
+import java.util.List;
 
 /**
  * Main panel for the Spec Browser tool window.
  * Shows tasks grouped by status in a tree, with a preview panel below.
+ * Supports checkbox selection of To Do tasks for batch sequential execution.
  */
-public class SpecBrowserPanel extends SimpleToolWindowPanel {
+public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskRunnerListener {
 
     // Preferred status ordering (others appended at end)
     private static final List<String> STATUS_ORDER = List.of("To Do", "In Progress", "Done");
@@ -42,6 +51,16 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
     private final DefaultTreeModel treeModel;
     private final SpecPreviewPanel previewPanel;
     private final JBSplitter splitter;
+    private final SpecTreeCellRenderer cellRenderer;
+    private final SpecTaskRunnerProgressPanel progressPanel;
+
+    // Checkbox tracking for To Do tasks
+    private final Set<String> checkedTaskIds = new LinkedHashSet<>();
+
+    // Toolbar actions (need references for enable/disable)
+    private AnAction runSelectedAction;
+    private AnAction runAllTodoAction;
+    private AnAction cancelRunAction;
 
     public SpecBrowserPanel(@NotNull Project project) {
         super(true, true);
@@ -53,7 +72,9 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
         specTree = new Tree(treeModel);
         specTree.setRootVisible(false);
         specTree.setShowsRootHandles(true);
-        specTree.setCellRenderer(new SpecTreeCellRenderer());
+        cellRenderer = new SpecTreeCellRenderer();
+        cellRenderer.setCheckedTaskIds(checkedTaskIds);
+        specTree.setCellRenderer(cellRenderer);
 
         // Preview panel
         previewPanel = new SpecPreviewPanel(project);
@@ -75,11 +96,27 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
             }
         });
 
+        // Mouse listener for checkbox toggling on To Do tasks
+        specTree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleCheckboxClick(e);
+            }
+        });
+
+        // Progress panel (shown above splitter during batch runs)
+        progressPanel = new SpecTaskRunnerProgressPanel();
+
         // Layout with splitter — orientation adapts to available width
         splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(new JBScrollPane(specTree));
         splitter.setSecondComponent(previewPanel);
-        setContent(splitter);
+
+        // Main content: progress panel + splitter
+        JPanel contentWrapper = new JPanel(new BorderLayout());
+        contentWrapper.add(progressPanel, BorderLayout.NORTH);
+        contentWrapper.add(splitter, BorderLayout.CENTER);
+        setContent(contentWrapper);
 
         // Switch between vertical (narrow/sidebar) and horizontal (wide/bottom) layout
         addComponentListener(new ComponentAdapter() {
@@ -90,24 +127,216 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
         });
 
         // Toolbar
-        DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(new AnAction("Refresh", "Refresh specs from disk", com.intellij.icons.AllIcons.Actions.Refresh) {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent e) {
-                refreshSpecs();
-            }
-        });
-        ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("SpecBrowser", actionGroup, true);
-        toolbar.setTargetComponent(this);
-        setToolbar(toolbar.getComponent());
+        setupToolbar();
 
         // Listen for spec changes
         SpecService specService = SpecService.getInstance(project);
         specService.addChangeListener(() -> ApplicationManager.getApplication().invokeLater(this::refreshTree));
 
+        // Register as runner listener
+        SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+        runner.addListener(this);
+
         // Initial load
         refreshTree();
     }
+
+    private void setupToolbar() {
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+
+        actionGroup.add(new AnAction("Refresh", "Refresh specs from disk", AllIcons.Actions.Refresh) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                refreshSpecs();
+            }
+        });
+
+        actionGroup.addSeparator();
+
+        runSelectedAction = new AnAction("Run Selected", "Run checked To Do tasks sequentially", AllIcons.Actions.Execute) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                runSelectedTasks();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                e.getPresentation().setEnabled(!runner.isRunning() && !checkedTaskIds.isEmpty());
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
+        actionGroup.add(runSelectedAction);
+
+        runAllTodoAction = new AnAction("Run All To Do", "Run all To Do tasks sequentially", AllIcons.Actions.RunAll) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                runAllTodoTasks();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                e.getPresentation().setEnabled(!runner.isRunning());
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
+        actionGroup.add(runAllTodoAction);
+
+        cancelRunAction = new AnAction("Cancel Run", "Stop after current task finishes", AllIcons.Actions.Suspend) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService.getInstance(project).cancel();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                e.getPresentation().setVisible(runner.isRunning());
+                e.getPresentation().setEnabled(runner.isRunning());
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
+        actionGroup.add(cancelRunAction);
+
+        ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("SpecBrowser", actionGroup, true);
+        toolbar.setTargetComponent(this);
+        setToolbar(toolbar.getComponent());
+    }
+
+    // ===== Checkbox Handling =====
+
+    private void handleCheckboxClick(MouseEvent e) {
+        TreePath path = specTree.getPathForLocation(e.getX(), e.getY());
+        if (path == null) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+        if (!(node.getUserObject() instanceof TaskSpec spec)) return;
+
+        // Only To Do tasks have checkboxes
+        if (!"To Do".equalsIgnoreCase(spec.getStatus()) || spec.getId() == null) return;
+
+        // Check if click is in the icon area (roughly first 20px of the row)
+        Rectangle bounds = specTree.getPathBounds(path);
+        if (bounds == null) return;
+
+        int iconAreaWidth = 20;
+        if (e.getX() < bounds.x + iconAreaWidth) {
+            // Toggle checkbox
+            if (checkedTaskIds.contains(spec.getId())) {
+                checkedTaskIds.remove(spec.getId());
+            } else {
+                checkedTaskIds.add(spec.getId());
+            }
+            specTree.repaint();
+        }
+    }
+
+    /**
+     * Get all checked tasks from the tree.
+     */
+    private @NotNull List<TaskSpec> getCheckedTasks() {
+        List<TaskSpec> tasks = new ArrayList<>();
+        for (int i = 0; i < rootNode.getChildCount(); i++) {
+            DefaultMutableTreeNode statusNode = (DefaultMutableTreeNode) rootNode.getChildAt(i);
+            for (int j = 0; j < statusNode.getChildCount(); j++) {
+                DefaultMutableTreeNode taskNode = (DefaultMutableTreeNode) statusNode.getChildAt(j);
+                if (taskNode.getUserObject() instanceof TaskSpec spec) {
+                    if (spec.getId() != null && checkedTaskIds.contains(spec.getId())) {
+                        tasks.add(spec);
+                    }
+                }
+            }
+        }
+        return tasks;
+    }
+
+    // ===== Task Runner Actions =====
+
+    private void runSelectedTasks() {
+        List<TaskSpec> tasks = getCheckedTasks();
+        if (tasks.isEmpty()) {
+            NotificationUtil.sendWarningNotification(project, "No tasks selected. Check the boxes next to To Do tasks first.");
+            return;
+        }
+        try {
+            SpecTaskRunnerService.getInstance(project).runTasks(tasks);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof CircularDependencyException) {
+                NotificationUtil.sendErrorNotification(project,
+                        "Cannot run tasks: " + e.getMessage());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private void runAllTodoTasks() {
+        try {
+            SpecTaskRunnerService.getInstance(project).runAllTodoTasks();
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof CircularDependencyException) {
+                NotificationUtil.sendErrorNotification(project,
+                        "Cannot run tasks: " + e.getMessage());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    // ===== SpecTaskRunnerListener =====
+
+    @Override
+    public void onRunStarted(int totalTasks) {
+        NotificationUtil.sendNotification(project, "Starting batch run of " + totalTasks + " task(s)");
+    }
+
+    @Override
+    public void onTaskStarted(TaskSpec task, int index, int total) {
+        progressPanel.update(task, index, total);
+        NotificationUtil.sendNotification(project,
+                String.format("Task %d/%d started: %s", index + 1, total, task.getDisplayLabel()));
+    }
+
+    @Override
+    public void onTaskCompleted(TaskSpec task, int index, int total) {
+        // Tree will refresh via SpecService change listener
+    }
+
+    @Override
+    public void onTaskSkipped(TaskSpec task, int index, int total, String reason) {
+        NotificationUtil.sendWarningNotification(project,
+                String.format("Task %s skipped: %s", task.getDisplayLabel(), reason));
+    }
+
+    @Override
+    public void onRunFinished(int completed, int skipped, int total, SpecTaskRunnerService.RunnerState finalState) {
+        progressPanel.showCompleted(completed, skipped, total);
+        checkedTaskIds.clear();
+        specTree.repaint();
+
+        String msg = switch (finalState) {
+            case ALL_COMPLETED -> String.format("Batch run complete: %d/%d tasks done", completed, total);
+            case CANCELLED -> String.format("Batch run cancelled: %d/%d done, %d skipped", completed, total, skipped);
+            case ERROR -> "Batch run ended with errors";
+            default -> "Batch run finished";
+        };
+        NotificationUtil.sendNotification(project, msg);
+    }
+
+    // ===== Existing Methods =====
 
     /**
      * Refresh specs from disk and rebuild the tree.
@@ -135,6 +364,15 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel {
         rootNode.removeAllChildren();
 
         List<TaskSpec> specs = SpecService.getInstance(project).getAllSpecs();
+
+        // Remove checked IDs that no longer exist or are no longer To Do
+        Set<String> validIds = new HashSet<>();
+        for (TaskSpec spec : specs) {
+            if (spec.getId() != null && "To Do".equalsIgnoreCase(spec.getStatus())) {
+                validIds.add(spec.getId());
+            }
+        }
+        checkedTaskIds.retainAll(validIds);
 
         // Group by status
         Map<String, List<TaskSpec>> grouped = new LinkedHashMap<>();

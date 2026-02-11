@@ -3,9 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
-import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.service.mcp.MCPService;
-import com.devoxx.genie.service.spec.SpecContextBuilder;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -167,12 +165,6 @@ public class MessageCreationService {
             }
         }
 
-        // Add active task spec context if set
-        TaskSpec activeSpec = chatMessageContext.getActiveTaskSpec();
-        if (activeSpec != null) {
-            String specContext = SpecContextBuilder.buildContext(activeSpec);
-            stringBuilder.append(specContext).append("\n\n");
-        }
 
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
             // Semantic search is enabled, add search results

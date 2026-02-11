@@ -76,13 +76,23 @@ public class NonStreamingPromptExecutionService {
         // Create new future for the current query
         CompletableFuture<ChatResponse> queryFuture = CompletableFuture
             .supplyAsync(
-                () -> processChatMessage(chatMessageContext), 
+                () -> processChatMessage(chatMessageContext),
                 threadPoolManager.getPromptExecutionPool()
-            )
-            .orTimeout(
-                chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(), 
-                TimeUnit.SECONDS
-            )
+            );
+
+        // Only apply a blanket timeout for simple (non-agent, non-MCP) prompts.
+        // Agent/MCP conversations involve many HTTP round trips; each individual
+        // request already has a timeout via the Langchain4j SDK.
+        boolean isAgentOrMcp = Boolean.TRUE.equals(
+                DevoxxGenieStateService.getInstance().getAgentModeEnabled())
+                || MCPService.isMCPEnabled();
+        if (!isAgentOrMcp) {
+            queryFuture = queryFuture.orTimeout(
+                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(),
+                    TimeUnit.SECONDS);
+        }
+
+        queryFuture = queryFuture
             .thenApply(result -> {
                 chatMessageContext.setExecutionTimeMs(System.currentTimeMillis() - startTime);
                 return result;
