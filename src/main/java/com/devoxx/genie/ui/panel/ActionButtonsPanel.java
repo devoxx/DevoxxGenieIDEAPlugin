@@ -8,6 +8,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.agent.AgentToggleManager;
 import com.devoxx.genie.ui.mcp.MCPToolsManager;
+import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
@@ -66,6 +67,9 @@ public class ActionButtonsPanel extends JPanel
 
     // The Agent toggle manager
     private final transient AgentToggleManager agentToggleManager;
+
+    // Queued prompt from spec task runner — submitted when current execution finishes
+    private String pendingSpecPrompt;
 
     public ActionButtonsPanel(Project project,
                               SubmitPanel submitPanel,
@@ -229,7 +233,36 @@ public class ActionButtonsPanel extends JPanel
             submitBtn.setIcon(SubmitIcon);
             promptInputArea.setEnabled(true);
             submitPanel.stopGlowing();
+            submitPendingSpecPrompt();
+
+            // Notify the spec task runner that prompt execution completed so it can
+            // start a grace timer and advance if the task wasn't marked Done.
+            SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+            if (runner.isRunning()) {
+                runner.notifyPromptExecutionCompleted();
+            }
         });
+    }
+
+    /**
+     * If the spec task runner queued a prompt while the previous execution was still
+     * streaming, submit it now that execution has finished.
+     */
+    private void submitPendingSpecPrompt() {
+        if (pendingSpecPrompt == null) {
+            return;
+        }
+        String prompt = pendingSpecPrompt;
+        pendingSpecPrompt = null;
+
+        // Only submit if the spec task runner is still active (not cancelled)
+        SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+        if (!runner.isRunning()) {
+            return;
+        }
+
+        ApplicationManager.getApplication().invokeLater(() ->
+                onPromptSubmitted(project, prompt));
     }
 
     public void disableButtons() {
@@ -294,6 +327,12 @@ public class ActionButtonsPanel extends JPanel
             return;
         }
         ApplicationManager.getApplication().invokeLater(() -> {
+            if (controller.isPromptRunning()) {
+                // Don't stop the current execution — queue this prompt so the
+                // current response finishes streaming to the user.
+                pendingSpecPrompt = prompt;
+                return;
+            }
             promptInputArea.setText(prompt);
             onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
         });

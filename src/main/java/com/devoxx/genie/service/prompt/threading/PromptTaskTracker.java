@@ -100,28 +100,24 @@ public class PromptTaskTracker {
     public int cancelAllTasks(@NotNull Project project) {
         String projectHash = project.getLocationHash();
         int count = 0;
-        
+
         // Handle new-style tasks
         Set<PromptTask<?>> tasks = projectTasks.get(projectHash);
         if (tasks != null && !tasks.isEmpty()) {
             count += tasks.size();
             log.debug("Cancelling {} new-style tasks for project {}", tasks.size(), projectHash);
-            
+
             // Clone to avoid ConcurrentModificationException
             new HashSet<>(tasks).forEach(task -> task.cancel(true));
+
+            // Remove cancelled tasks from tracking so subsequent executePrompt() calls
+            // don't see stale entries and abort (the early-return guard in executePrompt).
+            projectTasks.remove(projectHash);
         }
-        
-//        // Handle legacy tasks
-//        Map<String, CancellableTask> oldTasks = legacyTasks.get(projectHash);
-//        if (oldTasks != null && !oldTasks.isEmpty()) {
-//            count += oldTasks.size();
-//            log.debug("Cancelling {} legacy tasks for project {}", oldTasks.size(), projectHash);
-//
-//            // Cancel all tasks
-//            oldTasks.values().forEach(CancellableTask::cancel);
-//            oldTasks.clear();
-//        }
-        
+
+        // Also clear context ID index for this project
+        tasksByContextId.remove(projectHash);
+
         return count;
     }
 

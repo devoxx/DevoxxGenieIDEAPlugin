@@ -21,6 +21,7 @@ public class PromptExecutionController implements PromptExecutionListener {
     private final PromptOutputPanel promptOutputPanel;
     private final ActionButtonsPanel actionButtonsPanel;
     private boolean isPromptRunning = false;
+    private long currentExecutionId = 0;
     private ChatMessageContext currentChatMessageContext;
 
     public PromptExecutionController(Project project,
@@ -87,11 +88,18 @@ public class PromptExecutionController implements PromptExecutionListener {
         if (!promptOutputPanel.isNewConversation()) {
             promptOutputPanel.scrollToBottom();
         }
-        
+
+        // Capture execution ID so the completion callback can detect if it's stale.
+        // When the task runner advances to the next task, it stops the current execution
+        // and starts a new one. The old completion callback must not interfere.
+        final long myExecutionId = currentExecutionId;
         promptExecutionService.executePrompt(
-                currentChatMessageContext, 
-                promptOutputPanel, 
+                currentChatMessageContext,
+                promptOutputPanel,
                 () -> {
+                    if (myExecutionId != currentExecutionId) {
+                        return; // Stale callback from a previous execution; ignore
+                    }
                     endPromptExecution();
                     promptInputArea.clear();
                     promptInputArea.requestInputFocus();
@@ -107,6 +115,7 @@ public class PromptExecutionController implements PromptExecutionListener {
     @Override
     public void startPromptExecution() {
         isPromptRunning = true;
+        currentExecutionId++;
         actionButtonsPanel.disableSubmitBtn();
         actionButtonsPanel.disableButtons();
         actionButtonsPanel.startGlowing();
