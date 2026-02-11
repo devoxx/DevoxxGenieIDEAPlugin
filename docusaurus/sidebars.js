@@ -30,6 +30,7 @@ const sidebars = {
       items: [
         'features/overview',
         'features/spec-driven-development',
+        'features/sdd-agent-loop',
         'features/chat-interface',
         'features/mcp_expanded',
         'features/agent-mode',

@@ -448,6 +448,10 @@ To install the CLI:
 npm i -g backlog.md
 ```
 
+## Batch Task Execution (Agent Loop)
+
+For running multiple tasks sequentially with dependency ordering, progress tracking, and automatic task advancement, see [Agent Loop — Batch Task Execution](sdd-agent-loop.md).
+
 ## Tips and Best Practices
 
 - **Write clear acceptance criteria**: The more specific your criteria, the better the agent can implement and verify its work
