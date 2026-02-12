@@ -18,10 +18,21 @@ public interface CliCommand {
     /**
      * Build the full command list for ProcessBuilder,
      * including MCP config flag and prompt (if passed as a trailing argument).
+     * Used by task execution mode.
      */
     @NotNull List<String> buildProcessCommand(@NotNull CliToolConfig config,
                                                @NotNull String prompt,
                                                @Nullable String mcpConfigPath);
+
+    /**
+     * Build the command list for chat mode (no MCP config, may omit
+     * task-specific flags like --print).
+     * Default delegates to {@link #buildProcessCommand} with null mcpConfigPath.
+     */
+    default @NotNull List<String> buildChatCommand(@NotNull CliToolConfig config,
+                                                    @NotNull String prompt) {
+        return buildProcessCommand(config, prompt, null);
+    }
 
     /**
      * Deliver the prompt to the running process.
@@ -41,6 +52,15 @@ public interface CliCommand {
 
     /** Default MCP config CLI flag (e.g., "--mcp-config"). */
     @NotNull String defaultMcpConfigFlag();
+
+    /**
+     * Filter a line of stdout from the CLI process before including it in the chat response.
+     * Return null to exclude the line, or the (possibly cleaned) line to include.
+     * Default: return the line as-is.
+     */
+    default @Nullable String filterResponseLine(@NotNull String line) {
+        return line;
+    }
 
     /**
      * Called when the backlog task is marked Done while the process is still running.
