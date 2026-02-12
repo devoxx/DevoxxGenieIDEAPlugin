@@ -112,7 +112,11 @@ public class WebViewJavaScriptExecutor {
                     browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
                     lastExecutionTime.set(System.currentTimeMillis());
                     failureCount.set(0); // Reset failure count on success
-                    
+
+                    // Force JCEF component repaint — in OSR mode, DOM changes via
+                    // executeJavaScript may not trigger the Swing paint cycle automatically
+                    browser.getComponent().repaint();
+
                     debugLogger.logTiming("jsExecution#" + execNumber, startTime);
                 } else {
                     String reason = !isLoaded.get() ? "not loaded" : "CEF browser is null";

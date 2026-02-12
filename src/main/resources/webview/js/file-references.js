@@ -41,8 +41,8 @@ function addFileReferencesToConversation(messageId, fileReferencesHtml) {
             
             messagePair.parentNode.insertBefore(fileRefsContainer, messagePair.nextSibling);
             
-            // Scroll to the bottom
-            window.scrollTo(0, document.body.scrollHeight);
+            // Scroll to the bottom (deferred to allow layout recalculation)
+            setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);
         } else {
             console.error('Message pair not found: ' + messageId);
         }

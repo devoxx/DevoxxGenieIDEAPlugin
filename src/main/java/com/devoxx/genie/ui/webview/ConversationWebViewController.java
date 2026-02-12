@@ -103,13 +103,14 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                         jsExecutor.setLoaded(true);
                         initialized.set(true);
                         log.info("ConversationWebView loaded with status: " + httpStatusCode);
-                        
+
                         // Initialize external link handling after page load
                         if (externalLinkHandler != null) {
                             externalLinkHandler.injectLinkHandlingScript();
                         }
                     }
                 }, browser.getCefBrowser());
+
             } catch (Exception e) {
                 log.error("Error initializing JCEF browser despite JCEF being available: {}", e.getMessage());
                 // Set jcefAvailable to false to use fallback mode
