@@ -5,6 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.mcp.MCPSettings;
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -236,6 +237,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String specDirectory = "backlog";
     private Boolean autoInjectSpecContext = true;
     private Integer specTaskRunnerTimeoutMinutes = 10;
+
+    // CLI tool runner settings for spec tasks
+    private List<CliToolConfig> cliTools = new ArrayList<>();
+    private String specRunnerMode = "llm";          // "llm" or "cli"
+    private String specSelectedCliTool = "";         // name of selected CLI tool
 
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"

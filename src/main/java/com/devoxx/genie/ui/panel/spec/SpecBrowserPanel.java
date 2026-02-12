@@ -1,11 +1,13 @@
 package com.devoxx.genie.ui.panel.spec;
 
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.service.spec.CircularDependencyException;
 import com.devoxx.genie.service.spec.SpecContextBuilder;
 import com.devoxx.genie.service.spec.SpecService;
 import com.devoxx.genie.service.spec.SpecTaskRunnerListener;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
@@ -61,6 +63,11 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private AnAction runSelectedAction;
     private AnAction runAllTodoAction;
     private AnAction cancelRunAction;
+
+    // Execution mode ComboBox
+    private JComboBox<String> executionModeCombo;
+    private boolean refreshingCombo = false;
+    private static final String LLM_PROVIDER_LABEL = "LLM Provider";
 
     public SpecBrowserPanel(@NotNull Project project) {
         super(true, true);
@@ -136,6 +143,14 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         // Register as runner listener
         SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
         runner.addListener(this);
+
+        // Refresh execution mode combo when settings change (e.g., CLI tools added/removed)
+        // SpecSettingsConfigurable publishes on the project message bus
+        project.getMessageBus()
+                .connect()
+                .subscribe(AppTopics.SETTINGS_CHANGED_TOPIC,
+                        (com.devoxx.genie.ui.listener.SettingsChangeListener) hasKey ->
+                                ApplicationManager.getApplication().invokeLater(this::refreshExecutionModeCombo));
 
         // Initial load
         refreshTree();
@@ -213,7 +228,68 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
 
         ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("SpecBrowser", actionGroup, true);
         toolbar.setTargetComponent(this);
-        setToolbar(toolbar.getComponent());
+
+        // Build a composite toolbar with the execution mode ComboBox + action buttons
+        executionModeCombo = new JComboBox<>();
+        executionModeCombo.setToolTipText("Select execution mode: LLM Provider or external CLI tool");
+        refreshExecutionModeCombo();
+        executionModeCombo.addActionListener(e -> onExecutionModeChanged());
+
+        JPanel toolbarPanel = new JPanel(new BorderLayout());
+        toolbarPanel.add(executionModeCombo, BorderLayout.WEST);
+        toolbarPanel.add(toolbar.getComponent(), BorderLayout.CENTER);
+        setToolbar(toolbarPanel);
+    }
+
+    private void refreshExecutionModeCombo() {
+        if (executionModeCombo == null) return;
+
+        // Suppress listener during programmatic updates
+        refreshingCombo = true;
+        try {
+            executionModeCombo.removeAllItems();
+            executionModeCombo.addItem(LLM_PROVIDER_LABEL);
+
+            DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+            List<CliToolConfig> tools = stateService.getCliTools();
+            if (tools != null) {
+                for (CliToolConfig tool : tools) {
+                    if (tool.isEnabled()) {
+                        executionModeCombo.addItem("CLI: " + tool.getName());
+                    }
+                }
+            }
+
+            // Restore selection
+            String mode = stateService.getSpecRunnerMode();
+            if ("cli".equalsIgnoreCase(mode)) {
+                String selectedTool = stateService.getSpecSelectedCliTool();
+                String label = "CLI: " + selectedTool;
+                for (int i = 0; i < executionModeCombo.getItemCount(); i++) {
+                    if (label.equals(executionModeCombo.getItemAt(i))) {
+                        executionModeCombo.setSelectedIndex(i);
+                        return;
+                    }
+                }
+            }
+            executionModeCombo.setSelectedIndex(0);
+        } finally {
+            refreshingCombo = false;
+        }
+    }
+
+    private void onExecutionModeChanged() {
+        if (executionModeCombo == null || refreshingCombo) return;
+        String selected = (String) executionModeCombo.getSelectedItem();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+
+        if (selected == null || LLM_PROVIDER_LABEL.equals(selected)) {
+            stateService.setSpecRunnerMode("llm");
+            stateService.setSpecSelectedCliTool("");
+        } else if (selected.startsWith("CLI: ")) {
+            stateService.setSpecRunnerMode("cli");
+            stateService.setSpecSelectedCliTool(selected.substring("CLI: ".length()));
+        }
     }
 
     // ===== Checkbox Handling =====
@@ -330,10 +406,14 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         String msg = switch (finalState) {
             case ALL_COMPLETED -> String.format("Batch run complete: %d/%d tasks done", completed, total);
             case CANCELLED -> String.format("Batch run cancelled: %d/%d done, %d skipped", completed, total, skipped);
-            case ERROR -> "Batch run ended with errors";
+            case ERROR -> String.format("Batch run stopped due to error: %d/%d done, %d skipped. Check the CLI tool's authentication and configuration.", completed, total, skipped);
             default -> "Batch run finished";
         };
-        NotificationUtil.sendNotification(project, msg);
+        if (finalState == SpecTaskRunnerService.RunnerState.ERROR) {
+            NotificationUtil.sendErrorNotification(project, msg);
+        } else {
+            NotificationUtil.sendNotification(project, msg);
+        }
     }
 
     // ===== Existing Methods =====

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.spec;
 
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.spec.BacklogConfigService;
 import com.devoxx.genie.service.spec.SpecService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -11,13 +12,18 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.table.JBTable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,6 +46,9 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             new SpinnerNumberModel(
                     stateService.getSpecTaskRunnerTimeoutMinutes() != null ? stateService.getSpecTaskRunnerTimeoutMinutes() : 10,
                     1, 60, 1));
+
+    private final CliToolTableModel cliToolTableModel = new CliToolTableModel();
+    private final JBTable cliToolTable = new JBTable(cliToolTableModel);
 
     public SpecSettingsComponent(@NotNull Project project) {
         this.project = project;
@@ -107,6 +116,41 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                 "to complete before being automatically skipped. The timeout resets if the agent " +
                 "starts working on the task (status changes to 'In Progress').");
 
+        // --- CLI Runners ---
+        addSection(contentPanel, gbc, "CLI Runners");
+
+        addHelpText(contentPanel, gbc,
+                "Configure external CLI tools (e.g., GitHub Copilot CLI, Claude Code, Gemini CLI) " +
+                "that can execute spec tasks instead of the built-in LLM provider. " +
+                "CLI tools must have the Backlog MCP server installed so they can update task status. " +
+                "Select the execution mode in the Spec Browser toolbar.");
+
+        // Configure table columns
+        cliToolTable.getColumnModel().getColumn(0).setMaxWidth(60);   // Enabled
+        cliToolTable.getColumnModel().getColumn(0).setMinWidth(60);
+        cliToolTable.getColumnModel().getColumn(1).setPreferredWidth(80);  // Type
+        cliToolTable.getColumnModel().getColumn(2).setPreferredWidth(220); // Path
+        cliToolTable.getColumnModel().getColumn(3).setPreferredWidth(170); // MCP Config Flag
+        cliToolTable.setRowHeight(25);
+
+        ToolbarDecorator decorator = ToolbarDecorator.createDecorator(cliToolTable)
+                .setAddAction(button -> addCliTool())
+                .setEditAction(button -> editCliTool())
+                .setRemoveAction(button -> removeCliTool());
+
+        JPanel tablePanel = decorator.createPanel();
+        tablePanel.setPreferredSize(new Dimension(-1, 150));
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        contentPanel.add(tablePanel, gbc);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridy++;
+
+        // Load existing CLI tools from state
+        loadCliTools();
+
         // Filler
         gbc.weighty = 1.0;
         gbc.gridy++;
@@ -114,6 +158,56 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
         panel.add(contentPanel, BorderLayout.NORTH);
     }
+
+    // ===== CLI Tool Table Management =====
+
+    private void loadCliTools() {
+        List<CliToolConfig> tools = stateService.getCliTools();
+        if (tools != null) {
+            for (CliToolConfig tool : tools) {
+                cliToolTableModel.addTool(tool);
+            }
+        }
+        // Pre-populate with copilot if no tools configured
+        if (cliToolTableModel.getRowCount() == 0) {
+            List<String> defaultArgs = new ArrayList<>();
+            defaultArgs.add("--allow-all");
+            cliToolTableModel.addTool(CliToolConfig.builder()
+                    .type(CliToolConfig.CliType.COPILOT)
+                    .name(CliToolConfig.CliType.COPILOT.getDisplayName())
+                    .executablePath("/opt/homebrew/bin/copilot")
+                    .extraArgs(defaultArgs)
+                    .mcpConfigFlag("--additional-mcp-config")
+                    .enabled(true)
+                    .build());
+        }
+    }
+
+    private void addCliTool() {
+        CliToolDialog dialog = new CliToolDialog(null);
+        if (dialog.showAndGet()) {
+            cliToolTableModel.addTool(dialog.getResult());
+        }
+    }
+
+    private void editCliTool() {
+        int row = cliToolTable.getSelectedRow();
+        if (row < 0) return;
+        CliToolConfig existing = cliToolTableModel.getToolAt(row);
+        CliToolDialog dialog = new CliToolDialog(existing);
+        if (dialog.showAndGet()) {
+            cliToolTableModel.updateTool(row, dialog.getResult());
+        }
+    }
+
+    private void removeCliTool() {
+        int row = cliToolTable.getSelectedRow();
+        if (row >= 0) {
+            cliToolTableModel.removeTool(row);
+        }
+    }
+
+    // ===== Existing Helper Methods =====
 
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
         gbc.gridwidth = 2;
@@ -176,7 +270,6 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                 ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
                 try {
-                    // Step 1: Create directory structure
                     indicator.setText("Creating backlog directory structure...");
                     indicator.setIndeterminate(false);
                     indicator.setFraction(0.2);
@@ -185,7 +278,6 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
                     indicator.checkCanceled();
 
-                    // Step 2: Refresh VFS
                     indicator.setText("Refreshing project files...");
                     indicator.setFraction(0.6);
 
@@ -204,7 +296,6 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
                     indicator.checkCanceled();
 
-                    // Step 3: Refresh spec service cache
                     indicator.setText("Updating spec browser...");
                     indicator.setFraction(0.9);
 
@@ -221,7 +312,6 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             cancelled = true;
         }
 
-        // Back on EDT — update UI
         if (cancelled) {
             statusLabel.setText("Cancelled");
             initBacklogButton.setEnabled(true);
@@ -240,13 +330,22 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
                 || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory())
-                || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes());
+                || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes())
+                || isCliToolsModified();
+    }
+
+    private boolean isCliToolsModified() {
+        List<CliToolConfig> saved = stateService.getCliTools();
+        List<CliToolConfig> current = cliToolTableModel.getAllTools();
+        if (saved == null) return !current.isEmpty();
+        return !saved.equals(current);
     }
 
     public void apply() {
         stateService.setSpecBrowserEnabled(enableSpecBrowserCheckbox.isSelected());
         stateService.setSpecDirectory(specDirectoryField.getText().trim());
         stateService.setSpecTaskRunnerTimeoutMinutes((Integer) taskRunnerTimeoutSpinner.getValue());
+        stateService.setCliTools(new ArrayList<>(cliToolTableModel.getAllTools()));
     }
 
     public void reset() {
@@ -254,10 +353,426 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         enableSpecBrowserCheckbox.setSelected(Boolean.TRUE.equals(state.getSpecBrowserEnabled()));
         specDirectoryField.setText(state.getSpecDirectory() != null ? state.getSpecDirectory() : "backlog");
         taskRunnerTimeoutSpinner.setValue(state.getSpecTaskRunnerTimeoutMinutes() != null ? state.getSpecTaskRunnerTimeoutMinutes() : 10);
+
+        cliToolTableModel.clear();
+        List<CliToolConfig> tools = state.getCliTools();
+        if (tools != null) {
+            for (CliToolConfig tool : tools) {
+                cliToolTableModel.addTool(tool);
+            }
+        }
     }
 
     @Override
     public void addListeners() {
         // No dynamic listeners needed
+    }
+
+    // ===== CLI Tool Table Model =====
+
+    private static class CliToolTableModel extends AbstractTableModel {
+        private static final String[] COLUMNS = {"Enabled", "Type", "Executable Path", "MCP Config Flag"};
+        private final List<CliToolConfig> tools = new ArrayList<>();
+
+        @Override
+        public int getRowCount() {
+            return tools.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return COLUMNS.length;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return COLUMNS[column];
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return columnIndex == 0 ? Boolean.class : String.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0; // Only "Enabled" is directly editable
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            CliToolConfig tool = tools.get(rowIndex);
+            return switch (columnIndex) {
+                case 0 -> tool.isEnabled();
+                case 1 -> tool.getType() != null ? tool.getType().getDisplayName() : "";
+                case 2 -> tool.getExecutablePath();
+                case 3 -> tool.getMcpConfigFlag() != null ? tool.getMcpConfigFlag() : "";
+                default -> "";
+            };
+        }
+
+        @Override
+        public void setValueAt(Object value, int rowIndex, int columnIndex) {
+            if (columnIndex == 0 && value instanceof Boolean) {
+                tools.get(rowIndex).setEnabled((Boolean) value);
+                fireTableCellUpdated(rowIndex, columnIndex);
+            }
+        }
+
+        public void addTool(CliToolConfig tool) {
+            tools.add(tool);
+            fireTableRowsInserted(tools.size() - 1, tools.size() - 1);
+        }
+
+        public void updateTool(int row, CliToolConfig tool) {
+            tools.set(row, tool);
+            fireTableRowsUpdated(row, row);
+        }
+
+        public void removeTool(int row) {
+            tools.remove(row);
+            fireTableRowsDeleted(row, row);
+        }
+
+        public CliToolConfig getToolAt(int row) {
+            return tools.get(row);
+        }
+
+        public List<CliToolConfig> getAllTools() {
+            return new ArrayList<>(tools);
+        }
+
+        public void clear() {
+            int size = tools.size();
+            if (size > 0) {
+                tools.clear();
+                fireTableRowsDeleted(0, size - 1);
+            }
+        }
+    }
+
+    // ===== CLI Tool Dialog =====
+
+    private static class CliToolDialog extends com.intellij.openapi.ui.DialogWrapper {
+        private final JComboBox<CliToolConfig.CliType> typeCombo = new JComboBox<>(CliToolConfig.CliType.values());
+        private final JBTextField pathField = new JBTextField();
+        private final JBTextField argsField = new JBTextField();
+        private final JBTextField envVarsField = new JBTextField();
+        private final JBTextField mcpConfigFlagField = new JBTextField();
+        private final JBCheckBox enabledCheckbox = new JBCheckBox("Enabled", true);
+        private final JBLabel testResultLabel = new JBLabel();
+        private boolean suppressTypeListener = false;
+
+        CliToolDialog(CliToolConfig existing) {
+            super(true);
+            setTitle(existing == null ? "Add CLI Tool" : "Edit CLI Tool");
+            if (existing != null) {
+                suppressTypeListener = true;
+                typeCombo.setSelectedItem(existing.getType() != null ? existing.getType() : CliToolConfig.CliType.CUSTOM);
+                suppressTypeListener = false;
+                pathField.setText(existing.getExecutablePath());
+                argsField.setText(existing.getExtraArgs() != null ? String.join(" ", existing.getExtraArgs()) : "");
+                envVarsField.setText(formatEnvVars(existing.getEnvVars()));
+                mcpConfigFlagField.setText(existing.getMcpConfigFlag() != null ? existing.getMcpConfigFlag() : "");
+                enabledCheckbox.setSelected(existing.isEnabled());
+            }
+            init();
+            // Pre-fill defaults for the initially selected type when adding a new entry
+            if (existing == null) {
+                onTypeChanged();
+            }
+        }
+
+        @Override
+        protected JComponent createCenterPanel() {
+            JPanel panel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.insets = new Insets(4, 4, 4, 4);
+            gbc.anchor = GridBagConstraints.WEST;
+
+            // Type selector (first row)
+            gbc.gridy = 0;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Type:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            typeCombo.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean focus) {
+                    super.getListCellRendererComponent(list, value, index, sel, focus);
+                    if (value instanceof CliToolConfig.CliType t) setText(t.getDisplayName());
+                    return this;
+                }
+            });
+            typeCombo.addActionListener(e -> onTypeChanged());
+            panel.add(typeCombo, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Executable path:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(pathField, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Extra args:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(argsField, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Env vars:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            envVarsField.getEmptyText().setText("KEY=VALUE, KEY2=VALUE2");
+            panel.add(envVarsField, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("MCP config flag:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            mcpConfigFlagField.setEditable(false);
+            mcpConfigFlagField.setEnabled(false);
+            panel.add(mcpConfigFlagField, gbc);
+
+            // Help text for MCP config
+            gbc.gridy++;
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            JBLabel mcpHelpLabel = new JBLabel("Backlog MCP config is auto-generated and passed to the CLI tool");
+            mcpHelpLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+            mcpHelpLabel.setFont(mcpHelpLabel.getFont().deriveFont((float) mcpHelpLabel.getFont().getSize() - 1));
+            panel.add(mcpHelpLabel, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.gridwidth = 2;
+            panel.add(enabledCheckbox, gbc);
+
+            // Test button row
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.gridwidth = 2;
+            JPanel testRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+            JButton testButton = new JButton("Test Connection");
+            testButton.addActionListener(e -> runTest());
+            testRow.add(testButton);
+            testResultLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+            testRow.add(testResultLabel);
+            panel.add(testRow, gbc);
+
+            return panel;
+        }
+
+        private void onTypeChanged() {
+            if (suppressTypeListener) return;
+            CliToolConfig.CliType type = (CliToolConfig.CliType) typeCombo.getSelectedItem();
+            if (type == null || type == CliToolConfig.CliType.CUSTOM) return;
+
+            // Auto-populate defaults based on the selected type
+            mcpConfigFlagField.setText(type.getDefaultMcpFlag());
+
+            switch (type) {
+                case COPILOT -> {
+                    pathField.setText("/opt/homebrew/bin/copilot");
+                    argsField.setText("--allow-all");
+                }
+                case CLAUDE -> {
+                    pathField.setText("/opt/homebrew/bin/claude");
+                    argsField.setText("-p --dangerously-skip-permissions --model opus --allowedTools Backlog.md");
+                }
+                case CODEX -> {
+                    pathField.setText("/opt/homebrew/bin/codex");
+                    argsField.setText("--full-auto");
+                }
+                case GEMINI -> {
+                    pathField.setText("/opt/homebrew/bin/gemini");
+                    argsField.setText("");
+                }
+                default -> {}
+            }
+        }
+
+        private void runTest() {
+            String path = pathField.getText().trim();
+            if (path.isEmpty()) {
+                testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
+                testResultLabel.setText("Executable path is empty");
+                return;
+            }
+
+            testResultLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+            testResultLabel.setText("Testing...");
+
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    // Build the actual command using the configured flags and pipe a test prompt via stdin
+                    // This verifies authentication, not just installation
+                    CliToolConfig testConfig = getResult();
+                    java.util.List<String> command = testConfig.buildCommand();
+
+                    ProcessBuilder pb = new ProcessBuilder(command);
+                    pb.redirectErrorStream(false);
+
+                    // Inherit the user's shell environment (PATH, tokens, etc.)
+                    pb.environment().putAll(com.intellij.util.EnvironmentUtil.getEnvironmentMap());
+
+                    // Overlay with tool-specific env var overrides
+                    if (testConfig.getEnvVars() != null && !testConfig.getEnvVars().isEmpty()) {
+                        pb.environment().putAll(testConfig.getEnvVars());
+                    }
+
+                    Process process = pb.start();
+
+                    // Pipe test prompt via stdin
+                    try (var writer = new java.io.OutputStreamWriter(
+                            process.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8)) {
+                        writer.write("Respond with only: OK");
+                        writer.flush();
+                    }
+
+                    // Read stdout and stderr in parallel
+                    StringBuilder stdout = new StringBuilder();
+                    StringBuilder stderr = new StringBuilder();
+
+                    Thread stdoutReader = new Thread(() -> {
+                        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                                new java.io.InputStreamReader(process.getInputStream()))) {
+                            String line;
+                            int count = 0;
+                            while ((line = reader.readLine()) != null && count < 10) {
+                                if (stdout.length() > 0) stdout.append(" ");
+                                stdout.append(line);
+                                count++;
+                            }
+                        } catch (java.io.IOException ignored) {}
+                    });
+                    Thread stderrReader = new Thread(() -> {
+                        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                                new java.io.InputStreamReader(process.getErrorStream()))) {
+                            String line;
+                            int count = 0;
+                            while ((line = reader.readLine()) != null && count < 10) {
+                                if (stderr.length() > 0) stderr.append(" ");
+                                stderr.append(line);
+                                count++;
+                            }
+                        } catch (java.io.IOException ignored) {}
+                    });
+
+                    stdoutReader.setDaemon(true);
+                    stderrReader.setDaemon(true);
+                    stdoutReader.start();
+                    stderrReader.start();
+
+                    boolean exited = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
+                    if (!exited) {
+                        process.destroyForcibly();
+                        showTestResult(false, "Timed out after 30s");
+                        return;
+                    }
+
+                    stdoutReader.join(3000);
+                    stderrReader.join(3000);
+
+                    int exitCode = process.exitValue();
+                    if (exitCode == 0) {
+                        showTestResult(true, "Connected successfully");
+                    } else {
+                        // Prefer stderr for error messages, fall back to stdout
+                        String err = stderr.toString().trim();
+                        if (err.isEmpty()) err = stdout.toString().trim();
+                        if (err.isEmpty()) err = "Exit code " + exitCode;
+                        showTestResult(false, err);
+                    }
+
+                } catch (java.io.IOException ex) {
+                    showTestResult(false, "Not found: " + ex.getMessage());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showTestResult(false, "Interrupted");
+                }
+            });
+        }
+
+        private void showTestResult(boolean success, String message) {
+            SwingUtilities.invokeLater(() -> {
+                String truncated = message.length() > 80 ? message.substring(0, 80) + "..." : message;
+                if (success) {
+                    testResultLabel.setForeground(new java.awt.Color(0, 128, 0));
+                    testResultLabel.setText(truncated);
+                } else {
+                    testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
+                    testResultLabel.setText(truncated);
+                }
+            });
+        }
+
+        private static String formatEnvVars(java.util.Map<String, String> envVars) {
+            if (envVars == null || envVars.isEmpty()) return "";
+            StringBuilder sb = new StringBuilder();
+            for (var entry : envVars.entrySet()) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+            return sb.toString();
+        }
+
+        /**
+         * Strip surrounding shell-style quotes from an argument.
+         * ProcessBuilder doesn't use a shell, so literal quotes must be removed.
+         */
+        private static String stripShellQuotes(String arg) {
+            if (arg.length() >= 2) {
+                if ((arg.startsWith("'") && arg.endsWith("'")) ||
+                        (arg.startsWith("\"") && arg.endsWith("\""))) {
+                    return arg.substring(1, arg.length() - 1);
+                }
+            }
+            return arg;
+        }
+
+        private static java.util.Map<String, String> parseEnvVars(String text) {
+            java.util.Map<String, String> map = new java.util.LinkedHashMap<>();
+            if (text == null || text.isEmpty()) return map;
+            for (String pair : text.split(",")) {
+                String trimmed = pair.trim();
+                int eq = trimmed.indexOf('=');
+                if (eq > 0 && eq < trimmed.length() - 1) {
+                    map.put(trimmed.substring(0, eq).trim(), trimmed.substring(eq + 1).trim());
+                }
+            }
+            return map;
+        }
+
+        public CliToolConfig getResult() {
+            List<String> args = new ArrayList<>();
+            String argsText = argsField.getText().trim();
+            if (!argsText.isEmpty()) {
+                for (String arg : argsText.split("\\s+")) {
+                    args.add(stripShellQuotes(arg));
+                }
+            }
+            CliToolConfig.CliType selectedType = (CliToolConfig.CliType) typeCombo.getSelectedItem();
+            if (selectedType == null) selectedType = CliToolConfig.CliType.CUSTOM;
+            return CliToolConfig.builder()
+                    .type(selectedType)
+                    .name(selectedType.getDisplayName())
+                    .executablePath(pathField.getText().trim())
+                    .extraArgs(args)
+                    .envVars(parseEnvVars(envVarsField.getText().trim()))
+                    .mcpConfigFlag(mcpConfigFlagField.getText().trim())
+                    .enabled(enabledCheckbox.isSelected())
+                    .build();
+        }
     }
 }

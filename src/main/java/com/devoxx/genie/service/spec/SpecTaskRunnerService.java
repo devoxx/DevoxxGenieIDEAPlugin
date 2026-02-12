@@ -1,8 +1,10 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
@@ -60,6 +62,10 @@ public final class SpecTaskRunnerService implements Disposable {
     private final Set<String> completedTaskIds = new HashSet<>();
     private Set<String> selectedTaskIds = Collections.emptySet();
 
+    // CLI execution mode flag, determined at start of runTasks()
+    @Getter
+    private boolean cliMode = false;
+
     public SpecTaskRunnerService(@NotNull Project project) {
         this.project = project;
     }
@@ -105,6 +111,10 @@ public final class SpecTaskRunnerService implements Disposable {
                         .map(t -> t.getId() != null ? t.getId() : "?")
                         .collect(Collectors.joining(" → ")));
 
+        // Determine execution mode at the start of the run
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        cliMode = "cli".equalsIgnoreCase(stateService.getSpecRunnerMode());
+
         currentTaskIndex = -1;
         completedCount = 0;
         skippedCount = 0;
@@ -140,8 +150,45 @@ public final class SpecTaskRunnerService implements Disposable {
             return;
         }
         log.info("Cancelling task runner");
+        if (cliMode) {
+            CliTaskExecutorService.getInstance(project).cancelCurrentProcess();
+        }
         state = RunnerState.CANCELLED;
         finish(RunnerState.CANCELLED);
+    }
+
+    /**
+     * Called when a CLI tool exits with a non-zero exit code.
+     * Immediately fails the current task with the error details and stops
+     * the entire run — subsequent tasks would likely fail the same way
+     * (e.g., authentication errors).
+     */
+    public void notifyCliTaskFailed(int exitCode, @NotNull String errorOutput) {
+        if (state != RunnerState.WAITING_FOR_COMPLETION) {
+            return;
+        }
+
+        TaskSpec current = getCurrentTask();
+        if (current == null) {
+            return;
+        }
+
+        cancelGraceTimer();
+
+        // Extract first meaningful line of stderr for the skip reason
+        String firstLine = errorOutput.lines()
+                .filter(l -> !l.isBlank())
+                .findFirst()
+                .orElse("Unknown error");
+        String reason = "CLI tool failed (exit code " + exitCode + "): " + firstLine;
+
+        log.error("CLI task {} failed: {}", current.getId(), reason);
+        skippedCount++;
+        notifyTaskSkipped(current, reason);
+
+        // Stop the run — remaining tasks will likely fail the same way
+        log.info("Stopping task runner due to CLI failure");
+        finish(RunnerState.ERROR);
     }
 
     /**
@@ -281,25 +328,75 @@ public final class SpecTaskRunnerService implements Disposable {
             return;
         }
 
-        // Start a fresh conversation for each task
-        startFreshConversation();
-
-        // Submit the task prompt
         state = RunnerState.WAITING_FOR_COMPLETION;
         notifyTaskStarted(fresh);
 
-        String taskDetails = SpecContextBuilder.buildContext(fresh);
-        String instruction = SpecContextBuilder.buildAgentInstruction(fresh);
+        if (cliMode) {
+            submitTaskViaCli(fresh);
+        } else {
+            submitTaskViaLlm(fresh);
+        }
+    }
+
+    private void submitTaskViaLlm(@NotNull TaskSpec task) {
+        // Start a fresh conversation for each task
+        startFreshConversation();
+
+        String taskDetails = SpecContextBuilder.buildContext(task);
+        String instruction = SpecContextBuilder.buildAgentInstruction(task);
         String prompt = instruction + "\n\n" + taskDetails +
                 "\n\nPlease implement the task described above, satisfying all acceptance criteria.";
 
         project.getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
                 .onPromptSubmitted(project, prompt);
+    }
 
-        // No timeout timer — tasks can take varying amounts of time,
-        // especially during batch runs of 50+ tasks. The agent will
-        // set the task to Done when finished, which triggers advancement.
+    private void submitTaskViaCli(@NotNull TaskSpec task) {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        String toolName = stateService.getSpecSelectedCliTool();
+        log.info("CLI mode: specRunnerMode={}, specSelectedCliTool='{}'",
+                stateService.getSpecRunnerMode(), toolName);
+
+        CliToolConfig cliTool = findCliTool(toolName);
+        if (cliTool == null) {
+            log.error("CLI tool '{}' not found or not enabled. Available tools: {}", toolName,
+                    stateService.getCliTools());
+            skipTask(task, "CLI tool '" + toolName + "' not found or not enabled");
+            return;
+        }
+
+        log.info("CLI tool resolved: name={}, type={}, path={}, extraArgs={}, enabled={}",
+                cliTool.getName(), cliTool.getType(),
+                cliTool.getExecutablePath(), cliTool.getExtraArgs(), cliTool.isEnabled());
+
+        // Build prompt: CLI instruction (workflow steps) + task ID reference.
+        // The CLI tool has Backlog MCP, so it fetches full task details itself.
+        String taskId = task.getId() != null ? task.getId() : "?";
+        String instruction = SpecContextBuilder.buildCliInstruction(task);
+        String prompt = instruction +
+                "\n\nStart by using backlog task_view with id '" + taskId +
+                "' to read the full task details and acceptance criteria." +
+                "\n\nPlease implement the task, satisfying all acceptance criteria.";
+
+        log.info("CLI prompt for task {}: {} chars", taskId, prompt.length());
+
+        CliTaskExecutorService.getInstance(project).execute(
+                cliTool, prompt,
+                task.getId() != null ? task.getId() : "?",
+                task.getTitle() != null ? task.getTitle() : "Untitled"
+        );
+    }
+
+    private @Nullable CliToolConfig findCliTool(@Nullable String name) {
+        if (name == null || name.isEmpty()) return null;
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        List<CliToolConfig> tools = stateService.getCliTools();
+        if (tools == null) return null;
+        return tools.stream()
+                .filter(t -> t.isEnabled() && name.equalsIgnoreCase(t.getName()))
+                .findFirst()
+                .orElse(null);
     }
 
     private void onSpecsChanged() {
