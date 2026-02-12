@@ -12,7 +12,7 @@ DevoxxGenie offers a comprehensive set of features designed to enhance your deve
 
 ## Core Features
 
-### Spec Driven Development (SDD)
+### Spec-driven Development (SDD)
 
 Define tasks as structured markdown specs with acceptance criteria, and let the LLM agent implement them autonomously:
 
@@ -92,7 +92,7 @@ DevoxxGenie also includes experimental features that are being developed and ref
 
 For detailed information about specific features, check out the dedicated pages:
 
-- [Spec Driven Development](spec-driven-development.md)
+- [Spec-driven Development](spec-driven-development.md)
 - [Chat Interface](chat-interface.md)
 - [MCP Support](mcp_expanded.md)
 - [Agent Mode](agent-mode.md)
