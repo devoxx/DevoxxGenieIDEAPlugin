@@ -87,6 +87,14 @@ When a CLI tool runs, its stdout and stderr stream into the **Run** tool window 
 - The full output from the CLI tool
 - An exit summary with exit code and elapsed time
 
+## Chat Mode
+
+CLI Runners aren't limited to spec task execution — you can also use them for **interactive chatting**. When you open a chat session with a CLI runner selected as the execution mode, your messages are sent directly to the external CLI tool, and responses stream back into the DevoxxGenie chat window. This gives you the full power of tools like Claude Code or GitHub Copilot CLI while staying inside IntelliJ.
+
+![Chatting with a CLI Runner in DevoxxGenie](/img/CLI-Runner-Chat.jpg)
+
+This is useful when you want to ask quick questions, explore ideas, or get code suggestions from your preferred CLI tool without switching to a terminal — all while keeping the conversation history in your IDE. It also means you can leverage your **monthly subscription** (e.g., Claude Pro, GitHub Copilot) instead of being billed per token through a cloud API, making it a cost-effective way to use premium models directly from DevoxxGenie.
+
 ## Adding a Custom CLI Tool
 
 If your CLI tool is not in the preset list:
