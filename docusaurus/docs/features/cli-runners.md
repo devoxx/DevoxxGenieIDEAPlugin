@@ -1,14 +1,14 @@
 ---
 sidebar_position: 5
 title: CLI Runners
-description: Execute spec tasks via external CLI tools like Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, or Google Gemini CLI. DevoxxGenie manages the task lifecycle while your preferred tool does the implementation.
-keywords: [devoxxgenie, cli runners, claude code, copilot, codex, gemini, cli tools, spec-driven development, sdd, agent loop]
+description: Execute spec tasks via external CLI tools like Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, or Kimi CLI. DevoxxGenie manages the task lifecycle while your preferred tool does the implementation.
+keywords: [devoxxgenie, cli runners, claude code, copilot, codex, gemini, kimi, cli tools, spec-driven development, sdd, agent loop]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
 # CLI Runners
 
-Instead of using the built-in LLM provider, you can execute spec tasks via **external CLI tools** — such as Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, or Google Gemini CLI. This lets you leverage the tool you already use and trust, while DevoxxGenie manages the task lifecycle.
+Instead of using the built-in LLM provider, you can execute spec tasks via **external CLI tools** — such as Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, or Kimi CLI. This lets you leverage the tool you already use and trust, while DevoxxGenie manages the task lifecycle.
 
 CLI Runners integrate with both [Spec-driven Development](spec-driven-development.md) (single task execution) and the [Agent Loop](sdd-agent-loop.md) (batch task execution).
 
@@ -35,6 +35,7 @@ Each CLI tool is launched as an external process with your task prompt piped in.
 | **GitHub Copilot** | stdin | Auto-generated `--additional-mcp-config` (with `@` prefix) | `--allow-all` |
 | **OpenAI Codex** | Trailing argument | Not supported | `exec --model gpt-5.3-codex --full-auto` |
 | **Google Gemini** | stdin | Auto-generated `--mcp-config` | *(none)* |
+| **Kimi** | `--prompt` flag | Auto-generated `--mcp-config-file` | `--yolo` |
 | **Custom** | stdin | Configurable | *(user-defined)* |
 
 :::note
@@ -61,7 +62,7 @@ You can configure **multiple CLI tools** — for example, Claude for complex tas
 The **DevoxxGenie Specs** toolbar contains an execution mode dropdown:
 
 - **LLM Provider** — uses the built-in LLM agent (default)
-- **CLI: Claude** / **CLI: Copilot** / etc. — uses the configured external CLI tool
+- **CLI: Claude** / **CLI: Copilot** / **CLI: Kimi** / etc. — uses the configured external CLI tool
 
 The selection is persisted across IDE restarts. When you click **Run Selected** or **Run All To Do**, tasks are executed using whichever mode is selected.
 
@@ -71,7 +72,7 @@ The selection is persisted across IDE restarts. When you click **Run Selected** 
 
 | Field | Description |
 |-------|-------------|
-| **Type** | Preset type (Claude, Copilot, Codex, Gemini, Custom). Selecting a type auto-fills the other fields. |
+| **Type** | Preset type (Claude, Copilot, Codex, Gemini, Kimi, Custom). Selecting a type auto-fills the other fields. |
 | **Executable path** | Absolute path to the CLI binary (e.g., `/opt/homebrew/bin/claude`) |
 | **Extra args** | Command-line arguments passed to the CLI. These are split on whitespace — no shell quoting needed. |
 | **Env vars** | Optional environment variables as `KEY=VALUE, KEY2=VALUE2`. Useful for API keys not inherited from the shell. |

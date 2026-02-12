@@ -34,6 +34,7 @@ public class CliToolConfig {
         CLAUDE("Claude"),
         CODEX("Codex"),
         GEMINI("Gemini"),
+        KIMI("Kimi"),
         CUSTOM("Custom");
 
         private final String displayName;
@@ -49,6 +50,7 @@ public class CliToolConfig {
                 case CLAUDE -> new ClaudeCliCommand();
                 case CODEX -> new CodexCliCommand();
                 case GEMINI -> new GeminiCliCommand();
+                case KIMI -> new KimiCliCommand();
                 case CUSTOM -> new CustomCliCommand();
             };
         }
