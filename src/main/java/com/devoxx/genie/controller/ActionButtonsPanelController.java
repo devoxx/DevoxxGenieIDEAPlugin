@@ -140,7 +140,18 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
      */
     private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieSettingsService stateService) {
         ModelProvider selectedProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
-        if (selectedProvider != null &&
+        if (selectedProvider != null && selectedProvider.equals(CLIRunners)) {
+            String cliToolName = DevoxxGenieStateService.getInstance().getSpecSelectedCliTool();
+            return LanguageModel.builder()
+                    .provider(CLIRunners)
+                    .modelName(cliToolName != null ? cliToolName : "")
+                    .displayName(cliToolName != null ? cliToolName : "CLI Runner")
+                    .apiKeyUsed(false)
+                    .inputCost(0)
+                    .outputCost(0)
+                    .inputMaxTokens(0)
+                    .build();
+        } else if (selectedProvider != null &&
                 (selectedProvider.equals(LMStudio) ||
                  selectedProvider.equals(GPT4All) ||
                  selectedProvider.equals(LLaMA))) {

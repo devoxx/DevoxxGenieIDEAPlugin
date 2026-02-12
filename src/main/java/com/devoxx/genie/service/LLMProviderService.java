@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -46,6 +47,7 @@ public class LLMProviderService {
         providers.addAll(getModelProvidersWithApiKeyConfigured());
         providers.addAll(getLocalModelProviders());
         providers.addAll(getOptionalProviders());
+        providers.addAll(getCliRunnersProvider());
 
         return providers;
     }
@@ -85,6 +87,15 @@ public class LLMProviderService {
 
 
         return optionalModelProviders;
+    }
+
+    private @NotNull List<ModelProvider> getCliRunnersProvider() {
+        boolean hasEnabledCliTool = DevoxxGenieStateService.getInstance().getCliTools().stream()
+                .anyMatch(CliToolConfig::isEnabled);
+        if (hasEnabledCliTool) {
+            return List.of(ModelProvider.CLIRunners);
+        }
+        return List.of();
     }
 
     /**
