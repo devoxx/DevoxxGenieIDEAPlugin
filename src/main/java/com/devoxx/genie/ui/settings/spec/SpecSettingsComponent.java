@@ -601,10 +601,14 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
             com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    // Build the actual command using the configured flags and pipe a test prompt via stdin
-                    // This verifies authentication, not just installation
+                    // Use the CliCommand abstraction to build command and deliver prompt
+                    // This ensures tool-specific behavior (e.g., --prompt flag for Kimi)
                     CliToolConfig testConfig = getResult();
-                    java.util.List<String> command = testConfig.buildCommand();
+                    String testPrompt = "Respond with only: OK";
+                    CliToolConfig.CliType cliType = testConfig.getType() != null
+                            ? testConfig.getType() : CliToolConfig.CliType.CUSTOM;
+                    com.devoxx.genie.service.cli.command.CliCommand cliCommand = cliType.createCommand();
+                    java.util.List<String> command = cliCommand.buildProcessCommand(testConfig, testPrompt, null);
 
                     ProcessBuilder pb = new ProcessBuilder(command);
                     pb.redirectErrorStream(false);
@@ -619,12 +623,8 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
                     Process process = pb.start();
 
-                    // Pipe test prompt via stdin
-                    try (var writer = new java.io.OutputStreamWriter(
-                            process.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8)) {
-                        writer.write("Respond with only: OK");
-                        writer.flush();
-                    }
+                    // Delegate prompt delivery to the command
+                    cliCommand.writePrompt(process, testPrompt);
 
                     // Read stdout and stderr in parallel
                     StringBuilder stdout = new StringBuilder();
