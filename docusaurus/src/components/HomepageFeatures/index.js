@@ -12,7 +12,7 @@ import MCPMarketplaceIcon from './icons/MCPMarketplace';
 import SubAgentsIcon from './icons/SubAgents';
 import ProjectScannerIcon from './icons/ProjectScanner';
 import InlineCompletionIcon from './icons/InlineCompletion';
-import WebSearchIcon from './icons/WebSearch';
+import CliRunnersIcon from './icons/CliRunners';
 import DragDropIcon from './icons/DragDrop';
 
 const FeatureList = [
@@ -87,12 +87,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Web Search',
-    icon: WebSearchIcon,
-    link: '/docs/features/web-search',
+    title: 'CLI Runners',
+    icon: CliRunnersIcon,
+    link: '/docs/features/cli-runners',
     description: (
       <>
-        Integrate web search functionality using Google or Tavily to find relevant information for your programming questions.
+        Execute prompts and spec tasks via external CLI tools like Claude Code, GitHub Copilot, Codex, Gemini CLI, and Kimi directly from the chat interface.
       </>
     ),
   },

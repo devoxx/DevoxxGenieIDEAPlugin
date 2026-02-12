@@ -215,6 +215,32 @@ milestone: v2.0
         </div>
         <div className="container home-section">
           <div className="row">
+            <div className="col col--6">
+              <h2>CLI Runners</h2>
+              <p>
+                Execute prompts and spec tasks via external CLI tools like <strong>Claude Code</strong>, <strong>GitHub Copilot</strong>, <strong>OpenAI Codex</strong>, <strong>Google Gemini CLI</strong>, and <strong>Kimi</strong> — directly from the chat interface or the Spec Browser.
+              </p>
+              <p>
+                <strong>Chat Mode:</strong> Select a CLI runner as your provider and chat naturally. DevoxxGenie routes your prompts to the external CLI tool and streams the response back into the conversation.
+              </p>
+              <p>
+                <strong>Spec Task Execution:</strong> Run individual or batch spec tasks through any configured CLI runner. Combined with the Agent Loop, you can delegate entire task backlogs to your preferred coding assistant.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/cli-runners')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+            <div className="col col--6">
+              <img src={useBaseUrl('/img/CLI-Runners-Setup.png')} alt="CLI Runners configuration" className="feature-image" />
+            </div>
+          </div>
+        </div>
+        <div className="container home-section">
+          <div className="row">
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>
               <p>Join thousands of developers who are already using DevoxxGenie to improve their productivity.</p>
