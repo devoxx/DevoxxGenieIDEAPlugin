@@ -237,8 +237,9 @@ public class ActionButtonsPanel extends JPanel
 
             // Notify the spec task runner that prompt execution completed so it can
             // start a grace timer and advance if the task wasn't marked Done.
+            // Skip in CLI mode — the CLI process exit handles notification instead.
             SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
-            if (runner.isRunning()) {
+            if (runner.isRunning() && !runner.isCliMode()) {
                 runner.notifyPromptExecutionCompleted();
             }
         });

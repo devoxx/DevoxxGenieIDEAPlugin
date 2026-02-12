@@ -263,7 +263,7 @@ Final Response (synthesized by main agent)
 
 ## Batch Task Execution (Agent Loop)
 
-Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multiple tasks sequentially in a single batch. Combined with [Spec Driven Development](spec-driven-development.md), you can define structured task specs and have the agent implement them one after another — with dependency ordering, progress tracking, and automatic advancement to the next task.
+Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multiple tasks sequentially in a single batch. Combined with [Spec-driven Development](spec-driven-development.md), you can define structured task specs and have the agent implement them one after another — with dependency ordering, progress tracking, and automatic advancement to the next task.
 
 ## Best Practices
 

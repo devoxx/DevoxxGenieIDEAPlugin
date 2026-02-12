@@ -1,21 +1,21 @@
 ---
 slug: spec-driven-development
-title: "Stop Prompting, Start Specifying: Introducing Spec Driven Development in DevoxxGenie"
+title: "Stop Prompting, Start Specifying: Introducing Spec-driven Development in DevoxxGenie"
 authors: [stephanj]
-tags: [spec driven development, SDD, agent mode, backlog.md, kanban, agentic AI, IntelliJ IDEA, LLM, Java, open source]
+tags: [spec-driven development, SDD, agent mode, backlog.md, kanban, agentic AI, IntelliJ IDEA, LLM, Java, open source]
 date: 2026-02-10
-description: "Introducing Spec Driven Development (SDD) in DevoxxGenie v0.9.7 — define structured task specs with acceptance criteria and let the AI agent implement them."
-keywords: [devoxxgenie, spec driven development, sdd, backlog.md, task specs, kanban board, agent mode, acceptance criteria, milestones, agentic programming]
+description: "Introducing Spec-driven Development (SDD) in DevoxxGenie v0.9.7 — define structured task specs with acceptance criteria and let the AI agent implement them."
+keywords: [devoxxgenie, spec-driven development, sdd, backlog.md, task specs, kanban board, agent mode, acceptance criteria, milestones, agentic programming]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
-# Stop Prompting, Start Specifying: Introducing Spec Driven Development in DevoxxGenie
+# Stop Prompting, Start Specifying: Introducing Spec-driven Development in DevoxxGenie
 
 We've all been there. You open your AI coding assistant, type a prompt, get a result, realise it missed half the requirements, rephrase, try again. Rephrase and repeat. It works (kind of) but it doesn't scale and we lose history.
 
 What if instead of ad-hoc prompting, you could define exactly what needs to be built as a structured spec, and then let the AI agent implement it autonomously — checking off acceptance criteria as it goes?
 
-That's the idea behind **Spec Driven Development (SDD)**, the latest feature in DevoxxGenie v0.9.7.
+That's the idea behind **Spec-driven Development (SDD)**, the latest feature in DevoxxGenie v0.9.7.
 
 <!-- truncate -->
 
@@ -24,7 +24,7 @@ That's the idea behind **Spec Driven Development (SDD)**, the latest feature in 
   width="100%"
   style={{aspectRatio: '16/9', maxWidth: '720px', borderRadius: '8px'}}
   src="https://www.youtube.com/embed/t1MOHCfsdvk"
-  title="Spec Driven Development Demo"
+  title="Spec-driven Development Demo"
   frameBorder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
   allowFullScreen
@@ -105,7 +105,7 @@ I could also have used a local model like GLM-4.7-Flash via Ollama, which works 
 
 ## The Bigger Picture
 
-DevoxxGenie started as a simple LLM chat plugin. With [Agent Mode](/docs/features/agent-mode), [MCP support](/docs/features/mcp_expanded), and now [Spec Driven Development](/docs/features/spec-driven-development), it's evolving into something more — an AI-augmented development environment where structured specifications replace ad-hoc prompts, and autonomous agents replace copy-paste workflows.
+DevoxxGenie started as a simple LLM chat plugin. With [Agent Mode](/docs/features/agent-mode), [MCP support](/docs/features/mcp_expanded), and now [Spec-driven Development](/docs/features/spec-driven-development), it's evolving into something more — an AI-augmented development environment where structured specifications replace ad-hoc prompts, and autonomous agents replace copy-paste workflows.
 
 We're not just chatting with AI anymore. We're collaborating with it.
 

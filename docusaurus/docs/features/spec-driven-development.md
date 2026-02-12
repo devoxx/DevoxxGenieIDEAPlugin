@@ -1,28 +1,28 @@
 ---
 sidebar_position: 3
-title: Spec Driven Development
-description: Use Spec Driven Development (SDD) with Backlog.md to define tasks as structured markdown specs, then let the LLM agent implement them autonomously within your IDE.
-keywords: [devoxxgenie, spec driven development, sdd, backlog.md, task specs, agent mode, acceptance criteria, milestones]
+title: Spec-driven Development
+description: Use Spec-driven Development (SDD) with Backlog.md to define tasks as structured markdown specs, then let the LLM agent implement them autonomously within your IDE.
+keywords: [devoxxgenie, spec-driven development, sdd, backlog.md, task specs, agent mode, acceptance criteria, milestones]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
-# Spec Driven Development (SDD)
+# Spec-driven Development (SDD)
 
-Spec Driven Development (SDD) is a workflow where you define **what** needs to be built as structured task specifications, and the LLM agent figures out **how** to build it. Instead of writing code instructions in chat, you write clear specs with acceptance criteria, and the agent implements them autonomously using its built-in tools.
+Spec-driven Development (SDD) is a workflow where you define **what** needs to be built as structured task specifications, and the LLM agent figures out **how** to build it. Instead of writing code instructions in chat, you write clear specs with acceptance criteria, and the agent implements them autonomously using its built-in tools.
 
 <div style={{textAlign: 'center', margin: '2rem 0'}}>
 <iframe
   width="100%"
   style={{aspectRatio: '16/9', maxWidth: '720px', borderRadius: '8px'}}
   src="https://www.youtube.com/embed/t1MOHCfsdvk"
-  title="Spec Driven Development Demo"
+  title="Spec-driven Development Demo"
   frameBorder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
   allowFullScreen
 />
 </div>
 
-## Why Spec Driven Development?
+## Why Spec-driven Development?
 
 Traditional AI-assisted coding relies on ad-hoc prompts: you describe what you want in natural language and hope the LLM understands. SDD takes a more disciplined approach:
 
@@ -451,6 +451,12 @@ npm i -g backlog.md
 ## Batch Task Execution (Agent Loop)
 
 For running multiple tasks sequentially with dependency ordering, progress tracking, and automatic task advancement, see [Agent Loop — Batch Task Execution](sdd-agent-loop.md).
+
+Both the built-in LLM provider and external [CLI Runners](cli-runners.md) support batch execution.
+
+## CLI Runners
+
+Instead of using the built-in LLM provider, you can execute spec tasks via **external CLI tools** — such as Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, or Google Gemini CLI. See the dedicated [CLI Runners](cli-runners.md) page for setup instructions, supported tools, and configuration details.
 
 ## Tips and Best Practices
 

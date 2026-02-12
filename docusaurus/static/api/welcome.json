@@ -5,7 +5,7 @@
   "description": "The Devoxx Genie plugin allows you to interact with Local & Cloud Large Language Models (LLMs). The remote LLM's do require an API key in the Settings page",
   "instructions": "Start by selecting a language model provider. Select some code, or add some files, type your prompt, and click submit button. Discover and install MCP servers from the MCP Marketplace in Settings!",
   "features": [
-    { "emoji": "\uD83D\uDCCB", "name": "Spec Driven Development", "description": "Define tasks in Backlog.md, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously. Enable in Settings > Spec Driven Development!" },
+    { "emoji": "\uD83D\uDCCB", "name": "Spec-driven Development", "description": "Define tasks in Backlog.md, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously. Enable in Settings > Spec-driven Development!" },
     { "emoji": "\uD83E\uDD16", "name": "Agent Mode", "description": "Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas concurrently. Configure in Agent Settings!" },
     { "emoji": "\uD83D\uDECD\uFE0F", "name": "MCP Marketplace", "description": "Discover and install MCP servers directly from Settings." },
     { "emoji": "\uD83D\uDCC2", "name": "@ Opens Files Popup", "description": "Type @ in your prompt to open the file selection dialog." },

@@ -69,7 +69,7 @@ export default function Home() {
                 <iframe
                   className={styles.demoVideo}
                   src="https://www.youtube.com/embed/t1MOHCfsdvk"
-                  title="Spec Driven Development Demo"
+                  title="Spec-driven Development Demo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -94,7 +94,7 @@ export default function Home() {
         <div className="container home-section">
           <div className="row">
             <div className="col col--6">
-              <h2>Spec Driven Development</h2>
+              <h2>Spec-driven Development</h2>
               <p>
                 Define <strong>what</strong> needs to be built as structured task specs with acceptance criteria, and let the LLM agent figure out <strong>how</strong> to build it. Powered by <a href="https://backlog.md" target="_blank" rel="noopener noreferrer">Backlog.md</a> integration, SDD brings disciplined, traceable AI-assisted development to your IDE.
               </p>

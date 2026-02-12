@@ -17,7 +17,7 @@ import DragDropIcon from './icons/DragDrop';
 
 const FeatureList = [
   {
-    title: 'Spec Driven Development',
+    title: 'Spec-driven Development',
     icon: SpecDrivenDevIcon,
     link: '/docs/features/spec-driven-development',
     description: (

@@ -175,7 +175,7 @@ const config = {
       // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
       metadata: [
-        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, spec driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
+        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
         {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for IntelliJ IDEA. Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, and custom skills.'},
         {name: 'og:type', content: 'website'},
         {name: 'og:site_name', content: 'DevoxxGenie'},

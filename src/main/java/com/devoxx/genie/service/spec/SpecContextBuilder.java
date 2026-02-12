@@ -113,6 +113,31 @@ public final class SpecContextBuilder {
     }
 
     /**
+     * Build instruction prefix for CLI tools that have the Backlog MCP server installed.
+     * Same backlog task management workflow as the LLM agent path.
+     */
+    public static @NotNull String buildCliInstruction(@NotNull TaskSpec spec) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are implementing task ");
+        if (spec.getId() != null) {
+            sb.append(spec.getId());
+        }
+        if (spec.getTitle() != null) {
+            sb.append(": ").append(spec.getTitle());
+        }
+        sb.append(".\n\n");
+        sb.append("Follow the acceptance criteria exactly.\n\n");
+        sb.append("IMPORTANT: Use the Backlog MCP tools to keep the task updated as you work:\n");
+        sb.append("1. FIRST, use backlog task_edit to set status to 'In Progress' when you start.\n");
+        sb.append("2. Use backlog task_edit with acceptanceCriteriaCheck to check off each criterion as you complete it.\n");
+        sb.append("3. Use backlog task_edit with notesAppend to record what you changed, which files were modified, and why.\n");
+        sb.append("4. When finished, use backlog task_edit to write a detailed finalSummary of everything that was implemented.\n");
+        sb.append("5. LAST, use backlog task_edit to set status to 'Done'.\n");
+        sb.append("\nYou MUST complete steps 3 and 4 before step 5. The notes and final summary are essential for traceability.\n");
+        return sb.toString();
+    }
+
+    /**
      * Build an agent instruction prefix for working on a specific task.
      */
     public static @NotNull String buildAgentInstruction(@NotNull TaskSpec spec) {

@@ -76,7 +76,7 @@ The plugin prioritizes developer control across every dimension:
 
 ## What's Next
 
-This is just the beginning. With [Spec Driven Development](/docs/features/spec-driven-development) (SDD) now available in v0.9.7, you can define tasks as structured specs and let the agent implement them autonomously — complete with acceptance criteria tracking and a visual Kanban board.
+This is just the beginning. With [Spec-driven Development](/docs/features/spec-driven-development) (SDD) now available in v0.9.7, you can define tasks as structured specs and let the agent implement them autonomously — complete with acceptance criteria tracking and a visual Kanban board.
 
 We're not just chatting with AI anymore. We're collaborating with it.
 
