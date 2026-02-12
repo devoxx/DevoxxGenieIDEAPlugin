@@ -3,8 +3,8 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     java
-    kotlin("jvm") version "2.0.21"
-    kotlin("plugin.lombok") version "2.0.21"
+    kotlin("jvm") version "2.3.10"
+    kotlin("plugin.lombok") version "2.3.10"
     id("org.jetbrains.intellij.platform") version "2.11.0"
 }
 
@@ -78,7 +78,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.26"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.27"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
