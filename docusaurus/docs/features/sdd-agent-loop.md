@@ -2,7 +2,7 @@
 sidebar_position: 4
 title: Agent Loop — Batch Task Execution
 description: Run multiple SDD tasks sequentially with dependency ordering, progress tracking, and automatic task advancement. Each task gets a fresh conversation and the agent updates notes, summaries, and acceptance criteria as it works.
-keywords: [devoxxgenie, sdd, agent loop, batch execution, dependencies, task runner, spec driven development]
+keywords: [devoxxgenie, sdd, agent loop, batch execution, dependencies, task runner, spec-driven development, cli runners]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -11,6 +11,8 @@ image: /img/devoxxgenie-social-card.jpg
 The Agent Loop lets you run multiple tasks sequentially in a single batch. Each task gets a fresh conversation, the agent implements the work autonomously, and when it marks a task as Done the runner automatically advances to the next one. You can watch the full LLM response for every task — output is preserved, not cleared between tasks.
 
 This is useful when you have a set of related tasks (e.g., "implement the auth module") and want the agent to work through them without manual intervention.
+
+The Agent Loop works with both the **built-in LLM provider** and **external CLI tools** (Claude Code, Copilot, Codex, Gemini). See [CLI Runners](cli-runners.md) for setup instructions.
 
 <div style={{textAlign: 'center', margin: '2rem 0'}}>
 <video
@@ -204,3 +206,5 @@ Each skip triggers a notification with the specific reason. The skip count is in
 | Task stuck in "In Progress" | Agent didn't mark the task as Done | Cancel the run, review the agent's output, and manually set the task status |
 | No tasks executed | All selected tasks are already Done or have unsatisfied deps | Check task statuses and dependency chains in the DevoxxGenie Specs |
 | Checkboxes cleared after run | Normal behavior | Checkboxes are automatically cleared when a batch run finishes |
+| CLI tool fails immediately | Authentication error or wrong path | Check the executable path and env vars in **Settings → Spec Driven Dev → CLI Runners**, use **Test Connection** to verify. See [CLI Runners](cli-runners.md). |
+| CLI process doesn't exit | Some CLI tools (e.g., Codex) don't self-exit after completing | The runner detects task completion via the file watcher and terminates the process automatically |

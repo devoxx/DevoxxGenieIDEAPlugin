@@ -51,6 +51,7 @@ const sidebars = {
         'llm-providers/local-models',
         'llm-providers/cloud-models',
         'llm-providers/custom-providers',
+        'features/cli-runners',
       ],
     },
     {
