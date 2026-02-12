@@ -431,6 +431,12 @@ public final class SpecTaskRunnerService implements Disposable {
                 log.info("Task {} detected as Done (deferring advance until prompt completes)", fresh.getId());
                 cancelGraceTimer();
                 currentTaskDoneWhileExecuting = true;
+
+                // In CLI mode, notify the executor — the command decides
+                // whether to kill the process (e.g., Codex doesn't self-exit).
+                if (cliMode) {
+                    CliTaskExecutorService.getInstance(project).notifyTaskDone();
+                }
             }
         });
     }

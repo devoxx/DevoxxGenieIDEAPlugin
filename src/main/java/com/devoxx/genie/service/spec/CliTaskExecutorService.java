@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.spec;
 
 import com.devoxx.genie.model.spec.CliToolConfig;
+import com.devoxx.genie.service.spec.command.CliCommand;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -19,8 +20,8 @@ import java.util.List;
 
 /**
  * Project-scoped service that runs a CLI tool as an external process.
- * Streams stdout/stderr to the IntelliJ Run tool window console
- * and notifies SpecTaskRunnerService when the process exits.
+ * Delegates command construction and prompt delivery to the tool's
+ * {@link CliCommand} implementation (Command pattern).
  */
 @Slf4j
 @Service(Service.Level.PROJECT)
@@ -28,6 +29,9 @@ public final class CliTaskExecutorService implements Disposable {
 
     private final Project project;
     private volatile Process activeProcess;
+    private volatile CliCommand activeCommand;
+    /** Set when the process is killed intentionally because the task was marked Done. */
+    private volatile boolean taskCompletedKill = false;
 
     public CliTaskExecutorService(@NotNull Project project) {
         this.project = project;
@@ -41,11 +45,6 @@ public final class CliTaskExecutorService implements Disposable {
      * Execute a CLI tool with the given prompt.
      * Runs the process on a pooled thread, streams output to console,
      * and calls notifyPromptExecutionCompleted() on process exit.
-     *
-     * @param cliTool the CLI tool configuration
-     * @param prompt  the full prompt string to pass to the tool
-     * @param taskId  task ID for console header
-     * @param taskTitle task title for console header
      */
     public void execute(@NotNull CliToolConfig cliTool,
                         @NotNull String prompt,
@@ -55,24 +54,17 @@ public final class CliTaskExecutorService implements Disposable {
         consoleManager.printTaskHeader(taskId, taskTitle, cliTool.getName());
         consoleManager.activateToolWindow();
 
-        List<String> command = new ArrayList<>(cliTool.buildCommand());
+        // Resolve the Command for this CLI type
+        CliToolConfig.CliType cliType = cliTool.getType() != null ? cliTool.getType() : CliToolConfig.CliType.CUSTOM;
+        CliCommand cliCommand = cliType.createCommand();
+        activeCommand = cliCommand;
 
-        // If MCP config flag is set, generate the Backlog MCP config and append to command
-        String mcpConfigFlag = cliTool.getMcpConfigFlag();
-        if (mcpConfigFlag != null && !mcpConfigFlag.isEmpty()) {
-            CliToolConfig.CliType cliType = cliTool.getType() != null ? cliTool.getType() : CliToolConfig.CliType.CUSTOM;
-            String mcpConfigPath = generateMcpConfig(cliType.getMcpJsonKey());
-            if (mcpConfigPath != null) {
-                command.add(mcpConfigFlag);
-                String pathArg = cliType.isUseAtPrefix() ? "@" + mcpConfigPath : mcpConfigPath;
-                command.add(pathArg);
-                log.info("CLI MCP config: type={}, flag={}, path={}", cliType, mcpConfigFlag, pathArg);
-            }
-        }
+        // Generate MCP config and let the command build the full process command
+        String mcpConfigPath = generateMcpConfig(cliCommand.mcpJsonKey());
+        List<String> command = cliCommand.buildProcessCommand(cliTool, prompt, mcpConfigPath);
 
-        // Log command details (prompt piped via stdin)
-        log.info("CLI execute: task={}, tool={}, command={}, promptLength={}",
-                taskId, cliTool.getName(), command, prompt.length());
+        log.info("CLI execute: task={}, tool={}, type={}, command={}, promptLength={}",
+                taskId, cliTool.getName(), cliType, command, prompt.length());
 
         String basePath = project.getBasePath();
         log.info("CLI working directory: {}", basePath);
@@ -103,13 +95,10 @@ public final class CliTaskExecutorService implements Disposable {
                 activeProcess = pb.start();
                 log.info("CLI process started successfully (pid={})", activeProcess.pid());
 
-                // Pipe the prompt to the process's stdin
-                try (var writer = new java.io.OutputStreamWriter(
-                        activeProcess.getOutputStream(), StandardCharsets.UTF_8)) {
-                    writer.write(prompt);
-                    writer.flush();
-                }
-                log.info("CLI prompt written to stdin ({} chars)", prompt.length());
+                // Delegate prompt delivery to the command
+                cliCommand.writePrompt(activeProcess, prompt);
+                log.info("CLI prompt delivered via {} ({} chars)",
+                        cliCommand.getClass().getSimpleName(), prompt.length());
 
                 // Collect stderr lines for error reporting
                 List<String> stderrLines = Collections.synchronizedList(new ArrayList<>());
@@ -130,12 +119,17 @@ public final class CliTaskExecutorService implements Disposable {
                 stderrThread.join(5000);
 
                 activeProcess = null;
+                activeCommand = null;
 
-                log.info("CLI process exited: task={}, exitCode={}, elapsed={}ms", taskId, exitCode, elapsed);
+                boolean completedKill = taskCompletedKill;
+                taskCompletedKill = false;
+
+                log.info("CLI process exited: task={}, exitCode={}, completedKill={}, elapsed={}ms",
+                        taskId, exitCode, completedKill, elapsed);
 
                 String exitMsg = "\n=== Process exited with code " + exitCode + " (after " + elapsed + "ms) ===\n";
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (exitCode == 0) {
+                    if (exitCode == 0 || completedKill) {
                         consoleManager.printSystem(exitMsg);
                         log.info("CLI notifying prompt execution completed for task {}", taskId);
                         SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted();
@@ -152,6 +146,7 @@ public final class CliTaskExecutorService implements Disposable {
             } catch (IOException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 activeProcess = null;
+                activeCommand = null;
                 log.error("CLI failed to start process: task={}, elapsed={}ms, error={}",
                         taskId, elapsed, e.getMessage(), e);
                 ApplicationManager.getApplication().invokeLater(() -> {
@@ -162,6 +157,7 @@ public final class CliTaskExecutorService implements Disposable {
             } catch (InterruptedException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
                 activeProcess = null;
+                activeCommand = null;
                 Thread.currentThread().interrupt();
                 log.info("CLI process interrupted: task={}, elapsed={}ms", taskId, elapsed);
                 ApplicationManager.getApplication().invokeLater(() -> {
@@ -175,7 +171,7 @@ public final class CliTaskExecutorService implements Disposable {
     }
 
     /**
-     * Cancel the currently running process.
+     * Cancel the currently running process (user-initiated).
      */
     public void cancelCurrentProcess() {
         Process process = activeProcess;
@@ -188,6 +184,22 @@ public final class CliTaskExecutorService implements Disposable {
         }
     }
 
+    /**
+     * Called when the backlog task is marked Done while the process is still running.
+     * Delegates to the active {@link CliCommand#onTaskCompleted(Process)} —
+     * only commands that don't self-exit (e.g., Codex) will kill the process.
+     */
+    public void notifyTaskDone() {
+        CliCommand command = activeCommand;
+        Process process = activeProcess;
+        if (command != null && process != null && process.isAlive()) {
+            if (command.onTaskCompleted(process)) {
+                taskCompletedKill = true;
+                log.info("CLI process killed by {} — task completed", command.getClass().getSimpleName());
+            }
+        }
+    }
+
     public boolean isRunning() {
         Process process = activeProcess;
         return process != null && process.isAlive();
@@ -196,8 +208,6 @@ public final class CliTaskExecutorService implements Disposable {
     /**
      * Generate a temporary MCP config JSON file for the Backlog MCP server.
      * The file is written to the system temp directory and deleted on JVM exit.
-     *
-     * @param mcpJsonKey the top-level JSON key (e.g., "mcpServers" or "servers")
      */
     private @Nullable String generateMcpConfig(@NotNull String mcpJsonKey) {
         try {

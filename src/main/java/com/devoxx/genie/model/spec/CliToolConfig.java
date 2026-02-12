@@ -1,10 +1,12 @@
 package com.devoxx.genie.model.spec;
 
+import com.devoxx.genie.service.spec.command.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,29 +25,32 @@ import java.util.Map;
 public class CliToolConfig {
 
     /**
-     * Known CLI tool types with their MCP config format defaults.
+     * Known CLI tool types. Each type maps to a {@link CliCommand}
+     * implementation that encapsulates tool-specific execution behavior.
      */
     @Getter
     public enum CliType {
-        COPILOT("Copilot", "mcpServers", "--additional-mcp-config", true),
-        CLAUDE("Claude", "mcpServers", "--mcp-config", false),
-        CODEX("Codex", "servers", "--mcp-config", false),
-        GEMINI("Gemini", "mcpServers", "--mcp-config", false),
-        CUSTOM("Custom", "mcpServers", "", false);
+        COPILOT("Copilot"),
+        CLAUDE("Claude"),
+        CODEX("Codex"),
+        GEMINI("Gemini"),
+        CUSTOM("Custom");
 
         private final String displayName;
-        /** JSON key for the MCP servers block (e.g., "mcpServers" or "servers"). */
-        private final String mcpJsonKey;
-        /** Default MCP config flag for this tool type. */
-        private final String defaultMcpFlag;
-        /** Whether to prefix the config file path with @ (copilot convention). */
-        private final boolean useAtPrefix;
 
-        CliType(String displayName, String mcpJsonKey, String defaultMcpFlag, boolean useAtPrefix) {
+        CliType(String displayName) {
             this.displayName = displayName;
-            this.mcpJsonKey = mcpJsonKey;
-            this.defaultMcpFlag = defaultMcpFlag;
-            this.useAtPrefix = useAtPrefix;
+        }
+
+        /** Factory method — creates the Command (GoF) for this CLI type. */
+        public @NotNull CliCommand createCommand() {
+            return switch (this) {
+                case COPILOT -> new CopilotCliCommand();
+                case CLAUDE -> new ClaudeCliCommand();
+                case CODEX -> new CodexCliCommand();
+                case GEMINI -> new GeminiCliCommand();
+                case CUSTOM -> new CustomCliCommand();
+            };
         }
     }
 
@@ -70,14 +75,12 @@ public class CliToolConfig {
      * CLI flag for passing the MCP config file path.
      * When set, the executor auto-generates a Backlog MCP config file
      * and appends [mcpConfigFlag, configPath] to the command.
-     * Defaults are populated from {@link CliType#getDefaultMcpFlag()}.
      */
     @Builder.Default
     private String mcpConfigFlag = "";
 
     /**
-     * Build the command list for ProcessBuilder.
-     * The prompt is piped via stdin by the caller, so the prompt flag is not included.
+     * Build the base command list for ProcessBuilder.
      * Format: [executablePath, ...extraArgs]
      */
     public List<String> buildCommand() {

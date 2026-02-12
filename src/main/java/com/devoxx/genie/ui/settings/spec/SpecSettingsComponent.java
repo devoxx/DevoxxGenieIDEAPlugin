@@ -168,16 +168,19 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                 cliToolTableModel.addTool(tool);
             }
         }
-        // Pre-populate with copilot if no tools configured
+        // Pre-populate with Copilot if no tools configured
         if (cliToolTableModel.getRowCount() == 0) {
+            com.devoxx.genie.service.spec.command.CliCommand cmd = CliToolConfig.CliType.COPILOT.createCommand();
             List<String> defaultArgs = new ArrayList<>();
-            defaultArgs.add("--allow-all");
+            for (String arg : cmd.defaultExtraArgs().split("\\s+")) {
+                if (!arg.isEmpty()) defaultArgs.add(arg);
+            }
             cliToolTableModel.addTool(CliToolConfig.builder()
                     .type(CliToolConfig.CliType.COPILOT)
                     .name(CliToolConfig.CliType.COPILOT.getDisplayName())
-                    .executablePath("/opt/homebrew/bin/copilot")
+                    .executablePath(cmd.defaultExecutablePath())
                     .extraArgs(defaultArgs)
-                    .mcpConfigFlag("--additional-mcp-config")
+                    .mcpConfigFlag(cmd.defaultMcpConfigFlag())
                     .enabled(true)
                     .build());
         }
@@ -578,28 +581,11 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             CliToolConfig.CliType type = (CliToolConfig.CliType) typeCombo.getSelectedItem();
             if (type == null || type == CliToolConfig.CliType.CUSTOM) return;
 
-            // Auto-populate defaults based on the selected type
-            mcpConfigFlagField.setText(type.getDefaultMcpFlag());
-
-            switch (type) {
-                case COPILOT -> {
-                    pathField.setText("/opt/homebrew/bin/copilot");
-                    argsField.setText("--allow-all");
-                }
-                case CLAUDE -> {
-                    pathField.setText("/opt/homebrew/bin/claude");
-                    argsField.setText("-p --dangerously-skip-permissions --model opus --allowedTools Backlog.md");
-                }
-                case CODEX -> {
-                    pathField.setText("/opt/homebrew/bin/codex");
-                    argsField.setText("--full-auto");
-                }
-                case GEMINI -> {
-                    pathField.setText("/opt/homebrew/bin/gemini");
-                    argsField.setText("");
-                }
-                default -> {}
-            }
+            // Delegate to the Command for this type — no switch needed
+            com.devoxx.genie.service.spec.command.CliCommand command = type.createCommand();
+            pathField.setText(command.defaultExecutablePath());
+            argsField.setText(command.defaultExtraArgs());
+            mcpConfigFlagField.setText(command.defaultMcpConfigFlag());
         }
 
         private void runTest() {
