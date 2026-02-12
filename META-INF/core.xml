@@ -1,0 +1,6 @@
+<idea-plugin>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <registryKey defaultValue="false" description="Force file cache" key="matterhorn.force.file.cache" />
+  </extensions>
+</idea-plugin>

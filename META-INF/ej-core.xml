@@ -1,0 +1,35 @@
+<idea-plugin>
+
+  <extensionPoints>
+    <extensionPoint qualifiedName="com.intellij.ml.llm.matterhorn.supportProvider"
+                    interface="com.intellij.ml.llm.matterhorn.ElectricJuniorSupportProvider"
+                    dynamic="true" />
+    <extensionPoint qualifiedName="com.intellij.ml.llm.matterhorn.editCallbacks"
+                    interface="com.intellij.ml.llm.matterhorn.EditCallbacks"
+                    dynamic="true" />
+    <extensionPoint qualifiedName="com.intellij.ml.llm.matterhorn.relevance.extractors.elementProvider"
+                    beanClass="com.intellij.openapi.fileTypes.FileTypeExtensionPoint"
+                    dynamic="true">
+      <with attribute="implementationClass" implements="com.intellij.ml.llm.matterhorn.relevance.extractors.ElementProvider"/>
+    </extensionPoint>
+  </extensionPoints>
+  <depends>org.jetbrains.plugins.docker.gateway</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+
+    <ml.llm.matterhorn.propertyContainer implementation="com.intellij.ml.llm.matterhorn.EjProperties" />
+    <statistics.validation.customValidationRule implementation="com.intellij.ml.llm.matterhorn.statistics.TrueValidationRule"/>
+
+    <registryKey defaultValue="false" description="Use predefined elements to test UI in Matterhorn (do not use LLM)"
+                 key="matterhorn.debug.ui.mode" />
+
+    <postStartupActivity implementation="com.intellij.ml.llm.matterhorn.run.docker.ContainerRemovalProjectActivity" />
+  </extensions>
+
+  <actions resource-bundle="messages.EjCoreBundle">
+    <action class="com.intellij.ml.llm.matterhorn.run.docker.RequestDockerContainerRebuildAction"
+            id="RequestDockerContainerRebuildAction">
+      <add-to-group group-id="EditorContextBarMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>
