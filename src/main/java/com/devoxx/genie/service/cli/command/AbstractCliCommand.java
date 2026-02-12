@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Base implementation with shared behavior for most CLI tools:
@@ -16,6 +17,15 @@ import java.util.List;
  * and pipes the prompt via stdin.
  */
 public abstract class AbstractCliCommand implements CliCommand {
+
+    /** Matches ANSI escape sequences (CSI and OSC). */
+    protected static final Pattern ANSI_ESCAPE =
+            Pattern.compile("\\x1B(?:\\[[0-?]*[ -/]*[@-~]|\\].*?(?:\\x07|\\x1B\\\\))");
+
+    @Override
+    public @Nullable String filterResponseLine(@NotNull String line) {
+        return ANSI_ESCAPE.matcher(line).replaceAll("");
+    }
 
     @Override
     public @NotNull List<String> buildProcessCommand(@NotNull CliToolConfig config,

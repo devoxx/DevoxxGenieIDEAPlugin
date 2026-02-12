@@ -14,6 +14,7 @@ public enum ModelProvider {
     LLaMA("LLaMA.c++", Type.LOCAL),
     LMStudio("LMStudio", Type.LOCAL),
     Ollama("Ollama", Type.LOCAL),
+    CLIRunners("CLI Runners", Type.LOCAL),
 
     OpenAI("OpenAI", Type.CLOUD),
     Anthropic("Anthropic", Type.CLOUD),

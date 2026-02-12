@@ -174,7 +174,7 @@ public class WebViewMessageRenderer {
                  "  } else {" +
                  "    console.log('Message with ID " + jsExecutor.escapeJS(messageId) + " already exists, skipping addition');" +
                  "  }" +
-                 "  window.scrollTo(0, document.body.scrollHeight);" +
+                 "  setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                  "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                  "} catch (error) {" +
                  "  console.error('Error adding chat message:', error);" +
@@ -188,7 +188,7 @@ public class WebViewMessageRenderer {
                  "  while (tempDiv.firstChild) {" +
                  "    container.appendChild(tempDiv.firstChild);" +
                  "  }" +
-                 "  window.scrollTo(0, document.body.scrollHeight);" +
+                 "  setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                  "  if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                  "} catch (error) {" +
                  "  console.error('Error adding chat message:', error);" +

@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.prompt.strategy;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,7 +26,14 @@ public class PromptExecutionStrategyFactory {
      */
     public PromptExecutionStrategy createStrategy(@NotNull ChatMessageContext chatMessageContext) {
         Project project = chatMessageContext.getProject();
-        
+
+        // Check if CLI Runners provider — bypasses Langchain4J entirely
+        if (chatMessageContext.getLanguageModel() != null &&
+                chatMessageContext.getLanguageModel().getProvider() == ModelProvider.CLIRunners) {
+            log.debug("Creating CliPromptStrategy");
+            return new CliPromptStrategy(project);
+        }
+
         // Check if web search is requested
         if (chatMessageContext.isWebSearchRequested()) {
             log.debug("Creating WebSearchPromptStrategy");

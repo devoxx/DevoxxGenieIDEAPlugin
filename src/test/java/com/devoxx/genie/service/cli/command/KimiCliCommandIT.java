@@ -41,6 +41,7 @@ class KimiCliCommandIT {
                 KIMI_PATH,
                 "--yolo",
                 "--mcp-config-file", "/tmp/mcp.json",
+                "--print",
                 "--prompt", "say hello"
         );
     }
@@ -64,7 +65,7 @@ class KimiCliCommandIT {
 
         Process process = pb.start();
 
-        // Don't close stdin — Kimi crashes with BrokenPipeError if stdin is closed
+        // Close stdin so Kimi knows no more input is coming
         command.writePrompt(process, "Respond with only: OK");
 
         // Read first few lines of stdout

@@ -300,7 +300,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "    }\n" +
                 "    var agentContainer = target.querySelector('.agent-outer-container');\n" +
                 "    if (agentContainer) { agentContainer.scrollTop = agentContainer.scrollHeight; }\n" +
-                "    window.scrollTo(0, document.body.scrollHeight);\n" +
+                "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
                 "  }\n" +
                 "} catch (error) {\n" +
                 "  console.error('Error updating agent activity:', error);\n" +

@@ -246,6 +246,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case GLM -> state.isGlmEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
+                    case CLIRunners -> false;
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
@@ -410,6 +411,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case GLM -> state.isGlmEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
+                    case CLIRunners -> false;
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))

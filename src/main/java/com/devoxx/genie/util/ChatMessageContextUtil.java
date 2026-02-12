@@ -46,10 +46,13 @@ public class ChatMessageContextUtil {
                 .cost(0)
                 .build();
 
-        if (Boolean.TRUE.equals(stateService.getStreamMode())) {
-            chatMessageContext.setStreamingChatModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
-        } else {
-            chatMessageContext.setChatModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
+        // CLI Runners bypass Langchain4J — no chat model needed
+        if (chatContextParameters.languageModel().getProvider() != ModelProvider.CLIRunners) {
+            if (Boolean.TRUE.equals(stateService.getStreamMode())) {
+                chatMessageContext.setStreamingChatModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
+            } else {
+                chatMessageContext.setChatModel(chatContextParameters.chatModelProvider().getChatLanguageModel(chatMessageContext));
+            }
         }
 
         chatMessageContext.setTimeout(stateService.getTimeout() == ZERO_SECONDS ? SIXTY_SECONDS : stateService.getTimeout());

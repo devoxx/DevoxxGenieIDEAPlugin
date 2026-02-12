@@ -259,7 +259,7 @@ public class WebViewMCPLogHandler implements MCPLoggingMessage {
                 "      `;\n" +
                 "      document.head.appendChild(styleEl);\n" +
                 "    }\n" +
-                "    window.scrollTo(0, document.body.scrollHeight);\n" +
+                "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
                 "    if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }\n" +
                 "  }\n" +
                 "} catch (error) {\n" +

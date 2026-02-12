@@ -57,6 +57,16 @@ public final class CliTaskExecutorService implements Disposable {
 
         // Resolve the Command for this CLI type
         CliToolConfig.CliType cliType = cliTool.getType() != null ? cliTool.getType() : CliToolConfig.CliType.CUSTOM;
+        // Auto-detect type from tool name when stored type is CUSTOM (backwards compat)
+        if (cliType == CliToolConfig.CliType.CUSTOM) {
+            for (CliToolConfig.CliType t : CliToolConfig.CliType.values()) {
+                if (t != CliToolConfig.CliType.CUSTOM &&
+                        t.getDisplayName().equalsIgnoreCase(cliTool.getName())) {
+                    cliType = t;
+                    break;
+                }
+            }
+        }
         CliCommand cliCommand = cliType.createCommand();
         activeCommand = cliCommand;
 

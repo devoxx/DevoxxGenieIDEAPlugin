@@ -142,7 +142,7 @@ public class WebViewAIMessageUpdater {
                     "        if (loadingIndicator) loadingIndicator.style.display = 'none';" +
                     "        assistantMessage.innerHTML = `" + escapedContent + "`;" +
                     "      }" +
-                    "      window.scrollTo(0, document.body.scrollHeight);" +
+                    "      setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                     "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                     "    }" +
                     "  }" +
@@ -159,7 +159,7 @@ public class WebViewAIMessageUpdater {
                     "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
                     "    if (assistantMessage) {" +
                     "      assistantMessage.innerHTML = `" + escapedContent + "`;" +
-                    "      window.scrollTo(0, document.body.scrollHeight);" +
+                    "      setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                     "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                     "    }" +
                     "  }" +
@@ -250,6 +250,8 @@ public class WebViewAIMessageUpdater {
                     "        firstMessage.style.marginTop = '30px';\n" +
                     "      }\n" +
                     "      window.scrollTo(0, 0);\n" +
+                    "    } else {\n" +
+                    "      setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
                     "    }\n" +
                     "  }\n" +
                     "} catch (error) {\n" +

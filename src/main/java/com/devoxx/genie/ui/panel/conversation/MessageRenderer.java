@@ -131,7 +131,7 @@ public class MessageRenderer implements FileReferencesListener {
      */
     public void scrollToBottom() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            webViewController.executeJavaScript("window.scrollTo(0, document.body.scrollHeight);");
+            webViewController.executeJavaScript("setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);");
         });
     }
 
