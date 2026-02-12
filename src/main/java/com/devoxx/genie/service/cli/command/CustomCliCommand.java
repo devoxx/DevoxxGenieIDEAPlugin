@@ -1,16 +1,16 @@
-package com.devoxx.genie.service.spec.command;
+package com.devoxx.genie.service.cli.command;
 
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Google Gemini CLI: prompt piped via stdin.
- * Example: echo "prompt" | gemini --mcp-config config.json
+ * Custom CLI tool with user-defined configuration.
+ * Defaults to stdin prompt delivery and mcpServers JSON key.
  */
-public class GeminiCliCommand extends AbstractCliCommand {
+public class CustomCliCommand extends AbstractCliCommand {
 
     @Override
     public @NotNull String defaultExecutablePath() {
-        return "/opt/homebrew/bin/gemini";
+        return "";
     }
 
     @Override
@@ -20,6 +20,6 @@ public class GeminiCliCommand extends AbstractCliCommand {
 
     @Override
     public @NotNull String defaultMcpConfigFlag() {
-        return "--mcp-config";
+        return "";
     }
 }

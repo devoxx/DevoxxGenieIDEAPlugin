@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.spec;
+package com.devoxx.genie.service.cli;
 
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;

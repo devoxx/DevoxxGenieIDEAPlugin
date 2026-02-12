@@ -1,6 +1,6 @@
 package com.devoxx.genie.model.spec;
 
-import com.devoxx.genie.service.spec.command.*;
+import com.devoxx.genie.service.cli.command.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

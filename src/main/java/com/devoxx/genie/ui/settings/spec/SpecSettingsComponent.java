@@ -170,7 +170,7 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         }
         // Pre-populate with Copilot if no tools configured
         if (cliToolTableModel.getRowCount() == 0) {
-            com.devoxx.genie.service.spec.command.CliCommand cmd = CliToolConfig.CliType.COPILOT.createCommand();
+            com.devoxx.genie.service.cli.command.CliCommand cmd = CliToolConfig.CliType.COPILOT.createCommand();
             List<String> defaultArgs = new ArrayList<>();
             for (String arg : cmd.defaultExtraArgs().split("\\s+")) {
                 if (!arg.isEmpty()) defaultArgs.add(arg);
@@ -582,7 +582,7 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             if (type == null || type == CliToolConfig.CliType.CUSTOM) return;
 
             // Delegate to the Command for this type — no switch needed
-            com.devoxx.genie.service.spec.command.CliCommand command = type.createCommand();
+            com.devoxx.genie.service.cli.command.CliCommand command = type.createCommand();
             pathField.setText(command.defaultExecutablePath());
             argsField.setText(command.defaultExtraArgs());
             mcpConfigFlagField.setText(command.defaultMcpConfigFlag());

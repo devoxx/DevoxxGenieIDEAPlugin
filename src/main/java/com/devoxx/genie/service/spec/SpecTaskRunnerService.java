@@ -2,6 +2,7 @@ package com.devoxx.genie.service.spec;
 
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
+import com.devoxx.genie.service.cli.CliTaskExecutorService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;

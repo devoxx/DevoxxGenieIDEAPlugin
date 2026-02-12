@@ -1,7 +1,8 @@
-package com.devoxx.genie.service.spec;
+package com.devoxx.genie.service.cli;
 
 import com.devoxx.genie.model.spec.CliToolConfig;
-import com.devoxx.genie.service.spec.command.CliCommand;
+import com.devoxx.genie.service.cli.command.CliCommand;
+import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;

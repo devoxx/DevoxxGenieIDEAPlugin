@@ -1,4 +1,4 @@
-package com.devoxx.genie.service.spec.command;
+package com.devoxx.genie.service.cli.command;
 
 import com.devoxx.genie.model.spec.CliToolConfig;
 import org.jetbrains.annotations.NotNull;
