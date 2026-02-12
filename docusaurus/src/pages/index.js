@@ -235,7 +235,7 @@ milestone: v2.0
               </div>
             </div>
             <div className="col col--6">
-              <img src={useBaseUrl('/img/CLI-Runners-Setup.png')} alt="CLI Runners configuration" className="feature-image" />
+              <img src={useBaseUrl('/img/CLI-Runners-Homepage.jpg')} alt="CLI Runners configuration" className="feature-image" />
             </div>
           </div>
         </div>
