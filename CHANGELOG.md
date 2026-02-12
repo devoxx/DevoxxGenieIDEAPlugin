@@ -2,6 +2,22 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.9]
+
+### Added
+- CLI Runners as a chat-mode provider: execute prompts via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface (#916)
+- CLI tool execution for spec tasks: run selected or all To Do tasks through CLI runners (Claude, Copilot, Codex, Gemini, Kimi) (#874, #875)
+- Kimi CLI runner with `--prompt` flag support and `--quiet` mode for clean output (#875, #916)
+
+### Changed
+- Refactor CLI runners to dedicated `com.devoxx.genie.service.cli` package with Command pattern (GoF) (#874, #875)
+
+### Fixed
+- Defer `scrollTo` in JCEF WebView to fix auto-scroll after DOM updates (#916)
+
+### Dependencies
+- Bump the gradle-dependencies group with 3 updates (#873)
+
 ## [0.9.8]
 
 ### Added

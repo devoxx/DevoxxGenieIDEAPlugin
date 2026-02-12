@@ -45,6 +45,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.9</h2>
+        <UL>
+            <LI>CLI Runners as a chat-mode provider: execute prompts via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) (#916)</LI>
+            <LI>CLI tool execution for spec tasks: run To Do tasks through CLI runners (#874, #875)</LI>
+            <LI>Kimi CLI runner with --prompt flag support and --quiet mode for clean output (#875, #916)</LI>
+            <LI>Refactor CLI runners to dedicated package with Command pattern (GoF) (#874, #875)</LI>
+            <LI>Fix: defer scrollTo in JCEF WebView to fix auto-scroll after DOM updates (#916)</LI>
+            <LI>Bump the gradle-dependencies group with 3 updates (#873)</LI>
+        </UL>
         <h2>v0.9.8</h2>
         <UL>
             <LI>Automated test execution: new run_tests agent tool that auto-detects build systems (Gradle/Maven/npm/Cargo/Go/Make), runs tests, and returns structured results (#863)</LI>
