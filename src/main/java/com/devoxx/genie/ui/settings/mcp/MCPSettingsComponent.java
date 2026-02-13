@@ -447,77 +447,171 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
     }
     
     /**
-     * Shows a dialog with detailed tools information for the selected server
-     * 
+     * Shows a dialog with detailed tools information for the selected server.
+     * Each tool has a checkbox to enable/disable it individually.
+     *
      * @param server The MCP server to show tools for
      */
     private void showToolsInfoDialog(MCPServer server) {
         if (server == null) {
             return;
         }
-        
-        // Create a dialog instead of using Messages.showMessageDialog
+
         DialogWrapper dialog = new DialogWrapper(true) {
+            private final List<JCheckBox> toolCheckboxes = new ArrayList<>();
+
             {
                 init();
-                setTitle("MCP Tools Information - " + server.getName());
+                setTitle("MCP Tools - " + server.getName());
             }
-            
+
             @Override
             protected JComponent createCenterPanel() {
                 JPanel panel = new JPanel(new BorderLayout());
                 panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                
+
                 if (server.getAvailableTools() == null || server.getAvailableTools().isEmpty()) {
-                    // Show a simple message if no tools are available
                     JLabel noToolsLabel = new JLabel("No tools available for this MCP server.");
                     noToolsLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
                     panel.add(noToolsLabel, BorderLayout.CENTER);
                 } else {
-                    // Create a table to display tool names and descriptions
-                    String[] columnNames = {"Tool Name", "Description"};
-                    Object[][] data = new Object[server.getAvailableTools().size()][2];
-                    
-                    // Fill the table data
+                    java.util.Set<String> disabledTools = server.getDisabledTools() != null
+                            ? server.getDisabledTools()
+                            : new java.util.HashSet<>();
+
+                    // Create a table with Enabled checkbox, Tool Name, and Description columns
+                    String[] columnNames = {"Enabled", "Tool Name", "Description"};
+                    Object[][] data = new Object[server.getAvailableTools().size()][3];
+
                     for (int i = 0; i < server.getAvailableTools().size(); i++) {
                         String toolName = server.getAvailableTools().get(i);
-                        String description = server.getToolDescriptions() != null ? 
-                                server.getToolDescriptions().getOrDefault(toolName, "") : "";
-                        
-                        data[i][0] = toolName;
-                        data[i][1] = description;
+                        String description = server.getToolDescriptions() != null
+                                ? server.getToolDescriptions().getOrDefault(toolName, "") : "";
+
+                        data[i][0] = !disabledTools.contains(toolName);
+                        data[i][1] = toolName;
+                        data[i][2] = description;
                     }
-                    
-                    // Create and configure the table
-                    JTable toolsTable = new JTable(data, columnNames);
+
+                    javax.swing.table.AbstractTableModel toolsTableModel = new javax.swing.table.AbstractTableModel() {
+                        private final Object[][] tableData = data;
+
+                        @Override public int getRowCount() { return tableData.length; }
+                        @Override public int getColumnCount() { return 3; }
+                        @Override public String getColumnName(int column) { return columnNames[column]; }
+
+                        @Override
+                        public Object getValueAt(int rowIndex, int columnIndex) {
+                            return tableData[rowIndex][columnIndex];
+                        }
+
+                        @Override
+                        public Class<?> getColumnClass(int columnIndex) {
+                            return columnIndex == 0 ? Boolean.class : String.class;
+                        }
+
+                        @Override
+                        public boolean isCellEditable(int rowIndex, int columnIndex) {
+                            return columnIndex == 0;
+                        }
+
+                        @Override
+                        public void setValueAt(Object value, int rowIndex, int columnIndex) {
+                            if (columnIndex == 0) {
+                                tableData[rowIndex][columnIndex] = value;
+                                fireTableCellUpdated(rowIndex, columnIndex);
+                            }
+                        }
+                    };
+
+                    JTable toolsTable = new JBTable(toolsTableModel);
                     toolsTable.setRowHeight(24);
-                    toolsTable.getColumnModel().getColumn(0).setPreferredWidth(150);
-                    toolsTable.getColumnModel().getColumn(1).setPreferredWidth(350);
-                    
+                    toolsTable.getColumnModel().getColumn(0).setPreferredWidth(60);
+                    toolsTable.getColumnModel().getColumn(0).setMaxWidth(70);
+                    toolsTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+                    toolsTable.getColumnModel().getColumn(2).setPreferredWidth(350);
+
                     // Make description column wrap text
-                    toolsTable.getColumnModel().getColumn(1).setCellRenderer(new MultiLineTableCellRenderer());
-                    
+                    toolsTable.getColumnModel().getColumn(2).setCellRenderer(new MultiLineTableCellRenderer());
+
                     JScrollPane scrollPane = new JBScrollPane(toolsTable);
-                    scrollPane.setPreferredSize(new Dimension(600, 400));
-                    
-                    // Add a header
-                    JLabel headerLabel = new JLabel("Available Tools: " + server.getAvailableTools().size());
-                    headerLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-                    
-                    panel.add(headerLabel, BorderLayout.NORTH);
+                    scrollPane.setPreferredSize(new Dimension(650, 400));
+
+                    // Header with count and enable/disable all buttons
+                    int enabledCount = server.getAvailableTools().size() - disabledTools.size();
+                    JLabel headerLabel = new JLabel("Tools: " + enabledCount + "/" + server.getAvailableTools().size() + " enabled");
+                    headerLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+                    JButton enableAllBtn = new JButton("Enable All");
+                    enableAllBtn.addActionListener(e -> {
+                        for (int i = 0; i < toolsTableModel.getRowCount(); i++) {
+                            toolsTableModel.setValueAt(true, i, 0);
+                        }
+                    });
+
+                    JButton disableAllBtn = new JButton("Disable All");
+                    disableAllBtn.addActionListener(e -> {
+                        for (int i = 0; i < toolsTableModel.getRowCount(); i++) {
+                            toolsTableModel.setValueAt(false, i, 0);
+                        }
+                    });
+
+                    JPanel headerPanel = new JPanel(new BorderLayout());
+                    headerPanel.add(headerLabel, BorderLayout.WEST);
+                    JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+                    btnPanel.add(enableAllBtn);
+                    btnPanel.add(disableAllBtn);
+                    headerPanel.add(btnPanel, BorderLayout.EAST);
+
+                    panel.add(headerPanel, BorderLayout.NORTH);
                     panel.add(scrollPane, BorderLayout.CENTER);
+
+                    JLabel hintLabel = new JLabel("<html><i>Uncheck tools to prevent them from being sent to the LLM.</i></html>");
+                    hintLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+                    hintLabel.setForeground(javax.swing.UIManager.getColor("Label.disabledForeground"));
+                    panel.add(hintLabel, BorderLayout.SOUTH);
                 }
-                
+
                 return panel;
             }
-            
+
             @Override
-            protected Action @NotNull [] createActions() {
-                // Only show OK button
-                return new Action[]{ getOKAction() };
+            protected void doOKAction() {
+                // Persist the disabled tools state
+                if (server.getAvailableTools() != null && !server.getAvailableTools().isEmpty()) {
+                    java.util.Set<String> newDisabledTools = new java.util.HashSet<>();
+                    // Read from the table model via the table in the center panel
+                    JScrollPane scrollPane = findScrollPane(getContentPanel());
+                    if (scrollPane != null && scrollPane.getViewport().getView() instanceof JTable table) {
+                        for (int i = 0; i < table.getRowCount(); i++) {
+                            Boolean enabled = (Boolean) table.getModel().getValueAt(i, 0);
+                            String toolName = (String) table.getModel().getValueAt(i, 1);
+                            if (!Boolean.TRUE.equals(enabled)) {
+                                newDisabledTools.add(toolName);
+                            }
+                        }
+                    }
+                    server.setDisabledTools(newDisabledTools);
+                    isModified = true;
+                    tableModel.fireTableDataChanged();
+                }
+                super.doOKAction();
+            }
+
+            @Nullable
+            private JScrollPane findScrollPane(Container container) {
+                if (container == null) return null;
+                for (Component c : container.getComponents()) {
+                    if (c instanceof JScrollPane sp) return sp;
+                    if (c instanceof Container ct) {
+                        JScrollPane found = findScrollPane(ct);
+                        if (found != null) return found;
+                    }
+                }
+                return null;
             }
         };
-        
+
         dialog.show();
     }
     
@@ -745,7 +839,12 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
             if (server.getAvailableTools() == null || server.getAvailableTools().isEmpty()) {
                 return "No tools info";
             }
-            return "Available tools: " + server.getAvailableTools().size();
+            int total = server.getAvailableTools().size();
+            int disabled = server.getDisabledTools() != null ? server.getDisabledTools().size() : 0;
+            if (disabled > 0) {
+                return (total - disabled) + "/" + total + " tools enabled";
+            }
+            return "Available tools: " + total;
         }
 
         @Override

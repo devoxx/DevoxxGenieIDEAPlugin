@@ -13,8 +13,7 @@ import dev.langchain4j.service.tool.ToolProviderResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides built-in IDE tools for agentic interactions:
@@ -210,9 +209,14 @@ public class BuiltInToolProvider implements ToolProvider {
 
     @Override
     public ToolProviderResult provideTools(ToolProviderRequest request) {
+        List<String> disabledTools = DevoxxGenieStateService.getInstance().getDisabledAgentTools();
+        Set<String> disabledSet = disabledTools != null ? new HashSet<>(disabledTools) : Collections.emptySet();
+
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
         for (Map.Entry<ToolSpecification, ToolExecutor> entry : tools.entrySet()) {
-            builder.add(entry.getKey(), entry.getValue());
+            if (!disabledSet.contains(entry.getKey().name())) {
+                builder.add(entry.getKey(), entry.getValue());
+            }
         }
         return builder.build();
     }

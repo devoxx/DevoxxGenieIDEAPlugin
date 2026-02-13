@@ -131,6 +131,15 @@ public class MCPConfigurationParser {
             builder.enabled(true);
         }
 
+        // Parse disabled tools (optional, DevoxxGenie extension)
+        if (config.has("disabledTools")) {
+            Set<String> disabledTools = new HashSet<>();
+            for (JsonElement element : config.getAsJsonArray("disabledTools")) {
+                disabledTools.add(element.getAsString());
+            }
+            builder.disabledTools(disabledTools);
+        }
+
         return builder.build();
     }
 
@@ -233,6 +242,15 @@ public class MCPConfigurationParser {
             // Add enabled flag if extensions are enabled and not default (true)
             if (includeExtensions && !server.isEnabled()) {
                 serverConfig.addProperty("enabled", server.isEnabled());
+            }
+
+            // Add disabled tools if extensions are enabled and there are disabled tools
+            if (includeExtensions && server.getDisabledTools() != null && !server.getDisabledTools().isEmpty()) {
+                JsonArray disabledToolsArray = new JsonArray();
+                for (String tool : server.getDisabledTools()) {
+                    disabledToolsArray.add(tool);
+                }
+                serverConfig.add("disabledTools", disabledToolsArray);
             }
 
             mcpServers.add(serverName, serverConfig);

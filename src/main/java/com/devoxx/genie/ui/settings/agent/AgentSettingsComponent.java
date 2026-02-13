@@ -16,10 +16,8 @@ import com.intellij.ui.components.JBLabel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 
 import static com.devoxx.genie.model.Constant.*;
 
@@ -58,6 +56,17 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final ComboBox<ModelProvider> subAgentProviderComboBox = new ComboBox<>();
     private final ComboBox<LanguageModel> subAgentModelComboBox = new ComboBox<>();
 
+    // Built-in tool enable/disable checkboxes
+    private static final String[][] CORE_AGENT_TOOLS = {
+            {"read_file", "Read file contents from the project"},
+            {"write_file", "Write content to files in the project"},
+            {"edit_file", "Edit files by replacing exact string matches"},
+            {"list_files", "List files and directories in the project"},
+            {"search_files", "Search for regex patterns in project files"},
+            {"run_command", "Execute terminal commands in the project directory"}
+    };
+    private final Map<String, JBCheckBox> toolCheckboxes = new LinkedHashMap<>();
+
     // Per-agent model override rows
     private final JPanel agentConfigPanel = new JPanel();
     private final List<AgentConfigRow> agentConfigRows = new ArrayList<>();
@@ -83,6 +92,24 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "When enabled, the LLM gets built-in IDE tools (read_file, write_file, " +
                 "list_files, search_files, run_command) to interact with your project autonomously.");
+
+        // --- Built-in Tools ---
+        addSection(contentPanel, gbc, "Built-in Tools");
+
+        List<String> disabledTools = stateService.getDisabledAgentTools();
+        Set<String> disabledSet = disabledTools != null ? new HashSet<>(disabledTools) : Collections.emptySet();
+
+        for (String[] toolInfo : CORE_AGENT_TOOLS) {
+            String toolName = toolInfo[0];
+            String toolDesc = toolInfo[1];
+            JBCheckBox cb = new JBCheckBox(toolName + " - " + toolDesc, !disabledSet.contains(toolName));
+            toolCheckboxes.put(toolName, cb);
+            addFullWidthRow(contentPanel, gbc, cb);
+        }
+
+        addHelpText(contentPanel, gbc,
+                "Uncheck tools to prevent them from being available to the agent. " +
+                "This does not affect the run_tests, parallel_explore, or backlog tools which have their own toggles above/below.");
 
         // --- Loop Controls ---
         addSection(contentPanel, gbc, "Loop Controls");
@@ -648,7 +675,21 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || subAgentTimeoutSpinner.getNumber() != (state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS)
                 || !Objects.equals(getSelectedProviderName(), state.getSubAgentModelProvider() != null ? state.getSubAgentModelProvider() : "")
                 || !Objects.equals(getSelectedModelName(), state.getSubAgentModelName() != null ? state.getSubAgentModelName() : "")
-                || isPerAgentConfigsModified();
+                || isPerAgentConfigsModified()
+                || isToolCheckboxesModified();
+    }
+
+    private boolean isToolCheckboxesModified() {
+        List<String> saved = stateService.getDisabledAgentTools();
+        Set<String> savedSet = saved != null ? new HashSet<>(saved) : Collections.emptySet();
+        for (Map.Entry<String, JBCheckBox> entry : toolCheckboxes.entrySet()) {
+            boolean currentlyDisabled = !entry.getValue().isSelected();
+            boolean wasDisabled = savedSet.contains(entry.getKey());
+            if (currentlyDisabled != wasDisabled) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void apply() {
@@ -667,6 +708,15 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setSubAgentModelName(getSelectedModelName());
         // setSubAgentConfigs also syncs subAgentParallelism to configs.size()
         stateService.setSubAgentConfigs(getPerAgentConfigs());
+
+        // Save disabled agent tools
+        List<String> disabledTools = new ArrayList<>();
+        for (Map.Entry<String, JBCheckBox> entry : toolCheckboxes.entrySet()) {
+            if (!entry.getValue().isSelected()) {
+                disabledTools.add(entry.getKey());
+            }
+        }
+        stateService.setDisabledAgentTools(disabledTools);
     }
 
     public void reset() {
@@ -689,6 +739,13 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         // Rebuild per-agent config rows from saved state
         initAgentConfigRows();
+
+        // Reset tool checkboxes
+        List<String> disabledTools = state.getDisabledAgentTools();
+        Set<String> disabledSet = disabledTools != null ? new HashSet<>(disabledTools) : Collections.emptySet();
+        for (Map.Entry<String, JBCheckBox> entry : toolCheckboxes.entrySet()) {
+            entry.getValue().setSelected(!disabledSet.contains(entry.getKey()));
+        }
     }
 
     private String getSelectedProviderName() {
