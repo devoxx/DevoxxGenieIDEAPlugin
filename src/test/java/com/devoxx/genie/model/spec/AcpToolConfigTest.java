@@ -33,6 +33,8 @@ class AcpToolConfigTest {
 
     @Test
     void testAcpType_displayNames() {
+        assertThat(AcpToolConfig.AcpType.CLAUDE.getDisplayName()).isEqualTo("Claude");
+        assertThat(AcpToolConfig.AcpType.COPILOT.getDisplayName()).isEqualTo("Copilot");
         assertThat(AcpToolConfig.AcpType.KIMI.getDisplayName()).isEqualTo("Kimi");
         assertThat(AcpToolConfig.AcpType.GEMINI.getDisplayName()).isEqualTo("Gemini");
         assertThat(AcpToolConfig.AcpType.KILOCODE.getDisplayName()).isEqualTo("Kilocode");
@@ -41,6 +43,8 @@ class AcpToolConfigTest {
 
     @Test
     void testAcpType_defaultExecutablePaths() {
+        assertThat(AcpToolConfig.AcpType.CLAUDE.getDefaultExecutablePath()).isEqualTo("claude-code-acp");
+        assertThat(AcpToolConfig.AcpType.COPILOT.getDefaultExecutablePath()).isEqualTo("copilot");
         assertThat(AcpToolConfig.AcpType.KIMI.getDefaultExecutablePath()).isEqualTo("kimi");
         assertThat(AcpToolConfig.AcpType.GEMINI.getDefaultExecutablePath()).isEqualTo("gemini");
         assertThat(AcpToolConfig.AcpType.KILOCODE.getDefaultExecutablePath()).isEqualTo("kilocode");
@@ -48,10 +52,22 @@ class AcpToolConfigTest {
     }
 
     @Test
+    void testAcpType_defaultAcpFlags() {
+        assertThat(AcpToolConfig.AcpType.CLAUDE.getDefaultAcpFlag()).isEqualTo("acp");
+        assertThat(AcpToolConfig.AcpType.COPILOT.getDefaultAcpFlag()).isEqualTo("--acp");
+        assertThat(AcpToolConfig.AcpType.KIMI.getDefaultAcpFlag()).isEqualTo("acp");
+        assertThat(AcpToolConfig.AcpType.GEMINI.getDefaultAcpFlag()).isEqualTo("acp");
+        assertThat(AcpToolConfig.AcpType.KILOCODE.getDefaultAcpFlag()).isEqualTo("acp");
+        assertThat(AcpToolConfig.AcpType.CUSTOM.getDefaultAcpFlag()).isEqualTo("acp");
+    }
+
+    @Test
     void testAcpType_allValues() {
         AcpToolConfig.AcpType[] values = AcpToolConfig.AcpType.values();
-        assertThat(values).hasSize(4);
+        assertThat(values).hasSize(6);
         assertThat(values).containsExactly(
+                AcpToolConfig.AcpType.CLAUDE,
+                AcpToolConfig.AcpType.COPILOT,
                 AcpToolConfig.AcpType.KIMI,
                 AcpToolConfig.AcpType.GEMINI,
                 AcpToolConfig.AcpType.KILOCODE,
