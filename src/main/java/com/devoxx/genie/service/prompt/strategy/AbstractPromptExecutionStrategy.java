@@ -179,12 +179,28 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
             }
         }
 
-        String currentPrompt = context.getUserPrompt();
-        if (history.isEmpty()) {
-            return currentPrompt;
+        // Build the full prompt including conversation history, file context, and user prompt
+        StringBuilder fullPrompt = new StringBuilder();
+        
+        // Add conversation history if present
+        if (!history.isEmpty()) {
+            fullPrompt.append("<conversation_history>\n")
+                      .append(history)
+                      .append("</conversation_history>\n\n");
         }
-
-        return "<conversation_history>\n" + history + "</conversation_history>\n\n" + currentPrompt;
+        
+        // Add file context if present (for ACP/CLI runners that need plain text)
+        String filesContext = context.getFilesContext();
+        if (filesContext != null && !filesContext.isEmpty()) {
+            fullPrompt.append("<attached_files>\n")
+                      .append(filesContext)
+                      .append("</attached_files>\n\n");
+        }
+        
+        // Add the user prompt
+        fullPrompt.append(context.getUserPrompt());
+        
+        return fullPrompt.toString();
     }
 
     /**
