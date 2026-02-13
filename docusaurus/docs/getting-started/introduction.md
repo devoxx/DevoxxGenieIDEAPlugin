@@ -24,6 +24,10 @@ DevoxxGenie provides a rich set of features to enhance your development workflow
 - **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
 - **MCP Support**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
 - **Agent Mode** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider.
+- **[Spec Driven Development](../features/spec-driven-development.md)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously.
+- **[CLI Runners](../features/cli-runners.md)** *(v0.9.9+)*: Execute prompts and spec tasks via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface or the Spec Browser.
+- **[ACP Runners](../features/acp-runners.md)** *(v0.9.10+)*: Communicate with external agents via the Agent Communication Protocol (JSON-RPC 2.0) with structured streaming, conversation history, and capability negotiation.
+- **[Inline Code Completion](../features/inline-completion.md)** *(v0.9.6+)*: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio.
 - **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
 - **Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
