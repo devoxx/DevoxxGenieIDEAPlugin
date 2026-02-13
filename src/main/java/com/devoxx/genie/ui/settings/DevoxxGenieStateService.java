@@ -214,6 +214,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
+    private List<String> disabledAgentTools = new ArrayList<>();
 
     // Parallel exploration (sub-agent) settings
     private Boolean parallelExploreEnabled = true;

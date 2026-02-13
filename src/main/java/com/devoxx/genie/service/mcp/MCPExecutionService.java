@@ -133,9 +133,12 @@ public class MCPExecutionService implements Disposable {
         }
 
         MCPService.logDebug("Creating MCP Tool Provider with " + mcpClients.size() + " clients");
-        return McpToolProvider.builder()
+        ToolProvider rawProvider = McpToolProvider.builder()
                 .mcpClients(mcpClients)
                 .build();
+
+        // Wrap with filtering to exclude individually disabled tools
+        return new FilteredMcpToolProvider(rawProvider);
     }
 
     /**

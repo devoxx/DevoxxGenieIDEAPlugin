@@ -13,14 +13,14 @@ import java.util.Set;
 
 /**
  * Wraps tools with conditional approval logic.
- * Read-only tools (read_file, list_files, search_files) can be auto-approved.
+ * Read-only tools (read_file, list_files, search_files, fetch_page) can be auto-approved.
  * Write tools (write_file, run_command) always require approval.
  */
 @Slf4j
 public class AgentApprovalProvider implements ToolProvider {
 
     private static final Set<String> READ_ONLY_TOOLS = Set.of(
-            "read_file", "list_files", "search_files",
+            "read_file", "list_files", "search_files", "fetch_page",
             "backlog_task_list", "backlog_task_search", "backlog_task_view",
             "backlog_document_list", "backlog_document_view", "backlog_document_search",
             "backlog_milestone_list"

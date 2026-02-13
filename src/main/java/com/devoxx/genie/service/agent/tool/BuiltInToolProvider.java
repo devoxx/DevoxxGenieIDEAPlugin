@@ -13,12 +13,11 @@ import dev.langchain4j.service.tool.ToolProviderResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides built-in IDE tools for agentic interactions:
- * read_file, write_file, edit_file, list_files, search_files, run_command, run_tests, parallel_explore.
+ * read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page, run_tests, parallel_explore.
  */
 public class BuiltInToolProvider implements ToolProvider {
 
@@ -116,6 +115,22 @@ public class BuiltInToolProvider implements ToolProvider {
                 new RunCommandToolExecutor(project)
         );
 
+        // fetch_page
+        tools.put(
+                ToolSpecification.builder()
+                        .name("fetch_page")
+                        .description("Fetch a web page by URL and return its readable text content. " +
+                                "HTML tags, CSS, and JavaScript are stripped. " +
+                                "Useful for reading documentation, API references, and web pages. " +
+                                "Large pages are truncated to 100K characters.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("url", "The URL to fetch (must start with http:// or https://)")
+                                .required("url")
+                                .build())
+                        .build(),
+                new FetchPageToolExecutor()
+        );
+
         // run_tests — only when test execution is enabled
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
             tools.put(
@@ -210,9 +225,14 @@ public class BuiltInToolProvider implements ToolProvider {
 
     @Override
     public ToolProviderResult provideTools(ToolProviderRequest request) {
+        List<String> disabledTools = DevoxxGenieStateService.getInstance().getDisabledAgentTools();
+        Set<String> disabledSet = disabledTools != null ? new HashSet<>(disabledTools) : Collections.emptySet();
+
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
         for (Map.Entry<ToolSpecification, ToolExecutor> entry : tools.entrySet()) {
-            builder.add(entry.getKey(), entry.getValue());
+            if (!disabledSet.contains(entry.getKey().name())) {
+                builder.add(entry.getKey(), entry.getValue());
+            }
         }
         return builder.build();
     }

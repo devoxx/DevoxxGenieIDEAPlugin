@@ -5,10 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents an MCP server configuration.
@@ -55,6 +52,9 @@ public class MCPServer {
     
     @Builder.Default
     private Map<String, String> toolDescriptions = new HashMap<>();
-    
+
+    @Builder.Default
+    private Set<String> disabledTools = new HashSet<>();
+
     private String toolsDescription;
 }
