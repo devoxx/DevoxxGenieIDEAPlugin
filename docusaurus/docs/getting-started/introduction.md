@@ -21,22 +21,22 @@ With DevoxxGenie, developers can leverage the power of artificial intelligence t
 
 DevoxxGenie provides a rich set of features to enhance your development workflow:
 
-- **Multiple LLM Providers**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
-- **MCP Support**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
-- **Agent Mode** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider.
+- **[Multiple LLM Providers](../llm-providers/overview.md)**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
+- **[MCP Support](../features/mcp_expanded.md)**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
+- **[Agent Mode](../features/agent-mode.md)** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider.
 - **[Spec Driven Development](../features/spec-driven-development.md)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously.
 - **[CLI Runners](../features/cli-runners.md)** *(v0.9.9+)*: Execute prompts and spec tasks via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface or the Spec Browser.
 - **[ACP Runners](../features/acp-runners.md)** *(v0.9.10+)*: Communicate with external agents via the Agent Communication Protocol (JSON-RPC 2.0) with structured streaming, conversation history, and capability negotiation.
 - **[Inline Code Completion](../features/inline-completion.md)** *(v0.9.6+)*: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio.
-- **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
+- **[Skills](../features/skills.md)**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
-- **Chat History**: Your chats are stored locally, allowing you to easily restore them in the future.
-- **Project Scanner**: Add source code (full project or by package) to prompt context when using compatible LLM providers.
-- **Token Cost Calculator**: Calculate the cost when using Cloud LLM providers.
-- **Web Search**: Search the web for a given query using Google or Tavily.
-- **Streaming responses**: See each token as it's received from the LLM in real-time.
-- **DnD Images**: Drag and drop images with multimodal LLM support.
-- **Appearance Customization**: Customize chat interface colors, spacing, and font sizes.
+- **[Chat History](../features/chat-interface.md)**: Your chats are stored locally, allowing you to easily restore them in the future.
+- **[Project Scanner](../features/project-scanner.md)**: Add source code (full project or by package) to prompt context when using compatible LLM providers.
+- **[Token Cost Calculator](../configuration/token-cost.md)**: Calculate the cost when using Cloud LLM providers.
+- **[Web Search](../features/web-search.md)**: Search the web for a given query using Google or Tavily.
+- **[Streaming responses](../features/chat-interface.md)**: See each token as it's received from the LLM in real-time.
+- **[DnD Images](../features/dnd-images.md)**: Drag and drop images with multimodal LLM support.
+- **[Appearance Customization](../configuration/appearance.md)**: Customize chat interface colors, spacing, and font sizes.
 - **100% Java**: Built entirely in Java using the Langchain4J library.
 
 ## Why Use DevoxxGenie?
