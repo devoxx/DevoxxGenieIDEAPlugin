@@ -1,8 +1,8 @@
 ---
 sidebar_position: 2
 title: Agent Mode
-description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Run tests automatically after code changes. Use parallel sub-agents for concurrent read-only exploration of multiple aspects.
-keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution]
+description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Fetch web pages for documentation. Run tests automatically after code changes. Use parallel sub-agents for concurrent read-only exploration. Enable or disable individual tools.
+keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control]
 ---
 
 # Agent Mode
@@ -22,6 +22,7 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `read_file` | Read the contents of a file in the project |
 | `list_files` | List files and directories (with optional recursion) |
 | `search_files` | Search for regex patterns across project files |
+| `fetch_page` | Fetch a web page by URL and return its readable text content (HTML/CSS/JS stripped) |
 
 ### Write Tools
 
@@ -32,7 +33,16 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `run_command` | Execute terminal commands in the project directory (30s timeout) |
 | `run_tests` | Auto-detect build system and run tests with structured results (configurable timeout) |
 
-As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
+As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
+
+### Per-Tool Enable/Disable
+
+Each built-in tool can be individually enabled or disabled in the **Built-in Tools** section of the Agent settings. Uncheck a tool to prevent the agent from using it. This is useful when you want to:
+
+- **Restrict capabilities** — disable `run_command` to prevent terminal access, or `fetch_page` to block web access
+- **Reduce context window usage** — each enabled tool adds its specification to the LLM prompt, consuming tokens. Disabling tools you don't need frees up context for your actual conversation, which is especially important with smaller context window models
+
+The `run_tests`, `parallel_explore`, and backlog tools have their own dedicated toggles in separate settings sections.
 
 :::tip Safety
 Write operations require user approval by default. You'll see a diff preview before any changes are applied to your project.
@@ -115,7 +125,7 @@ When the LLM decides it needs to investigate multiple areas simultaneously, it c
 
 Each sub-agent:
 
-- Has **read-only access** to your project (read_file, list_files, search_files only)
+- Has **read-only access** to your project (read_file, list_files, search_files, fetch_page only)
 - Runs with its own **isolated chat memory** and tool call budget
 - Can use a **different LLM provider/model** than the main agent (e.g., a cheaper/faster model)
 - Returns a **concise markdown summary** of its findings back to the main agent
@@ -133,6 +143,7 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | Setting | Default | Description |
 |---------|---------|-------------|
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
+| **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
 ### Test Execution Settings
@@ -231,7 +242,8 @@ User Prompt
 Main Agent (your configured LLM)
     |
     |--> read_file, write_file, edit_file
-    |--> list_files, search_files, run_command, run_tests
+    |--> list_files, search_files, run_command
+    |--> fetch_page, run_tests
     |         |
     |         v
     |    Tool Results
@@ -250,9 +262,9 @@ Main Agent (your configured LLM)
     |
     |--> parallel_explore(queries: ["query1", "query2", "query3"])
     |         |
-    |         |--> Sub-Agent #1 (read_file, list_files, search_files)
-    |         |--> Sub-Agent #2 (read_file, list_files, search_files)
-    |         |--> Sub-Agent #3 (read_file, list_files, search_files)
+    |         |--> Sub-Agent #1 (read_file, list_files, search_files, fetch_page)
+    |         |--> Sub-Agent #2 (read_file, list_files, search_files, fetch_page)
+    |         |--> Sub-Agent #3 (read_file, list_files, search_files, fetch_page)
     |         |
     |         v
     |    Combined Results (markdown)

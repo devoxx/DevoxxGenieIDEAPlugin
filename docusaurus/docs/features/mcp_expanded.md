@@ -1,8 +1,8 @@
 ---
 sidebar_position: 3
 title: MCP Support - Model Context Protocol
-description: Learn how DevoxxGenie integrates with MCP servers to give your LLM access to external tools, files, databases, and APIs.
-keywords: [devoxxgenie, mcp, model context protocol, tools, agents, intellij plugin, marketplace]
+description: Learn how DevoxxGenie integrates with MCP servers to give your LLM access to external tools, files, databases, and APIs. Enable or disable individual tools per server.
+keywords: [devoxxgenie, mcp, model context protocol, tools, agents, intellij plugin, marketplace, tool control]
 ---
 
 # MCP Support
@@ -185,6 +185,26 @@ Each MCP server exposes a set of tools. To see what tools a server provides:
 1. In the MCP settings table, click the **View** button for a server
 2. A dialog shows a table of tool names and their descriptions
 3. The tools column in the main table also shows a summary count
+
+## Per-Tool Enable/Disable
+
+You can selectively enable or disable individual tools exposed by each MCP server. This gives you fine-grained control over which capabilities the LLM can use during conversations.
+
+![MCP Tools Activation](/img/MCPToolsActivation.jpg)
+
+### How to Use
+
+1. In the MCP settings table, click the **View** button for a server
+2. Each tool is listed with a checkbox next to its name
+3. Uncheck a tool to disable it — the LLM will no longer be able to call it
+4. Check a tool to re-enable it
+
+### Use Cases
+
+- **Security**: Disable write or delete tools on a filesystem server to make it read-only
+- **Focus**: Disable tools that aren't relevant to your current task to reduce noise
+- **Testing**: Temporarily disable a tool to see how the LLM behaves without it
+- **Cost control**: Disable expensive API-calling tools when not needed
 
 ## Troubleshooting
 
