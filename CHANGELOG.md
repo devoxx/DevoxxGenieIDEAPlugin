@@ -2,6 +2,17 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.11]
+
+### Added
+- PSI Tools: 5 new IDE-powered code intelligence tools for agent mode — `find_symbols`, `document_symbols`, `find_references`, `find_definition`, `find_implementations` (#921)
+- Semantic code navigation: agent can jump to definitions, find usages, and discover implementations using IntelliJ's Program Structure Interface
+- PSI tools work across all IDE-supported languages (Java, Kotlin, Python, JS/TS, Go, Rust, etc.)
+- New PSI Tools toggle in Agent Settings (enabled by default)
+
+### Documentation
+- Add PSI Tools (Code Intelligence) section to Agent Mode documentation with tool descriptions, example prompts, and architecture diagrams
+
 ## [0.9.10]
 
 ### Added
