@@ -1,8 +1,8 @@
 ---
 sidebar_position: 2
 title: Agent Mode
-description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Fetch web pages for documentation. Run tests automatically after code changes. Use parallel sub-agents for concurrent read-only exploration. Enable or disable individual tools.
-keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control]
+description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Fetch web pages for documentation. Run tests automatically after code changes. Use PSI tools for semantic code intelligence. Use parallel sub-agents for concurrent read-only exploration. Enable or disable individual tools.
+keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control, PSI, code intelligence, find references, find definition, find implementations]
 ---
 
 # Agent Mode
@@ -24,6 +24,16 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `search_files` | Search for regex patterns across project files |
 | `fetch_page` | Fetch a web page by URL and return its readable text content (HTML/CSS/JS stripped) |
 
+### PSI Tools (Code Intelligence)
+
+| Tool | Description |
+|------|-------------|
+| `find_symbols` | Search for symbol definitions (classes, methods, fields) by name across the project |
+| `document_symbols` | List all symbol definitions in a file with their kind and line numbers |
+| `find_references` | Find all usages of a symbol using semantic reference search |
+| `find_definition` | Navigate from a symbol usage to its definition |
+| `find_implementations` | Find all implementations of an interface, abstract class, or method |
+
 ### Write Tools
 
 | Tool | Description |
@@ -33,7 +43,7 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `run_command` | Execute terminal commands in the project directory (30s timeout) |
 | `run_tests` | Auto-detect build system and run tests with structured results (configurable timeout) |
 
-As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
+As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. The **PSI tools** give the agent IDE-level code intelligence — it can find symbol definitions, look up references, navigate to definitions, and discover implementations, all powered by IntelliJ's semantic index rather than text search. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
 
 ### Per-Tool Enable/Disable
 
@@ -117,6 +127,61 @@ The agent will create the test, write the implementation, call `run_tests`, and 
 
 ---
 
+## PSI Tools (Code Intelligence)
+
+PSI (Program Structure Interface) tools give the agent access to IntelliJ's semantic code index. Unlike text-based search (`search_files`), PSI tools understand language semantics — imports, type hierarchies, qualified names, and cross-file references. They work across all languages supported by your IDE (Java, Kotlin, Python, JavaScript/TypeScript, Go, Rust, and more).
+
+### Available PSI Tools
+
+#### `find_symbols`
+
+Search for symbol definitions by name across the entire project. Only returns actual declarations (classes, methods, fields), not usages. Supports an optional `kind` filter (`class`, `method`, or `field`).
+
+**Example prompt**: *"Find where the ChatService class is defined"*
+
+#### `document_symbols`
+
+List all symbol definitions in a file with their kind, name, and line number. Shows nesting structure (e.g., methods inside classes). Useful for understanding file structure before reading specific sections.
+
+**Example prompt**: *"Show me the structure of PromptExecutionService.java"*
+
+#### `find_references`
+
+Find all usages of a symbol defined at a given file and line. More accurate than text search because it understands imports, qualified names, and language semantics.
+
+**Example prompt**: *"Find all places where executeQuery is called"*
+
+#### `find_definition`
+
+Navigate from a symbol usage to its definition. Given a file position where a symbol is used, resolves and returns the location where it is defined. Understands imports, inheritance, and cross-file references.
+
+**Example prompt**: *"Go to the definition of the ChatModelFactory interface used in this file"*
+
+#### `find_implementations`
+
+Find all implementations of an interface, abstract class, or abstract method. Useful for understanding the type hierarchy and finding concrete implementations.
+
+**Example prompt**: *"Find all implementations of ChatModelFactory"*
+
+### Why PSI Tools Matter
+
+With PSI tools, the agent can navigate your codebase the same way you do in the IDE — jumping to definitions, finding usages, and exploring type hierarchies. This is significantly more accurate than text-based grep for tasks like:
+
+- Understanding how components are wired together
+- Tracing call chains across files
+- Finding all concrete implementations of an interface
+- Identifying where a method is called before refactoring it
+
+### Enabling PSI Tools
+
+PSI tools are **enabled by default**. You can toggle them in **Settings > Tools > DevoxxGenie > Agent > PSI Tools (Code Intelligence)**.
+
+:::tip
+PSI tools are read-only and don't require user approval. They are also available to parallel sub-agents for deeper exploration.
+:::
+
+---
+
 ## Parallel Sub-Agents
 
 **Parallel Sub-Agents** extend Agent Mode by spawning multiple read-only AI assistants that concurrently investigate different aspects of your project. This is especially useful for large codebases where you need to understand multiple components at once.
@@ -145,6 +210,12 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
 | **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
+
+### PSI Tools Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Enable PSI Tools** | Enabled | Enables IDE-powered code intelligence tools (find_symbols, document_symbols, find_references, find_definition, find_implementations) |
 
 ### Test Execution Settings
 
@@ -244,6 +315,9 @@ Main Agent (your configured LLM)
     |--> read_file, write_file, edit_file
     |--> list_files, search_files, run_command
     |--> fetch_page, run_tests
+    |--> find_symbols, document_symbols        ← PSI Tools
+    |--> find_references, find_definition      ← (Code Intelligence)
+    |--> find_implementations                  ←
     |         |
     |         v
     |    Tool Results
@@ -262,9 +336,9 @@ Main Agent (your configured LLM)
     |
     |--> parallel_explore(queries: ["query1", "query2", "query3"])
     |         |
-    |         |--> Sub-Agent #1 (read_file, list_files, search_files, fetch_page)
-    |         |--> Sub-Agent #2 (read_file, list_files, search_files, fetch_page)
-    |         |--> Sub-Agent #3 (read_file, list_files, search_files, fetch_page)
+    |         |--> Sub-Agent #1 (read_file, list_files, search_files, fetch_page, PSI tools)
+    |         |--> Sub-Agent #2 (read_file, list_files, search_files, fetch_page, PSI tools)
+    |         |--> Sub-Agent #3 (read_file, list_files, search_files, fetch_page, PSI tools)
     |         |
     |         v
     |    Combined Results (markdown)
@@ -282,6 +356,7 @@ Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multip
 - **Start with single agent mode**: For simple questions, single agent mode is often sufficient and faster
 - **Use parallel sub-agents for complex exploration**: When you need to understand multiple unrelated aspects of your codebase
 - **Use cheaper models for sub-agents**: Sub-agents perform read-only exploration, so smaller models work well
+- **Leverage PSI tools for refactoring**: Before renaming or modifying a method, ask the agent to find all references first — PSI-based search is more reliable than text grep
 - **Let the agent verify its own changes**: With `run_tests` enabled, the agent automatically runs tests after code modifications and iterates on failures
 - **Target specific tests**: For faster feedback, ask the agent to run a specific test class rather than the full suite
 - **Set appropriate timeouts**: Increase the test timeout for large test suites or integration tests, decrease for quick unit tests

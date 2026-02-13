@@ -216,6 +216,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentDebugLogsEnabled = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 
+    // PSI (Program Structure Interface) tools
+    private Boolean psiToolsEnabled = true;
+
     // Parallel exploration (sub-agent) settings
     private Boolean parallelExploreEnabled = true;
     private Integer subAgentMaxToolCalls = SUB_AGENT_MAX_TOOL_CALLS;

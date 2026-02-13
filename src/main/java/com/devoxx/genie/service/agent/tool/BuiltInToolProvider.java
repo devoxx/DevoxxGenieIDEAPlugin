@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.agent.tool.psi.*;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -182,6 +183,95 @@ public class BuiltInToolProvider implements ToolProvider {
                     parallelExploreExecutor
             );
         }
+
+        // PSI (Program Structure Interface) tools — only when enabled in settings
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getPsiToolsEnabled())) {
+            registerPsiTools(project);
+        }
+    }
+
+    private void registerPsiTools(@NotNull Project project) {
+        // find_symbols — search for symbol definitions by name
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_symbols")
+                        .description("Search for symbol definitions (classes, methods, fields) by name in the project. " +
+                                "Unlike text search, this uses the IDE's semantic index and only returns actual declarations, not usages. " +
+                                "Works across all languages supported by the IDE (Java, Kotlin, Python, JS/TS, Go, etc.).")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("name", "Exact symbol name to search for (e.g. 'ChatService', 'executeQuery')")
+                                .addStringProperty("kind", "Optional filter: 'class', 'method', or 'field'")
+                                .required("name")
+                                .build())
+                        .build(),
+                new FindSymbolsToolExecutor(project)
+        );
+
+        // document_symbols — list all symbols defined in a file
+        tools.put(
+                ToolSpecification.builder()
+                        .name("document_symbols")
+                        .description("List all symbol definitions in a file with their kind (class, method, field) " +
+                                "and line numbers. Shows the nesting structure (e.g. methods inside classes). " +
+                                "Useful for understanding file structure before reading specific sections.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root")
+                                .required("file")
+                                .build())
+                        .build(),
+                new DocumentSymbolsToolExecutor(project)
+        );
+
+        // find_references — find all usages of a symbol
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_references")
+                        .description("Find all references (usages) of a symbol defined at a given file and line. " +
+                                "Uses the IDE's semantic reference search, which is more accurate than text search " +
+                                "because it understands imports, qualified names, and language semantics.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root where the symbol is defined")
+                                .addIntegerProperty("line", "1-based line number where the symbol is defined")
+                                .addStringProperty("symbol", "Optional: symbol name to disambiguate if multiple definitions are on the same line")
+                                .required("file", "line")
+                                .build())
+                        .build(),
+                new FindReferencesToolExecutor(project)
+        );
+
+        // find_definition — go to the definition of a symbol
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_definition")
+                        .description("Navigate from a symbol usage to its definition. Given a file position where " +
+                                "a symbol is used, resolves and returns the location where it is defined. " +
+                                "Understands imports, inheritance, and cross-file references.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root containing the symbol usage")
+                                .addIntegerProperty("line", "1-based line number of the symbol usage")
+                                .addIntegerProperty("column", "Optional: 1-based column for precise positioning")
+                                .addStringProperty("symbol", "Optional: symbol name to look for on the line")
+                                .required("file", "line")
+                                .build())
+                        .build(),
+                new FindDefinitionToolExecutor(project)
+        );
+
+        // find_implementations — find implementations of an interface/abstract class/method
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_implementations")
+                        .description("Find all implementations of an interface, abstract class, or abstract method. " +
+                                "Useful for understanding the type hierarchy and finding concrete implementations.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root where the interface/class is defined")
+                                .addIntegerProperty("line", "1-based line number of the interface/class/method definition")
+                                .addStringProperty("symbol", "Optional: symbol name to disambiguate if multiple definitions are on the same line")
+                                .required("file", "line")
+                                .build())
+                        .build(),
+                new FindImplementationsToolExecutor(project)
+        );
     }
 
     private void registerBacklogTools(@NotNull Project project) {
