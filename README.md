@@ -9,13 +9,13 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
-**🆕 Spec Driven Development (SDD)** — Define tasks in `Backlog.md`, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously! Use the **Agent Loop** to run multiple tasks in a single batch with dependency ordering and automatic advancement.
+**🆕 [Spec Driven Development (SDD)](https://genie.devoxx.com/docs/features/spec-driven-development)** — Define tasks in `Backlog.md`, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously! Use the **Agent Loop** to run multiple tasks in a single batch with dependency ordering and automatic advancement.
 
-**🆕 AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
+**🆕 [AI-powered Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
 
 **🆕 [ACP Runners](https://genie.devoxx.com/docs/features/acp-runners)** — Communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol (JSON-RPC 2.0 over stdin/stdout) with structured streaming, conversation history, and capability negotiation!
 
-**🆕 CLI Runners** — CLI Runners let you execute prompts and spec tasks directly from DevoxxGenie's chat interface or Spec Browser using external CLI tools like Claude Code, GitHub Copilot, Codex, Gemini CLI, and Kimi.
+**🆕 [CLI Runners](https://genie.devoxx.com/docs/features/acp-runners)** — CLI Runners let you execute prompts and spec tasks directly from DevoxxGenie's chat interface or Spec Browser using external CLI tools like Claude Code, GitHub Copilot, Codex, Gemini CLI, and Kimi.
 
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
