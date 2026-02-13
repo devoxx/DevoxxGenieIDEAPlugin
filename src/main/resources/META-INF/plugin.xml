@@ -45,6 +45,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.10</h2>
+        <UL>
+            <LI>ACP Runners: communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol with JSON-RPC 2.0 over stdin/stdout (#920)</LI>
+            <LI>Conversation history for CLI and ACP runners: prior exchanges are included so the LLM can recall earlier messages</LI>
+            <LI>Move CLAUDE.md/AGENTS.md and DEVOXXGENIE.md content to system prompt (set once per conversation instead of repeated in every user message)</LI>
+            <LI>Per-tool enable/disable for MCP servers and agent mode built-in tools (#919)</LI>
+            <LI>New fetch_page built-in agent tool for web page fetching</LI>
+            <LI>Dedicated CLI/ACP Runners settings page (moved from Spec Driven Development settings)</LI>
+            <LI>Add Claude and Copilot as ACP tool types with configurable ACP flags</LI>
+        </UL>
         <h2>v0.9.9</h2>
         <UL>
             <LI>CLI Runners as a chat-mode provider: execute prompts via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) (#916)</LI>

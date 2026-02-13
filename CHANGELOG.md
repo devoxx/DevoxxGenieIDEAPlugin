@@ -2,6 +2,22 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.10]
+
+### Added
+- ACP Runners: communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol (JSON-RPC 2.0 over stdin/stdout) with structured streaming and capability negotiation (#920)
+- Conversation history for CLI and ACP runners: prior exchanges are formatted as a text preamble so external tools can recall earlier messages (#920)
+- Per-tool enable/disable for MCP servers and agent mode built-in tools (#919)
+- New `fetch_page` built-in agent tool for web page fetching (#919)
+- Claude and Copilot as new ACP tool types with configurable ACP flags (#920)
+
+### Changed
+- Move CLAUDE.md/AGENTS.md and DEVOXXGENIE.md content injection from per-user-message to system prompt, set once per conversation (#920)
+- Dedicated CLI/ACP Runners settings page, extracted from Spec Driven Development settings (#920)
+
+### Dependencies
+- Bump software.amazon.awssdk:bom (#918)
+
 ## [0.9.9]
 
 ### Added
