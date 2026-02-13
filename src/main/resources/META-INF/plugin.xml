@@ -45,6 +45,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.11</h2>
+        <UL>
+            <LI>PSI Tools: 5 new IDE-powered code intelligence tools for agent mode — find_symbols, document_symbols, find_references, find_definition, find_implementations (#921)</LI>
+            <LI>Semantic code navigation: agent can jump to definitions, find usages, and discover implementations using IntelliJ's Program Structure Interface</LI>
+            <LI>PSI tools work across all IDE-supported languages (Java, Kotlin, Python, JS/TS, Go, Rust, etc.)</LI>
+            <LI>New PSI Tools toggle in Agent Settings (enabled by default)</LI>
+        </UL>
         <h2>v0.9.10</h2>
         <UL>
             <LI>ACP Runners: communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol with JSON-RPC 2.0 over stdin/stdout (#920)</LI>
