@@ -27,6 +27,13 @@ public class PromptExecutionStrategyFactory {
     public PromptExecutionStrategy createStrategy(@NotNull ChatMessageContext chatMessageContext) {
         Project project = chatMessageContext.getProject();
 
+        // Check if ACP Runners provider — bypasses Langchain4J entirely
+        if (chatMessageContext.getLanguageModel() != null &&
+                chatMessageContext.getLanguageModel().getProvider() == ModelProvider.ACPRunners) {
+            log.debug("Creating AcpPromptStrategy");
+            return new AcpPromptStrategy(project);
+        }
+
         // Check if CLI Runners provider — bypasses Langchain4J entirely
         if (chatMessageContext.getLanguageModel() != null &&
                 chatMessageContext.getLanguageModel().getProvider() == ModelProvider.CLIRunners) {

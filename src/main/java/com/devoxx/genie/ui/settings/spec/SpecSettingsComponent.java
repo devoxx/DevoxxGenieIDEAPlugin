@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.spec;
 
+import com.devoxx.genie.model.spec.AcpToolConfig;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.spec.BacklogConfigService;
 import com.devoxx.genie.service.spec.SpecService;
@@ -49,6 +50,9 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
     private final CliToolTableModel cliToolTableModel = new CliToolTableModel();
     private final JBTable cliToolTable = new JBTable(cliToolTableModel);
+
+    private final AcpToolTableModel acpToolTableModel = new AcpToolTableModel();
+    private final JBTable acpToolTable = new JBTable(acpToolTableModel);
 
     public SpecSettingsComponent(@NotNull Project project) {
         this.project = project;
@@ -151,6 +155,40 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         // Load existing CLI tools from state
         loadCliTools();
 
+        // --- ACP Runners ---
+        addSection(contentPanel, gbc, "ACP Runners");
+
+        addHelpText(contentPanel, gbc,
+                "Configure external ACP (Agent Communication Protocol) tools that communicate " +
+                "via JSON-RPC 2.0 over stdin/stdout. ACP provides structured streaming, file operations, " +
+                "terminal management, and capability negotiation. " +
+                "Supported CLIs: Kimi, Gemini CLI, Kilocode.");
+
+        // Configure ACP table columns
+        acpToolTable.getColumnModel().getColumn(0).setMaxWidth(60);   // Enabled
+        acpToolTable.getColumnModel().getColumn(0).setMinWidth(60);
+        acpToolTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Type
+        acpToolTable.getColumnModel().getColumn(2).setPreferredWidth(270); // Path
+        acpToolTable.setRowHeight(25);
+
+        ToolbarDecorator acpDecorator = ToolbarDecorator.createDecorator(acpToolTable)
+                .setAddAction(button -> addAcpTool())
+                .setEditAction(button -> editAcpTool())
+                .setRemoveAction(button -> removeAcpTool());
+
+        JPanel acpTablePanel = acpDecorator.createPanel();
+        acpTablePanel.setPreferredSize(new Dimension(-1, 150));
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        contentPanel.add(acpTablePanel, gbc);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridy++;
+
+        // Load existing ACP tools from state
+        loadAcpTools();
+
         // Filler
         gbc.weighty = 1.0;
         gbc.gridy++;
@@ -207,6 +245,41 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         int row = cliToolTable.getSelectedRow();
         if (row >= 0) {
             cliToolTableModel.removeTool(row);
+        }
+    }
+
+    // ===== ACP Tool Table Management =====
+
+    private void loadAcpTools() {
+        List<AcpToolConfig> tools = stateService.getAcpTools();
+        if (tools != null) {
+            for (AcpToolConfig tool : tools) {
+                acpToolTableModel.addTool(tool);
+            }
+        }
+    }
+
+    private void addAcpTool() {
+        AcpToolDialog dialog = new AcpToolDialog(null);
+        if (dialog.showAndGet()) {
+            acpToolTableModel.addTool(dialog.getResult());
+        }
+    }
+
+    private void editAcpTool() {
+        int row = acpToolTable.getSelectedRow();
+        if (row < 0) return;
+        AcpToolConfig existing = acpToolTableModel.getToolAt(row);
+        AcpToolDialog dialog = new AcpToolDialog(existing);
+        if (dialog.showAndGet()) {
+            acpToolTableModel.updateTool(row, dialog.getResult());
+        }
+    }
+
+    private void removeAcpTool() {
+        int row = acpToolTable.getSelectedRow();
+        if (row >= 0) {
+            acpToolTableModel.removeTool(row);
         }
     }
 
@@ -334,7 +407,8 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         return enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
                 || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory())
                 || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes())
-                || isCliToolsModified();
+                || isCliToolsModified()
+                || isAcpToolsModified();
     }
 
     private boolean isCliToolsModified() {
@@ -344,11 +418,19 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         return !saved.equals(current);
     }
 
+    private boolean isAcpToolsModified() {
+        List<AcpToolConfig> saved = stateService.getAcpTools();
+        List<AcpToolConfig> current = acpToolTableModel.getAllTools();
+        if (saved == null) return !current.isEmpty();
+        return !saved.equals(current);
+    }
+
     public void apply() {
         stateService.setSpecBrowserEnabled(enableSpecBrowserCheckbox.isSelected());
         stateService.setSpecDirectory(specDirectoryField.getText().trim());
         stateService.setSpecTaskRunnerTimeoutMinutes((Integer) taskRunnerTimeoutSpinner.getValue());
         stateService.setCliTools(new ArrayList<>(cliToolTableModel.getAllTools()));
+        stateService.setAcpTools(new ArrayList<>(acpToolTableModel.getAllTools()));
     }
 
     public void reset() {
@@ -362,6 +444,14 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         if (tools != null) {
             for (CliToolConfig tool : tools) {
                 cliToolTableModel.addTool(tool);
+            }
+        }
+
+        acpToolTableModel.clear();
+        List<AcpToolConfig> acpTools = state.getAcpTools();
+        if (acpTools != null) {
+            for (AcpToolConfig tool : acpTools) {
+                acpToolTableModel.addTool(tool);
             }
         }
     }
@@ -757,6 +847,223 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                     .extraArgs(args)
                     .envVars(parseEnvVars(envVarsField.getText().trim()))
                     .mcpConfigFlag(mcpConfigFlagField.getText().trim())
+                    .enabled(enabledCheckbox.isSelected())
+                    .build();
+        }
+    }
+
+    // ===== ACP Tool Table Model =====
+
+    private static class AcpToolTableModel extends AbstractTableModel {
+        private static final String[] COLUMNS = {"Enabled", "Type", "Executable Path"};
+        private final List<AcpToolConfig> tools = new ArrayList<>();
+
+        @Override
+        public int getRowCount() {
+            return tools.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return COLUMNS.length;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return COLUMNS[column];
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return columnIndex == 0 ? Boolean.class : String.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            AcpToolConfig tool = tools.get(rowIndex);
+            return switch (columnIndex) {
+                case 0 -> tool.isEnabled();
+                case 1 -> tool.getType() != null ? tool.getType().getDisplayName() : "";
+                case 2 -> tool.getExecutablePath();
+                default -> "";
+            };
+        }
+
+        @Override
+        public void setValueAt(Object value, int rowIndex, int columnIndex) {
+            if (columnIndex == 0 && value instanceof Boolean) {
+                tools.get(rowIndex).setEnabled((Boolean) value);
+                fireTableCellUpdated(rowIndex, columnIndex);
+            }
+        }
+
+        public void addTool(AcpToolConfig tool) {
+            tools.add(tool);
+            fireTableRowsInserted(tools.size() - 1, tools.size() - 1);
+        }
+
+        public void updateTool(int row, AcpToolConfig tool) {
+            tools.set(row, tool);
+            fireTableRowsUpdated(row, row);
+        }
+
+        public void removeTool(int row) {
+            tools.remove(row);
+            fireTableRowsDeleted(row, row);
+        }
+
+        public AcpToolConfig getToolAt(int row) {
+            return tools.get(row);
+        }
+
+        public List<AcpToolConfig> getAllTools() {
+            return new ArrayList<>(tools);
+        }
+
+        public void clear() {
+            int size = tools.size();
+            if (size > 0) {
+                tools.clear();
+                fireTableRowsDeleted(0, size - 1);
+            }
+        }
+    }
+
+    // ===== ACP Tool Dialog =====
+
+    private static class AcpToolDialog extends com.intellij.openapi.ui.DialogWrapper {
+        private final JComboBox<AcpToolConfig.AcpType> typeCombo = new JComboBox<>(AcpToolConfig.AcpType.values());
+        private final JBTextField pathField = new JBTextField();
+        private final JBCheckBox enabledCheckbox = new JBCheckBox("Enabled", true);
+        private final JBLabel testResultLabel = new JBLabel();
+        private boolean suppressTypeListener = false;
+
+        AcpToolDialog(AcpToolConfig existing) {
+            super(true);
+            setTitle(existing == null ? "Add ACP Tool" : "Edit ACP Tool");
+            if (existing != null) {
+                suppressTypeListener = true;
+                typeCombo.setSelectedItem(existing.getType() != null ? existing.getType() : AcpToolConfig.AcpType.CUSTOM);
+                suppressTypeListener = false;
+                pathField.setText(existing.getExecutablePath());
+                enabledCheckbox.setSelected(existing.isEnabled());
+            }
+            init();
+            if (existing == null) {
+                onTypeChanged();
+            }
+        }
+
+        @Override
+        protected JComponent createCenterPanel() {
+            JPanel panel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.insets = new Insets(4, 4, 4, 4);
+            gbc.anchor = GridBagConstraints.WEST;
+
+            gbc.gridy = 0;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Type:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            typeCombo.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean focus) {
+                    super.getListCellRendererComponent(list, value, index, sel, focus);
+                    if (value instanceof AcpToolConfig.AcpType t) setText(t.getDisplayName());
+                    return this;
+                }
+            });
+            typeCombo.addActionListener(e -> onTypeChanged());
+            panel.add(typeCombo, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(new JBLabel("Executable path:"), gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(pathField, gbc);
+
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.gridwidth = 2;
+            panel.add(enabledCheckbox, gbc);
+
+            // Test button row
+            gbc.gridy++;
+            gbc.gridx = 0;
+            gbc.gridwidth = 2;
+            JPanel testRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+            JButton testButton = new JButton("Test Connection");
+            testButton.addActionListener(e -> runTest());
+            testRow.add(testButton);
+            testResultLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+            testRow.add(testResultLabel);
+            panel.add(testRow, gbc);
+
+            return panel;
+        }
+
+        private void onTypeChanged() {
+            if (suppressTypeListener) return;
+            AcpToolConfig.AcpType type = (AcpToolConfig.AcpType) typeCombo.getSelectedItem();
+            if (type == null || type == AcpToolConfig.AcpType.CUSTOM) return;
+            pathField.setText(type.getDefaultExecutablePath());
+        }
+
+        private void runTest() {
+            String path = pathField.getText().trim();
+            if (path.isEmpty()) {
+                testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
+                testResultLabel.setText("Executable path is empty");
+                return;
+            }
+
+            testResultLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+            testResultLabel.setText("Testing ACP handshake...");
+
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    com.devoxx.genie.service.acp.protocol.AcpClient client =
+                            new com.devoxx.genie.service.acp.protocol.AcpClient(text -> {});
+                    client.start(null, path, "acp");
+                    client.initialize();
+                    client.close();
+                    showTestResult(true, "ACP handshake successful");
+                } catch (Exception ex) {
+                    showTestResult(false, ex.getMessage());
+                }
+            });
+        }
+
+        private void showTestResult(boolean success, String message) {
+            SwingUtilities.invokeLater(() -> {
+                String truncated = message.length() > 80 ? message.substring(0, 80) + "..." : message;
+                if (success) {
+                    testResultLabel.setForeground(new java.awt.Color(0, 128, 0));
+                    testResultLabel.setText(truncated);
+                } else {
+                    testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
+                    testResultLabel.setText(truncated);
+                }
+            });
+        }
+
+        public AcpToolConfig getResult() {
+            AcpToolConfig.AcpType selectedType = (AcpToolConfig.AcpType) typeCombo.getSelectedItem();
+            if (selectedType == null) selectedType = AcpToolConfig.AcpType.CUSTOM;
+            return AcpToolConfig.builder()
+                    .type(selectedType)
+                    .name(selectedType.getDisplayName())
+                    .executablePath(pathField.getText().trim())
                     .enabled(enabledCheckbox.isSelected())
                     .build();
         }
