@@ -1,5 +1,8 @@
 package com.devoxx.genie.service.acp.model;
 
+/**
+ * Identifies the ACP client to the agent during the {@code initialize} handshake.
+ */
 public class ClientInfo {
     public String name;
     public String version;
