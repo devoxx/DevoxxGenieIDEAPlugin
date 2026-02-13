@@ -70,7 +70,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         }
         CliCommand cliCommand = cliType.createCommand();
 
-        String prompt = context.getUserPrompt();
+        String prompt = buildPromptWithHistory(context);
         List<String> command = cliCommand.buildChatCommand(cliTool, prompt);
 
         log.info("CLI chat execute: tool={}, type={}, command={}", toolName, cliType, command);

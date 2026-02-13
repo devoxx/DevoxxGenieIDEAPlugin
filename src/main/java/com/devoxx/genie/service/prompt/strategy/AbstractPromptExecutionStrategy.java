@@ -11,10 +11,14 @@ import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.concurrent.CancellationException;
 
 /**
@@ -142,6 +146,47 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         }
     }
     
+    /**
+     * Builds a prompt string that includes conversation history for strategies
+     * that communicate via plain text (CLI/ACP runners).
+     * Prepares memory, adds the user message, then formats prior exchanges
+     * as a text preamble prepended to the current prompt.
+     *
+     * @param context The chat message context
+     * @return The prompt string, optionally prefixed with conversation history
+     */
+    protected String buildPromptWithHistory(@NotNull ChatMessageContext context) {
+        prepareMemory(context);
+        chatMemoryManager.addUserMessage(context);
+
+        List<ChatMessage> messages = chatMemoryManager.getMessages(project);
+
+        // Collect prior exchanges (skip SystemMessage and the last UserMessage which is the current prompt)
+        StringBuilder history = new StringBuilder();
+        int messageCount = messages.size();
+        // The last message is the current user message we just added — exclude it from history
+        int historyEnd = messageCount - 1;
+
+        for (int i = 0; i < historyEnd; i++) {
+            ChatMessage msg = messages.get(i);
+            if (msg instanceof SystemMessage) {
+                continue;
+            }
+            if (msg instanceof UserMessage userMsg) {
+                history.append("[user]: ").append(userMsg.singleText()).append("\n");
+            } else if (msg instanceof AiMessage aiMsg) {
+                history.append("[assistant]: ").append(aiMsg.text()).append("\n");
+            }
+        }
+
+        String currentPrompt = context.getUserPrompt();
+        if (history.isEmpty()) {
+            return currentPrompt;
+        }
+
+        return "<conversation_history>\n" + history + "</conversation_history>\n\n" + currentPrompt;
+    }
+
     /**
      * Standardized error handling for execution exceptions.
      * Hides the "Thinking..." loading indicator when an error occurs.

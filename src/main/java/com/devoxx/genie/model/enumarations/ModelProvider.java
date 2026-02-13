@@ -15,6 +15,7 @@ public enum ModelProvider {
     LMStudio("LMStudio", Type.LOCAL),
     Ollama("Ollama", Type.LOCAL),
     CLIRunners("CLI Runners", Type.LOCAL),
+    ACPRunners("ACP Runners", Type.LOCAL),
 
     OpenAI("OpenAI", Type.CLOUD),
     Anthropic("Anthropic", Type.CLOUD),

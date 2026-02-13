@@ -319,6 +319,11 @@
                              instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
                              displayName="Spec Driven Development (BETA)"/>
 
+        <projectConfigurable id="com.devoxx.genie.runners"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.runner.RunnerSettingsConfigurable"
+                             displayName="CLI/ACP Runners"/>
+
         <projectConfigurable id="com.devoxx.genie.InlineCompletion"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"

@@ -44,7 +44,7 @@ Codex CLI does not support MCP, so it cannot update task status directly. The ta
 
 ## Setup
 
-1. Open **Settings** > **Tools** > **DevoxxGenie** > **Spec Driven Dev**
+1. Open **Settings** > **Tools** > **DevoxxGenie** > **CLI/ACP Runners**
 2. Scroll to the **CLI Runners** section
 3. Click **+** to add a new CLI tool
 4. Select the **Type** from the dropdown — all fields are pre-filled with sensible defaults

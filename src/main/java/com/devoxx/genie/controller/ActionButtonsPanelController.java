@@ -151,6 +151,16 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                     .outputCost(0)
                     .inputMaxTokens(0)
                     .build();
+        } else if (selectedProvider != null && selectedProvider.equals(ACPRunners)) {
+            return LanguageModel.builder()
+                    .provider(ACPRunners)
+                    .modelName("")
+                    .displayName("ACP Runner")
+                    .apiKeyUsed(false)
+                    .inputCost(0)
+                    .outputCost(0)
+                    .inputMaxTokens(0)
+                    .build();
         } else if (selectedProvider != null &&
                 (selectedProvider.equals(LMStudio) ||
                  selectedProvider.equals(GPT4All) ||

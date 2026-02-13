@@ -1,5 +1,7 @@
 package com.devoxx.genie.service.prompt.strategy;
 
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
@@ -87,6 +89,32 @@ public class PromptExecutionStrategyFactoryTest extends LightPlatformTestCase {
         }
     }
     
+    @Test
+    public void testCreateStrategy_AcpRunners() {
+        LanguageModel acpModel = LanguageModel.builder()
+                .provider(ModelProvider.ACPRunners)
+                .modelName("Kimi")
+                .build();
+        when(context.getLanguageModel()).thenReturn(acpModel);
+
+        PromptExecutionStrategy strategy = factory.createStrategy(context);
+
+        assertTrue(strategy instanceof AcpPromptStrategy);
+    }
+
+    @Test
+    public void testCreateStrategy_CliRunners() {
+        LanguageModel cliModel = LanguageModel.builder()
+                .provider(ModelProvider.CLIRunners)
+                .modelName("Claude")
+                .build();
+        when(context.getLanguageModel()).thenReturn(cliModel);
+
+        PromptExecutionStrategy strategy = factory.createStrategy(context);
+
+        assertTrue(strategy instanceof CliPromptStrategy);
+    }
+
     @Test
     public void testCreateStrategy_StreamingNull() {
         // Set up context without web search
