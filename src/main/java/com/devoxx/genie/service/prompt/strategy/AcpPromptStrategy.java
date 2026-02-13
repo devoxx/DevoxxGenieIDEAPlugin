@@ -52,7 +52,7 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
             return;
         }
 
-        String prompt = context.getUserPrompt();
+        String prompt = buildPromptWithHistory(context);
         String executablePath = acpTool.getExecutablePath();
 
         log.info("ACP execute: tool={}, executable={}", toolName, executablePath);
@@ -103,7 +103,8 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
             File cwd = basePath != null ? new File(basePath) : null;
 
             consoleManager.printSystem("[ACP] Starting " + acpTool.getName() + "...");
-            client.start(cwd, acpTool.getExecutablePath(), "acp");
+            String acpFlag = acpTool.getAcpFlag() != null ? acpTool.getAcpFlag() : "acp";
+            client.start(cwd, acpTool.getExecutablePath(), acpFlag);
 
             consoleManager.printSystem("[ACP] Initializing protocol...");
             client.initialize();

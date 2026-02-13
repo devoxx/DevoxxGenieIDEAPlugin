@@ -14,17 +14,21 @@ public class AcpToolConfig {
 
     @Getter
     public enum AcpType {
-        KIMI("Kimi", "kimi"),
-        GEMINI("Gemini", "gemini"),
-        KILOCODE("Kilocode", "kilocode"),
-        CUSTOM("Custom", "");
+        CLAUDE("Claude", "claude-code-acp", "acp"),
+        COPILOT("Copilot", "copilot", "--acp"),
+        KIMI("Kimi", "kimi", "acp"),
+        GEMINI("Gemini", "gemini", "acp"),
+        KILOCODE("Kilocode", "kilocode", "acp"),
+        CUSTOM("Custom", "", "acp");
 
         private final String displayName;
         private final String defaultExecutablePath;
+        private final String defaultAcpFlag;
 
-        AcpType(String displayName, String defaultExecutablePath) {
+        AcpType(String displayName, String defaultExecutablePath, String defaultAcpFlag) {
             this.displayName = displayName;
             this.defaultExecutablePath = defaultExecutablePath;
+            this.defaultAcpFlag = defaultAcpFlag;
         }
     }
 
@@ -34,6 +38,8 @@ public class AcpToolConfig {
     private String name = "";
     @Builder.Default
     private String executablePath = "";
+    @Builder.Default
+    private String acpFlag = "acp";
     @Builder.Default
     private boolean enabled = true;
 }
