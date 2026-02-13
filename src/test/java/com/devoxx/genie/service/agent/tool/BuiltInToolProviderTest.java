@@ -55,10 +55,10 @@ class BuiltInToolProviderTest {
     }
 
     @Test
-    void provideTools_returnsSixTools() {
+    void provideTools_returnsSevenTools() {
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(6);
+        assertThat(result.tools()).hasSize(7);
     }
 
     @Test
@@ -70,18 +70,19 @@ class BuiltInToolProviderTest {
                 .collect(Collectors.toSet());
 
         assertThat(toolNames).containsExactlyInAnyOrder(
-                "read_file", "write_file", "edit_file", "list_files", "search_files", "run_command"
+                "read_file", "write_file", "edit_file", "list_files", "search_files",
+                "run_command", "fetch_page"
         );
     }
 
     @Test
-    void provideTools_returnsSevenToolsWhenTestExecutionEnabled() {
+    void provideTools_returnsEightToolsWhenTestExecutionEnabled() {
         when(stateService.getTestExecutionEnabled()).thenReturn(true);
         BuiltInToolProvider providerWithTests = new BuiltInToolProvider(project);
 
         ToolProviderResult result = providerWithTests.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(8);
     }
 
     @Test
@@ -97,7 +98,7 @@ class BuiltInToolProviderTest {
 
         assertThat(toolNames).containsExactlyInAnyOrder(
                 "read_file", "write_file", "edit_file", "list_files", "search_files",
-                "run_command", "run_tests"
+                "run_command", "fetch_page", "run_tests"
         );
     }
 

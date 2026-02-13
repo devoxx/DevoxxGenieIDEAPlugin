@@ -95,6 +95,7 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("org.commonmark:commonmark:0.27.1")
+    implementation("org.jsoup:jsoup:1.18.3")
     implementation("io.netty:netty-all:4.2.10.Final")
 
     // Logging

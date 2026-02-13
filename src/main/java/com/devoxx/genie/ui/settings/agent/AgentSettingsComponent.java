@@ -28,7 +28,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner maxToolCallsSpinner =
             new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, 100);
     private final JBCheckBox autoApproveReadOnlyCheckbox =
-            new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files)", stateService.getAgentAutoApproveReadOnly());
+            new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files, fetch_page)", stateService.getAgentAutoApproveReadOnly());
     private final JBCheckBox writeApprovalRequiredCheckbox =
             new JBCheckBox("Write tools always require approval (write_file, run_command)", Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired()));
     private final JBCheckBox enableDebugLogsCheckbox =
@@ -63,7 +63,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             {"edit_file", "Edit files by replacing exact string matches"},
             {"list_files", "List files and directories in the project"},
             {"search_files", "Search for regex patterns in project files"},
-            {"run_command", "Execute terminal commands in the project directory"}
+            {"run_command", "Execute terminal commands in the project directory"},
+            {"fetch_page", "Fetch a web page and return its text content"}
     };
     private final Map<String, JBCheckBox> toolCheckboxes = new LinkedHashMap<>();
 
