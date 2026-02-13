@@ -141,6 +141,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                     case Bedrock -> stateService.isAwsEnabled();
                     case CLIRunners -> true;
+                    case ACPRunners -> true;
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))

@@ -46,8 +46,9 @@ public class ChatMessageContextUtil {
                 .cost(0)
                 .build();
 
-        // CLI Runners bypass Langchain4J — no chat model needed
-        if (chatContextParameters.languageModel().getProvider() != ModelProvider.CLIRunners) {
+        // CLI Runners and ACP Runners bypass Langchain4J — no chat model needed
+        if (chatContextParameters.languageModel().getProvider() != ModelProvider.CLIRunners &&
+            chatContextParameters.languageModel().getProvider() != ModelProvider.ACPRunners) {
             if (Boolean.TRUE.equals(stateService.getStreamMode())) {
                 chatMessageContext.setStreamingChatModel(chatContextParameters.chatModelProvider().getStreamingChatLanguageModel(chatMessageContext));
             } else {

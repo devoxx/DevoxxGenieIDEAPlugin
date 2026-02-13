@@ -16,6 +16,7 @@ import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
+import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
@@ -67,6 +68,7 @@ public class ChatModelFactoryProvider {
             case "Kimi" -> new KimiChatModelFactory();
             case "GLM" -> new GLMChatModelFactory();
             case "CLI Runners" -> new CliRunnersChatModelFactory();
+            case "ACP Runners" -> new AcpRunnersChatModelFactory();
             default -> null;
         };
     }

@@ -2,6 +2,7 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.spec.AcpToolConfig;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -48,6 +49,7 @@ public class LLMProviderService {
         providers.addAll(getLocalModelProviders());
         providers.addAll(getOptionalProviders());
         providers.addAll(getCliRunnersProvider());
+        providers.addAll(getAcpRunnersProvider());
 
         return providers;
     }
@@ -87,6 +89,15 @@ public class LLMProviderService {
 
 
         return optionalModelProviders;
+    }
+
+    private @NotNull List<ModelProvider> getAcpRunnersProvider() {
+        boolean hasEnabledAcpTool = DevoxxGenieStateService.getInstance().getAcpTools().stream()
+                .anyMatch(AcpToolConfig::isEnabled);
+        if (hasEnabledAcpTool) {
+            return List.of(ModelProvider.ACPRunners);
+        }
+        return List.of();
     }
 
     private @NotNull List<ModelProvider> getCliRunnersProvider() {

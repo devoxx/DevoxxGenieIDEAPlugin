@@ -244,6 +244,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String specRunnerMode = "llm";          // "llm" or "cli"
     private String specSelectedCliTool = "";         // name of selected CLI tool
 
+    // ACP tool runner settings
+    private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();
+
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
     private String inlineCompletionModel = "";
