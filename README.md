@@ -13,7 +13,9 @@ Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, 
 
 **🆕 AI-powered Inline Code Completion** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
 
-**🆕 CLI Runners** — CLI Runners let you execute prompts and spec tasks directly from DevoxxGenie's chat interface or Spec Browser using external CLI tools like Claude Code, GitHub Copilot, Codex, Gemini CLI, and Kimi.  
+**🆕 [ACP Runners](https://genie.devoxx.com/docs/features/acp-runners)** — Communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol (JSON-RPC 2.0 over stdin/stdout) with structured streaming, conversation history, and capability negotiation!
+
+**🆕 CLI Runners** — CLI Runners let you execute prompts and spec tasks directly from DevoxxGenie's chat interface or Spec Browser using external CLI tools like Claude Code, GitHub Copilot, Codex, Gemini CLI, and Kimi.
 
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
@@ -34,6 +36,7 @@ Quick links:
 - [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode) - Autonomous code tools with parallel sub-agents
 - [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development) - Task management with Backlog.md, Kanban Board, and Agent implementation
 - [Agent Loop](https://genie.devoxx.com/docs/features/sdd-agent-loop) - Batch task execution with dependency ordering and progress tracking
+- [ACP Runners](https://genie.devoxx.com/docs/features/acp-runners) - Agent Communication Protocol integration with external agents
 - [CLI Runners](https://genie.devoxx.com/docs/features/cli-runners) - Execute prompts and spec tasks via external CLI tools
 - [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion) - AI-powered code suggestions as you type
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
@@ -93,6 +96,7 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 ### Key Features:
 
 - **📋 [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser (Task List + Kanban Board), and let the Agent implement them. 17 built-in backlog tools for full CRUD on tasks, documents, and milestones. Use the [Agent Loop](https://genie.devoxx.com/docs/features/sdd-agent-loop) to run multiple tasks in batch with dependency ordering *(v0.9.8+)*.
+- **🆕 [ACP Runners](https://genie.devoxx.com/docs/features/acp-runners)** *(v0.9.10+)*: Communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol with structured streaming, conversation history, and capability negotiation.
 - **🖥️ [CLI Runners](https://genie.devoxx.com/docs/features/cli-runners)** *(v0.9.9+)*: Execute prompts and spec tasks via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface or the Spec Browser.
 - **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: (v0.9.6+) AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
