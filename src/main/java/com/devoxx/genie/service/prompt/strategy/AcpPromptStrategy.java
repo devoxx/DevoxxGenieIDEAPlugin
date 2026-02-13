@@ -84,19 +84,21 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
         StringBuilder accumulatedResponse = new StringBuilder();
 
         try {
-            AcpClient client = new AcpClient(textChunk -> {
-                accumulatedResponse.append(textChunk);
-                final String fullText = accumulatedResponse.toString();
+            AcpClient client = AcpClient.builder()
+                    .outputConsumer(textChunk -> {
+                        accumulatedResponse.append(textChunk);
+                        final String fullText = accumulatedResponse.toString();
 
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    consoleManager.printOutput(textChunk);
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            consoleManager.printOutput(textChunk);
 
-                    if (webViewController != null && !fullText.isEmpty()) {
-                        context.setAiMessage(AiMessage.from(fullText));
-                        webViewController.updateAiMessageContent(context);
-                    }
-                });
-            });
+                            if (webViewController != null && !fullText.isEmpty()) {
+                                context.setAiMessage(AiMessage.from(fullText));
+                                webViewController.updateAiMessageContent(context);
+                            }
+                        });
+                    })
+                    .build();
             activeClient = client;
 
             String basePath = project.getBasePath();
