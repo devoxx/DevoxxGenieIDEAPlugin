@@ -68,6 +68,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private JComboBox<String> executionModeCombo;
     private boolean refreshingCombo = false;
     private static final String LLM_PROVIDER_LABEL = "LLM Provider";
+    private static final String CLI_PREFIX = "CLI: ";
 
     public SpecBrowserPanel(@NotNull Project project) {
         super(true, true);
@@ -251,11 +252,13 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             executionModeCombo.addItem(LLM_PROVIDER_LABEL);
 
             DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-            List<CliToolConfig> tools = stateService.getCliTools();
-            if (tools != null) {
-                for (CliToolConfig tool : tools) {
+
+            // Add CLI tools
+            List<CliToolConfig> cliTools = stateService.getCliTools();
+            if (cliTools != null) {
+                for (CliToolConfig tool : cliTools) {
                     if (tool.isEnabled()) {
-                        executionModeCombo.addItem("CLI: " + tool.getName());
+                        executionModeCombo.addItem(CLI_PREFIX + tool.getName());
                     }
                 }
             }
@@ -264,7 +267,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             String mode = stateService.getSpecRunnerMode();
             if ("cli".equalsIgnoreCase(mode)) {
                 String selectedTool = stateService.getSpecSelectedCliTool();
-                String label = "CLI: " + selectedTool;
+                String label = CLI_PREFIX + selectedTool;
                 for (int i = 0; i < executionModeCombo.getItemCount(); i++) {
                     if (label.equals(executionModeCombo.getItemAt(i))) {
                         executionModeCombo.setSelectedIndex(i);
@@ -286,9 +289,9 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         if (selected == null || LLM_PROVIDER_LABEL.equals(selected)) {
             stateService.setSpecRunnerMode("llm");
             stateService.setSpecSelectedCliTool("");
-        } else if (selected.startsWith("CLI: ")) {
+        } else if (selected.startsWith(CLI_PREFIX)) {
             stateService.setSpecRunnerMode("cli");
-            stateService.setSpecSelectedCliTool(selected.substring("CLI: ".length()));
+            stateService.setSpecSelectedCliTool(selected.substring(CLI_PREFIX.length()));
         }
     }
 
