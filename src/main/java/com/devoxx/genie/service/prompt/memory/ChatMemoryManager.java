@@ -19,7 +19,13 @@ import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -317,6 +323,86 @@ public class ChatMemoryManager {
             MCPService.logDebug("Added MCP instructions to system prompt");
         }
 
+        // Add DEVOXXGENIE.md content to system prompt (once per conversation)
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
+            String devoxxGenieMdContent = readDevoxxGenieMdFile(context.getProject());
+            if (devoxxGenieMdContent != null && !devoxxGenieMdContent.isEmpty()) {
+                systemPrompt += "\n<ProjectContext>\n" + devoxxGenieMdContent + "\n</ProjectContext>\n";
+            }
+        }
+
+        // Add CLAUDE.md or AGENTS.md content to system prompt (once per conversation)
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseClaudeOrAgentsMdInPrompt())) {
+            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(context.getProject());
+            if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
+                systemPrompt += "\n<ProjectContext>\n" + claudeOrAgentsMdContent + "\n</ProjectContext>\n";
+            }
+        }
+
         return TemplateVariableEscaper.escape(systemPrompt);
+    }
+
+    /**
+     * Read the content of DEVOXXGENIE.md file from the project root directory.
+     *
+     * @param project the project
+     * @return the content of DEVOXXGENIE.md file or null if file not found or can't be read
+     */
+    @Nullable
+    static String readDevoxxGenieMdFile(Project project) {
+        try {
+            if (project == null || project.getBasePath() == null) {
+                log.warn("Project or base path is null");
+                return null;
+            }
+
+            Path devoxxGenieMdPath = Paths.get(project.getBasePath(), "DEVOXXGENIE.md");
+            if (!Files.exists(devoxxGenieMdPath)) {
+                log.debug("DEVOXXGENIE.md file not found in project root: {}", devoxxGenieMdPath);
+                return null;
+            }
+
+            return Files.readString(devoxxGenieMdPath, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("Failed to read DEVOXXGENIE.md file: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Read the content of CLAUDE.md or AGENTS.md file from the project root directory.
+     * CLAUDE.md has priority - if both files exist, only CLAUDE.md is read and AGENTS.md is skipped.
+     *
+     * @param project the project
+     * @return the content of CLAUDE.md or AGENTS.md file or null if neither file is found or can't be read
+     */
+    @Nullable
+    static String readClaudeOrAgentsMdFile(Project project) {
+        try {
+            if (project == null || project.getBasePath() == null) {
+                log.warn("Project or base path is null");
+                return null;
+            }
+
+            // Try CLAUDE.md first (priority)
+            Path claudeMdPath = Paths.get(project.getBasePath(), "CLAUDE.md");
+            if (Files.exists(claudeMdPath)) {
+                log.debug("Found CLAUDE.md file in project root, using it (AGENTS.md will be skipped if present)");
+                return Files.readString(claudeMdPath, StandardCharsets.UTF_8);
+            }
+
+            // If CLAUDE.md doesn't exist, try AGENTS.md
+            Path agentsMdPath = Paths.get(project.getBasePath(), "AGENTS.md");
+            if (Files.exists(agentsMdPath)) {
+                log.debug("Found AGENTS.md file in project root");
+                return Files.readString(agentsMdPath, StandardCharsets.UTF_8);
+            }
+
+            log.debug("Neither CLAUDE.md nor AGENTS.md file found in project root");
+            return null;
+        } catch (IOException e) {
+            log.warn("Failed to read CLAUDE.md or AGENTS.md file: {}", e.getMessage());
+            return null;
+        }
     }
 }
