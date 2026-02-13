@@ -72,18 +72,18 @@ public class FindImplementationsToolExecutor implements ToolExecutor {
         }
 
         List<String> results = new ArrayList<>();
-        DefinitionsScopedSearch.search(target).forEach(impl -> {
-            if (results.size() >= MAX_RESULTS) return;
+        for (PsiElement impl : DefinitionsScopedSearch.search(target).findAll()) {
+            if (results.size() >= MAX_RESULTS) break;
 
             String location = PsiToolUtils.formatLocation(impl, projectBase);
-            if (location == null) return;
+            if (location == null) continue;
 
             String name = (impl instanceof PsiNameIdentifierOwner owner) ? owner.getName() : impl.getText();
             String kind = (impl instanceof PsiNameIdentifierOwner owner)
                     ? PsiToolUtils.getElementKind(owner) : "symbol";
 
             results.add(String.format("  [%s] %s  %s", kind, name, location));
-        });
+        }
 
         if (results.isEmpty()) {
             return "No implementations found for '" + target.getName() + "' defined at " + filePath + ":" + line;
