@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import lombok.Getter;
@@ -18,10 +19,15 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 import static javax.swing.SwingConstants.RIGHT;
 
 public class LanguageModelCostSettingsComponent extends AbstractSettingsComponent {
+
+    private static final String EDIT_COSTS_URL =
+            "https://github.com/devoxx/DevoxxGenieIDEAPlugin/edit/master/docusaurus/static/api/llm-api-cost.json";
+
     private final JTable costTable;
     private final SortableTableModel tableModel;
 
@@ -69,6 +75,14 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         setupColumns();
         setCustomRenderers();
         loadCurrentCosts();
+
+        // Toolbar with Edit on GitHub button
+        JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton editButton = createActionButton("Edit on GitHub", null,
+                "Edit LLM cost data on GitHub via a Pull Request",
+                e -> BrowserUtil.open(EDIT_COSTS_URL));
+        toolbarPanel.add(editButton);
+        panel.add(toolbarPanel, BorderLayout.NORTH);
 
         JScrollPane scrollPane = new JBScrollPane(costTable);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
