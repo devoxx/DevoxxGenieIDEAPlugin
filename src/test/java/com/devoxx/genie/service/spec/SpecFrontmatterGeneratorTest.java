@@ -130,6 +130,331 @@ class SpecFrontmatterGeneratorTest {
         assertThat(result).contains("title: \"Fix: colon in title\"");
     }
 
+    // --- quoteIfNeeded() branch coverage ---
+
+    @Test
+    void shouldQuoteValueWithHash() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-4")
+                .title("Fix # issue")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"Fix # issue\"");
+    }
+
+    @Test
+    void shouldQuoteValueWithSingleQuote() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-5")
+                .title("It's a test")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"It's a test\"");
+    }
+
+    @Test
+    void shouldQuoteAndEscapeDoubleQuote() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-6")
+                .title("Say \"hello\"")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"Say \\\"hello\\\"\"");
+    }
+
+    @Test
+    void shouldQuoteValueWithNewline() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-7")
+                .title("Line1\nLine2")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"Line1\nLine2\"");
+    }
+
+    @Test
+    void shouldQuoteValueStartingWithCurlyBrace() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-8")
+                .title("{flow}")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"{flow}\"");
+    }
+
+    @Test
+    void shouldQuoteValueStartingWithSquareBracket() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-9")
+                .title("[WIP] Task")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"[WIP] Task\"");
+    }
+
+    @Test
+    void shouldQuoteValueStartingWithAsterisk() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-10a")
+                .title("*important*")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"*important*\"");
+    }
+
+    @Test
+    void shouldQuoteValueStartingWithAmpersand() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-11")
+                .title("&anchor")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"&anchor\"");
+    }
+
+    @Test
+    void shouldEscapeBackslashInQuotedValue() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-12")
+                .title("path\\to: file")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: \"path\\\\to: file\"");
+    }
+
+    @Test
+    void shouldNotQuotePlainValue() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-13")
+                .title("Simple task")
+                .status("To Do")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("title: Simple task\n");
+        assertThat(result).doesNotContain("title: \"Simple task\"");
+    }
+
+    @Test
+    void shouldQuoteSpecialCharsInListValues() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-14")
+                .title("Test")
+                .status("To Do")
+                .labels(List.of("feature: auth", "tag#1"))
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("  - \"feature: auth\"");
+        assertThat(result).contains("  - \"tag#1\"");
+    }
+
+    // --- generate() null/empty field branch coverage ---
+
+    @Test
+    void shouldSkipEmptyDescription() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-15")
+                .title("No desc")
+                .status("To Do")
+                .description("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("---\n\n");
+        // After the closing frontmatter, there should be no description text
+        String afterFrontmatter = result.substring(result.lastIndexOf("---\n") + 4);
+        assertThat(afterFrontmatter.trim()).isEmpty();
+    }
+
+    @Test
+    void shouldSkipEmptyAcceptanceCriteria() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-16")
+                .title("No AC")
+                .status("To Do")
+                .acceptanceCriteria(List.of())
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("## Acceptance Criteria");
+    }
+
+    @Test
+    void shouldSkipEmptyDefinitionOfDone() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-17")
+                .title("No DoD")
+                .status("To Do")
+                .definitionOfDone(List.of())
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("## Definition of Done");
+    }
+
+    @Test
+    void shouldSkipEmptyImplementationPlan() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-18")
+                .title("No plan")
+                .status("To Do")
+                .implementationPlan("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("## Implementation Plan");
+    }
+
+    @Test
+    void shouldSkipEmptyImplementationNotes() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-19")
+                .title("No notes")
+                .status("To Do")
+                .implementationNotes("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("## Implementation Notes");
+    }
+
+    @Test
+    void shouldSkipEmptyFinalSummary() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-20")
+                .title("No summary")
+                .status("To Do")
+                .finalSummary("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("## Final Summary");
+    }
+
+    @Test
+    void shouldSkipNullOptionalScalarFields() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-21")
+                .title("Minimal")
+                .status("To Do")
+                .priority(null)
+                .milestone(null)
+                .parentTaskId(null)
+                .createdAt(null)
+                .updatedAt(null)
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("priority:");
+        assertThat(result).doesNotContain("milestone:");
+        assertThat(result).doesNotContain("parent_task_id:");
+        assertThat(result).doesNotContain("created_date:");
+        assertThat(result).doesNotContain("updated_date:");
+    }
+
+    @Test
+    void shouldSkipEmptyStringScalarFields() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-22")
+                .title("Empty fields")
+                .status("To Do")
+                .priority("")
+                .milestone("")
+                .parentTaskId("")
+                .createdAt("")
+                .updatedAt("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).doesNotContain("priority:");
+        assertThat(result).doesNotContain("milestone:");
+        assertThat(result).doesNotContain("parent_task_id:");
+        assertThat(result).doesNotContain("created_date:");
+        assertThat(result).doesNotContain("updated_date:");
+    }
+
+    @Test
+    void shouldHandleNullLists() {
+        TaskSpec spec = TaskSpec.builder()
+                .id("TASK-23")
+                .title("Null lists")
+                .status("To Do")
+                .assignees(null)
+                .labels(null)
+                .dependencies(null)
+                .references(null)
+                .documentation(null)
+                .build();
+
+        String result = SpecFrontmatterGenerator.generate(spec);
+        assertThat(result).contains("assignee: []\n");
+        assertThat(result).contains("labels: []\n");
+        assertThat(result).contains("dependencies: []\n");
+        assertThat(result).contains("references: []\n");
+        assertThat(result).contains("documentation: []\n");
+    }
+
+    // --- generateDocument() branch coverage ---
+
+    @Test
+    void shouldGenerateDocumentWithNullContent() {
+        BacklogDocument doc = BacklogDocument.builder()
+                .id("DOC-2")
+                .title("Empty doc")
+                .content(null)
+                .build();
+
+        String result = SpecFrontmatterGenerator.generateDocument(doc);
+        assertThat(result).contains("id: DOC-2\n");
+        assertThat(result).contains("title: Empty doc\n");
+        String afterFrontmatter = result.substring(result.lastIndexOf("---\n") + 4);
+        assertThat(afterFrontmatter.trim()).isEmpty();
+    }
+
+    @Test
+    void shouldGenerateDocumentWithEmptyContent() {
+        BacklogDocument doc = BacklogDocument.builder()
+                .id("DOC-3")
+                .title("Blank doc")
+                .content("")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generateDocument(doc);
+        String afterFrontmatter = result.substring(result.lastIndexOf("---\n") + 4);
+        assertThat(afterFrontmatter.trim()).isEmpty();
+    }
+
+    @Test
+    void shouldGenerateDocumentWithNullIdAndTitle() {
+        BacklogDocument doc = BacklogDocument.builder()
+                .content("Some content")
+                .build();
+
+        String result = SpecFrontmatterGenerator.generateDocument(doc);
+        assertThat(result).doesNotContain("id:");
+        assertThat(result).doesNotContain("title:");
+        assertThat(result).contains("Some content");
+    }
+
     @Test
     void shouldRoundTripThroughParserAndGenerator() {
         TaskSpec original = TaskSpec.builder()
