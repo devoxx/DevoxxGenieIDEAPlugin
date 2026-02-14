@@ -17,13 +17,27 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RunCommandToolExecutor implements ToolExecutor {
 
-    private static final int TIMEOUT_SECONDS = 30;
-    private static final int MAX_OUTPUT_LENGTH = 10000;
+    private static final int DEFAULT_TIMEOUT_SECONDS = 30;
+    private static final int DEFAULT_MAX_OUTPUT_LENGTH = 10000;
 
     private final Project project;
+    private final int timeoutSeconds;
+    private final int maxOutputLength;
+    private final ProcessStarter processStarter;
 
     public RunCommandToolExecutor(@NotNull Project project) {
+        this(project, DEFAULT_TIMEOUT_SECONDS, DEFAULT_MAX_OUTPUT_LENGTH);
+    }
+
+    RunCommandToolExecutor(@NotNull Project project, int timeoutSeconds, int maxOutputLength) {
+        this(project, timeoutSeconds, maxOutputLength, null);
+    }
+
+    RunCommandToolExecutor(@NotNull Project project, int timeoutSeconds, int maxOutputLength, ProcessStarter processStarter) {
         this.project = project;
+        this.timeoutSeconds = timeoutSeconds;
+        this.maxOutputLength = maxOutputLength;
+        this.processStarter = processStarter != null ? processStarter : this::createProcess;
     }
 
     @Override
@@ -32,11 +46,11 @@ public class RunCommandToolExecutor implements ToolExecutor {
             String command = validateAndGetCommand(request);
             String workingDir = ToolArgumentParser.getString(request.arguments(), "working_dir");
 
-            Process process = createProcess(command, workingDir);
+            Process process = processStarter.start(command, workingDir);
 
             String output = readProcessOutput(process);
 
-            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 return formatTimeoutError(output);
@@ -92,7 +106,7 @@ public class RunCommandToolExecutor implements ToolExecutor {
                 new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (output.length() < MAX_OUTPUT_LENGTH) {
+                if (output.length() < maxOutputLength) {
                     output.append(line).append("\n");
                 }
             }
@@ -101,7 +115,7 @@ public class RunCommandToolExecutor implements ToolExecutor {
     }
 
     private String formatTimeoutError(String output) {
-        return "Error: Command timed out after " + TIMEOUT_SECONDS + " seconds.\nPartial output:\n" + truncate(output);
+        return "Error: Command timed out after " + timeoutSeconds + " seconds.\nPartial output:\n" + truncate(output);
     }
 
     private String formatResult(int exitCode, String output) {
@@ -114,9 +128,14 @@ public class RunCommandToolExecutor implements ToolExecutor {
     }
 
     private String truncate(String text) {
-        if (text.length() > MAX_OUTPUT_LENGTH) {
-            return text.substring(0, MAX_OUTPUT_LENGTH) + "\n... (output truncated)";
+        if (text.length() > maxOutputLength) {
+            return text.substring(0, maxOutputLength) + "\n... (output truncated)";
         }
         return text;
+    }
+
+    @FunctionalInterface
+    interface ProcessStarter {
+        Process start(String command, String workingDir) throws IOException;
     }
 }

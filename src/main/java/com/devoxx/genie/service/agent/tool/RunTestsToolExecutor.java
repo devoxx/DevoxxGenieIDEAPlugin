@@ -22,7 +22,7 @@ import static com.devoxx.genie.model.Constant.TEST_EXECUTION_DEFAULT_TIMEOUT;
 @Slf4j
 public class RunTestsToolExecutor implements ToolExecutor {
 
-    private static final int MAX_OUTPUT_LENGTH = 50_000;
+    static final int MAX_OUTPUT_LENGTH = 50_000;
 
     private final Project project;
 
@@ -71,7 +71,7 @@ public class RunTestsToolExecutor implements ToolExecutor {
         }
     }
 
-    private String resolveTestCommand(@NotNull String basePath, String testTarget) {
+    String resolveTestCommand(@NotNull String basePath, String testTarget) {
         // Custom command takes priority
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String customCommand = state.getTestExecutionCustomCommand();
@@ -108,7 +108,7 @@ public class RunTestsToolExecutor implements ToolExecutor {
         return BuildSystemDetector.buildCommandString(commandParts);
     }
 
-    private Process createProcess(String command, File workingDir) throws IOException {
+    Process createProcess(String command, File workingDir) throws IOException {
         ProcessBuilder processBuilder;
         if (SystemInfo.isWindows) {
             processBuilder = new ProcessBuilder("cmd.exe", "/c", command);
@@ -120,14 +120,14 @@ public class RunTestsToolExecutor implements ToolExecutor {
         return processBuilder.start();
     }
 
-    private File determineWorkingDirectory(String workingDir) {
+    File determineWorkingDirectory(String workingDir) {
         if (workingDir != null && !workingDir.isBlank()) {
             return new File(project.getBasePath(), workingDir);
         }
         return new File(Objects.requireNonNull(project.getBasePath()));
     }
 
-    private String readProcessOutput(Process process) throws IOException {
+    String readProcessOutput(Process process) throws IOException {
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()))) {
@@ -141,13 +141,13 @@ public class RunTestsToolExecutor implements ToolExecutor {
         return output.toString();
     }
 
-    private int getTimeout() {
+    int getTimeout() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         Integer timeout = state.getTestExecutionTimeoutSeconds();
         return timeout != null ? timeout : TEST_EXECUTION_DEFAULT_TIMEOUT;
     }
 
-    private String formatTimeoutResult(String output, int timeoutSeconds) {
+    @NotNull String formatTimeoutResult(String output, int timeoutSeconds) {
         TestResult result = TestResult.builder()
                 .status(TestResult.Status.TIMEOUT)
                 .exitCode(-1)
@@ -159,7 +159,7 @@ public class RunTestsToolExecutor implements ToolExecutor {
         return result.getSummary() + "\n\nPartial output:\n" + truncate(output);
     }
 
-    private @NotNull String formatResult(@NotNull TestResult result, @NotNull String fullOutput) {
+    @NotNull String formatResult(@NotNull TestResult result, @NotNull String fullOutput) {
         StringBuilder sb = new StringBuilder();
         sb.append(result.getSummary());
 
@@ -172,7 +172,7 @@ public class RunTestsToolExecutor implements ToolExecutor {
         return sb.toString();
     }
 
-    private String truncate(String text) {
+    static String truncate(String text) {
         if (text != null && text.length() > MAX_OUTPUT_LENGTH) {
             return text.substring(0, MAX_OUTPUT_LENGTH) + "\n... (output truncated)";
         }

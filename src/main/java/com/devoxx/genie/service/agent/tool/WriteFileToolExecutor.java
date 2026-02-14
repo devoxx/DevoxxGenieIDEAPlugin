@@ -5,16 +5,16 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.intellij.openapi.vfs.VfsUtilCore.isAncestor;
 
 @Slf4j
 public class WriteFileToolExecutor implements ToolExecutor {
@@ -54,9 +54,9 @@ public class WriteFileToolExecutor implements ToolExecutor {
         }
     }
 
-    private @NotNull String writeFile(@NotNull String path, @NotNull String content) {
+    @NotNull String writeFile(@NotNull String path, @NotNull String content) {
         try {
-            VirtualFile projectBase = ProjectUtil.guessProjectDir(project);
+            VirtualFile projectBase = getProjectBaseDir();
             if (projectBase == null) {
                 return "Error: Project base directory not found.";
             }
@@ -65,7 +65,7 @@ public class WriteFileToolExecutor implements ToolExecutor {
             if (parentDir == null) {
                 return "Error: Failed to create parent directories for: " + path;
             }
-            if (!isAncestor(projectBase, parentDir, false)) {
+            if (!isAncestor(projectBase, parentDir)) {
                 return "Error: Access denied - path is outside the project root.";
             }
 
@@ -83,8 +83,16 @@ public class WriteFileToolExecutor implements ToolExecutor {
         }
     }
 
-    private static VirtualFile resolveParentDir(@NotNull String path, @NotNull VirtualFile projectBase)
-            throws java.io.IOException {
+    VirtualFile getProjectBaseDir() {
+        return ProjectUtil.guessProjectDir(project);
+    }
+
+    boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
+        return VfsUtilCore.isAncestor(ancestor, descendant, false);
+    }
+
+    VirtualFile resolveParentDir(@NotNull String path, @NotNull VirtualFile projectBase)
+            throws IOException {
         if (!path.contains("/")) {
             return projectBase;
         }
@@ -92,7 +100,7 @@ public class WriteFileToolExecutor implements ToolExecutor {
         return VfsUtil.createDirectoryIfMissing(projectBase, parentPath);
     }
 
-    private static @NotNull String extractFileName(@NotNull String path) {
+    static @NotNull String extractFileName(@NotNull String path) {
         int lastSlash = path.lastIndexOf('/');
         return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
     }
