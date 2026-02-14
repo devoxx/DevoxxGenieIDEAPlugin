@@ -60,6 +60,15 @@ public enum ModelProvider {
         throw new IllegalArgumentException("No constant with text " + text + " found");
     }
 
+    public static ModelProvider fromName(String name) {
+        for (ModelProvider provider : ModelProvider.values()) {
+            if (provider.name.equalsIgnoreCase(name)) {
+                return provider;
+            }
+        }
+        return null;
+    }
+
     public static List<ModelProvider> fromType(ModelProvider.Type type) {
         return Arrays.stream(ModelProvider.values())
                 .filter(provider -> provider.type == type)
