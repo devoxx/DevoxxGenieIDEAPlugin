@@ -22,7 +22,7 @@ With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and f
 We also support RAG-based prompt context based on your vectorized project files, Git Diff viewer, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
-43K+ Downloads
+44K+ Downloads
 
 ## 📚 Documentation
 
