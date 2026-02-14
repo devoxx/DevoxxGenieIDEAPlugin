@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.completion;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,9 @@ public class CompletionSettingsConfigurable implements Configurable {
     public @Nullable JComponent createComponent() {
         settingsComponent = new CompletionSettingsComponent();
         settingsComponent.addListeners();
-        return settingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            settingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/inline-completion");
     }
 
     @Override

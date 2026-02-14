@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -38,7 +39,9 @@ public class RAGSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return ragSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            ragSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/rag");
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
@@ -22,7 +23,9 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         copyProjectSettingsComponent = new CopyProjectSettingsComponent();
-        return copyProjectSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            copyProjectSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/project-scanner");
     }
 
     @Override

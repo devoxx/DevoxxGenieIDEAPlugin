@@ -1,10 +1,12 @@
 package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.util.ui.JBUI;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
@@ -92,5 +94,31 @@ public class AbstractSettingsComponent implements SettingsComponent {
 
         jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
+    }
+
+    /**
+     * Wraps a settings content panel with a help button at the top-right corner
+     * that links to the relevant documentation page.
+     *
+     * @param contentPanel the original settings panel
+     * @param docUrl       the full URL to the documentation page
+     * @return a wrapper panel containing the help button and the content panel
+     */
+    public static @NotNull JPanel wrapWithHelpButton(@NotNull JPanel contentPanel, @NotNull String docUrl) {
+        JPanel wrapper = new JPanel(new BorderLayout());
+
+        JButton helpButton = new JButton("Help", AllIcons.Actions.Help);
+        helpButton.setToolTipText("Open documentation");
+        helpButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        helpButton.addActionListener(e -> BrowserUtil.open(docUrl));
+
+        JPanel helpPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        helpPanel.setBorder(JBUI.Borders.emptyBottom(4));
+        helpPanel.add(helpButton);
+
+        wrapper.add(helpPanel, BorderLayout.NORTH);
+        wrapper.add(contentPanel, BorderLayout.CENTER);
+
+        return wrapper;
     }
 }

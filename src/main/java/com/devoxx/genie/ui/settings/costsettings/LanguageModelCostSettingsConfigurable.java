@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -27,7 +28,9 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return new LanguageModelCostSettingsComponent().createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            new LanguageModelCostSettingsComponent().createPanel(),
+            "https://genie.devoxx.com/docs/configuration/token-cost");
     }
 
     @Override

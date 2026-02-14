@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.mcp;
 
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -37,7 +38,9 @@ public class MCPSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         mcpSettingsComponent = new MCPSettingsComponent();
-        return mcpSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            mcpSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/mcp_expanded");
     }
 
     @Override

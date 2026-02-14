@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.spec;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -35,7 +36,9 @@ public class SpecSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         specSettingsComponent = new SpecSettingsComponent(project);
-        return specSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            specSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/spec-driven-development");
     }
 
     @Override

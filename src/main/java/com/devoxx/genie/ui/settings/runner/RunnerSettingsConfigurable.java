@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.runner;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -35,7 +36,9 @@ public class RunnerSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         runnerSettingsComponent = new RunnerSettingsComponent(project);
-        return runnerSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            runnerSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/cli-runners");
     }
 
     @Override

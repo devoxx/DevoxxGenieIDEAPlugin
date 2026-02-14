@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.skill;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -28,7 +29,9 @@ public class SkillSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return skillSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            skillSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/skills");
     }
 
     @Override

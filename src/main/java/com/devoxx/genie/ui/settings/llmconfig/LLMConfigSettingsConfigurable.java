@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
@@ -35,7 +36,9 @@ public class LLMConfigSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmConfigSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            llmConfigSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/configuration/settings");
     }
 
     /**

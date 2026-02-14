@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -40,7 +41,9 @@ public class LLMProvidersConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            llmSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/llm-providers/overview");
     }
 
     /**

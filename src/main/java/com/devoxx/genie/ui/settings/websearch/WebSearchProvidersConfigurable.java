@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.websearch;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -38,7 +39,9 @@ public class WebSearchProvidersConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return webSearchProvidersComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            webSearchProvidersComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/web-search");
     }
 
     /**

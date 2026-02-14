@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.agent;
 
+import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -34,7 +35,9 @@ public class AgentSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         agentSettingsComponent = new AgentSettingsComponent();
-        return agentSettingsComponent.createPanel();
+        return AbstractSettingsComponent.wrapWithHelpButton(
+            agentSettingsComponent.createPanel(),
+            "https://genie.devoxx.com/docs/features/agent-mode");
     }
 
     @Override
