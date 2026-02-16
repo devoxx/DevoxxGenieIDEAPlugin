@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.spec;
 
+import com.devoxx.genie.model.enumarations.ExecutionMode;
 import com.devoxx.genie.service.spec.BacklogConfigService;
 import com.devoxx.genie.service.spec.SpecService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -40,6 +41,13 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             new SpinnerNumberModel(
                     stateService.getSpecTaskRunnerTimeoutMinutes() != null ? stateService.getSpecTaskRunnerTimeoutMinutes() : 10,
                     1, 60, 1));
+
+    private final JComboBox<ExecutionMode> executionModeCombo = new JComboBox<>(ExecutionMode.values());
+
+    private final JSpinner maxConcurrencySpinner = new JSpinner(
+            new SpinnerNumberModel(
+                    stateService.getSpecMaxConcurrency() != null ? stateService.getSpecMaxConcurrency() : 4,
+                    1, 8, 1));
 
     public SpecSettingsComponent(@NotNull Project project) {
         this.project = project;
@@ -106,6 +114,30 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
                 "When running multiple tasks sequentially, each task is given this amount of time " +
                 "to complete before being automatically skipped. The timeout resets if the agent " +
                 "starts working on the task (status changes to 'In Progress').");
+
+        JPanel modeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        modeRow.add(new JBLabel("Execution mode:"));
+        executionModeCombo.setSelectedItem(resolveExecutionMode());
+        modeRow.add(executionModeCombo);
+        addFullWidthRow(contentPanel, gbc, modeRow);
+        addHelpText(contentPanel, gbc,
+                "SEQUENTIAL executes tasks one at a time in dependency order (default). " +
+                "PARALLEL executes independent tasks within the same dependency layer concurrently, " +
+                "proceeding to the next layer only after all tasks in the current layer complete.");
+
+        JPanel concurrencyRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        concurrencyRow.add(new JBLabel("Max concurrency:"));
+        maxConcurrencySpinner.setPreferredSize(new java.awt.Dimension(60, 25));
+        concurrencyRow.add(maxConcurrencySpinner);
+        addFullWidthRow(contentPanel, gbc, concurrencyRow);
+        addHelpText(contentPanel, gbc,
+                "Maximum number of tasks to execute in parallel within a single dependency layer. " +
+                "Only applies when execution mode is PARALLEL. Range: 1–8, default: 4.");
+
+        // Enable/disable concurrency spinner based on execution mode
+        maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL);
+        executionModeCombo.addActionListener(e ->
+                maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL));
 
         // Filler
         gbc.weighty = 1.0;
@@ -220,13 +252,18 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
                 || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory())
-                || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes());
+                || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes())
+                || !Objects.equals(executionModeCombo.getSelectedItem(), resolveExecutionMode(state))
+                || !Objects.equals(maxConcurrencySpinner.getValue(), state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4);
     }
 
     public void apply() {
         stateService.setSpecBrowserEnabled(enableSpecBrowserCheckbox.isSelected());
         stateService.setSpecDirectory(specDirectoryField.getText().trim());
         stateService.setSpecTaskRunnerTimeoutMinutes((Integer) taskRunnerTimeoutSpinner.getValue());
+        ExecutionMode selectedMode = (ExecutionMode) executionModeCombo.getSelectedItem();
+        stateService.setSpecExecutionMode(selectedMode != null ? selectedMode.name() : "SEQUENTIAL");
+        stateService.setSpecMaxConcurrency((Integer) maxConcurrencySpinner.getValue());
     }
 
     public void reset() {
@@ -234,6 +271,25 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         enableSpecBrowserCheckbox.setSelected(Boolean.TRUE.equals(state.getSpecBrowserEnabled()));
         specDirectoryField.setText(state.getSpecDirectory() != null ? state.getSpecDirectory() : "backlog");
         taskRunnerTimeoutSpinner.setValue(state.getSpecTaskRunnerTimeoutMinutes() != null ? state.getSpecTaskRunnerTimeoutMinutes() : 10);
+        executionModeCombo.setSelectedItem(resolveExecutionMode(state));
+        maxConcurrencySpinner.setValue(state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4);
+        maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL);
+    }
+
+    private ExecutionMode resolveExecutionMode() {
+        return resolveExecutionMode(stateService);
+    }
+
+    private static ExecutionMode resolveExecutionMode(DevoxxGenieStateService state) {
+        String mode = state.getSpecExecutionMode();
+        if (mode != null) {
+            try {
+                return ExecutionMode.valueOf(mode);
+            } catch (IllegalArgumentException ignored) {
+                // fall through
+            }
+        }
+        return ExecutionMode.SEQUENTIAL;
     }
 
     @Override

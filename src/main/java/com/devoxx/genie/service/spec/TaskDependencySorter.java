@@ -177,6 +177,124 @@ public final class TaskDependencySorter {
         return unsatisfied;
     }
 
+    /**
+     * Sort the given tasks into topological layers using Kahn's algorithm.
+     * Each layer contains tasks whose dependencies are all in prior layers (or
+     * are external and already "Done"). Tasks within a layer are independent
+     * of each other and may safely execute in parallel.
+     *
+     * @param tasks    the selected tasks to sort
+     * @param allSpecs all known specs (for checking external dependency status)
+     * @return list of layers; each layer is a list of tasks that can run concurrently
+     * @throws CircularDependencyException if a cycle is detected
+     */
+    public static @NotNull List<List<TaskSpec>> sortByLayers(@NotNull List<TaskSpec> tasks,
+                                                              @NotNull List<TaskSpec> allSpecs)
+            throws CircularDependencyException {
+
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Build lookup maps
+        Set<String> selectedIds = tasks.stream()
+                .map(TaskSpec::getId)
+                .filter(Objects::nonNull)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        Map<String, TaskSpec> selectedById = new LinkedHashMap<>();
+        for (TaskSpec t : tasks) {
+            if (t.getId() != null) {
+                selectedById.put(t.getId().toLowerCase(), t);
+            }
+        }
+
+        // Build adjacency list and in-degree map (only within selected set)
+        Map<String, Set<String>> dependents = new HashMap<>();
+        Map<String, Integer> inDegree = new HashMap<>();
+
+        for (String id : selectedIds) {
+            inDegree.put(id, 0);
+            dependents.put(id, new HashSet<>());
+        }
+
+        for (TaskSpec task : tasks) {
+            if (task.getId() == null) continue;
+            String taskId = task.getId().toLowerCase();
+            List<String> deps = task.getDependencies();
+            if (deps == null) continue;
+
+            for (String dep : deps) {
+                String depLower = dep.toLowerCase();
+                if (selectedIds.contains(depLower)) {
+                    dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId);
+                    inDegree.merge(taskId, 1, Integer::sum);
+                }
+            }
+        }
+
+        // BFS (Kahn's algorithm) — collect layers
+        Queue<String> queue = new LinkedList<>();
+        for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                queue.add(entry.getKey());
+            }
+        }
+
+        List<List<TaskSpec>> layers = new ArrayList<>();
+        int processedCount = 0;
+
+        while (!queue.isEmpty()) {
+            List<String> layerIds = new ArrayList<>(queue);
+            queue.clear();
+
+            // Sort within layer by ordinal then numeric ID
+            layerIds.sort((a, b) -> {
+                TaskSpec ta = selectedById.get(a);
+                TaskSpec tb = selectedById.get(b);
+                int cmp = Integer.compare(
+                        ta != null ? ta.getOrdinal() : 1000,
+                        tb != null ? tb.getOrdinal() : 1000);
+                if (cmp != 0) return cmp;
+                return Integer.compare(extractNumber(a), extractNumber(b));
+            });
+
+            List<TaskSpec> layer = new ArrayList<>();
+            for (String id : layerIds) {
+                TaskSpec spec = selectedById.get(id);
+                if (spec != null) {
+                    layer.add(spec);
+                    processedCount++;
+                }
+                for (String dependent : dependents.getOrDefault(id, Collections.emptySet())) {
+                    int newDegree = inDegree.merge(dependent, -1, Integer::sum);
+                    if (newDegree == 0) {
+                        queue.add(dependent);
+                    }
+                }
+            }
+
+            if (!layer.isEmpty()) {
+                layers.add(layer);
+            }
+        }
+
+        // Check for cycle
+        if (processedCount < selectedIds.size()) {
+            List<String> cycleIds = selectedIds.stream()
+                    .filter(id -> inDegree.getOrDefault(id, 0) > 0)
+                    .map(id -> {
+                        TaskSpec t = selectedById.get(id);
+                        return t != null && t.getId() != null ? t.getId() : id;
+                    })
+                    .collect(Collectors.toList());
+            throw new CircularDependencyException(cycleIds);
+        }
+
+        return layers;
+    }
+
     private static int extractNumber(String id) {
         if (id == null) return Integer.MAX_VALUE;
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(id);
