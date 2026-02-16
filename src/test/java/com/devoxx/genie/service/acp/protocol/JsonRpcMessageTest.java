@@ -1,6 +1,5 @@
 package com.devoxx.genie.service.acp.protocol;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -16,10 +15,10 @@ class JsonRpcMessageTest {
         assertThat(msg.isRequest()).isTrue();
         assertThat(msg.isNotification()).isFalse();
         assertThat(msg.isResponse()).isFalse();
-        assertThat(msg.id).isEqualTo(1);
-        assertThat(msg.method).isEqualTo("initialize");
-        assertThat(msg.jsonrpc).isEqualTo("2.0");
-        assertThat(msg.params).isNotNull();
+        assertThat(msg.getId()).isEqualTo(1);
+        assertThat(msg.getMethod()).isEqualTo("initialize");
+        assertThat(msg.getJsonrpc()).isEqualTo("2.0");
+        assertThat(msg.getParams()).isNotNull();
     }
 
     @Test
@@ -27,7 +26,7 @@ class JsonRpcMessageTest {
         JsonRpcMessage msg = JsonRpcMessage.request(2, "session/new", null);
 
         assertThat(msg.isRequest()).isTrue();
-        assertThat(msg.params).isNull();
+        assertThat(msg.getParams()).isNull();
     }
 
     @Test
@@ -37,9 +36,9 @@ class JsonRpcMessageTest {
         assertThat(msg.isResponse()).isTrue();
         assertThat(msg.isRequest()).isFalse();
         assertThat(msg.isNotification()).isFalse();
-        assertThat(msg.id).isEqualTo(1);
-        assertThat(msg.result).isNotNull();
-        assertThat(msg.error).isNull();
+        assertThat(msg.getId()).isEqualTo(1);
+        assertThat(msg.getResult()).isNotNull();
+        assertThat(msg.getError()).isNull();
     }
 
     @Test
@@ -47,17 +46,17 @@ class JsonRpcMessageTest {
         JsonRpcMessage msg = JsonRpcMessage.errorResponse(1, -32603, "Internal error");
 
         assertThat(msg.isResponse()).isTrue();
-        assertThat(msg.id).isEqualTo(1);
-        assertThat(msg.error).isNotNull();
-        assertThat(msg.error.code).isEqualTo(-32603);
-        assertThat(msg.error.message).isEqualTo("Internal error");
-        assertThat(msg.result).isNull();
+        assertThat(msg.getId()).isEqualTo(1);
+        assertThat(msg.getError()).isNotNull();
+        assertThat(msg.getError().getCode()).isEqualTo(-32603);
+        assertThat(msg.getError().getMessage()).isEqualTo("Internal error");
+        assertThat(msg.getResult()).isNull();
     }
 
     @Test
     void testNotification_hasMethodButNoId() {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.method = "session/update";
+        msg.setMethod("session/update");
         // id is null by default
 
         assertThat(msg.isNotification()).isTrue();
@@ -73,9 +72,9 @@ class JsonRpcMessageTest {
         String json = AcpTransport.MAPPER.writeValueAsString(original);
         JsonRpcMessage deserialized = AcpTransport.MAPPER.readValue(json, JsonRpcMessage.class);
 
-        assertThat(deserialized.id).isEqualTo(42);
-        assertThat(deserialized.method).isEqualTo("session/prompt");
-        assertThat(deserialized.jsonrpc).isEqualTo("2.0");
+        assertThat(deserialized.getId()).isEqualTo(42);
+        assertThat(deserialized.getMethod()).isEqualTo("session/prompt");
+        assertThat(deserialized.getJsonrpc()).isEqualTo("2.0");
         assertThat(deserialized.isRequest()).isTrue();
     }
 
@@ -98,8 +97,8 @@ class JsonRpcMessageTest {
 
         JsonRpcMessage msg = AcpTransport.MAPPER.readValue(json, JsonRpcMessage.class);
 
-        assertThat(msg.id).isEqualTo(1);
-        assertThat(msg.method).isEqualTo("test");
+        assertThat(msg.getId()).isEqualTo(1);
+        assertThat(msg.getMethod()).isEqualTo("test");
     }
 
     @Test
@@ -110,15 +109,15 @@ class JsonRpcMessageTest {
         );
         JsonRpcMessage msg = JsonRpcMessage.response(1, resultData);
 
-        assertThat(msg.result.has("protocolVersion")).isTrue();
-        assertThat(msg.result.get("protocolVersion").asText()).isEqualTo("1");
-        assertThat(msg.result.has("capabilities")).isTrue();
+        assertThat(msg.getResult().has("protocolVersion")).isTrue();
+        assertThat(msg.getResult().get("protocolVersion").asText()).isEqualTo("1");
+        assertThat(msg.getResult().has("capabilities")).isTrue();
     }
 
     @Test
     void testJsonRpcError_defaultConstructor() {
         JsonRpcMessage.JsonRpcError error = new JsonRpcMessage.JsonRpcError();
-        assertThat(error.code).isEqualTo(0);
-        assertThat(error.message).isNull();
+        assertThat(error.getCode()).isEqualTo(0);
+        assertThat(error.getMessage()).isNull();
     }
 }

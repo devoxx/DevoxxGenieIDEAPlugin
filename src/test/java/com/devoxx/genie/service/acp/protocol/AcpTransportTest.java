@@ -69,7 +69,7 @@ class AcpTransportTest {
         boolean received1 = latch.await(5, TimeUnit.SECONDS);
         assertThat(received1).isTrue();
         assertThat(received.get()).isNotNull();
-        assertThat(received.get().method).isEqualTo("session/update");
+        assertThat(received.get().getMethod()).isEqualTo("session/update");
         assertThat(received.get().isNotification()).isTrue();
     }
 
@@ -92,9 +92,9 @@ class AcpTransportTest {
         boolean received1 = latch.await(5, TimeUnit.SECONDS);
         assertThat(received1).isTrue();
         assertThat(received.get()).isNotNull();
-        assertThat(received.get().method).isEqualTo("fs/read_text_file");
+        assertThat(received.get().getMethod()).isEqualTo("fs/read_text_file");
         assertThat(received.get().isRequest()).isTrue();
-        assertThat(received.get().id).isEqualTo(99);
+        assertThat(received.get().getId()).isEqualTo(99);
     }
 
     @Test
@@ -111,8 +111,8 @@ class AcpTransportTest {
 
         assertThat(response).isNotNull();
         assertThat(response.isResponse()).isTrue();
-        assertThat(response.id).isEqualTo(1);
-        assertThat(response.result.get("protocolVersion").asText()).isEqualTo("1");
+        assertThat(response.getId()).isEqualTo(1);
+        assertThat(response.getResult().get("protocolVersion").asText()).isEqualTo("1");
     }
 
     @Test
@@ -139,7 +139,7 @@ class AcpTransportTest {
             JsonRpcMessage msg = AcpTransport.MAPPER.readValue(
                     "{\"jsonrpc\":\"2.0\",\"id\":1,\"unknownField\":42}",
                     JsonRpcMessage.class);
-            assertThat(msg.id).isEqualTo(1);
+            assertThat(msg.getId()).isEqualTo(1);
         } catch (Exception e) {
             throw new AssertionError("MAPPER should ignore unknown properties", e);
         }
