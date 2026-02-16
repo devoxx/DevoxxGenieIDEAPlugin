@@ -9,10 +9,7 @@ public abstract class AbstractLightPlatformTestCase extends LightPlatformTestCas
 
     @Override
     protected @NotNull String getTestName(boolean lowercaseFirstLetter) {
-        String name = getName();
-        if (name == null) {
-            name = "defaultTestName";
-        }
+        @NotNull String name = getName() != null ? getName() : "defaultTestName";
         name = StringUtil.trimStart(name, "test");
         if (!name.isEmpty() && lowercaseFirstLetter && !PlatformTestUtil.isAllUppercaseName(name)) {
             name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
