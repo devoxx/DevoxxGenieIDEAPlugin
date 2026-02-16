@@ -18,15 +18,41 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Slf4j
 public class MCPListenerService implements ChatModelListener {
+
+    private final Supplier<Boolean> agentModeSupplier;
+    private final Supplier<Boolean> agentDebugLogsEnabledSupplier;
+    private final Consumer<MCPMessage> mcpMessagePublisher;
+    private final Consumer<AgentMessage> agentMessagePublisher;
+
+    public MCPListenerService() {
+        this(
+                () -> Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()),
+                () -> Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled()),
+                MCPListenerService::publishMcpMessage,
+                MCPListenerService::publishAgentMessage
+        );
+    }
+
+    MCPListenerService(Supplier<Boolean> agentModeSupplier,
+                       Supplier<Boolean> agentDebugLogsEnabledSupplier,
+                       Consumer<MCPMessage> mcpMessagePublisher,
+                       Consumer<AgentMessage> agentMessagePublisher) {
+        this.agentModeSupplier = agentModeSupplier;
+        this.agentDebugLogsEnabledSupplier = agentDebugLogsEnabledSupplier;
+        this.mcpMessagePublisher = mcpMessagePublisher;
+        this.agentMessagePublisher = agentMessagePublisher;
+    }
 
     @Override
     public void onRequest(@NotNull ChatModelRequestContext requestContext) {
         log.debug("onRequest: {}", requestContext.chatRequest().toString());
 
-        boolean agentMode = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled());
+        boolean agentMode = agentModeSupplier.get();
 
         List<ChatMessage> messages = requestContext.chatRequest().messages();
         if (messages.isEmpty() || messages.size() <= 2) {
@@ -66,16 +92,14 @@ public class MCPListenerService implements ChatModelListener {
         }
     }
 
-    private static void postMcpMessage(MCPMessage mcpMessage) {
+    private void postMcpMessage(MCPMessage mcpMessage) {
         if (mcpMessage != null) {
-            MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
-            messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
-                    .onMCPLoggingMessage(mcpMessage);
+            mcpMessagePublisher.accept(mcpMessage);
         }
     }
 
-    private static void postAgentMessage(@NotNull String text) {
-        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
+    private void postAgentMessage(@NotNull String text) {
+        if (!agentDebugLogsEnabledSupplier.get()) {
             return;
         }
         try {
@@ -83,11 +107,21 @@ public class MCPListenerService implements ChatModelListener {
                     .type(AgentType.INTERMEDIATE_RESPONSE)
                     .result(text)
                     .build();
-            ApplicationManager.getApplication().getMessageBus()
-                    .syncPublisher(AppTopics.AGENT_LOG_MSG)
-                    .onAgentLoggingMessage(message);
+            agentMessagePublisher.accept(message);
         } catch (Exception e) {
             log.debug("Failed to publish agent intermediate response", e);
         }
+    }
+
+    private static void publishMcpMessage(MCPMessage mcpMessage) {
+        MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
+        messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
+                .onMCPLoggingMessage(mcpMessage);
+    }
+
+    private static void publishAgentMessage(AgentMessage message) {
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(AppTopics.AGENT_LOG_MSG)
+                .onAgentLoggingMessage(message);
     }
 }

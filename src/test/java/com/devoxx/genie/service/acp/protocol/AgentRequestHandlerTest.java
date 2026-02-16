@@ -1,16 +1,12 @@
 package com.devoxx.genie.service.acp.protocol;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -31,19 +27,16 @@ class AgentRequestHandlerTest {
 
     @Test
     void testHandleFsRead_readsFileContent() throws Exception {
-        // Create a test file
         Path testFile = tempDir.resolve("test.txt");
         Files.writeString(testFile, "Hello, ACP!");
 
-        // Build a request message
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 1;
-        msg.method = "fs/read_text_file";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of("path", testFile.toString()));
+        msg.setId(1);
+        msg.setMethod("fs/read_text_file");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of("path", testFile.toString())));
 
         handler.handle(msg);
 
-        // Verify response was sent with file content
         verify(mockTransport).sendResponse(eq(1), argThat(result -> {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) result;
@@ -56,19 +49,17 @@ class AgentRequestHandlerTest {
         Path testFile = tempDir.resolve("output.txt");
 
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 2;
-        msg.method = "fs/write_text_file";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of(
+        msg.setId(2);
+        msg.setMethod("fs/write_text_file");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of(
                 "path", testFile.toString(),
                 "content", "Written by ACP"
-        ));
+        )));
 
         handler.handle(msg);
 
-        // Verify file was written
         assertThat(Files.readString(testFile)).isEqualTo("Written by ACP");
 
-        // Verify success response
         verify(mockTransport).sendResponse(eq(2), argThat(result -> {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) result;
@@ -81,12 +72,12 @@ class AgentRequestHandlerTest {
         Path testFile = tempDir.resolve("sub/dir/file.txt");
 
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 3;
-        msg.method = "fs/write_text_file";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of(
+        msg.setId(3);
+        msg.setMethod("fs/write_text_file");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of(
                 "path", testFile.toString(),
                 "content", "nested"
-        ));
+        )));
 
         handler.handle(msg);
 
@@ -97,9 +88,9 @@ class AgentRequestHandlerTest {
     @Test
     void testHandleRequestPermission_autoApproves() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 4;
-        msg.method = "session/request_permission";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of("permission", "fs_write"));
+        msg.setId(4);
+        msg.setMethod("session/request_permission");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of("permission", "fs_write")));
 
         handler.handle(msg);
 
@@ -113,9 +104,9 @@ class AgentRequestHandlerTest {
     @Test
     void testHandleUnknownMethod_sendsError() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 5;
-        msg.method = "unknown/method";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of());
+        msg.setId(5);
+        msg.setMethod("unknown/method");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of()));
 
         handler.handle(msg);
 
@@ -125,29 +116,27 @@ class AgentRequestHandlerTest {
     @Test
     void testHandleFsRead_nonExistentFile_sendsError() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 6;
-        msg.method = "fs/read_text_file";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of("path", "/nonexistent/file.txt"));
+        msg.setId(6);
+        msg.setMethod("fs/read_text_file");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of("path", "/nonexistent/file.txt")));
 
         handler.handle(msg);
 
-        // Should send an error response because the file doesn't exist
         verify(mockTransport).sendErrorResponse(eq(6), eq(-32603), any());
     }
 
     @Test
     void testHandleTerminalCreate_startsProcess() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 7;
-        msg.method = "terminal/create";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of(
+        msg.setId(7);
+        msg.setMethod("terminal/create");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of(
                 "command", "echo hello",
                 "cwd", tempDir.toString()
-        ));
+        )));
 
         handler.handle(msg);
 
-        // Verify a response with terminalId was sent
         verify(mockTransport).sendResponse(eq(7), argThat(result -> {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) result;
@@ -158,9 +147,9 @@ class AgentRequestHandlerTest {
     @Test
     void testHandleTerminalOutput_unknownTerminal() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 8;
-        msg.method = "terminal/output";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of("terminalId", "nonexistent"));
+        msg.setId(8);
+        msg.setMethod("terminal/output");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of("terminalId", "nonexistent")));
 
         handler.handle(msg);
 
@@ -174,9 +163,9 @@ class AgentRequestHandlerTest {
     @Test
     void testHandleTerminalKill_unknownTerminal_noError() throws Exception {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.id = 9;
-        msg.method = "terminal/kill";
-        msg.params = AcpTransport.MAPPER.valueToTree(Map.of("terminalId", "nonexistent"));
+        msg.setId(9);
+        msg.setMethod("terminal/kill");
+        msg.setParams(AcpTransport.MAPPER.valueToTree(Map.of("terminalId", "nonexistent")));
 
         handler.handle(msg);
 

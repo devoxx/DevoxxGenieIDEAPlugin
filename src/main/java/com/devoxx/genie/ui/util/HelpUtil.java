@@ -72,6 +72,6 @@ public class HelpUtil {
             .stream()
             .map(customPrompt -> "<li><span class=\"feature-name\">/" +
                  customPrompt.getName() + "</span> : " + customPrompt.getPrompt() + "</li>")
-            .collect(Collectors.joining("\n"));
+            .collect(Collectors.joining("%n"));
     }
 }

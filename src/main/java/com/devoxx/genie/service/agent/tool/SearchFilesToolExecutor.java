@@ -22,9 +22,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class SearchFilesToolExecutor implements ToolExecutor {
 
-    private static final int MAX_RESULTS = 50;
-    private static final int MAX_LINE_LENGTH = 200;
-    private static final Set<String> SKIP_DIRS = Set.of(
+    static final int MAX_RESULTS = 50;
+    static final int MAX_LINE_LENGTH = 200;
+    static final Set<String> SKIP_DIRS = Set.of(
             ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
     );
 
@@ -54,14 +54,21 @@ public class SearchFilesToolExecutor implements ToolExecutor {
                     ? FileSystems.getDefault().getPathMatcher("glob:" + filePattern)
                     : null;
 
-            return ReadAction.compute(() -> searchFiles(patternStr, path, regex, fileMatcher));
+            return ReadAction.compute(() -> {
+                VirtualFile projectBase = getProjectBaseDir();
+                return searchFiles(patternStr, path, regex, fileMatcher, projectBase);
+            });
         } catch (Exception e) {
             log.error("Error searching files", e);
             return "Error: Failed to search files - " + e.getMessage();
         }
     }
 
-    private static Pattern compilePattern(String patternStr) {
+    VirtualFile getProjectBaseDir() {
+        return ProjectUtil.guessProjectDir(project);
+    }
+
+    static Pattern compilePattern(String patternStr) {
         try {
             return Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
         } catch (Exception e) {
@@ -69,9 +76,9 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         }
     }
 
-    private @NotNull String searchFiles(String patternStr, String path,
-                                        Pattern regex, PathMatcher fileMatcher) {
-        VirtualFile projectBase = ProjectUtil.guessProjectDir(project);
+    @NotNull String searchFiles(String patternStr, String path,
+                                Pattern regex, PathMatcher fileMatcher,
+                                VirtualFile projectBase) {
         if (projectBase == null) {
             return "Error: Project base directory not found.";
         }
@@ -80,7 +87,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         if (searchDir == null) {
             return "Error: Directory not found: " + (path != null ? path : ".");
         }
-        if (!VfsUtil.isAncestor(projectBase, searchDir, false)) {
+        if (!isAncestor(projectBase, searchDir)) {
             return "Error: Access denied - path is outside the project root.";
         }
 
@@ -97,16 +104,16 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         return result.toString();
     }
 
-    private static VirtualFile resolveSearchDir(String path, @NotNull VirtualFile projectBase) {
+    static VirtualFile resolveSearchDir(String path, @NotNull VirtualFile projectBase) {
         if (path == null || path.isBlank() || path.equals(".")) {
             return projectBase;
         }
         return projectBase.findFileByRelativePath(path);
     }
 
-    private void searchInDirectory(VirtualFile dir, VirtualFile projectBase,
-                                   Pattern regex, PathMatcher fileMatcher,
-                                   StringBuilder result, int[] count) {
+    void searchInDirectory(VirtualFile dir, VirtualFile projectBase,
+                           Pattern regex, PathMatcher fileMatcher,
+                           StringBuilder result, int[] count) {
         VirtualFile[] children = dir.getChildren();
         if (children == null) return;
 
@@ -125,11 +132,11 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         }
     }
 
-    private void searchInFile(VirtualFile file, VirtualFile projectBase,
-                              Pattern regex, StringBuilder result, int[] count) {
+    void searchInFile(VirtualFile file, VirtualFile projectBase,
+                      Pattern regex, StringBuilder result, int[] count) {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            String relativePath = VfsUtil.getRelativePath(file, projectBase);
+            String relativePath = getRelativePath(file, projectBase);
             if (relativePath == null) return;
 
             String line;
@@ -153,7 +160,15 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         }
     }
 
-    private boolean isBinaryFile(@NotNull VirtualFile file) {
+    boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
+        return VfsUtil.isAncestor(ancestor, descendant, false);
+    }
+
+    String getRelativePath(VirtualFile file, VirtualFile ancestor) {
+        return VfsUtil.getRelativePath(file, ancestor);
+    }
+
+    static boolean isBinaryFile(@NotNull VirtualFile file) {
         String extension = file.getExtension();
         if (extension == null) return false;
         return Set.of("jar", "class", "png", "jpg", "jpeg", "gif", "ico", "svg",

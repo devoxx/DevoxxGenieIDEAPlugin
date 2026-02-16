@@ -63,7 +63,7 @@ public final class SpecTaskRunnerService implements Disposable {
     private final Set<String> completedTaskIds = new HashSet<>();
     private Set<String> selectedTaskIds = Collections.emptySet();
 
-    // CLI execution mode flag, determined at start of runTasks()
+    // Execution mode flag, determined at start of runTasks()
     @Getter
     private boolean cliMode = false;
 
@@ -114,7 +114,8 @@ public final class SpecTaskRunnerService implements Disposable {
 
         // Determine execution mode at the start of the run
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        cliMode = "cli".equalsIgnoreCase(stateService.getSpecRunnerMode());
+        String runnerMode = stateService.getSpecRunnerMode();
+        cliMode = "cli".equalsIgnoreCase(runnerMode);
 
         currentTaskIndex = -1;
         completedCount = 0;
@@ -216,11 +217,7 @@ public final class SpecTaskRunnerService implements Disposable {
             currentTaskDoneWhileExecuting = false;
             log.info("Prompt execution completed for task {} (already marked Done), advancing", current.getId());
             cancelGraceTimer();
-            completedCount++;
-            if (current.getId() != null) {
-                completedTaskIds.add(current.getId().toLowerCase());
-            }
-            notifyTaskCompleted(current);
+            markTaskCompleted(current);
             advanceToNextTask();
             return;
         }
@@ -243,6 +240,14 @@ public final class SpecTaskRunnerService implements Disposable {
         });
         graceTimer.setRepeats(false);
         graceTimer.start();
+    }
+
+    private void markTaskCompleted(@NotNull TaskSpec task) {
+        completedCount++;
+        if (task.getId() != null) {
+            completedTaskIds.add(task.getId().toLowerCase());
+        }
+        notifyTaskCompleted(task);
     }
 
     private void cancelGraceTimer() {
@@ -470,6 +475,8 @@ public final class SpecTaskRunnerService implements Disposable {
                 finalState, completedCount, skippedCount, orderedTasks.size());
         // Reset to idle after notifying
         state = RunnerState.IDLE;
+        // Reset mode flag
+        cliMode = false;
     }
 
     // ===== Conversation Management =====
@@ -529,5 +536,6 @@ public final class SpecTaskRunnerService implements Disposable {
         }
         listeners.clear();
         state = RunnerState.IDLE;
+        cliMode = false;
     }
 }

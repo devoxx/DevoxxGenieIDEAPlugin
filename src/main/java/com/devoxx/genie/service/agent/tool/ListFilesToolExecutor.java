@@ -3,7 +3,7 @@ package com.devoxx.genie.service.agent.tool;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -12,14 +12,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
-import static com.intellij.openapi.vfs.VfsUtilCore.getRelativePath;
-import static com.intellij.openapi.vfs.VfsUtilCore.isAncestor;
-
 @Slf4j
 public class ListFilesToolExecutor implements ToolExecutor {
 
-    private static final int MAX_ENTRIES = 500;
-    private static final Set<String> SKIP_DIRS = Set.of(
+    static final int MAX_ENTRIES = 500;
+    static final Set<String> SKIP_DIRS = Set.of(
             ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
     );
 
@@ -35,15 +32,21 @@ public class ListFilesToolExecutor implements ToolExecutor {
             String path = ToolArgumentParser.getString(request.arguments(), "path");
             boolean recursive = ToolArgumentParser.getBoolean(request.arguments(), "recursive", false);
 
-            return ReadAction.compute(() -> listFiles(path, recursive));
+            return ReadAction.compute(() -> {
+                VirtualFile projectBase = getProjectBaseDir();
+                return listFiles(path, recursive, projectBase);
+            });
         } catch (Exception e) {
             log.error("Error listing files", e);
             return "Error: Failed to list files - " + e.getMessage();
         }
     }
 
-    private @NotNull String listFiles(String path, boolean recursive) {
-        VirtualFile projectBase = ProjectUtil.guessProjectDir(project);
+    VirtualFile getProjectBaseDir() {
+        return ProjectUtil.guessProjectDir(project);
+    }
+
+    @NotNull String listFiles(String path, boolean recursive, VirtualFile projectBase) {
         if (projectBase == null) {
             return "Error: Project base directory not found.";
         }
@@ -55,7 +58,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
         if (!targetDir.isDirectory()) {
             return "Error: Path is not a directory: " + path;
         }
-        if (!isAncestor(projectBase, targetDir, false)) {
+        if (!isAncestor(projectBase, targetDir)) {
             return "Error: Access denied - path is outside the project root.";
         }
 
@@ -70,15 +73,15 @@ public class ListFilesToolExecutor implements ToolExecutor {
         return result.toString();
     }
 
-    private static VirtualFile resolveTargetDir(String path, @NotNull VirtualFile projectBase) {
+    static VirtualFile resolveTargetDir(String path, @NotNull VirtualFile projectBase) {
         if (path == null || path.isBlank() || path.equals(".")) {
             return projectBase;
         }
         return projectBase.findFileByRelativePath(path);
     }
 
-    private void listDirectory(VirtualFile dir, VirtualFile projectBase, boolean recursive,
-                               StringBuilder result, int[] count) {
+    void listDirectory(VirtualFile dir, VirtualFile projectBase, boolean recursive,
+                       StringBuilder result, int[] count) {
         VirtualFile[] children = dir.getChildren();
         if (children == null) return;
 
@@ -97,8 +100,8 @@ public class ListFilesToolExecutor implements ToolExecutor {
         }
     }
 
-    private void appendDirectory(VirtualFile child, String relativePath, VirtualFile projectBase,
-                                 boolean recursive, StringBuilder result, int[] count) {
+    void appendDirectory(VirtualFile child, String relativePath, VirtualFile projectBase,
+                         boolean recursive, StringBuilder result, int[] count) {
         if (SKIP_DIRS.contains(child.getName())) return;
 
         result.append("[DIR]  ").append(relativePath).append("\n");
@@ -106,5 +109,13 @@ public class ListFilesToolExecutor implements ToolExecutor {
         if (recursive) {
             listDirectory(child, projectBase, true, result, count);
         }
+    }
+
+    boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
+        return VfsUtilCore.isAncestor(ancestor, descendant, false);
+    }
+
+    String getRelativePath(VirtualFile file, VirtualFile ancestor) {
+        return VfsUtilCore.getRelativePath(file, ancestor);
     }
 }

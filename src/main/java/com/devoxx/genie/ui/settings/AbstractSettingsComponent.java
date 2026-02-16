@@ -29,6 +29,7 @@ public class AbstractSettingsComponent implements SettingsComponent {
 
     @Override
     public void addListeners() {
+        // Intentionally empty - subclasses can override this method to add specific listeners
     }
 
     protected void addSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String title) {

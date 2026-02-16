@@ -247,7 +247,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String specRunnerMode = "llm";          // "llm" or "cli"
     private String specSelectedCliTool = "";         // name of selected CLI tool
 
-    // ACP tool runner settings
+    // ACP tool runner settings (used by ACP Runners LLM provider in chat panel)
     private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();
 
     // Inline completion settings

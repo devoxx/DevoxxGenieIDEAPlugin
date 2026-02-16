@@ -1,12 +1,10 @@
 package com.devoxx.genie.chatmodel.cloud.bedrock;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.google.auth.oauth2.AwsCredentials;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Wraps an MCP ToolProvider and filters out tools that have been disabled
@@ -22,9 +23,16 @@ import java.util.Set;
 public class FilteredMcpToolProvider implements ToolProvider {
 
     private final ToolProvider delegate;
+    private final Supplier<Set<String>> disabledToolsSupplier;
 
     public FilteredMcpToolProvider(@NotNull ToolProvider delegate) {
+        this(delegate, FilteredMcpToolProvider::collectDisabledToolsFromSettings);
+    }
+
+    FilteredMcpToolProvider(@NotNull ToolProvider delegate,
+                            @NotNull Supplier<Set<String>> disabledToolsSupplier) {
         this.delegate = delegate;
+        this.disabledToolsSupplier = disabledToolsSupplier;
     }
 
     @Override
@@ -32,7 +40,7 @@ public class FilteredMcpToolProvider implements ToolProvider {
         ToolProviderResult delegateResult = delegate.provideTools(request);
 
         // Collect all disabled tool names across all enabled MCP servers
-        Set<String> allDisabledTools = collectDisabledTools();
+        Set<String> allDisabledTools = disabledToolsSupplier.get();
 
         if (allDisabledTools.isEmpty()) {
             return delegateResult;
@@ -53,15 +61,22 @@ public class FilteredMcpToolProvider implements ToolProvider {
     }
 
     /**
-     * Collects all disabled tool names from all enabled MCP servers.
+     * Collects all disabled tool names from all enabled MCP servers using application settings.
      */
     @NotNull
-    private static Set<String> collectDisabledTools() {
-        Set<String> disabledTools = new HashSet<>();
+    static Set<String> collectDisabledToolsFromSettings() {
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance()
                 .getMcpSettings()
                 .getMcpServers();
+        return collectDisabledTools(mcpServers);
+    }
 
+    /**
+     * Collects all disabled tool names from all enabled MCP servers.
+     */
+    @NotNull
+    static Set<String> collectDisabledTools(@NotNull Map<String, MCPServer> mcpServers) {
+        Set<String> disabledTools = new HashSet<>();
         for (MCPServer server : mcpServers.values()) {
             if (server.isEnabled() && server.getDisabledTools() != null) {
                 disabledTools.addAll(server.getDisabledTools());

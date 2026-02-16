@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm") version "2.3.10"
     kotlin("plugin.lombok") version "2.3.10"
     id("org.jetbrains.intellij.platform") version "2.11.0"
+    jacoco
 }
 
 group = "com.devoxx.genie"
@@ -16,6 +17,42 @@ repositories {
     intellijPlatform {
         defaultRepositories()
     }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    classDirectories.setFrom(
+        files(
+            fileTree("build/instrumented/instrumentCode")
+        )
+    )
+
+    sourceDirectories.setFrom(
+        files(
+            "src/main/java",
+            "src/main/kotlin"
+        )
+    )
+
+    executionData.setFrom(
+        files("build/jacoco/test.exec")
+    )
+}
+
+// Configure test task for JaCoCo
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.register("updateProperties") {
@@ -168,6 +205,13 @@ tasks {
         maxHeapSize = "1g"
 
         forkEvery = 1
+
+        // Configure JaCoCo agent to include plugin classes loaded from sandbox JARs
+        extensions.configure<JacocoTaskExtension> {
+            includes = listOf("com.devoxx.genie.*")
+            isIncludeNoLocationClasses = true
+            excludes = listOf("jdk.internal.*")
+        }
 
         reports {
             junitXml.required.set(true)

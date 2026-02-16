@@ -164,6 +164,203 @@ class TaskDependencySorterTest {
                 });
     }
 
+    // --- getUnsatisfiedDependencies() branch coverage ---
+
+    @Test
+    void getUnsatisfiedDependenciesNullDeps() {
+        TaskSpec task = createTask("TASK-1", "No deps");
+        task.setDependencies(null);
+
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                task, Collections.emptySet(), Collections.emptySet(), Collections.emptyList());
+
+        assertThat(unsatisfied).isEmpty();
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesEmptyDeps() {
+        TaskSpec task = createTask("TASK-1", "Empty deps");
+
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                task, Collections.emptySet(), Collections.emptySet(), Collections.emptyList());
+
+        assertThat(unsatisfied).isEmpty();
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesInternalNotCompleted() {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1");
+
+        Set<String> completed = Collections.emptySet();
+        Set<String> selected = Set.of("task-1", "task-2");
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                t2, completed, selected, List.of(t1, t2));
+
+        // TASK-1 is in selected set but not completed
+        assertThat(unsatisfied).containsExactly("TASK-1");
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesExternalDone() {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        t1.setStatus("Done");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1");
+
+        Set<String> completed = Collections.emptySet();
+        Set<String> selected = Set.of("task-2"); // t1 not selected
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                t2, completed, selected, List.of(t1, t2));
+
+        // External dep is Done, so satisfied
+        assertThat(unsatisfied).isEmpty();
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesUnknownDep() {
+        TaskSpec t1 = createTask("TASK-1", "First", "TASK-UNKNOWN");
+
+        Set<String> completed = Collections.emptySet();
+        Set<String> selected = Set.of("task-1");
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                t1, completed, selected, Collections.emptyList());
+
+        // Unknown dep (not in allSpecs) is unsatisfied
+        assertThat(unsatisfied).containsExactly("TASK-UNKNOWN");
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesExternalNotDoneInAllSpecs() {
+        TaskSpec ext = createTask("TASK-EXT", "External");
+        ext.setStatus("In Progress");
+        TaskSpec t1 = createTask("TASK-1", "First", "TASK-EXT");
+
+        Set<String> completed = Collections.emptySet();
+        Set<String> selected = Set.of("task-1");
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                t1, completed, selected, List.of(ext, t1));
+
+        // External dep is In Progress, not Done
+        assertThat(unsatisfied).containsExactly("TASK-EXT");
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesMixedSatisfaction() {
+        TaskSpec done = createTask("TASK-1", "Done");
+        done.setStatus("Done");
+        TaskSpec notDone = createTask("TASK-2", "Not done");
+        notDone.setStatus("To Do");
+        TaskSpec task = createTask("TASK-3", "Depends on both", "TASK-1", "TASK-2");
+
+        Set<String> completed = Set.of("task-1");
+        Set<String> selected = Set.of("task-3"); // neither dep is in selected
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                task, completed, selected, List.of(done, notDone, task));
+
+        // TASK-1 is completed, TASK-2 is external and not Done
+        assertThat(unsatisfied).containsExactly("TASK-2");
+    }
+
+    @Test
+    void getUnsatisfiedDependenciesAllSpecsWithNullId() {
+        TaskSpec nullIdSpec = new TaskSpec();
+        nullIdSpec.setStatus("Done");
+        TaskSpec t1 = createTask("TASK-1", "First", "TASK-2");
+
+        Set<String> completed = Collections.emptySet();
+        Set<String> selected = Set.of("task-1");
+        List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                t1, completed, selected, List.of(nullIdSpec, t1));
+
+        // TASK-2 not found in allSpecs (only null-id spec there)
+        assertThat(unsatisfied).containsExactly("TASK-2");
+    }
+
+    // --- sort() branch coverage ---
+
+    @Test
+    void sortWithNullDependencyList() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        t1.setDependencies(null);
+        TaskSpec t2 = createTask("TASK-2", "Second");
+        t2.setDependencies(null);
+
+        List<TaskSpec> all = List.of(t2, t1);
+        List<TaskSpec> result = TaskDependencySorter.sort(all, all);
+
+        assertThat(result).containsExactly(t1, t2);
+    }
+
+    @Test
+    void sortWithNullIdTask() throws CircularDependencyException {
+        TaskSpec nullId = new TaskSpec();
+        nullId.setTitle("No ID");
+        nullId.setOrdinal(1000);
+        nullId.setDependencies(new ArrayList<>());
+
+        TaskSpec t1 = createTask("TASK-1", "First");
+
+        List<TaskSpec> all = List.of(nullId, t1);
+        List<TaskSpec> result = TaskDependencySorter.sort(all, all);
+
+        // Task with null ID isn't added to selectedIds, so it won't appear in sorted output
+        assertThat(result).containsExactly(t1);
+    }
+
+    @Test
+    void sortWithNonNumericIds() throws CircularDependencyException {
+        TaskSpec ta = createTask("alpha", "Alpha task");
+        TaskSpec tb = createTask("beta", "Beta task");
+
+        List<TaskSpec> all = List.of(tb, ta);
+        List<TaskSpec> result = TaskDependencySorter.sort(all, all);
+
+        // Both have same ordinal (1000) and no numeric part → extractNumber returns MAX_VALUE
+        // Tiebreak by extractNumber is equal, so insertion order in layer is preserved
+        assertThat(result).hasSize(2);
+        assertThat(result).containsExactlyInAnyOrder(ta, tb);
+    }
+
+    @Test
+    void sortAllSpecsWithNullId() throws CircularDependencyException {
+        TaskSpec nullIdSpec = new TaskSpec();
+        nullIdSpec.setStatus("Done");
+
+        TaskSpec t1 = createTask("TASK-1", "First");
+
+        List<TaskSpec> result = TaskDependencySorter.sort(
+                List.of(t1), List.of(nullIdSpec, t1));
+
+        assertThat(result).containsExactly(t1);
+    }
+
+    @Test
+    void sortWithCaseInsensitiveDeps() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second");
+        // Use mixed case for dependency reference
+        t2.setDependencies(new ArrayList<>(List.of("task-1")));
+
+        List<TaskSpec> all = List.of(t2, t1);
+        List<TaskSpec> result = TaskDependencySorter.sort(all, all);
+
+        assertThat(result).containsExactly(t1, t2);
+    }
+
+    @Test
+    void sortWithEqualOrdinalDifferentNumericIds() throws CircularDependencyException {
+        TaskSpec t10 = createTask("TASK-10", "Tenth");
+        t10.setOrdinal(500);
+        TaskSpec t2 = createTask("TASK-2", "Second");
+        t2.setOrdinal(500);
+
+        List<TaskSpec> all = List.of(t10, t2);
+        List<TaskSpec> result = TaskDependencySorter.sort(all, all);
+
+        // Same ordinal, tiebreak by numeric ID: 2 < 10
+        assertThat(result).containsExactly(t2, t10);
+    }
+
     // ===== Helpers =====
 
     private static TaskSpec createTask(String id, String title, String... dependencies) {

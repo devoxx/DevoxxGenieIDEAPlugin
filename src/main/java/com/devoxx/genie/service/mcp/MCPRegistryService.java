@@ -21,10 +21,22 @@ import java.util.*;
 public class MCPRegistryService {
 
     private static final String REGISTRY_BASE_URL = "https://registry.modelcontextprotocol.io/v0.1/servers";
-    private final OkHttpClient client = HttpClientProvider.getClient();
-    private final Gson gson = new GsonBuilder().create();
+    private final OkHttpClient client;
+    private final Gson gson;
 
     private List<MCPRegistryServerEntry> cachedServers = null;
+
+    public MCPRegistryService() {
+        this(HttpClientProvider.getClient(), new GsonBuilder().create());
+    }
+
+    /**
+     * Package-private constructor for testing with injectable dependencies.
+     */
+    MCPRegistryService(OkHttpClient client, Gson gson) {
+        this.client = client;
+        this.gson = gson;
+    }
 
     @NotNull
     public static MCPRegistryService getInstance() {

@@ -11,9 +11,15 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -25,6 +31,7 @@ import org.mockito.quality.Strictness;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -119,7 +126,11 @@ class NonStreamingPromptStrategyTest {
         
         // Also mock the createdOn date
         when(mockChatMessageContext.getCreatedOn()).thenReturn(java.time.LocalDateTime.now());
-        
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("test question");
+        when(mockChatMessageContext.getUserMessage()).thenReturn(
+            dev.langchain4j.data.message.UserMessage.from("test question"));
+        when(mockChatMessageContext.getId()).thenReturn("test-id");
+
         // Setup other required mocks
         when(mockThreadPoolManager.getPromptExecutionPool()).thenReturn(mockExecutor);
         when(mockPromptExecutionService.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(null));
@@ -163,5 +174,83 @@ class NonStreamingPromptStrategyTest {
         if (messageCreationServiceMock != null) messageCreationServiceMock.close();
         if (promptExecutionServiceMock != null) promptExecutionServiceMock.close();
         if (fileListManagerMock != null) fileListManagerMock.close();
+    }
+
+    @Test
+    void getStrategyName_returnsNonStreamingPrompt() {
+        assertThat(strategy.getStrategyName()).isEqualTo("non-streaming prompt");
+    }
+
+    @Test
+    void cancel_cancelsExecutingQuery() {
+        strategy.cancel();
+        verify(mockPromptExecutionService).cancelExecutingQuery();
+    }
+
+    @Test
+    void executeStrategySpecific_delegatesToPromptExecutionService() {
+        // Execute runnables inline
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(mockExecutor).execute(any(Runnable.class));
+
+        // Set up user prompt and user message on mock context
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("test question");
+        when(mockChatMessageContext.getUserMessage()).thenReturn(
+            dev.langchain4j.data.message.UserMessage.from("test question"));
+
+        ChatResponse response = ChatResponse.builder()
+            .aiMessage(AiMessage.from("test response"))
+            .build();
+        when(mockPromptExecutionService.executeQuery(any()))
+            .thenReturn(CompletableFuture.completedFuture(response));
+
+        // Mock panel with null conversation panel to test the null-safe path
+        when(mockPanel.getConversationPanel()).thenReturn(null);
+
+        // Mock message bus
+        var mockMessageBus = mock(com.intellij.util.messages.MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        var mockPublisher = mock(ConversationEventListener.class);
+        when(mockMessageBus.syncPublisher(com.devoxx.genie.ui.topic.AppTopics.CONVERSATION_TOPIC))
+            .thenReturn(mockPublisher);
+
+        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
+
+        verify(mockPromptExecutionService).executeQuery(mockChatMessageContext);
+    }
+
+    @Test
+    void executeStrategySpecific_withNullResponse_completesWithFailure() {
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(mockExecutor).execute(any(Runnable.class));
+
+        // Set up user prompt and user message on mock context
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("test question");
+        when(mockChatMessageContext.getUserMessage()).thenReturn(
+            dev.langchain4j.data.message.UserMessage.from("test question"));
+
+        when(mockPromptExecutionService.executeQuery(any()))
+            .thenReturn(CompletableFuture.completedFuture(null));
+
+        // Mock panel with null conversation panel for hideLoadingIndicator null-safe path
+        when(mockPanel.getConversationPanel()).thenReturn(null);
+
+        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
+
+        verify(mockResultTask).complete(argThat(result -> {
+            assertThat(result.getError()).isNotNull();
+            return true;
+        }));
+    }
+
+    @Test
+    void cancel_withNullPanel_doesNotThrow() {
+        // No panel set - cancel should not throw
+        strategy.cancel();
+        verify(mockPromptExecutionService).cancelExecutingQuery();
     }
 }
