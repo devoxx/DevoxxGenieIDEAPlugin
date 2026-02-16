@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.panel.spec;
 
+import com.devoxx.genie.model.enumarations.ExecutionMode;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.service.spec.CircularDependencyException;
@@ -9,6 +10,7 @@ import com.devoxx.genie.service.spec.SpecTaskRunnerListener;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
@@ -62,6 +64,8 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     // Toolbar actions (need references for enable/disable)
     private AnAction runSelectedAction;
     private AnAction runAllTodoAction;
+    private AnAction runSelectedParallelAction;
+    private AnAction runAllParallelAction;
     private AnAction cancelRunAction;
 
     // Execution mode ComboBox
@@ -206,6 +210,54 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             }
         };
         actionGroup.add(runAllTodoAction);
+
+        actionGroup.addSeparator();
+
+        runSelectedParallelAction = new AnAction(
+                "Run Selected (Parallel)",
+                "Run checked To Do tasks in parallel — independent tasks execute concurrently",
+                DevoxxGenieIconsUtil.RunParallelIcon) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                runSelectedTasksParallel();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                e.getPresentation().setEnabled(!runner.isRunning() && !checkedTaskIds.isEmpty());
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
+        actionGroup.add(runSelectedParallelAction);
+
+        runAllParallelAction = new AnAction(
+                "Run All (Parallel)",
+                "Run all To Do tasks in parallel — independent tasks execute concurrently",
+                DevoxxGenieIconsUtil.RunParallelIcon) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                runAllTodoTasksParallel();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                e.getPresentation().setEnabled(!runner.isRunning());
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        };
+        actionGroup.add(runAllParallelAction);
+
+        actionGroup.addSeparator();
 
         cancelRunAction = new AnAction("Cancel Run", "Stop after current task finishes", AllIcons.Actions.Suspend) {
             @Override
@@ -365,6 +417,38 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private void runAllTodoTasks() {
         try {
             SpecTaskRunnerService.getInstance(project).runAllTodoTasks();
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof CircularDependencyException) {
+                NotificationUtil.sendErrorNotification(project,
+                        "Cannot run tasks: " + e.getMessage());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private void runSelectedTasksParallel() {
+        List<TaskSpec> tasks = getCheckedTasks();
+        if (tasks.isEmpty()) {
+            NotificationUtil.sendWarningNotification(project,
+                    "No tasks selected. Check the boxes next to To Do tasks first.");
+            return;
+        }
+        try {
+            SpecTaskRunnerService.getInstance(project).runTasks(tasks, ExecutionMode.PARALLEL);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof CircularDependencyException) {
+                NotificationUtil.sendErrorNotification(project,
+                        "Cannot run tasks: " + e.getMessage());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private void runAllTodoTasksParallel() {
+        try {
+            SpecTaskRunnerService.getInstance(project).runAllTodoTasksParallel();
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,

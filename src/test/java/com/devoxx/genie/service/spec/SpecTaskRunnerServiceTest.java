@@ -456,7 +456,7 @@ class SpecTaskRunnerServiceTest {
 
             service.cancel();
 
-            verify(ctx.cliTaskExecutorService).cancelCurrentProcess();
+            verify(ctx.cliTaskExecutorService).cancelAllProcesses();
         }
     }
 
@@ -645,6 +645,173 @@ class SpecTaskRunnerServiceTest {
 
             assertThat(service.getSkippedCount()).isEqualTo(1);
         }
+    }
+
+    // ── Parallel mode: all Done tasks ─────────────────────────────────
+
+    @Test
+    void runTasks_parallelMode_allDoneTasks_completesImmediately() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("Done").build();
+            TaskSpec t2 = TaskSpec.builder().id("TASK-2").title("T2").status("Done").build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1, t2));
+            when(ctx.specService.getSpec("TASK-1")).thenReturn(t1);
+            when(ctx.specService.getSpec("TASK-2")).thenReturn(t2);
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("PARALLEL");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+            SpecTaskRunnerListener listener = mock(SpecTaskRunnerListener.class);
+            service.addListener(listener);
+
+            service.runTasks(List.of(t1, t2));
+
+            assertThat(service.getCompletedCount()).isEqualTo(2);
+            assertThat(service.getState()).isEqualTo(RunnerState.IDLE);
+            verify(listener).onRunFinished(eq(2), eq(0), eq(2), eq(RunnerState.ALL_COMPLETED));
+        }
+    }
+
+    // ── Parallel mode: task not found ──────────────────────────────────
+
+    @Test
+    void runTasks_parallelMode_taskNotFound_skipped() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("To Do").build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1));
+            when(ctx.specService.getSpec("TASK-1")).thenReturn(null); // not found
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("PARALLEL");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+            SpecTaskRunnerListener listener = mock(SpecTaskRunnerListener.class);
+            service.addListener(listener);
+
+            service.runTasks(List.of(t1));
+
+            assertThat(service.getSkippedCount()).isEqualTo(1);
+            verify(listener).onTaskSkipped(eq(t1), anyInt(), eq(1), contains("not found"));
+        }
+    }
+
+    // ── Parallel mode: execution mode getter ──────────────────────────
+
+    @Test
+    void runTasks_parallelMode_setsExecutionMode() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("Done").build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1));
+            when(ctx.specService.getSpec("TASK-1")).thenReturn(t1);
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("PARALLEL");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+            service.runTasks(List.of(t1));
+
+            // After completion, executionMode resets to SEQUENTIAL
+            assertThat(service.getExecutionMode()).isEqualTo(com.devoxx.genie.model.enumarations.ExecutionMode.SEQUENTIAL);
+        }
+    }
+
+    // ── Parallel mode: cancel ──────────────────────────────────────────
+
+    @Test
+    void cancel_parallelMode_stopsExecution() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("To Do").build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1));
+            when(ctx.specService.getSpec("TASK-1")).thenReturn(t1);
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("PARALLEL");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+            SpecTaskRunnerListener listener = mock(SpecTaskRunnerListener.class);
+            service.addListener(listener);
+
+            service.runTasks(List.of(t1));
+            assertThat(service.isRunning()).isTrue();
+
+            service.cancel();
+
+            assertThat(service.isRunning()).isFalse();
+            verify(listener).onRunFinished(anyInt(), anyInt(), eq(1), eq(RunnerState.CANCELLED));
+        }
+    }
+
+    // ── Parallel mode: circular dependency ─────────────────────────────
+
+    @Test
+    void runTasks_parallelMode_circularDependency_throwsError() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("To Do")
+                    .dependencies(List.of("TASK-2")).build();
+            TaskSpec t2 = TaskSpec.builder().id("TASK-2").title("T2").status("To Do")
+                    .dependencies(List.of("TASK-1")).build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1, t2));
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("PARALLEL");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+
+            assertThatThrownBy(() -> service.runTasks(List.of(t1, t2)))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasCauseInstanceOf(CircularDependencyException.class);
+        }
+    }
+
+    // ── Parallel mode: invalid execution mode string defaults to sequential ─
+
+    @Test
+    void runTasks_invalidExecutionMode_fallsBackToSequential() {
+        try (var ctx = new RunnerMockContext()) {
+            TaskSpec t1 = TaskSpec.builder().id("TASK-1").title("T1").status("Done").build();
+
+            when(ctx.specService.getAllSpecs()).thenReturn(List.of(t1));
+            when(ctx.specService.getSpec("TASK-1")).thenReturn(t1);
+            when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.stateService.getSpecExecutionMode()).thenReturn("INVALID_MODE");
+            when(ctx.stateService.getSpecMaxConcurrency()).thenReturn(4);
+
+            SpecTaskRunnerService service = ctx.createService();
+            service.runTasks(List.of(t1));
+
+            assertThat(service.getCompletedCount()).isEqualTo(1);
+        }
+    }
+
+    // ── notifyPromptExecutionCompleted with taskId (parallel) ──────────
+
+    @Test
+    void notifyPromptExecutionCompleted_withTaskId_whenNotWaiting_doesNothing() {
+        Project project = mock(Project.class);
+        SpecTaskRunnerService service = new SpecTaskRunnerService(project);
+
+        service.notifyPromptExecutionCompleted("TASK-1");
+
+        assertThat(service.getState()).isEqualTo(RunnerState.IDLE);
+    }
+
+    // ── notifyCliTaskFailed with taskId (parallel) ─────────────────────
+
+    @Test
+    void notifyCliTaskFailed_withTaskId_whenNotWaiting_doesNothing() {
+        Project project = mock(Project.class);
+        SpecTaskRunnerService service = new SpecTaskRunnerService(project);
+
+        service.notifyCliTaskFailed(1, "some error", "TASK-1");
+
+        assertThat(service.getState()).isEqualTo(RunnerState.IDLE);
+        assertThat(service.getSkippedCount()).isZero();
     }
 
     /**

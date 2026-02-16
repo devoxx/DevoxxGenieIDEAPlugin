@@ -18,9 +18,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Project-scoped service that runs a CLI tool as an external process.
+ * Project-scoped service that runs CLI tools as external processes.
+ * Supports multiple concurrent processes tracked by task ID.
  * Delegates command construction and prompt delivery to the tool's
  * {@link CliCommand} implementation (Command pattern).
  */
@@ -29,10 +31,23 @@ import java.util.List;
 public final class CliTaskExecutorService implements Disposable {
 
     private final Project project;
-    private volatile Process activeProcess;
-    private volatile CliCommand activeCommand;
-    /** Set when the process is killed intentionally because the task was marked Done. */
-    private volatile boolean taskCompletedKill = false;
+
+    /** Active CLI tasks indexed by task ID. Supports concurrent execution. */
+    private final ConcurrentHashMap<String, ActiveCliTask> activeTasks = new ConcurrentHashMap<>();
+
+    /**
+     * Bundles the process, command, and completion-kill flag for a single CLI task.
+     */
+    private static class ActiveCliTask {
+        final Process process;
+        final CliCommand command;
+        volatile boolean taskCompletedKill = false;
+
+        ActiveCliTask(@NotNull Process process, @NotNull CliCommand command) {
+            this.process = process;
+            this.command = command;
+        }
+    }
 
     public CliTaskExecutorService(@NotNull Project project) {
         this.project = project;
@@ -45,7 +60,8 @@ public final class CliTaskExecutorService implements Disposable {
     /**
      * Execute a CLI tool with the given prompt.
      * Runs the process on a pooled thread, streams output to console,
-     * and calls notifyPromptExecutionCompleted() on process exit.
+     * and calls notifyPromptExecutionCompleted() or notifyCliTaskFailed() on process exit.
+     * Multiple tasks can execute concurrently; each is tracked by taskId.
      */
     public void execute(@NotNull CliToolConfig cliTool,
                         @NotNull String prompt,
@@ -68,7 +84,6 @@ public final class CliTaskExecutorService implements Disposable {
             }
         }
         CliCommand cliCommand = cliType.createCommand();
-        activeCommand = cliCommand;
 
         // Generate MCP config and let the command build the full process command
         String mcpConfigPath = generateMcpConfig(cliCommand.mcpJsonKey());
@@ -103,11 +118,15 @@ public final class CliTaskExecutorService implements Disposable {
                 }
 
                 log.info("CLI starting process...");
-                activeProcess = pb.start();
-                log.info("CLI process started successfully (pid={})", activeProcess.pid());
+                Process process = pb.start();
+                log.info("CLI process started successfully (pid={})", process.pid());
+
+                // Register the active task
+                ActiveCliTask activeTask = new ActiveCliTask(process, cliCommand);
+                activeTasks.put(taskId, activeTask);
 
                 // Delegate prompt delivery to the command
-                cliCommand.writePrompt(activeProcess, prompt);
+                cliCommand.writePrompt(process, prompt);
                 log.info("CLI prompt delivered via {} ({} chars)",
                         cliCommand.getClass().getSimpleName(), prompt.length());
 
@@ -116,24 +135,21 @@ public final class CliTaskExecutorService implements Disposable {
 
                 // Stream stdout and stderr concurrently
                 Thread stdoutThread = createStreamReader(
-                        activeProcess, true, consoleManager, taskId, null);
+                        process, true, consoleManager, taskId, null);
                 Thread stderrThread = createStreamReader(
-                        activeProcess, false, consoleManager, taskId, stderrLines);
+                        process, false, consoleManager, taskId, stderrLines);
 
                 stdoutThread.start();
                 stderrThread.start();
 
                 log.info("CLI waiting for process to finish (task={})", taskId);
-                int exitCode = activeProcess.waitFor();
+                int exitCode = process.waitFor();
                 long elapsed = System.currentTimeMillis() - startTime;
                 stdoutThread.join(5000);
                 stderrThread.join(5000);
 
-                activeProcess = null;
-                activeCommand = null;
-
-                boolean completedKill = taskCompletedKill;
-                taskCompletedKill = false;
+                boolean completedKill = activeTask.taskCompletedKill;
+                activeTasks.remove(taskId);
 
                 log.info("CLI process exited: task={}, exitCode={}, completedKill={}, elapsed={}ms",
                         taskId, exitCode, completedKill, elapsed);
@@ -143,37 +159,35 @@ public final class CliTaskExecutorService implements Disposable {
                     if (exitCode == 0 || completedKill) {
                         consoleManager.printSystem(exitMsg);
                         log.info("CLI notifying prompt execution completed for task {}", taskId);
-                        SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted();
+                        SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
                     } else {
                         consoleManager.printError(exitMsg);
                         String errorOutput = String.join("\n", stderrLines).trim();
                         log.warn("CLI task {} failed with exit code {}: {}", taskId, exitCode,
                                 errorOutput.length() > 300 ? errorOutput.substring(0, 300) + "..." : errorOutput);
                         SpecTaskRunnerService.getInstance(project)
-                                .notifyCliTaskFailed(exitCode, errorOutput);
+                                .notifyCliTaskFailed(exitCode, errorOutput, taskId);
                     }
                 });
 
             } catch (IOException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
-                activeProcess = null;
-                activeCommand = null;
+                activeTasks.remove(taskId);
                 log.error("CLI failed to start process: task={}, elapsed={}ms, error={}",
                         taskId, elapsed, e.getMessage(), e);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     consoleManager.printError("Failed to start process: " + e.getMessage());
                     SpecTaskRunnerService.getInstance(project)
-                            .notifyCliTaskFailed(-1, e.getMessage());
+                            .notifyCliTaskFailed(-1, e.getMessage(), taskId);
                 });
             } catch (InterruptedException e) {
                 long elapsed = System.currentTimeMillis() - startTime;
-                activeProcess = null;
-                activeCommand = null;
+                activeTasks.remove(taskId);
                 Thread.currentThread().interrupt();
                 log.info("CLI process interrupted: task={}, elapsed={}ms", taskId, elapsed);
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    consoleManager.printSystem("Process interrupted");
-                    SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted();
+                    consoleManager.printSystem("[" + taskId + "] Process interrupted");
+                    SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
                 });
             }
         });
@@ -182,38 +196,82 @@ public final class CliTaskExecutorService implements Disposable {
     }
 
     /**
-     * Cancel the currently running process (user-initiated).
+     * Cancel the process for a specific task (user-initiated or parallel cancellation).
      */
-    public void cancelCurrentProcess() {
-        Process process = activeProcess;
-        if (process != null && process.isAlive()) {
-            log.info("Destroying CLI process (pid={})", process.pid());
-            process.destroyForcibly();
-            activeProcess = null;
+    public void cancelTask(@NotNull String taskId) {
+        ActiveCliTask task = activeTasks.remove(taskId);
+        if (task != null && task.process.isAlive()) {
+            log.info("Destroying CLI process for task {} (pid={})", taskId, task.process.pid());
+            task.process.destroyForcibly();
             ApplicationManager.getApplication().invokeLater(() ->
-                    CliConsoleManager.getInstance(project).printSystem("\n=== Process cancelled ===\n"));
+                    CliConsoleManager.getInstance(project).printSystem(
+                            "\n=== [" + taskId + "] Process cancelled ===\n"));
         }
     }
 
     /**
-     * Called when the backlog task is marked Done while the process is still running.
+     * Cancel the currently running process (legacy single-task API).
+     * When multiple tasks are running, cancels all of them.
+     */
+    public void cancelCurrentProcess() {
+        cancelAllProcesses();
+    }
+
+    /**
+     * Cancel all active CLI processes.
+     */
+    public void cancelAllProcesses() {
+        List<String> taskIds = new ArrayList<>(activeTasks.keySet());
+        for (String taskId : taskIds) {
+            cancelTask(taskId);
+        }
+    }
+
+    /**
+     * Called when a specific backlog task is marked Done while the process is still running.
      * Delegates to the active {@link CliCommand#onTaskCompleted(Process)} —
      * only commands that don't self-exit (e.g., Codex) will kill the process.
      */
-    public void notifyTaskDone() {
-        CliCommand command = activeCommand;
-        Process process = activeProcess;
-        if (command != null && process != null && process.isAlive()) {
-            if (command.onTaskCompleted(process)) {
-                taskCompletedKill = true;
-                log.info("CLI process killed by {} — task completed", command.getClass().getSimpleName());
+    public void notifyTaskDone(@NotNull String taskId) {
+        ActiveCliTask task = activeTasks.get(taskId);
+        if (task != null && task.process.isAlive()) {
+            if (task.command.onTaskCompleted(task.process)) {
+                task.taskCompletedKill = true;
+                log.info("CLI process killed by {} — task {} completed",
+                        task.command.getClass().getSimpleName(), taskId);
             }
         }
     }
 
+    /**
+     * Legacy single-task notifyTaskDone(). Notifies all active tasks.
+     */
+    public void notifyTaskDone() {
+        for (String taskId : new ArrayList<>(activeTasks.keySet())) {
+            notifyTaskDone(taskId);
+        }
+    }
+
+    /**
+     * Returns true if any CLI process is currently running.
+     */
     public boolean isRunning() {
-        Process process = activeProcess;
-        return process != null && process.isAlive();
+        return activeTasks.values().stream().anyMatch(t -> t.process.isAlive());
+    }
+
+    /**
+     * Returns true if the process for a specific task is currently running.
+     */
+    public boolean isRunning(@NotNull String taskId) {
+        ActiveCliTask task = activeTasks.get(taskId);
+        return task != null && task.process.isAlive();
+    }
+
+    /**
+     * Returns the number of currently active CLI processes.
+     */
+    public int getActiveCount() {
+        return (int) activeTasks.values().stream().filter(t -> t.process.isAlive()).count();
     }
 
     /**
@@ -267,11 +325,14 @@ public final class CliTaskExecutorService implements Disposable {
                         log.info("CLI {} [{}] line {}: {}", streamName, taskId, lineCount,
                                 text.length() > 200 ? text.substring(0, 200) + "..." : text);
                     }
+                    // Prefix with task ID for parallel execution traceability
+                    final boolean isParallel = activeTasks.size() > 1;
                     ApplicationManager.getApplication().invokeLater(() -> {
+                        String displayText = isParallel ? "[" + taskId + "] " + text : text;
                         if (isStdout) {
-                            consoleManager.printOutput(text);
+                            consoleManager.printOutput(displayText);
                         } else {
-                            consoleManager.printError(text);
+                            consoleManager.printError(displayText);
                         }
                     });
                 }
@@ -287,6 +348,6 @@ public final class CliTaskExecutorService implements Disposable {
 
     @Override
     public void dispose() {
-        cancelCurrentProcess();
+        cancelAllProcesses();
     }
 }

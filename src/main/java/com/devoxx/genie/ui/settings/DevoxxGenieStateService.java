@@ -246,6 +246,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private List<CliToolConfig> cliTools = new ArrayList<>();
     private String specRunnerMode = "llm";          // "llm" or "cli"
     private String specSelectedCliTool = "";         // name of selected CLI tool
+    private String specExecutionMode = "SEQUENTIAL"; // "SEQUENTIAL" or "PARALLEL"
+    private Integer specMaxConcurrency = 4;          // max parallel tasks per layer (1–8)
 
     // ACP tool runner settings (used by ACP Runners LLM provider in chat panel)
     private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();

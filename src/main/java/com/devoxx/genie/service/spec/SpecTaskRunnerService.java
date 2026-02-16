@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.enumarations.ExecutionMode;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
+import com.devoxx.genie.service.cli.CliConsoleManager;
 import com.devoxx.genie.service.cli.CliTaskExecutorService;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
@@ -18,12 +20,21 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Timer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
- * Project-scoped service that executes spec tasks sequentially in dependency order.
- * Monitors task completion via SpecService change listener.
+ * Project-scoped service that executes spec tasks in dependency order.
+ * Supports both sequential execution (one task at a time) and parallel
+ * execution (independent tasks within a dependency layer run concurrently).
+ * The execution mode is controlled by the specExecutionMode setting.
+ *
+ * <p>In parallel mode, tasks are grouped into topological layers using
+ * {@link TaskDependencySorter#sortByLayers}. All tasks in a layer execute
+ * concurrently, and the runner proceeds to the next layer only after all
+ * tasks in the current layer complete.</p>
  */
 @Slf4j
 @Service(Service.Level.PROJECT)
@@ -60,12 +71,51 @@ public final class SpecTaskRunnerService implements Disposable {
     private volatile boolean currentTaskDoneWhileExecuting = false;
 
     // Track which tasks in this run have completed (for dependency checking)
-    private final Set<String> completedTaskIds = new HashSet<>();
+    private final Set<String> completedTaskIds = Collections.synchronizedSet(new HashSet<>());
     private Set<String> selectedTaskIds = Collections.emptySet();
 
     // Execution mode flag, determined at start of runTasks()
     @Getter
     private boolean cliMode = false;
+
+    // --- Parallel execution state ---
+    @Getter
+    private ExecutionMode executionMode = ExecutionMode.SEQUENTIAL;
+    private int maxConcurrency = 4;
+    private List<List<TaskSpec>> layers = Collections.emptyList();
+    private int currentLayerIndex = -1;
+
+    /** Per-task grace timers for parallel mode (task ID -> Timer). */
+    private final ConcurrentHashMap<String, Timer> parallelGraceTimers = new ConcurrentHashMap<>();
+
+    /** Per-task "done while executing" flags for parallel mode. */
+    private final ConcurrentHashMap<String, Boolean> parallelTaskDoneFlags = new ConcurrentHashMap<>();
+
+    /** Latch for the current layer — counts down as each task completes/skips. */
+    private volatile CountDownLatch layerLatch;
+
+    /** Tasks currently executing in the active layer. */
+    private final Set<String> activeLayerTaskIds = ConcurrentHashMap.newKeySet();
+
+    /** Track per-task results within a layer for deterministic reporting. */
+    private final ConcurrentHashMap<String, LayerTaskResult> layerTaskResults = new ConcurrentHashMap<>();
+
+    /** Result of a single task within a parallel layer. */
+    static final class LayerTaskResult {
+        final TaskSpec task;
+        final boolean completed;
+        final boolean skipped;
+        final String skipReason;
+        final long elapsedMs;
+
+        LayerTaskResult(TaskSpec task, boolean completed, boolean skipped, String skipReason, long elapsedMs) {
+            this.task = task;
+            this.completed = completed;
+            this.skipped = skipped;
+            this.skipReason = skipReason;
+            this.elapsedMs = elapsedMs;
+        }
+    }
 
     public SpecTaskRunnerService(@NotNull Project project) {
         this.project = project;
@@ -78,9 +128,19 @@ public final class SpecTaskRunnerService implements Disposable {
     // ===== Public API =====
 
     /**
-     * Sort and execute the given tasks sequentially.
+     * Sort and execute the given tasks, using the configured execution mode.
      */
     public void runTasks(@NotNull List<TaskSpec> tasks) {
+        runTasks(tasks, null);
+    }
+
+    /**
+     * Sort and execute the given tasks, optionally overriding the execution mode.
+     *
+     * @param tasks         tasks to execute
+     * @param modeOverride  if non-null, overrides the configured execution mode
+     */
+    public void runTasks(@NotNull List<TaskSpec> tasks, @Nullable ExecutionMode modeOverride) {
         if (state == RunnerState.RUNNING_TASK || state == RunnerState.WAITING_FOR_COMPLETION) {
             log.warn("Runner is already active, ignoring runTasks call");
             return;
@@ -97,27 +157,58 @@ public final class SpecTaskRunnerService implements Disposable {
         SpecService specService = SpecService.getInstance(project);
         List<TaskSpec> allSpecs = specService.getAllSpecs();
 
-        try {
-            orderedTasks = TaskDependencySorter.sort(tasks, allSpecs);
-        } catch (CircularDependencyException e) {
-            log.error("Circular dependency detected: {}", e.getMessage());
-            state = RunnerState.ERROR;
-            notifyRunFinished(RunnerState.ERROR);
-            throw new RuntimeException(e.getMessage(), e);
-        }
-
-        // Log execution order so users can understand dependency-based ordering
-        log.info("Task execution order (dependency-sorted): {}",
-                orderedTasks.stream()
-                        .map(t -> t.getId() != null ? t.getId() : "?")
-                        .collect(Collectors.joining(" → ")));
-
-        // Determine execution mode at the start of the run
+        // Determine execution mode (override takes precedence over settings)
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        if (modeOverride != null) {
+            executionMode = modeOverride;
+        } else {
+            String modeSetting = stateService.getSpecExecutionMode();
+            executionMode = parseExecutionMode(modeSetting);
+        }
+        maxConcurrency = stateService.getSpecMaxConcurrency() != null
+                ? Math.max(1, Math.min(8, stateService.getSpecMaxConcurrency()))
+                : 4;
+
+        // Determine CLI mode
         String runnerMode = stateService.getSpecRunnerMode();
         cliMode = "cli".equalsIgnoreCase(runnerMode);
 
+        if (executionMode == ExecutionMode.PARALLEL) {
+            try {
+                layers = TaskDependencySorter.sortByLayers(tasks, allSpecs);
+                orderedTasks = layers.stream().flatMap(List::stream).collect(Collectors.toList());
+            } catch (CircularDependencyException e) {
+                log.error("Circular dependency detected: {}", e.getMessage());
+                state = RunnerState.ERROR;
+                notifyRunFinished(RunnerState.ERROR);
+                throw new RuntimeException(e.getMessage(), e);
+            }
+
+            log.info("Parallel execution: {} layers, maxConcurrency={}", layers.size(), maxConcurrency);
+            for (int i = 0; i < layers.size(); i++) {
+                log.info("  Layer {}: {}", i,
+                        layers.get(i).stream()
+                                .map(t -> t.getId() != null ? t.getId() : "?")
+                                .collect(Collectors.joining(", ")));
+            }
+        } else {
+            try {
+                orderedTasks = TaskDependencySorter.sort(tasks, allSpecs);
+            } catch (CircularDependencyException e) {
+                log.error("Circular dependency detected: {}", e.getMessage());
+                state = RunnerState.ERROR;
+                notifyRunFinished(RunnerState.ERROR);
+                throw new RuntimeException(e.getMessage(), e);
+            }
+
+            log.info("Sequential execution order: {}",
+                    orderedTasks.stream()
+                            .map(t -> t.getId() != null ? t.getId() : "?")
+                            .collect(Collectors.joining(" -> ")));
+        }
+
         currentTaskIndex = -1;
+        currentLayerIndex = -1;
         completedCount = 0;
         skippedCount = 0;
         completedTaskIds.clear();
@@ -133,7 +224,12 @@ public final class SpecTaskRunnerService implements Disposable {
 
         state = RunnerState.RUNNING_TASK;
         notifyRunStarted();
-        submitNextTask();
+
+        if (executionMode == ExecutionMode.PARALLEL) {
+            executeNextLayer();
+        } else {
+            submitNextTask();
+        }
     }
 
     /**
@@ -145,6 +241,14 @@ public final class SpecTaskRunnerService implements Disposable {
     }
 
     /**
+     * Convenience: run all To Do tasks in parallel mode.
+     */
+    public void runAllTodoTasksParallel() {
+        List<TaskSpec> todoTasks = SpecService.getInstance(project).getSpecsByStatus("To Do");
+        runTasks(todoTasks, ExecutionMode.PARALLEL);
+    }
+
+    /**
      * Cancel the run after the current task finishes.
      */
     public void cancel() {
@@ -153,23 +257,46 @@ public final class SpecTaskRunnerService implements Disposable {
         }
         log.info("Cancelling task runner");
         if (cliMode) {
-            CliTaskExecutorService.getInstance(project).cancelCurrentProcess();
+            CliTaskExecutorService.getInstance(project).cancelAllProcesses();
         }
         state = RunnerState.CANCELLED;
+
+        // Release any pending layer latch so the parallel executor thread can proceed
+        CountDownLatch latch = layerLatch;
+        if (latch != null) {
+            while (latch.getCount() > 0) {
+                latch.countDown();
+            }
+        }
+
+        // Cancel all parallel grace timers
+        cancelAllParallelGraceTimers();
+
         finish(RunnerState.CANCELLED);
     }
 
     /**
-     * Called when a CLI tool exits with a non-zero exit code.
-     * Immediately fails the current task with the error details and stops
-     * the entire run — subsequent tasks would likely fail the same way
-     * (e.g., authentication errors).
+     * Called when a CLI tool exits with a non-zero exit code (legacy single-task API).
      */
     public void notifyCliTaskFailed(int exitCode, @NotNull String errorOutput) {
+        notifyCliTaskFailed(exitCode, errorOutput, null);
+    }
+
+    /**
+     * Called when a CLI tool exits with a non-zero exit code.
+     * In parallel mode, only the specific task fails; the layer continues.
+     */
+    public void notifyCliTaskFailed(int exitCode, @NotNull String errorOutput, @Nullable String taskId) {
         if (state != RunnerState.WAITING_FOR_COMPLETION) {
             return;
         }
 
+        if (executionMode == ExecutionMode.PARALLEL && taskId != null) {
+            handleParallelTaskFailure(taskId, exitCode, errorOutput);
+            return;
+        }
+
+        // Sequential mode
         TaskSpec current = getCurrentTask();
         if (current == null) {
             return;
@@ -177,7 +304,6 @@ public final class SpecTaskRunnerService implements Disposable {
 
         cancelGraceTimer();
 
-        // Extract first meaningful line of stderr for the skip reason
         String firstLine = errorOutput.lines()
                 .filter(l -> !l.isBlank())
                 .findFirst()
@@ -188,31 +314,37 @@ public final class SpecTaskRunnerService implements Disposable {
         skippedCount++;
         notifyTaskSkipped(current, reason);
 
-        // Stop the run — remaining tasks will likely fail the same way
         log.info("Stopping task runner due to CLI failure");
         finish(RunnerState.ERROR);
     }
 
     /**
-     * Called when prompt execution completes (success or failure).
-     * <p>
-     * If the spec was already detected as Done while the prompt was executing
-     * (via {@code onSpecsChanged}), advance immediately.  Otherwise start a
-     * grace timer: if the spec isn't marked "Done" within 3 seconds, skip the
-     * task and advance to the next one.
+     * Called when prompt execution completes (legacy single-task API).
      */
     public void notifyPromptExecutionCompleted() {
+        notifyPromptExecutionCompleted(null);
+    }
+
+    /**
+     * Called when prompt execution completes (success or failure).
+     * In parallel mode, the taskId identifies which task completed.
+     */
+    public void notifyPromptExecutionCompleted(@Nullable String taskId) {
         if (state != RunnerState.WAITING_FOR_COMPLETION) {
             return;
         }
 
+        if (executionMode == ExecutionMode.PARALLEL && taskId != null) {
+            handleParallelTaskCompletion(taskId);
+            return;
+        }
+
+        // Sequential mode
         TaskSpec current = getCurrentTask();
         if (current == null) {
             return;
         }
 
-        // If onSpecsChanged() already detected Done while the prompt was still
-        // running, we deferred advancement until now.  Advance immediately.
         if (currentTaskDoneWhileExecuting) {
             currentTaskDoneWhileExecuting = false;
             log.info("Prompt execution completed for task {} (already marked Done), advancing", current.getId());
@@ -226,10 +358,8 @@ public final class SpecTaskRunnerService implements Disposable {
         cancelGraceTimer();
 
         graceTimer = new Timer(3000, e -> {
-            // Check if the task was marked Done during the grace period
             TaskSpec fresh = SpecService.getInstance(project).getSpec(current.getId());
             if (fresh != null && "Done".equalsIgnoreCase(fresh.getStatus())) {
-                // Already handled by onSpecsChanged(), nothing to do
                 return;
             }
             if (state != RunnerState.WAITING_FOR_COMPLETION) {
@@ -288,7 +418,7 @@ public final class SpecTaskRunnerService implements Disposable {
         listeners.remove(listener);
     }
 
-    // ===== Internal Execution =====
+    // ===== Sequential Execution =====
 
     private void submitNextTask() {
         currentTaskIndex++;
@@ -309,7 +439,6 @@ public final class SpecTaskRunnerService implements Disposable {
         // Re-read task from SpecService to get fresh status
         TaskSpec fresh = SpecService.getInstance(project).getSpec(task.getId());
         if (fresh == null) {
-            // Task file deleted
             skipTask(task, "Task file not found");
             return;
         }
@@ -345,7 +474,6 @@ public final class SpecTaskRunnerService implements Disposable {
     }
 
     private void submitTaskViaLlm(@NotNull TaskSpec task) {
-        // Start a fresh conversation for each task
         startFreshConversation();
 
         String taskDetails = SpecContextBuilder.buildContext(task);
@@ -376,8 +504,6 @@ public final class SpecTaskRunnerService implements Disposable {
                 cliTool.getName(), cliTool.getType(),
                 cliTool.getExecutablePath(), cliTool.getExtraArgs(), cliTool.isEnabled());
 
-        // Build prompt: CLI instruction (workflow steps) + task ID reference.
-        // The CLI tool has Backlog MCP, so it fetches full task details itself.
         String taskId = task.getId() != null ? task.getId() : "?";
         String instruction = SpecContextBuilder.buildCliInstruction(task);
         String prompt = instruction +
@@ -411,35 +537,28 @@ public final class SpecTaskRunnerService implements Disposable {
                 return;
             }
 
+            if (executionMode == ExecutionMode.PARALLEL) {
+                onSpecsChangedParallel();
+                return;
+            }
+
+            // Sequential mode
             TaskSpec current = getCurrentTask();
             if (current == null || current.getId() == null) {
                 return;
             }
 
-            // Re-read fresh status
             TaskSpec fresh = SpecService.getInstance(project).getSpec(current.getId());
             if (fresh == null) {
-                // Task file not found — might be temporarily unavailable during a file move
-                // (e.g., backlog_task_complete moves the file to completed/).
-                // Don't skip immediately; let the next change event handle it.
                 log.debug("Task {} not found in spec cache, waiting for next change event", current.getId());
                 return;
             }
 
             if ("Done".equalsIgnoreCase(fresh.getStatus())) {
-                // Don't advance immediately — the prompt may still be executing
-                // (the LLM marks Done via a tool call mid-response).  Advancing
-                // now would clear chat memory while the agent loop is running and
-                // cause the next task's grace timer to start prematurely.
-                //
-                // Instead, set a flag so notifyPromptExecutionCompleted() can
-                // advance as soon as the prompt finishes.
                 log.info("Task {} detected as Done (deferring advance until prompt completes)", fresh.getId());
                 cancelGraceTimer();
                 currentTaskDoneWhileExecuting = true;
 
-                // In CLI mode, notify the executor — the command decides
-                // whether to kill the process (e.g., Codex doesn't self-exit).
                 if (cliMode) {
                     CliTaskExecutorService.getInstance(project).notifyTaskDone();
                 }
@@ -463,9 +582,289 @@ public final class SpecTaskRunnerService implements Disposable {
         submitNextTask();
     }
 
+    // ===== Parallel Layer Execution =====
+
+    /**
+     * Execute the next layer of independent tasks in parallel.
+     * Called from the EDT after the previous layer completes.
+     */
+    private void executeNextLayer() {
+        currentLayerIndex++;
+
+        if (currentLayerIndex >= layers.size()) {
+            finish(RunnerState.ALL_COMPLETED);
+            return;
+        }
+
+        if (state == RunnerState.CANCELLED) {
+            finish(RunnerState.CANCELLED);
+            return;
+        }
+
+        List<TaskSpec> layer = layers.get(currentLayerIndex);
+        log.info("=== Starting layer {}/{} ({} tasks) ===",
+                currentLayerIndex + 1, layers.size(), layer.size());
+
+        // Pre-filter: check for already-done or missing tasks
+        List<TaskSpec> tasksToExecute = new ArrayList<>();
+        for (TaskSpec task : layer) {
+            TaskSpec fresh = SpecService.getInstance(project).getSpec(task.getId());
+            if (fresh == null) {
+                skippedCount++;
+                notifyTaskSkipped(task, "Task file not found");
+                continue;
+            }
+            if ("Done".equalsIgnoreCase(fresh.getStatus())) {
+                completedCount++;
+                if (fresh.getId() != null) {
+                    completedTaskIds.add(fresh.getId().toLowerCase());
+                }
+                notifyTaskCompleted(fresh);
+                continue;
+            }
+            // Check unsatisfied dependencies
+            List<TaskSpec> allSpecs = SpecService.getInstance(project).getAllSpecs();
+            List<String> unsatisfied = TaskDependencySorter.getUnsatisfiedDependencies(
+                    fresh, completedTaskIds, selectedTaskIds, allSpecs);
+            if (!unsatisfied.isEmpty()) {
+                skippedCount++;
+                notifyTaskSkipped(fresh, "Unsatisfied dependencies: " + String.join(", ", unsatisfied));
+                continue;
+            }
+            tasksToExecute.add(fresh);
+        }
+
+        if (tasksToExecute.isEmpty()) {
+            log.info("Layer {}: all tasks already done or skipped, proceeding to next layer",
+                    currentLayerIndex + 1);
+            executeNextLayer();
+            return;
+        }
+
+        log.info("Layer {}: executing {} tasks (concurrency capped at {})",
+                currentLayerIndex + 1, tasksToExecute.size(), maxConcurrency);
+
+        state = RunnerState.WAITING_FOR_COMPLETION;
+        layerLatch = new CountDownLatch(tasksToExecute.size());
+        activeLayerTaskIds.clear();
+        layerTaskResults.clear();
+        parallelTaskDoneFlags.clear();
+
+        long layerStartTime = System.currentTimeMillis();
+
+        // Submit all tasks in this layer
+        for (TaskSpec task : tasksToExecute) {
+            String tid = task.getId() != null ? task.getId() : "?";
+            activeLayerTaskIds.add(tid);
+
+            // Update the flat index for listener reporting
+            currentTaskIndex = orderedTasks.indexOf(task);
+            notifyTaskStarted(task);
+
+            if (cliMode) {
+                submitTaskViaCli(task);
+            } else {
+                // In parallel LLM mode, each task needs its own fresh conversation.
+                // The message bus / prompt submission is inherently single-threaded.
+                // Parallel mode provides real concurrency only for CLI mode.
+                submitTaskViaLlm(task);
+            }
+        }
+
+        // Wait for all tasks in the layer on a background thread, then advance
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                layerLatch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.info("Layer latch interrupted");
+            }
+
+            long layerElapsed = System.currentTimeMillis() - layerStartTime;
+
+            // Report layer summary (deterministic order)
+            reportLayerSummary(tasksToExecute, layerElapsed);
+
+            // Advance to next layer on EDT
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (state == RunnerState.CANCELLED) {
+                    finish(RunnerState.CANCELLED);
+                    return;
+                }
+                state = RunnerState.RUNNING_TASK;
+                executeNextLayer();
+            });
+        });
+    }
+
+    /**
+     * Handle specs-changed events in parallel mode.
+     * Check all active layer tasks for completion.
+     */
+    private void onSpecsChangedParallel() {
+        for (String taskId : activeLayerTaskIds) {
+            TaskSpec fresh = SpecService.getInstance(project).getSpec(taskId);
+            if (fresh == null) {
+                log.debug("Parallel task {} not found in spec cache, waiting", taskId);
+                continue;
+            }
+            if ("Done".equalsIgnoreCase(fresh.getStatus())) {
+                log.info("Parallel task {} detected as Done (deferring advance until prompt completes)", taskId);
+                cancelParallelGraceTimer(taskId);
+                parallelTaskDoneFlags.put(taskId, true);
+
+                if (cliMode) {
+                    CliTaskExecutorService.getInstance(project).notifyTaskDone(taskId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle completion of a specific task in parallel mode.
+     */
+    private void handleParallelTaskCompletion(@NotNull String taskId) {
+        if (!activeLayerTaskIds.contains(taskId)) {
+            log.debug("Parallel task {} not in active layer, ignoring completion", taskId);
+            return;
+        }
+
+        if (Boolean.TRUE.equals(parallelTaskDoneFlags.remove(taskId))) {
+            // Task was already marked Done via onSpecsChanged
+            log.info("Parallel task {} prompt completed (already marked Done), counting as completed", taskId);
+            cancelParallelGraceTimer(taskId);
+            TaskSpec fresh = SpecService.getInstance(project).getSpec(taskId);
+            if (fresh != null) {
+                markTaskCompleted(fresh);
+                layerTaskResults.put(taskId, new LayerTaskResult(fresh, true, false, null, 0));
+            }
+            activeLayerTaskIds.remove(taskId);
+            layerLatch.countDown();
+            return;
+        }
+
+        // Start grace timer for this task
+        log.info("Parallel task {} prompt completed, starting grace timer", taskId);
+        cancelParallelGraceTimer(taskId);
+
+        Timer timer = new Timer(3000, e -> {
+            TaskSpec fresh = SpecService.getInstance(project).getSpec(taskId);
+            if (fresh != null && "Done".equalsIgnoreCase(fresh.getStatus())) {
+                return; // Already handled
+            }
+            if (state != RunnerState.WAITING_FOR_COMPLETION) {
+                return;
+            }
+            log.warn("Parallel task {} not marked Done after grace period, skipping", taskId);
+            skippedCount++;
+            if (fresh != null) {
+                notifyTaskSkipped(fresh, "Prompt execution completed but task was not marked Done");
+                layerTaskResults.put(taskId, new LayerTaskResult(fresh, false, true,
+                        "Prompt execution completed but task was not marked Done", 0));
+            }
+            activeLayerTaskIds.remove(taskId);
+            layerLatch.countDown();
+        });
+        timer.setRepeats(false);
+        parallelGraceTimers.put(taskId, timer);
+        timer.start();
+    }
+
+    /**
+     * Handle failure of a specific task in parallel mode.
+     */
+    private void handleParallelTaskFailure(@NotNull String taskId, int exitCode, @NotNull String errorOutput) {
+        if (!activeLayerTaskIds.contains(taskId)) {
+            return;
+        }
+
+        cancelParallelGraceTimer(taskId);
+
+        String firstLine = errorOutput.lines()
+                .filter(l -> !l.isBlank())
+                .findFirst()
+                .orElse("Unknown error");
+        String reason = "CLI tool failed (exit code " + exitCode + "): " + firstLine;
+
+        log.error("Parallel CLI task {} failed: {}", taskId, reason);
+        skippedCount++;
+
+        TaskSpec fresh = SpecService.getInstance(project).getSpec(taskId);
+        if (fresh != null) {
+            notifyTaskSkipped(fresh, reason);
+            layerTaskResults.put(taskId, new LayerTaskResult(fresh, false, true, reason, 0));
+        }
+
+        activeLayerTaskIds.remove(taskId);
+        layerLatch.countDown();
+    }
+
+    private void cancelParallelGraceTimer(@NotNull String taskId) {
+        Timer timer = parallelGraceTimers.remove(taskId);
+        if (timer != null) {
+            timer.stop();
+        }
+    }
+
+    private void cancelAllParallelGraceTimers() {
+        for (Timer timer : parallelGraceTimers.values()) {
+            timer.stop();
+        }
+        parallelGraceTimers.clear();
+    }
+
+    /**
+     * Report a deterministic layer summary after all tasks complete.
+     * Results are sorted by the original task order within the layer.
+     */
+    private void reportLayerSummary(@NotNull List<TaskSpec> layerTasks, long elapsedMs) {
+        int layerCompleted = 0;
+        int layerSkipped = 0;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("=== Layer %d completed (%dms) ===%n",
+                currentLayerIndex + 1, elapsedMs));
+
+        for (TaskSpec task : layerTasks) {
+            String tid = task.getId() != null ? task.getId() : "?";
+            LayerTaskResult result = layerTaskResults.get(tid);
+            if (result != null) {
+                if (result.completed) {
+                    layerCompleted++;
+                    sb.append(String.format("  [OK]   %s: %s%n", tid,
+                            task.getTitle() != null ? task.getTitle() : ""));
+                } else if (result.skipped) {
+                    layerSkipped++;
+                    sb.append(String.format("  [SKIP] %s: %s (%s)%n", tid,
+                            task.getTitle() != null ? task.getTitle() : "",
+                            result.skipReason != null ? result.skipReason : "unknown"));
+                }
+            } else {
+                sb.append(String.format("  [???]  %s%n", tid));
+            }
+        }
+
+        sb.append(String.format("  Total: %d completed, %d skipped out of %d%n",
+                layerCompleted, layerSkipped, layerTasks.size()));
+
+        log.info(sb.toString());
+
+        // Print to CLI console if in CLI mode
+        if (cliMode) {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                try {
+                    CliConsoleManager.getInstance(project).printSystem(sb.toString());
+                } catch (Exception ignored) {
+                    // Console might not be available
+                }
+            });
+        }
+    }
+
     private void finish(@NotNull RunnerState finalState) {
         state = finalState;
         cancelGraceTimer();
+        cancelAllParallelGraceTimers();
         if (specChangeListener != null) {
             SpecService.getInstance(project).removeChangeListener(specChangeListener);
             specChangeListener = null;
@@ -475,21 +874,20 @@ public final class SpecTaskRunnerService implements Disposable {
                 finalState, completedCount, skippedCount, orderedTasks.size());
         // Reset to idle after notifying
         state = RunnerState.IDLE;
-        // Reset mode flag
+        // Reset mode flags
         cliMode = false;
+        executionMode = ExecutionMode.SEQUENTIAL;
+        layers = Collections.emptyList();
+        activeLayerTaskIds.clear();
+        layerTaskResults.clear();
+        parallelTaskDoneFlags.clear();
     }
 
     // ===== Conversation Management =====
 
-    /**
-     * Clear chat memory and file references to ensure each task starts
-     * with a fresh LLM context. The output panels are NOT cleared so the
-     * user can review all task responses from the run.
-     */
     private void startFreshConversation() {
         ChatMemoryService.getInstance().clearMemory(project);
         FileListManager.getInstance().clear(project);
-
         log.debug("Started fresh conversation for next task");
     }
 
@@ -527,9 +925,21 @@ public final class SpecTaskRunnerService implements Disposable {
         }
     }
 
+    private static ExecutionMode parseExecutionMode(@Nullable String mode) {
+        if (mode != null) {
+            try {
+                return ExecutionMode.valueOf(mode);
+            } catch (IllegalArgumentException ignored) {
+                // fall through
+            }
+        }
+        return ExecutionMode.SEQUENTIAL;
+    }
+
     @Override
     public void dispose() {
         cancelGraceTimer();
+        cancelAllParallelGraceTimers();
         if (specChangeListener != null) {
             SpecService.getInstance(project).removeChangeListener(specChangeListener);
             specChangeListener = null;
@@ -537,5 +947,6 @@ public final class SpecTaskRunnerService implements Disposable {
         listeners.clear();
         state = RunnerState.IDLE;
         cliMode = false;
+        executionMode = ExecutionMode.SEQUENTIAL;
     }
 }

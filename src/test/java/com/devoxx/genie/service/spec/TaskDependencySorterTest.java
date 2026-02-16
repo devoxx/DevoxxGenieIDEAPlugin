@@ -361,6 +361,131 @@ class TaskDependencySorterTest {
         assertThat(result).containsExactly(t2, t10);
     }
 
+    // ===== sortByLayers tests =====
+
+    @Test
+    void layersEmptyList() throws CircularDependencyException {
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(
+                Collections.emptyList(), Collections.emptyList());
+        assertThat(layers).isEmpty();
+    }
+
+    @Test
+    void layersSingleTask() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(List.of(t1), List.of(t1));
+        assertThat(layers).hasSize(1);
+        assertThat(layers.get(0)).containsExactly(t1);
+    }
+
+    @Test
+    void layersNoDependenciesAllInOneLayer() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second");
+        TaskSpec t3 = createTask("TASK-3", "Third");
+
+        List<TaskSpec> all = List.of(t3, t1, t2);
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        // All independent tasks should be in a single layer
+        assertThat(layers).hasSize(1);
+        assertThat(layers.get(0)).containsExactly(t1, t2, t3);
+    }
+
+    @Test
+    void layersLinearChainProducesOneLayerPerTask() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1");
+        TaskSpec t3 = createTask("TASK-3", "Third", "TASK-2");
+
+        List<TaskSpec> all = List.of(t1, t2, t3);
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        assertThat(layers).hasSize(3);
+        assertThat(layers.get(0)).containsExactly(t1);
+        assertThat(layers.get(1)).containsExactly(t2);
+        assertThat(layers.get(2)).containsExactly(t3);
+    }
+
+    @Test
+    void layersDiamondDependency() throws CircularDependencyException {
+        // Diamond: T1 -> T2, T1 -> T3, T2 -> T4, T3 -> T4
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1");
+        TaskSpec t3 = createTask("TASK-3", "Third", "TASK-1");
+        TaskSpec t4 = createTask("TASK-4", "Fourth", "TASK-2", "TASK-3");
+
+        List<TaskSpec> all = List.of(t1, t2, t3, t4);
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        assertThat(layers).hasSize(3);
+        assertThat(layers.get(0)).containsExactly(t1);
+        assertThat(layers.get(1)).containsExactlyInAnyOrder(t2, t3);
+        assertThat(layers.get(2)).containsExactly(t4);
+    }
+
+    @Test
+    void layersCircularDependencyThrows() {
+        TaskSpec t1 = createTask("TASK-1", "First", "TASK-2");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1");
+
+        List<TaskSpec> all = List.of(t1, t2);
+
+        assertThatThrownBy(() -> TaskDependencySorter.sortByLayers(all, all))
+                .isInstanceOf(CircularDependencyException.class);
+    }
+
+    @Test
+    void layersPartialSelectionWithExternalDoneDependency() throws CircularDependencyException {
+        // T1 is Done (not selected), T2 depends on T1 (selected), T3 is independent (selected)
+        TaskSpec t1 = createTask("TASK-1", "Done task");
+        t1.setStatus("Done");
+        TaskSpec t2 = createTask("TASK-2", "Depends on Done", "TASK-1");
+        TaskSpec t3 = createTask("TASK-3", "Independent");
+
+        List<TaskSpec> selected = List.of(t2, t3);
+        List<TaskSpec> allSpecs = List.of(t1, t2, t3);
+
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(selected, allSpecs);
+
+        // T2 and T3 are both in layer 0 since T1 is external/done
+        assertThat(layers).hasSize(1);
+        assertThat(layers.get(0)).containsExactlyInAnyOrder(t2, t3);
+    }
+
+    @Test
+    void layersWideGraphIndependentTasksGroupedTogether() throws CircularDependencyException {
+        // A root task with 4 independent children
+        TaskSpec root = createTask("ROOT", "Root");
+        TaskSpec a = createTask("A", "Task A", "ROOT");
+        TaskSpec b = createTask("B", "Task B", "ROOT");
+        TaskSpec c = createTask("C", "Task C", "ROOT");
+        TaskSpec d = createTask("D", "Task D", "ROOT");
+        TaskSpec finalTask = createTask("FINAL", "Final", "A", "B", "C", "D");
+
+        List<TaskSpec> all = List.of(root, a, b, c, d, finalTask);
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        assertThat(layers).hasSize(3);
+        assertThat(layers.get(0)).containsExactly(root);
+        assertThat(layers.get(1)).containsExactlyInAnyOrder(a, b, c, d);
+        assertThat(layers.get(2)).containsExactly(finalTask);
+    }
+
+    @Test
+    void layersWithCaseInsensitiveDeps() throws CircularDependencyException {
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second");
+        t2.setDependencies(new ArrayList<>(List.of("task-1"))); // lowercase
+
+        List<TaskSpec> all = List.of(t2, t1);
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        assertThat(layers).hasSize(2);
+        assertThat(layers.get(0)).containsExactly(t1);
+        assertThat(layers.get(1)).containsExactly(t2);
+    }
+
     // ===== Helpers =====
 
     private static TaskSpec createTask(String id, String title, String... dependencies) {

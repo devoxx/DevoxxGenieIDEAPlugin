@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 16 16" fill="none">
+  <!-- Parallel run icon (dark theme): two green play triangles side by side -->
+  <!-- Left play triangle -->
+  <path d="M2 3.5v9l4.5-4.5z" fill="#499C54" stroke="none"/>
+  <!-- Right play triangle -->
+  <path d="M8.5 3.5v9l4.5-4.5z" fill="#499C54" stroke="none"/>
+</svg>
