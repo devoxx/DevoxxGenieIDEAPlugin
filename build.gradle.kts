@@ -115,7 +115,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.28"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.29"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
@@ -132,11 +132,11 @@ dependencies {
     // JTokkit dependencies
     implementation("com.knuddels:jtokkit:1.1.0")
     implementation("org.commonmark:commonmark:0.27.1")
-    implementation("org.jsoup:jsoup:1.18.3")
+    implementation("org.jsoup:jsoup:1.22.1")
     implementation("io.netty:netty-all:4.2.10.Final")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.29")
+    implementation("ch.qos.logback:logback-classic:1.5.31")
 
     // GitIgnore Reader
     implementation("nl.basjes.gitignore:gitignore-reader:1.14.1")
@@ -144,13 +144,13 @@ dependencies {
     // TDG : Add other TDG dependencies
     implementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
     implementation("org.junit.jupiter:junit-jupiter-engine:6.1.0-M1")
-    implementation("org.junit.platform:junit-platform-launcher:6.0.2")
+    implementation("org.junit.platform:junit-platform-launcher:6.0.3")
 
     compileOnly("org.projectlombok:lombok:1.18.42")
     annotationProcessor("org.projectlombok:lombok:1.18.42")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:6.0.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:6.0.3")
     testImplementation("org.mockito:mockito-core:5.21.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
