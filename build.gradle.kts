@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "0.9.11"
+version = "0.9.12"
 
 repositories {
     mavenCentral()

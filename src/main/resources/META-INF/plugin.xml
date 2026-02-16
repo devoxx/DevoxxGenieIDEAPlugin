@@ -45,6 +45,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.12</h2>
+        <UL>
+            <LI>ACP Client rewrite: builder pattern, lifecycle management, configurable timeouts, and typed exception hierarchy</LI>
+            <LI>Attached files context now included in prompt history for ACP/CLI runners</LI>
+            <LI>ExternalPromptService: new project service for programmatic prompt submission</LI>
+            <LI>MCP services refactored for testability with dependency injection</LI>
+            <LI>JaCoCo code coverage plugin added with proper IntelliJ plugin classloading support</LI>
+            <LI>Comprehensive test coverage: 2100+ unit tests across services, UI, chatmodel factories, and utilities</LI>
+            <LI>Fix: resolve jar duplicate entry for kotlin_module</LI>
+            <LI>Fix: replace deprecated Query.forEach with findAll iteration</LI>
+        </UL>
         <h2>v0.9.11</h2>
         <UL>
             <LI>PSI Tools: 5 new IDE-powered code intelligence tools for agent mode — find_symbols, document_symbols, find_references, find_definition, find_implementations (#921)</LI>

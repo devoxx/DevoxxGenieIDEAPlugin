@@ -2,6 +2,24 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.12]
+
+### Added
+- ExternalPromptService: new project service for programmatic prompt submission from external components
+- JaCoCo code coverage plugin with proper IntelliJ plugin classloading support
+- Comprehensive test suite: 2100+ unit tests across services, UI, chatmodel factories, and utilities
+
+### Changed
+- ACP Client rewritten with builder pattern, lifecycle management, configurable timeouts, and typed exception hierarchy
+- Attached files context now included in prompt history for ACP/CLI runners
+- MCP services refactored for testability with dependency injection (MCPExecutionService, MCPListenerService, MCPRegistryService, ApprovalRequiredToolProvider, FilteredMcpToolProvider)
+- ACP protocol: JsonRpcMessage fields encapsulated with proper getters/setters, AgentRequestHandler uses typed exceptions
+- ActionButtonsPanelController: extract createDefaultLanguageModel into focused helper methods
+
+### Fixed
+- Resolve jar duplicate entry for `META-INF/DevoxxGenie.kotlin_module`
+- Replace deprecated `Query.forEach` with `findAll` iteration
+
 ## [0.9.11]
 
 ### Added
