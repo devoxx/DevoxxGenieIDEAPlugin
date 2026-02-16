@@ -422,7 +422,7 @@ public class AcpClient implements AutoCloseable {
             }
         }
         // Try one level deep (e.g. "toolCall": { "name": "..." })
-        var fields = node.fields();
+        var fields = node.properties();
         while (fields.hasNext()) {
             var entry = fields.next();
             if (entry.getValue().isObject()) {
@@ -462,7 +462,7 @@ public class AcpClient implements AutoCloseable {
 
     /** Helper method to search for text in nested nodes. */
     private static String findTextInNestedNode(JsonNode node, String... candidates) {
-        var fields = node.fields();
+        var fields = node.properties();
         while (fields.hasNext()) {
             var entry = fields.next();
             if (entry.getValue().isObject()) {
