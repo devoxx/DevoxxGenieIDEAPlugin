@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Spec-driven Development
 description: Use Spec-driven Development (SDD) with Backlog.md to define tasks as structured markdown specs, then let the LLM agent implement them autonomously within your IDE.
-keywords: [devoxxgenie, spec-driven development, sdd, backlog.md, task specs, agent mode, acceptance criteria, milestones]
+keywords: [devoxxgenie, spec-driven development, sdd, backlog.md, task specs, agent mode, acceptance criteria, milestones, parallel execution, cli runners]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -454,9 +454,69 @@ For running multiple tasks sequentially with dependency ordering, progress track
 
 Both the built-in LLM provider and external [CLI Runners](cli-runners.md) support batch execution.
 
+## Parallel Task Execution with CLI Runners
+
+When using [CLI Runners](cli-runners.md), you can run **independent tasks in parallel** — multiple CLI processes execute concurrently, each working on a separate task. This can dramatically speed up batch runs when your backlog contains tasks that don't depend on each other.
+
+![Parallel Run buttons in the Spec Browser toolbar](/img/RunTasksInParallel.png)
+
+### How It Works
+
+The runner uses the same dependency graph as sequential execution (topological sort via Kahn's algorithm), but instead of executing tasks one at a time, it groups them into **layers**:
+
+- **Layer 0**: Tasks with no dependencies — all run in parallel
+- **Layer 1**: Tasks whose dependencies are all in Layer 0 — run in parallel after Layer 0 completes
+- **Layer 2**: Tasks whose dependencies are all satisfied by Layers 0–1 — and so on
+
+Within each layer, all tasks are independent of each other and execute concurrently as separate CLI processes.
+
+```
+Example: Diamond dependency graph
+
+       TASK-1          ← Layer 0 (runs alone)
+      /      \
+  TASK-2    TASK-3      ← Layer 1 (run in parallel)
+      \      /
+       TASK-4           ← Layer 2 (runs after both complete)
+```
+
+### Running Tasks in Parallel
+
+The **DevoxxGenie Specs** toolbar provides two dedicated parallel run buttons (the green parallel-lines icons):
+
+- **Run Selected (Parallel)** — runs only the checked tasks in parallel
+- **Run All (Parallel)** — runs all "To Do" tasks in parallel
+
+These buttons are enabled when a CLI Runner is selected as the execution mode. Each CLI process streams its output into the **Run** tool window console, with output lines prefixed by the task ID (e.g., `[TASK-3] ...`) so you can distinguish which task produced which output.
+
+### Configuration
+
+Open **Settings** > **Tools** > **DevoxxGenie** > **Spec Driven Dev** to configure parallel execution:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Execution mode** | Choose between Sequential and Parallel | Sequential |
+| **Max concurrency** | Maximum number of CLI processes running at the same time (1–8) | 4 |
+
+The max concurrency setting caps how many tasks within a single layer can run simultaneously. If a layer contains more tasks than the concurrency limit, excess tasks wait for a slot to open up.
+
+:::note
+Parallel execution is designed for **CLI Runners** (Claude Code, Copilot, Codex, Gemini, Kimi). When using the built-in LLM provider, the message bus is single-threaded so tasks still execute sequentially regardless of the execution mode setting.
+:::
+
+### When to Use Parallel Execution
+
+Parallel execution works best when:
+
+- You have **multiple independent tasks** that don't depend on each other's output
+- You're using **CLI Runners** — each task gets its own CLI process
+- Your tasks are **self-contained** — they modify different files or different parts of the codebase
+
+Be cautious with parallel execution when tasks might modify the same files, as concurrent edits can lead to merge conflicts. Use `dependencies` in your task frontmatter to enforce ordering when tasks touch overlapping code.
+
 ## CLI Runners
 
-Instead of using the built-in LLM provider, you can execute spec tasks via **external CLI tools** — such as Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, or Google Gemini CLI. See the dedicated [CLI Runners](cli-runners.md) page for setup instructions, supported tools, and configuration details.
+Instead of using the built-in LLM provider, you can execute spec tasks via **external CLI tools** — such as Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, or Kimi CLI. See the dedicated [CLI Runners](cli-runners.md) page for setup instructions, supported tools, and configuration details.
 
 ## Tips and Best Practices
 
