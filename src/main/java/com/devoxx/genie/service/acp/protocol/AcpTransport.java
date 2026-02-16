@@ -49,7 +49,7 @@ public class AcpTransport implements AutoCloseable {
 
     /** Maximum time in seconds to wait for the agent process to shut down gracefully. */
     public static final long SHUTDOWN_WAIT_SECONDS = 5;
-    /
+
     @Getter
     private Process process;
     private BufferedWriter writer;
@@ -144,7 +144,7 @@ public class AcpTransport implements AutoCloseable {
     }
 
     private void completePendingRequest(JsonRpcMessage msg) {
-        CompletableFuture<JsonRpcMessage> future = pendingRequests.remove(msg.id);
+        CompletableFuture<JsonRpcMessage> future = pendingRequests.remove(msg.getId());
         if (future != null) {
             future.complete(msg);
         }

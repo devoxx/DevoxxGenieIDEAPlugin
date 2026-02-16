@@ -18,33 +18,23 @@ import lombok.Setter;
  * <p>Use the static factory methods ({@link #request}, {@link #response}, {@link #errorResponse})
  * to construct outgoing messages. Incoming messages are deserialized by Jackson and can be
  * classified using {@link #isRequest()}, {@link #isNotification()}, and {@link #isResponse()}.
- *
- * <p>The JSON-RPC version is maintained as a private static final constant {@link #JSONRPC}.
  */
+@Getter
+@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonRpcMessage {
-    private static final String JSONRPC = "2.0";
+    private static final String JSON_RPC_VERSION = "2.0";
 
-    @Setter
-    @Getter
-    public Integer id;
-
-    public String jsonrpc;
-    public String method;
-    public JsonNode params;
-    public JsonNode result;
-    public JsonRpcError error;
+    private Integer id;
+    private String jsonrpc;
+    private String method;
+    private JsonNode params;
+    private JsonNode result;
+    private JsonRpcError error;
 
     /** Default constructor for Jackson deserialization. */
-    public JsonRpcMessage() {}
-
-    /**
-     * Returns the JSON-RPC version constant.
-     *
-     * @return the JSON-RPC version string (always "2.0")
-     */
-    public static String getJsonrpc() {
-        return JSONRPC;
+    public JsonRpcMessage() {
+        // Required by Jackson for deserialization
     }
 
     /**
@@ -84,8 +74,8 @@ public class JsonRpcMessage {
      */
     public static JsonRpcMessage request(int id, String method, Object params) {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.jsonrpc = JSONRPC;
-        msg.setId(id);
+        msg.jsonrpc = JSON_RPC_VERSION;
+        msg.id = id;
         msg.method = method;
         if (params != null) {
             msg.params = AcpTransport.MAPPER.valueToTree(params);
@@ -102,8 +92,8 @@ public class JsonRpcMessage {
      */
     public static JsonRpcMessage response(int id, Object resultObj) {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.jsonrpc = JSONRPC;
-        msg.setId(id);
+        msg.jsonrpc = JSON_RPC_VERSION;
+        msg.id = id;
         msg.result = AcpTransport.MAPPER.valueToTree(resultObj);
         return msg;
     }
@@ -118,20 +108,24 @@ public class JsonRpcMessage {
      */
     public static JsonRpcMessage errorResponse(int id, int code, String message) {
         JsonRpcMessage msg = new JsonRpcMessage();
-        msg.jsonrpc = JSONRPC;
-        msg.setId(id);
+        msg.jsonrpc = JSON_RPC_VERSION;
+        msg.id = id;
         msg.error = new JsonRpcError(code, message);
         return msg;
     }
 
     /** Represents the error object in a JSON-RPC error response. */
+    @Getter
+    @Setter
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class JsonRpcError {
-        public int code;
-        public String message;
+        private int code;
+        private String message;
 
         /** Default constructor for Jackson deserialization. */
-        public JsonRpcError() {}
+        public JsonRpcError() {
+            // Required by Jackson for deserialization
+        }
 
         /**
          * Creates an error with the given code and message.

@@ -221,13 +221,13 @@ public class AcpClient implements AutoCloseable {
                 PROTOCOL_VERSION, CLIENT_NAME, CLIENT_VERSION, requestTimeoutSeconds);
         try {
             JsonRpcMessage response = transport.sendRequest("initialize", params, requestTimeoutSeconds);
-            if (response.error != null) {
+            if (response.getError() != null) {
                 log.warn("[ACP] initialize returned error (code={}, message={})",
-                        response.error.code, response.error.message);
-                throw new AcpConnectionException("Initialize failed: " + response.error.message);
+                        response.getError().getCode(), response.getError().getMessage());
+                throw new AcpConnectionException("Initialize failed: " + response.getError().getMessage());
             }
 
-            InitializeResult result = AcpTransport.MAPPER.treeToValue(response.result, InitializeResult.class);
+            InitializeResult result = AcpTransport.MAPPER.treeToValue(response.getResult(), InitializeResult.class);
             initialized = true;
             log.info("[ACP] Connected to agent (protocolVersion={}, timeout={}s)",
                     result.protocolVersion, requestTimeoutSeconds);
@@ -273,13 +273,13 @@ public class AcpClient implements AutoCloseable {
         log.debug("[ACP] Creating session (cwd={}, timeout={}s)", cwd, requestTimeoutSeconds);
         try {
             JsonRpcMessage response = transport.sendRequest("session/new", params, requestTimeoutSeconds);
-            if (response.error != null) {
+            if (response.getError() != null) {
                 log.warn("[ACP] session/new returned error (code={}, message={})",
-                        response.error.code, response.error.message);
-                throw new AcpSessionException("session/new failed: " + response.error.message);
+                        response.getError().getCode(), response.getError().getMessage());
+                throw new AcpSessionException("session/new failed: " + response.getError().getMessage());
             }
 
-            SessionNewResult result = AcpTransport.MAPPER.treeToValue(response.result, SessionNewResult.class);
+            SessionNewResult result = AcpTransport.MAPPER.treeToValue(response.getResult(), SessionNewResult.class);
             this.sessionId = result.sessionId;
             log.info("[ACP] Session created (sessionId={}, cwd={})", sessionId, cwd);
         } catch (AcpSessionException e) {
@@ -317,13 +317,13 @@ public class AcpClient implements AutoCloseable {
                 sessionId, safeLength(text), requestTimeoutSeconds);
         try {
             JsonRpcMessage response = transport.sendRequest("session/prompt", params, requestTimeoutSeconds);
-            if (response.error != null) {
+            if (response.getError() != null) {
                 log.warn("[ACP] session/prompt returned error (sessionId={}, code={}, message={})",
-                        sessionId, response.error.code, response.error.message);
-                throw new AcpSessionException("session/prompt failed: " + response.error.message);
+                        sessionId, response.getError().getCode(), response.getError().getMessage());
+                throw new AcpSessionException("session/prompt failed: " + response.getError().getMessage());
             }
             log.info("[ACP] Prompt completed (sessionId={}, result={})", sessionId,
-                    response.result != null ? response.result.toString() : "null");
+                    response.getResult() != null ? response.getResult().toString() : "null");
         } catch (AcpSessionException e) {
             throw e;
         } catch (InterruptedException e) {
@@ -342,12 +342,12 @@ public class AcpClient implements AutoCloseable {
     }
 
     private void handleNotification(JsonRpcMessage msg) {
-        if (!"session/update".equals(msg.method)) {
-            log.debug("[ACP] Notification method: {}", msg.method);
+        if (!"session/update".equals(msg.getMethod())) {
+            log.debug("[ACP] Notification method: {}", msg.getMethod());
             return;
         }
         try {
-            SessionUpdateParams updateParams = AcpTransport.MAPPER.treeToValue(msg.params, SessionUpdateParams.class);
+            SessionUpdateParams updateParams = AcpTransport.MAPPER.treeToValue(msg.getParams(), SessionUpdateParams.class);
             if (updateParams.update == null) {
                 log.debug("[ACP] session/update without payload");
                 return;
@@ -518,7 +518,7 @@ public class AcpClient implements AutoCloseable {
         log.debug("[ACP] Sending ping (timeout={}s)", requestTimeoutSeconds);
         try {
             JsonRpcMessage response = transport.sendRequest("ping", null, requestTimeoutSeconds);
-            log.debug("[ACP] Ping response received (hasError={})", response != null && response.error != null);
+            log.debug("[ACP] Ping response received (hasError={})", response != null && response.getError() != null);
             return response != null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

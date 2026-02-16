@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Prompt execution strategy for ACP Runners.
@@ -28,7 +29,7 @@ import java.io.File;
 @Slf4j
 public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
 
-    private volatile AcpClient activeClient;
+    private AtomicReference<AcpClient> activeClient = new AtomicReference<>();
 
     public AcpPromptStrategy(@NotNull Project project) {
         super(project);
@@ -99,7 +100,7 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
                         });
                     })
                     .build();
-            activeClient = client;
+            activeClient.set(client);
 
             String basePath = project.getBasePath();
             File cwd = basePath != null ? new File(basePath) : null;
@@ -117,7 +118,7 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
             consoleManager.printSystem("[ACP] Sending prompt...");
             client.sendPrompt(prompt);
 
-            activeClient = null;
+            activeClient.set(null);
             client.close();
 
             long elapsed = System.currentTimeMillis() - startTime;
@@ -159,11 +160,10 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
     }
 
     private void closeClient() {
-        AcpClient client = activeClient;
+        AcpClient client = activeClient.getAndSet(null);
         if (client != null) {
             log.info("Closing ACP client");
             client.close();
-            activeClient = null;
             ApplicationManager.getApplication().invokeLater(() ->
                     CliConsoleManager.getInstance(project).printSystem("\n=== ACP session cancelled ===\n"));
         }
