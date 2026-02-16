@@ -34,8 +34,7 @@ tasks.jacocoTestReport {
 
     classDirectories.setFrom(
         files(
-            fileTree("build/classes/java/main"),
-            fileTree("build/classes/kotlin/main")
+            fileTree("build/instrumented/instrumentCode")
         )
     )
 
@@ -206,6 +205,13 @@ tasks {
         maxHeapSize = "1g"
 
         forkEvery = 1
+
+        // Configure JaCoCo agent to include plugin classes loaded from sandbox JARs
+        extensions.configure<JacocoTaskExtension> {
+            includes = listOf("com.devoxx.genie.*")
+            isIncludeNoLocationClasses = true
+            excludes = listOf("jdk.internal.*")
+        }
 
         reports {
             junitXml.required.set(true)
