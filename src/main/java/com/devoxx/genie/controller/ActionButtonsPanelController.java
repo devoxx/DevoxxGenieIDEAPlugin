@@ -140,58 +140,95 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
      */
     private LanguageModel createDefaultLanguageModel(@NotNull DevoxxGenieSettingsService stateService) {
         ModelProvider selectedProvider = (ModelProvider) modelProviderComboBox.getSelectedItem();
-        if (selectedProvider != null && selectedProvider.equals(CLIRunners)) {
-            String cliToolName = DevoxxGenieStateService.getInstance().getSpecSelectedCliTool();
-            return LanguageModel.builder()
-                    .provider(CLIRunners)
-                    .modelName(cliToolName != null ? cliToolName : "")
-                    .displayName(cliToolName != null ? cliToolName : "CLI Runner")
-                    .apiKeyUsed(false)
-                    .inputCost(0)
-                    .outputCost(0)
-                    .inputMaxTokens(0)
-                    .build();
-        } else if (selectedProvider != null && selectedProvider.equals(ACPRunners)) {
-            return LanguageModel.builder()
-                    .provider(ACPRunners)
-                    .modelName("")
-                    .displayName("ACP Runner")
-                    .apiKeyUsed(false)
-                    .inputCost(0)
-                    .outputCost(0)
-                    .inputMaxTokens(0)
-                    .build();
-        } else if (selectedProvider != null &&
-                (selectedProvider.equals(LMStudio) ||
-                 selectedProvider.equals(GPT4All) ||
-                 selectedProvider.equals(LLaMA))) {
-            return LanguageModel.builder()
-                    .provider(selectedProvider)
-                    .apiKeyUsed(false)
-                    .inputCost(0)
-                    .outputCost(0)
-                    .inputMaxTokens(4096)
-                    .build();
-        } else if (selectedProvider != null && selectedProvider.getName().equals("CustomOpenAI")) {
-            return LanguageModel.builder()
-                    .provider(selectedProvider)
-                    .apiKeyUsed(true)
-                    .modelName(!stateService.getCustomOpenAIModelName().isBlank() ? stateService.getCustomOpenAIModelName() : "na")
-                    .inputCost(0)
-                    .outputCost(0)
-                    .inputMaxTokens(4096)
-                    .build();
-        } else {
-            String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
-            return LanguageModel.builder()
-                    .provider(selectedProvider != null ? selectedProvider : OpenAI)
-                    .modelName(modelName)
-                    .apiKeyUsed(false)
-                    .inputCost(0)
-                    .outputCost(0)
-                    .inputMaxTokens(128_000)
-                    .build();
+        if (selectedProvider == null) {
+            return buildFallbackModel(stateService);
         }
+        if (selectedProvider.equals(CLIRunners)) {
+            return buildCliRunnerModel();
+        }
+        if (selectedProvider.equals(ACPRunners)) {
+            return buildAcpRunnerModel();
+        }
+        if (selectedProvider.equals(LMStudio) || selectedProvider.equals(GPT4All) || selectedProvider.equals(LLaMA)) {
+            return buildLocalProviderModel(selectedProvider);
+        }
+        if (selectedProvider.getName().equals("CustomOpenAI")) {
+            return buildCustomOpenAIModel(selectedProvider, stateService);
+        }
+        return buildDefaultModel(selectedProvider, stateService);
+    }
+
+    private LanguageModel buildCliRunnerModel() {
+        String cliToolName = DevoxxGenieStateService.getInstance().getSpecSelectedCliTool();
+        return LanguageModel.builder()
+                .provider(CLIRunners)
+                .modelName(cliToolName != null ? cliToolName : "")
+                .displayName(cliToolName != null ? cliToolName : "CLI Runner")
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(0)
+                .build();
+    }
+
+    private static LanguageModel buildAcpRunnerModel() {
+        return LanguageModel.builder()
+                .provider(ACPRunners)
+                .modelName("")
+                .displayName("ACP Runner")
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(0)
+                .build();
+    }
+
+    private static LanguageModel buildLocalProviderModel(ModelProvider provider) {
+        return LanguageModel.builder()
+                .provider(provider)
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(4096)
+                .build();
+    }
+
+    private static LanguageModel buildCustomOpenAIModel(ModelProvider provider,
+                                                        @NotNull DevoxxGenieSettingsService stateService) {
+        String customModelName = stateService.getCustomOpenAIModelName();
+        return LanguageModel.builder()
+                .provider(provider)
+                .apiKeyUsed(true)
+                .modelName(!customModelName.isBlank() ? customModelName : "na")
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(4096)
+                .build();
+    }
+
+    private LanguageModel buildDefaultModel(ModelProvider provider,
+                                            @NotNull DevoxxGenieSettingsService stateService) {
+        String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
+        return LanguageModel.builder()
+                .provider(provider)
+                .modelName(modelName)
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(128_000)
+                .build();
+    }
+
+    private LanguageModel buildFallbackModel(@NotNull DevoxxGenieSettingsService stateService) {
+        String modelName = stateService.getSelectedLanguageModel(project.getLocationHash());
+        return LanguageModel.builder()
+                .provider(OpenAI)
+                .modelName(modelName)
+                .apiKeyUsed(false)
+                .inputCost(0)
+                .outputCost(0)
+                .inputMaxTokens(128_000)
+                .build();
     }
 
     /**

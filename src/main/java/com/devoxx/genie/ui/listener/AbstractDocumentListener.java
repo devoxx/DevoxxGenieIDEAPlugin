@@ -6,13 +6,16 @@ import javax.swing.event.DocumentListener;
 public class AbstractDocumentListener implements DocumentListener {
     @Override
     public void insertUpdate(DocumentEvent e) {
+        // Abstract method - to be implemented by concrete subclasses
     }
 
     @Override
     public void removeUpdate(DocumentEvent e) {
+        // Abstract method - to be implemented by concrete subclasses
     }
 
     @Override
     public void changedUpdate(DocumentEvent e) {
+        // Abstract method - to be implemented by concrete subclasses
     }
 }

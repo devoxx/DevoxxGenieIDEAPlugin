@@ -145,10 +145,10 @@ public class ActionButtonsPanel extends JPanel
     }
 
     private @NotNull TokenUsageBar createTokenUsageBar() {
-        TokenUsageBar tokenUsageBar = new TokenUsageBar();
-        tokenUsageBar.setVisible(false);
-        tokenUsageBar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
-        return tokenUsageBar;
+        TokenUsageBar tokenUsageBarInstance = new TokenUsageBar();
+        tokenUsageBarInstance.setVisible(false);
+        tokenUsageBarInstance.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
+        return tokenUsageBarInstance;
     }
 
     private @NotNull JPanel createCalcProjectPanel() {
@@ -388,7 +388,7 @@ public class ActionButtonsPanel extends JPanel
     
     /**
      * Find the first focusable component (text field) in the panel
-     * 
+     *
      * @param panel the panel to search in
      * @return the first focusable text field found, or null if none found
      */
@@ -397,8 +397,8 @@ public class ActionButtonsPanel extends JPanel
             if (component instanceof JTextField && component.isFocusable()) {
                 return component;
             }
-            if (component instanceof Container) {
-                Component found = findFocusableComponent((Container) component);
+            if (component instanceof Container container) {
+                Component found = findFocusableComponent(container);
                 if (found != null) {
                     return found;
                 }

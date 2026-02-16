@@ -89,10 +89,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         // Create a self-managed prompt task
         PromptTask<PromptResult> resultTask = new PromptTask<>(project);
         resultTask.putUserData(PromptTask.CONTEXT_KEY, context);
-        
-        // Add user prompt to UI
-        // panel.addUserPrompt(context);
-        
+
         // Execute strategy-specific logic
         try {
             executeStrategySpecific(context, panel, resultTask);
@@ -263,8 +260,6 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                                      @NotNull PromptOutputPanel panel) {
         task.whenComplete((result, error) -> {
             if (task.isCancelled()) {
-                // TODO Check if we can actually remove context from memory?!
-                // panel.removeLastUserPrompt(context);
                 chatMemoryManager.removeLastUserMessage(context);
                 log.debug("Task for context {} was cancelled, cleaned up UI and memory", context.getId());
             } else if (error != null) {

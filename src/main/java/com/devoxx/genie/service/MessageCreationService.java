@@ -43,11 +43,11 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 public class MessageCreationService {
 
     public static final String SEMANTIC_RESULT = """
-            File: %s
-            Score: %.2f
-            ```java
-            %s
-            ```
+            File: %s%n
+            Score: %.2f%n
+            ```java%n
+            %s%n
+            ```%n
             """;
 
     @NotNull
