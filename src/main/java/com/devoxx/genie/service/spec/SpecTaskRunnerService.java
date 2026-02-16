@@ -131,6 +131,16 @@ public final class SpecTaskRunnerService implements Disposable {
      * Sort and execute the given tasks, using the configured execution mode.
      */
     public void runTasks(@NotNull List<TaskSpec> tasks) {
+        runTasks(tasks, null);
+    }
+
+    /**
+     * Sort and execute the given tasks, optionally overriding the execution mode.
+     *
+     * @param tasks         tasks to execute
+     * @param modeOverride  if non-null, overrides the configured execution mode
+     */
+    public void runTasks(@NotNull List<TaskSpec> tasks, @Nullable ExecutionMode modeOverride) {
         if (state == RunnerState.RUNNING_TASK || state == RunnerState.WAITING_FOR_COMPLETION) {
             log.warn("Runner is already active, ignoring runTasks call");
             return;
@@ -147,10 +157,14 @@ public final class SpecTaskRunnerService implements Disposable {
         SpecService specService = SpecService.getInstance(project);
         List<TaskSpec> allSpecs = specService.getAllSpecs();
 
-        // Determine execution mode from settings
+        // Determine execution mode (override takes precedence over settings)
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        String modeSetting = stateService.getSpecExecutionMode();
-        executionMode = parseExecutionMode(modeSetting);
+        if (modeOverride != null) {
+            executionMode = modeOverride;
+        } else {
+            String modeSetting = stateService.getSpecExecutionMode();
+            executionMode = parseExecutionMode(modeSetting);
+        }
         maxConcurrency = stateService.getSpecMaxConcurrency() != null
                 ? Math.max(1, Math.min(8, stateService.getSpecMaxConcurrency()))
                 : 4;
@@ -224,6 +238,14 @@ public final class SpecTaskRunnerService implements Disposable {
     public void runAllTodoTasks() {
         List<TaskSpec> todoTasks = SpecService.getInstance(project).getSpecsByStatus("To Do");
         runTasks(todoTasks);
+    }
+
+    /**
+     * Convenience: run all To Do tasks in parallel mode.
+     */
+    public void runAllTodoTasksParallel() {
+        List<TaskSpec> todoTasks = SpecService.getInstance(project).getSpecsByStatus("To Do");
+        runTasks(todoTasks, ExecutionMode.PARALLEL);
     }
 
     /**
