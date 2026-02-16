@@ -193,10 +193,10 @@ class AcpPromptStrategyTest {
             return null;
         }).when(mockApp).invokeLater(any(Runnable.class));
 
-        // Set the activeClient field via reflection
+        // Set the activeClient AtomicReference via reflection
         java.lang.reflect.Field clientField = AcpPromptStrategy.class.getDeclaredField("activeClient");
         clientField.setAccessible(true);
-        clientField.set(strategy, mockClient);
+        ((java.util.concurrent.atomic.AtomicReference<AcpClient>) clientField.get(strategy)).set(mockClient);
 
         strategy.cancel();
 
