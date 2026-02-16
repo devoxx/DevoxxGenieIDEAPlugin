@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.window;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.ExternalPromptService;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
@@ -96,6 +97,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         llmProviderPanel = new LlmProviderPanel(project);
         promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
         submitPanel = new SubmitPanel(this);
+
+        ExternalPromptService.getInstance(project).setPromptInputArea(submitPanel.getPromptInputArea());
     }
 
     private void setupLayout() {
