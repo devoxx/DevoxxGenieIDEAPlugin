@@ -3,6 +3,7 @@ package com.devoxx.genie.service.mcp;
 import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolExecutor;
@@ -14,10 +15,24 @@ public class ApprovalRequiredToolProvider implements ToolProvider {
 
     private final ToolProvider delegate;
     private final Project project;
+    private final ApprovalChecker approvalChecker;
+
+    /**
+     * Functional interface for checking tool execution approval.
+     */
+    @FunctionalInterface
+    interface ApprovalChecker {
+        boolean requestApproval(@Nullable Project project, @NotNull String toolName, @NotNull String arguments);
+    }
 
     public ApprovalRequiredToolProvider(ToolProvider delegate, Project project) {
+        this(delegate, project, MCPApprovalService::requestApproval);
+    }
+
+    ApprovalRequiredToolProvider(ToolProvider delegate, @Nullable Project project, ApprovalChecker approvalChecker) {
         this.delegate = delegate;
         this.project = project;
+        this.approvalChecker = approvalChecker;
     }
 
     @Override
@@ -32,7 +47,7 @@ public class ApprovalRequiredToolProvider implements ToolProvider {
 
             // Wrap the original executor
             ToolExecutor approvalExecutor = (toolExecutionRequest, memoryId) -> {
-                boolean approved = MCPApprovalService.requestApproval(
+                boolean approved = approvalChecker.requestApproval(
                         project,
                         toolExecutionRequest.name(),
                         toolExecutionRequest.arguments()

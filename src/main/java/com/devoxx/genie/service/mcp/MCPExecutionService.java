@@ -34,13 +34,41 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MCPExecutionService implements Disposable {
 
+    /**
+     * Strategy for creating MCP clients from server configurations.
+     * Package-private for testability.
+     */
+    @FunctionalInterface
+    interface McpClientCreator {
+        @Nullable McpClient create(@NotNull MCPServer mcpServer);
+    }
+
     // Cache of MCP clients keyed by server name
     private final Map<String, McpClient> clientCache = new ConcurrentHashMap<>();
+    private final McpClientCreator clientCreator;
+
+    public MCPExecutionService() {
+        this.clientCreator = MCPExecutionService::createNewClient;
+    }
+
+    /**
+     * Package-private constructor for testing with an injectable client creator.
+     */
+    MCPExecutionService(McpClientCreator clientCreator) {
+        this.clientCreator = clientCreator;
+    }
 
     public static MCPExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(MCPExecutionService.class);
     }
-    
+
+    /**
+     * Returns the number of cached clients. Package-private for testing.
+     */
+    int getCacheSize() {
+        return clientCache.size();
+    }
+
     /**
      * Clears the client cache, forcing new client creation on next request
      */
@@ -60,7 +88,7 @@ public class MCPExecutionService implements Disposable {
 
     /**
      * Safely close an MCP client, handling exceptions
-     * 
+     *
      * @param client The client to close
      */
     private void closeClientSafely(McpClient client) {
@@ -72,7 +100,7 @@ public class MCPExecutionService implements Disposable {
             log.warn("Error closing MCP client", e);
         }
     }
-    
+
     /**
      * Cleanup resources when the component is disposed
      */
@@ -81,7 +109,7 @@ public class MCPExecutionService implements Disposable {
         log.info("Disposing MCPExecutionService, closing all clients");
         clearClientCache();
     }
-    
+
     /**
      * Creates tool providers for all configured MCP servers, wrapped with approval UI.
      * Use this for standalone MCP (non-agent) callers.
@@ -142,13 +170,14 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
-     * Create an MCP client from an MCPServer configuration
-     * 
+     * Create an MCP client from an MCPServer configuration, using the cache.
+     * Package-private for testing.
+     *
      * @param mcpServer The MCP server configuration
      * @return An initialized MCP client or null if creation fails
      */
     @Nullable
-    private McpClient createMcpClient(@NotNull MCPServer mcpServer) {
+    McpClient createMcpClient(@NotNull MCPServer mcpServer) {
         String serverName = mcpServer.getName();
 
         // Check if we already have a client for this server
@@ -160,29 +189,7 @@ public class MCPExecutionService implements Disposable {
         try {
             MCPService.logDebug("Creating new MCP client for: " + serverName);
 
-            // Create client based on transport type
-            McpClient client;
-
-            if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
-                // Create HTTP SSE client
-                client = initHttpSseClient(mcpServer);
-            } else if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP) {
-                // Create Streamable HTTP client
-                client = initStreamableHttpClient(mcpServer);
-            } else {
-                // Default to STDIO transport
-                // Handle bash commands differently based on working implementation
-                List<String> commandList = new ArrayList<>();
-                commandList.add(mcpServer.getCommand());
-                if (mcpServer.getArgs() != null) {
-                    commandList.addAll(mcpServer.getArgs());
-                }
-
-                MCPService.logDebug("Command list: " + commandList);
-
-                // Create the client using the helper method
-                client = initStdioClient(commandList, mcpServer.getEnv());
-            }
+            McpClient client = clientCreator.create(mcpServer);
 
             // Cache the client if not null
             if (client != null) {
@@ -197,13 +204,36 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
-     * Helper method to initialize an HTTP SSE client with error handling
-     * 
+     * Creates a new MCP client based on the server's transport type.
+     * This is the default implementation used by the production constructor.
+     * Package-private for testing.
+     */
+    @Nullable
+    static McpClient createNewClient(@NotNull MCPServer mcpServer) {
+        if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
+            return initHttpSseClient(mcpServer);
+        } else if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP) {
+            return initStreamableHttpClient(mcpServer);
+        } else {
+            List<String> commandList = new ArrayList<>();
+            commandList.add(mcpServer.getCommand());
+            if (mcpServer.getArgs() != null) {
+                commandList.addAll(mcpServer.getArgs());
+            }
+            MCPService.logDebug("Command list: " + commandList);
+            return initStdioClient(commandList, mcpServer.getEnv());
+        }
+    }
+
+    /**
+     * Helper method to initialize an HTTP SSE client with error handling.
+     * Package-private for testing.
+     *
      * @param mcpServer The MCP server configuration
      * @return An initialized MCP client or null if creation fails
      */
     @Nullable
-    private static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
+    static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
         try {
             String sseUrl = mcpServer.getUrl();
             if (sseUrl == null || sseUrl.trim().isEmpty()) {
@@ -211,7 +241,7 @@ public class MCPExecutionService implements Disposable {
                 MCPService.logDebug("SSE URL cannot be empty for HTTP SSE transport");
                 return null;
             }
-            
+
             MCPService.logDebug("Initializing streamable HTTP transport for HTTP_SSE config with URL: " + sseUrl);
 
             // Use Streamable HTTP transport as replacement for legacy HTTP/SSE transport
@@ -245,13 +275,14 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
-     * Helper method to initialize a streamable HTTP client with error handling
+     * Helper method to initialize a streamable HTTP client with error handling.
+     * Package-private for testing.
      *
      * @param mcpServer The MCP server configuration
      * @return An initialized MCP client or null if creation fails
      */
     @Nullable
-    private static McpClient initStreamableHttpClient(@NotNull MCPServer mcpServer) {
+    static McpClient initStreamableHttpClient(@NotNull MCPServer mcpServer) {
         try {
             String url = mcpServer.getUrl();
             if (url == null || url.trim().isEmpty()) {
@@ -291,10 +322,10 @@ public class MCPExecutionService implements Disposable {
             return null;
         }
     }
-    
+
     /**
      * Helper method to initialize a stdio client with error handling
-     * 
+     *
      * @param command The command list to use
      * @param customEnv Custom environment variables to add
      * @return An initialized MCP client or null if creation fails
@@ -352,8 +383,10 @@ public class MCPExecutionService implements Disposable {
      * <p>
      * Lines prefixed with {@code "> "} are outgoing requests (blue in the panel),
      * lines prefixed with {@code "< "} are incoming responses (green in the panel).
+     * <p>
+     * Package-private for testing.
      */
-    private static Consumer<String> createTrafficConsumer() {
+    static Consumer<String> createTrafficConsumer() {
         return line -> {
             if (!MCPService.isDebugLogsEnabled()) {
                 return;
@@ -373,13 +406,22 @@ public class MCPExecutionService implements Disposable {
     }
 
     public static @NotNull List<String> createMCPCommand(@NotNull List<String> command) {
+        if (command.isEmpty()) {
+            throw new IllegalArgumentException("Command list must not be empty");
+        }
+
+        // Filter out null arguments
+        List<String> filteredCommand = command.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
         List<String> mcpCommand = new ArrayList<>();
-        
+
         if (com.intellij.openapi.util.SystemInfo.isWindows) {
             // Windows platform handling
             mcpCommand.add("cmd.exe");
             mcpCommand.add("/c");
-            String cmdString = command.stream()
+            String cmdString = filteredCommand.stream()
                     .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
                     .collect(Collectors.joining(" "));
             mcpCommand.add(cmdString);
@@ -387,12 +429,12 @@ public class MCPExecutionService implements Disposable {
             // Unix/macOS platform handling
             mcpCommand.add("/bin/bash");
             mcpCommand.add("-c");
-            String cmdString = command.stream()
+            String cmdString = filteredCommand.stream()
                     .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
                     .collect(Collectors.joining(" "));
             mcpCommand.add(cmdString);
         }
-        
+
         log.debug("Platform-specific command: {}", mcpCommand);
         return mcpCommand;
     }
