@@ -28,10 +28,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChatModelFactoryProvider {
+public final class ChatModelFactoryProvider {
 
     private ChatModelFactoryProvider() {
-        throw new IllegalStateException("Utility class");
     }
 
     private static final Map<String, ChatModelFactory> factoryCache = new ConcurrentHashMap<>();
