@@ -131,7 +131,7 @@ public class SpecStatisticsPanel extends JPanel {
         contentPanel.add(priorityLabel);
 
         // Row 4: Acceptance Criteria + DoD aggregate progress (only if any exist)
-        int totalAc = 0, checkedAc = 0, totalDod = 0, checkedDod = 0;
+        long totalAc = 0, checkedAc = 0, totalDod = 0, checkedDod = 0;
         for (TaskSpec spec : specs) {
             if (spec.getAcceptanceCriteria() != null) {
                 totalAc += spec.getAcceptanceCriteria().size();
