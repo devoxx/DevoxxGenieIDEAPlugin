@@ -115,7 +115,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.29"))
+    implementation(platform("software.amazon.awssdk:bom:2.41.30"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
@@ -136,7 +136,7 @@ dependencies {
     implementation("io.netty:netty-all:4.2.10.Final")
 
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.31")
+    implementation("ch.qos.logback:logback-classic:1.5.32")
 
     // GitIgnore Reader
     implementation("nl.basjes.gitignore:gitignore-reader:1.14.1")
