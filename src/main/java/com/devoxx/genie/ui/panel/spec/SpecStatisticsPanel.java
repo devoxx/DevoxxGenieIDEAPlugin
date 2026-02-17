@@ -63,9 +63,16 @@ public class SpecStatisticsPanel extends JPanel {
      * Update the statistics display with the current list of tasks.
      */
     public void update(@NotNull List<TaskSpec> specs) {
+        update(specs, 0);
+    }
+
+    /**
+     * Update the statistics display with the current list of tasks and archived task count.
+     */
+    public void update(@NotNull List<TaskSpec> specs, int archivedCount) {
         contentPanel.removeAll();
 
-        if (specs.isEmpty()) {
+        if (specs.isEmpty() && archivedCount == 0) {
             JBLabel emptyLabel = new JBLabel("No tasks found");
             emptyLabel.setForeground(JBColor.GRAY);
             emptyLabel.setFont(emptyLabel.getFont().deriveFont(emptyLabel.getFont().getSize() - 1f));
@@ -85,13 +92,15 @@ public class SpecStatisticsPanel extends JPanel {
         int todoCount = statusCounts.getOrDefault("To Do", 0);
         int otherCount = total - doneCount - inProgressCount - todoCount;
 
-        // Row 1: Total + completion percentage
+        // Row 1: Total + completion percentage + archived
         double completionPct = total > 0 ? (doneCount * 100.0) / total : 0;
-        String summaryText = String.format("%d tasks  |  %d%% complete  (%d done, %d in progress, %d to do%s)",
+        String archivedSuffix = archivedCount > 0 ? "  |  " + archivedCount + " archived" : "";
+        String summaryText = String.format("%d tasks  |  %d%% complete  (%d done, %d in progress, %d to do%s)%s",
                 total,
                 Math.round(completionPct),
                 doneCount, inProgressCount, todoCount,
-                otherCount > 0 ? ", " + otherCount + " other" : "");
+                otherCount > 0 ? ", " + otherCount + " other" : "",
+                archivedSuffix);
         JBLabel summaryLabel = new JBLabel(summaryText);
         summaryLabel.setFont(summaryLabel.getFont().deriveFont(summaryLabel.getFont().getSize() - 1f));
         summaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);

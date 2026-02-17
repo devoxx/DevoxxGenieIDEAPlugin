@@ -322,6 +322,113 @@ public final class SpecService implements Disposable {
         }
     }
 
+    /**
+     * Archives all tasks with status "Done". Returns the number of tasks archived.
+     */
+    public int archiveDoneTasks() throws IOException {
+        writeLock.lock();
+        try {
+            List<TaskSpec> doneTasks = specCache.values().stream()
+                    .filter(s -> "Done".equalsIgnoreCase(s.getStatus()))
+                    .collect(Collectors.toList());
+
+            if (doneTasks.isEmpty()) {
+                return 0;
+            }
+
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            Path archiveDir = configService.getArchiveTasksDir();
+            if (archiveDir == null) {
+                throw new IOException("Cannot determine archive directory");
+            }
+            Files.createDirectories(archiveDir);
+
+            int count = 0;
+            for (TaskSpec spec : doneTasks) {
+                if (spec.getFilePath() == null) continue;
+                Path source = Paths.get(spec.getFilePath());
+                if (!Files.exists(source)) continue;
+                Path target = archiveDir.resolve(source.getFileName());
+                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+                count++;
+            }
+
+            refreshVfs();
+            refresh();
+            return count;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Returns all archived tasks by scanning the archive/tasks/ directory.
+     * These are NOT part of the normal specCache.
+     */
+    public @NotNull List<TaskSpec> getArchivedTasks() {
+        BacklogConfigService configService = BacklogConfigService.getInstance(project);
+        Path archiveDir = configService.getArchiveTasksDir();
+        if (archiveDir == null || !Files.isDirectory(archiveDir)) {
+            return List.of();
+        }
+
+        List<TaskSpec> archived = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(archiveDir)) {
+            files.filter(p -> p.toString().endsWith(".md"))
+                    .filter(Files::isRegularFile)
+                    .forEach(file -> {
+                        try {
+                            String content = Files.readString(file, StandardCharsets.UTF_8);
+                            TaskSpec spec = SpecFrontmatterParser.parse(content, file.toAbsolutePath().toString());
+                            if (spec != null && spec.getId() != null) {
+                                spec.setLastModified(Files.getLastModifiedTime(file).toMillis());
+                                archived.add(spec);
+                            }
+                        } catch (IOException e) {
+                            log.warn("Failed to read archived task file: {}", file, e);
+                        }
+                    });
+        } catch (IOException e) {
+            log.warn("Failed to scan archive directory: {}", archiveDir, e);
+        }
+        return archived;
+    }
+
+    /**
+     * Unarchives a task by moving it from archive/tasks/ back to tasks/.
+     */
+    public void unarchiveTask(@NotNull String id) throws IOException {
+        writeLock.lock();
+        try {
+            // Find the task in the archive directory
+            List<TaskSpec> archivedTasks = getArchivedTasks();
+            TaskSpec spec = archivedTasks.stream()
+                    .filter(s -> id.equalsIgnoreCase(s.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (spec == null) {
+                throw new IOException("Archived task not found: " + id);
+            }
+
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            Path tasksDir = configService.getTasksDir();
+            if (tasksDir == null) {
+                throw new IOException("Cannot determine tasks directory");
+            }
+            Files.createDirectories(tasksDir);
+
+            Path source = Paths.get(spec.getFilePath());
+            Path target = tasksDir.resolve(source.getFileName());
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     // ===== Document Operations =====
 
     /**

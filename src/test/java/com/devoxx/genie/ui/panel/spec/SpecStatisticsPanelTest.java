@@ -182,6 +182,38 @@ class SpecStatisticsPanelTest {
     }
 
     @Test
+    void update_showsArchivedCount_whenPositive() {
+        SpecStatisticsPanel panel = new SpecStatisticsPanel();
+        panel.update(List.of(
+                taskWithStatus("To Do", "high"),
+                taskWithStatus("Done", "medium")
+        ), 5);
+
+        String text = extractAllText(panel);
+        assertThat(text).contains("5 archived");
+    }
+
+    @Test
+    void update_hidesArchivedCount_whenZero() {
+        SpecStatisticsPanel panel = new SpecStatisticsPanel();
+        panel.update(List.of(
+                taskWithStatus("To Do", "high")
+        ), 0);
+
+        String text = extractAllText(panel);
+        assertThat(text).doesNotContain("archived");
+    }
+
+    @Test
+    void update_showsNoTasksMessage_whenEmptyAndNoArchived() {
+        SpecStatisticsPanel panel = new SpecStatisticsPanel();
+        panel.update(List.of(), 0);
+
+        String text = extractAllText(panel);
+        assertThat(text).contains("No tasks found");
+    }
+
+    @Test
     void update_canBeCalledMultipleTimes() {
         SpecStatisticsPanel panel = new SpecStatisticsPanel();
 

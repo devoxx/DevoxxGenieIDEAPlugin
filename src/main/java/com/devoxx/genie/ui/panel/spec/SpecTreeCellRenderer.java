@@ -27,6 +27,7 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
     private static final Color STATUS_TODO_COLOR = new JBColor(new Color(100, 100, 200), new Color(130, 130, 230));
     private static final Color STATUS_IN_PROGRESS_COLOR = new JBColor(new Color(200, 150, 0), new Color(230, 180, 50));
     private static final Color STATUS_DONE_COLOR = new JBColor(new Color(50, 160, 50), new Color(80, 200, 80));
+    private static final Color STATUS_ARCHIVED_COLOR = new JBColor(new Color(140, 140, 140), new Color(120, 120, 120));
 
     private Set<String> checkedTaskIds = Collections.emptySet();
 
@@ -52,13 +53,30 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
         Object userObject = node.getUserObject();
 
         if (userObject instanceof TaskSpec spec) {
-            renderTaskSpec(spec);
+            // Check if parent node is "Archived"
+            DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+            boolean isArchived = parentNode != null && "Archived".equals(parentNode.getUserObject());
+            renderTaskSpec(spec, isArchived);
         } else if (userObject instanceof String groupLabel) {
             renderGroupLabel(groupLabel, node);
         }
     }
 
-    private void renderTaskSpec(@NotNull TaskSpec spec) {
+    private void renderTaskSpec(@NotNull TaskSpec spec, boolean isArchived) {
+        if (isArchived) {
+            // Archived tasks: gray italic with archive icon
+            setIcon(AllIcons.Actions.MoveToBottomRight);
+            SimpleTextAttributes archivedAttr = new SimpleTextAttributes(
+                    SimpleTextAttributes.STYLE_ITALIC, STATUS_ARCHIVED_COLOR);
+            if (spec.getId() != null) {
+                append(spec.getId(), new SimpleTextAttributes(
+                        SimpleTextAttributes.STYLE_ITALIC | SimpleTextAttributes.STYLE_BOLD, STATUS_ARCHIVED_COLOR));
+                append("  ", archivedAttr);
+            }
+            append(spec.getTitle() != null ? spec.getTitle() : "Untitled", archivedAttr);
+            return;
+        }
+
         // Checkbox icon for To Do tasks
         if ("To Do".equalsIgnoreCase(spec.getStatus()) && spec.getId() != null) {
             boolean checked = checkedTaskIds.contains(spec.getId());
@@ -111,7 +129,9 @@ public class SpecTreeCellRenderer extends ColoredTreeCellRenderer {
 
     private @NotNull Color getStatusColor(@NotNull String status) {
         String lower = status.toLowerCase();
-        if (lower.contains("done") || lower.contains("complete")) {
+        if ("archived".equals(lower)) {
+            return STATUS_ARCHIVED_COLOR;
+        } else if (lower.contains("done") || lower.contains("complete")) {
             return STATUS_DONE_COLOR;
         } else if (lower.contains("progress") || lower.contains("doing")) {
             return STATUS_IN_PROGRESS_COLOR;

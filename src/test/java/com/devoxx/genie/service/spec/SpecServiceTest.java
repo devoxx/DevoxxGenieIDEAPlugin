@@ -1244,6 +1244,207 @@ class SpecServiceTest {
         }
     }
 
+    // ── Bulk archive done tasks ─────────────────────────────────────────
+
+    @Test
+    void archiveDoneTasks_movesAllDoneTasksToArchive(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            // Create 3 tasks: 1 Done, 1 In Progress, 1 To Do
+            TaskSpec done1 = service.createTask(TaskSpec.builder().title("Done task").status("Done").build());
+            TaskSpec inProgress = service.createTask(TaskSpec.builder().title("In progress").status("In Progress").build());
+            TaskSpec todo = service.createTask(TaskSpec.builder().title("Todo task").status("To Do").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(1);
+            assertThat(service.getAllSpecs()).hasSize(2);
+            assertThat(service.getSpec(done1.getId())).isNull(); // archived
+            assertThat(service.getSpec(inProgress.getId())).isNotNull();
+            assertThat(service.getSpec(todo.getId())).isNotNull();
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_archivesMultipleDoneTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Done 1").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 2").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 3").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Not done").status("To Do").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(3);
+            assertThat(service.getAllSpecs()).hasSize(1);
+            assertThat(service.getAllSpecs().get(0).getTitle()).isEqualTo("Not done");
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_returnsZero_whenNoDoneTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Todo 1").status("To Do").build());
+            service.createTask(TaskSpec.builder().title("In progress 1").status("In Progress").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(0);
+            assertThat(service.getAllSpecs()).hasSize(2);
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_returnsZero_whenNoTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(0);
+        }
+    }
+
+    // ── Get archived tasks ───────────────────────────────────────────────
+
+    @Test
+    void getArchivedTasks_returnsTasksInArchiveDir(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            // Create and archive a task
+            TaskSpec task = service.createTask(TaskSpec.builder().title("To archive").status("Done").build());
+            service.archiveTask(task.getId());
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).hasSize(1);
+            assertThat(archived.get(0).getId()).isEqualTo(task.getId());
+            assertThat(archived.get(0).getTitle()).isEqualTo("To archive");
+        }
+    }
+
+    @Test
+    void getArchivedTasks_returnsEmptyList_whenNoArchivedTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Active task").status("To Do").build());
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).isEmpty();
+        }
+    }
+
+    @Test
+    void getArchivedTasks_returnsMultipleArchivedTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Done 1").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 2").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Active").status("To Do").build());
+
+            service.archiveDoneTasks();
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).hasSize(2);
+            assertThat(archived).extracting(TaskSpec::getTitle)
+                    .containsExactlyInAnyOrder("Done 1", "Done 2");
+        }
+    }
+
+    @Test
+    void getArchivedTasks_archivedTasksNotInMainCache(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task = service.createTask(TaskSpec.builder().title("To archive").status("Done").build());
+            service.archiveTask(task.getId());
+
+            // Main cache should not contain archived task
+            assertThat(service.getSpec(task.getId())).isNull();
+            assertThat(service.getAllSpecs()).isEmpty();
+
+            // But getArchivedTasks should find it
+            assertThat(service.getArchivedTasks()).hasSize(1);
+        }
+    }
+
+    // ── Unarchive task ───────────────────────────────────────────────────
+
+    @Test
+    void unarchiveTask_movesTaskBackToTasksDir(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task = service.createTask(TaskSpec.builder().title("Round trip").status("Done").build());
+            service.archiveTask(task.getId());
+
+            // Verify it's archived
+            assertThat(service.getSpec(task.getId())).isNull();
+            assertThat(service.getArchivedTasks()).hasSize(1);
+
+            // Unarchive
+            service.unarchiveTask(task.getId());
+
+            // Should be back in main cache
+            assertThat(service.getSpec(task.getId())).isNotNull();
+            assertThat(service.getSpec(task.getId()).getTitle()).isEqualTo("Round trip");
+            assertThat(service.getArchivedTasks()).isEmpty();
+        }
+    }
+
+    @Test
+    void unarchiveTask_throwsWhenTaskNotInArchive(@TempDir Path tempDir) {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            assertThatThrownBy(() -> service.unarchiveTask("NONEXISTENT"))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("Archived task not found");
+        }
+    }
+
+    @Test
+    void unarchiveTask_restoresCorrectTask_whenMultipleArchived(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task1 = service.createTask(TaskSpec.builder().title("Task A").status("Done").build());
+            TaskSpec task2 = service.createTask(TaskSpec.builder().title("Task B").status("Done").build());
+            service.archiveDoneTasks();
+
+            assertThat(service.getArchivedTasks()).hasSize(2);
+
+            // Unarchive only task1
+            service.unarchiveTask(task1.getId());
+
+            assertThat(service.getSpec(task1.getId())).isNotNull();
+            assertThat(service.getSpec(task2.getId())).isNull();
+            assertThat(service.getArchivedTasks()).hasSize(1);
+            assertThat(service.getArchivedTasks().get(0).getId()).isEqualTo(task2.getId());
+        }
+    }
+
     // ── Spec files without id are skipped ──────────────────────────────
 
     @Test

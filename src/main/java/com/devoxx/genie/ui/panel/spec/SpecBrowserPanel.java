@@ -17,12 +17,14 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -34,6 +36,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -42,10 +45,12 @@ import java.util.List;
  * Shows tasks grouped by status in a tree, with a preview panel below.
  * Supports checkbox selection of To Do tasks for batch sequential execution.
  */
+@Slf4j
 public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskRunnerListener {
 
     // Preferred status ordering (others appended at end)
     private static final List<String> STATUS_ORDER = List.of("To Do", "In Progress", "Done");
+    private static final String ARCHIVED_GROUP = "Archived";
 
     private static final int HORIZONTAL_LAYOUT_MIN_WIDTH = 600;
 
@@ -61,6 +66,9 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
 
     // Checkbox tracking for To Do tasks
     private final Set<String> checkedTaskIds = new LinkedHashSet<>();
+
+    // Toggle for showing archived tasks
+    private boolean showArchived = false;
 
     // Toolbar actions (need references for enable/disable)
     private AnAction runSelectedAction;
@@ -92,6 +100,14 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         // Preview panel
         previewPanel = new SpecPreviewPanel(project);
         previewPanel.setOnImplementAction(this::implementCurrentSpec);
+        previewPanel.setOnArchiveAction(() -> {
+            TaskSpec spec = previewPanel.getCurrentSpec();
+            if (spec != null) archiveSingleTask(spec);
+        });
+        previewPanel.setOnUnarchiveAction(() -> {
+            TaskSpec spec = previewPanel.getCurrentSpec();
+            if (spec != null) unarchiveSingleTask(spec);
+        });
 
         // Tree selection listener
         specTree.addTreeSelectionListener(e -> {
@@ -99,7 +115,10 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             if (path != null) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
                 if (node.getUserObject() instanceof TaskSpec spec) {
-                    previewPanel.showSpec(spec);
+                    // Determine if this task is in the Archived group
+                    DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+                    boolean isArchived = parentNode != null && ARCHIVED_GROUP.equals(parentNode.getUserObject());
+                    previewPanel.showSpec(spec, isArchived);
                     openTaskFile(spec);
                 } else {
                     previewPanel.showEmptyState();
@@ -109,11 +128,21 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             }
         });
 
-        // Mouse listener for checkbox toggling on To Do tasks
+        // Mouse listener for checkbox toggling on To Do tasks + right-click context menu
         specTree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleCheckboxClick(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) showTreeContextMenu(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) showTreeContextMenu(e);
             }
         });
 
@@ -265,6 +294,49 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             }
         };
         actionGroup.add(runAllParallelAction);
+
+        actionGroup.addSeparator();
+
+        // Archive actions
+        actionGroup.add(new AnAction("Archive Done", "Archive all completed tasks", AllIcons.Actions.MoveToBottomRight) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                archiveAllDoneTasks();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                SpecService specService = SpecService.getInstance(project);
+                long doneCount = specService.getAllSpecs().stream()
+                        .filter(s -> "Done".equalsIgnoreCase(s.getStatus()))
+                        .count();
+                e.getPresentation().setEnabled(doneCount > 0);
+                e.getPresentation().setText(doneCount > 0 ? "Archive Done (" + doneCount + ")" : "Archive Done");
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        });
+
+        actionGroup.add(new ToggleAction("Show Archived", "Toggle visibility of archived tasks", AllIcons.Actions.ShowAsTree) {
+            @Override
+            public boolean isSelected(@NotNull AnActionEvent e) {
+                return showArchived;
+            }
+
+            @Override
+            public void setSelected(@NotNull AnActionEvent e, boolean state) {
+                showArchived = state;
+                refreshTree();
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        });
 
         actionGroup.addSeparator();
 
@@ -512,6 +584,115 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         }
     }
 
+    // ===== Archive Actions =====
+
+    private void archiveAllDoneTasks() {
+        SpecService specService = SpecService.getInstance(project);
+        long doneCount = specService.getAllSpecs().stream()
+                .filter(s -> "Done".equalsIgnoreCase(s.getStatus()))
+                .count();
+
+        if (doneCount == 0) {
+            NotificationUtil.sendWarningNotification(project, "No completed tasks to archive.");
+            return;
+        }
+
+        int result = Messages.showYesNoDialog(
+                project,
+                "Archive " + doneCount + " completed task(s)?\n\nArchived tasks are moved to the archive/tasks/ directory and hidden from the main view.",
+                "Archive Done Tasks",
+                "Archive",
+                "Cancel",
+                Messages.getQuestionIcon());
+
+        if (result != Messages.YES) {
+            return;
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                int archived = specService.archiveDoneTasks();
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendNotification(project, archived + " task(s) archived successfully."));
+            } catch (IOException ex) {
+                log.warn("Failed to archive done tasks", ex);
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendErrorNotification(project, "Failed to archive tasks: " + ex.getMessage()));
+            }
+        });
+    }
+
+    private void archiveSingleTask(@NotNull TaskSpec spec) {
+        int result = Messages.showYesNoDialog(
+                project,
+                "Archive task " + spec.getDisplayLabel() + "?",
+                "Archive Task",
+                "Archive",
+                "Cancel",
+                Messages.getQuestionIcon());
+
+        if (result != Messages.YES) {
+            return;
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                SpecService.getInstance(project).archiveTask(spec.getId());
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendNotification(project, "Task " + spec.getId() + " archived."));
+            } catch (IOException ex) {
+                log.warn("Failed to archive task: {}", spec.getId(), ex);
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendErrorNotification(project, "Failed to archive task: " + ex.getMessage()));
+            }
+        });
+    }
+
+    private void unarchiveSingleTask(@NotNull TaskSpec spec) {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                SpecService.getInstance(project).unarchiveTask(spec.getId());
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendNotification(project, "Task " + spec.getId() + " restored from archive."));
+            } catch (IOException ex) {
+                log.warn("Failed to unarchive task: {}", spec.getId(), ex);
+                ApplicationManager.getApplication().invokeLater(() ->
+                        NotificationUtil.sendErrorNotification(project, "Failed to unarchive task: " + ex.getMessage()));
+            }
+        });
+    }
+
+    private void showTreeContextMenu(MouseEvent e) {
+        TreePath path = specTree.getPathForLocation(e.getX(), e.getY());
+        if (path == null) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+        if (!(node.getUserObject() instanceof TaskSpec spec)) return;
+
+        // Select the node under the cursor
+        specTree.setSelectionPath(path);
+
+        JPopupMenu popup = new JPopupMenu();
+
+        // Check if this is an archived task (parent node text == "Archived")
+        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+        boolean isArchived = parentNode != null && ARCHIVED_GROUP.equals(parentNode.getUserObject());
+
+        if (isArchived) {
+            JMenuItem unarchiveItem = new JMenuItem("Restore from Archive");
+            unarchiveItem.setIcon(AllIcons.Actions.Undo);
+            unarchiveItem.addActionListener(a -> unarchiveSingleTask(spec));
+            popup.add(unarchiveItem);
+        } else {
+            JMenuItem archiveItem = new JMenuItem("Archive");
+            archiveItem.setIcon(AllIcons.Actions.MoveToBottomRight);
+            archiveItem.addActionListener(a -> archiveSingleTask(spec));
+            popup.add(archiveItem);
+        }
+
+        popup.show(specTree, e.getX(), e.getY());
+    }
+
     // ===== Existing Methods =====
 
     /**
@@ -539,10 +720,12 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private void refreshTree() {
         rootNode.removeAllChildren();
 
-        List<TaskSpec> specs = SpecService.getInstance(project).getAllSpecs();
+        SpecService specService = SpecService.getInstance(project);
+        List<TaskSpec> specs = specService.getAllSpecs();
+        List<TaskSpec> archivedTasks = showArchived ? specService.getArchivedTasks() : List.of();
 
-        // Update statistics panel with current task data
-        statisticsPanel.update(specs);
+        // Update statistics panel with current task data and archived count
+        statisticsPanel.update(specs, archivedTasks.size());
 
         // Remove checked IDs that no longer exist or are no longer To Do
         Set<String> validIds = new HashSet<>();
@@ -579,6 +762,16 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
                 statusNode.add(new DefaultMutableTreeNode(spec));
             }
             rootNode.add(statusNode);
+        }
+
+        // Add archived tasks group when toggled on
+        if (showArchived && !archivedTasks.isEmpty()) {
+            archivedTasks.sort((a, b) -> Integer.compare(extractTaskNumber(a.getId()), extractTaskNumber(b.getId())));
+            DefaultMutableTreeNode archivedNode = new DefaultMutableTreeNode(ARCHIVED_GROUP);
+            for (TaskSpec spec : archivedTasks) {
+                archivedNode.add(new DefaultMutableTreeNode(spec));
+            }
+            rootNode.add(archivedNode);
         }
 
         treeModel.reload();
