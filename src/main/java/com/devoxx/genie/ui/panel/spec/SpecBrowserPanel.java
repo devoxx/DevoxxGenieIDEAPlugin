@@ -57,6 +57,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private final JBSplitter splitter;
     private final SpecTreeCellRenderer cellRenderer;
     private final SpecTaskRunnerProgressPanel progressPanel;
+    private final SpecStatisticsPanel statisticsPanel;
 
     // Checkbox tracking for To Do tasks
     private final Set<String> checkedTaskIds = new LinkedHashSet<>();
@@ -119,14 +120,22 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         // Progress panel (shown above splitter during batch runs)
         progressPanel = new SpecTaskRunnerProgressPanel();
 
+        // Statistics panel (collapsible overview at top)
+        statisticsPanel = new SpecStatisticsPanel();
+
         // Layout with splitter — orientation adapts to available width
         splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(new JBScrollPane(specTree));
         splitter.setSecondComponent(previewPanel);
 
-        // Main content: progress panel + splitter
+        // Main content: statistics + progress + splitter
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        topPanel.add(statisticsPanel);
+        topPanel.add(progressPanel);
+
         JPanel contentWrapper = new JPanel(new BorderLayout());
-        contentWrapper.add(progressPanel, BorderLayout.NORTH);
+        contentWrapper.add(topPanel, BorderLayout.NORTH);
         contentWrapper.add(splitter, BorderLayout.CENTER);
         setContent(contentWrapper);
 
@@ -531,6 +540,9 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         rootNode.removeAllChildren();
 
         List<TaskSpec> specs = SpecService.getInstance(project).getAllSpecs();
+
+        // Update statistics panel with current task data
+        statisticsPanel.update(specs);
 
         // Remove checked IDs that no longer exist or are no longer To Do
         Set<String> validIds = new HashSet<>();
