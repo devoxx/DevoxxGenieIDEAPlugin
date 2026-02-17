@@ -78,14 +78,26 @@ public final class LLMModelRegistryService {
                         .apiKeyUsed(true)
                         .build());
 
-        String claude46 = "claude-opus-4-6";
-        models.put(ModelProvider.Anthropic.getName() + "-" + claude46,
+        String claude46Opus = "claude-opus-4-6";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude46Opus,
                 LanguageModel.builder()
                         .provider(ModelProvider.Anthropic)
-                        .modelName(claude45Opus)
+                        .modelName(claude46Opus)
                         .displayName("Claude 4.6 Opus")
                         .inputCost(5)
                         .outputCost(25)
+                        .inputMaxTokens(200_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude46Sonnet = "claude-sonnet-4-6";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude46Sonnet,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude46Sonnet)
+                        .displayName("Claude 4.6 Sonnet")
+                        .inputCost(3)
+                        .outputCost(15)
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
