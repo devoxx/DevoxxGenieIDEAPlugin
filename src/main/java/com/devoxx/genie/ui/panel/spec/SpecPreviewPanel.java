@@ -25,8 +25,13 @@ public class SpecPreviewPanel extends JPanel {
     private final JPanel contentPanel;
     private final JButton implementButton;
     private final JButton openFileButton;
+    private final JButton archiveButton;
+    private final JButton unarchiveButton;
     private TaskSpec currentSpec;
+    private boolean currentSpecIsArchived;
     private Runnable onImplementAction;
+    private Runnable onArchiveAction;
+    private Runnable onUnarchiveAction;
 
     public SpecPreviewPanel(@NotNull Project project) {
         super(new BorderLayout());
@@ -55,6 +60,23 @@ public class SpecPreviewPanel extends JPanel {
         openFileButton.addActionListener(e -> openCurrentSpecFile());
         buttonPanel.add(openFileButton);
 
+        archiveButton = new JButton("Archive");
+        archiveButton.setEnabled(false);
+        archiveButton.setToolTipText("Move this task to the archive");
+        archiveButton.addActionListener(e -> {
+            if (onArchiveAction != null) onArchiveAction.run();
+        });
+        buttonPanel.add(archiveButton);
+
+        unarchiveButton = new JButton("Restore");
+        unarchiveButton.setEnabled(false);
+        unarchiveButton.setVisible(false);
+        unarchiveButton.setToolTipText("Restore this task from the archive");
+        unarchiveButton.addActionListener(e -> {
+            if (onUnarchiveAction != null) onUnarchiveAction.run();
+        });
+        buttonPanel.add(unarchiveButton);
+
         add(buttonPanel, BorderLayout.SOUTH);
 
         showEmptyState();
@@ -68,6 +90,27 @@ public class SpecPreviewPanel extends JPanel {
     }
 
     /**
+     * Set the callback for the "Archive" button.
+     */
+    public void setOnArchiveAction(@Nullable Runnable action) {
+        this.onArchiveAction = action;
+    }
+
+    /**
+     * Set the callback for the "Restore" button.
+     */
+    public void setOnUnarchiveAction(@Nullable Runnable action) {
+        this.onUnarchiveAction = action;
+    }
+
+    /**
+     * Returns whether the currently displayed spec is an archived task.
+     */
+    public boolean isCurrentSpecArchived() {
+        return currentSpecIsArchived;
+    }
+
+    /**
      * Returns the currently displayed task spec.
      */
     public @Nullable TaskSpec getCurrentSpec() {
@@ -78,7 +121,15 @@ public class SpecPreviewPanel extends JPanel {
      * Display a task spec in the preview panel.
      */
     public void showSpec(@NotNull TaskSpec spec) {
+        showSpec(spec, false);
+    }
+
+    /**
+     * Display a task spec in the preview panel with optional archived indicator.
+     */
+    public void showSpec(@NotNull TaskSpec spec, boolean isArchived) {
         this.currentSpec = spec;
+        this.currentSpecIsArchived = isArchived;
         contentPanel.removeAll();
 
         addField("ID", spec.getId());
@@ -122,8 +173,14 @@ public class SpecPreviewPanel extends JPanel {
             contentPanel.add(descArea);
         }
 
-        implementButton.setEnabled(true);
+        implementButton.setEnabled(!isArchived);
         openFileButton.setEnabled(true);
+
+        // Show archive or unarchive button depending on state
+        archiveButton.setVisible(!isArchived);
+        archiveButton.setEnabled(!isArchived);
+        unarchiveButton.setVisible(isArchived);
+        unarchiveButton.setEnabled(isArchived);
 
         contentPanel.revalidate();
         contentPanel.repaint();
@@ -134,6 +191,7 @@ public class SpecPreviewPanel extends JPanel {
      */
     public void showEmptyState() {
         this.currentSpec = null;
+        this.currentSpecIsArchived = false;
         contentPanel.removeAll();
 
         JBLabel emptyLabel = new JBLabel("Select a task to see its details");
@@ -143,6 +201,10 @@ public class SpecPreviewPanel extends JPanel {
 
         implementButton.setEnabled(false);
         openFileButton.setEnabled(false);
+        archiveButton.setEnabled(false);
+        archiveButton.setVisible(true);
+        unarchiveButton.setEnabled(false);
+        unarchiveButton.setVisible(false);
 
         contentPanel.revalidate();
         contentPanel.repaint();

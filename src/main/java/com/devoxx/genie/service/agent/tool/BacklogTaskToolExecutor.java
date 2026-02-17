@@ -17,7 +17,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Executes the 7 backlog task tools: create, list, search, view, edit, complete, archive.
+ * Executes the 10 backlog task tools: create, list, search, view, edit, complete, archive,
+ * archive_done, unarchive, list_archived.
  */
 @Slf4j
 public class BacklogTaskToolExecutor implements ToolExecutor {
@@ -39,6 +40,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
                 case "backlog_task_edit" -> editTask(request.arguments());
                 case "backlog_task_complete" -> completeTask(request.arguments());
                 case "backlog_task_archive" -> archiveTask(request.arguments());
+                case "backlog_task_archive_done" -> archiveDoneTasks();
+                case "backlog_task_unarchive" -> unarchiveTask(request.arguments());
+                case "backlog_task_list_archived" -> listArchivedTasks();
                 default -> "Error: Unknown task tool: " + request.name();
             };
         } catch (Exception e) {
@@ -95,9 +99,23 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
             builder.acceptanceCriteria(criteria);
         }
 
+        // Support explicit DoD items provided by the agent
+        List<String> dodTexts = ToolArgumentParser.getStringArray(arguments, "definitionOfDone");
+        if (!dodTexts.isEmpty()) {
+            List<DefinitionOfDoneItem> dodItems = new ArrayList<>();
+            for (int i = 0; i < dodTexts.size(); i++) {
+                dodItems.add(DefinitionOfDoneItem.builder()
+                        .index(i).text(dodTexts.get(i)).checked(false).build());
+            }
+            builder.definitionOfDone(dodItems);
+        }
+
+        boolean skipDodDefaults = Boolean.parseBoolean(
+                ToolArgumentParser.getString(arguments, "skipDodDefaults"));
+
         TaskSpec spec = builder.build();
         SpecService specService = SpecService.getInstance(project);
-        TaskSpec created = specService.createTask(spec);
+        TaskSpec created = specService.createTask(spec, skipDodDefaults);
 
         return "Created task " + created.getId() + ": " + created.getTitle() + "\nFile: " + created.getFilePath();
     }
@@ -318,5 +336,48 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
         SpecService specService = SpecService.getInstance(project);
         specService.archiveTask(id);
         return "Task " + id + " archived.";
+    }
+
+    private @NotNull String archiveDoneTasks() throws Exception {
+        SpecService specService = SpecService.getInstance(project);
+        int count = specService.archiveDoneTasks();
+        if (count == 0) {
+            return "No completed tasks to archive.";
+        }
+        return count + " completed task(s) archived successfully.";
+    }
+
+    private @NotNull String unarchiveTask(@NotNull String arguments) throws Exception {
+        String id = ToolArgumentParser.getString(arguments, "id");
+        if (id == null || id.isEmpty()) {
+            return "Error: 'id' parameter is required.";
+        }
+
+        SpecService specService = SpecService.getInstance(project);
+        specService.unarchiveTask(id);
+        return "Task " + id + " restored from archive.";
+    }
+
+    private @NotNull String listArchivedTasks() {
+        SpecService specService = SpecService.getInstance(project);
+        List<TaskSpec> archived = specService.getArchivedTasks();
+
+        if (archived.isEmpty()) {
+            return "No archived tasks found.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Archived tasks (").append(archived.size()).append("):\n\n");
+        for (TaskSpec spec : archived) {
+            sb.append("- ").append(spec.getDisplayLabel());
+            if (spec.getStatus() != null) {
+                sb.append(" [").append(spec.getStatus()).append("]");
+            }
+            if (spec.getPriority() != null) {
+                sb.append(" [").append(spec.getPriority()).append("]");
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 }

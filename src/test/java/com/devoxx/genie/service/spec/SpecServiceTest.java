@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.spec;
 
 import com.devoxx.genie.model.spec.AcceptanceCriterion;
+import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
+import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
@@ -396,6 +398,149 @@ class SpecServiceTest {
             List<TaskSpec> results = service.searchSpecs("task", "", "", 0);
 
             assertThat(results).hasSize(3);
+        }
+    }
+
+    // ── Fuzzy search (searchSpecs) ───────────────────────────────────────
+
+    @Test
+    void searchSpecs_fuzzyMatchesTitleWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Frist" is a typo for "First"
+            List<TaskSpec> results = service.searchSpecs("Frist task", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-1");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyMatchesPartialWord(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Secon" is partial prefix of "Second"
+            List<TaskSpec> results = service.searchSpecs("Secon", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-2");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyRanksExactMatchFirst(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Second task" is an exact substring in TASK-2's title
+            // "second" also partially matches "first task description" (less so)
+            List<TaskSpec> results = service.searchSpecs("Second task", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results.get(0).getId()).isEqualTo("TASK-2");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyNoMatchForUnrelatedQuery(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            List<TaskSpec> results = service.searchSpecs("database migration", null, null, 0);
+
+            assertThat(results).isEmpty();
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyMatchesReversedTokens(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // Tokens in reversed order should still match
+            List<TaskSpec> results = service.searchSpecs("task First", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-1");
+        }
+    }
+
+    // ── Fuzzy search (getSpecsByFilters) ───────────────────────────────────
+
+    @Test
+    void getSpecsByFilters_fuzzySearchMatchesWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Secnd" is a typo for "Second"
+            List<TaskSpec> results = service.getSpecsByFilters(null, null, null, "Secnd", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-2");
+        }
+    }
+
+    @Test
+    void getSpecsByFilters_fuzzySearchCombinedWithStatusFilter(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "task" matches all, but filter by "To Do" status
+            List<TaskSpec> results = service.getSpecsByFilters("To Do", null, null, "task", 0);
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getId()).isEqualTo("TASK-1");
+        }
+    }
+
+    // ── Fuzzy search (searchDocuments) ──────────────────────────────────────
+
+    @Test
+    void searchDocuments_fuzzyMatchesTitleWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            // "Architectre" is a typo for "Architecture"
+            List<BacklogDocument> results = service.searchDocuments("Architectre", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(BacklogDocument::getId).contains("DOC-1");
+        }
+    }
+
+    @Test
+    void searchDocuments_fuzzyRanksExactMatchFirst(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            // "API" exact substring match in DOC-2
+            List<BacklogDocument> results = service.searchDocuments("API", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results.get(0).getId()).isEqualTo("DOC-2");
+        }
+    }
+
+    @Test
+    void searchDocuments_fuzzyNoMatchForUnrelated(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            List<BacklogDocument> results = service.searchDocuments("kubernetes deployment", 0);
+
+            assertThat(results).isEmpty();
         }
     }
 
@@ -985,6 +1130,318 @@ class SpecServiceTest {
             TaskSpec loaded = service.getSpec(created.getId());
             assertThat(loaded).isNotNull();
             assertThat(loaded.getAcceptanceCriteria()).hasSize(2);
+        }
+    }
+
+    // ── Definition of Done defaults auto-population ─────────────────────
+
+    @Test
+    void createTask_appliesDodDefaults_whenTaskHasNoDod(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Tests pass", "Code reviewed", "No regressions"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task with DoD defaults").build();
+            TaskSpec created = service.createTask(spec);
+
+            assertThat(created.getDefinitionOfDone()).hasSize(3);
+            assertThat(created.getDefinitionOfDone().get(0).getText()).isEqualTo("Tests pass");
+            assertThat(created.getDefinitionOfDone().get(1).getText()).isEqualTo("Code reviewed");
+            assertThat(created.getDefinitionOfDone().get(2).getText()).isEqualTo("No regressions");
+            assertThat(created.getDefinitionOfDone()).allMatch(d -> !d.isChecked());
+        }
+    }
+
+    @Test
+    void createTask_doesNotOverrideExistingDod(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Default item 1", "Default item 2"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder()
+                    .title("Task with custom DoD")
+                    .definitionOfDone(List.of(
+                            DefinitionOfDoneItem.builder().index(0).text("My custom item").checked(false).build()
+                    ))
+                    .build();
+            TaskSpec created = service.createTask(spec);
+
+            // Should keep the task's own DoD, not apply defaults
+            assertThat(created.getDefinitionOfDone()).hasSize(1);
+            assertThat(created.getDefinitionOfDone().get(0).getText()).isEqualTo("My custom item");
+        }
+    }
+
+    @Test
+    void createTask_skipDodDefaults_doesNotApplyDefaults(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Tests pass", "Code reviewed"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task skipping DoD defaults").build();
+            TaskSpec created = service.createTask(spec, true); // skipDodDefaults = true
+
+            assertThat(created.getDefinitionOfDone()).isEmpty();
+        }
+    }
+
+    @Test
+    void createTask_noDodDefaults_whenConfigHasNone(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task with no config DoD").build();
+            TaskSpec created = service.createTask(spec);
+
+            assertThat(created.getDefinitionOfDone()).isEmpty();
+        }
+    }
+
+    @Test
+    void createTask_dodDefaults_persistedToFile(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Docs updated", "Deployed to staging"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Persistence check").build();
+            TaskSpec created = service.createTask(spec);
+
+            // Verify the DoD items are written to the file and can be read back
+            TaskSpec reloaded = service.getSpec(created.getId());
+            assertThat(reloaded).isNotNull();
+            assertThat(reloaded.getDefinitionOfDone()).hasSize(2);
+            assertThat(reloaded.getDefinitionOfDone().get(0).getText()).isEqualTo("Docs updated");
+            assertThat(reloaded.getDefinitionOfDone().get(1).getText()).isEqualTo("Deployed to staging");
+        }
+    }
+
+    // ── Bulk archive done tasks ─────────────────────────────────────────
+
+    @Test
+    void archiveDoneTasks_movesAllDoneTasksToArchive(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            // Create 3 tasks: 1 Done, 1 In Progress, 1 To Do
+            TaskSpec done1 = service.createTask(TaskSpec.builder().title("Done task").status("Done").build());
+            TaskSpec inProgress = service.createTask(TaskSpec.builder().title("In progress").status("In Progress").build());
+            TaskSpec todo = service.createTask(TaskSpec.builder().title("Todo task").status("To Do").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(1);
+            assertThat(service.getAllSpecs()).hasSize(2);
+            assertThat(service.getSpec(done1.getId())).isNull(); // archived
+            assertThat(service.getSpec(inProgress.getId())).isNotNull();
+            assertThat(service.getSpec(todo.getId())).isNotNull();
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_archivesMultipleDoneTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Done 1").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 2").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 3").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Not done").status("To Do").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(3);
+            assertThat(service.getAllSpecs()).hasSize(1);
+            assertThat(service.getAllSpecs().get(0).getTitle()).isEqualTo("Not done");
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_returnsZero_whenNoDoneTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Todo 1").status("To Do").build());
+            service.createTask(TaskSpec.builder().title("In progress 1").status("In Progress").build());
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(0);
+            assertThat(service.getAllSpecs()).hasSize(2);
+        }
+    }
+
+    @Test
+    void archiveDoneTasks_returnsZero_whenNoTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            int archived = service.archiveDoneTasks();
+
+            assertThat(archived).isEqualTo(0);
+        }
+    }
+
+    // ── Get archived tasks ───────────────────────────────────────────────
+
+    @Test
+    void getArchivedTasks_returnsTasksInArchiveDir(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            // Create and archive a task
+            TaskSpec task = service.createTask(TaskSpec.builder().title("To archive").status("Done").build());
+            service.archiveTask(task.getId());
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).hasSize(1);
+            assertThat(archived.get(0).getId()).isEqualTo(task.getId());
+            assertThat(archived.get(0).getTitle()).isEqualTo("To archive");
+        }
+    }
+
+    @Test
+    void getArchivedTasks_returnsEmptyList_whenNoArchivedTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Active task").status("To Do").build());
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).isEmpty();
+        }
+    }
+
+    @Test
+    void getArchivedTasks_returnsMultipleArchivedTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            service.createTask(TaskSpec.builder().title("Done 1").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Done 2").status("Done").build());
+            service.createTask(TaskSpec.builder().title("Active").status("To Do").build());
+
+            service.archiveDoneTasks();
+
+            List<TaskSpec> archived = service.getArchivedTasks();
+
+            assertThat(archived).hasSize(2);
+            assertThat(archived).extracting(TaskSpec::getTitle)
+                    .containsExactlyInAnyOrder("Done 1", "Done 2");
+        }
+    }
+
+    @Test
+    void getArchivedTasks_archivedTasksNotInMainCache(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task = service.createTask(TaskSpec.builder().title("To archive").status("Done").build());
+            service.archiveTask(task.getId());
+
+            // Main cache should not contain archived task
+            assertThat(service.getSpec(task.getId())).isNull();
+            assertThat(service.getAllSpecs()).isEmpty();
+
+            // But getArchivedTasks should find it
+            assertThat(service.getArchivedTasks()).hasSize(1);
+        }
+    }
+
+    // ── Unarchive task ───────────────────────────────────────────────────
+
+    @Test
+    void unarchiveTask_movesTaskBackToTasksDir(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task = service.createTask(TaskSpec.builder().title("Round trip").status("Done").build());
+            service.archiveTask(task.getId());
+
+            // Verify it's archived
+            assertThat(service.getSpec(task.getId())).isNull();
+            assertThat(service.getArchivedTasks()).hasSize(1);
+
+            // Unarchive
+            service.unarchiveTask(task.getId());
+
+            // Should be back in main cache
+            assertThat(service.getSpec(task.getId())).isNotNull();
+            assertThat(service.getSpec(task.getId()).getTitle()).isEqualTo("Round trip");
+            assertThat(service.getArchivedTasks()).isEmpty();
+        }
+    }
+
+    @Test
+    void unarchiveTask_throwsWhenTaskNotInArchive(@TempDir Path tempDir) {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            assertThatThrownBy(() -> service.unarchiveTask("NONEXISTENT"))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("Archived task not found");
+        }
+    }
+
+    @Test
+    void unarchiveTask_restoresCorrectTask_whenMultipleArchived(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec task1 = service.createTask(TaskSpec.builder().title("Task A").status("Done").build());
+            TaskSpec task2 = service.createTask(TaskSpec.builder().title("Task B").status("Done").build());
+            service.archiveDoneTasks();
+
+            assertThat(service.getArchivedTasks()).hasSize(2);
+
+            // Unarchive only task1
+            service.unarchiveTask(task1.getId());
+
+            assertThat(service.getSpec(task1.getId())).isNotNull();
+            assertThat(service.getSpec(task2.getId())).isNull();
+            assertThat(service.getArchivedTasks()).hasSize(1);
+            assertThat(service.getArchivedTasks().get(0).getId()).isEqualTo(task2.getId());
         }
     }
 

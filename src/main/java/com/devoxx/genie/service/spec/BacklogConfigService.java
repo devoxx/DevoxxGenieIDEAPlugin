@@ -364,6 +364,7 @@ public final class BacklogConfigService {
         switch (key.toLowerCase()) {
             case "statuses" -> builder.statuses(new ArrayList<>(values));
             case "labels" -> builder.labels(new ArrayList<>(values));
+            case "definition_of_done", "definitionofdone" -> builder.definitionOfDone(new ArrayList<>(values));
             default -> log.trace("Ignoring unknown config list field: {}", key);
         }
     }
@@ -390,6 +391,12 @@ public final class BacklogConfigService {
         sb.append("check_active_branches: ").append(config.isCheckActiveBranches()).append("\n");
         sb.append("active_branch_days: ").append(config.getActiveBranchDays()).append("\n");
         sb.append("task_prefix: \"").append(config.getTaskPrefix()).append("\"\n");
+        if (config.getDefinitionOfDone() != null && !config.getDefinitionOfDone().isEmpty()) {
+            sb.append("definition_of_done:\n");
+            for (String item : config.getDefinitionOfDone()) {
+                sb.append("  - \"").append(item.replace("\"", "\\\"")).append("\"\n");
+            }
+        }
         return sb.toString();
     }
 

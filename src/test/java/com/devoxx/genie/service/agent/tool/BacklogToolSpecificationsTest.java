@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests that all 17 backlog tool specifications are properly defined.
+ * Tests that all 20 backlog tool specifications are properly defined.
  */
 class BacklogToolSpecificationsTest {
 
@@ -19,6 +19,9 @@ class BacklogToolSpecificationsTest {
         assertToolSpec(BacklogToolSpecifications.taskEdit(), "backlog_task_edit");
         assertToolSpec(BacklogToolSpecifications.taskComplete(), "backlog_task_complete");
         assertToolSpec(BacklogToolSpecifications.taskArchive(), "backlog_task_archive");
+        assertToolSpec(BacklogToolSpecifications.taskArchiveDone(), "backlog_task_archive_done");
+        assertToolSpec(BacklogToolSpecifications.taskUnarchive(), "backlog_task_unarchive");
+        assertToolSpec(BacklogToolSpecifications.taskListArchived(), "backlog_task_list_archived");
     }
 
     @Test
@@ -89,8 +92,15 @@ class BacklogToolSpecificationsTest {
     }
 
     @Test
-    void totalToolCountShouldBe17() {
-        // 7 task + 5 document + 5 milestone = 17
+    void taskUnarchiveShouldRequireId() {
+        ToolSpecification spec = BacklogToolSpecifications.taskUnarchive();
+        assertThat(spec.parameters()).isNotNull();
+        assertThat(spec.parameters().required()).contains("id");
+    }
+
+    @Test
+    void totalToolCountShouldBe20() {
+        // 10 task + 5 document + 5 milestone = 20
         int count = 0;
         count++; // taskCreate
         count++; // taskList
@@ -99,6 +109,9 @@ class BacklogToolSpecificationsTest {
         count++; // taskEdit
         count++; // taskComplete
         count++; // taskArchive
+        count++; // taskArchiveDone
+        count++; // taskUnarchive
+        count++; // taskListArchived
         count++; // documentList
         count++; // documentView
         count++; // documentCreate
@@ -109,7 +122,7 @@ class BacklogToolSpecificationsTest {
         count++; // milestoneRename
         count++; // milestoneRemove
         count++; // milestoneArchive
-        assertThat(count).isEqualTo(17);
+        assertThat(count).isEqualTo(20);
     }
 
     private void assertToolSpec(ToolSpecification spec, String expectedName) {

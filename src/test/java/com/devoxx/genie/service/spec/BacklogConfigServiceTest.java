@@ -1088,6 +1088,135 @@ class BacklogConfigServiceTest {
         }
     }
 
+    // ── Definition of Done defaults ──────────────────────────────────────
+
+    @Test
+    void shouldCreateDefaultConfigWithEmptyDod() {
+        BacklogConfig config = BacklogConfig.builder().build();
+        assertThat(config.getDefinitionOfDone()).isEmpty();
+    }
+
+    @Test
+    void shouldBuildConfigWithDodDefaults() {
+        BacklogConfig config = BacklogConfig.builder()
+                .definitionOfDone(List.of("Tests pass", "Documentation updated", "No regressions"))
+                .build();
+
+        assertThat(config.getDefinitionOfDone()).containsExactly(
+                "Tests pass", "Documentation updated", "No regressions");
+    }
+
+    @Test
+    void saveAndLoadConfig_roundTrip_withDodDefaults(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Files.createDirectories(tempDir.resolve("backlog"));
+
+            BacklogConfig original = BacklogConfig.builder()
+                    .definitionOfDone(List.of("Tests pass", "Code reviewed", "No regressions introduced"))
+                    .build();
+
+            service.saveConfig(original);
+            service.invalidateCache();
+            BacklogConfig loaded = service.getConfig();
+
+            assertThat(loaded.getDefinitionOfDone()).containsExactly(
+                    "Tests pass", "Code reviewed", "No regressions introduced");
+        }
+    }
+
+    @Test
+    void saveAndLoadConfig_roundTrip_emptyDod(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Files.createDirectories(tempDir.resolve("backlog"));
+
+            BacklogConfig original = BacklogConfig.builder()
+                    .definitionOfDone(List.of())
+                    .build();
+
+            service.saveConfig(original);
+            service.invalidateCache();
+            BacklogConfig loaded = service.getConfig();
+
+            assertThat(loaded.getDefinitionOfDone()).isEmpty();
+        }
+    }
+
+    @Test
+    void serializeConfig_dodDefaultsUsesMultilineFormat(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Files.createDirectories(tempDir.resolve("backlog"));
+
+            BacklogConfig config = BacklogConfig.builder()
+                    .definitionOfDone(List.of("Tests pass", "Docs updated"))
+                    .build();
+
+            service.saveConfig(config);
+
+            String content = Files.readString(tempDir.resolve("backlog/config.yml"), StandardCharsets.UTF_8);
+            assertThat(content).contains("definition_of_done:");
+            assertThat(content).contains("  - \"Tests pass\"");
+            assertThat(content).contains("  - \"Docs updated\"");
+        }
+    }
+
+    @Test
+    void serializeConfig_noDodSection_whenEmpty(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Files.createDirectories(tempDir.resolve("backlog"));
+
+            BacklogConfig config = BacklogConfig.builder().build();
+            service.saveConfig(config);
+
+            String content = Files.readString(tempDir.resolve("backlog/config.yml"), StandardCharsets.UTF_8);
+            assertThat(content).doesNotContain("definition_of_done");
+        }
+    }
+
+    @Test
+    void getConfig_parsesDodFromMultilineList(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Path configPath = tempDir.resolve("backlog/config.yml");
+            Files.createDirectories(configPath.getParent());
+
+            String yaml = """
+                    project_name: "DodTest"
+                    definition_of_done:
+                      - Tests pass
+                      - Documentation updated
+                      - No regressions introduced
+                    """;
+            Files.writeString(configPath, yaml, StandardCharsets.UTF_8);
+
+            BacklogConfig config = service.getConfig();
+
+            assertThat(config.getDefinitionOfDone()).containsExactly(
+                    "Tests pass", "Documentation updated", "No regressions introduced");
+        }
+    }
+
+    @Test
+    void getConfig_parsesDodFromInlineArray(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Path configPath = tempDir.resolve("backlog/config.yml");
+            Files.createDirectories(configPath.getParent());
+
+            String yaml = """
+                    definition_of_done: ["Tests pass", "Code reviewed"]
+                    """;
+            Files.writeString(configPath, yaml, StandardCharsets.UTF_8);
+
+            BacklogConfig config = service.getConfig();
+
+            assertThat(config.getDefinitionOfDone()).containsExactly("Tests pass", "Code reviewed");
+        }
+    }
+
     /**
      * Sets up a BacklogConfigService backed by a temp directory with mocked
      * DevoxxGenieStateService returning "backlog" as the spec directory.

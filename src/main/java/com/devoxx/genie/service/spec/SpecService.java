@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
+import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.Disposable;
@@ -106,6 +108,7 @@ public final class SpecService implements Disposable {
 
     /**
      * Returns specs matching the given filters.
+     * When a search term is provided, results are fuzzy-matched and ranked by relevance.
      */
     public @NotNull List<TaskSpec> getSpecsByFilters(@Nullable String status,
                                                       @Nullable String assignee,
@@ -125,12 +128,20 @@ public final class SpecService implements Disposable {
             stream = stream.filter(s -> s.getLabels() != null &&
                     labels.stream().allMatch(l -> s.getLabels().stream().anyMatch(sl -> sl.equalsIgnoreCase(l))));
         }
+
         if (search != null && !search.isEmpty()) {
-            String lowerSearch = search.toLowerCase();
-            stream = stream.filter(s ->
-                    (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerSearch)) ||
-                    (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerSearch)) ||
-                    (s.getId() != null && s.getId().toLowerCase().contains(lowerSearch)));
+            // Score, filter, and sort by relevance
+            List<Map.Entry<TaskSpec, Double>> scored = stream
+                    .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(search, s.getTitle(), s.getDescription(), s.getId())))
+                    .filter(e -> e.getValue() >= 0.3)
+                    .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
+                    .collect(Collectors.toList());
+
+            Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
+            if (limit > 0) {
+                resultStream = resultStream.limit(limit);
+            }
+            return resultStream.collect(Collectors.toList());
         }
 
         if (limit > 0) {
@@ -141,17 +152,14 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Search specs by query string matching title and description.
+     * Search specs by query string with fuzzy matching on title and description.
+     * Results are ranked by relevance score (best matches first).
      */
     public @NotNull List<TaskSpec> searchSpecs(@NotNull String query,
                                                 @Nullable String status,
                                                 @Nullable String priority,
                                                 int limit) {
-        String lowerQuery = query.toLowerCase();
-        Stream<TaskSpec> stream = specCache.values().stream()
-                .filter(s ->
-                        (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerQuery)) ||
-                        (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerQuery)));
+        Stream<TaskSpec> stream = specCache.values().stream();
 
         if (status != null && !status.isEmpty()) {
             stream = stream.filter(s -> status.equalsIgnoreCase(s.getStatus()));
@@ -159,19 +167,40 @@ public final class SpecService implements Disposable {
         if (priority != null && !priority.isEmpty()) {
             stream = stream.filter(s -> priority.equalsIgnoreCase(s.getPriority()));
         }
+
+        // Score each spec and filter out non-matches, then sort by relevance
+        List<Map.Entry<TaskSpec, Double>> scored = stream
+                .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(query, s.getTitle(), s.getDescription())))
+                .filter(e -> e.getValue() >= 0.3)
+                .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
+                .collect(Collectors.toList());
+
+        Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
-            stream = stream.limit(limit);
+            resultStream = resultStream.limit(limit);
         }
 
-        return stream.collect(Collectors.toList());
+        return resultStream.collect(Collectors.toList());
     }
 
     // ===== Task Write Operations =====
 
     /**
      * Creates a new task file and returns the created spec.
+     * If the task has no Definition of Done items, project-wide DoD defaults from config.yml
+     * are automatically applied (unless skipDodDefaults is true).
      */
     public @NotNull TaskSpec createTask(@NotNull TaskSpec spec) throws IOException {
+        return createTask(spec, false);
+    }
+
+    /**
+     * Creates a new task file and returns the created spec.
+     *
+     * @param spec             the task specification to create
+     * @param skipDodDefaults  if true, project-wide Definition of Done defaults are NOT applied
+     */
+    public @NotNull TaskSpec createTask(@NotNull TaskSpec spec, boolean skipDodDefaults) throws IOException {
         writeLock.lock();
         try {
             BacklogConfigService configService = BacklogConfigService.getInstance(project);
@@ -181,6 +210,23 @@ public final class SpecService implements Disposable {
             }
             if (spec.getCreatedAt() == null) {
                 spec.setCreatedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+
+            // Apply Definition of Done defaults from config if the task has none
+            if (!skipDodDefaults && (spec.getDefinitionOfDone() == null || spec.getDefinitionOfDone().isEmpty())) {
+                BacklogConfig config = configService.getConfig();
+                List<String> dodDefaults = config.getDefinitionOfDone();
+                if (dodDefaults != null && !dodDefaults.isEmpty()) {
+                    List<DefinitionOfDoneItem> dodItems = new ArrayList<>();
+                    for (int i = 0; i < dodDefaults.size(); i++) {
+                        dodItems.add(DefinitionOfDoneItem.builder()
+                                .index(i)
+                                .text(dodDefaults.get(i))
+                                .checked(false)
+                                .build());
+                    }
+                    spec.setDefinitionOfDone(dodItems);
+                }
             }
 
             Path tasksDir = configService.getTasksDir();
@@ -276,6 +322,113 @@ public final class SpecService implements Disposable {
         }
     }
 
+    /**
+     * Archives all tasks with status "Done". Returns the number of tasks archived.
+     */
+    public int archiveDoneTasks() throws IOException {
+        writeLock.lock();
+        try {
+            List<TaskSpec> doneTasks = specCache.values().stream()
+                    .filter(s -> "Done".equalsIgnoreCase(s.getStatus()))
+                    .collect(Collectors.toList());
+
+            if (doneTasks.isEmpty()) {
+                return 0;
+            }
+
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            Path archiveDir = configService.getArchiveTasksDir();
+            if (archiveDir == null) {
+                throw new IOException("Cannot determine archive directory");
+            }
+            Files.createDirectories(archiveDir);
+
+            int count = 0;
+            for (TaskSpec spec : doneTasks) {
+                if (spec.getFilePath() == null) continue;
+                Path source = Paths.get(spec.getFilePath());
+                if (!Files.exists(source)) continue;
+                Path target = archiveDir.resolve(source.getFileName());
+                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+                count++;
+            }
+
+            refreshVfs();
+            refresh();
+            return count;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
+     * Returns all archived tasks by scanning the archive/tasks/ directory.
+     * These are NOT part of the normal specCache.
+     */
+    public @NotNull List<TaskSpec> getArchivedTasks() {
+        BacklogConfigService configService = BacklogConfigService.getInstance(project);
+        Path archiveDir = configService.getArchiveTasksDir();
+        if (archiveDir == null || !Files.isDirectory(archiveDir)) {
+            return List.of();
+        }
+
+        List<TaskSpec> archived = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(archiveDir)) {
+            files.filter(p -> p.toString().endsWith(".md"))
+                    .filter(Files::isRegularFile)
+                    .forEach(file -> {
+                        try {
+                            String content = Files.readString(file, StandardCharsets.UTF_8);
+                            TaskSpec spec = SpecFrontmatterParser.parse(content, file.toAbsolutePath().toString());
+                            if (spec != null && spec.getId() != null) {
+                                spec.setLastModified(Files.getLastModifiedTime(file).toMillis());
+                                archived.add(spec);
+                            }
+                        } catch (IOException e) {
+                            log.warn("Failed to read archived task file: {}", file, e);
+                        }
+                    });
+        } catch (IOException e) {
+            log.warn("Failed to scan archive directory: {}", archiveDir, e);
+        }
+        return archived;
+    }
+
+    /**
+     * Unarchives a task by moving it from archive/tasks/ back to tasks/.
+     */
+    public void unarchiveTask(@NotNull String id) throws IOException {
+        writeLock.lock();
+        try {
+            // Find the task in the archive directory
+            List<TaskSpec> archivedTasks = getArchivedTasks();
+            TaskSpec spec = archivedTasks.stream()
+                    .filter(s -> id.equalsIgnoreCase(s.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (spec == null) {
+                throw new IOException("Archived task not found: " + id);
+            }
+
+            BacklogConfigService configService = BacklogConfigService.getInstance(project);
+            Path tasksDir = configService.getTasksDir();
+            if (tasksDir == null) {
+                throw new IOException("Cannot determine tasks directory");
+            }
+            Files.createDirectories(tasksDir);
+
+            Path source = Paths.get(spec.getFilePath());
+            Path target = tasksDir.resolve(source.getFileName());
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+            refreshVfs();
+            refresh();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     // ===== Document Operations =====
 
     /**
@@ -356,19 +509,21 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Search documents by query string matching title and content.
+     * Search documents by query string with fuzzy matching on title and content.
+     * Results are ranked by relevance score (best matches first).
      */
     public @NotNull List<BacklogDocument> searchDocuments(@NotNull String query, int limit) {
-        String lowerQuery = query.toLowerCase();
-        Stream<BacklogDocument> stream = documentCache.values().stream()
-                .filter(d ->
-                        (d.getTitle() != null && d.getTitle().toLowerCase().contains(lowerQuery)) ||
-                        (d.getContent() != null && d.getContent().toLowerCase().contains(lowerQuery)));
+        List<Map.Entry<BacklogDocument, Double>> scored = documentCache.values().stream()
+                .map(d -> Map.entry(d, FuzzySearchHelper.scoreMultiField(query, d.getTitle(), d.getContent())))
+                .filter(e -> e.getValue() >= 0.3)
+                .sorted(Map.Entry.<BacklogDocument, Double>comparingByValue().reversed())
+                .collect(Collectors.toList());
 
+        Stream<BacklogDocument> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
-            stream = stream.limit(limit);
+            resultStream = resultStream.limit(limit);
         }
-        return stream.collect(Collectors.toList());
+        return resultStream.collect(Collectors.toList());
     }
 
     /**

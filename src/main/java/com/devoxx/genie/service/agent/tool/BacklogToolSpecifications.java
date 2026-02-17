@@ -8,7 +8,7 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 
 /**
- * Static factory for all 17 backlog tool specifications.
+ * Static factory for all 20 backlog tool specifications.
  * Tool names use the "backlog_" prefix.
  */
 public final class BacklogToolSpecifications {
@@ -16,7 +16,7 @@ public final class BacklogToolSpecifications {
     private BacklogToolSpecifications() {
     }
 
-    // ===== Task Tools (7) =====
+    // ===== Task Tools (10) =====
 
     public static ToolSpecification taskCreate() {
         return ToolSpecification.builder()
@@ -53,6 +53,13 @@ public final class BacklogToolSpecifications {
                                 .description("Documentation URLs or file paths")
                                 .build())
                         .addStringProperty("parentTaskId", "Parent task ID for subtasks")
+                        .addProperty("definitionOfDone", JsonArraySchema.builder()
+                                .items(JsonStringSchema.builder().build())
+                                .description("Definition of Done checklist items. If omitted, project-wide DoD defaults from config.yml are applied automatically.")
+                                .build())
+                        .addProperty("skipDodDefaults", JsonBooleanSchema.builder()
+                                .description("If true, do NOT auto-populate project-wide Definition of Done defaults. Defaults to false.")
+                                .build())
                         .required("title")
                         .build())
                 .build();
@@ -181,6 +188,33 @@ public final class BacklogToolSpecifications {
                         .addStringProperty("id", "Task ID (required)")
                         .required("id")
                         .build())
+                .build();
+    }
+
+    public static ToolSpecification taskArchiveDone() {
+        return ToolSpecification.builder()
+                .name("backlog_task_archive_done")
+                .description("Archive all tasks with status 'Done'. Moves them to the archive/tasks/ directory to clean up the active backlog.")
+                .parameters(JsonObjectSchema.builder().build())
+                .build();
+    }
+
+    public static ToolSpecification taskUnarchive() {
+        return ToolSpecification.builder()
+                .name("backlog_task_unarchive")
+                .description("Restore an archived task by moving it from archive/tasks/ back to the active tasks/ directory.")
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("id", "Task ID (required)")
+                        .required("id")
+                        .build())
+                .build();
+    }
+
+    public static ToolSpecification taskListArchived() {
+        return ToolSpecification.builder()
+                .name("backlog_task_list_archived")
+                .description("List all archived tasks from the archive/tasks/ directory.")
+                .parameters(JsonObjectSchema.builder().build())
                 .build();
     }
 
