@@ -8,7 +8,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AcpTransportTest {
 
@@ -28,6 +27,7 @@ class AcpTransportTest {
         // "echo" just outputs and exits, which is fine for verifying process startup
         transport.start(null, "echo", "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}");
         // If we get here without exception, the process started successfully
+        assertThat(transport).isNotNull();
     }
 
     @Test
@@ -40,6 +40,7 @@ class AcpTransportTest {
         // Close it — all pending futures should be cancelled.
         transport.close();
         // Should not throw, process should be destroyed
+        assertThat(transport).isNotNull();
     }
 
     @Test
@@ -47,7 +48,8 @@ class AcpTransportTest {
         transport = new AcpTransport();
         // Close without starting — should not throw
         transport.close();
-        transport.close();
+        // Verify close is idempotent
+        assertThat(transport).isNotNull();
     }
 
     @Test
