@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.spec;
 
 import com.devoxx.genie.model.enumarations.ExecutionMode;
+import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.service.spec.BacklogConfigService;
 import com.devoxx.genie.service.spec.SpecService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -19,6 +20,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -48,6 +52,12 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
             new SpinnerNumberModel(
                     stateService.getSpecMaxConcurrency() != null ? stateService.getSpecMaxConcurrency() : 4,
                     1, 8, 1));
+
+    private final DefaultListModel<String> dodListModel = new DefaultListModel<>();
+    private final JList<String> dodList = new JList<>(dodListModel);
+    private final JBTextField dodInputField = new JBTextField();
+    private final JButton addDodButton = new JButton("Add");
+    private final JButton removeDodButton = new JButton("Remove");
 
     public SpecSettingsComponent(@NotNull Project project) {
         this.project = project;
@@ -139,6 +149,42 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         executionModeCombo.addActionListener(e ->
                 maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL));
 
+        // --- Definition of Done Defaults ---
+        addSection(contentPanel, gbc, "Definition of Done Defaults");
+
+        addHelpText(contentPanel, gbc,
+                "Define project-wide Definition of Done checklist items. " +
+                "These are automatically added to every new task created via the agent or the API. " +
+                "Tasks that already have their own DoD items are not affected. " +
+                "Compatible with Backlog.md's definition_of_done config setting.");
+
+        // Load current DoD items from config
+        loadDodFromConfig();
+
+        // List display
+        dodList.setVisibleRowCount(5);
+        dodList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane dodScrollPane = new JScrollPane(dodList);
+        dodScrollPane.setPreferredSize(new java.awt.Dimension(400, 100));
+        addFullWidthRow(contentPanel, gbc, dodScrollPane);
+
+        // Input + Add/Remove buttons
+        JPanel dodButtonRow = new JPanel(new BorderLayout(5, 0));
+        dodInputField.setToolTipText("Enter a Definition of Done item, e.g. \"Tests pass\"");
+        dodButtonRow.add(dodInputField, BorderLayout.CENTER);
+        JPanel dodButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        addDodButton.addActionListener(e -> addDodItem());
+        removeDodButton.addActionListener(e -> removeDodItem());
+        dodButtons.add(addDodButton);
+        dodButtons.add(removeDodButton);
+        dodButtonRow.add(dodButtons, BorderLayout.EAST);
+        addFullWidthRow(contentPanel, gbc, dodButtonRow);
+
+        // Allow Enter key to add items
+        dodInputField.addActionListener(e -> addDodItem());
+        removeDodButton.setEnabled(false);
+        dodList.addListSelectionListener(e -> removeDodButton.setEnabled(dodList.getSelectedIndex() >= 0));
+
         // Filler
         gbc.weighty = 1.0;
         gbc.gridy++;
@@ -172,6 +218,43 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         panel.add(helpArea, gbc);
         gbc.insets = new Insets(4, 5, 4, 5);
         gbc.gridy++;
+    }
+
+    private void loadDodFromConfig() {
+        dodListModel.clear();
+        BacklogConfigService configService = BacklogConfigService.getInstance(project);
+        if (configService.isBacklogInitialized()) {
+            BacklogConfig config = configService.getConfig();
+            if (config.getDefinitionOfDone() != null) {
+                for (String item : config.getDefinitionOfDone()) {
+                    dodListModel.addElement(item);
+                }
+            }
+        }
+    }
+
+    private void addDodItem() {
+        String text = dodInputField.getText().trim();
+        if (!text.isEmpty()) {
+            dodListModel.addElement(text);
+            dodInputField.setText("");
+            dodInputField.requestFocusInWindow();
+        }
+    }
+
+    private void removeDodItem() {
+        int selected = dodList.getSelectedIndex();
+        if (selected >= 0) {
+            dodListModel.remove(selected);
+        }
+    }
+
+    private @NotNull List<String> getDodItems() {
+        List<String> items = new ArrayList<>();
+        for (int i = 0; i < dodListModel.size(); i++) {
+            items.add(dodListModel.getElementAt(i));
+        }
+        return items;
     }
 
     private void updateInitButtonState() {
@@ -250,11 +333,22 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
 
     public boolean isModified() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        return enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
+        if (enableSpecBrowserCheckbox.isSelected() != Boolean.TRUE.equals(state.getSpecBrowserEnabled())
                 || !Objects.equals(specDirectoryField.getText().trim(), state.getSpecDirectory())
                 || !Objects.equals(taskRunnerTimeoutSpinner.getValue(), state.getSpecTaskRunnerTimeoutMinutes())
                 || !Objects.equals(executionModeCombo.getSelectedItem(), resolveExecutionMode(state))
-                || !Objects.equals(maxConcurrencySpinner.getValue(), state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4);
+                || !Objects.equals(maxConcurrencySpinner.getValue(), state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4)) {
+            return true;
+        }
+
+        // Check if DoD defaults changed
+        BacklogConfigService configService = BacklogConfigService.getInstance(project);
+        if (configService.isBacklogInitialized()) {
+            List<String> currentDod = configService.getConfig().getDefinitionOfDone();
+            List<String> uiDod = getDodItems();
+            return !Objects.equals(currentDod != null ? currentDod : List.of(), uiDod);
+        }
+        return !getDodItems().isEmpty();
     }
 
     public void apply() {
@@ -264,6 +358,19 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         ExecutionMode selectedMode = (ExecutionMode) executionModeCombo.getSelectedItem();
         stateService.setSpecExecutionMode(selectedMode != null ? selectedMode.name() : "SEQUENTIAL");
         stateService.setSpecMaxConcurrency((Integer) maxConcurrencySpinner.getValue());
+
+        // Save DoD defaults to config.yml
+        BacklogConfigService configService = BacklogConfigService.getInstance(project);
+        if (configService.isBacklogInitialized()) {
+            try {
+                BacklogConfig config = configService.getConfig();
+                config.setDefinitionOfDone(getDodItems());
+                configService.saveConfig(config);
+            } catch (IOException e) {
+                NotificationUtil.sendNotification(project,
+                        "Failed to save Definition of Done defaults: " + e.getMessage());
+            }
+        }
     }
 
     public void reset() {
@@ -274,6 +381,7 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         executionModeCombo.setSelectedItem(resolveExecutionMode(state));
         maxConcurrencySpinner.setValue(state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4);
         maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL);
+        loadDodFromConfig();
     }
 
     private ExecutionMode resolveExecutionMode() {

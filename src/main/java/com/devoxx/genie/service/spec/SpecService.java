@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
+import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.Disposable;
@@ -185,8 +187,20 @@ public final class SpecService implements Disposable {
 
     /**
      * Creates a new task file and returns the created spec.
+     * If the task has no Definition of Done items, project-wide DoD defaults from config.yml
+     * are automatically applied (unless skipDodDefaults is true).
      */
     public @NotNull TaskSpec createTask(@NotNull TaskSpec spec) throws IOException {
+        return createTask(spec, false);
+    }
+
+    /**
+     * Creates a new task file and returns the created spec.
+     *
+     * @param spec             the task specification to create
+     * @param skipDodDefaults  if true, project-wide Definition of Done defaults are NOT applied
+     */
+    public @NotNull TaskSpec createTask(@NotNull TaskSpec spec, boolean skipDodDefaults) throws IOException {
         writeLock.lock();
         try {
             BacklogConfigService configService = BacklogConfigService.getInstance(project);
@@ -196,6 +210,23 @@ public final class SpecService implements Disposable {
             }
             if (spec.getCreatedAt() == null) {
                 spec.setCreatedAt(LocalDateTime.now(java.time.ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+
+            // Apply Definition of Done defaults from config if the task has none
+            if (!skipDodDefaults && (spec.getDefinitionOfDone() == null || spec.getDefinitionOfDone().isEmpty())) {
+                BacklogConfig config = configService.getConfig();
+                List<String> dodDefaults = config.getDefinitionOfDone();
+                if (dodDefaults != null && !dodDefaults.isEmpty()) {
+                    List<DefinitionOfDoneItem> dodItems = new ArrayList<>();
+                    for (int i = 0; i < dodDefaults.size(); i++) {
+                        dodItems.add(DefinitionOfDoneItem.builder()
+                                .index(i)
+                                .text(dodDefaults.get(i))
+                                .checked(false)
+                                .build());
+                    }
+                    spec.setDefinitionOfDone(dodItems);
+                }
             }
 
             Path tasksDir = configService.getTasksDir();

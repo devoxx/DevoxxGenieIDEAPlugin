@@ -46,6 +46,14 @@ public class BacklogConfig {
     @Builder.Default
     private int activeBranchDays = 30;
 
+    /**
+     * Project-wide Definition of Done defaults.
+     * These items are automatically added to every new task unless explicitly skipped.
+     * Compatible with Backlog.md's definition_of_done config.
+     */
+    @Builder.Default
+    private List<String> definitionOfDone = new ArrayList<>();
+
     @Data
     @Builder
     @NoArgsConstructor

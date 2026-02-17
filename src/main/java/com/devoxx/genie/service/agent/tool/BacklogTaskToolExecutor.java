@@ -95,9 +95,23 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
             builder.acceptanceCriteria(criteria);
         }
 
+        // Support explicit DoD items provided by the agent
+        List<String> dodTexts = ToolArgumentParser.getStringArray(arguments, "definitionOfDone");
+        if (!dodTexts.isEmpty()) {
+            List<DefinitionOfDoneItem> dodItems = new ArrayList<>();
+            for (int i = 0; i < dodTexts.size(); i++) {
+                dodItems.add(DefinitionOfDoneItem.builder()
+                        .index(i).text(dodTexts.get(i)).checked(false).build());
+            }
+            builder.definitionOfDone(dodItems);
+        }
+
+        boolean skipDodDefaults = Boolean.parseBoolean(
+                ToolArgumentParser.getString(arguments, "skipDodDefaults"));
+
         TaskSpec spec = builder.build();
         SpecService specService = SpecService.getInstance(project);
-        TaskSpec created = specService.createTask(spec);
+        TaskSpec created = specService.createTask(spec, skipDodDefaults);
 
         return "Created task " + created.getId() + ": " + created.getTitle() + "\nFile: " + created.getFilePath();
     }

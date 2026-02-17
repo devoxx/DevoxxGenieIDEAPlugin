@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.spec;
 
 import com.devoxx.genie.model.spec.AcceptanceCriterion;
+import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
+import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
@@ -1128,6 +1130,117 @@ class SpecServiceTest {
             TaskSpec loaded = service.getSpec(created.getId());
             assertThat(loaded).isNotNull();
             assertThat(loaded.getAcceptanceCriteria()).hasSize(2);
+        }
+    }
+
+    // ── Definition of Done defaults auto-population ─────────────────────
+
+    @Test
+    void createTask_appliesDodDefaults_whenTaskHasNoDod(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Tests pass", "Code reviewed", "No regressions"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task with DoD defaults").build();
+            TaskSpec created = service.createTask(spec);
+
+            assertThat(created.getDefinitionOfDone()).hasSize(3);
+            assertThat(created.getDefinitionOfDone().get(0).getText()).isEqualTo("Tests pass");
+            assertThat(created.getDefinitionOfDone().get(1).getText()).isEqualTo("Code reviewed");
+            assertThat(created.getDefinitionOfDone().get(2).getText()).isEqualTo("No regressions");
+            assertThat(created.getDefinitionOfDone()).allMatch(d -> !d.isChecked());
+        }
+    }
+
+    @Test
+    void createTask_doesNotOverrideExistingDod(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Default item 1", "Default item 2"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder()
+                    .title("Task with custom DoD")
+                    .definitionOfDone(List.of(
+                            DefinitionOfDoneItem.builder().index(0).text("My custom item").checked(false).build()
+                    ))
+                    .build();
+            TaskSpec created = service.createTask(spec);
+
+            // Should keep the task's own DoD, not apply defaults
+            assertThat(created.getDefinitionOfDone()).hasSize(1);
+            assertThat(created.getDefinitionOfDone().get(0).getText()).isEqualTo("My custom item");
+        }
+    }
+
+    @Test
+    void createTask_skipDodDefaults_doesNotApplyDefaults(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Tests pass", "Code reviewed"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task skipping DoD defaults").build();
+            TaskSpec created = service.createTask(spec, true); // skipDodDefaults = true
+
+            assertThat(created.getDefinitionOfDone()).isEmpty();
+        }
+    }
+
+    @Test
+    void createTask_noDodDefaults_whenConfigHasNone(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Task with no config DoD").build();
+            TaskSpec created = service.createTask(spec);
+
+            assertThat(created.getDefinitionOfDone()).isEmpty();
+        }
+    }
+
+    @Test
+    void createTask_dodDefaults_persistedToFile(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+
+            // Set DoD defaults in config
+            BacklogConfigService configService = BacklogConfigService.getInstance(mocks.project);
+            BacklogConfig config = configService.getConfig();
+            config.setDefinitionOfDone(List.of("Docs updated", "Deployed to staging"));
+            configService.saveConfig(config);
+
+            SpecService service = mocks.createService();
+
+            TaskSpec spec = TaskSpec.builder().title("Persistence check").build();
+            TaskSpec created = service.createTask(spec);
+
+            // Verify the DoD items are written to the file and can be read back
+            TaskSpec reloaded = service.getSpec(created.getId());
+            assertThat(reloaded).isNotNull();
+            assertThat(reloaded.getDefinitionOfDone()).hasSize(2);
+            assertThat(reloaded.getDefinitionOfDone().get(0).getText()).isEqualTo("Docs updated");
+            assertThat(reloaded.getDefinitionOfDone().get(1).getText()).isEqualTo("Deployed to staging");
         }
     }
 

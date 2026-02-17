@@ -53,6 +53,13 @@ public final class BacklogToolSpecifications {
                                 .description("Documentation URLs or file paths")
                                 .build())
                         .addStringProperty("parentTaskId", "Parent task ID for subtasks")
+                        .addProperty("definitionOfDone", JsonArraySchema.builder()
+                                .items(JsonStringSchema.builder().build())
+                                .description("Definition of Done checklist items. If omitted, project-wide DoD defaults from config.yml are applied automatically.")
+                                .build())
+                        .addProperty("skipDodDefaults", JsonBooleanSchema.builder()
+                                .description("If true, do NOT auto-populate project-wide Definition of Done defaults. Defaults to false.")
+                                .build())
                         .required("title")
                         .build())
                 .build();
