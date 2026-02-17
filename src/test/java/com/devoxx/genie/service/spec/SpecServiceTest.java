@@ -399,6 +399,149 @@ class SpecServiceTest {
         }
     }
 
+    // ── Fuzzy search (searchSpecs) ───────────────────────────────────────
+
+    @Test
+    void searchSpecs_fuzzyMatchesTitleWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Frist" is a typo for "First"
+            List<TaskSpec> results = service.searchSpecs("Frist task", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-1");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyMatchesPartialWord(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Secon" is partial prefix of "Second"
+            List<TaskSpec> results = service.searchSpecs("Secon", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-2");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyRanksExactMatchFirst(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Second task" is an exact substring in TASK-2's title
+            // "second" also partially matches "first task description" (less so)
+            List<TaskSpec> results = service.searchSpecs("Second task", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results.get(0).getId()).isEqualTo("TASK-2");
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyNoMatchForUnrelatedQuery(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            List<TaskSpec> results = service.searchSpecs("database migration", null, null, 0);
+
+            assertThat(results).isEmpty();
+        }
+    }
+
+    @Test
+    void searchSpecs_fuzzyMatchesReversedTokens(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // Tokens in reversed order should still match
+            List<TaskSpec> results = service.searchSpecs("task First", null, null, 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-1");
+        }
+    }
+
+    // ── Fuzzy search (getSpecsByFilters) ───────────────────────────────────
+
+    @Test
+    void getSpecsByFilters_fuzzySearchMatchesWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "Secnd" is a typo for "Second"
+            List<TaskSpec> results = service.getSpecsByFilters(null, null, null, "Secnd", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(TaskSpec::getId).contains("TASK-2");
+        }
+    }
+
+    @Test
+    void getSpecsByFilters_fuzzySearchCombinedWithStatusFilter(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedTaskFiles(tempDir, TASK_1, TASK_2, TASK_3);
+            SpecService service = mocks.createService();
+
+            // "task" matches all, but filter by "To Do" status
+            List<TaskSpec> results = service.getSpecsByFilters("To Do", null, null, "task", 0);
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getId()).isEqualTo("TASK-1");
+        }
+    }
+
+    // ── Fuzzy search (searchDocuments) ──────────────────────────────────────
+
+    @Test
+    void searchDocuments_fuzzyMatchesTitleWithTypo(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            // "Architectre" is a typo for "Architecture"
+            List<BacklogDocument> results = service.searchDocuments("Architectre", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results).extracting(BacklogDocument::getId).contains("DOC-1");
+        }
+    }
+
+    @Test
+    void searchDocuments_fuzzyRanksExactMatchFirst(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            // "API" exact substring match in DOC-2
+            List<BacklogDocument> results = service.searchDocuments("API", 0);
+
+            assertThat(results).isNotEmpty();
+            assertThat(results.get(0).getId()).isEqualTo("DOC-2");
+        }
+    }
+
+    @Test
+    void searchDocuments_fuzzyNoMatchForUnrelated(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            seedDocFiles(tempDir, DOC_1, DOC_2);
+            SpecService service = mocks.createService();
+
+            List<BacklogDocument> results = service.searchDocuments("kubernetes deployment", 0);
+
+            assertThat(results).isEmpty();
+        }
+    }
+
     // ── Completed directory scanning ───────────────────────────────────
 
     @Test

@@ -106,6 +106,7 @@ public final class SpecService implements Disposable {
 
     /**
      * Returns specs matching the given filters.
+     * When a search term is provided, results are fuzzy-matched and ranked by relevance.
      */
     public @NotNull List<TaskSpec> getSpecsByFilters(@Nullable String status,
                                                       @Nullable String assignee,
@@ -125,12 +126,20 @@ public final class SpecService implements Disposable {
             stream = stream.filter(s -> s.getLabels() != null &&
                     labels.stream().allMatch(l -> s.getLabels().stream().anyMatch(sl -> sl.equalsIgnoreCase(l))));
         }
+
         if (search != null && !search.isEmpty()) {
-            String lowerSearch = search.toLowerCase();
-            stream = stream.filter(s ->
-                    (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerSearch)) ||
-                    (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerSearch)) ||
-                    (s.getId() != null && s.getId().toLowerCase().contains(lowerSearch)));
+            // Score, filter, and sort by relevance
+            List<Map.Entry<TaskSpec, Double>> scored = stream
+                    .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(search, s.getTitle(), s.getDescription(), s.getId())))
+                    .filter(e -> e.getValue() >= 0.3)
+                    .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
+                    .collect(Collectors.toList());
+
+            Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
+            if (limit > 0) {
+                resultStream = resultStream.limit(limit);
+            }
+            return resultStream.collect(Collectors.toList());
         }
 
         if (limit > 0) {
@@ -141,17 +150,14 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Search specs by query string matching title and description.
+     * Search specs by query string with fuzzy matching on title and description.
+     * Results are ranked by relevance score (best matches first).
      */
     public @NotNull List<TaskSpec> searchSpecs(@NotNull String query,
                                                 @Nullable String status,
                                                 @Nullable String priority,
                                                 int limit) {
-        String lowerQuery = query.toLowerCase();
-        Stream<TaskSpec> stream = specCache.values().stream()
-                .filter(s ->
-                        (s.getTitle() != null && s.getTitle().toLowerCase().contains(lowerQuery)) ||
-                        (s.getDescription() != null && s.getDescription().toLowerCase().contains(lowerQuery)));
+        Stream<TaskSpec> stream = specCache.values().stream();
 
         if (status != null && !status.isEmpty()) {
             stream = stream.filter(s -> status.equalsIgnoreCase(s.getStatus()));
@@ -159,11 +165,20 @@ public final class SpecService implements Disposable {
         if (priority != null && !priority.isEmpty()) {
             stream = stream.filter(s -> priority.equalsIgnoreCase(s.getPriority()));
         }
+
+        // Score each spec and filter out non-matches, then sort by relevance
+        List<Map.Entry<TaskSpec, Double>> scored = stream
+                .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(query, s.getTitle(), s.getDescription())))
+                .filter(e -> e.getValue() >= 0.3)
+                .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
+                .collect(Collectors.toList());
+
+        Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
-            stream = stream.limit(limit);
+            resultStream = resultStream.limit(limit);
         }
 
-        return stream.collect(Collectors.toList());
+        return resultStream.collect(Collectors.toList());
     }
 
     // ===== Task Write Operations =====
@@ -356,19 +371,21 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Search documents by query string matching title and content.
+     * Search documents by query string with fuzzy matching on title and content.
+     * Results are ranked by relevance score (best matches first).
      */
     public @NotNull List<BacklogDocument> searchDocuments(@NotNull String query, int limit) {
-        String lowerQuery = query.toLowerCase();
-        Stream<BacklogDocument> stream = documentCache.values().stream()
-                .filter(d ->
-                        (d.getTitle() != null && d.getTitle().toLowerCase().contains(lowerQuery)) ||
-                        (d.getContent() != null && d.getContent().toLowerCase().contains(lowerQuery)));
+        List<Map.Entry<BacklogDocument, Double>> scored = documentCache.values().stream()
+                .map(d -> Map.entry(d, FuzzySearchHelper.scoreMultiField(query, d.getTitle(), d.getContent())))
+                .filter(e -> e.getValue() >= 0.3)
+                .sorted(Map.Entry.<BacklogDocument, Double>comparingByValue().reversed())
+                .collect(Collectors.toList());
 
+        Stream<BacklogDocument> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
-            stream = stream.limit(limit);
+            resultStream = resultStream.limit(limit);
         }
-        return stream.collect(Collectors.toList());
+        return resultStream.collect(Collectors.toList());
     }
 
     /**
