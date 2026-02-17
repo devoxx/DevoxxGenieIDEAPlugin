@@ -2,6 +2,29 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.13]
+
+### Added
+- Add claude-sonnet-4-6 to Anthropic model selection (#932)
+- Parallel execution for independent tasks in SDD Spec Browser dependency graph (#927)
+- Green parallel Run buttons added to Spec Browser toolbar (#927)
+- Individual and bulk archive/unarchive for done tasks in SDD Spec Browser (#933)
+- Project statistics/overview panel in SDD Spec Browser (#933)
+- Project-wide Definition of Done defaults for SDD backlog (#933)
+- Fuzzy search replaces simple text matching in SDD backlog (#933)
+
+### Changed
+- Make ChatModelFactoryProvider a final utility class (#934)
+
+### Fixed
+- ACP client Set iteration using for-each loop for JsonNode.properties() (#929)
+- Replace deprecated JsonNode.fields() with properties() (#927)
+- Implicit narrowing conversion in compound assignment (security alert)
+- Improve AcpTransportTest assertions and remove unused import (#934)
+
+### Dependencies
+- Bump gradle dependencies (#930)
+
 ## [0.9.12]
 
 ### Added

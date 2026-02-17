@@ -45,6 +45,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.13</h2>
+        <UL>
+            <LI>Add claude-sonnet-4-6 to Anthropic model selection (#932)</LI>
+            <LI>Parallel execution for independent tasks in SDD Spec Browser dependency graph (#927)</LI>
+            <LI>Green parallel Run buttons added to Spec Browser toolbar (#927)</LI>
+            <LI>Individual and bulk archive/unarchive for done tasks in SDD Spec Browser (#933)</LI>
+            <LI>Project statistics/overview panel in SDD Spec Browser (#933)</LI>
+            <LI>Project-wide Definition of Done defaults for SDD backlog (#933)</LI>
+            <LI>Fuzzy search replaces simple text matching in SDD backlog (#933)</LI>
+            <LI>Fix: ACP client Set iteration using for-each loop for JsonNode.properties() (#929)</LI>
+            <LI>Fix: replace deprecated JsonNode.fields() with properties() (#927)</LI>
+            <LI>Fix: implicit narrowing conversion in compound assignment (security alert)</LI>
+            <LI>Refactor: ChatModelFactoryProvider made final utility class (#934)</LI>
+        </UL>
         <h2>v0.9.12</h2>
         <UL>
             <LI>ACP Client rewrite: builder pattern, lifecycle management, configurable timeouts, and typed exception hierarchy</LI>
