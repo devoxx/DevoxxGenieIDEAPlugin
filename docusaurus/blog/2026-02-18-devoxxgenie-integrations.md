@@ -6,7 +6,7 @@ tags: [integrations, sonarlint, spotbugs, intellij plugin, api, backlog, spec-dr
 date: 2026-02-18
 description: "Learn how IntelliJ plugins can integrate with DevoxxGenie at runtime — and see it in action with SonarLint and SpotBugs forks that let you fix code-quality findings with a single click."
 keywords: [devoxxgenie, intellij plugin integration, sonarlint, spotbugs, external prompt service, backlog tasks, code quality, ai fix]
-image: /img/integrations/sonarlint-banner.png
+image: /img/integrations/sonarlint-banner.webp
 ---
 
 # Extending DevoxxGenie: How External Plugins Can Plug Into Your AI Assistant
