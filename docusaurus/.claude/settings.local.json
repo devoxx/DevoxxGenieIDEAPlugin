@@ -1,11 +1,23 @@
 {
+  "permissions": {
+    "allow": [
+      "Skill(git-commit-push)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:genie.devoxx.com)",
+      "Bash(xargs:*)",
+      "Bash(sort:*)",
+      "Bash(ls:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(chmod:*)",
+      "Bash(/tmp/convert_webm.sh)"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "playwright"
-  ],
-  "permissions": {
-    "allow": [
-      "Skill(git-commit-push)"
-    ]
-  }
+  ]
 }
