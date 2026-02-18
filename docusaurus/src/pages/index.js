@@ -242,11 +242,16 @@ milestone: v2.0
               <p>
                 <strong>Spec Task Execution:</strong> Run individual or batch spec tasks through any configured CLI runner. Combined with the Agent Loop, you can delegate entire task backlogs to your preferred coding assistant.
               </p>
-              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px', gap: '10px'}}>
                 <Link
                   className="button button--primary button--md"
                   to={useBaseUrl('/docs/features/cli-runners')}>
-                  Learn More
+                  CLI Runners
+                </Link>
+                <Link
+                  className="button button--secondary button--md"
+                  to={useBaseUrl('/docs/features/acp-runners')}>
+                  ACP Runners
                 </Link>
               </div>
             </div>
