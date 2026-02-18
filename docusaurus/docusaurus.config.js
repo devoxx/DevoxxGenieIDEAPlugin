@@ -121,6 +121,10 @@ const config = {
               if (item.url === 'https://genie.devoxx.com/' || item.url === 'https://genie.devoxx.com') {
                 return {...item, priority: 1.0, changefreq: 'daily'};
               }
+              // Blog index — set lastmod to today so Google knows it's fresh
+              if (item.url === 'https://genie.devoxx.com/blog') {
+                return {...item, priority: 0.8, changefreq: 'weekly', lastmod: new Date().toISOString().split('T')[0]};
+              }
               // Getting started & installation — high priority
               if (item.url.includes('/docs/intro') || item.url.includes('/docs/getting-started/')) {
                 return {...item, priority: 0.9, changefreq: 'weekly'};
@@ -266,6 +270,10 @@ const config = {
               {
                 label: 'Blog',
                 to: '/blog',
+              },
+              {
+                label: 'RSS Feed',
+                href: '/blog/rss.xml',
               },
               {
                 label: 'GitHub',

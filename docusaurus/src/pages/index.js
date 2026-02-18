@@ -13,15 +13,16 @@ function HomepageHeader() {
   return (
     <header className={styles.heroBanner}>
       <video
-        src={useBaseUrl('/img/DevoxxGenie.mp4')}
         poster={useBaseUrl('/img/devoxxgenie-hero-poster.jpg')}
         autoPlay
         loop
         muted
         playsInline
         preload="none"
-        className={styles.heroVideo}
-      />
+        className={styles.heroVideo}>
+        <source src={useBaseUrl('/img/DevoxxGenie.webm')} type="video/webm" />
+        <source src={useBaseUrl('/img/DevoxxGenie.mp4')} type="video/mp4" />
+      </video>
       <div className={styles.heroOverlay}>
         <h1 className="hero__title">{siteConfig.title}</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
