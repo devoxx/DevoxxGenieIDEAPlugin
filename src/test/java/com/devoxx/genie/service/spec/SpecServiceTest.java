@@ -279,7 +279,9 @@ class SpecServiceTest {
 
             List<TaskSpec> results = service.getSpecsByFilters(null, null, null, "TASK-2", 0);
 
-            assertThat(results).hasSize(1);
+            // Fuzzy search may return both TASK-1 and TASK-2 (similar IDs), but TASK-2
+            // must be ranked first as the best match for its own ID.
+            assertThat(results).isNotEmpty();
             assertThat(results.get(0).getId()).isEqualTo("TASK-2");
         }
     }
@@ -292,7 +294,9 @@ class SpecServiceTest {
 
             List<TaskSpec> results = service.getSpecsByFilters(null, null, null, "first task description", 0);
 
-            assertThat(results).hasSize(1);
+            // Fuzzy search may match multiple tasks via shared words, but TASK-1 must be
+            // ranked first as its description contains the exact phrase.
+            assertThat(results).isNotEmpty();
             assertThat(results.get(0).getId()).isEqualTo("TASK-1");
         }
     }

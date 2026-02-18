@@ -822,6 +822,7 @@ class SpecTaskRunnerServiceTest {
         final MockedStatic<DevoxxGenieStateService> stateServiceMock;
         final MockedStatic<ChatMemoryService> chatMemoryMock;
         final MockedStatic<FileListManager> fileListMock;
+        final MockedStatic<ApplicationManager> appManagerMock;
 
         final DevoxxGenieStateService stateService;
         final SpecService specService;
@@ -837,6 +838,13 @@ class SpecTaskRunnerServiceTest {
             stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
             chatMemoryMock = Mockito.mockStatic(ChatMemoryService.class);
             fileListMock = Mockito.mockStatic(FileListManager.class);
+            appManagerMock = Mockito.mockStatic(ApplicationManager.class);
+
+            Application application = mock(Application.class);
+            appManagerMock.when(ApplicationManager::getApplication).thenReturn(application);
+            // Parallel mode dispatches tasks via executeOnPooledThread — run them inline for tests
+            doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; })
+                    .when(application).executeOnPooledThread(any(Runnable.class));
 
             stateService = mock(DevoxxGenieStateService.class);
             stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
@@ -879,6 +887,7 @@ class SpecTaskRunnerServiceTest {
             fileListMock.close();
             chatMemoryMock.close();
             stateServiceMock.close();
+            appManagerMock.close();
         }
     }
 }

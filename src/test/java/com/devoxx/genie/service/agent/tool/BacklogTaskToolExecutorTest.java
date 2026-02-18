@@ -2,7 +2,6 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.model.spec.AcceptanceCriterion;
 import com.devoxx.genie.model.spec.TaskSpec;
-import com.devoxx.genie.service.spec.SpecContextBuilder;
 import com.devoxx.genie.service.spec.SpecService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -22,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,7 +67,7 @@ class BacklogTaskToolExecutorTest {
                 .title("My Task")
                 .filePath("/backlog/tasks/task-1.md")
                 .build();
-        when(specService.createTask(any(TaskSpec.class))).thenReturn(created);
+        when(specService.createTask(any(TaskSpec.class), anyBoolean())).thenReturn(created);
 
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("backlog_task_create")
@@ -108,7 +108,7 @@ class BacklogTaskToolExecutorTest {
                 .title("Full Task")
                 .filePath("/backlog/tasks/task-2.md")
                 .build();
-        when(specService.createTask(any(TaskSpec.class))).thenReturn(created);
+        when(specService.createTask(any(TaskSpec.class), anyBoolean())).thenReturn(created);
 
         String args = """
                 {
@@ -444,7 +444,7 @@ class BacklogTaskToolExecutorTest {
 
     @Test
     void execute_exceptionInHandler_returnsErrorMessage() throws Exception {
-        when(specService.createTask(any(TaskSpec.class))).thenThrow(new RuntimeException("IO fail"));
+        when(specService.createTask(any(TaskSpec.class), anyBoolean())).thenThrow(new RuntimeException("IO fail"));
 
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("backlog_task_create")

@@ -2,7 +2,6 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
@@ -35,8 +34,6 @@ class BuiltInToolProviderTest {
     @Mock
     private Project project;
     @Mock
-    private VirtualFile projectBase;
-    @Mock
     private ToolProviderRequest request;
     @Mock
     private DevoxxGenieStateService stateService;
@@ -48,7 +45,6 @@ class BuiltInToolProviderTest {
         stateServiceMock = mockStatic(DevoxxGenieStateService.class);
         stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
 
-        when(project.getBaseDir()).thenReturn(projectBase);
         when(project.getBasePath()).thenReturn("/tmp/test-project");
     }
 
@@ -181,11 +177,12 @@ class BuiltInToolProviderTest {
         ToolProviderResult result = provider.provideTools(request);
 
         Set<String> toolNames = getToolNames(result);
-        // 7 base + 17 backlog (7 task + 5 document + 5 milestone)
-        assertThat(result.tools()).hasSize(24);
+        // 7 base + 20 backlog (10 task + 5 document + 5 milestone)
+        assertThat(result.tools()).hasSize(27);
         assertThat(toolNames).contains(
                 "backlog_task_create", "backlog_task_list", "backlog_task_search",
                 "backlog_task_view", "backlog_task_edit", "backlog_task_complete", "backlog_task_archive",
+                "backlog_task_archive_done", "backlog_task_unarchive", "backlog_task_list_archived",
                 "backlog_document_list", "backlog_document_view", "backlog_document_create",
                 "backlog_document_update", "backlog_document_search",
                 "backlog_milestone_list", "backlog_milestone_add", "backlog_milestone_rename",
@@ -249,8 +246,8 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        // 7 base + 1 run_tests + 1 parallel_explore + 17 backlog + 5 PSI = 31
-        assertThat(result.tools()).hasSize(31);
+        // 7 base + 1 run_tests + 1 parallel_explore + 20 backlog + 5 PSI = 34
+        assertThat(result.tools()).hasSize(34);
     }
 
     // --- Disabled tools filtering in provideTools() ---

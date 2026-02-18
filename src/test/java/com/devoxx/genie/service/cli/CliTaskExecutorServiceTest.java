@@ -17,6 +17,8 @@ import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +27,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class CliTaskExecutorServiceTest {
+
+    private static final String TEST_TASK_ID = "test-task-id";
 
     @Mock
     private Project project;
@@ -110,8 +114,7 @@ class CliTaskExecutorServiceTest {
         Process mockProcess = mock(Process.class);
         when(mockProcess.isAlive()).thenReturn(false);
         CliCommand mockCommand = mock(CliCommand.class);
-        setActiveProcess(mockProcess);
-        setActiveCommand(mockCommand);
+        setActiveTask(mockProcess, mockCommand);
 
         service.notifyTaskDone();
         verify(mockCommand, never()).onTaskCompleted(any());
@@ -123,8 +126,7 @@ class CliTaskExecutorServiceTest {
         when(mockProcess.isAlive()).thenReturn(true);
         CliCommand mockCommand = mock(CliCommand.class);
         when(mockCommand.onTaskCompleted(mockProcess)).thenReturn(true);
-        setActiveProcess(mockProcess);
-        setActiveCommand(mockCommand);
+        setActiveTask(mockProcess, mockCommand);
 
         service.notifyTaskDone();
         verify(mockCommand).onTaskCompleted(mockProcess);
@@ -136,8 +138,7 @@ class CliTaskExecutorServiceTest {
         when(mockProcess.isAlive()).thenReturn(true);
         CliCommand mockCommand = mock(CliCommand.class);
         when(mockCommand.onTaskCompleted(mockProcess)).thenReturn(false);
-        setActiveProcess(mockProcess);
-        setActiveCommand(mockCommand);
+        setActiveTask(mockProcess, mockCommand);
 
         service.notifyTaskDone();
         verify(mockCommand).onTaskCompleted(mockProcess);
@@ -150,8 +151,7 @@ class CliTaskExecutorServiceTest {
         when(mockProcess.isAlive()).thenReturn(true);
         CliCommand mockCommand = mock(CliCommand.class);
         when(mockCommand.onTaskCompleted(mockProcess)).thenReturn(true);
-        setActiveProcess(mockProcess);
-        setActiveCommand(mockCommand);
+        setActiveTask(mockProcess, mockCommand);
 
         service.notifyTaskDone();
         assertThat(getTaskCompletedKill()).isTrue();
@@ -209,23 +209,50 @@ class CliTaskExecutorServiceTest {
         file.delete();
     }
 
-    // Helper methods to set private fields via reflection
+    // Helper methods to manipulate private state via reflection
 
+    /**
+     * Injects an ActiveCliTask (process + command) into the activeTasks map under TEST_TASK_ID.
+     * Uses reflection to access the private static inner class ActiveCliTask.
+     */
+    private void setActiveTask(Process process, CliCommand command) throws Exception {
+        Class<?> activeCliTaskClass = Arrays.stream(CliTaskExecutorService.class.getDeclaredClasses())
+                .filter(c -> c.getSimpleName().equals("ActiveCliTask"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("ActiveCliTask inner class not found"));
+
+        var constructor = activeCliTaskClass.getDeclaredConstructor(Process.class, CliCommand.class);
+        constructor.setAccessible(true);
+        Object activeTask = constructor.newInstance(process, command);
+
+        Field activeTasksField = CliTaskExecutorService.class.getDeclaredField("activeTasks");
+        activeTasksField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        ConcurrentHashMap<String, Object> map =
+                (ConcurrentHashMap<String, Object>) activeTasksField.get(service);
+        map.put(TEST_TASK_ID, activeTask);
+    }
+
+    /**
+     * Injects a process-only active task (with a stub command) under TEST_TASK_ID.
+     */
     private void setActiveProcess(Process process) throws Exception {
-        Field field = CliTaskExecutorService.class.getDeclaredField("activeProcess");
-        field.setAccessible(true);
-        field.set(service, process);
+        setActiveTask(process, mock(CliCommand.class));
     }
 
-    private void setActiveCommand(CliCommand command) throws Exception {
-        Field field = CliTaskExecutorService.class.getDeclaredField("activeCommand");
-        field.setAccessible(true);
-        field.set(service, command);
-    }
-
+    /**
+     * Reads taskCompletedKill from the ActiveCliTask stored under TEST_TASK_ID.
+     */
     private boolean getTaskCompletedKill() throws Exception {
-        Field field = CliTaskExecutorService.class.getDeclaredField("taskCompletedKill");
+        Field activeTasksField = CliTaskExecutorService.class.getDeclaredField("activeTasks");
+        activeTasksField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        ConcurrentHashMap<String, ?> map =
+                (ConcurrentHashMap<String, ?>) activeTasksField.get(service);
+        Object task = map.get(TEST_TASK_ID);
+        if (task == null) return false;
+        Field field = task.getClass().getDeclaredField("taskCompletedKill");
         field.setAccessible(true);
-        return (boolean) field.get(service);
+        return (boolean) field.get(task);
     }
 }
