@@ -242,7 +242,7 @@ const config = {
               },
               {
                 label: 'RSS Feed',
-                href: '/blog/rss.xml',
+                href: 'https://genie.devoxx.com/blog/rss.xml',
               },
               {
                 label: 'GitHub',
