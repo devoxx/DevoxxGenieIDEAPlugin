@@ -72,17 +72,29 @@ export default function Home() {
             </div>
             <div className="col col--6">
               <div className={styles.videoContainer}>
-                <iframe
-                  width="560"
-                  height="315"
-                  src="https://www.youtube.com/embed/t1MOHCfsdvk?si=6ohh21rytW3ASqtp"
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                  style={{borderRadius: '8px', width: '100%'}}
-                />
+                <a
+                  href="https://www.youtube.com/watch?v=t1MOHCfsdvk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{display: 'block', position: 'relative', borderRadius: '8px', overflow: 'hidden'}}
+                >
+                  <img
+                    src="https://img.youtube.com/vi/t1MOHCfsdvk/maxresdefault.jpg"
+                    alt="Spec-driven Development Demo"
+                    style={{width: '100%', display: 'block', borderRadius: '8px'}}
+                  />
+                  <div style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '68px', height: '48px',
+                    background: '#ff0000', borderRadius: '12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <svg viewBox="0 0 68 48" width="68" height="48">
+                      <polygon points="27,17 27,31 41,24" fill="#fff"/>
+                    </svg>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
