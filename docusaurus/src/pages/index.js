@@ -44,7 +44,7 @@ export default function Home() {
       <HomepageHeader />
       <div style={{background: 'var(--ifm-color-primary)', padding: '0.6rem 1rem', textAlign: 'center', color: '#fff', fontSize: '0.95rem'}}>
         Learn hands-on Agentic Engineering with the founder of DevoxxGenie —{' '}
-        <a href="https://stephanjanssen.be" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
+        <a href="https://stephanjanssen.be?utm_source=DevoxxGenie" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
           Agentic Engineering Workshop
         </a>
       </div>
