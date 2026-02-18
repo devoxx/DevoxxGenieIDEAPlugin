@@ -200,6 +200,12 @@ const config = {
             position: 'left',
             label: 'Documentation',
           },
+          {
+            type: 'docSidebar',
+            sidebarId: 'integrationsSidebar',
+            position: 'left',
+            label: 'Integrations',
+          },
           {to: '/blog', label: 'Blog', position: 'left'},
           {
             href: 'https://github.com/devoxx/DevoxxGenieIDEAPlugin',

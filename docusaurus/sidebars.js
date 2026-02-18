@@ -77,6 +77,11 @@ const sidebars = {
       ],
     },
   ],
+  integrationsSidebar: [
+    'integrations/overview',
+    'integrations/sonarlint',
+    'integrations/spotbugs',
+  ],
 };
 
 export default sidebars;
