@@ -255,6 +255,45 @@ milestone: v2.0
             </div>
           </div>
         </div>
+        <div className="container home-section home-section-alternate">
+          <div className="row">
+            <div className="col col--6">
+              <Link
+                to="/blog/devoxxgenie-plugin-integrations"
+                style={{display: 'block', position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 8px rgba(0,0,0,0.1)'}}>
+                <img
+                  src={useBaseUrl('/img/integrations/sonarlint-banner.png')}
+                  alt="DevoxxGenie Plugin Integrations"
+                  style={{width: '100%', display: 'block', borderRadius: '8px'}}
+                />
+              </Link>
+            </div>
+            <div className="col col--6">
+              <h2>Plugin Integration API</h2>
+              <p>
+                DevoxxGenie exposes a lightweight runtime API that other IntelliJ plugins can use to interact with it — no hard compile-time dependency required. Detect DevoxxGenie via <code>PluginManagerCore</code>, send prompts via reflection, or write structured <code>TASK-*.md</code> files for deferred AI-assisted resolution.
+              </p>
+              <p>
+                <strong>SonarLint DevoxxGenie:</strong> A fork of SonarLint v11.13 that adds three entry points for AI-assisted fixes — Alt+Enter intention action, rule panel button, and batch task creation for the SDD workflow.
+              </p>
+              <p>
+                <strong>SpotBugs DevoxxGenie:</strong> A fork of the JetBrains SpotBugs plugin that sends bug findings directly to DevoxxGenie with full context — pattern ID, category, priority, and ±10 lines of code.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px', gap: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to="/blog/devoxxgenie-plugin-integrations">
+                  Read the Blog Post
+                </Link>
+                <Link
+                  className="button button--secondary button--md"
+                  to={useBaseUrl('/docs/integrations/overview')}>
+                  API Reference
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="container home-section">
           <div className="row">
             <div className="col col--12 text--center">
