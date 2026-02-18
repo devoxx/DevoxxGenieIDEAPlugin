@@ -154,6 +154,20 @@ Implement JWT-based authentication for the REST API endpoints.
 
 The **DevoxxGenie Specs** tool window provides two views for managing your task specs: a **Task List** and a **Kanban Board**. Switch between them using the tabs at the top of the tool window.
 
+### Project Overview
+
+The **Project Overview** panel appears at the top of the Task List tab and gives you an instant summary of your backlog health:
+
+![SDD Project Overview](/img/SDD-ProjectOverview.png)
+
+- **Summary line**: shows the total task count, overall completion percentage, and a breakdown by status (e.g. "7 tasks | 14% complete | (1 done, 1 in progress, 5 to do)")
+- **Segmented progress bar**: a color-coded bar visualizing task distribution — green for Done, blue for In Progress, gray for To Do, and yellow for any custom statuses
+- **Priority breakdown**: count of high, medium, and low priority tasks at a glance
+- **Checklist progress**: aggregated acceptance criteria and Definition of Done completion across all tasks (e.g. "12/45 acceptance criteria | 8/20 definition of done")
+- **Archived task count**: displayed when archived tasks exist in the backlog
+
+The panel header has a **Hide/Show** toggle so you can collapse it to save vertical space once you have a feel for your backlog status.
+
 ### Task List
 
 The Task List view displays tasks in a tree structure grouped by status:
