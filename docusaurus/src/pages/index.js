@@ -42,6 +42,12 @@ export default function Home() {
       title={`${siteConfig.title} - Java-based LLM Assistant for IntelliJ IDEA`}
       description={siteConfig.customFields.description}>
       <HomepageHeader />
+      <div style={{background: 'var(--ifm-color-primary)', padding: '0.6rem 1rem', textAlign: 'center', color: '#fff', fontSize: '0.95rem'}}>
+        Learn hands-on Agentic Engineering with the founder of DevoxxGenie —{' '}
+        <a href="https://stephanjanssen.be" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
+          Agentic Engineering Workshop
+        </a>
+      </div>
       <main>
         <div className="container home-section">
           <div className="row">
