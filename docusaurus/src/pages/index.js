@@ -14,10 +14,12 @@ function HomepageHeader() {
     <header className={styles.heroBanner}>
       <video
         src={useBaseUrl('/img/DevoxxGenie.mp4')}
+        poster={useBaseUrl('/img/devoxxgenie-hero-poster.jpg')}
         autoPlay
         loop
         muted
         playsInline
+        preload="none"
         className={styles.heroVideo}
       />
       <div className={styles.heroOverlay}>
@@ -80,7 +82,7 @@ export default function Home() {
                 >
                   <img
                     src="https://img.youtube.com/vi/t1MOHCfsdvk/maxresdefault.jpg"
-                    alt="Spec-driven Development Demo"
+                    alt="DevoxxGenie AI Code Assistant demo video for IntelliJ IDEA"
                     style={{width: '100%', display: 'block', borderRadius: '8px'}}
                   />
                   <div style={{
@@ -267,7 +269,7 @@ milestone: v2.0
                 to="/blog/devoxxgenie-plugin-integrations"
                 style={{display: 'block', position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 8px rgba(0,0,0,0.1)'}}>
                 <img
-                  src={useBaseUrl('/img/integrations/sonarlint-banner.png')}
+                  src={useBaseUrl('/img/integrations/sonarlint-banner.webp')}
                   alt="DevoxxGenie Plugin Integrations"
                   style={{width: '100%', display: 'block', borderRadius: '8px'}}
                 />
@@ -303,7 +305,7 @@ milestone: v2.0
           <div className="row">
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>
-              <p>Join thousands of developers who are already using DevoxxGenie to improve their productivity.</p>
+              <p>Join over 45,000 developers who are already using DevoxxGenie to improve their productivity.</p>
               <p><em>100% free and open source with no hidden costs - just bring your own API keys (BYOK)!</em></p>
               <div className={styles.buttons} style={{marginTop: '20px'}}>
                 <Link
