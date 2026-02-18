@@ -47,38 +47,7 @@ const config = {
     locales: ['en'],
   },
 
-  plugins: [
-    // Remove standalone sitemap plugin as it's already included in the classic preset
-    // If you need custom sitemap settings, configure it in the preset options instead
-    [
-      // Using our custom schema plugin instead of the npm package
-      require.resolve('./src/plugins/schema-plugin'),
-      {
-        schemas: [
-          {
-            '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            'name': 'DevoxxGenie',
-            'applicationCategory': 'DeveloperApplication',
-            'operatingSystem': 'Windows, macOS, Linux',
-            'offers': {
-              '@type': 'Offer',
-              'price': '0',
-              'priceCurrency': 'USD'
-            },
-            'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
-            'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
-            'softwareVersion': '0.9.13',
-            'author': {
-              '@type': 'Organization',
-              'name': 'Devoxx',
-              'url': 'https://devoxx.com'
-            }
-          }
-        ]
-      }
-    ],
-  ],
+  plugins: [],
 
   presets: [
     [
@@ -112,7 +81,7 @@ const config = {
           lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: ['/tags/**', '/blog/tags/**', '/blog/archive', '/blog/authors'],
+          ignorePatterns: ['/tags/**', '/blog/tags/**', '/blog/archive', '/blog/authors', '/docs/category/**'],
           createSitemapItems: async (params) => {
             const {defaultCreateSitemapItems, ...rest} = params;
             const items = await defaultCreateSitemapItems(rest);
@@ -181,14 +150,14 @@ const config = {
       metadata: [
         {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
         {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for IntelliJ IDEA. Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, and custom skills.'},
-        {name: 'og:type', content: 'website'},
-        {name: 'og:site_name', content: 'DevoxxGenie'},
+        {property: 'og:type', content: 'website'},
+        {property: 'og:site_name', content: 'DevoxxGenie'},
         {name: 'twitter:card', content: 'summary_large_image'},
         {name: 'twitter:site', content: '@DevoxxGenie'},
         {name: 'twitter:creator', content: '@DevoxxGenie'},
-        {name: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
-        {name: 'og:image:width', content: '1200'},
-        {name: 'og:image:height', content: '630'},
+        {property: 'og:image:alt', content: 'DevoxxGenie - IntelliJ IDEA Code Assistant'},
+        {property: 'og:image:width', content: '1200'},
+        {property: 'og:image:height', content: '630'},
         {name: 'msvalidate.01', content: 'DBDB8BF0B394F33D60BAB8AEE5DB11B3'},
       ],
       navbar: {
