@@ -189,5 +189,5 @@ TASK-43-spotbugs-NP_NULL_ON_SOME_PATH-OrderProcessor-l124.md
 
 | Plugin | Features | Source |
 |---|---|---|
-| [SonarLint DevoxxGenie](./sonarlint.md) | AI fix + backlog task creation | [GitHub](https://github.com/devoxx/sonarlint-devoxxgenie-intellij) |
-| [SpotBugs DevoxxGenie](./spotbugs.md) | AI fix (prompt-only) | [GitHub](https://github.com/devoxx/spotbugs-devoxxgenie-plugin) |
+| [SonarLint DevoxxGenie](./sonarlint.md) | AI fix + backlog task creation | [GitHub](https://github.com/stephanj/sonarlint-devoxxgenie-intellij) |
+| [SpotBugs DevoxxGenie](./spotbugs.md) | AI fix (prompt-only) | [GitHub](https://github.com/stephanj/spotbugs-devoxxgenie-plugin) |

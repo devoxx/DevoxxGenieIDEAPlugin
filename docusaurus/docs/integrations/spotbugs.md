@@ -119,7 +119,7 @@ If you need deferred task-based resolution with backlog integration, see the [So
 
 ## Installation
 
-1. Download the plugin JAR from [GitHub Releases](https://github.com/devoxx/spotbugs-devoxxgenie-plugin/releases)
+1. Download the plugin JAR from [GitHub Releases](https://github.com/stephanj/spotbugs-devoxxgenie-plugin/releases)
 2. In IntelliJ: **Settings → Plugins → Install Plugin from Disk…**
 3. Select the downloaded JAR and restart the IDE
 
@@ -131,4 +131,4 @@ This plugin replaces the standard JetBrains SpotBugs plugin. Uninstall the offic
 
 ## GitHub Repository
 
-[github.com/devoxx/spotbugs-devoxxgenie-plugin](https://github.com/devoxx/spotbugs-devoxxgenie-plugin)
+[github.com/stephanj/spotbugs-devoxxgenie-plugin](https://github.com/stephanj/spotbugs-devoxxgenie-plugin)

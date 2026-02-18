@@ -113,7 +113,7 @@ All three entry points build the prompt from the same set of contextual fields:
 
 ## Installation
 
-1. Download the plugin JAR from [GitHub Releases](https://github.com/devoxx/sonarlint-devoxxgenie-intellij/releases)
+1. Download the plugin JAR from [GitHub Releases](https://github.com/stephanj/sonarlint-devoxxgenie-intellij/releases)
 2. In IntelliJ: **Settings → Plugins → Install Plugin from Disk…**
 3. Select the downloaded JAR and restart the IDE
 4. Ensure DevoxxGenie v0.9.12+ is also installed
@@ -126,4 +126,4 @@ This plugin replaces the standard SonarLint plugin. Uninstall the official Sonar
 
 ## GitHub Repository
 
-[github.com/devoxx/sonarlint-devoxxgenie-intellij](https://github.com/devoxx/sonarlint-devoxxgenie-intellij)
+[github.com/stephanj/sonarlint-devoxxgenie-intellij](https://github.com/stephanj/sonarlint-devoxxgenie-intellij)
