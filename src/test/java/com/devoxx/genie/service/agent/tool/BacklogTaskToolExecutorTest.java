@@ -76,7 +76,7 @@ class BacklogTaskToolExecutorTest {
 
         String result = executor.execute(request, null);
         assertThat(result).contains("Created task TASK-1").contains("My Task");
-        verify(specService).createTask(any(TaskSpec.class));
+        verify(specService).createTask(any(TaskSpec.class), anyBoolean());
     }
 
     @Test
@@ -134,7 +134,7 @@ class BacklogTaskToolExecutorTest {
 
         String result = executor.execute(request, null);
         assertThat(result).contains("Created task TASK-2");
-        verify(specService).createTask(any(TaskSpec.class));
+        verify(specService).createTask(any(TaskSpec.class), anyBoolean());
     }
 
     @Test
