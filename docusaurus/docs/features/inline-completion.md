@@ -3,6 +3,7 @@ sidebar_position: 10
 title: Inline Code Completion
 description: Setup and configuration guide for DevoxxGenie's inline code completion feature using Fill-in-the-Middle (FIM) models via Ollama or LM Studio.
 keywords: [inline completion, code completion, intellij, fim, fill-in-the-middle, ollama, lmstudio, starcoder, qwen, deepseek-coder]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 import Tabs from '@theme/Tabs';

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 5
-title: CLI Runners
-description: Execute spec tasks via external CLI tools like Claude Code, GitHub Copilot CLI, OpenAI Codex CLI, Google Gemini CLI, or Kimi CLI. DevoxxGenie manages the task lifecycle while your preferred tool does the implementation.
+title: CLI Runners - Use Claude Code & Copilot in IntelliJ IDEA
+description: Use Claude Code, GitHub Copilot CLI, Codex, Gemini CLI, or Kimi CLI directly inside IntelliJ IDEA. DevoxxGenie CLI Runners manage spec task execution via your existing AI subscriptions.
 keywords: [devoxxgenie, cli runners, claude code, copilot, codex, gemini, kimi, cli tools, spec-driven development, sdd, agent loop]
 image: /img/devoxxgenie-social-card.jpg
 ---

@@ -3,6 +3,7 @@ sidebar_position: 2
 title: Local LLM Providers
 description: Guide to all local LLM providers supported by DevoxxGenie, including setup instructions and configuration.
 keywords: [devoxxgenie, ollama, lmstudio, gpt4all, llama.cpp, jan, local llm, privacy]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Local LLM Providers

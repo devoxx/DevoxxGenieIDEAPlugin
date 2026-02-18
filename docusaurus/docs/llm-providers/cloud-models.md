@@ -3,6 +3,7 @@ sidebar_position: 3
 title: Cloud LLM Providers
 description: Guide to all cloud-based LLM providers supported by DevoxxGenie, including setup instructions and configuration.
 keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloud llm]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Cloud LLM Providers

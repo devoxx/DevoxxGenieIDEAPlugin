@@ -1,7 +1,8 @@
 ---
 sidebar_position: 2
-title: Agent Mode
-description: Enable agent mode to let the LLM autonomously explore and modify your codebase using built-in tools. Fetch web pages for documentation. Run tests automatically after code changes. Use PSI tools for semantic code intelligence. Use parallel sub-agents for concurrent read-only exploration. Enable or disable individual tools.
+title: Agent Mode - Autonomous AI Coding in IntelliJ IDEA
+description: DevoxxGenie Agent Mode lets your LLM autonomously explore, edit, and test your codebase using built-in tools, PSI code intelligence, and parallel sub-agents — in IntelliJ IDEA.
+image: /img/devoxxgenie-social-card.jpg
 keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control, PSI, code intelligence, find references, find definition, find implementations]
 ---
 

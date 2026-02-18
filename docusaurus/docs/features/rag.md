@@ -3,6 +3,7 @@ sidebar_position: 6
 title: RAG Support - Retrieval-Augmented Generation
 description: Learn how DevoxxGenie uses Retrieval-Augmented Generation (RAG) to improve AI assistance by automatically finding and incorporating relevant code from your project.
 keywords: [rag, retrieval augmented generation, chromadb, ollama, code search, intellij, ai coding]
+image: /img/devoxxgenie-social-card.jpg
 slug: /features/rag
 ---
 

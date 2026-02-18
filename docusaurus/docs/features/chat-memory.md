@@ -1,6 +1,6 @@
 ---
 sidebar_position: 8
-title: Chat Memory
+title: Chat Memory & Conversation Context - DevoxxGenie
 description: Configure DevoxxGenie's chat memory to control how much conversation context is sent to the LLM, balancing response quality with token usage.
 keywords: [devoxxgenie, chat memory, conversation context, memory size, token usage, llm context, chat history]
 image: /img/devoxxgenie-social-card.jpg

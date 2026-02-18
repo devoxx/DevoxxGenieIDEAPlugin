@@ -3,6 +3,7 @@ sidebar_position: 3
 title: Appearance Settings
 description: Customize the look and feel of the DevoxxGenie chat interface — colors, spacing, and font sizes.
 keywords: [devoxxgenie, appearance, theme, colors, fonts, customization, intellij plugin]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Appearance Settings

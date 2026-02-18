@@ -3,6 +3,7 @@ sidebar_position: 3
 title: MCP Support - Model Context Protocol
 description: Learn how DevoxxGenie integrates with MCP servers to give your LLM access to external tools, files, databases, and APIs. Enable or disable individual tools per server.
 keywords: [devoxxgenie, mcp, model context protocol, tools, agents, intellij plugin, marketplace, tool control]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # MCP Support

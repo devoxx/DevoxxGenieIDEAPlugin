@@ -7,7 +7,7 @@ image: /img/devoxxgenie-social-card.jpg
 slug: /getting-started/introduction
 ---
 
-# Introduction to DevoxxGenie
+# Introduction to DevoxxGenie - AI Code Assistant for IntelliJ IDEA
 
 ![DevoxxGenie Logo](../../static/img/genie.svg)
 

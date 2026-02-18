@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: Custom Providers
+title: Custom OpenAI-Compatible LLM Providers - DevoxxGenie
 description: Connect DevoxxGenie to any OpenAI-compatible LLM service including self-hosted models, DeepSeek R1, Grok, JLama, and enterprise AI platforms.
 keywords: [devoxxgenie, custom providers, openai compatible, self-hosted llm, deepseek, grok, jlama, enterprise ai, custom endpoint]
 image: /img/devoxxgenie-social-card.jpg

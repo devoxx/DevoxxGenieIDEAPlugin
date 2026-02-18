@@ -6,7 +6,7 @@ keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag,
 image: /img/devoxxgenie-social-card.jpg
 ---
 
-# Features Overview
+# Features Overview - DevoxxGenie Documentation
 
 DevoxxGenie offers a comprehensive set of features designed to enhance your development workflow with AI assistance. This page provides an overview of the key features available in the plugin.
 

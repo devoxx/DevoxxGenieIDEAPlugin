@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: ACP Runners
+title: ACP Runners - Agent Communication Protocol in IntelliJ IDEA
 description: Execute spec tasks via external ACP (Agent Communication Protocol) tools. DevoxxGenie communicates with ACP-compatible CLIs using JSON-RPC 2.0 over stdin/stdout for structured agent interactions.
 keywords: [devoxxgenie, acp runners, agent communication protocol, json-rpc, claude, kimi, gemini, kilocode, agent loop, spec-driven development]
 image: /img/devoxxgenie-social-card.jpg

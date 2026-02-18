@@ -3,6 +3,7 @@ sidebar_position: 4
 title: Skills - Custom Slash Commands
 description: Learn how to use and create Skills in DevoxxGenie — reusable slash commands that let you trigger common prompts with a simple /command.
 keywords: [devoxxgenie, skills, slash commands, custom prompts, intellij plugin, ai assistant]
+image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Skills
@@ -100,3 +101,9 @@ Skills and the system prompt serve different purposes:
 - Use `$ARGUMENT` to make skills flexible — the same skill can handle different inputs
 - Create project-specific skills for patterns you use frequently (e.g., `/service` to generate a service class following your project's conventions)
 - Combine skills with file context — select code in the editor before running a skill to include it in the prompt
+
+## Related Features
+
+- [Agent Mode](agent-mode.md) — let the LLM use skills autonomously via tool calls
+- [MCP Support](mcp_expanded.md) — extend capabilities with external tool servers
+- [Chat Interface](chat-interface.md) — use skills directly in the chat panel
