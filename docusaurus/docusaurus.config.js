@@ -31,7 +31,7 @@ const config = {
   organizationName: 'devoxx', // Usually your GitHub org/user name.
   projectName: 'DevoxxGenieIDEAPlugin', // Usually your repo name.
 
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
 
   markdown: {
     hooks: {
@@ -68,7 +68,7 @@ const config = {
             },
             'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
             'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
-            'softwareVersion': '0.9.7',
+            'softwareVersion': '0.9.13',
             'author': {
               '@type': 'Organization',
               'name': 'Devoxx',
@@ -94,8 +94,8 @@ const config = {
         },
         blog: {
           showReadingTime: true,
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
+          blogTitle: 'DevoxxGenie Blog - AI & IntelliJ IDEA Development',
+          blogDescription: 'News, tutorials, and updates on DevoxxGenie — the free, open-source AI code assistant plugin for IntelliJ IDEA. Learn about agent mode, MCP, spec-driven development, and more.',
           editUrl:
             'https://github.com/devoxx/DevoxxGenieIDEAPlugin/tree/master/docusaurus/',
           feedOptions: {
@@ -112,7 +112,7 @@ const config = {
           lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: ['/tags/**'],
+          ignorePatterns: ['/tags/**', '/blog/tags/**', '/blog/archive', '/blog/authors'],
           createSitemapItems: async (params) => {
             const {defaultCreateSitemapItems, ...rest} = params;
             const items = await defaultCreateSitemapItems(rest);
