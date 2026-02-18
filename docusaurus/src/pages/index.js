@@ -73,17 +73,15 @@ export default function Home() {
             <div className="col col--6">
               <div className={styles.videoContainer}>
                 <iframe
-                  className={styles.demoVideo}
-                  src="https://www.youtube-nocookie.com/embed/t1MOHCfsdvk"
-                  title="Spec-driven Development Demo"
+                  width="560"
+                  height="315"
+                  src="https://www.youtube.com/embed/t1MOHCfsdvk?si=6ohh21rytW3ASqtp"
+                  title="YouTube video player"
                   frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
-                  style={{
-                    width: '100%',
-                    aspectRatio: '16/9',
-                    borderRadius: '8px'
-                  }}
+                  style={{borderRadius: '8px', width: '100%'}}
                 />
               </div>
             </div>
