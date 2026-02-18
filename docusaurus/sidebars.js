@@ -22,6 +22,9 @@ const sidebars = {
         'getting-started/installation',
         'getting-started/quick-start-local',
         'getting-started/quick-start-cloud',
+        'getting-started/use-ollama-in-intellij',
+        'getting-started/why-devoxxgenie',
+        'getting-started/faq',
       ],
     },
     {
