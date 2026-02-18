@@ -4,7 +4,29 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
+import Head from '@docusaurus/Head';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  'name': 'DevoxxGenie',
+  'applicationCategory': 'DeveloperApplication',
+  'operatingSystem': 'Windows, macOS, Linux',
+  'offers': {
+    '@type': 'Offer',
+    'price': '0',
+    'priceCurrency': 'USD'
+  },
+  'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
+  'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
+  'softwareVersion': '0.9.13',
+  'author': {
+    '@type': 'Organization',
+    'name': 'Devoxx',
+    'url': 'https://devoxx.com'
+  }
+};
 
 import styles from './index.module.css';
 
@@ -13,6 +35,7 @@ function HomepageHeader() {
   return (
     <header className={styles.heroBanner}>
       <video
+        aria-label="DevoxxGenie AI code assistant plugin demo"
         poster={useBaseUrl('/img/devoxxgenie-hero-poster.jpg')}
         autoPlay
         loop
@@ -20,11 +43,11 @@ function HomepageHeader() {
         playsInline
         preload="none"
         className={styles.heroVideo}>
-        <source src={useBaseUrl('/img/DevoxxGenie.webm')} type="video/webm" />
-        <source src={useBaseUrl('/img/DevoxxGenie.mp4')} type="video/mp4" />
+        <source src={useBaseUrl('/img/DevoxxGenie.webm')} type="video/webm;codecs=vp9" />
+        <source src={useBaseUrl('/img/DevoxxGenie.mp4')} type="video/mp4;codecs=avc1.42E01E" />
       </video>
       <div className={styles.heroOverlay}>
-        <h1 className="hero__title">{siteConfig.title}</h1>
+        <h1 className="hero__title">DevoxxGenie — Free AI Code Assistant for IntelliJ IDEA</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
@@ -42,8 +65,11 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`${siteConfig.title} - Java-based LLM Assistant for IntelliJ IDEA`}
+      title="Free AI Code Assistant Plugin for IntelliJ IDEA"
       description={siteConfig.customFields.description}>
+      <Head>
+        <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
+      </Head>
       <HomepageHeader />
       <div style={{background: 'var(--ifm-color-primary)', padding: '0.6rem 1rem', textAlign: 'center', color: '#fff', fontSize: '0.95rem'}}>
         Learn hands-on Agentic Engineering with the founder of DevoxxGenie —{' '}
