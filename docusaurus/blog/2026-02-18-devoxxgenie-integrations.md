@@ -115,7 +115,7 @@ The **SonarLint DevoxxGenie** plugin is a fork of SonarLint for IntelliJ (v11.13
 
 <a href="https://www.youtube.com/watch?v=vWEK0jEIU3s" target="_blank" rel="noopener noreferrer"
    style={{display:'block',position:'relative',borderRadius:'8px',overflow:'hidden',boxShadow:'0 4px 8px rgba(0,0,0,0.1)',marginBottom:'1.5rem'}}>
-  <img src="/img/integrations/sonarlint-banner.png" alt="SonarLint DevoxxGenie Demo"
+  <img src="/img/integrations/sonarlint-banner.webp" alt="SonarLint DevoxxGenie Demo"
        style={{width:'100%',display:'block',borderRadius:'8px'}} />
   <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
                width:'68px',height:'48px',background:'#ff0000',borderRadius:'12px',
@@ -136,19 +136,19 @@ The fork surfaces three entry points for acting on a SonarLint finding with AI.
 
 Press **Alt+Enter** on any SonarLint-highlighted code and you'll see a "Fix with DevoxxGenie" intention action in the lightbulb menu. Select it and the prompt is assembled and submitted automatically — rule ID, rule description, severity, and ±10 lines of context all included.
 
-![Lightbulb intention action for SonarLint fix](/img/integrations/sonarlint-intention-action.png)
+![Lightbulb intention action for SonarLint fix](/img/integrations/sonarlint-intention-action.webp)
 
 ### Entry Point 2: Rule Panel Button
 
 Open the SonarLint tool window, select an issue, and look at the rule detail panel. A **"Fix with DevoxxGenie"** button appears in the header. Clicking it sends the same rich context to DevoxxGenie and focuses the chat panel so you can review the response.
 
-![Fix with DevoxxGenie button in rule panel](/img/integrations/sonarlint-rule-panel-button.png)
+![Fix with DevoxxGenie button in rule panel](/img/integrations/sonarlint-rule-panel-button.webp)
 
 ### Entry Point 3: Create DevoxxGenie Task(s)
 
 The SonarLint toolbar has a **"Create DevoxxGenie Task(s)"** action that does something different: instead of invoking the LLM immediately, it writes one or more `TASK-*.md` files into `backlog/tasks/`. This is the SDD integration path — defer the fix, let an agent handle it later.
 
-![Task creation toolbar action](/img/integrations/sonarlint-task-creation.png)
+![Task creation toolbar action](/img/integrations/sonarlint-task-creation.webp)
 
 ### What Context Gets Sent
 
@@ -172,7 +172,7 @@ All three entry points build the same prompt from the same fields:
 
 The **SpotBugs DevoxxGenie** plugin is a fork of the JetBrains SpotBugs plugin that adds a DevoxxGenie AI layer for fixing static analysis findings. When SpotBugs detects a potential bug, you send it to DevoxxGenie for an AI-assisted fix — no manual copy-pasting required.
 
-![SpotBugs DevoxxGenie banner](/img/integrations/spotbugs-banner.png)
+![SpotBugs DevoxxGenie banner](/img/integrations/spotbugs-banner.webp)
 
 :::info Requirements
 - **IntelliJ IDEA** 2023.3 or later
@@ -182,7 +182,7 @@ The **SpotBugs DevoxxGenie** plugin is a fork of the JetBrains SpotBugs plugin t
 
 ### Three Entry Points
 
-![SpotBugs DevoxxGenie integration](/img/integrations/spotbugs-integration.png)
+![SpotBugs DevoxxGenie integration](/img/integrations/spotbugs-integration.webp)
 
 1. **Intention action** — press **Alt+Enter** on SpotBugs-highlighted code. You'll see a `"DevoxxGenie: Fix '[BugPattern]'"` entry, e.g. `DevoxxGenie: Fix 'NP_NULL_ON_SOME_PATH'`. Selecting it assembles and submits the prompt immediately.
 

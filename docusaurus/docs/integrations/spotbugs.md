@@ -10,7 +10,7 @@ image: /img/devoxxgenie-social-card.jpg
 
 The **SpotBugs DevoxxGenie** plugin is a fork of the JetBrains SpotBugs plugin that adds a DevoxxGenie AI layer for fixing bug findings. When SpotBugs detects a potential bug in your Java code, you can send it to DevoxxGenie for an AI-assisted fix with a single action — no manual copy-pasting required.
 
-![SpotBugs DevoxxGenie banner](/img/integrations/spotbugs-banner.png)
+![SpotBugs DevoxxGenie banner](/img/integrations/spotbugs-banner.webp)
 
 :::info Requirements
 - **IntelliJ IDEA** 2023.3 or later
@@ -30,7 +30,7 @@ SpotBugs DevoxxGenie surfaces three ways to invoke AI assistance on a finding:
 
 All three entry points send the same rich context to DevoxxGenie: the bug pattern, category, priority, file path, line number, and the surrounding code.
 
-![SpotBugs DevoxxGenie integration](/img/integrations/spotbugs-integration.png)
+![SpotBugs DevoxxGenie integration](/img/integrations/spotbugs-integration.webp)
 
 ---
 

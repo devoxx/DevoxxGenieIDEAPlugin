@@ -158,7 +158,7 @@ The **DevoxxGenie Specs** tool window provides two views for managing your task 
 
 The **Project Overview** panel appears at the top of the Task List tab and gives you an instant summary of your backlog health:
 
-![SDD Project Overview](/img/SDD-ProjectOverview.png)
+![SDD Project Overview](/img/SDD-ProjectOverview.webp)
 
 - **Summary line**: shows the total task count, overall completion percentage, and a breakdown by status (e.g. "7 tasks | 14% complete | (1 done, 1 in progress, 5 to do)")
 - **Segmented progress bar**: a color-coded bar visualizing task distribution — green for Done, blue for In Progress, gray for To Do, and yellow for any custom statuses
@@ -178,13 +178,13 @@ The Task List view displays tasks in a tree structure grouped by status:
 
 Click any task to see its full details in the preview panel and open the markdown file in the editor. The layout adapts automatically — when the tool window is narrow (e.g., docked to the side), the tree and preview stack vertically; when wide (e.g., docked at the bottom), they sit side by side.
 
-![SDD Task List](/img/SDD-TaskList.png)
+![SDD Task List](/img/SDD-TaskList.webp)
 
 ### Kanban Board
 
 The Kanban Board provides a visual drag-and-drop interface for managing task status. Each status column shows task cards with priority badges, labels, and acceptance criteria progress.
 
-![SDD Kanban Board](/img/SDD-Kanban.png)
+![SDD Kanban Board](/img/SDD-Kanban.webp)
 
 Key features of the Kanban Board:
 

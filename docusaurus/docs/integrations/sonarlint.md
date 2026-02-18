@@ -11,7 +11,7 @@ image: /img/devoxxgenie-social-card.jpg
 The **SonarLint DevoxxGenie** plugin is a fork of SonarLint for IntelliJ (v11.13) that adds a DevoxxGenie AI layer on top of the standard SonarQube analysis. It lets you fix SonarLint findings with a single click and optionally create structured backlog task specs for later resolution.
 
 <a href="https://www.youtube.com/watch?v=vWEK0jEIU3s" target="_blank" rel="noopener noreferrer" style={{display: 'block', position: 'relative', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 8px rgba(0,0,0,0.1)'}}>
-  <img src="/img/integrations/sonarlint-banner.png" alt="SonarLint DevoxxGenie Demo" style={{width: '100%', display: 'block', borderRadius: '8px'}} />
+  <img src="/img/integrations/sonarlint-banner.webp" alt="SonarLint DevoxxGenie Demo" style={{width: '100%', display: 'block', borderRadius: '8px'}} />
   <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '68px', height: '48px', background: '#ff0000', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
     <svg viewBox="0 0 68 48" width="68" height="48"><polygon points="27,17 27,31 41,24" fill="#fff"/></svg>
   </div>
@@ -39,7 +39,7 @@ When SonarLint detects a code quality issue, the SonarLint DevoxxGenie plugin su
 
 Press **Alt+Enter** (or click the lightbulb) on any SonarLint-highlighted code to see a "Fix with DevoxxGenie" intention action. Selecting it sends an AI-crafted fix prompt to DevoxxGenie with full context: the rule ID, rule description, affected code, and surrounding lines.
 
-![Lightbulb intention action for SonarLint fix](/img/integrations/sonarlint-intention-action.png)
+![Lightbulb intention action for SonarLint fix](/img/integrations/sonarlint-intention-action.webp)
 
 The prompt is submitted automatically — DevoxxGenie will respond with a suggested fix in the chat panel.
 
@@ -49,7 +49,7 @@ The prompt is submitted automatically — DevoxxGenie will respond with a sugges
 
 When you open the **SonarLint tool window** and select an issue, the rule detail panel includes a **"Fix with DevoxxGenie"** button in the header area.
 
-![Fix with DevoxxGenie button in rule panel](/img/integrations/sonarlint-rule-panel-button.png)
+![Fix with DevoxxGenie button in rule panel](/img/integrations/sonarlint-rule-panel-button.webp)
 
 Clicking this button:
 1. Assembles a prompt with the rule name, severity, description, and the violating code snippet
@@ -62,7 +62,7 @@ Clicking this button:
 
 The SonarLint toolbar includes a **"Create DevoxxGenie Task(s)"** action. This does not immediately invoke the LLM — instead, it writes one or more `TASK-*.md` files into `backlog/tasks/` for deferred AI-assisted resolution via the [Spec-Driven Development](../features/spec-driven-development.md) workflow.
 
-![Task creation toolbar action](/img/integrations/sonarlint-task-creation.png)
+![Task creation toolbar action](/img/integrations/sonarlint-task-creation.webp)
 
 ### What gets written
 

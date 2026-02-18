@@ -58,11 +58,11 @@ A dedicated tool window in your IDE gives you two views:
 
 A **Task List** grouped by status (To Do, In Progress, Done) with a detail preview panel:
 
-![SDD Task List](/img/SDD-TaskList.png)
+![SDD Task List](/img/SDD-TaskList.webp)
 
 A **Kanban Board** with drag-and-drop for visual task management:
 
-![SDD Kanban Board](/img/SDD-Kanban.png)
+![SDD Kanban Board](/img/SDD-Kanban.webp)
 
 ### 3. Click "Implement with Agent"
 

@@ -82,13 +82,13 @@ Setup is similar to CLI Runners — about a minute of configuration:
 5. Click **Test Connection** to verify the ACP handshake succeeds
 6. **Apply** and you're done
 
-![ACP Runners Setup](/img/ACP-Runners-Setup.png)
+![ACP Runners Setup](/img/ACP-Runners-Setup.webp)
 
 ## Selecting Your Runner
 
 The DevoxxGenie Specs toolbar includes an execution mode dropdown where ACP runners appear alongside CLI runners and the built-in LLM provider:
 
-![ACP Runners Selection](/img/ACP-Runners-Selection.png)
+![ACP Runners Selection](/img/ACP-Runners-Selection.webp)
 
 ACP runners show up prefixed with **ACP:** — so you'll see entries like *ACP: Claude*, *ACP: Kimi*, and *ACP: Gemini* next to the existing CLI runner options. The selection persists across IDE restarts.
 
