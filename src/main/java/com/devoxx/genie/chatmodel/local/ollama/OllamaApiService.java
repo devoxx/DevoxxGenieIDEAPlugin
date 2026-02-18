@@ -48,6 +48,21 @@ public class OllamaApiService {
 
     private static int findContextLength(@NotNull JsonObject jsonObject) {
         JsonElement modelInfo = jsonObject.get("model_info");
+
+        // If the model context length has been overridden with num_ctx param, use that instead of max supported length
+        JsonElement parameters = jsonObject.get("parameters");
+        if (parameters != null && parameters.isJsonPrimitive()) {
+            for (String parameter : parameters.getAsString().split("\n")) {
+                String[] parts = parameter.strip().split("\\s+", 2);
+                if (parts.length == 2 && parts[0].equals("num_ctx")) {
+                    try {
+                        return Integer.parseInt(parts[1]);
+                    } catch (NumberFormatException nfe) {
+                        break;
+                    }
+            }
+        }
+
         if (modelInfo != null && modelInfo.isJsonObject()) {
             JsonObject modelInfoObject = modelInfo.getAsJsonObject();
             for (String key : modelInfoObject.keySet()) {
