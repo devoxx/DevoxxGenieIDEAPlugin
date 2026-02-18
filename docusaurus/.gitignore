@@ -20,3 +20,6 @@ yarn-debug.log*
 yarn-error.log*
 
 .clever.json
+
+# Claude Code local settings
+.claude/settings.local.json
