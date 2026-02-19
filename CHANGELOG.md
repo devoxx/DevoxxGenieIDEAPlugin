@@ -2,6 +2,16 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.16]
+
+### Fixed
+- Conversation history popup now closes after selecting an old chat (#946)
+- Remove EDT-blocking sleep calls during conversation restoration (#946)
+- Prevent IDE freezes when searching/attaching large files (#942)
+
+### Added
+- Prefer value of num_ctx for context length of Ollama models (#936)
+
 ## [0.9.15]
 
 ### Added
