@@ -113,6 +113,11 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/inline-completion";
+    }
+
+    @Override
     public void addListeners() {
         providerComboBox.addActionListener(e -> {
             updateEnabledState();

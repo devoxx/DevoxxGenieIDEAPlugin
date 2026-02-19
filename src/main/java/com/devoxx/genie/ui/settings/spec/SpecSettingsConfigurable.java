@@ -35,7 +35,7 @@ public class SpecSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         specSettingsComponent = new SpecSettingsComponent(project);
-        return specSettingsComponent.createPanel();
+        return specSettingsComponent.createPanelWithHelp();
     }
 
     @Override

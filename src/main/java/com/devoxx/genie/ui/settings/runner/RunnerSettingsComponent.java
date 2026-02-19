@@ -249,6 +249,11 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
         return area;
     }
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/acp-runners";
+    }
+
     // ===== State Management =====
 
     public boolean isModified() {

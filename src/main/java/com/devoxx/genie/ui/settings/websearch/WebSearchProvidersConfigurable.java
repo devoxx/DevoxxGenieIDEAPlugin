@@ -38,7 +38,7 @@ public class WebSearchProvidersConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return webSearchProvidersComponent.createPanel();
+        return webSearchProvidersComponent.createPanelWithHelp();
     }
 
     /**

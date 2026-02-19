@@ -27,6 +27,11 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/configuration/settings";
+    }
+
+    @Override
     public JPanel createPanel() {
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();

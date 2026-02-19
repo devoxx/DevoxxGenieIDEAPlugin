@@ -1,9 +1,11 @@
 package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.components.JBLabel;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +27,37 @@ public class AbstractSettingsComponent implements SettingsComponent {
     @Override
     public JPanel createPanel() {
         return panel;
+    }
+
+    protected String getHelpUrl() {
+        return null;
+    }
+
+    public JPanel createPanelWithHelp() {
+        JPanel content = createPanel();
+        String url = getHelpUrl();
+        if (url == null) return content;
+
+        HyperlinkLabel helpLink = new HyperlinkLabel("More Info");
+        helpLink.setIcon(AllIcons.General.Web);
+        helpLink.setToolTipText("Open online documentation");
+        helpLink.addHyperlinkListener(e -> {
+            try {
+                BrowserUtil.open(url);
+            } catch (Exception ex) {
+                Project p = ProjectManager.getInstance().getOpenProjects()[0];
+                NotificationUtil.sendNotification(p, "Error: Unable to open the link");
+            }
+        });
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.add(helpLink, BorderLayout.EAST);
+        header.setBorder(BorderFactory.createEmptyBorder(2, 0, 4, 8));
+
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.add(header, BorderLayout.NORTH);
+        wrapper.add(content, BorderLayout.CENTER);
+        return wrapper;
     }
 
     @Override

@@ -37,7 +37,7 @@ public class MCPSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         mcpSettingsComponent = new MCPSettingsComponent();
-        return mcpSettingsComponent.createPanel();
+        return mcpSettingsComponent.createPanelWithHelp();
     }
 
     @Override

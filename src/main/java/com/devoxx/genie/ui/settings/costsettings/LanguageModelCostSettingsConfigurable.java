@@ -27,7 +27,7 @@ public class LanguageModelCostSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return new LanguageModelCostSettingsComponent().createPanel();
+        return new LanguageModelCostSettingsComponent().createPanelWithHelp();
     }
 
     @Override

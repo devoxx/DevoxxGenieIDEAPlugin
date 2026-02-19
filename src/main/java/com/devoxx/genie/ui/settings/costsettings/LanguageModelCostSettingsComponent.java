@@ -75,6 +75,11 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         panel.add(scrollPane, BorderLayout.CENTER);
     }
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/configuration/token-cost";
+    }
+
     private void setupColumns() {
         costTable.getColumnModel().getColumn(ColumnName.PROVIDER.ordinal()).setPreferredWidth(60);
         costTable.getColumnModel().getColumn(ColumnName.MODEL.ordinal()).setPreferredWidth(220);

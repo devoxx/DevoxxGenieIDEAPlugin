@@ -80,6 +80,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/rag";
+    }
+
+    @Override
     public void addListeners() {
         startIndexButton.addActionListener(e -> startIndexing());
         enableIndexerCheckBox.addActionListener(e -> {

@@ -28,7 +28,7 @@ public class SkillSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return skillSettingsComponent.createPanel();
+        return skillSettingsComponent.createPanelWithHelp();
     }
 
     @Override

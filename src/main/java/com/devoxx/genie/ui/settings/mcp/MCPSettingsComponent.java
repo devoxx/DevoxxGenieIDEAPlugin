@@ -381,6 +381,11 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
         }
     }
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/mcp_expanded";
+    }
+
     /**
      * Apply the settings from the UI to the DevoxxGenieStateService
      */

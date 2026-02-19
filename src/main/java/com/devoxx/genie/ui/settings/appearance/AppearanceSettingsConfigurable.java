@@ -23,7 +23,7 @@ public class AppearanceSettingsConfigurable implements Configurable {
     public @Nullable JComponent createComponent() {
         settingsComponent = new AppearanceSettingsComponent();
         settingsComponent.addListeners();
-        return settingsComponent.createPanel();
+        return settingsComponent.createPanelWithHelp();
     }
     
     @Override
