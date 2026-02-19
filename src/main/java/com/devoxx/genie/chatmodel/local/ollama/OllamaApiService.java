@@ -60,6 +60,7 @@ public class OllamaApiService {
                     } catch (NumberFormatException nfe) {
                         break;
                     }
+                }
             }
         }
 
