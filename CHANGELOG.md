@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 - Refresh button now works for cloud providers (Anthropic, OpenAI, Google, etc.) with model diff notification (#943)
 - Add Gemini 3.1 Pro Preview model
 
+### Fixed
+- Prevent IDE freezes when searching/attaching large files (#942)
+
 ### Changed
 - Token Cost settings table is now read-only and refreshes from remote models.json on open (#944)
 
