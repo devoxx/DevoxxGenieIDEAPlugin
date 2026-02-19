@@ -381,21 +381,13 @@
                     icon="/icons/pluginIcon.svg"
                     factoryClass="com.devoxx.genie.ui.window.DevoxxGenieToolWindowFactory"/>
 
-        <toolWindow id="DevoxxGenieMCPLogs"
+        <toolWindow id="DevoxxGenieActivityLogs"
                     anchor="bottom"
-                    icon="/icons/logIcon.svg"
+                    icon="/icons/spy.svg"
                     secondary="true"
                     doNotActivateOnStart="true"
                     canCloseContents="true"
-                    factoryClass="com.devoxx.genie.ui.window.MCPLogToolWindowFactory"/>
-
-        <toolWindow id="DevoxxGenieAgentLogs"
-                    anchor="bottom"
-                    icon="/icons/agent.svg"
-                    secondary="true"
-                    doNotActivateOnStart="true"
-                    canCloseContents="true"
-                    factoryClass="com.devoxx.genie.ui.window.AgentLogToolWindowFactory"/>
+                    factoryClass="com.devoxx.genie.ui.window.AgentMcpLogToolWindowFactory"/>
 
         <toolWindow id="DevoxxGenieSpecs"
                     anchor="right"

@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.window;
 
-import com.devoxx.genie.ui.panel.agent.AgentLogPanel;
+import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.ui.panel.log.AgentMcpLogPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -11,31 +12,28 @@ import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Factory for creating the Agent Log tool window.
+ * Factory for creating the unified Agent + MCP activity log tool window.
  */
-public class AgentLogToolWindowFactory implements ToolWindowFactory {
+public class AgentMcpLogToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            AgentLogPanel agentLogPanel = new AgentLogPanel(project);
-            Content content = ContentFactory.getInstance().createContent(
-                    agentLogPanel,
-                    "DevoxxGenie Agent Logs",
-                    false
-            );
+            AgentMcpLogPanel panel = new AgentMcpLogPanel(project);
+            Content content = ContentFactory.getInstance().createContent(panel, "DevoxxGenie Logs", false);
             toolWindow.getContentManager().addContent(content);
         });
     }
 
     @Override
     public boolean shouldBeAvailable(@NotNull Project project) {
-        return Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled());
+        DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
+        return Boolean.TRUE.equals(s.getAgentModeEnabled()) || MCPService.isMCPEnabled();
     }
 
     @Override
     public void init(@NotNull ToolWindow toolWindow) {
-        toolWindow.setStripeTitle("DevoxxGenie Agent Logs");
+        toolWindow.setStripeTitle("DevoxxGenie Logs");
         toolWindow.setToHideOnEmptyContent(false);
     }
 }
