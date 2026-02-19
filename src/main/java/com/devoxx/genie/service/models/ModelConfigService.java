@@ -77,6 +77,19 @@ public final class ModelConfigService {
         }
     }
 
+    /**
+     * Forces an immediate background fetch of models.json, ignoring TTL.
+     * The optional callback is invoked on the EDT after the fetch completes (or fails).
+     */
+    public void forceRefresh(@Nullable Runnable callback) {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            fetchAndCache();
+            if (callback != null) {
+                ApplicationManager.getApplication().invokeLater(callback);
+            }
+        });
+    }
+
     private void triggerBackgroundFetch() {
         ApplicationManager.getApplication().executeOnPooledThread(this::fetchAndCache);
     }
