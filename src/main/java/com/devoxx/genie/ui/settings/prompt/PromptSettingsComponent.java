@@ -91,7 +91,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy = 0;
 
         // --- System Prompt ---
-        addSection(contentPanel, gbc, "Prompts");
+        addSection(contentPanel, gbc, "System Prompt");
         addPromptArea(contentPanel, gbc, systemPromptField);
 
         // --- DEVOXXGENIE.md Generation ---
