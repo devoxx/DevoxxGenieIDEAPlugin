@@ -71,6 +71,9 @@ public class MessageCreationService {
             return;
         }
 
+        // Load deferred attached files content (runs on background thread, not EDT)
+        resolvePendingAttachedFiles(chatMessageContext);
+
         String context = chatMessageContext.getFilesContext();
         if (context != null && !context.isEmpty()) {
             constructUserMessageWithFullContext(chatMessageContext, context);
@@ -78,6 +81,16 @@ public class MessageCreationService {
             constructUserMessageWithCombinedContext(chatMessageContext);
         }
         addImages(chatMessageContext);
+    }
+
+    private void resolvePendingAttachedFiles(@NotNull ChatMessageContext chatMessageContext) {
+        List<VirtualFile> pending = chatMessageContext.getPendingAttachedFiles();
+        if (pending != null && !pending.isEmpty()
+                && (chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty())) {
+            String context = createAttachedFilesContext(chatMessageContext.getProject(), pending);
+            chatMessageContext.setFilesContext(context);
+            chatMessageContext.setPendingAttachedFiles(null);
+        }
     }
 
     private void addImages(@NotNull ChatMessageContext chatMessageContext) {

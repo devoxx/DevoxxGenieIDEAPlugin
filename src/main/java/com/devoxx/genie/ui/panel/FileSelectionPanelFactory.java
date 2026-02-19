@@ -32,6 +32,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
     private static final int DOUBLE_CLICK = 2;
     private static final int DEBOUNCE_DELAY = 300; // milliseconds
+    private static final int MAX_RESULTS = 50;
 
     private FileSelectionPanelFactory() {
     }
@@ -177,6 +178,7 @@ public class FileSelectionPanelFactory implements DumbAware {
                 String[] names = model.getNames(false);
                 for (String name : names) {
                     if (indicator.isCanceled()) return true;
+                    if (foundFiles.size() >= MAX_RESULTS) return false;
                     if (name.toLowerCase().contains(searchText.toLowerCase())) {
                         Object[] objects = model.getElementsByName(name, false, name);
                         for (Object obj : objects) {
@@ -184,6 +186,7 @@ public class FileSelectionPanelFactory implements DumbAware {
                                 VirtualFile virtualFile = psiFile.getVirtualFile();
                                 if (virtualFile != null && !foundFiles.contains(virtualFile)) {
                                     foundFiles.add(virtualFile);
+                                    if (foundFiles.size() >= MAX_RESULTS) return false;
                                 }
                             }
                         }
