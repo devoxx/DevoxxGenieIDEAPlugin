@@ -34,7 +34,7 @@ public class AgentSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         agentSettingsComponent = new AgentSettingsComponent();
-        return agentSettingsComponent.createPanel();
+        return agentSettingsComponent.createPanelWithHelp();
     }
 
     @Override

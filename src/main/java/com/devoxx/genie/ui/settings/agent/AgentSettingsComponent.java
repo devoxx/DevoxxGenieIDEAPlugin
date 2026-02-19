@@ -680,6 +680,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy++;
     }
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/agent-mode";
+    }
+
     public boolean isModified() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return enableAgentModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentModeEnabled())
@@ -769,6 +774,18 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         for (Map.Entry<String, JBCheckBox> entry : toolCheckboxes.entrySet()) {
             entry.getValue().setSelected(!disabledSet.contains(entry.getKey()));
         }
+
+        // customTestCommandField.setText() above triggers caret-based scrollRectToVisible,
+        // which scrolls IntelliJ's viewport to mid-panel. Scroll back to top
+        // using the wrapper parent so the "More Info" header is also visible.
+        SwingUtilities.invokeLater(() -> {
+            Container parent = panel.getParent();
+            if (parent instanceof JComponent wrapper) {
+                wrapper.scrollRectToVisible(new Rectangle(0, 0, 1, 1));
+            } else {
+                panel.scrollRectToVisible(new Rectangle(0, 0, 1, 1));
+            }
+        });
     }
 
     private String getSelectedProviderName() {

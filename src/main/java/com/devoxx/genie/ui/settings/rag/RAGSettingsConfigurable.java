@@ -38,7 +38,7 @@ public class RAGSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return ragSettingsComponent.createPanel();
+        return ragSettingsComponent.createPanelWithHelp();
     }
 
     /**

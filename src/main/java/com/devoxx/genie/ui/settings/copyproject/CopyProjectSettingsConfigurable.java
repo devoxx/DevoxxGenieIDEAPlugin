@@ -22,7 +22,7 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         copyProjectSettingsComponent = new CopyProjectSettingsComponent();
-        return copyProjectSettingsComponent.createPanel();
+        return copyProjectSettingsComponent.createPanelWithHelp();
     }
 
     @Override

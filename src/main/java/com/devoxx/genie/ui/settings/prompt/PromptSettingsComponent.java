@@ -74,6 +74,11 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/configuration/prompts";
+    }
+
+    @Override
     public JPanel createPanel() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();

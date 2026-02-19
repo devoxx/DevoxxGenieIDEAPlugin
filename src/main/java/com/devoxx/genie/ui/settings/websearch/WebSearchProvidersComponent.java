@@ -42,6 +42,11 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/web-search";
+    }
+
+    @Override
     public JPanel createPanel() {
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();

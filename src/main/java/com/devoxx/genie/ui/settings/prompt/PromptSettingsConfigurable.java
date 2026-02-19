@@ -27,7 +27,7 @@ public class PromptSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return promptSettingsComponent.createPanel();
+        return promptSettingsComponent.createPanelWithHelp();
     }
 
     @Nls

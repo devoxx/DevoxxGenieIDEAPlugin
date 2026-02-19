@@ -401,6 +401,11 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/spec-driven-development";
+    }
+
+    @Override
     public void addListeners() {
         // No dynamic listeners needed
     }

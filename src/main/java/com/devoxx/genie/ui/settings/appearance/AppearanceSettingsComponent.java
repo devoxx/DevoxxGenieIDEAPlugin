@@ -333,9 +333,14 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         return panel;
     }
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/configuration/appearance";
+    }
+
     public boolean isModified() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        
+
         return state.getLineHeight() != lineHeightSpinner.getValue() ||
                state.getMessagePadding() != messagePaddingSpinner.getNumber() ||
                state.getMessageMargin() != messageMarginSpinner.getNumber() ||

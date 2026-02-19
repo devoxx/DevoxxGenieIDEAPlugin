@@ -5,7 +5,6 @@ import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.MessageBusUtil;
@@ -29,6 +28,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -62,7 +62,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         String fullContent
     ) {
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return timestamp + " " + message;
         }
     }
@@ -314,36 +314,36 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
         switch (message.getType()) {
             case TOOL_REQUEST:
-                sb.append("\u25B6 ").append(message.getToolName());
+                sb.append("▶ ").append(message.getToolName());
                 if (message.getArguments() != null) {
                     String args = message.getArguments();
                     if (args.length() > 100) args = args.substring(0, 100) + "...";
-                    sb.append(" \u2190 ").append(args);
+                    sb.append(" ← ").append(args);
                 }
                 break;
             case TOOL_RESPONSE:
-                sb.append("\u2714 ").append(message.getToolName());
+                sb.append("✔ ").append(message.getToolName());
                 if (message.getResult() != null) {
                     String result = message.getResult();
                     if (result.length() > 120) result = result.substring(0, 120) + "...";
-                    sb.append(" \u2192 ").append(result.replace("\n", " "));
+                    sb.append(" → ").append(result.replace("\n", " "));
                 }
                 break;
             case TOOL_ERROR:
-                sb.append("\u2716 ").append(message.getToolName());
-                if (message.getResult() != null) sb.append(" \u2192 ").append(message.getResult());
+                sb.append("✖ ").append(message.getToolName());
+                if (message.getResult() != null) sb.append(" → ").append(message.getResult());
                 break;
             case LOOP_LIMIT:
-                sb.append("\u26A0 LOOP LIMIT REACHED (").append(message.getMaxCalls()).append(" calls)");
+                sb.append("⚠ LOOP LIMIT REACHED (").append(message.getMaxCalls()).append(" calls)");
                 break;
             case APPROVAL_REQUESTED:
-                sb.append("\u2753 Approval requested for ").append(message.getToolName());
+                sb.append("❓ Approval requested for ").append(message.getToolName());
                 break;
             case APPROVAL_GRANTED:
-                sb.append("\u2714 Approval granted for ").append(message.getToolName());
+                sb.append("✔ Approval granted for ").append(message.getToolName());
                 break;
             case APPROVAL_DENIED:
-                sb.append("\u2716 Approval denied for ").append(message.getToolName());
+                sb.append("✖ Approval denied for ").append(message.getToolName());
                 break;
             case INTERMEDIATE_RESPONSE:
                 sb.append("\uD83D\uDCAC ");

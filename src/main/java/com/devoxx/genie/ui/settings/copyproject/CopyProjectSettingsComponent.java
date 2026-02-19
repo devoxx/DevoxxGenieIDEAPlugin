@@ -33,6 +33,11 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/project-scanner";
+    }
+
+    @Override
     public JPanel createPanel() {
         // Add description
         JBLabel descriptionLabel = new JBLabel("<html><body style='width: 100%;'>" +

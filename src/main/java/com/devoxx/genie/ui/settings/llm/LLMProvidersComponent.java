@@ -143,6 +143,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     }
 
     @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/llm-providers/overview";
+    }
+
+    @Override
     public JPanel createPanel() {
         panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();

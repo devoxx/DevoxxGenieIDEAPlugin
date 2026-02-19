@@ -20,7 +20,7 @@ public class CompletionSettingsConfigurable implements Configurable {
     public @Nullable JComponent createComponent() {
         settingsComponent = new CompletionSettingsComponent();
         settingsComponent.addListeners();
-        return settingsComponent.createPanel();
+        return settingsComponent.createPanelWithHelp();
     }
 
     @Override

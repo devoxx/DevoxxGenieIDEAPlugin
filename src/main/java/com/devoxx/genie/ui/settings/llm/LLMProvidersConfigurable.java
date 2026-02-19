@@ -40,7 +40,7 @@ public class LLMProvidersConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        return llmSettingsComponent.createPanel();
+        return llmSettingsComponent.createPanelWithHelp();
     }
 
     /**
