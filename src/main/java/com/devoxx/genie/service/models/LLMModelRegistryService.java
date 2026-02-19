@@ -3,8 +3,11 @@ package com.devoxx.genie.service.models;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.models.ModelConfig;
+import com.devoxx.genie.model.models.ModelConfigEntry;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,6 +19,7 @@ import static dev.langchain4j.model.anthropic.AnthropicChatModelName.*;
 import static dev.langchain4j.model.mistralai.MistralAiChatModelName.*;
 import static dev.langchain4j.model.openai.OpenAiChatModelName.*;
 
+@Slf4j
 @Service
 public final class LLMModelRegistryService {
 
@@ -27,6 +31,14 @@ public final class LLMModelRegistryService {
     }
 
     public LLMModelRegistryService() {
+        loadHardcodedModels();
+        loadRemoteConfigFromCache();
+    }
+
+    /**
+     * Loads the hardcoded model definitions as the baseline/fallback.
+     */
+    private void loadHardcodedModels() {
         addOpenAiModels();
         addAnthropicModels();
         addDeepInfraModels();
@@ -38,6 +50,78 @@ public final class LLMModelRegistryService {
         addGrokModels();
         addKimiModels();
         addGLMModels();
+    }
+
+    /**
+     * On startup, tries to load model config from the persistent cache (synchronous).
+     * This ensures that if a remote config was previously fetched, it's used immediately.
+     */
+    private void loadRemoteConfigFromCache() {
+        try {
+            ModelConfig config = ModelConfigService.getInstance().getModelConfig();
+            if (config != null) {
+                applyRemoteConfig(config);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load remote model config from cache: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Called by {@link ModelConfigService} when a fresh remote config is fetched.
+     * Replaces models with the remote config, keeping hardcoded models as fallback
+     * for any providers not present in the remote config.
+     */
+    public void refreshFromRemoteConfig(@NotNull ModelConfig config) {
+        applyRemoteConfig(config);
+        log.info("Model registry refreshed from remote config (updated {})", config.getLastUpdated());
+    }
+
+    /**
+     * Applies the remote model config by replacing models for providers that are
+     * present in the remote config.
+     */
+    private void applyRemoteConfig(@NotNull ModelConfig config) {
+        if (config.getProviders() == null || config.getProviders().isEmpty()) {
+            return;
+        }
+
+        Map<String, LanguageModel> updatedModels = new HashMap<>(models);
+
+        for (Map.Entry<String, List<ModelConfigEntry>> entry : config.getProviders().entrySet()) {
+            String providerName = entry.getKey();
+            List<ModelConfigEntry> entries = entry.getValue();
+
+            ModelProvider provider;
+            try {
+                provider = ModelProvider.fromString(providerName);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown provider in remote model config: {}", providerName);
+                continue;
+            }
+
+            // Remove all existing models for this provider
+            updatedModels.entrySet().removeIf(m -> m.getValue().getProvider() == provider);
+
+            // Add models from remote config
+            String separator = provider == ModelProvider.Anthropic ? "-" : ":";
+            for (ModelConfigEntry modelEntry : entries) {
+                String key = provider.getName() + separator + modelEntry.getModelName();
+                LanguageModel model = LanguageModel.builder()
+                        .provider(provider)
+                        .modelName(modelEntry.getModelName())
+                        .displayName(modelEntry.getDisplayName())
+                        .inputCost(modelEntry.getInputCost())
+                        .outputCost(modelEntry.getOutputCost())
+                        .inputMaxTokens(modelEntry.getInputMaxTokens())
+                        .outputMaxTokens(modelEntry.getOutputMaxTokens())
+                        .apiKeyUsed(modelEntry.isApiKeyUsed())
+                        .build();
+                updatedModels.put(key, model);
+            }
+        }
+
+        this.models = updatedModels;
     }
 
     private void addAnthropicModels() {

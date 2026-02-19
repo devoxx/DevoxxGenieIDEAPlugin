@@ -6,6 +6,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.models.ModelConfigService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.renderer.ModelProviderRenderer;
@@ -25,9 +26,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
@@ -179,8 +183,46 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
             });
         } else {
-            NotificationUtil.sendNotification(project,
-                    "Model refresh is only available for LMStudio, Ollama, GPT4All and Jan providers.");
+            refreshButton.setEnabled(false);
+
+            // Capture current model names before refresh
+            Set<String> beforeNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                    .map(f -> f.getModels().stream()
+                            .map(LanguageModel::getModelName)
+                            .collect(Collectors.toSet()))
+                    .orElse(Collections.emptySet());
+
+            ModelConfigService.getInstance().forceRefresh(() -> {
+                ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                        .ifPresent(ChatModelFactory::resetModels);
+                updateModelNamesComboBox(selectedProvider.getName());
+                modelNameComboBox.setRenderer(new ModelInfoRenderer());
+                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+                modelNameComboBox.revalidate();
+                modelNameComboBox.repaint();
+                refreshButton.setEnabled(true);
+
+                // Compute diff and show notification
+                Set<String> afterNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                        .map(f -> f.getModels().stream()
+                                .map(LanguageModel::getModelName)
+                                .collect(Collectors.toSet()))
+                        .orElse(Collections.emptySet());
+
+                long added = afterNames.stream().filter(n -> !beforeNames.contains(n)).count();
+                long removed = beforeNames.stream().filter(n -> !afterNames.contains(n)).count();
+
+                String message;
+                if (added == 0 && removed == 0) {
+                    message = selectedProvider.getName() + " models are up to date (" + afterNames.size() + " models).";
+                } else {
+                    List<String> parts = new ArrayList<>();
+                    if (added > 0) parts.add(added + " new");
+                    if (removed > 0) parts.add(removed + " removed");
+                    message = selectedProvider.getName() + " models refreshed: " + String.join(", ", parts) + ".";
+                }
+                NotificationUtil.sendNotification(project, message);
+            });
         }
     }
 
