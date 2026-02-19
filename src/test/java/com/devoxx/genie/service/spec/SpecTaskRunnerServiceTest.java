@@ -842,9 +842,10 @@ class SpecTaskRunnerServiceTest {
 
             Application application = mock(Application.class);
             appManagerMock.when(ApplicationManager::getApplication).thenReturn(application);
-            // Parallel mode dispatches tasks via executeOnPooledThread — run them inline for tests
-            doAnswer(inv -> { ((Runnable) inv.getArgument(0)).run(); return null; })
-                    .when(application).executeOnPooledThread(any(Runnable.class));
+            // Parallel mode dispatches tasks via executeOnPooledThread with a blocking
+            // layerLatch.await(). We make this a no-op because: (1) running inline
+            // would deadlock the test thread, and (2) MockedStatic is thread-scoped
+            // so a real background thread can't see the mocked ApplicationManager.
 
             stateService = mock(DevoxxGenieStateService.class);
             stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
