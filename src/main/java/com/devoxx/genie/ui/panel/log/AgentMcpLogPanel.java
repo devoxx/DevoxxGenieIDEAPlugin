@@ -178,7 +178,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
 
         @Override
-        protected @NotNull DefaultActionGroup createPopupActionGroup(@NotNull JComponent button) {
+        protected @NotNull DefaultActionGroup createPopupActionGroup(@NotNull JComponent button, @NotNull DataContext dataContext) {
             DefaultActionGroup group = new DefaultActionGroup();
             group.add(filterAction("Show All",          LogFilter.ALL));
             group.add(filterAction("Show MCP Only",     LogFilter.MCP_ONLY));
