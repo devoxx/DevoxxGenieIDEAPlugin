@@ -315,6 +315,15 @@
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-3.1-pro-preview",
+        "displayName": "Gemini 3.1 Pro Preview",
+        "inputCost": 2,
+        "outputCost": 12,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
       }
     ],
     "Groq": [
