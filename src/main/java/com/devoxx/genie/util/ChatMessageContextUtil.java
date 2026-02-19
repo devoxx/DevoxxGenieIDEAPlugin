@@ -1,6 +1,5 @@
 package com.devoxx.genie.util;
 
-import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.ChatContextParameters;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -8,7 +7,6 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import dev.langchain4j.data.message.UserMessage;
 import com.devoxx.genie.service.FileListManager;
-import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
@@ -19,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.devoxx.genie.action.AddSnippetAction.*;
@@ -115,15 +114,8 @@ public class ChatMessageContextUtil {
                 fileListManager.getImageFiles(chatMessageContext.getProject()).size());
 
         if (!files.isEmpty()) {
-            try {
-                String newContext = MessageCreationService
-                        .getInstance()
-                        .createAttachedFilesContext(chatMessageContext.getProject(), files);
-
-                chatMessageContext.setFilesContext(newContext);
-            } catch (Exception ex) {
-                ErrorHandler.handleError(chatMessageContext.getProject(), ex);
-            }
+            // Defer file content loading to background thread to avoid EDT freeze on large files
+            chatMessageContext.setPendingAttachedFiles(new ArrayList<>(files));
         }
     }
 

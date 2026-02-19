@@ -51,6 +51,10 @@ public class ChatMessageContext {
     @Setter
     private List<VirtualFile> fileReferences;
 
+    @Getter
+    @Setter
+    private List<VirtualFile> pendingAttachedFiles;
+
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;
