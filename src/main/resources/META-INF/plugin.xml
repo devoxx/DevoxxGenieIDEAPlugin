@@ -45,6 +45,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.15</h2>
+        <UL>
+            <LI>Externalize cloud model config (names, costs, context windows) to remote models.json with 24h TTL caching</LI>
+            <LI>Refresh button now works for cloud providers (Anthropic, OpenAI, Google, etc.) with model diff notification</LI>
+            <LI>Token Cost settings table is now read-only and refreshes from remote models.json on open</LI>
+            <LI>Add Gemini 3.1 Pro Preview model</LI>
+        </UL>
         <h2>v0.9.14</h2>
         <UL>
             <LI>Compact icon-only toolbar footer: all buttons uniform 28x28 with tooltips, FlowLayout eliminates gaps when buttons are hidden (#941)</LI>

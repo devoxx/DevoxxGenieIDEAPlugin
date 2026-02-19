@@ -2,6 +2,16 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.15]
+
+### Added
+- Externalize cloud model config (names, costs, context windows) to remote models.json with 24h TTL caching (#943)
+- Refresh button now works for cloud providers (Anthropic, OpenAI, Google, etc.) with model diff notification (#943)
+- Add Gemini 3.1 Pro Preview model
+
+### Changed
+- Token Cost settings table is now read-only and refreshes from remote models.json on open (#944)
+
 ## [0.9.14]
 
 ### Added
