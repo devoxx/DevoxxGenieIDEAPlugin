@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.costsettings;
 
 import com.devoxx.genie.service.models.LLMModelRegistryService;
+import com.devoxx.genie.service.models.ModelConfigService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
@@ -78,6 +79,9 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         setCustomRenderers();
         loadCurrentCosts();
 
+        // Trigger a remote config refresh so newly added models in models.json appear
+        ModelConfigService.getInstance().forceRefresh(this::loadCurrentCosts);
+
         JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         optionsPanel.add(showCalcTokensButtonCheckBox);
         optionsPanel.add(showAddFileButtonCheckBox);
@@ -143,9 +147,7 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == ColumnName.INPUT_COST.ordinal() ||
-                column == ColumnName.OUTPUT_COST.ordinal() ||
-                column == ColumnName.CONTEXT_WINDOW.ordinal();
+            return false;
         }
     }
 }
