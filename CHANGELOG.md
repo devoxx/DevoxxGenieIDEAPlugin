@@ -2,6 +2,19 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.14]
+
+### Added
+- Compact icon-only toolbar footer: all buttons uniform 28x28 with tooltips, FlowLayout eliminates gaps when buttons are hidden (#941)
+- Distinct folder-with-plus icon for Add Project button to differentiate from Add File (#941)
+- Toggleable Add File button in footer via Settings > Token Cost & Context Window (#941)
+- "More Info" help links added to all settings panels (#940)
+
+### Changed
+- Merge Agent and MCP log panels into unified Activity Logs panel (#938)
+- Vertically centered Agent/MCP labels in footer right panel (#941)
+- Replace unicode escapes with literal characters in AgentMcpLogPanel
+
 ## [0.9.13]
 
 ### Added
