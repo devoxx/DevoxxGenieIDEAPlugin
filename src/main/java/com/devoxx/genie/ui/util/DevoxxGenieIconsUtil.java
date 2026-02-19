@@ -10,6 +10,7 @@ public final class DevoxxGenieIconsUtil {
     public static final Icon ClockIcon = load("/icons/clock.svg");
     public static final Icon PlusIcon = load("/icons/plus.svg");
     public static final Icon AddFileIcon = load("/icons/addNewFile.svg");
+    public static final Icon AddProjectIcon = load("/icons/addProject.svg");
     public static final Icon CalculateIcon = load("/icons/calculator.svg");
     public static final Icon DeleteIcon = load("/icons/delete.svg");
     public static final Icon SubmitIcon = load("/icons/paperPlane.svg");

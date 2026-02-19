@@ -26,6 +26,14 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
     private final SortableTableModel tableModel;
 
     @Getter
+    private final JCheckBox showCalcTokensButtonCheckBox =
+            new JCheckBox("Show Calc Tokens button in footer", stateService.getShowCalcTokensButton());
+
+    @Getter
+    private final JCheckBox showAddFileButtonCheckBox =
+            new JCheckBox("Show Add File button in footer", stateService.getShowAddFileButton());
+
+    @Getter
     public enum ColumnName {
         PROVIDER("Provider"),
         MODEL("Model"),
@@ -69,6 +77,11 @@ public class LanguageModelCostSettingsComponent extends AbstractSettingsComponen
         setupColumns();
         setCustomRenderers();
         loadCurrentCosts();
+
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        optionsPanel.add(showCalcTokensButtonCheckBox);
+        optionsPanel.add(showAddFileButtonCheckBox);
+        panel.add(optionsPanel, BorderLayout.NORTH);
 
         JScrollPane scrollPane = new JBScrollPane(costTable);
         scrollPane.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);

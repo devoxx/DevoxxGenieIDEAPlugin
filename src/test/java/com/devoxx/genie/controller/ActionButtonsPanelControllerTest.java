@@ -96,6 +96,10 @@ class ActionButtonsPanelControllerTest {
         // Need to mock the service retrieval for EditorFileButtonManager
         when(application.getService(any(Class.class))).thenReturn(null);
 
+        // Default: Calc Tokens button hidden, Add File button visible
+        when(stateService.getShowCalcTokensButton()).thenReturn(false);
+        when(stateService.getShowAddFileButton()).thenReturn(true);
+
         controller = new ActionButtonsPanelController(
                 project, promptInputArea, promptOutputPanel,
                 modelProviderComboBox, modelNameComboBox, actionButtonsPanel
@@ -142,6 +146,7 @@ class ActionButtonsPanelControllerTest {
 
     @Test
     void testUpdateButtonVisibility_SupportedProvider_ShowsButtons() {
+        when(stateService.getShowCalcTokensButton()).thenReturn(true);
         modelProviderComboBox.addItem(ModelProvider.Google);
         modelProviderComboBox.setSelectedItem(ModelProvider.Google);
 
@@ -149,6 +154,20 @@ class ActionButtonsPanelControllerTest {
 
         verify(actionButtonsPanel).setCalcTokenCostButtonVisible(true);
         verify(actionButtonsPanel).setAddProjectButtonVisible(true);
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
+    }
+
+    @Test
+    void testUpdateButtonVisibility_SupportedProvider_CalcTokensHiddenWhenSettingDisabled() {
+        when(stateService.getShowCalcTokensButton()).thenReturn(false);
+        modelProviderComboBox.addItem(ModelProvider.Google);
+        modelProviderComboBox.setSelectedItem(ModelProvider.Google);
+
+        controller.updateButtonVisibility();
+
+        verify(actionButtonsPanel).setCalcTokenCostButtonVisible(false);
+        verify(actionButtonsPanel).setAddProjectButtonVisible(true);
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
     }
 
     @Test
@@ -160,6 +179,7 @@ class ActionButtonsPanelControllerTest {
 
         verify(actionButtonsPanel).setCalcTokenCostButtonVisible(false);
         verify(actionButtonsPanel).setAddProjectButtonVisible(false);
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
     }
 
     @Test
@@ -168,10 +188,12 @@ class ActionButtonsPanelControllerTest {
 
         verify(actionButtonsPanel).setCalcTokenCostButtonVisible(false);
         verify(actionButtonsPanel).setAddProjectButtonVisible(false);
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
     }
 
     @Test
     void testUpdateButtonVisibility_MultipleProviders_ChecksSelectedOne() {
+        when(stateService.getShowCalcTokensButton()).thenReturn(true);
         modelProviderComboBox.addItem(ModelProvider.GPT4All);
         modelProviderComboBox.addItem(ModelProvider.OpenAI);
         modelProviderComboBox.setSelectedItem(ModelProvider.OpenAI);
@@ -180,6 +202,29 @@ class ActionButtonsPanelControllerTest {
 
         verify(actionButtonsPanel).setCalcTokenCostButtonVisible(true);
         verify(actionButtonsPanel).setAddProjectButtonVisible(true);
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
+    }
+
+    @Test
+    void testUpdateButtonVisibility_AddFileHiddenWhenSettingDisabled() {
+        when(stateService.getShowAddFileButton()).thenReturn(false);
+        modelProviderComboBox.addItem(ModelProvider.Google);
+        modelProviderComboBox.setSelectedItem(ModelProvider.Google);
+
+        controller.updateButtonVisibility();
+
+        verify(actionButtonsPanel).setAddFileButtonVisible(false);
+    }
+
+    @Test
+    void testUpdateButtonVisibility_AddFileShownWhenSettingEnabled() {
+        when(stateService.getShowAddFileButton()).thenReturn(true);
+        modelProviderComboBox.addItem(ModelProvider.Google);
+        modelProviderComboBox.setSelectedItem(ModelProvider.Google);
+
+        controller.updateButtonVisibility();
+
+        verify(actionButtonsPanel).setAddFileButtonVisible(true);
     }
 
     @Test

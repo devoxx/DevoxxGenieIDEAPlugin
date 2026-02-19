@@ -249,8 +249,11 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
     }
 
     public void updateButtonVisibility() {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         boolean isSupported = projectContextController.isProjectContextSupportedProvider();
-        actionButtonsPanel.setCalcTokenCostButtonVisible(isSupported);
+        boolean showCalcTokens = isSupported && stateService.getShowCalcTokensButton();
+        actionButtonsPanel.setCalcTokenCostButtonVisible(showCalcTokens);
         actionButtonsPanel.setAddProjectButtonVisible(isSupported);
+        actionButtonsPanel.setAddFileButtonVisible(stateService.getShowAddFileButton());
     }
 }
