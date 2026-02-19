@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.util.ThreadUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -140,11 +139,10 @@ public class MessageRenderer implements FileReferencesListener {
      * This is used after restoring a conversation.
      */
     public void scrollToTop() {
-        // Small delay before scrolling to ensure all message rendering is complete
+        // Use setTimeout in JS to delay scroll until rendering is complete, avoiding EDT blocking
         ApplicationManager.getApplication().invokeLater(() -> {
-            ThreadUtils.sleep(300);
-            webViewController.executeJavaScript("window.scrollTo(0, 0);");
-            log.debug("Scrolled conversation to top");
+            webViewController.executeJavaScript("setTimeout(function() { window.scrollTo(0, 0); }, 300);");
+            log.debug("Scheduled scroll-to-top");
         });
     }
 
@@ -161,9 +159,6 @@ public class MessageRenderer implements FileReferencesListener {
                 log.error("Error adding chat message: {}", e.getMessage(), e);
             }
         });
-        
-        // Small delay to ensure proper rendering between messages
-        ThreadUtils.sleep(75);
     }
     
     /**
@@ -179,9 +174,6 @@ public class MessageRenderer implements FileReferencesListener {
                 log.error("Error adding user message: {}", e.getMessage(), e);
             }
         });
-        
-        // Small delay to ensure proper rendering
-        ThreadUtils.sleep(50);
     }
 
     /**

@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
@@ -35,6 +36,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     private final ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
     private final Project project;
+    private JBPopup activePopup;
 
     public ConversationHistoryPanel(Project project) {
         this.project = project;
@@ -78,6 +80,10 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
                     updateChatMemory(conversation);
                     // Notify listener
                     onConversationSelected(conversation);
+                    // Dismiss the popup so the restored conversation is visible
+                    if (activePopup != null && !activePopup.isDisposed()) {
+                        activePopup.cancel();
+                    }
                 }
             }
         });
@@ -129,6 +135,10 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         add(createActionButton("Delete All", TrashIcon, e -> showDeleteAllConfirmationDialog()), BorderLayout.SOUTH);
 
         loadConversations();
+    }
+
+    public void setPopup(JBPopup popup) {
+        this.activePopup = popup;
     }
 
     public void loadConversations() {

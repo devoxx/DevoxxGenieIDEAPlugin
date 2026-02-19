@@ -67,6 +67,9 @@ public class ConversationHistoryManager {
                 .setMinSize(new Dimension(500, 400))
                 .createPopup();
 
+        // Allow the history panel to dismiss the popup on selection
+        historyPanel.setPopup(historyPopup);
+
         // Calculate the position for the popup
         int x = referenceButton.getX() + referenceButton.getWidth() - 500;
         int y = referenceButton.getY() + referenceButton.getHeight();
@@ -129,10 +132,7 @@ public class ConversationHistoryManager {
 
             log.debug("Starting to process {} messages for conversation restoration", messages.size());
 
-        // Clear any existing DOM content first to prevent duplicate messages
-        messageRenderer.clearWithoutWelcome();
-        
-        // Process all messages
+        // Process all messages (caller already cleared the DOM via clearWithoutWelcome)
         int messageIndex = 0;
 
         // If the first message is an AI message, handle it specially
