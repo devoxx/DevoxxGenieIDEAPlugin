@@ -200,6 +200,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private Map<String, Integer> modelWindowContexts = new HashMap<>();
     private Integer defaultWindowContext = 8000;
+
+    // Show/hide Calc Tokens button in footer
+    private Boolean showCalcTokensButton = false;
+
+    // Show/hide Add File button in footer
+    private Boolean showAddFileButton = true;
     
     // MCP settings
     private MCPSettings mcpSettings = new MCPSettings();

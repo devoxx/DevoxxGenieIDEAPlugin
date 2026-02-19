@@ -81,6 +81,9 @@ public class Constant {
     public static final String REMOVE_CONTEXT = "Remove context";
 
     // Button tooltip texts
+    public static final String SUBMIT_PROMPT_TOOLTIP = "Submit prompt to AI";
+    public static final String ADD_FILES_TO_CONTEXT_TOOLTIP = "Add files to prompt context";
+    public static final String CALCULATE_TOKEN_COST_TOOLTIP = "Calculate token cost for current context";
     public static final String ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT = "Add entire project to prompt context";
     public static final String PROMPT_IS_RUNNING_PLEASE_BE_PATIENT = "Prompt is running, please be patient...";
     public static final String REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT = "Remove entire project from prompt context";

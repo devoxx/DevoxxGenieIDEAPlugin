@@ -106,6 +106,9 @@ public class ActionButtonsPanel extends JPanel
         // Call setupUI which will create the buttons before creating the button panel
         setupUI();
         setupAccessibility();
+
+        // Apply initial button visibility based on settings
+        controller.updateButtonVisibility();
     }
 
     private void setupUI() {
@@ -116,30 +119,32 @@ public class ActionButtonsPanel extends JPanel
     }
 
     private void createButtons() {
-        submitBtn = createActionButton(SubmitIcon, this::onSubmitPrompt);
-        addFileBtn = createActionButton(AddFileIcon, this::selectFilesForPromptContext);
-        addProjectBtn = createActionButton(ADD_PROJECT_TO_CONTEXT, AddFileIcon, this::handleProjectContext);
-        calcTokenCostBtn = createActionButton(CALC_TOKENS_COST, CalculateIcon, e -> controller.calculateTokensAndCost());
+        submitBtn = createActionButton(SubmitIcon, SUBMIT_PROMPT_TOOLTIP, this::onSubmitPrompt);
+        addFileBtn = createActionButton(AddFileIcon, ADD_FILES_TO_CONTEXT_TOOLTIP, this::selectFilesForPromptContext);
+        addProjectBtn = createActionButton(AddProjectIcon, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT, this::handleProjectContext);
+        calcTokenCostBtn = createActionButton(CalculateIcon, CALCULATE_TOKEN_COST_TOOLTIP, e -> controller.calculateTokensAndCost());
     }
 
     private @NotNull JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new BorderLayout(0, 0));
-        
-        // Main buttons using GridLayout
-        JPanel mainButtons = new JPanel(new GridLayout(1, 4, 5, 0));
+
+        // Main buttons using FlowLayout so hidden buttons leave no gaps
+        JPanel mainButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         mainButtons.add(submitBtn);
         mainButtons.add(calcTokenCostBtn);
         mainButtons.add(addProjectBtn);
         mainButtons.add(addFileBtn);
         buttonPanel.add(mainButtons, BorderLayout.CENTER);
         
-        // Agent toggle and MCP Tools counter on the right
+        // Agent toggle and MCP Tools counter on the right, vertically centered
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        rightPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
         rightPanel.add(agentToggleManager.getAgentToggleLabel());
         rightPanel.add(mcpToolsManager.getMcpToolsCountLabel());
 
-        buttonPanel.add(rightPanel, BorderLayout.EAST);
+        // GridBagLayout centers its child vertically by default
+        JPanel rightWrapper = new JPanel(new GridBagLayout());
+        rightWrapper.add(rightPanel);
+        buttonPanel.add(rightWrapper, BorderLayout.EAST);
         
         return buttonPanel;
     }
@@ -283,19 +288,17 @@ public class ActionButtonsPanel extends JPanel
 
     public void updateAddProjectButton(boolean isProjectContextAdded, int tokenCount) {
         if (isProjectContextAdded) {
-            setAddProjectButton(DeleteIcon, REMOVE_CONTEXT, REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT);
+            addProjectBtn.setIcon(DeleteIcon);
             if (tokenCount > 0) {
-                addProjectBtn.setText(WindowContextFormatterUtil.format(tokenCount, "tokens"));
+                addProjectBtn.setToolTipText(REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT +
+                        " (" + WindowContextFormatterUtil.format(tokenCount, "tokens") + ")");
+            } else {
+                addProjectBtn.setToolTipText(REMOVE_ENTIRE_PROJECT_FROM_PROMPT_CONTEXT);
             }
         } else {
-            setAddProjectButton(AddFileIcon, ADD_PROJECT_TO_CONTEXT, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
+            addProjectBtn.setIcon(AddProjectIcon);
+            addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
         }
-    }
-
-    private void setAddProjectButton(Icon addFileIcon, String addProjectToContext, String addEntireProjectToPromptContext) {
-        addProjectBtn.setIcon(addFileIcon);
-        addProjectBtn.setText(addProjectToContext);
-        addProjectBtn.setToolTipText(addEntireProjectToPromptContext);
     }
 
     public void setAddProjectButtonEnabled(boolean enabled) {
@@ -367,6 +370,10 @@ public class ActionButtonsPanel extends JPanel
         addProjectBtn.setVisible(visible);
     }
 
+    public void setAddFileButtonVisible(boolean visible) {
+        addFileBtn.setVisible(visible);
+    }
+
     @Override
     public void startGlowing() {
         submitPanel.startGlowing();
@@ -430,10 +437,10 @@ public class ActionButtonsPanel extends JPanel
             addProjectBtn.setToolTipText("Project context is disabled because JCEF is not available");
             calcTokenCostBtn.setToolTipText("Token calculation is disabled because JCEF is not available");
         } else {
-            submitBtn.setToolTipText("Submit prompt to AI");
-            addFileBtn.setToolTipText("Add files to context");
+            submitBtn.setToolTipText(SUBMIT_PROMPT_TOOLTIP);
+            addFileBtn.setToolTipText(ADD_FILES_TO_CONTEXT_TOOLTIP);
             addProjectBtn.setToolTipText(ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT);
-            calcTokenCostBtn.setToolTipText(CALC_TOKENS_COST);
+            calcTokenCostBtn.setToolTipText(CALCULATE_TOKEN_COST_TOOLTIP);
         }
     }
 }
