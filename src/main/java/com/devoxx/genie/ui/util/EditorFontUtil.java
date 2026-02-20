@@ -1,11 +1,6 @@
 package com.devoxx.genie.ui.util;
 
 import com.intellij.openapi.editor.colors.EditorColorsManager;
-import org.jetbrains.annotations.NotNull;
-
-import java.awt.*;
-
-import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT;
 
 /**
  * Utility class for getting editor font information.
@@ -13,6 +8,10 @@ import static com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.SOURCE_CODE_PRO_FONT
 public class EditorFontUtil {
 
     private static final int DEFAULT_FONT_SIZE = 12;
+
+    private EditorFontUtil() {
+        /* This utility class should not be instantiated */
+    }
 
     /**
      * Gets the editor font size, falling back to a default if the EditorColorsManager is not available.

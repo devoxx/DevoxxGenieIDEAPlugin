@@ -14,7 +14,6 @@ import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.devoxx.genie.ui.util.CodeLanguageUtil;
 
 import java.text.NumberFormat;

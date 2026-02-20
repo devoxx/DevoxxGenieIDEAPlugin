@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.renderer;
 
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
