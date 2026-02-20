@@ -34,7 +34,7 @@ public class RunnerSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        runnerSettingsComponent = new RunnerSettingsComponent(project);
+        runnerSettingsComponent = new RunnerSettingsComponent();
         return runnerSettingsComponent.createPanelWithHelp();
     }
 

@@ -4,27 +4,23 @@ import com.devoxx.genie.model.spec.AcpToolConfig;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.table.JBTable;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Settings panel for CLI and ACP Runners configuration.
  */
 public class RunnerSettingsComponent extends AbstractSettingsComponent {
-
-    private final Project project;
 
     private final CliToolTableModel cliToolTableModel = new CliToolTableModel();
     private final JBTable cliToolTable = new JBTable(cliToolTableModel);
@@ -32,8 +28,7 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
     private final AcpToolTableModel acpToolTableModel = new AcpToolTableModel();
     private final JBTable acpToolTable = new JBTable(acpToolTableModel);
 
-    public RunnerSettingsComponent(@NotNull Project project) {
-        this.project = project;
+    public RunnerSettingsComponent() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -209,13 +204,6 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
 
     // ===== Helper Methods =====
 
-    private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
-        gbc.gridwidth = 2;
-        gbc.gridx = 0;
-        panel.add(component, gbc);
-        gbc.gridy++;
-    }
-
     private void addHelpText(JPanel panel, GridBagConstraints gbc, String text) {
         gbc.gridwidth = 2;
         gbc.gridx = 0;
@@ -349,8 +337,8 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
 
         @Override
         public void setValueAt(Object value, int rowIndex, int columnIndex) {
-            if (columnIndex == 0 && value instanceof Boolean) {
-                tools.get(rowIndex).setEnabled((Boolean) value);
+            if (columnIndex == 0 && value instanceof Boolean b) {
+                tools.get(rowIndex).setEnabled(b);
                 fireTableCellUpdated(rowIndex, columnIndex);
             }
         }
@@ -547,99 +535,84 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
                 testResultLabel.setText("Executable path is empty");
                 return;
             }
-
             testResultLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
             testResultLabel.setText("Testing...");
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(this::executeCliTest);
+        }
 
-            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    // Use the CliCommand abstraction to build command and deliver prompt
-                    // This ensures tool-specific behavior (e.g., --prompt flag for Kimi)
-                    CliToolConfig testConfig = getResult();
-                    String testPrompt = "Respond with only: OK";
-                    CliToolConfig.CliType cliType = testConfig.getType() != null
-                            ? testConfig.getType() : CliToolConfig.CliType.CUSTOM;
-                    com.devoxx.genie.service.cli.command.CliCommand cliCommand = cliType.createCommand();
-                    java.util.List<String> command = cliCommand.buildProcessCommand(testConfig, testPrompt, null);
+        private void executeCliTest() {
+            try {
+                CliToolConfig testConfig = getResult();
+                String testPrompt = "Respond with only: OK";
+                CliToolConfig.CliType cliType = testConfig.getType() != null
+                        ? testConfig.getType() : CliToolConfig.CliType.CUSTOM;
+                com.devoxx.genie.service.cli.command.CliCommand cliCommand = cliType.createCommand();
+                java.util.List<String> command = cliCommand.buildProcessCommand(testConfig, testPrompt, null);
 
-                    ProcessBuilder pb = new ProcessBuilder(command);
-                    pb.redirectErrorStream(false);
+                Process process = buildProcessBuilder(testConfig, command).start();
+                cliCommand.writePrompt(process, testPrompt);
 
-                    // Inherit the user's shell environment (PATH, tokens, etc.)
-                    pb.environment().putAll(com.intellij.util.EnvironmentUtil.getEnvironmentMap());
+                StringBuilder stdout = new StringBuilder();
+                StringBuilder stderr = new StringBuilder();
+                Thread stdoutReader = startStreamReaderThread(process.getInputStream(), stdout);
+                Thread stderrReader = startStreamReaderThread(process.getErrorStream(), stderr);
 
-                    // Overlay with tool-specific env var overrides
-                    if (testConfig.getEnvVars() != null && !testConfig.getEnvVars().isEmpty()) {
-                        pb.environment().putAll(testConfig.getEnvVars());
-                    }
-
-                    Process process = pb.start();
-
-                    // Delegate prompt delivery to the command
-                    cliCommand.writePrompt(process, testPrompt);
-
-                    // Read stdout and stderr in parallel
-                    StringBuilder stdout = new StringBuilder();
-                    StringBuilder stderr = new StringBuilder();
-
-                    Thread stdoutReader = new Thread(() -> {
-                        try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                                new java.io.InputStreamReader(process.getInputStream()))) {
-                            String line;
-                            int count = 0;
-                            while ((line = reader.readLine()) != null && count < 10) {
-                                if (stdout.length() > 0) stdout.append(" ");
-                                stdout.append(line);
-                                count++;
-                            }
-                        } catch (java.io.IOException ignored) {}
-                    });
-                    Thread stderrReader = new Thread(() -> {
-                        try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                                new java.io.InputStreamReader(process.getErrorStream()))) {
-                            String line;
-                            int count = 0;
-                            while ((line = reader.readLine()) != null && count < 10) {
-                                if (stderr.length() > 0) stderr.append(" ");
-                                stderr.append(line);
-                                count++;
-                            }
-                        } catch (java.io.IOException ignored) {}
-                    });
-
-                    stdoutReader.setDaemon(true);
-                    stderrReader.setDaemon(true);
-                    stdoutReader.start();
-                    stderrReader.start();
-
-                    boolean exited = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
-                    if (!exited) {
-                        process.destroyForcibly();
-                        showTestResult(false, "Timed out after 30s");
-                        return;
-                    }
-
-                    stdoutReader.join(3000);
-                    stderrReader.join(3000);
-
-                    int exitCode = process.exitValue();
-                    if (exitCode == 0) {
-                        showTestResult(true, "Connected successfully");
-                    } else {
-                        // Prefer stderr for error messages, fall back to stdout
-                        String err = stderr.toString().trim();
-                        if (err.isEmpty()) err = stdout.toString().trim();
-                        if (err.isEmpty()) err = "Exit code " + exitCode;
-                        showTestResult(false, err);
-                    }
-
-                } catch (java.io.IOException ex) {
-                    showTestResult(false, "Not found: " + ex.getMessage());
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                    showTestResult(false, "Interrupted");
+                boolean exited = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
+                if (!exited) {
+                    process.destroyForcibly();
+                    showTestResult(false, "Timed out after 30s");
+                    return;
                 }
+                stdoutReader.join(3000);
+                stderrReader.join(3000);
+
+                int exitCode = process.exitValue();
+                if (exitCode == 0) {
+                    showTestResult(true, "Connected successfully");
+                } else {
+                    showTestResult(false, resolveErrorMessage(exitCode, stdout.toString(), stderr.toString()));
+                }
+            } catch (java.io.IOException ex) {
+                showTestResult(false, "Not found: " + ex.getMessage());
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                showTestResult(false, "Interrupted");
+            }
+        }
+
+        private ProcessBuilder buildProcessBuilder(CliToolConfig testConfig, java.util.List<String> command) {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(false);
+            pb.environment().putAll(com.intellij.util.EnvironmentUtil.getEnvironmentMap());
+            if (testConfig.getEnvVars() != null && !testConfig.getEnvVars().isEmpty()) {
+                pb.environment().putAll(testConfig.getEnvVars());
+            }
+            return pb;
+        }
+
+        private Thread startStreamReaderThread(java.io.InputStream inputStream, StringBuilder buffer) {
+            Thread thread = new Thread(() -> {
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(inputStream))) {
+                    String line;
+                    int count = 0;
+                    while ((line = reader.readLine()) != null && count < 10) {
+                        if (!buffer.isEmpty()) buffer.append(" ");
+                        buffer.append(line);
+                        count++;
+                    }
+                } catch (java.io.IOException ignored) {}
             });
+            thread.setDaemon(true);
+            thread.start();
+            return thread;
+        }
+
+        private static @NonNull String resolveErrorMessage(int exitCode, String stdout, @NonNull String stderr) {
+            String err = stderr.trim();
+            if (err.isEmpty()) err = stdout.trim();
+            if (err.isEmpty()) err = "Exit code " + exitCode;
+            return err;
         }
 
         private void showTestResult(boolean success, String message) {
@@ -655,11 +628,11 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
             });
         }
 
-        private static String formatEnvVars(java.util.Map<String, String> envVars) {
+        private static @NonNull String formatEnvVars(java.util.Map<String, String> envVars) {
             if (envVars == null || envVars.isEmpty()) return "";
             StringBuilder sb = new StringBuilder();
             for (var entry : envVars.entrySet()) {
-                if (sb.length() > 0) sb.append(", ");
+                if (!sb.isEmpty()) sb.append(", ");
                 sb.append(entry.getKey()).append("=").append(entry.getValue());
             }
             return sb.toString();
@@ -669,17 +642,16 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
          * Strip surrounding shell-style quotes from an argument.
          * ProcessBuilder doesn't use a shell, so literal quotes must be removed.
          */
-        private static String stripShellQuotes(String arg) {
-            if (arg.length() >= 2) {
-                if ((arg.startsWith("'") && arg.endsWith("'")) ||
-                        (arg.startsWith("\"") && arg.endsWith("\""))) {
+        private static @NonNull String stripShellQuotes(@NonNull String arg) {
+            if (arg.length() >= 2 && ((arg.startsWith("'") && arg.endsWith("'")) ||
+                        (arg.startsWith("\"") && arg.endsWith("\"")))) {
                     return arg.substring(1, arg.length() - 1);
                 }
-            }
+
             return arg;
         }
 
-        private static java.util.Map<String, String> parseEnvVars(String text) {
+        private static java.util.@NonNull Map<String, String> parseEnvVars(String text) {
             java.util.Map<String, String> map = new java.util.LinkedHashMap<>();
             if (text == null || text.isEmpty()) return map;
             for (String pair : text.split(",")) {
@@ -758,8 +730,8 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
 
         @Override
         public void setValueAt(Object value, int rowIndex, int columnIndex) {
-            if (columnIndex == 0 && value instanceof Boolean) {
-                tools.get(rowIndex).setEnabled((Boolean) value);
+            if (columnIndex == 0 && value instanceof Boolean b) {
+                tools.get(rowIndex).setEnabled(b);
                 fireTableCellUpdated(rowIndex, columnIndex);
             }
         }

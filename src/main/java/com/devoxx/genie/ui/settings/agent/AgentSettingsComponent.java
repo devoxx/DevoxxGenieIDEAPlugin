@@ -24,7 +24,7 @@ import static com.devoxx.genie.model.Constant.*;
 public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     private final JBCheckBox enableAgentModeCheckbox =
-            new JBCheckBox("Enable Agent Mode", stateService.getAgentModeEnabled());
+            new JBCheckBox("Enable agent mode", stateService.getAgentModeEnabled());
     private final JBIntSpinner maxToolCallsSpinner =
             new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, 100);
     private final JBCheckBox autoApproveReadOnlyCheckbox =
@@ -32,11 +32,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBCheckBox writeApprovalRequiredCheckbox =
             new JBCheckBox("Write tools always require approval (write_file, run_command)", Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired()));
     private final JBCheckBox enableDebugLogsCheckbox =
-            new JBCheckBox("Enable Agent Debug Logs", Boolean.TRUE.equals(stateService.getAgentDebugLogsEnabled()));
+            new JBCheckBox("Enable agent debug logs", Boolean.TRUE.equals(stateService.getAgentDebugLogsEnabled()));
 
     // Test execution settings
     private final JBCheckBox enableTestExecutionCheckbox =
-            new JBCheckBox("Enable Run Tests tool", Boolean.TRUE.equals(stateService.getTestExecutionEnabled()));
+            new JBCheckBox("Enable run tests tool", Boolean.TRUE.equals(stateService.getTestExecutionEnabled()));
     private final JBIntSpinner testTimeoutSpinner =
             new JBIntSpinner(stateService.getTestExecutionTimeoutSeconds() != null ? stateService.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT, 10, 600);
     private final JTextField customTestCommandField = new JTextField(
@@ -49,7 +49,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     // Parallel exploration settings
     private final JBCheckBox enableParallelExploreCheckbox =
-            new JBCheckBox("Enable Parallel Explore tool", Boolean.TRUE.equals(stateService.getParallelExploreEnabled()));
+            new JBCheckBox("Enable parallel explore tool", Boolean.TRUE.equals(stateService.getParallelExploreEnabled()));
     private final JBIntSpinner subAgentMaxToolCallsSpinner =
             new JBIntSpinner(stateService.getSubAgentMaxToolCalls() != null ? stateService.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS, 1, 200);
     private final JBIntSpinner subAgentTimeoutSpinner =
@@ -203,7 +203,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         // --- Per-Agent Model Overrides ---
         JPanel overridesHeaderPanel = new JPanel(new BorderLayout());
-        JBLabel overridesLabel = new JBLabel("Per-Agent Model Overrides");
+        JBLabel overridesLabel = new JBLabel("Per-agent model overrides");
         overridesLabel.setFont(overridesLabel.getFont().deriveFont(Font.BOLD));
         overridesHeaderPanel.add(overridesLabel, BorderLayout.WEST);
         addAgentButton.setToolTipText("Add a new sub-agent slot (max " + SUB_AGENT_MAX_PARALLELISM + ")");
@@ -227,7 +227,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addFullWidthRow(contentPanel, gbc, enableDebugLogsCheckbox);
         addHelpText(contentPanel, gbc,
                 "Agent tool calls, arguments, and results are logged in the " +
-                "'DevoxxGenie Agent Logs' tool window (View \u2192 Tool Windows).");
+                "'DevoxxGenie Agent Logs' tool window (View → Tool Windows).");
 
         // Filler
         gbc.weighty = 1.0;
@@ -393,96 +393,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         agentConfigPanel.repaint();
     }
 
-    private void removeAgentConfigRow(int index) {
-        if (agentConfigRows.size() <= 1 || index < 0 || index >= agentConfigRows.size()) {
-            return;
-        }
-
-        // Capture current configs before rebuilding
-        List<SubAgentConfig> currentConfigs = new ArrayList<>();
-        for (AgentConfigRow row : agentConfigRows) {
-            currentConfigs.add(row.toConfig());
-        }
-        currentConfigs.remove(index);
-
-        // Rebuild all rows with re-numbered labels
-        agentConfigPanel.removeAll();
-        agentConfigRows.clear();
-
-        for (int i = 0; i < currentConfigs.size(); i++) {
-            AgentConfigRow row = new AgentConfigRow(i);
-            agentConfigRows.add(row);
-            agentConfigPanel.add(row.getPanel());
-            row.restoreConfig(currentConfigs.get(i));
-        }
-
-        updateAddRemoveButtonState();
-        agentConfigPanel.revalidate();
-        agentConfigPanel.repaint();
-    }
-
     private void updateAddRemoveButtonState() {
         addAgentButton.setEnabled(agentConfigRows.size() < SUB_AGENT_MAX_PARALLELISM);
         for (AgentConfigRow row : agentConfigRows) {
             row.setRemoveEnabled(agentConfigRows.size() > 1);
         }
-    }
-
-    private void populateRowProviderComboBox(ComboBox<ModelProvider> comboBox) {
-        comboBox.removeAllItems();
-        // null = "Use default"
-        comboBox.addItem(null);
-
-        LLMProviderService providerService = LLMProviderService.getInstance();
-        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-
-        providerService.getAvailableModelProviders().stream()
-                .filter(provider -> switch (provider) {
-                    case Ollama -> state.isOllamaEnabled();
-                    case LMStudio -> state.isLmStudioEnabled();
-                    case GPT4All -> state.isGpt4AllEnabled();
-                    case Jan -> state.isJanEnabled();
-                    case LLaMA -> state.isLlamaCPPEnabled();
-                    case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
-                    case OpenAI -> state.isOpenAIEnabled();
-                    case Mistral -> state.isMistralEnabled();
-                    case Anthropic -> state.isAnthropicEnabled();
-                    case Groq -> state.isGroqEnabled();
-                    case DeepInfra -> state.isDeepInfraEnabled();
-                    case Google -> state.isGoogleEnabled();
-                    case DeepSeek -> state.isDeepSeekEnabled();
-                    case OpenRouter -> state.isOpenRouterEnabled();
-                    case Grok -> state.isGrokEnabled();
-                    case Kimi -> state.isKimiEnabled();
-                    case GLM -> state.isGlmEnabled();
-                    case AzureOpenAI -> state.isAzureOpenAIEnabled();
-                    case Bedrock -> state.isAwsEnabled();
-                    case CLIRunners -> false;
-                    case ACPRunners -> false;
-                })
-                .distinct()
-                .sorted(Comparator.comparing(ModelProvider::getName))
-                .forEach(comboBox::addItem);
-    }
-
-    private void updateRowModelComboBox(ComboBox<ModelProvider> providerCombo, ComboBox<LanguageModel> modelCombo) {
-        modelCombo.removeAllItems();
-        ModelProvider selectedProvider = (ModelProvider) providerCombo.getSelectedItem();
-
-        if (selectedProvider == null) {
-            modelCombo.setEnabled(false);
-            return;
-        }
-
-        modelCombo.setEnabled(true);
-        ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
-                .ifPresent(factory -> {
-                    List<LanguageModel> models = new ArrayList<>(factory.getModels());
-                    if (!models.isEmpty()) {
-                        models.sort(Comparator.naturalOrder());
-                        models.forEach(modelCombo::addItem);
-                    }
-                });
     }
 
     private List<SubAgentConfig> getPerAgentConfigs() {
@@ -498,18 +413,25 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         List<SubAgentConfig> current = getPerAgentConfigs();
 
         if (saved == null || saved.isEmpty()) {
-            // Modified if row count differs from default or any row has a non-default config
-            int defaultCount = stateService.getSubAgentParallelism();
-            if (current.size() != defaultCount) {
-                return true;
-            }
-            return current.stream().anyMatch(c -> c.getModelProvider() != null && !c.getModelProvider().isEmpty());
+            return isModifiedFromDefaults(current);
         }
 
         if (saved.size() != current.size()) {
             return true;
         }
 
+        return hasConfigDifferences(saved, current);
+    }
+
+    private boolean isModifiedFromDefaults(List<SubAgentConfig> current) {
+        int defaultCount = stateService.getSubAgentParallelism();
+        if (current.size() != defaultCount) {
+            return true;
+        }
+        return current.stream().anyMatch(c -> c.getModelProvider() != null && !c.getModelProvider().isEmpty());
+    }
+
+    private boolean hasConfigDifferences(List<SubAgentConfig> saved, List<SubAgentConfig> current) {
         for (int i = 0; i < saved.size(); i++) {
             SubAgentConfig s = saved.get(i);
             SubAgentConfig c = current.get(i);
@@ -545,7 +467,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             providerCombo.setRenderer(new UseDefaultProviderRenderer());
             providerCombo.setFont(DevoxxGenieFontsUtil.getDropdownFont());
             providerCombo.setPreferredSize(new Dimension(180, providerCombo.getPreferredSize().height));
-            populateRowProviderComboBox(providerCombo);
+            populateRowProviderComboBox();
             rowPanel.add(providerCombo);
 
             modelCombo = new ComboBox<>();
@@ -558,19 +480,71 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             removeButton = new JButton("-");
             removeButton.setToolTipText("Remove this sub-agent slot");
             removeButton.setPreferredSize(new Dimension(45, removeButton.getPreferredSize().height));
-            removeButton.addActionListener(e -> {
-                int currentIndex = agentConfigRows.indexOf(this);
-                if (currentIndex >= 0) {
-                    removeAgentConfigRow(currentIndex);
-                }
-            });
+            removeButton.addActionListener(e -> remove());
             rowPanel.add(removeButton);
 
             providerCombo.addActionListener(e -> {
                 if ("comboBoxChanged".equals(e.getActionCommand())) {
-                    updateRowModelComboBox(providerCombo, modelCombo);
+                    updateRowModelComboBox();
                 }
             });
+        }
+
+        private void populateRowProviderComboBox() {
+            providerCombo.removeAllItems();
+            // null = "Use default"
+            providerCombo.addItem(null);
+
+            LLMProviderService providerService = LLMProviderService.getInstance();
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+
+            providerService.getAvailableModelProviders().stream()
+                    .filter(provider -> switch (provider) {
+                        case Ollama -> state.isOllamaEnabled();
+                        case LMStudio -> state.isLmStudioEnabled();
+                        case GPT4All -> state.isGpt4AllEnabled();
+                        case Jan -> state.isJanEnabled();
+                        case LLaMA -> state.isLlamaCPPEnabled();
+                        case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
+                        case OpenAI -> state.isOpenAIEnabled();
+                        case Mistral -> state.isMistralEnabled();
+                        case Anthropic -> state.isAnthropicEnabled();
+                        case Groq -> state.isGroqEnabled();
+                        case DeepInfra -> state.isDeepInfraEnabled();
+                        case Google -> state.isGoogleEnabled();
+                        case DeepSeek -> state.isDeepSeekEnabled();
+                        case OpenRouter -> state.isOpenRouterEnabled();
+                        case Grok -> state.isGrokEnabled();
+                        case Kimi -> state.isKimiEnabled();
+                        case GLM -> state.isGlmEnabled();
+                        case AzureOpenAI -> state.isAzureOpenAIEnabled();
+                        case Bedrock -> state.isAwsEnabled();
+                        case CLIRunners -> false;
+                        case ACPRunners -> false;
+                    })
+                    .distinct()
+                    .sorted(Comparator.comparing(ModelProvider::getName))
+                    .forEach(providerCombo::addItem);
+        }
+
+        private void updateRowModelComboBox() {
+            modelCombo.removeAllItems();
+            ModelProvider selectedProvider = (ModelProvider) providerCombo.getSelectedItem();
+
+            if (selectedProvider == null) {
+                modelCombo.setEnabled(false);
+                return;
+            }
+
+            modelCombo.setEnabled(true);
+            ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
+                    .ifPresent(factory -> {
+                        List<LanguageModel> models = new ArrayList<>(factory.getModels());
+                        if (!models.isEmpty()) {
+                            models.sort(Comparator.naturalOrder());
+                            models.forEach(modelCombo::addItem);
+                        }
+                    });
         }
 
         JPanel getPanel() {
@@ -593,35 +567,74 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         void restoreConfig(SubAgentConfig config) {
             if (config == null || config.getModelProvider() == null || config.getModelProvider().isEmpty()) {
                 providerCombo.setSelectedIndex(0); // "Use default"
-                updateRowModelComboBox(providerCombo, modelCombo);
+                updateRowModelComboBox();
                 return;
             }
 
             try {
                 ModelProvider provider = ModelProvider.fromString(config.getModelProvider());
-                for (int i = 0; i < providerCombo.getItemCount(); i++) {
-                    if (provider.equals(providerCombo.getItemAt(i))) {
-                        providerCombo.setSelectedIndex(i);
-                        updateRowModelComboBox(providerCombo, modelCombo);
-
-                        // Restore model
-                        if (config.getModelName() != null && !config.getModelName().isEmpty()) {
-                            for (int j = 0; j < modelCombo.getItemCount(); j++) {
-                                LanguageModel m = modelCombo.getItemAt(j);
-                                if (m != null && config.getModelName().equals(m.getModelName())) {
-                                    modelCombo.setSelectedIndex(j);
-                                    break;
-                                }
-                            }
-                        }
-                        return;
-                    }
+                if (selectProvider(provider, config.getModelName())) {
+                    return;
                 }
             } catch (IllegalArgumentException ignored) {
                 // Provider not found
             }
             providerCombo.setSelectedIndex(0);
-            updateRowModelComboBox(providerCombo, modelCombo);
+            updateRowModelComboBox();
+        }
+
+        private boolean selectProvider(ModelProvider provider, String modelName) {
+            for (int i = 0; i < providerCombo.getItemCount(); i++) {
+                if (provider.equals(providerCombo.getItemAt(i))) {
+                    providerCombo.setSelectedIndex(i);
+                    updateRowModelComboBox();
+                    selectModel(modelName);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void selectModel(String modelName) {
+            if (modelName == null || modelName.isEmpty()) {
+                return;
+            }
+            for (int j = 0; j < modelCombo.getItemCount(); j++) {
+                LanguageModel m = modelCombo.getItemAt(j);
+                if (m != null && modelName.equals(m.getModelName())) {
+                    modelCombo.setSelectedIndex(j);
+                    return;
+                }
+            }
+        }
+
+        void remove() {
+            int index = agentConfigRows.indexOf(this);
+            if (agentConfigRows.size() <= 1 || index < 0 || index >= agentConfigRows.size()) {
+                return;
+            }
+
+            // Capture current configs before rebuilding
+            List<SubAgentConfig> currentConfigs = new ArrayList<>();
+            for (AgentConfigRow row : agentConfigRows) {
+                currentConfigs.add(row.toConfig());
+            }
+            currentConfigs.remove(index);
+
+            // Rebuild all rows with re-numbered labels
+            agentConfigPanel.removeAll();
+            agentConfigRows.clear();
+
+            for (int i = 0; i < currentConfigs.size(); i++) {
+                AgentConfigRow row = new AgentConfigRow(i);
+                agentConfigRows.add(row);
+                agentConfigPanel.add(row.getPanel());
+                row.restoreConfig(currentConfigs.get(i));
+            }
+
+            updateAddRemoveButtonState();
+            agentConfigPanel.revalidate();
+            agentConfigPanel.repaint();
         }
     }
 
