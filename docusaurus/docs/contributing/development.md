@@ -242,7 +242,7 @@ For UI problems:
 
 ## Additional Resources
 
-- [IntelliJ Platform UI Guidelines](https://jetbrains.github.io/ui/)
+- [IntelliJ Platform SDK Documentation](https://plugins.jetbrains.com/docs/intellij/)
 - [Langchain4j Documentation](https://docs.langchain4j.dev/)
 - [Plugin Development Forum](https://intellij-support.jetbrains.com/hc/en-us/community/topics/200366979-IntelliJ-IDEA-Open-API-and-Plugin-Development)
 

@@ -44,7 +44,7 @@ Most AI-assisted coding today is conversational. You describe what you want in n
 
 SDD flips the workflow. Instead of writing code instructions in chat, you write **task specifications** — structured markdown files with a title, description, acceptance criteria, priority, labels, dependencies, and milestones. These specs live in a `backlog/` directory alongside your code, version-controlled like everything else.
 
-I've intentionally aligned with the [Backlog.md](https://github.com/backlog-md/backlog.md) directory structure and workflow, so you can use their board or browser view side-by-side with the new IDEA SDD views that DevoxxGenie introduces.
+I've intentionally aligned with the [Backlog.md](https://github.com/MrLesk/Backlog.md) directory structure and workflow, so you can use their board or browser view side-by-side with the new IDEA SDD views that DevoxxGenie introduces.
 
 The workflow is straightforward:
 

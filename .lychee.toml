@@ -11,7 +11,7 @@ retry_wait_time = 2
 
 # Accept these HTTP status codes as "OK"
 # 429 = rate limited (GitHub, JetBrains) — not a real broken link
-accept = [200, 429]
+accept = [200, 303, 429]
 
 # Skip these URLs (crawlers blocked or known false positives)
 exclude = [
@@ -24,6 +24,13 @@ exclude = [
   "^http://localhost",
   # Ignore mailto links
   "^mailto:",
+  # Docusaurus internal .md links — resolved incorrectly by lychee against --base.
+  # These relative links are validated by Docusaurus build, not lychee.
+  "https://genie\\.devoxx\\.com/.*\\.md",
+  # Static images served by Docusaurus — not present on the live site at these paths.
+  "https://genie\\.devoxx\\.com/static/img/.*",
+  # Placeholder/example URLs used in documentation snippets.
+  "https://github\\.com/myproject/.*",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)

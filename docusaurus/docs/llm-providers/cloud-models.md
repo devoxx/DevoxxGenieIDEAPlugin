@@ -189,7 +189,7 @@ Google provides the Gemini family of models through Google AI Studio.
 - Good selection of optimized open models
 - Strong performance on code tasks
 
-*Check [Groq's pricing page](https://console.groq.com/pricing) for current rates.*
+*Check [Groq's pricing page](https://groq.com/pricing) for current rates.*
 
 ## DeepInfra
 

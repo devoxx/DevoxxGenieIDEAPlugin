@@ -58,7 +58,7 @@ Many self-hosted inference servers implement the OpenAI API format:
 
 #### LocalAI
 
-[LocalAI](https://github.com/localai/localai) is a drop-in replacement for OpenAI's API that runs on your hardware:
+[LocalAI](https://github.com/mudler/LocalAI) is a drop-in replacement for OpenAI's API that runs on your hardware:
 
 ```bash
 # Example setup

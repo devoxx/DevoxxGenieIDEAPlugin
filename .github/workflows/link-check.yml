@@ -22,7 +22,7 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           args: >
-            --base https://genie.devoxx.com
+            --base-url https://genie.devoxx.com
             --config .lychee.toml
             --verbose
             --no-progress
