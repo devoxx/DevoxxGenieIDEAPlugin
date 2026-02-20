@@ -7,8 +7,6 @@ import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

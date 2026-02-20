@@ -39,8 +39,7 @@ class AcpClientTest {
     void testClose_idempotent() {
         client = new AcpClient(text -> {});
         client.close();
-        client.close();
-        // Should not throw
+        assertThatCode(() -> client.close()).doesNotThrowAnyException();
     }
 
     @Test
@@ -76,8 +75,7 @@ class AcpClientTest {
 
         client = new AcpClient(text -> {});
         client.start(null, "sh", "-c", script);
-        client.initialize();
-        // If we get here without exception, initialize succeeded
+        assertThatCode(() -> client.initialize()).doesNotThrowAnyException();
     }
 
     @Test
@@ -104,9 +102,10 @@ class AcpClientTest {
 
         client = new AcpClient(text -> {});
         client.start(null, "sh", "-c", script);
-        client.initialize();
-        client.createSession("/tmp/test");
-        // If we get here without exception, session creation succeeded
+        assertThatCode(() -> {
+            client.initialize();
+            client.createSession("/tmp/test");
+        }).doesNotThrowAnyException();
     }
 
     @Test
@@ -335,10 +334,9 @@ class AcpClientTest {
         // Custom timeout of 10 seconds — should still succeed for fast responses
         client = new AcpClient(text -> {}, 10);
         client.start(null, "sh", "-c", script);
-        client.initialize();
-        client.createSession("/tmp/test");
-        client.sendPrompt("hello");
-        // If we get here without exception, the custom timeout worked correctly
+        assertThatCode(() -> client.initialize()).doesNotThrowAnyException();
+        assertThatCode(() -> client.createSession("/tmp/test")).doesNotThrowAnyException();
+        assertThatCode(() -> client.sendPrompt("hello")).doesNotThrowAnyException();
     }
 
     @Test

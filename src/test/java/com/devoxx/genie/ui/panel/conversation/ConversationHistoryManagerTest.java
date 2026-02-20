@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.panel.conversation;
 
-import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -17,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

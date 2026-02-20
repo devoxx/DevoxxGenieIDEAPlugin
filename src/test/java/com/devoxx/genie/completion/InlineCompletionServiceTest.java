@@ -1,7 +1,6 @@
 package com.devoxx.genie.completion;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

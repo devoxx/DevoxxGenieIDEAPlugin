@@ -11,8 +11,6 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
-import com.devoxx.genie.ui.panel.conversation.ConversationPanel;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;

@@ -20,7 +20,6 @@ import org.mockito.quality.Strictness;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,8 +80,8 @@ class CliRunnersChatModelFactoryTest {
         assertThat(models.get(0).getModelName()).isEqualTo("Claude");
         assertThat(models.get(0).getProvider()).isEqualTo(ModelProvider.CLIRunners);
         assertThat(models.get(0).isApiKeyUsed()).isFalse();
-        assertThat(models.get(0).getInputCost()).isEqualTo(0);
-        assertThat(models.get(0).getOutputCost()).isEqualTo(0);
+        assertThat(models.get(0).getInputCost()).isZero();
+        assertThat(models.get(0).getOutputCost()).isZero();
         assertThat(models.get(1).getModelName()).isEqualTo("Codex");
     }
 
@@ -144,8 +143,8 @@ class CliRunnersChatModelFactoryTest {
         List<LanguageModel> models = factory.getModels();
 
         assertThat(models).hasSize(1);
-        assertThat(models.get(0).getInputMaxTokens()).isEqualTo(0);
-        assertThat(models.get(0).getOutputMaxTokens()).isEqualTo(0);
+        assertThat(models.get(0).getInputMaxTokens()).isZero();
+        assertThat(models.get(0).getOutputMaxTokens()).isZero();
     }
 
     @Test

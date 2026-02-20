@@ -4,16 +4,11 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
-import com.devoxx.genie.util.DefaultLLMSettingsUtil;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.util.xmlb.XmlSerializerUtil;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,7 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.devoxx.genie.model.Constant.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
