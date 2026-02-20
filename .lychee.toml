@@ -1,0 +1,31 @@
+# Lychee link checker configuration
+# https://lychee.cli.rs/usage/config/
+
+# Skip fragment/anchor checking (Docusaurus generates dynamic IDs)
+include_fragments = false
+
+# Timeout and retry settings
+timeout = 20
+max_retries = 3
+retry_wait_time = 2
+
+# Accept these HTTP status codes as "OK"
+# 429 = rate limited (GitHub, JetBrains) — not a real broken link
+accept = [200, 429]
+
+# Skip these URLs (crawlers blocked or known false positives)
+exclude = [
+  # Twitter/X blocks automated crawlers
+  "https://x.com/.*",
+  "https://twitter.com/.*",
+  # LinkedIn blocks automated crawlers
+  "https://www.linkedin.com/.*",
+  # localhost / local dev URLs
+  "^http://localhost",
+  # Ignore mailto links
+  "^mailto:",
+]
+
+# Use GitHub token for github.com links to avoid rate limiting
+[github]
+token = "${GITHUB_TOKEN}"
