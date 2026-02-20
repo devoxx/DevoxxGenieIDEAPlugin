@@ -32,6 +32,7 @@ import org.jspecify.annotations.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
@@ -195,16 +196,16 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
                 }
             };
         }
-    }
 
-    private void applyFilter() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            logListModel.clear();
-            fullLogs.stream()
-                    .filter(this::matchesFilter)
-                    .forEach(logListModel::addElement);
-            scrollToBottom();
-        });
+        private void applyFilter() {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                logListModel.clear();
+                fullLogs.stream()
+                        .filter(AgentMcpLogPanel.this::matchesFilter)
+                        .forEach(logListModel::addElement);
+                scrollToBottom();
+            });
+        }
     }
 
     private boolean matchesFilter(LogEntry e) {
@@ -287,12 +288,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         ApplicationManager.getApplication().invokeLater(() -> {
             int excess = (fullLogs.size() + logsToProcess.size()) - maxLogEntries;
             if (excess > 0) {
-                for (int i = 0; i < excess && !fullLogs.isEmpty(); i++) {
-                    LogEntry removed = fullLogs.remove(0);
-                    if (matchesFilter(removed) && !logListModel.isEmpty()) {
-                        logListModel.remove(0);
-                    }
-                }
+                trimExcessLogs(excess);
             }
             fullLogs.addAll(logsToProcess);
             for (LogEntry entry : logsToProcess) {
@@ -304,6 +300,16 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         });
     }
 
+    private void trimExcessLogs(int excess) {
+        int toRemove = Math.min(excess, fullLogs.size());
+        List<LogEntry> removed = new ArrayList<>(fullLogs.subList(0, toRemove));
+        fullLogs.subList(0, toRemove).clear();
+        long filteredCount = removed.stream().filter(this::matchesFilter).count();
+        for (int i = 0; i < filteredCount && !logListModel.isEmpty(); i++) {
+            logListModel.remove(0);
+        }
+    }
+
     private @NotNull String formatAgentMessage(@NotNull AgentMessage message) {
         StringBuilder sb = new StringBuilder();
         if (message.getType() != AgentType.INTERMEDIATE_RESPONSE) {
@@ -313,22 +319,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
             sb.append("[").append(message.getSubAgentId()).append("] ");
         }
         switch (message.getType()) {
-            case TOOL_REQUEST:
-                sb.append("▶ ").append(message.getToolName());
-                if (message.getArguments() != null) {
-                    String args = message.getArguments();
-                    if (args.length() > 100) args = args.substring(0, 100) + "...";
-                    sb.append(" ← ").append(args);
-                }
-                break;
-            case TOOL_RESPONSE:
-                sb.append("✔ ").append(message.getToolName());
-                if (message.getResult() != null) {
-                    String result = message.getResult();
-                    if (result.length() > 120) result = result.substring(0, 120) + "...";
-                    sb.append(" → ").append(result.replace("\n", " "));
-                }
-                break;
+            case TOOL_REQUEST:    formatToolRequest(sb, message);    break;
+            case TOOL_RESPONSE:   formatToolResponse(sb, message);   break;
             case TOOL_ERROR:
                 sb.append("✖ ").append(message.getToolName());
                 if (message.getResult() != null) sb.append(" → ").append(message.getResult());
@@ -345,18 +337,48 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
             case APPROVAL_DENIED:
                 sb.append("✖ Approval denied for ").append(message.getToolName());
                 break;
-            case INTERMEDIATE_RESPONSE:
-                sb.append("\uD83D\uDCAC ");
-                if (message.getResult() != null) {
-                    String text = message.getResult().replace("\n", " ");
-                    if (text.length() > 150) text = text.substring(0, 150) + "...";
-                    sb.append(text);
-                } else {
-                    sb.append("LLM intermediate response");
-                }
+            case INTERMEDIATE_RESPONSE: formatIntermediateResponse(sb, message); break;
+            case SUB_AGENT_STARTED:
+                sb.append("⬇ Sub-agent started: ").append(message.getSubAgentId());
+                break;
+            case SUB_AGENT_COMPLETED:
+                sb.append("⬆ Sub-agent completed: ").append(message.getSubAgentId());
+                break;
+            case SUB_AGENT_ERROR:
+                sb.append("✖ Sub-agent error: ").append(message.getSubAgentId());
+                if (message.getResult() != null) sb.append(" → ").append(message.getResult());
                 break;
         }
         return sb.toString();
+    }
+
+    private void formatToolRequest(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+        sb.append("▶ ").append(message.getToolName());
+        if (message.getArguments() != null) {
+            String args = message.getArguments();
+            if (args.length() > 100) args = args.substring(0, 100) + "...";
+            sb.append(" ← ").append(args);
+        }
+    }
+
+    private void formatToolResponse(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+        sb.append("✔ ").append(message.getToolName());
+        if (message.getResult() != null) {
+            String result = message.getResult();
+            if (result.length() > 120) result = result.substring(0, 120) + "...";
+            sb.append(" → ").append(result.replace("\n", " "));
+        }
+    }
+
+    private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+        sb.append("\uD83D\uDCAC ");
+        if (message.getResult() != null) {
+            String text = message.getResult().replace("\n", " ");
+            if (text.length() > 150) text = text.substring(0, 150) + "...";
+            sb.append(text);
+        } else {
+            sb.append("LLM intermediate response");
+        }
     }
 
     private @NotNull String buildAgentFullContent(@NotNull AgentMessage message) {
@@ -389,13 +411,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
                     content = content.substring(1).trim();
                 }
                 String fileName = "MCPLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".json";
-                try {
-                    Object json = JSON_MAPPER.readValue(content, Object.class);
-                    content = JSON_MAPPER.writeValueAsString(json);
-                } catch (Exception ignored) {
-                    // Not valid JSON, use as-is
-                }
-                String finalContent = content;
+                String finalContent = formatJsonContent(content);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     LightVirtualFile virtualFile = new LightVirtualFile(fileName, finalContent);
                     FileEditorManager.getInstance(project).openFile(virtualFile, true);
@@ -404,6 +420,16 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         } catch (Exception e) {
             log.error("Error opening log entry: {}", e.getMessage());
             NotificationUtil.sendNotification(project, "Error opening log: " + e.getMessage());
+        }
+    }
+
+    private String formatJsonContent(String content) {
+        try {
+            Object json = JSON_MAPPER.readValue(content, Object.class);
+            return JSON_MAPPER.writeValueAsString(json);
+        } catch (Exception ignored) {
+            // Not valid JSON, use as-is
+            return content;
         }
     }
 
@@ -418,7 +444,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
             NotificationUtil.sendNotification(project, "No logs to copy.");
             return;
         }
-        java.awt.datatransfer.StringSelection selection = new java.awt.datatransfer.StringSelection(sb.toString());
+        StringSelection selection = new StringSelection(sb.toString());
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
         NotificationUtil.sendNotification(project, "Logs copied to clipboard (" + logsToExport.size() + " entries).");
     }
@@ -504,32 +530,38 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             if (value instanceof LogEntry entry && !isSelected) {
-                String badge = currentFilter == LogFilter.ALL
-                        ? (entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ")
-                        : "";
+                String sourceTag = entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ";
+                String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 label.setText(entry.timestamp() + " " + badge + entry.message());
                 label.setToolTipText(entry.message());
-
-                if (entry.source() == LogSource.AGENT && entry.agentType() != null) {
-                    switch (entry.agentType()) {
-                        case TOOL_REQUEST                                    -> label.setForeground(REQUEST_COLOR);
-                        case TOOL_RESPONSE                                   -> label.setForeground(RESPONSE_COLOR);
-                        case TOOL_ERROR                                      -> label.setForeground(ERROR_COLOR);
-                        case LOOP_LIMIT                                      -> label.setForeground(LIMIT_COLOR);
-                        case APPROVAL_REQUESTED, APPROVAL_GRANTED,
-                             APPROVAL_DENIED                                 -> label.setForeground(APPROVAL_COLOR);
-                        case INTERMEDIATE_RESPONSE                           -> label.setForeground(JBColor.foreground());
-                    }
-                } else if (entry.source() == LogSource.MCP) {
-                    String msg = entry.message();
-                    if (msg.startsWith("<")) {
-                        label.setForeground(MCP_IN_COLOR);
-                    } else if (msg.startsWith(">")) {
-                        label.setForeground(MCP_OUT_COLOR);
-                    }
+                Color fg = resolveEntryColor(entry);
+                if (fg != null) {
+                    label.setForeground(fg);
                 }
             }
             return label;
+        }
+
+        private Color resolveEntryColor(LogEntry entry) {
+            if (entry.source() == LogSource.AGENT && entry.agentType() != null) {
+                return switch (entry.agentType()) {
+                    case TOOL_REQUEST                                        -> REQUEST_COLOR;
+                    case TOOL_RESPONSE                                       -> RESPONSE_COLOR;
+                    case TOOL_ERROR                                          -> ERROR_COLOR;
+                    case LOOP_LIMIT                                          -> LIMIT_COLOR;
+                    case APPROVAL_REQUESTED, APPROVAL_GRANTED,
+                         APPROVAL_DENIED                                     -> APPROVAL_COLOR;
+                    case INTERMEDIATE_RESPONSE                               -> JBColor.foreground();
+                    case SUB_AGENT_STARTED -> null;
+                    case SUB_AGENT_COMPLETED -> null;
+                    case SUB_AGENT_ERROR -> null;
+                };
+            }
+            if (entry.source() == LogSource.MCP) {
+                if (entry.message().startsWith("<")) return MCP_IN_COLOR;
+                if (entry.message().startsWith(">")) return MCP_OUT_COLOR;
+            }
+            return null;
         }
     }
 }
