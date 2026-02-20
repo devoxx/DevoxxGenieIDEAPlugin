@@ -26,13 +26,16 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+
 
 /**
  * Service for creating and managing MCP clients based on user configuration
  */
 @Slf4j
 public class MCPExecutionService implements Disposable {
+
+    public static final String DEVOXX_GENIE = "DevoxxGenie";
+    public static final String PROTOCOL_VERSION = "2024-11-05";
 
     /**
      * Strategy for creating MCP clients from server configurations.
@@ -153,7 +156,7 @@ public class MCPExecutionService implements Disposable {
                 .map(this::createMcpClient)
                 .filter(Objects::nonNull)
                 .peek(client -> MCPService.logDebug("Added MCP client"))
-                .collect(Collectors.toList());
+                .toList();
 
         if (mcpClients.isEmpty()) {
             MCPService.logDebug("No MCP clients could be created");
@@ -260,8 +263,8 @@ public class MCPExecutionService implements Disposable {
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
-                    .clientName("DevoxxGenie")
-                    .protocolVersion("2024-11-05")
+                    .clientName(DEVOXX_GENIE)
+                    .protocolVersion(PROTOCOL_VERSION)
                     .transport(transport)
                     .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
@@ -309,8 +312,8 @@ public class MCPExecutionService implements Disposable {
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
-                    .clientName("DevoxxGenie")
-                    .protocolVersion("2024-11-05")
+                    .clientName(DEVOXX_GENIE)
+                    .protocolVersion(PROTOCOL_VERSION)
                     .transport(transport)
                     .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
@@ -363,8 +366,8 @@ public class MCPExecutionService implements Disposable {
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
-                    .clientName("DevoxxGenie")
-                    .protocolVersion("2024-11-05")
+                    .clientName(DEVOXX_GENIE)
+                    .protocolVersion(PROTOCOL_VERSION)
                     .transport(transport)
                     .logHandler(new MCPLogMessageHandler())
                     .toolExecutionTimeout(Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
@@ -413,7 +416,7 @@ public class MCPExecutionService implements Disposable {
         // Filter out null arguments
         List<String> filteredCommand = command.stream()
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> mcpCommand = new ArrayList<>();
 
@@ -423,7 +426,7 @@ public class MCPExecutionService implements Disposable {
             mcpCommand.add("/c");
             String cmdString = filteredCommand.stream()
                     .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                    .collect(Collectors.joining(" "));
+                    .collect(java.util.stream.Collectors.joining(" "));
             mcpCommand.add(cmdString);
         } else {
             // Unix/macOS platform handling
@@ -431,7 +434,7 @@ public class MCPExecutionService implements Disposable {
             mcpCommand.add("-c");
             String cmdString = filteredCommand.stream()
                     .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
-                    .collect(Collectors.joining(" "));
+                    .collect(java.util.stream.Collectors.joining(" "));
             mcpCommand.add(cmdString);
         }
 

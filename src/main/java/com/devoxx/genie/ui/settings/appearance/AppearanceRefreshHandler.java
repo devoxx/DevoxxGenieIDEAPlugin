@@ -18,6 +18,10 @@ import static com.devoxx.genie.ui.topic.AppTopics.APPEARANCE_SETTINGS_TOPIC;
 @Slf4j
 public final class AppearanceRefreshHandler implements AppearanceSettingsEvents {
 
+    public static final String NEWLINE = "');\n";
+    public static final String PIXELS = "px');\n";
+    public static final String COLON_NEWLINE = "'; });\n";
+
     public AppearanceRefreshHandler() {
         // Register for appearance settings changes
          MessageBusConnection connection = ApplicationManager.getApplication().getMessageBus().connect();
@@ -63,26 +67,26 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
 
         // Apply line height
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-line-height', '")
-                .append(state.getLineHeight()).append("');\n");
+                .append(state.getLineHeight()).append(NEWLINE);
 
         // Apply padding and margins
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-message-padding', '")
-                .append(state.getMessagePadding()).append("px');\n");
+                .append(state.getMessagePadding()).append(PIXELS);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-message-margin', '")
-                .append(state.getMessageMargin()).append("px');\n");
+                .append(state.getMessageMargin()).append(PIXELS);
 
         // Apply border settings
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-border-width', '")
-                .append(state.getBorderWidth()).append("px');\n");
+                .append(state.getBorderWidth()).append(PIXELS);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-corner-radius', '")
-                .append(state.getCornerRadius()).append("px');\n");
+                .append(state.getCornerRadius()).append(PIXELS);
 
         // Apply border colors - these are always the Devoxx brand colors regardless of theme
         // Orange for user, blue for assistant
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-border-color', '")
-                .append(state.getUserMessageBorderColor()).append("');\n");
+                .append(state.getUserMessageBorderColor()).append(NEWLINE);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-border-color', '")
-                .append(state.getAssistantMessageBorderColor()).append("');\n");
+                .append(state.getAssistantMessageBorderColor()).append(NEWLINE);
 
         // Apply background and text colors based on useCustomColors setting
         String userMessageBorderColor;
@@ -132,23 +136,23 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
 
         // Set CSS variables
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-background-color', '")
-                .append(userMessageBackgroundColor).append("');\n");
+                .append(userMessageBackgroundColor).append(NEWLINE);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-background-color', '")
-                .append(assistantMessageBackgroundColor).append("');\n");
+                .append(assistantMessageBackgroundColor).append(NEWLINE);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-user-message-text-color', '")
-                .append(userMessageTextColor).append("');\n");
+                .append(userMessageTextColor).append(NEWLINE);
         cssStyleUpdates.append("document.documentElement.style.setProperty('--custom-assistant-message-text-color', '")
-                .append(assistantMessageTextColor).append("');\n");
+                .append(assistantMessageTextColor).append(NEWLINE);
                 
         // Apply text colors directly to elements - this is needed for proper rendering
         cssStyleUpdates.append("document.querySelectorAll('.user-message').forEach(function(el) { ")
                 .append("el.style.color = '").append(userMessageTextColor).append("'; ")
                 .append("el.style.backgroundColor = '").append(userMessageBackgroundColor).append("'; ")
-                .append("el.style.borderColor = '").append(userMessageBorderColor).append("'; });\n");
+                .append("el.style.borderColor = '").append(userMessageBorderColor).append(COLON_NEWLINE);
         cssStyleUpdates.append("document.querySelectorAll('.assistant-message').forEach(function(el) { ")
                 .append("el.style.color = '").append(assistantMessageTextColor).append("'; ")
                 .append("el.style.backgroundColor = '").append(assistantMessageBackgroundColor).append("'; ")
-                .append("el.style.borderColor = '").append(assistantMessageBorderColor).append("'; });\n");
+                .append("el.style.borderColor = '").append(assistantMessageBorderColor).append(COLON_NEWLINE);
 
         // Apply font sizes if custom sizes are enabled
         if (Boolean.TRUE.equals(state.getUseCustomFontSize())) {
@@ -167,7 +171,7 @@ public final class AppearanceRefreshHandler implements AppearanceSettingsEvents 
         // Apply rounded corners setting
         String borderRadius = Boolean.TRUE.equals(state.getUseRoundedCorners()) ? state.getCornerRadius() + "px" : "0";
         cssStyleUpdates.append("document.querySelectorAll('.user-message, .assistant-message').forEach(function(el) { ")
-                .append("el.style.borderRadius = '").append(borderRadius).append("'; });\n");
+                .append("el.style.borderRadius = '").append(borderRadius).append(COLON_NEWLINE);
 
         // Update message pair margins
         cssStyleUpdates.append("document.querySelectorAll('.message-pair').forEach(function(el) { ")

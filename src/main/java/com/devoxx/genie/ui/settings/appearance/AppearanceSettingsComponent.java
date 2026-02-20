@@ -23,6 +23,8 @@ import static com.devoxx.genie.ui.topic.AppTopics.APPEARANCE_SETTINGS_TOPIC;
  */
 public class AppearanceSettingsComponent extends AbstractSettingsComponent {
 
+    public static final String SETTINGS_COMPONENTS_ARE_BEING_INITIALIZED = "Settings components are being initialized...";
+
     private final JSpinner lineHeightSpinner;
     private final JBIntSpinner messagePaddingSpinner;
     private final JBIntSpinner messageMarginSpinner;
@@ -165,7 +167,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             panel.add(new JPanel(), gbc);
         } else {
             // Add a placeholder if components aren't initialized
-            JLabel placeholderLabel = new JLabel("Settings components are being initialized...");
+            JLabel placeholderLabel = new JLabel(SETTINGS_COMPONENTS_ARE_BEING_INITIALIZED);
             panel.add(placeholderLabel, new GridBagConstraints());
         }
         
@@ -205,7 +207,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             panel.add(new JPanel(), gbc);
         } else {
             // Add a placeholder if components aren't initialized
-            JLabel placeholderLabel = new JLabel("Settings components are being initialized...");
+            JLabel placeholderLabel = new JLabel(SETTINGS_COMPONENTS_ARE_BEING_INITIALIZED);
             panel.add(placeholderLabel, new GridBagConstraints());
         }
         
@@ -241,7 +243,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             panel.add(new JPanel(), gbc);
         } else {
             // Add a placeholder if components aren't initialized
-            JLabel placeholderLabel = new JLabel("Settings components are being initialized...");
+            JLabel placeholderLabel = new JLabel(SETTINGS_COMPONENTS_ARE_BEING_INITIALIZED);
             panel.add(placeholderLabel, new GridBagConstraints());
         }
         

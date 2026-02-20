@@ -128,7 +128,7 @@ public final class TaskDependencySorter {
                         TaskSpec t = selectedById.get(id);
                         return t != null && t.getId() != null ? t.getId() : id;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
             throw new CircularDependencyException(cycleIds);
         }
 
@@ -288,7 +288,7 @@ public final class TaskDependencySorter {
                         TaskSpec t = selectedById.get(id);
                         return t != null && t.getId() != null ? t.getId() : id;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
             throw new CircularDependencyException(cycleIds);
         }
 

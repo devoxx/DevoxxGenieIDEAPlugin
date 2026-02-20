@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
+
 /**
  * Project-scoped service that executes spec tasks in dependency order.
  * Supports both sequential execution (one task at a time) and parallel
@@ -176,7 +177,7 @@ public final class SpecTaskRunnerService implements Disposable {
         if (executionMode == ExecutionMode.PARALLEL) {
             try {
                 layers = TaskDependencySorter.sortByLayers(tasks, allSpecs);
-                orderedTasks = layers.stream().flatMap(List::stream).collect(Collectors.toList());
+                orderedTasks = layers.stream().flatMap(List::stream).toList();
             } catch (CircularDependencyException e) {
                 log.error("Circular dependency detected: {}", e.getMessage());
                 state = RunnerState.ERROR;

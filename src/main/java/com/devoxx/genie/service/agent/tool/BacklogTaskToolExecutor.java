@@ -23,6 +23,25 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BacklogTaskToolExecutor implements ToolExecutor {
 
+    public static final String PRIORITY = "priority";
+    public static final String STATUS = "status";
+    public static final String MILESTONE = "milestone";
+    public static final String PARENT_TASK_ID = "parentTaskId";
+    public static final String LABELS = "labels";
+    public static final String DESCRIPTION = "description";
+    public static final String ASSIGNEE = "assignee";
+    public static final String DEPENDENCIES = "dependencies";
+    public static final String REFERENCES = "references";
+    public static final String DOCUMENTATION = "documentation";
+    public static final String ACCEPTANCE_CRITERIA = "acceptanceCriteria";
+    public static final String DEFINITION_OF_DONE = "definitionOfDone";
+    public static final String SKIP_DOD_DEFAULTS = "skipDodDefaults";
+    public static final String SEARCH = "search";
+    public static final String LIMIT = "limit";
+    public static final String ERROR_ID_PARAMETER_IS_REQUIRED = "Error: 'id' parameter is required.";
+    public static final String ID = "id";
+    public static final String TITLE = "title";
+    public static final String TASK = "Task ";
     private final Project project;
 
     public BacklogTaskToolExecutor(@NotNull Project project) {
@@ -52,44 +71,44 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String createTask(@NotNull String arguments) throws Exception {
-        String title = ToolArgumentParser.getString(arguments, "title");
+        String title = ToolArgumentParser.getString(arguments, TITLE);
         if (title == null || title.isEmpty()) {
             return "Error: 'title' parameter is required.";
         }
 
         TaskSpec.TaskSpecBuilder builder = TaskSpec.builder().title(title);
 
-        String description = ToolArgumentParser.getString(arguments, "description");
+        String description = ToolArgumentParser.getString(arguments, DESCRIPTION);
         if (description != null) builder.description(description);
 
-        String priority = ToolArgumentParser.getString(arguments, "priority");
+        String priority = ToolArgumentParser.getString(arguments, PRIORITY);
         if (priority != null) builder.priority(priority);
 
-        String status = ToolArgumentParser.getString(arguments, "status");
+        String status = ToolArgumentParser.getString(arguments, STATUS);
         if (status != null) builder.status(status);
 
-        String milestone = ToolArgumentParser.getString(arguments, "milestone");
+        String milestone = ToolArgumentParser.getString(arguments, MILESTONE);
         if (milestone != null) builder.milestone(milestone);
 
-        String parentTaskId = ToolArgumentParser.getString(arguments, "parentTaskId");
+        String parentTaskId = ToolArgumentParser.getString(arguments, PARENT_TASK_ID);
         if (parentTaskId != null) builder.parentTaskId(parentTaskId);
 
-        List<String> labels = ToolArgumentParser.getStringArray(arguments, "labels");
+        List<String> labels = ToolArgumentParser.getStringArray(arguments, LABELS);
         if (!labels.isEmpty()) builder.labels(new ArrayList<>(labels));
 
-        List<String> assignees = ToolArgumentParser.getStringArray(arguments, "assignee");
+        List<String> assignees = ToolArgumentParser.getStringArray(arguments, ASSIGNEE);
         if (!assignees.isEmpty()) builder.assignees(new ArrayList<>(assignees));
 
-        List<String> dependencies = ToolArgumentParser.getStringArray(arguments, "dependencies");
+        List<String> dependencies = ToolArgumentParser.getStringArray(arguments, DEPENDENCIES);
         if (!dependencies.isEmpty()) builder.dependencies(new ArrayList<>(dependencies));
 
-        List<String> references = ToolArgumentParser.getStringArray(arguments, "references");
+        List<String> references = ToolArgumentParser.getStringArray(arguments, REFERENCES);
         if (!references.isEmpty()) builder.references(new ArrayList<>(references));
 
-        List<String> documentation = ToolArgumentParser.getStringArray(arguments, "documentation");
+        List<String> documentation = ToolArgumentParser.getStringArray(arguments, DOCUMENTATION);
         if (!documentation.isEmpty()) builder.documentation(new ArrayList<>(documentation));
 
-        List<String> acTexts = ToolArgumentParser.getStringArray(arguments, "acceptanceCriteria");
+        List<String> acTexts = ToolArgumentParser.getStringArray(arguments, ACCEPTANCE_CRITERIA);
         if (!acTexts.isEmpty()) {
             List<AcceptanceCriterion> criteria = new ArrayList<>();
             for (int i = 0; i < acTexts.size(); i++) {
@@ -100,7 +119,7 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
         }
 
         // Support explicit DoD items provided by the agent
-        List<String> dodTexts = ToolArgumentParser.getStringArray(arguments, "definitionOfDone");
+        List<String> dodTexts = ToolArgumentParser.getStringArray(arguments, DEFINITION_OF_DONE);
         if (!dodTexts.isEmpty()) {
             List<DefinitionOfDoneItem> dodItems = new ArrayList<>();
             for (int i = 0; i < dodTexts.size(); i++) {
@@ -111,7 +130,7 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
         }
 
         boolean skipDodDefaults = Boolean.parseBoolean(
-                ToolArgumentParser.getString(arguments, "skipDodDefaults"));
+                ToolArgumentParser.getString(arguments, SKIP_DOD_DEFAULTS));
 
         TaskSpec spec = builder.build();
         SpecService specService = SpecService.getInstance(project);
@@ -121,11 +140,11 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String listTasks(@NotNull String arguments) {
-        String status = ToolArgumentParser.getString(arguments, "status");
-        String assignee = ToolArgumentParser.getString(arguments, "assignee");
-        List<String> labels = ToolArgumentParser.getStringArray(arguments, "labels");
-        String search = ToolArgumentParser.getString(arguments, "search");
-        int limit = ToolArgumentParser.getInt(arguments, "limit", 0);
+        String status = ToolArgumentParser.getString(arguments, STATUS);
+        String assignee = ToolArgumentParser.getString(arguments, ASSIGNEE);
+        List<String> labels = ToolArgumentParser.getStringArray(arguments, LABELS);
+        String search = ToolArgumentParser.getString(arguments, SEARCH);
+        int limit = ToolArgumentParser.getInt(arguments, LIMIT, 0);
 
         SpecService specService = SpecService.getInstance(project);
         List<TaskSpec> specs = specService.getSpecsByFilters(status, assignee, labels.isEmpty() ? null : labels, search, limit);
@@ -171,9 +190,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
             return "Error: 'query' parameter is required.";
         }
 
-        String status = ToolArgumentParser.getString(arguments, "status");
-        String priority = ToolArgumentParser.getString(arguments, "priority");
-        int limit = ToolArgumentParser.getInt(arguments, "limit", 0);
+        String status = ToolArgumentParser.getString(arguments, STATUS);
+        String priority = ToolArgumentParser.getString(arguments, PRIORITY);
+        int limit = ToolArgumentParser.getInt(arguments, LIMIT, 0);
 
         SpecService specService = SpecService.getInstance(project);
         List<TaskSpec> results = specService.searchSpecs(query, status, priority, limit);
@@ -197,9 +216,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String viewTask(@NotNull String arguments) {
-        String id = ToolArgumentParser.getString(arguments, "id");
+        String id = ToolArgumentParser.getString(arguments, ID);
         if (id == null || id.isEmpty()) {
-            return "Error: 'id' parameter is required.";
+            return ERROR_ID_PARAMETER_IS_REQUIRED;
         }
 
         SpecService specService = SpecService.getInstance(project);
@@ -213,9 +232,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String editTask(@NotNull String arguments) throws Exception {
-        String id = ToolArgumentParser.getString(arguments, "id");
+        String id = ToolArgumentParser.getString(arguments, ID);
         if (id == null || id.isEmpty()) {
-            return "Error: 'id' parameter is required.";
+            return ERROR_ID_PARAMETER_IS_REQUIRED;
         }
 
         SpecService specService = SpecService.getInstance(project);
@@ -225,32 +244,32 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
         }
 
         // Apply scalar updates
-        String title = ToolArgumentParser.getString(arguments, "title");
+        String title = ToolArgumentParser.getString(arguments, TITLE);
         if (title != null) spec.setTitle(title);
 
-        String description = ToolArgumentParser.getString(arguments, "description");
+        String description = ToolArgumentParser.getString(arguments, DESCRIPTION);
         if (description != null) spec.setDescription(description);
 
-        String status = ToolArgumentParser.getString(arguments, "status");
+        String status = ToolArgumentParser.getString(arguments, STATUS);
         if (status != null) spec.setStatus(status);
 
-        String priority = ToolArgumentParser.getString(arguments, "priority");
+        String priority = ToolArgumentParser.getString(arguments, PRIORITY);
         if (priority != null) spec.setPriority(priority);
 
-        String milestone = ToolArgumentParser.getString(arguments, "milestone");
+        String milestone = ToolArgumentParser.getString(arguments, MILESTONE);
         if (milestone != null) spec.setMilestone(milestone);
 
         String finalSummary = ToolArgumentParser.getString(arguments, "finalSummary");
         if (finalSummary != null) spec.setFinalSummary(finalSummary);
 
         // Apply list replacements
-        List<String> assignees = ToolArgumentParser.getStringArray(arguments, "assignee");
+        List<String> assignees = ToolArgumentParser.getStringArray(arguments, ASSIGNEE);
         if (!assignees.isEmpty()) spec.setAssignees(new ArrayList<>(assignees));
 
-        List<String> labels = ToolArgumentParser.getStringArray(arguments, "labels");
+        List<String> labels = ToolArgumentParser.getStringArray(arguments, LABELS);
         if (!labels.isEmpty()) spec.setLabels(new ArrayList<>(labels));
 
-        List<String> dependencies = ToolArgumentParser.getStringArray(arguments, "dependencies");
+        List<String> dependencies = ToolArgumentParser.getStringArray(arguments, DEPENDENCIES);
         if (!dependencies.isEmpty()) spec.setDependencies(new ArrayList<>(dependencies));
 
         // Acceptance criteria modifications
@@ -317,25 +336,25 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String completeTask(@NotNull String arguments) throws Exception {
-        String id = ToolArgumentParser.getString(arguments, "id");
+        String id = ToolArgumentParser.getString(arguments, ID);
         if (id == null || id.isEmpty()) {
-            return "Error: 'id' parameter is required.";
+            return ERROR_ID_PARAMETER_IS_REQUIRED;
         }
 
         SpecService specService = SpecService.getInstance(project);
         specService.completeTask(id);
-        return "Task " + id + " marked as Done.";
+        return TASK + id + " marked as Done.";
     }
 
     private @NotNull String archiveTask(@NotNull String arguments) throws Exception {
-        String id = ToolArgumentParser.getString(arguments, "id");
+        String id = ToolArgumentParser.getString(arguments, ID);
         if (id == null || id.isEmpty()) {
-            return "Error: 'id' parameter is required.";
+            return ERROR_ID_PARAMETER_IS_REQUIRED;
         }
 
         SpecService specService = SpecService.getInstance(project);
         specService.archiveTask(id);
-        return "Task " + id + " archived.";
+        return TASK + id + " archived.";
     }
 
     private @NotNull String archiveDoneTasks() throws Exception {
@@ -348,14 +367,14 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
     }
 
     private @NotNull String unarchiveTask(@NotNull String arguments) throws Exception {
-        String id = ToolArgumentParser.getString(arguments, "id");
+        String id = ToolArgumentParser.getString(arguments, ID);
         if (id == null || id.isEmpty()) {
-            return "Error: 'id' parameter is required.";
+            return ERROR_ID_PARAMETER_IS_REQUIRED;
         }
 
         SpecService specService = SpecService.getInstance(project);
         specService.unarchiveTask(id);
-        return "Task " + id + " restored from archive.";
+        return TASK + id + " restored from archive.";
     }
 
     private @NotNull String listArchivedTasks() {

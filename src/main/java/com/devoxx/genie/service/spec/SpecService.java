@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -74,7 +73,7 @@ public final class SpecService implements Disposable {
     public @NotNull List<TaskSpec> getSpecsByStatus(@NotNull String status) {
         return specCache.values().stream()
                 .filter(spec -> status.equalsIgnoreCase(spec.getStatus()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -95,7 +94,7 @@ public final class SpecService implements Disposable {
                 .map(TaskSpec::getStatus)
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -135,20 +134,20 @@ public final class SpecService implements Disposable {
                     .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(search, s.getTitle(), s.getDescription(), s.getId())))
                     .filter(e -> e.getValue() >= 0.3)
                     .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
-                    .collect(Collectors.toList());
+                    .toList();
 
             Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
             if (limit > 0) {
                 resultStream = resultStream.limit(limit);
             }
-            return resultStream.collect(Collectors.toList());
+            return resultStream.toList();
         }
 
         if (limit > 0) {
             stream = stream.limit(limit);
         }
 
-        return stream.collect(Collectors.toList());
+        return stream.toList();
     }
 
     /**
@@ -173,14 +172,14 @@ public final class SpecService implements Disposable {
                 .map(s -> Map.entry(s, FuzzySearchHelper.scoreMultiField(query, s.getTitle(), s.getDescription())))
                 .filter(e -> e.getValue() >= 0.3)
                 .sorted(Map.Entry.<TaskSpec, Double>comparingByValue().reversed())
-                .collect(Collectors.toList());
+                .toList();
 
         Stream<TaskSpec> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
             resultStream = resultStream.limit(limit);
         }
 
-        return resultStream.collect(Collectors.toList());
+        return resultStream.toList();
     }
 
     // ===== Task Write Operations =====
@@ -330,7 +329,7 @@ public final class SpecService implements Disposable {
         try {
             List<TaskSpec> doneTasks = specCache.values().stream()
                     .filter(s -> "Done".equalsIgnoreCase(s.getStatus()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (doneTasks.isEmpty()) {
                 return 0;
@@ -517,13 +516,13 @@ public final class SpecService implements Disposable {
                 .map(d -> Map.entry(d, FuzzySearchHelper.scoreMultiField(query, d.getTitle(), d.getContent())))
                 .filter(e -> e.getValue() >= 0.3)
                 .sorted(Map.Entry.<BacklogDocument, Double>comparingByValue().reversed())
-                .collect(Collectors.toList());
+                .toList();
 
         Stream<BacklogDocument> resultStream = scored.stream().map(Map.Entry::getKey);
         if (limit > 0) {
             resultStream = resultStream.limit(limit);
         }
-        return resultStream.collect(Collectors.toList());
+        return resultStream.toList();
     }
 
     /**
