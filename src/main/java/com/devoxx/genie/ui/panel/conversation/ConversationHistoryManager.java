@@ -132,7 +132,10 @@ public class ConversationHistoryManager {
 
             log.debug("Starting to process {} messages for conversation restoration", messages.size());
 
-        // Process all messages (caller already cleared the DOM via clearWithoutWelcome)
+        // Clear the current view before restoring messages
+        messageRenderer.clearWithoutWelcome();
+
+        // Process all messages
         int messageIndex = 0;
 
         // If the first message is an AI message, handle it specially
