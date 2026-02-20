@@ -69,9 +69,65 @@ public class DevoxxGeniePromptSender {
 
 ---
 
+## Creating Backlog Tasks via Java API
+
+DevoxxGenie exposes `ExternalTaskService` as a programmatic API for creating backlog tasks.
+Access it via reflection — no compile-time dependency required:
+
+```java
+import com.intellij.openapi.project.Project;
+import java.util.List;
+
+public class DevoxxGenieTaskCreator {
+
+    public static String createTask(Project project, String title, String description,
+                                    String priority, List<String> labels) {
+        if (!DevoxxGenieDetector.isAvailable()) return null;
+
+        try {
+            Class<?> serviceClass = Class.forName(
+                "com.devoxx.genie.service.ExternalTaskService"
+            );
+            Object instance = serviceClass
+                .getMethod("getInstance", Project.class)
+                .invoke(null, project);
+
+            return (String) serviceClass
+                .getMethod("createBacklogTask",
+                           String.class, String.class, String.class, List.class)
+                .invoke(instance, title, description, priority, labels);
+
+        } catch (Exception e) {
+            // DevoxxGenie not available or API changed — fail silently
+            return null;
+        }
+    }
+}
+```
+
+`createBacklogTask` initialises the backlog directory structure if it does not yet exist,
+allocates the next available task ID, creates the task file, and returns the ID (e.g. `"TASK-5"`).
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `title` | `String` | Short human-readable task title |
+| `description` | `String` | Full markdown description of the task |
+| `priority` | `String` | `"low"`, `"medium"`, or `"high"` |
+| `labels` | `List<String>` | Free-form tags (e.g. `["bug", "sonarlint"]`) |
+
+### When to use this vs direct file writing
+
+Use `ExternalTaskService` when you need a simple, reliable path with automatic ID management.
+Use [direct file writing](#creating-backlog-task-files) when you need richer metadata fields such
+as `source`, `rule`, `file`, or `line` that are not exposed by this API.
+
+---
+
 ## Creating Backlog Task Files
 
-Integrations can create structured task files that are automatically recognised by the [Spec-Driven Development](../features/spec-driven-development.md) workflow. Files are written to `backlog/tasks/` inside the project root.
+For integrations that need richer metadata fields (`source`, `rule`, `file`, `line`, etc.), you can write structured task files directly. These are automatically recognised by the [Spec-Driven Development](../features/spec-driven-development.md) workflow. Files are written to `backlog/tasks/` inside the project root.
 
 ### File Format
 
