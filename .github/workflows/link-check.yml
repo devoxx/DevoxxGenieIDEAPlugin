@@ -29,8 +29,8 @@ jobs:
             './docusaurus/docs/**/*.md'
             './docusaurus/blog/**/*.md'
           fail: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          failIfEmpty: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   check-live-site:
     name: Check live site via sitemap
@@ -49,9 +49,9 @@ jobs:
             --no-progress
             https://genie.devoxx.com/sitemap.xml
           fail: false
+          failIfEmpty: false
           output: lychee-report.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create issue on broken links
         if: steps.lychee.outputs.exit_code != 0

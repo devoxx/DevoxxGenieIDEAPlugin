@@ -26,6 +26,4 @@ exclude = [
   "^mailto:",
 ]
 
-# Use GitHub token for github.com links to avoid rate limiting
-[github]
-token = "${GITHUB_TOKEN}"
+# GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)
