@@ -431,6 +431,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
