@@ -22,20 +22,19 @@ public class LLMProviderService {
     private static final EnumMap<ModelProvider, Supplier<String>> providerKeyMap = new EnumMap<>(ModelProvider.class);
 
     static {
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        providerKeyMap.put(OpenAI, stateService::getOpenAIKey);
-        providerKeyMap.put(Anthropic, stateService::getAnthropicKey);
-        providerKeyMap.put(Mistral, stateService::getMistralKey);
-        providerKeyMap.put(Groq, stateService::getGroqKey);
-        providerKeyMap.put(DeepInfra, stateService::getDeepInfraKey);
-        providerKeyMap.put(Google, stateService::getGeminiKey);
-        providerKeyMap.put(DeepSeek, stateService::getDeepSeekKey);
-        providerKeyMap.put(OpenRouter, stateService::getOpenRouterKey);
-        providerKeyMap.put(Grok, stateService::getGrokKey);
-        providerKeyMap.put(Kimi, stateService::getKimiKey);
-        providerKeyMap.put(GLM, stateService::getGlmKey);
-        providerKeyMap.put(AzureOpenAI, stateService::getAzureOpenAIKey);
-        providerKeyMap.put(Bedrock, stateService::getAwsSecretKey);
+        providerKeyMap.put(OpenAI, () -> DevoxxGenieStateService.getInstance().getOpenAIKey());
+        providerKeyMap.put(Anthropic, () -> DevoxxGenieStateService.getInstance().getAnthropicKey());
+        providerKeyMap.put(Mistral, () -> DevoxxGenieStateService.getInstance().getMistralKey());
+        providerKeyMap.put(Groq, () -> DevoxxGenieStateService.getInstance().getGroqKey());
+        providerKeyMap.put(DeepInfra, () -> DevoxxGenieStateService.getInstance().getDeepInfraKey());
+        providerKeyMap.put(Google, () -> DevoxxGenieStateService.getInstance().getGeminiKey());
+        providerKeyMap.put(DeepSeek, () -> DevoxxGenieStateService.getInstance().getDeepSeekKey());
+        providerKeyMap.put(OpenRouter, () -> DevoxxGenieStateService.getInstance().getOpenRouterKey());
+        providerKeyMap.put(Grok, () -> DevoxxGenieStateService.getInstance().getGrokKey());
+        providerKeyMap.put(Kimi, () -> DevoxxGenieStateService.getInstance().getKimiKey());
+        providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
+        providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
+        providerKeyMap.put(Bedrock, () -> DevoxxGenieStateService.getInstance().getAwsSecretKey());
     }
 
     @NotNull

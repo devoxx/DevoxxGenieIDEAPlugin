@@ -367,85 +367,82 @@ public class KotlinProjectScannerExtension implements ProjectAnalyzerExtension {
             buildSystem = new HashMap<>();
             projectInfo.put("buildSystem", buildSystem);
         }
-        
-        // Update or add Kotlin-specific commands
+
         Map<String, String> commands = (Map<String, String>) buildSystem.get("commands");
         if (commands == null) {
             commands = new HashMap<>();
             buildSystem.put("commands", commands);
         }
-        
-        // Determine build system type
+
         String buildSystemType = (String) kotlinInfo.getOrDefault("buildSystem", "Gradle (Kotlin DSL)");
-        boolean isGradleKts = buildSystemType.contains("Kotlin DSL");
         boolean isGradle = buildSystemType.contains("Gradle");
         boolean isMaven = buildSystemType.contains("Maven");
-        
-        String buildCommand;
-        String testCommand;
-        String runCommand;
-        String cleanCommand;
-        String singleTestCommand;
-        
+
+        commands.putAll(getBuildCommands(isGradle, isMaven));
+        addFrameworkCommands(commands, kotlinInfo, isGradle, isMaven);
+        addAndroidCommands(commands, kotlinInfo);
+        addMultiplatformCommands(commands, kotlinInfo);
+        addCodeQualityCommands(commands, kotlinInfo, isGradle);
+    }
+
+    private Map<String, String> getBuildCommands(boolean isGradle, boolean isMaven) {
+        Map<String, String> commands = new HashMap<>();
         if (isGradle) {
-            buildCommand = "./gradlew build";
-            testCommand = "./gradlew test";
-            runCommand = "./gradlew run";
-            cleanCommand = "./gradlew clean";
-            singleTestCommand = "./gradlew test --tests \"*TestName*\"";
+            commands.put("build", "./gradlew build");
+            commands.put("test", "./gradlew test");
+            commands.put("run", "./gradlew run");
+            commands.put("clean", "./gradlew clean");
+            commands.put("singleTest", "./gradlew test --tests \"*TestName*\"");
         } else if (isMaven) {
-            buildCommand = "mvn clean package";
-            testCommand = "mvn test";
-            runCommand = "mvn exec:java";
-            cleanCommand = "mvn clean";
-            singleTestCommand = "mvn test -Dtest=TestName";
+            commands.put("build", "mvn clean package");
+            commands.put("test", "mvn test");
+            commands.put("run", "mvn exec:java");
+            commands.put("clean", "mvn clean");
+            commands.put("singleTest", "mvn test -Dtest=TestName");
         } else {
-            // Default fallback
-            buildCommand = "kotlin build";
-            testCommand = "kotlin test";
-            runCommand = "kotlin run";
-            cleanCommand = "kotlin clean";
-            singleTestCommand = "kotlin test TestName";
+            commands.put("build", "kotlin build");
+            commands.put("test", "kotlin test");
+            commands.put("run", "kotlin run");
+            commands.put("clean", "kotlin clean");
+            commands.put("singleTest", "kotlin test TestName");
         }
-        
-        // Add common commands
-        commands.put("build", buildCommand);
-        commands.put("test", testCommand);
-        commands.put("run", runCommand);
-        commands.put("clean", cleanCommand);
-        commands.put("singleTest", singleTestCommand);
-        
-        // Add framework-specific commands
-        if (kotlinInfo.containsKey("framework")) {
-            String framework = (String) kotlinInfo.get("framework");
-            
-            if ("Spring Boot".equals(framework)) {
-                if (isGradle) {
-                    commands.put("bootRun", "./gradlew bootRun");
-                } else if (isMaven) {
-                    commands.put("bootRun", "mvn spring-boot:run");
-                }
-            } else if ("Ktor".equals(framework)) {
-                // Commands are mostly the same for Ktor
-            }
+        return commands;
+    }
+
+    private void addFrameworkCommands(Map<String, String> commands, Map<String, Object> kotlinInfo,
+                                      boolean isGradle, boolean isMaven) {
+        if (!kotlinInfo.containsKey("framework")) {
+            return;
         }
-        
-        // Add Android-specific commands
+        String framework = (String) kotlinInfo.get("framework");
+        if (!"Spring Boot".equals(framework)) {
+            return;
+        }
+        if (isGradle) {
+            commands.put("bootRun", "./gradlew bootRun");
+        } else if (isMaven) {
+            commands.put("bootRun", "mvn spring-boot:run");
+        }
+    }
+
+    private void addAndroidCommands(Map<String, String> commands, Map<String, Object> kotlinInfo) {
         if (kotlinInfo.containsKey("isAndroid") && (Boolean) kotlinInfo.get("isAndroid")) {
             commands.put("assembleDebug", "./gradlew assembleDebug");
             commands.put("assembleRelease", "./gradlew assembleRelease");
             commands.put("installDebug", "./gradlew installDebug");
             commands.put("connectedAndroidTest", "./gradlew connectedAndroidTest");
         }
-        
-        // Add Multiplatform-specific commands
+    }
+
+    private void addMultiplatformCommands(Map<String, String> commands, Map<String, Object> kotlinInfo) {
         if (kotlinInfo.containsKey("isMultiplatform") && (Boolean) kotlinInfo.get("isMultiplatform")) {
             commands.put("jsBrowserRun", "./gradlew jsBrowserRun");
             commands.put("iosX64Test", "./gradlew iosX64Test");
             commands.put("allTests", "./gradlew allTests");
         }
-        
-        // Add code quality commands
+    }
+
+    private void addCodeQualityCommands(Map<String, String> commands, Map<String, Object> kotlinInfo, boolean isGradle) {
         if (kotlinInfo.containsKey("linter") && "ktlint".equals(kotlinInfo.get("linter"))) {
             if (isGradle) {
                 commands.put("lint", "./gradlew ktlintCheck");
@@ -455,7 +452,7 @@ public class KotlinProjectScannerExtension implements ProjectAnalyzerExtension {
                 commands.put("format", "ktlint -F");
             }
         }
-        
+
         if (kotlinInfo.containsKey("staticAnalysis") && "Detekt".equals(kotlinInfo.get("staticAnalysis"))) {
             if (isGradle) {
                 commands.put("detekt", "./gradlew detekt");

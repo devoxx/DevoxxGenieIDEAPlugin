@@ -78,17 +78,13 @@ public class CachedProjectScanner {
 
         String key = baseDir.getPath();
         long modStamp = baseDir.getTimeStamp();
-        long startTime = System.currentTimeMillis();
 
         // Check cache first
         CachedScanResult cached = scanCache.get(key);
         if (cached != null && cached.lastModified == modStamp) {
-            // ProjectScannerLogPanel.log("Using cached scan result with " + cached.files.size() + " files");
             return cached.files; // Return cached result if directory is unchanged
         }
 
-        // ProjectScannerLogPanel.log("Starting project scan with timeout of " + SCAN_TIMEOUT_MS/1000 + " seconds");
-        
         try {
             // Create a container for collected files
             List<VirtualFile> collectedFiles = Collections.synchronizedList(new ArrayList<>());
@@ -112,7 +108,6 @@ public class CachedProjectScanner {
             return Collections.emptyList();
         } catch (Exception e) {
             // Some other error occurred
-            // ProjectScannerLogPanel.log("Error during scan: " + e.getMessage());
             log.error("Error during scan", e);
             return Collections.emptyList();
         }
@@ -151,109 +146,139 @@ public class CachedProjectScanner {
     
     /**
      * Recursively scans a directory with depth tracking and timeout awareness.
-     * 
+     *
      * @param directory The directory to scan
      * @param collectedFiles Container for collected files
      * @param depth Current recursion depth
      */
     private void scanDirectory(
-            @NotNull VirtualFile directory, 
-            @NotNull List<VirtualFile> collectedFiles, 
+            @NotNull VirtualFile directory,
+            @NotNull List<VirtualFile> collectedFiles,
             int depth) {
-        
-        // Check if scan has been cancelled
-        if (scanCancelled.get()) {
+
+        if (isScanTerminated(directory, depth)) {
             return;
         }
-        
-        // Check depth limit to prevent infinite recursion
-        if (depth > MAX_DEPTH) {
-            log.warn("Max depth reached at: " + directory.getPath());
-            return;
-        }
-        
-        // Check file count limit
-        if (fileCount.get() > MAX_FILES) {
-            log.warn("Max file count reached (" + MAX_FILES + "), stopping scan");
-            scanCancelled.set(true);
-            return;
-        }
-        
-        // Check directory count limit
-        if (dirCount.get() > MAX_DIRECTORIES) {
-            log.warn("Max directory count reached (" + MAX_DIRECTORIES + "), stopping scan");
-            scanCancelled.set(true);
-            return;
-        }
-        
-        // Track directory count
+
         dirCount.incrementAndGet();
-        
-        // First, check if directory should be ignored based on gitignore rules
+
         String dirRelativePath = getRelativePath(directory);
         if (!dirRelativePath.isEmpty() && gitignoreParser.shouldIgnore(dirRelativePath, true)) {
-            // Ignore this directory
             return;
         }
-        
-        // Get children safely
+
         VirtualFile[] children = directory.getChildren();
         if (children == null || children.length == 0) {
             return;
         }
-        
-        // For moderate number of children, process synchronously
-        // This avoids creating too many tasks for small directories
+
+        // For moderate number of children, process synchronously to avoid task overhead
         if (children.length <= 20) {
             for (VirtualFile child : children) {
                 processChild(child, collectedFiles, depth);
             }
         } else {
-            // For larger directories, process children in parallel but with controlled concurrency
-            int batchSize = 20;
-            List<List<VirtualFile>> batches = new ArrayList<>();
-            
-            for (int i = 0; i < children.length; i += batchSize) {
-                int end = Math.min(children.length, i + batchSize);
-                batches.add(Arrays.asList(children).subList(i, end));
+            processChildrenInParallel(directory, collectedFiles, children, depth);
+        }
+    }
+
+    /**
+     * Checks whether the scan should be terminated due to cancellation or limit violations.
+     *
+     * @param directory The current directory (used for log messages)
+     * @param depth     Current recursion depth
+     * @return {@code true} if the scan should stop
+     */
+    private boolean isScanTerminated(@NotNull VirtualFile directory, int depth) {
+        if (scanCancelled.get()) {
+            return true;
+        }
+        if (depth > MAX_DEPTH) {
+            log.warn("Max depth reached at: " + directory.getPath());
+            return true;
+        }
+        if (fileCount.get() > MAX_FILES) {
+            log.warn("Max file count reached (" + MAX_FILES + "), stopping scan");
+            scanCancelled.set(true);
+            return true;
+        }
+        if (dirCount.get() > MAX_DIRECTORIES) {
+            log.warn("Max directory count reached (" + MAX_DIRECTORIES + "), stopping scan");
+            scanCancelled.set(true);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Splits {@code children} into batches and processes each batch concurrently.
+     *
+     * @param directory      The parent directory (used for log messages)
+     * @param collectedFiles Container for collected files
+     * @param children       All child files/directories to process
+     * @param depth          Current recursion depth
+     */
+    private void processChildrenInParallel(
+            @NotNull VirtualFile directory,
+            @NotNull List<VirtualFile> collectedFiles,
+            VirtualFile[] children,
+            int depth) {
+
+        List<List<VirtualFile>> batches = createBatches(children);
+        CountDownLatch latch = new CountDownLatch(batches.size());
+
+        for (List<VirtualFile> batch : batches) {
+            if (scanCancelled.get()) {
+                latch.countDown();
+                continue;
             }
-            
-            // Process each batch in parallel
-            CountDownLatch latch = new CountDownLatch(batches.size());
-            
-            for (List<VirtualFile> batch : batches) {
-                // Skip if scan has been cancelled
-                if (scanCancelled.get()) {
-                    latch.countDown();
-                    continue;
-                }
-                
-                // Submit batch processing task
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        for (VirtualFile child : batch) {
-                            if (scanCancelled.get()) {
-                                break;
-                            }
-                            processChild(child, collectedFiles, depth);
+            CompletableFuture.runAsync(() -> {
+                try {
+                    for (VirtualFile child : batch) {
+                        if (scanCancelled.get()) {
+                            break;
                         }
-                    } finally {
-                        latch.countDown();
+                        processChild(child, collectedFiles, depth);
                     }
-                }, SCAN_EXECUTOR);
-            }
-            
-            // Wait for all batches to complete but with a timeout
-            try {
-                if (!latch.await(15, TimeUnit.SECONDS)) {
-                    // Timeout waiting for children to be processed
-                    log.warn("Timeout waiting for directory children to be processed: " + directory.getPath());
-                    scanCancelled.set(true);
+                } finally {
+                    latch.countDown();
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            }, SCAN_EXECUTOR);
+        }
+
+        awaitBatchCompletion(directory, latch);
+    }
+
+    /**
+     * Partitions an array of {@link VirtualFile} elements into sublists of at most {@code batchSize} elements.
+     *
+     * @param children Source array
+     * @return Ordered list of batches
+     */
+    private static List<List<VirtualFile>> createBatches(VirtualFile[] children) {
+        List<List<VirtualFile>> batches = new ArrayList<>();
+        for (int i = 0; i < children.length; i += 20) {
+            int end = Math.min(children.length, i + 20);
+            batches.add(Arrays.asList(children).subList(i, end));
+        }
+        return batches;
+    }
+
+    /**
+     * Waits for the given {@link CountDownLatch} to reach zero, cancelling the scan on timeout or interruption.
+     *
+     * @param directory The directory whose children are being processed (used for log messages)
+     * @param latch     The latch to await
+     */
+    private void awaitBatchCompletion(@NotNull VirtualFile directory, CountDownLatch latch) {
+        try {
+            if (!latch.await(15, TimeUnit.SECONDS)) {
+                log.warn("Timeout waiting for directory children to be processed: " + directory.getPath());
                 scanCancelled.set(true);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            scanCancelled.set(true);
         }
     }
     
@@ -325,21 +350,29 @@ public class CachedProjectScanner {
     public static void shutdown() {
         // Make sure we're on EDT before accessing any IntelliJ Platform components
         try {
-            if (!ApplicationManager.getApplication().isDispatchThread()) {
-                try {
-                    ApplicationManager.getApplication().invokeAndWait(CachedProjectScanner::performShutdown);
-                } catch (Exception e) {
-                    log.error("Error during scanner shutdown", e);
-                    // Fallback to direct shutdown if EDT access fails
-                    performShutdown();
-                }
-            } else {
-                performShutdown();
-            }
+            shutdownOnEDT();
         } catch (Exception e) {
             log.error("Unexpected error during scanner shutdown", e);
             // Last resort emergency shutdown
             SCAN_EXECUTOR.shutdownNow();
+        }
+    }
+
+    /**
+     * Performs shutdown on the Event Dispatch Thread (EDT) if needed.
+     * Falls back to direct shutdown if EDT access fails.
+     */
+    private static void shutdownOnEDT() {
+        if (!ApplicationManager.getApplication().isDispatchThread()) {
+            try {
+                ApplicationManager.getApplication().invokeAndWait(CachedProjectScanner::performShutdown);
+            } catch (Exception e) {
+                log.error("Error during scanner shutdown", e);
+                // Fallback to direct shutdown if EDT access fails
+                performShutdown();
+            }
+        } else {
+            performShutdown();
         }
     }
     

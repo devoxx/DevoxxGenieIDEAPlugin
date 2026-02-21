@@ -94,26 +94,30 @@ public final class ClaudeStreamJsonParser {
         if (content == null) return;
 
         for (JsonElement item : content) {
-            if (!item.isJsonObject()) continue;
-            JsonObject contentItem = item.getAsJsonObject();
-            String contentType = getStringOrNull(contentItem, "type");
-            if (contentType == null) continue;
-
-            switch (contentType) {
-                case "text" -> {
-                    String text = getStringOrNull(contentItem, "text");
-                    if (text != null && !text.isBlank()) {
-                        out.add(build(AgentType.INTERMEDIATE_RESPONSE, "assistant/text", null, text.trim(), hash));
-                    }
-                }
-                case "tool_use" -> {
-                    String toolName = getStringOrNull(contentItem, "name");
-                    JsonElement input = contentItem.get("input");
-                    String arguments = (input != null && !input.isJsonNull()) ? input.toString() : "{}";
-                    out.add(build(AgentType.TOOL_REQUEST, toolName != null ? toolName : "unknown", arguments, null, hash));
-                }
-                default -> { /* other content types (e.g. image) — ignore */ }
+            if (item.isJsonObject()) {
+                parseAssistantContentItem(item.getAsJsonObject(), hash, out);
             }
+        }
+    }
+
+    private static void parseAssistantContentItem(JsonObject contentItem, String hash, List<AgentMessage> out) {
+        String contentType = getStringOrNull(contentItem, "type");
+        if (contentType == null) return;
+
+        switch (contentType) {
+            case "text" -> {
+                String text = getStringOrNull(contentItem, "text");
+                if (text != null && !text.isBlank()) {
+                    out.add(build(AgentType.INTERMEDIATE_RESPONSE, "assistant/text", null, text.trim(), hash));
+                }
+            }
+            case "tool_use" -> {
+                String toolName = getStringOrNull(contentItem, "name");
+                JsonElement input = contentItem.get("input");
+                String arguments = (input != null && !input.isJsonNull()) ? input.toString() : "{}";
+                out.add(build(AgentType.TOOL_REQUEST, toolName != null ? toolName : "unknown", arguments, null, hash));
+            }
+            default -> { /* other content types (e.g. image) — ignore */ }
         }
     }
 

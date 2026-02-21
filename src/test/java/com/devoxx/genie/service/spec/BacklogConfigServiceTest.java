@@ -758,7 +758,7 @@ class BacklogConfigServiceTest {
             BacklogConfigService service = setupService(tempDir, stateMock);
             service.initBacklog("Test");
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-1");
+            assertThat(service.getNextTaskId()).isEqualTo("task-1");
         }
     }
 
@@ -772,7 +772,7 @@ class BacklogConfigServiceTest {
             Files.writeString(tasksDir.resolve("task-1.md"), "---\nid: TASK-1\n---\n", StandardCharsets.UTF_8);
             Files.writeString(tasksDir.resolve("task-3.md"), "---\nid: TASK-3\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-4");
+            assertThat(service.getNextTaskId()).isEqualTo("task-4");
         }
     }
 
@@ -785,7 +785,7 @@ class BacklogConfigServiceTest {
             Path completedDir = tempDir.resolve("backlog/completed");
             Files.writeString(completedDir.resolve("task-5.md"), "---\nid: TASK-5\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-6");
+            assertThat(service.getNextTaskId()).isEqualTo("task-6");
         }
     }
 
@@ -798,7 +798,7 @@ class BacklogConfigServiceTest {
             Path archiveDir = tempDir.resolve("backlog/archive/tasks");
             Files.writeString(archiveDir.resolve("task-10.md"), "---\nid: TASK-10\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-11");
+            assertThat(service.getNextTaskId()).isEqualTo("task-11");
         }
     }
 
@@ -812,7 +812,7 @@ class BacklogConfigServiceTest {
             Files.writeString(tempDir.resolve("backlog/completed/t2.md"), "---\nid: TASK-7\n---\n", StandardCharsets.UTF_8);
             Files.writeString(tempDir.resolve("backlog/archive/tasks/t3.md"), "---\nid: TASK-5\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-8");
+            assertThat(service.getNextTaskId()).isEqualTo("task-8");
         }
     }
 
@@ -842,7 +842,7 @@ class BacklogConfigServiceTest {
                     .build();
             service.saveConfig(config);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-1");
+            assertThat(service.getNextTaskId()).isEqualTo("task-1");
         }
     }
 
@@ -881,7 +881,7 @@ class BacklogConfigServiceTest {
             Path tasksDir = tempDir.resolve("backlog/tasks");
             Files.writeString(tasksDir.resolve("task-99.txt"), "---\nid: TASK-99\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-1");
+            assertThat(service.getNextTaskId()).isEqualTo("task-1");
         }
     }
 
@@ -895,7 +895,7 @@ class BacklogConfigServiceTest {
             Files.writeString(tasksDir.resolve("task-abc.md"), "---\nid: TASK-abc\n---\n", StandardCharsets.UTF_8);
             Files.writeString(tasksDir.resolve("task-2.md"), "---\nid: TASK-2\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-3");
+            assertThat(service.getNextTaskId()).isEqualTo("task-3");
         }
     }
 
@@ -908,7 +908,7 @@ class BacklogConfigServiceTest {
             Path tasksDir = tempDir.resolve("backlog/tasks");
             Files.writeString(tasksDir.resolve("nodash.md"), "---\nid: NODASH\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-1");
+            assertThat(service.getNextTaskId()).isEqualTo("task-1");
         }
     }
 
@@ -921,7 +921,7 @@ class BacklogConfigServiceTest {
             Path tasksDir = tempDir.resolve("backlog/tasks");
             Files.writeString(tasksDir.resolve("task-5.md"), "---\nid: \"TASK-5\"\n---\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-6");
+            assertThat(service.getNextTaskId()).isEqualTo("task-6");
         }
     }
 
@@ -934,7 +934,7 @@ class BacklogConfigServiceTest {
             Path tasksDir = tempDir.resolve("backlog/tasks");
             Files.writeString(tasksDir.resolve("noid.md"), "# Just a markdown file\nNo frontmatter here.\n", StandardCharsets.UTF_8);
 
-            assertThat(service.getNextTaskId()).isEqualTo("TASK-1");
+            assertThat(service.getNextTaskId()).isEqualTo("task-1");
         }
     }
 

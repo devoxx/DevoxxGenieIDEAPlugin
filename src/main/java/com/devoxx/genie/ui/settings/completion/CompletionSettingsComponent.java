@@ -14,6 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CompletionSettingsComponent extends AbstractSettingsComponent {
 
@@ -163,38 +167,44 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
-                if (OLLAMA.equals(provider)) {
-                    OllamaModelEntryDTO[] models = OllamaModelService.getInstance().getModels();
-                    SwingUtilities.invokeLater(() -> {
-                        modelComboBox.removeAllItems();
-                        for (OllamaModelEntryDTO model : models) {
-                            modelComboBox.addItem(model.getName());
-                        }
-                        selectModelIfPresent(selectedModel);
-                        restoreRefreshButton();
-                    });
-                } else if (LMSTUDIO.equals(provider)) {
-                    LMStudioModelEntryDTO[] models = LMStudioModelService.getInstance().getModels();
-                    SwingUtilities.invokeLater(() -> {
-                        modelComboBox.removeAllItems();
-                        for (LMStudioModelEntryDTO model : models) {
-                            modelComboBox.addItem(model.resolveModelName());
-                        }
-                        selectModelIfPresent(selectedModel);
-                        restoreRefreshButton();
-                    });
-                }
+                List<String> modelNames = fetchModelNames(provider);
+                SwingUtilities.invokeLater(() -> updateModelComboBox(modelNames, selectedModel));
             } catch (Exception ex) {
                 LOG.debug("Failed to fetch models for {}: {}", provider, ex.getMessage());
-                SwingUtilities.invokeLater(() -> {
-                    restoreRefreshButton();
-                    if (modelComboBox.getItemCount() == 0 && selectedModel != null && !selectedModel.isBlank()) {
-                        modelComboBox.addItem(selectedModel);
-                        modelComboBox.setSelectedItem(selectedModel);
-                    }
-                });
+                SwingUtilities.invokeLater(() -> handleModelLoadFailure(selectedModel));
             }
         });
+    }
+
+    private List<String> fetchModelNames(String provider) throws Exception {
+        if (OLLAMA.equals(provider)) {
+            return Arrays.stream(OllamaModelService.getInstance().getModels())
+                    .map(OllamaModelEntryDTO::getName)
+                    .collect(Collectors.toList());
+        }
+        if (LMSTUDIO.equals(provider)) {
+            return Arrays.stream(LMStudioModelService.getInstance().getModels())
+                    .map(LMStudioModelEntryDTO::resolveModelName)
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    private void updateModelComboBox(List<String> modelNames, String selectedModel) {
+        modelComboBox.removeAllItems();
+        for (String name : modelNames) {
+            modelComboBox.addItem(name);
+        }
+        selectModelIfPresent(selectedModel);
+        restoreRefreshButton();
+    }
+
+    private void handleModelLoadFailure(String selectedModel) {
+        restoreRefreshButton();
+        if (modelComboBox.getItemCount() == 0 && selectedModel != null && !selectedModel.isBlank()) {
+            modelComboBox.addItem(selectedModel);
+            modelComboBox.setSelectedItem(selectedModel);
+        }
     }
 
     private void selectModelIfPresent(String selectedModel) {

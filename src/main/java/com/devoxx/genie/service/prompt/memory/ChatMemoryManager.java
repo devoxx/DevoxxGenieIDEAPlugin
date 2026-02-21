@@ -56,6 +56,9 @@ public class ChatMemoryManager {
     public void initializeMemory(@NotNull Project project) {
         try {
             int chatMemorySize = DevoxxGenieStateService.getInstance().getChatMemorySize();
+            if (chatMemorySize <= 0) {
+                chatMemorySize = 10;
+            }
             chatMemoryService.initialize(project, chatMemorySize);
             log.debug("Chat memory initialized for project: {}", project.getLocationHash());
         } catch (Exception e) {

@@ -170,6 +170,32 @@ class GitignoreParserTest {
         assertThat(parser.shouldIgnore("target/classes/App.class", false)).isTrue();
     }
 
+    @Test
+    void shouldIgnore_negationPattern_unignoresSpecificFile() throws Exception {
+        // Use directory-prefixed patterns so GlobTool produces correct regex (avoids the *.ext optimization path)
+        setupGitignoreContent("src/*.log\n!src/important.log\n");
+
+        GitignoreParser parser = new GitignoreParser(baseDir);
+
+        // important.log is explicitly un-ignored by the negation pattern
+        assertThat(parser.shouldIgnore("src/important.log", false)).isFalse();
+        // other .log files in src/ are still ignored
+        assertThat(parser.shouldIgnore("src/debug.log", false)).isTrue();
+        assertThat(parser.shouldIgnore("src/error.log", false)).isTrue();
+    }
+
+    @Test
+    void shouldIgnore_negationPatternOnDirectory_unignoresDirectory() throws Exception {
+        setupGitignoreContent("build/\n!build/reports/\n");
+
+        GitignoreParser parser = new GitignoreParser(baseDir);
+
+        // The build directory itself is excluded
+        assertThat(parser.shouldIgnore("build", true)).isTrue();
+        // build/classes is under an excluded dir
+        assertThat(parser.shouldIgnore("build/classes", true)).isTrue();
+    }
+
     private void setupGitignoreContent(String content) throws Exception {
         when(baseDir.findChild(".gitignore")).thenReturn(gitignoreFile);
         when(gitignoreFile.getPath()).thenReturn("/project/.gitignore");

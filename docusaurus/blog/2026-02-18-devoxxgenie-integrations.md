@@ -107,6 +107,25 @@ To avoid ID collisions across sessions, scan the three task storage locations be
 
 Find the highest existing `id: TASK-N` value across all three, then increment by one. The full Java implementation is in the [API reference](/docs/integrations/overview#task-id-synchronisation).
 
+#### Creating Tasks Programmatically
+
+For a simpler path that handles ID allocation and backlog initialisation automatically,
+use `ExternalTaskService`:
+
+```java
+Class<?> svc = Class.forName("com.devoxx.genie.service.ExternalTaskService");
+Object instance = svc.getMethod("getInstance", Project.class).invoke(null, project);
+String taskId = (String) svc
+    .getMethod("createBacklogTask", String.class, String.class, String.class, List.class)
+    .invoke(instance, title, description, "high", List.of("sonarlint"));
+```
+
+This returns the created task ID (e.g. `"TASK-5"`) and requires no manual ID scanning or
+directory setup. The trade-off: it supports only `title`, `description`, `priority`, and `labels`.
+For richer metadata (`source`, `rule`, `file`, `line`), write the file directly as shown above.
+
+Full details in the [API reference](/docs/integrations/overview#creating-backlog-tasks-via-java-api).
+
 ---
 
 ## SonarQube / SonarLint Integration
@@ -221,7 +240,8 @@ The pattern is deliberately small. Here's what a minimal integration looks like 
 2. **Build** a rich prompt string from whatever context your plugin has (rule, file, code snippet, description)
 3. **Choose** your delivery mechanism:
    - Immediate AI response → call `ExternalPromptService.setPromptText()` via reflection
-   - Deferred SDD resolution → write a `TASK-*.md` file to `backlog/tasks/`
+   - Deferred SDD resolution (simple) → call `ExternalTaskService.createBacklogTask()` via reflection
+   - Deferred SDD resolution (rich metadata) → write a `TASK-*.md` file to `backlog/tasks/` directly
 
 That's it. No SDK to pull in, no compile-time coupling, no registration required. If DevoxxGenie isn't installed, your code path silently does nothing.
 

@@ -61,21 +61,7 @@ public class FindSymbolsToolExecutor implements ToolExecutor {
 
         PsiSearchHelper helper = PsiSearchHelper.getInstance(project);
         helper.processElementsWithWord(
-                (element, offsetInElement) -> {
-                    PsiElement parent = element.getParent();
-                    if (parent instanceof PsiNameIdentifierOwner owner) {
-                        PsiElement nameId = owner.getNameIdentifier();
-                        if (nameId != null && nameId.getTextRange().equals(element.getTextRange())) {
-                            if (matchesKind(owner, kind)) {
-                                String formatted = formatSymbol(owner, projectBase);
-                                if (formatted != null) {
-                                    results.add(formatted);
-                                }
-                            }
-                        }
-                    }
-                    return results.size() < MAX_RESULTS;
-                },
+                (element, offsetInElement) -> processFoundElement(element, results, kind, projectBase),
                 scope, name, UsageSearchContext.IN_CODE, true
         );
 
@@ -92,6 +78,27 @@ public class FindSymbolsToolExecutor implements ToolExecutor {
             sb.append("\n... (truncated at ").append(MAX_RESULTS).append(" results)");
         }
         return sb.toString();
+    }
+
+    private boolean processFoundElement(@NotNull PsiElement element,
+                                        @NotNull List<String> results,
+                                        String kind,
+                                        @NotNull VirtualFile projectBase) {
+        PsiElement parent = element.getParent();
+        if (!(parent instanceof PsiNameIdentifierOwner owner)) {
+            return results.size() < MAX_RESULTS;
+        }
+        PsiElement nameId = owner.getNameIdentifier();
+        if (nameId == null || !nameId.getTextRange().equals(element.getTextRange())) {
+            return results.size() < MAX_RESULTS;
+        }
+        if (matchesKind(owner, kind)) {
+            String formatted = formatSymbol(owner, projectBase);
+            if (formatted != null) {
+                results.add(formatted);
+            }
+        }
+        return results.size() < MAX_RESULTS;
     }
 
     private boolean matchesKind(@NotNull PsiNameIdentifierOwner owner, String kind) {

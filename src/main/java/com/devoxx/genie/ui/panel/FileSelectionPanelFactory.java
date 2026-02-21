@@ -20,8 +20,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -155,68 +155,85 @@ public class FileSelectionPanelFactory implements DumbAware {
                                     DefaultListModel<VirtualFile> listModel,
                                     JBList<VirtualFile> resultList,
                                     List<VirtualFile> openFiles) {
+        new FileSearchTask(project, searchText, listModel, resultList, openFiles).queue();
+    }
 
-        new Task.Backgroundable(project, "Searching files", true) {
-            private final List<VirtualFile> foundFiles = new ArrayList<>();
+    private static final class FileSearchTask extends Task.Backgroundable {
 
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                ReadAction.run(() -> searchVirtualFiles(indicator));
-            }
+        private final Project project;
+        private final String searchText;
+        private final DefaultListModel<VirtualFile> listModel;
+        private final JBList<VirtualFile> resultList;
+        private final List<VirtualFile> openFiles;
+        private final List<VirtualFile> foundFiles = new ArrayList<>();
 
-            private void searchVirtualFiles(@NotNull ProgressIndicator indicator) {
-                if (searchOpenFiles(indicator)) return;
+        FileSearchTask(Project project, String searchText, DefaultListModel<VirtualFile> listModel,
+                       JBList<VirtualFile> resultList, List<VirtualFile> openFiles) {
+            super(project, "Searching files", true);
+            this.project = project;
+            this.searchText = searchText;
+            this.listModel = listModel;
+            this.resultList = resultList;
+            this.openFiles = openFiles;
+        }
 
-                // Search through project files
-                if (searchProjectFiles(indicator)) return;
+        @Override
+        public void run(@NotNull ProgressIndicator indicator) {
+            ReadAction.run(() -> searchVirtualFiles(indicator));
+        }
 
-                foundFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
-            }
+        private void searchVirtualFiles(@NotNull ProgressIndicator indicator) {
+            if (searchOpenFiles(indicator)) return;
+            if (searchProjectFiles(indicator)) return;
+            foundFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
+        }
 
-            private boolean searchProjectFiles(@NotNull ProgressIndicator indicator) {
-                GotoFileModel model = new GotoFileModel(project);
-                String[] names = model.getNames(false);
-                for (String name : names) {
-                    if (indicator.isCanceled()) return true;
+        private boolean searchProjectFiles(@NotNull ProgressIndicator indicator) {
+            GotoFileModel model = new GotoFileModel(project);
+            String[] names = model.getNames(false);
+            for (String name : names) {
+                if (indicator.isCanceled()) return true;
+                if (foundFiles.size() >= MAX_RESULTS) return false;
+                if (name.toLowerCase().contains(searchText.toLowerCase())) {
+                    addMatchingFiles(model, name);
                     if (foundFiles.size() >= MAX_RESULTS) return false;
-                    if (name.toLowerCase().contains(searchText.toLowerCase())) {
-                        Object[] objects = model.getElementsByName(name, false, name);
-                        for (Object obj : objects) {
-                            if (obj instanceof PsiFile psiFile) {
-                                VirtualFile virtualFile = psiFile.getVirtualFile();
-                                if (virtualFile != null && !foundFiles.contains(virtualFile)) {
-                                    foundFiles.add(virtualFile);
-                                    if (foundFiles.size() >= MAX_RESULTS) return false;
-                                }
-                            }
-                        }
+                }
+            }
+            return false;
+        }
+
+        private void addMatchingFiles(GotoFileModel model, String name) {
+            Object[] objects = model.getElementsByName(name, false, name);
+            for (Object obj : objects) {
+                if (obj instanceof PsiFile psiFile) {
+                    VirtualFile virtualFile = psiFile.getVirtualFile();
+                    if (virtualFile != null && !foundFiles.contains(virtualFile)) {
+                        foundFiles.add(virtualFile);
                     }
                 }
-                return false;
             }
+        }
 
-            private boolean searchOpenFiles(@NotNull ProgressIndicator indicator) {
-                // Search through open files
-                for (VirtualFile file : openFiles) {
-                    if (indicator.isCanceled()) return true;
-                    if (file.getName().toLowerCase().contains(searchText.toLowerCase())) {
-                        foundFiles.add(file);
-                    }
+        private boolean searchOpenFiles(@NotNull ProgressIndicator indicator) {
+            for (VirtualFile file : openFiles) {
+                if (indicator.isCanceled()) return true;
+                if (file.getName().toLowerCase().contains(searchText.toLowerCase())) {
+                    foundFiles.add(file);
                 }
-                return false;
             }
+            return false;
+        }
 
-            @Override
-            public void onSuccess() {
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    listModel.clear();
-                    for (VirtualFile file : foundFiles) {
-                        listModel.addElement(file);
-                    }
-                    resultList.updateUI();
-                });
-            }
-        }.queue();
+        @Override
+        public void onSuccess() {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                listModel.clear();
+                for (VirtualFile file : foundFiles) {
+                    listModel.addElement(file);
+                }
+                resultList.updateUI();
+            });
+        }
     }
 
     /**
@@ -263,64 +280,46 @@ public class FileSelectionPanelFactory implements DumbAware {
      * @param project     the project
      */
     private static void setupKeyboardNavigation(JBTextField filterField, JBList<VirtualFile> resultList, Project project) {
-        // Add key listener to filter field to handle DOWN arrow and ENTER keys
-        filterField.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {
-                // Not used
-            }
-
+        filterField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_DOWN && resultList.getModel().getSize() > 0) {
-                    // Transfer focus to the result list and select first item if nothing is selected
-                    resultList.requestFocusInWindow();
-                    if (resultList.getSelectedIndex() == -1) {
-                        resultList.setSelectedIndex(0);
-                    }
-                    e.consume(); // Prevent further processing
-                } else if (e.getKeyCode() == KeyEvent.VK_ENTER && resultList.getModel().getSize() > 0) {
-                    // If Enter is pressed in filter field and there are results, select first item and add it
-                    if (resultList.getSelectedIndex() == -1 && resultList.getModel().getSize() > 0) {
-                        resultList.setSelectedIndex(0);
-                    }
-                    if (resultList.getSelectedValue() != null) {
-                        addSelectedFile(project, resultList);
-                    }
-                    e.consume();
-                }
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                // Not used
+                handleFilterFieldKeyPressed(e, resultList, project);
             }
         });
 
-        // Add key listener to result list to handle UP arrow and ENTER keys
-        resultList.addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {
-                // Not used
-            }
-
+        resultList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_UP && resultList.getSelectedIndex() == 0) {
-                    // If UP arrow is pressed and we're at the first item, go back to filter field
-                    filterField.requestFocusInWindow();
-                    e.consume();
-                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    // If Enter is pressed in result list, add the selected file
-                    addSelectedFile(project, resultList);
-                    e.consume();
-                }
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
-                // Not used
+                handleResultListKeyPressed(e, filterField, resultList, project);
             }
         });
+    }
+
+    static void handleFilterFieldKeyPressed(KeyEvent e, JBList<VirtualFile> resultList, Project project) {
+        if (e.getKeyCode() == KeyEvent.VK_DOWN && resultList.getModel().getSize() > 0) {
+            resultList.requestFocusInWindow();
+            if (resultList.getSelectedIndex() == -1) {
+                resultList.setSelectedIndex(0);
+            }
+            e.consume();
+        } else if (e.getKeyCode() == KeyEvent.VK_ENTER && resultList.getModel().getSize() > 0) {
+            if (resultList.getSelectedIndex() == -1) {
+                resultList.setSelectedIndex(0);
+            }
+            if (resultList.getSelectedValue() != null) {
+                addSelectedFile(project, resultList);
+            }
+            e.consume();
+        }
+    }
+
+    static void handleResultListKeyPressed(KeyEvent e, JBTextField filterField, JBList<VirtualFile> resultList, Project project) {
+        if (e.getKeyCode() == KeyEvent.VK_UP && resultList.getSelectedIndex() == 0) {
+            filterField.requestFocusInWindow();
+            e.consume();
+        } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+            addSelectedFile(project, resultList);
+            e.consume();
+        }
     }
 }

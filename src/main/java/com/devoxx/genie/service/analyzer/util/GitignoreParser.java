@@ -291,52 +291,58 @@ public class GitignoreParser {
     
     /**
      * Internal method to check if a specific path should be ignored, without checking parent directories
-     * 
+     *
      * @param normalizedPath The normalized path to check
      * @return true if the path should be ignored, false otherwise
      */
     private boolean isPathIgnored(@NotNull String normalizedPath) {
         // First check against root .gitignore patterns
-        
-        // Check if the path matches any root include patterns (negations)
-        for (Pattern pattern : rootIncludePatterns) {
-            if (pattern.matcher(normalizedPath).matches()) {
-                return false; // Explicitly included by root .gitignore
-            }
+        if (matchesAnyPattern(normalizedPath, rootIncludePatterns)) {
+            return false; // Explicitly included by root .gitignore
         }
-        
-        // Check if the path matches any root exclude patterns
-        for (Pattern pattern : rootExcludePatterns) {
-            if (pattern.matcher(normalizedPath).matches()) {
-                return true; // Explicitly excluded by root .gitignore
-            }
+        if (matchesAnyPattern(normalizedPath, rootExcludePatterns)) {
+            return true; // Explicitly excluded by root .gitignore
         }
-        
+
         // Then check nested .gitignore patterns, from the most specific to the least specific
-        // Get all parent directories of this path
+        return checkNestedPatterns(normalizedPath);
+    }
+
+    /**
+     * Checks if a path matches any pattern in the given list.
+     *
+     * @param path     The path to check
+     * @param patterns The patterns to match against
+     * @return true if the path matches any pattern
+     */
+    private boolean matchesAnyPattern(@NotNull String path, @NotNull List<Pattern> patterns) {
+        for (Pattern pattern : patterns) {
+            if (pattern.matcher(path).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks nested .gitignore patterns for a given path, from the most specific directory to the least.
+     *
+     * @param normalizedPath The normalized path to check
+     * @return true if the path should be ignored, false otherwise
+     */
+    private boolean checkNestedPatterns(@NotNull String normalizedPath) {
         List<String> parentDirs = getParentDirectories(normalizedPath);
-        
         for (String parentDir : parentDirs) {
             List<Pattern> nestedIncludes = nestedIncludePatterns.get(parentDir);
             List<Pattern> nestedExcludes = nestedExcludePatterns.get(parentDir);
-            
-            if (nestedIncludes != null) {
-                for (Pattern pattern : nestedIncludes) {
-                    if (pattern.matcher(normalizedPath).matches()) {
-                        return false; // Explicitly included by a nested .gitignore
-                    }
-                }
+
+            if (nestedIncludes != null && matchesAnyPattern(normalizedPath, nestedIncludes)) {
+                return false; // Explicitly included by a nested .gitignore
             }
-            
-            if (nestedExcludes != null) {
-                for (Pattern pattern : nestedExcludes) {
-                    if (pattern.matcher(normalizedPath).matches()) {
-                        return true; // Explicitly excluded by a nested .gitignore
-                    }
-                }
+            if (nestedExcludes != null && matchesAnyPattern(normalizedPath, nestedExcludes)) {
+                return true; // Explicitly excluded by a nested .gitignore
             }
         }
-        
         return false; // Not matched by any pattern, don't ignore
     }
 

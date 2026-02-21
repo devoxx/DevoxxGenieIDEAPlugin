@@ -92,19 +92,7 @@ public final class SpecFrontmatterParser {
 
                 currentKey = trimmed.substring(0, colonIndex).trim();
                 String value = trimmed.substring(colonIndex + 1).trim();
-
-                if (value.isEmpty()) {
-                    // This is likely a list field — next lines will be "- item"
-                    currentList = new ArrayList<>();
-                } else if ("[]".equals(value)) {
-                    // Explicit empty array
-                    currentList = null;
-                    applyListField(currentKey, new ArrayList<>(), builder);
-                } else {
-                    currentList = null;
-                    value = stripQuotes(value);
-                    applyScalarField(currentKey, value, builder);
-                }
+                currentList = parseFieldValue(currentKey, value, builder);
             }
         }
 
@@ -128,6 +116,24 @@ public final class SpecFrontmatterParser {
                 try { builder.ordinal(Integer.parseInt(value)); } catch (NumberFormatException ignored) { }
             }
             default -> log.trace("Ignoring unknown frontmatter field: {}", key);
+        }
+    }
+
+    /**
+     * Parse a frontmatter field value, applying it to the builder and returning the new currentList state.
+     * Returns a new list if the value is empty (list field start), or null for scalar/explicit-empty fields.
+     */
+    private static @Nullable List<String> parseFieldValue(@NotNull String key, @NotNull String value, TaskSpec.TaskSpecBuilder builder) {
+        if (value.isEmpty()) {
+            // This is likely a list field — next lines will be "- item"
+            return new ArrayList<>();
+        } else if ("[]".equals(value)) {
+            // Explicit empty array
+            applyListField(key, new ArrayList<>(), builder);
+            return null;
+        } else {
+            applyScalarField(key, stripQuotes(value), builder);
+            return null;
         }
     }
 

@@ -200,28 +200,40 @@ public class LLMProvidersConfigurable implements Configurable {
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
-            boolean hasKey = (!settings.getAnthropicKey().isBlank() && settings.isAnthropicEnabled()) ||
-                    (!settings.getOpenAIKey().isBlank() && settings.isOpenAIEnabled()) ||
-                    (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled()) ||
-                    (!settings.getOpenRouterKey().isBlank() && settings.isOpenRouterEnabled()) ||
-                    (!settings.getDeepSeekKey().isBlank() && settings.isDeepSeekEnabled()) ||
-                    (!settings.getDeepInfraKey().isBlank() && settings.isDeepInfraEnabled()) ||
-                    (!settings.getGeminiKey().isBlank() && settings.isGoogleEnabled()) ||
-                    (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
-                    (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
-                    (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
-                    (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
-                    (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
-                    (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
-                    (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
-                    (!settings.getAwsProfileName().isBlank() && settings.getShowAwsFields() && settings.getShouldPowerFromAWSProfile()) ||
-                    (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
-                    (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
-
             project.getMessageBus()
                     .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
-                    .settingsChanged(hasKey);
+                    .settingsChanged(isAnyApiKeyEnabled(settings));
         }
+    }
+
+    private boolean isAnyApiKeyEnabled(DevoxxGenieStateService settings) {
+        return hasEnabledMainCloudKey(settings) || hasEnabledAuxCloudKey(settings) || hasEnabledAwsOrAzureKey(settings);
+    }
+
+    private boolean hasEnabledMainCloudKey(DevoxxGenieStateService settings) {
+        return (!settings.getAnthropicKey().isBlank() && settings.isAnthropicEnabled()) ||
+                (!settings.getOpenAIKey().isBlank() && settings.isOpenAIEnabled()) ||
+                (!settings.getMistralKey().isBlank() && settings.isMistralEnabled()) ||
+                (!settings.getGeminiKey().isBlank() && settings.isGoogleEnabled()) ||
+                (!settings.getGroqKey().isBlank() && settings.isGroqEnabled()) ||
+                (!settings.getDeepInfraKey().isBlank() && settings.isDeepInfraEnabled());
+    }
+
+    private boolean hasEnabledAuxCloudKey(DevoxxGenieStateService settings) {
+        return (!settings.getDeepSeekKey().isBlank() && settings.isDeepSeekEnabled()) ||
+                (!settings.getOpenRouterKey().isBlank() && settings.isOpenRouterEnabled()) ||
+                (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
+                (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
+                (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
+                (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled());
+    }
+
+    private boolean hasEnabledAwsOrAzureKey(DevoxxGenieStateService settings) {
+        return (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
+                (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
+                (!settings.getAwsProfileName().isBlank() && settings.getShowAwsFields() && settings.getShouldPowerFromAWSProfile()) ||
+                (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
+                (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
     }
 
     /**

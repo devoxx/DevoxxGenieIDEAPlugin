@@ -47,54 +47,64 @@ public final class BuildSystemDetector {
         boolean hasTarget = testTarget != null && !testTarget.isBlank();
 
         switch (buildSystem) {
-            case GRADLE -> {
-                command.add(isWindows ? "gradlew.bat" : "./gradlew");
-                command.add("test");
-                if (hasTarget) {
-                    command.add("--tests");
-                    command.add(testTarget);
-                }
-            }
-            case MAVEN -> {
-                command.add(isWindows ? "mvn.cmd" : "mvn");
-                command.add("test");
-                if (hasTarget) {
-                    command.add("-Dtest=" + testTarget);
-                }
-            }
-            case NPM -> {
-                command.add(isWindows ? "npm.cmd" : "npm");
-                command.add("test");
-                if (hasTarget) {
-                    command.add("--");
-                    command.add(testTarget);
-                }
-            }
-            case CARGO -> {
-                command.add("cargo");
-                command.add("test");
-                if (hasTarget) {
-                    command.add(testTarget);
-                }
-            }
-            case GO -> {
-                command.add("go");
-                command.add("test");
-                if (hasTarget) {
-                    command.add(testTarget);
-                } else {
-                    command.add("./...");
-                }
-            }
-            case MAKE -> {
-                command.add("make");
-                command.add("test");
-            }
-            default -> {
-                // Return empty — caller should handle unknown
-            }
+            case GRADLE -> addGradleCommands(command, testTarget, hasTarget, isWindows);
+            case MAVEN  -> addMavenCommands(command, testTarget, hasTarget, isWindows);
+            case NPM    -> addNpmCommands(command, testTarget, hasTarget, isWindows);
+            case CARGO  -> addCargoCommands(command, testTarget, hasTarget);
+            case GO     -> addGoCommands(command, testTarget, hasTarget);
+            case MAKE   -> { command.add("make"); command.add("test"); }
+            default     -> { /* Return empty — caller should handle unknown */ }
         }
         return command;
+    }
+
+    private static void addGradleCommands(@NotNull List<String> command, String testTarget,
+                                          boolean hasTarget, boolean isWindows) {
+        command.add(isWindows ? "gradlew.bat" : "./gradlew");
+        command.add("test");
+        if (hasTarget) {
+            command.add("--tests");
+            command.add(testTarget);
+        }
+    }
+
+    private static void addMavenCommands(@NotNull List<String> command, String testTarget,
+                                         boolean hasTarget, boolean isWindows) {
+        command.add(isWindows ? "mvn.cmd" : "mvn");
+        command.add("test");
+        if (hasTarget) {
+            command.add("-Dtest=" + testTarget);
+        }
+    }
+
+    private static void addNpmCommands(@NotNull List<String> command, String testTarget,
+                                       boolean hasTarget, boolean isWindows) {
+        command.add(isWindows ? "npm.cmd" : "npm");
+        command.add("test");
+        if (hasTarget) {
+            command.add("--");
+            command.add(testTarget);
+        }
+    }
+
+    private static void addCargoCommands(@NotNull List<String> command, String testTarget,
+                                         boolean hasTarget) {
+        command.add("cargo");
+        command.add("test");
+        if (hasTarget) {
+            command.add(testTarget);
+        }
+    }
+
+    private static void addGoCommands(@NotNull List<String> command, String testTarget,
+                                      boolean hasTarget) {
+        command.add("go");
+        command.add("test");
+        if (hasTarget) {
+            command.add(testTarget);
+        } else {
+            command.add("./...");
+        }
     }
 
     public static @NotNull String buildCommandString(@NotNull List<String> commandParts) {

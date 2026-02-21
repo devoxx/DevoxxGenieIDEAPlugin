@@ -105,6 +105,24 @@ public class ButtonEditor extends DefaultCellEditor {
         return super.stopCellEditing();
     }
 
+    private void addCollectionRowSafely(ChromaCollection collection) {
+        try {
+            int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
+            tableModel.addRow(new Object[]{
+                    collection.name(),
+                    totalDocs,
+                    DELETE_LABEL
+            });
+        } catch (IOException e) {
+            // If we can't count documents for a specific collection, still add it with 0 count
+            tableModel.addRow(new Object[]{
+                    collection.name(),
+                    0,
+                    DELETE_LABEL
+            });
+        }
+    }
+
     public void safeLoadCollections() {
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
@@ -112,7 +130,7 @@ public class ButtonEditor extends DefaultCellEditor {
                 tableModel.setRowCount(0);
 
                 // Check if RAG is enabled in settings
-                if (!DevoxxGenieStateService.getInstance().getRagEnabled()) {
+                if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
                     // Don't try to load collections if RAG is disabled
                     tableModel.fireTableDataChanged();
                     return;
@@ -123,26 +141,12 @@ public class ButtonEditor extends DefaultCellEditor {
 
                 // Add rows safely
                 for (ChromaCollection collection : collections) {
-                    try {
-                        int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
-                        tableModel.addRow(new Object[]{
-                                collection.name(),
-                                totalDocs,
-                                DELETE_LABEL
-                        });
-                    } catch (IOException e) {
-                        // If we can't count documents for a specific collection, still add it with 0 count
-                        tableModel.addRow(new Object[]{
-                                collection.name(),
-                                0,
-                                DELETE_LABEL
-                        });
-                    }
+                    addCollectionRowSafely(collection);
                 }
 
                 // Notify table of data change
                 tableModel.fireTableDataChanged();
-                
+
                 // Force the table to repaint
                 if (collectionsTable != null) {
                     collectionsTable.revalidate();

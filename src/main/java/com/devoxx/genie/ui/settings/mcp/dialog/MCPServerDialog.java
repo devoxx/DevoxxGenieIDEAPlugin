@@ -522,139 +522,116 @@ public class MCPServerDialog extends DialogWrapper {
     }
     
     /**
+     * Pure sensitivity-check logic extracted for testability.
+     * Determines whether an environment variable key refers to sensitive data.
+     */
+    static class EnvVarSensitivityChecker {
+        private static final List<String> SENSITIVE_KEYWORDS = Arrays.asList(
+                "key", "secret", "token", "password", "pwd", "pass", "credential", "api", "auth"
+        );
+
+        boolean isSensitive(String key) {
+            if (key == null) return false;
+            String lowerKey = key.toLowerCase();
+            return SENSITIVE_KEYWORDS.stream().anyMatch(lowerKey::contains);
+        }
+    }
+
+    private static final EnvVarSensitivityChecker SENSITIVITY_CHECKER = new EnvVarSensitivityChecker();
+
+    /**
      * Dialog for adding/editing environment variables
      */
     private static class EnvVarDialog extends DialogWrapper {
         private final JTextField keyField = new JTextField();
         private JComponent valueField;  // Can be JTextField or JPasswordField
         private final JCheckBox showPasswordCheckbox = new JCheckBox("Show Value");
-        
-        // List of keywords that indicate sensitive information
-        private static final List<String> SENSITIVE_KEYWORDS = Arrays.asList(
-                "key", "secret", "token", "password", "pwd", "pass", "credential", "api", "auth"
-        );
 
         public EnvVarDialog(String key, String value) {
             super(true);
             setTitle(key == null ? "Add Environment Variable" : "Edit Environment Variable");
-            
-            // Determine if this should be a password field based on the key name
-            boolean isSensitive = isSensitiveKey(key);
-            
-            // Create appropriate field type
+            initValueField(SENSITIVITY_CHECKER.isSensitive(key));
+            init();
+            initKeyAndValue(key, value);
+            keyField.getDocument().addDocumentListener(createKeyDocumentListener());
+        }
+
+        private void initValueField(boolean isSensitive) {
             if (isSensitive) {
                 valueField = new JPasswordField();
                 showPasswordCheckbox.setSelected(false);
-                
-                // Add listener to toggle between showing and hiding password
-                showPasswordCheckbox.addActionListener(e -> {
-                    String currentValue = getValue();
-                    boolean show = showPasswordCheckbox.isSelected();
-                    
-                    // Replace the current field with the appropriate type
-                    Container parent = valueField.getParent();
-                    if (parent != null) {
-                        int index = Arrays.asList(parent.getComponents()).indexOf(valueField);
-                        if (index >= 0) {
-                            parent.remove(valueField);
-                            
-                            if (show) {
-                                valueField = new JTextField(currentValue);
-                            } else {
-                                valueField = new JPasswordField(currentValue);
-                            }
-                            
-                            valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
-                            parent.add(valueField, getConstraints(index));
-                            parent.revalidate();
-                            parent.repaint();
-                        }
-                    }
-                });
+                showPasswordCheckbox.addActionListener(e -> togglePasswordVisibility());
             } else {
                 valueField = new JTextField();
                 showPasswordCheckbox.setVisible(false);
             }
-            
-            init();
+        }
 
-            if (key != null) {
-                keyField.setText(key);
-                
-                if (valueField instanceof JTextField) {
-                    ((JTextField) valueField).setText(value);
-                } else if (valueField instanceof JPasswordField) {
-                    ((JPasswordField) valueField).setText(value);
-                }
+        private void initKeyAndValue(String key, String value) {
+            if (key == null) return;
+            keyField.setText(key);
+            setValueFieldText(value);
+            keyField.setEditable(false);
+        }
 
-                // Disable key field when editing
-                keyField.setEditable(false);
+        private void setValueFieldText(String text) {
+            if (valueField instanceof JPasswordField) {
+                ((JPasswordField) valueField).setText(text);
+            } else if (valueField instanceof JTextField) {
+                ((JTextField) valueField).setText(text);
             }
-            
-            // Add listener to key field to update field type when key changes
-            keyField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        }
+
+        private void togglePasswordVisibility() {
+            String currentValue = getValue();
+            boolean show = showPasswordCheckbox.isSelected();
+            replaceValueField(show ? new JTextField(currentValue) : new JPasswordField(currentValue));
+        }
+
+        private void updateFieldType() {
+            boolean shouldBeSensitive = SENSITIVITY_CHECKER.isSensitive(keyField.getText().trim());
+            boolean isCurrentlySensitive = valueField instanceof JPasswordField;
+            if (shouldBeSensitive == isCurrentlySensitive) return;
+
+            String currentValue = getValue();
+            if (shouldBeSensitive) {
+                replaceValueField(new JPasswordField(currentValue));
+                showPasswordCheckbox.setVisible(true);
+                showPasswordCheckbox.setSelected(false);
+            } else {
+                replaceValueField(new JTextField(currentValue));
+                showPasswordCheckbox.setVisible(false);
+            }
+        }
+
+        private void replaceValueField(JComponent newField) {
+            Container parent = valueField.getParent();
+            if (parent == null) return;
+
+            int index = Arrays.asList(parent.getComponents()).indexOf(valueField);
+            if (index < 0) return;
+
+            parent.remove(valueField);
+            valueField = newField;
+            valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
+            parent.add(valueField, getConstraints(index));
+            parent.revalidate();
+            parent.repaint();
+        }
+
+        private javax.swing.event.DocumentListener createKeyDocumentListener() {
+            return new javax.swing.event.DocumentListener() {
                 @Override
-                public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                    updateFieldType();
-                }
+                public void insertUpdate(javax.swing.event.DocumentEvent e) { updateFieldType(); }
 
                 @Override
-                public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                    updateFieldType();
-                }
+                public void removeUpdate(javax.swing.event.DocumentEvent e) { updateFieldType(); }
 
                 @Override
-                public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                    updateFieldType();
-                }
-                
-                private void updateFieldType() {
-                    boolean shouldBeSensitive = isSensitiveKey(keyField.getText().trim().toLowerCase());
-                    
-                    // Only update if the field type needs to change
-                    boolean isCurrentlySensitive = valueField instanceof JPasswordField;
-                    if (shouldBeSensitive != isCurrentlySensitive) {
-                        String currentValue = getValue();
-                        
-                        // Replace field with appropriate type
-                        Container parent = valueField.getParent();
-                        if (parent != null) {
-                            int index = Arrays.asList(parent.getComponents()).indexOf(valueField);
-                            if (index >= 0) {
-                                parent.remove(valueField);
-                                
-                                if (shouldBeSensitive) {
-                                    valueField = new JPasswordField(currentValue);
-                                    showPasswordCheckbox.setVisible(true);
-                                    showPasswordCheckbox.setSelected(false);
-                                } else {
-                                    valueField = new JTextField(currentValue);
-                                    showPasswordCheckbox.setVisible(false);
-                                }
-                                
-                                valueField.setPreferredSize(new Dimension(300, valueField.getPreferredSize().height));
-                                parent.add(valueField, getConstraints(index));
-                                parent.revalidate();
-                                parent.repaint();
-                            }
-                        }
-                    }
-                }
-            });
+                public void changedUpdate(javax.swing.event.DocumentEvent e) { updateFieldType(); }
+            };
         }
-        
-        /**
-         * Determines if a key indicates sensitive information
-         * @param key The key to check
-         * @return true if sensitive, false otherwise
-         */
-        private boolean isSensitiveKey(String key) {
-            if (key == null) return false;
-            
-            String lowerKey = key.toLowerCase();
-            return SENSITIVE_KEYWORDS.stream().anyMatch(lowerKey::contains);
-        }
-        
+
         /**
          * Helper method to get the GridBagConstraints for a component at a specific index
          */

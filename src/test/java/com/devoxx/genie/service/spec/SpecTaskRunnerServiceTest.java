@@ -814,6 +814,29 @@ class SpecTaskRunnerServiceTest {
         assertThat(service.getSkippedCount()).isZero();
     }
 
+    // ── formatSkipLine helper ──────────────────────────────────────────
+
+    @Test
+    void formatSkipLine_withSkipReason_includesReason() {
+        String line = SpecTaskRunnerService.formatSkipLine("TASK-1", "My Task", "Dependency missing");
+        assertThat(line).startsWith("  [SKIP]");
+        assertThat(line).contains("TASK-1").contains("My Task").contains("Dependency missing");
+    }
+
+    @Test
+    void formatSkipLine_withNullSkipReason_usesUnknown() {
+        String line = SpecTaskRunnerService.formatSkipLine("TASK-2", "Other Task", null);
+        assertThat(line).startsWith("  [SKIP]");
+        assertThat(line).contains("TASK-2").contains("Other Task").contains("unknown");
+    }
+
+    @Test
+    void formatSkipLine_withEmptyTitle_doesNotThrow() {
+        String line = SpecTaskRunnerService.formatSkipLine("TASK-3", "", "some reason");
+        assertThat(line).startsWith("  [SKIP]");
+        assertThat(line).contains("TASK-3").contains("some reason");
+    }
+
     /**
      * Manages all MockedStatic instances and mock objects needed
      * to test SpecTaskRunnerService.

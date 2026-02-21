@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,14 +27,21 @@ public class WebViewJavaScriptExecutor {
     private final AtomicInteger executionCounter = new AtomicInteger(0);
     private final AtomicLong lastExecutionTime = new AtomicLong(0);
     private final AtomicInteger failureCount = new AtomicInteger(0);
-    
+
     // Queue for pending JavaScript executions when browser is not ready
-    private final java.util.concurrent.ConcurrentLinkedQueue<PendingJSExecution> pendingExecutions = 
+    private final java.util.concurrent.ConcurrentLinkedQueue<PendingJSExecution> pendingExecutions =
         new java.util.concurrent.ConcurrentLinkedQueue<>();
-    
+
     private Timer pendingExecutionTimer;
     private static final int MAX_PENDING_EXECUTIONS = 100;
     private static final int MAX_CONSECUTIVE_FAILURES = 10;
+
+    /**
+     * After this many milliseconds of inactivity, a plain repaint() may not be
+     * enough to wake CEF's rendering pipeline (e.g. Ollama model cold-start).
+     * We schedule a second, delayed invalidate+revalidate+repaint in that case.
+     */
+    private static final long LONG_IDLE_THRESHOLD_MS = 5_000;
     
     /**
      * Class to hold pending JavaScript executions.
@@ -109,6 +117,8 @@ public class WebViewJavaScriptExecutor {
             try {
                 if (isLoaded.get() && browser.getCefBrowser() != null) {
                     long startTime = System.currentTimeMillis();
+                    long idleMs = lastExecutionTime.get() > 0 ? startTime - lastExecutionTime.get() : 0;
+
                     browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
                     lastExecutionTime.set(System.currentTimeMillis());
                     failureCount.set(0); // Reset failure count on success
@@ -116,6 +126,29 @@ public class WebViewJavaScriptExecutor {
                     // Force JCEF component repaint — in OSR mode, DOM changes via
                     // executeJavaScript may not trigger the Swing paint cycle automatically
                     browser.getComponent().repaint();
+
+                    // After a long idle (e.g. Ollama model cold-start), a single repaint()
+                    // is sometimes not enough to wake CEF's rendering pipeline.  Schedule a
+                    // second, more aggressive repaint shortly after to guarantee the content
+                    // becomes visible without the user having to click/move the panel.
+                    if (idleMs > LONG_IDLE_THRESHOLD_MS) {
+                        debugLogger.debug("Long idle detected ({}ms) — scheduling aggressive repaint after JS execution", idleMs);
+                        Timer aggressiveRepaint = new Timer(150, e -> {
+                            Component comp = browser.getComponent();
+                            if (comp != null) {
+                                comp.invalidate();
+                                comp.revalidate();
+                                comp.repaint();
+                                for (Container parent = comp.getParent(); parent != null; parent = parent.getParent()) {
+                                    parent.invalidate();
+                                    parent.revalidate();
+                                    parent.repaint();
+                                }
+                            }
+                        });
+                        aggressiveRepaint.setRepeats(false);
+                        aggressiveRepaint.start();
+                    }
 
                     debugLogger.logTiming("jsExecution#" + execNumber, startTime);
                 } else {

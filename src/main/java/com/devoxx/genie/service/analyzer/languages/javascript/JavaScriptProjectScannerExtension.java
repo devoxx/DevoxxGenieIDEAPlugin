@@ -291,74 +291,89 @@ public class JavaScriptProjectScannerExtension implements ProjectAnalyzerExtensi
             buildSystem = new HashMap<>();
             projectInfo.put("buildSystem", buildSystem);
         }
-        
-        // Update or add JS-specific commands
+
         Map<String, String> commands = (Map<String, String>) buildSystem.get("commands");
         if (commands == null) {
             commands = new HashMap<>();
             buildSystem.put("commands", commands);
         }
-        
-        // Get package manager
+
         String packageManager = (String) jsInfo.getOrDefault("packageManager", "npm");
-        String runCmd = packageManager.equals("yarn") ? "yarn" : 
-                       (packageManager.equals("pnpm") ? "pnpm" : "npm run");
-        
-        // Add common script commands
-        commands.put("install", packageManager.equals("yarn") ? "yarn" : 
-                              (packageManager.equals("pnpm") ? "pnpm install" : "npm install"));
+        String runCmd = getRunCommand(packageManager);
+
+        commands.put("install", getInstallCommand(packageManager));
         commands.put("start", runCmd + " start");
         commands.put("build", runCmd + " build");
-        
-        // Add test commands
-        if (jsInfo.containsKey("testFramework")) {
-            String testFramework = (String) jsInfo.get("testFramework");
-            commands.put("test", runCmd + " test");
-            
-            if ("Jest".equals(testFramework)) {
-                commands.put("testWatch", runCmd + " test -- --watch");
-                commands.put("singleTest", runCmd + " test -- -t \"Test Name\"");
-            }
+
+        addTestCommands(commands, jsInfo, runCmd);
+        addE2eTestCommands(commands, jsInfo, runCmd);
+        addLintFormatCommands(commands, jsInfo, runCmd);
+        addFrameworkCommands(commands, jsInfo, runCmd, packageManager);
+    }
+
+    private String getRunCommand(String packageManager) {
+        if ("yarn".equals(packageManager)) return "yarn";
+        if ("pnpm".equals(packageManager)) return "pnpm";
+        return "npm run";
+    }
+
+    private String getInstallCommand(String packageManager) {
+        if ("yarn".equals(packageManager)) return "yarn";
+        if ("pnpm".equals(packageManager)) return "pnpm install";
+        return "npm install";
+    }
+
+    private void addTestCommands(Map<String, String> commands, Map<String, Object> jsInfo, String runCmd) {
+        if (!jsInfo.containsKey("testFramework")) return;
+
+        String testFramework = (String) jsInfo.get("testFramework");
+        commands.put("test", runCmd + " test");
+
+        if ("Jest".equals(testFramework)) {
+            commands.put("testWatch", runCmd + " test -- --watch");
+            commands.put("singleTest", runCmd + " test -- -t \"Test Name\"");
         }
-        
-        // Add e2e test commands
-        if (jsInfo.containsKey("e2eTestFramework")) {
-            String e2eFramework = (String) jsInfo.get("e2eTestFramework");
-            
-            if ("Cypress".equals(e2eFramework)) {
-                commands.put("e2e", runCmd + " cypress:open");
-                commands.put("e2eHeadless", runCmd + " cypress:run");
-            } else if ("Playwright".equals(e2eFramework)) {
-                commands.put("e2e", runCmd + " playwright test");
-                commands.put("e2eUI", runCmd + " playwright test --ui");
-            }
+    }
+
+    private void addE2eTestCommands(Map<String, String> commands, Map<String, Object> jsInfo, String runCmd) {
+        if (!jsInfo.containsKey("e2eTestFramework")) return;
+
+        String e2eFramework = (String) jsInfo.get("e2eTestFramework");
+        if ("Cypress".equals(e2eFramework)) {
+            commands.put("e2e", runCmd + " cypress:open");
+            commands.put("e2eHeadless", runCmd + " cypress:run");
+        } else if ("Playwright".equals(e2eFramework)) {
+            commands.put("e2e", runCmd + " playwright test");
+            commands.put("e2eUI", runCmd + " playwright test --ui");
         }
-        
-        // Add lint/format commands
+    }
+
+    private void addLintFormatCommands(Map<String, String> commands, Map<String, Object> jsInfo, String runCmd) {
         if (jsInfo.containsKey("linter") && "ESLint".equals(jsInfo.get("linter"))) {
             commands.put("lint", runCmd + " lint");
             commands.put("lintFix", runCmd + " lint -- --fix");
         }
-        
+
         if (jsInfo.containsKey("formatter") && "Prettier".equals(jsInfo.get("formatter"))) {
             commands.put("format", runCmd + " format");
         }
-        
-        // Framework-specific commands
-        if (jsInfo.containsKey("framework")) {
-            String framework = (String) jsInfo.get("framework");
-            
-            if ("Next.js".equals(framework)) {
-                commands.put("dev", runCmd + " dev");
-                commands.put("start", runCmd + " start");
-                commands.put("export", runCmd + " export");
-            } else if ("Nuxt.js".equals(framework)) {
-                commands.put("dev", runCmd + " dev");
-                commands.put("generate", runCmd + " generate");
-            } else if ("Angular".equals(framework)) {
-                commands.put("serve", runCmd + " serve");
-                commands.put("generate", packageManager.equals("yarn") ? "yarn ng generate" : "npx ng generate");
-            }
+    }
+
+    private void addFrameworkCommands(Map<String, String> commands, Map<String, Object> jsInfo,
+                                      String runCmd, String packageManager) {
+        if (!jsInfo.containsKey("framework")) return;
+
+        String framework = (String) jsInfo.get("framework");
+        if ("Next.js".equals(framework)) {
+            commands.put("dev", runCmd + " dev");
+            commands.put("start", runCmd + " start");
+            commands.put("export", runCmd + " export");
+        } else if ("Nuxt.js".equals(framework)) {
+            commands.put("dev", runCmd + " dev");
+            commands.put("generate", runCmd + " generate");
+        } else if ("Angular".equals(framework)) {
+            commands.put("serve", runCmd + " serve");
+            commands.put("generate", "yarn".equals(packageManager) ? "yarn ng generate" : "npx ng generate");
         }
     }
 }

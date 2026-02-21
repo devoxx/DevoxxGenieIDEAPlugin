@@ -10,6 +10,7 @@ import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,6 +180,11 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
 
         String reassignTo = ToolArgumentParser.getString(arguments, "reassignTo");
 
+        // Validate reassign parameters early, before modifying state
+        if ("reassign".equals(taskHandling) && (reassignTo == null || reassignTo.isEmpty())) {
+            return "Error: 'reassignTo' is required when taskHandling is 'reassign'.";
+        }
+
         BacklogConfigService configService = BacklogConfigService.getInstance(project);
         BacklogConfig config = configService.getConfig();
 
@@ -193,35 +199,29 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
 
         configService.saveConfig(config);
 
-        // Handle tasks
-        SpecService specService = SpecService.getInstance(project);
-        int updatedCount = 0;
-        switch (taskHandling) {
-            case "clear" -> {
-                for (TaskSpec spec : specService.getAllSpecs()) {
-                    if (name.equalsIgnoreCase(spec.getMilestone())) {
-                        spec.setMilestone(null);
-                        specService.updateTask(spec);
-                        updatedCount++;
-                    }
-                }
-            }
-            case "reassign" -> {
-                if (reassignTo == null || reassignTo.isEmpty()) {
-                    return "Removed milestone '" + name + "' but 'reassignTo' is required for reassign handling.";
-                }
-                for (TaskSpec spec : specService.getAllSpecs()) {
-                    if (name.equalsIgnoreCase(spec.getMilestone())) {
-                        spec.setMilestone(reassignTo);
-                        specService.updateTask(spec);
-                        updatedCount++;
-                    }
-                }
-            }
-            // "keep" — do nothing to tasks
-        }
-
+        int updatedCount = applyTaskHandling(name, taskHandling, reassignTo);
         return "Removed milestone '" + name + "'. " + taskHandling + " handling applied to " + updatedCount + " task(s).";
+    }
+
+    private int applyTaskHandling(@NotNull String milestoneName, @NotNull String taskHandling, String reassignTo) throws IOException {
+        return switch (taskHandling) {
+            case "clear" -> updateMatchingTasks(milestoneName, null);
+            case "reassign" -> updateMatchingTasks(milestoneName, reassignTo);
+            default -> 0; // "keep" — do nothing to tasks
+        };
+    }
+
+    private int updateMatchingTasks(@NotNull String milestoneName, String newMilestone) throws IOException {
+        SpecService specService = SpecService.getInstance(project);
+        int count = 0;
+        for (TaskSpec spec : specService.getAllSpecs()) {
+            if (milestoneName.equalsIgnoreCase(spec.getMilestone())) {
+                spec.setMilestone(newMilestone);
+                specService.updateTask(spec);
+                count++;
+            }
+        }
+        return count;
     }
 
     private @NotNull String archiveMilestone(@NotNull String arguments) throws Exception {

@@ -197,67 +197,86 @@ public class MCPConfigurationParser {
         JsonObject mcpServers = new JsonObject();
 
         for (Map.Entry<String, MCPServer> entry : servers.entrySet()) {
-            String serverName = entry.getKey();
-            MCPServer server = entry.getValue();
-
-            JsonObject serverConfig = new JsonObject();
-
-            // Add transport type if extensions are enabled and not STDIO
-            if (includeExtensions && server.getTransportType() != MCPServer.TransportType.STDIO) {
-                String transport = switch (server.getTransportType()) {
-                    case HTTP -> "http";
-                    case HTTP_SSE -> "http-sse";
-                    default -> "stdio";
-                };
-                serverConfig.addProperty("transport", transport);
-            }
-
-            // Add fields based on transport type
-            if (server.getTransportType() == MCPServer.TransportType.HTTP ||
-                server.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
-                // HTTP transport
-                if (server.getUrl() != null) {
-                    serverConfig.addProperty("url", server.getUrl());
-                }
-
-                if (includeExtensions && server.getHeaders() != null && !server.getHeaders().isEmpty()) {
-                    serverConfig.add("headers", mapToJsonObject(server.getHeaders()));
-                }
-            } else {
-                // STDIO transport
-                if (server.getCommand() != null) {
-                    serverConfig.addProperty("command", server.getCommand());
-                }
-
-                if (server.getArgs() != null && !server.getArgs().isEmpty()) {
-                    serverConfig.add("args", listToJsonArray(server.getArgs()));
-                }
-            }
-
-            // Add environment variables
-            if (server.getEnv() != null && !server.getEnv().isEmpty()) {
-                serverConfig.add("env", mapToJsonObject(server.getEnv()));
-            }
-
-            // Add enabled flag if extensions are enabled and not default (true)
-            if (includeExtensions && !server.isEnabled()) {
-                serverConfig.addProperty("enabled", server.isEnabled());
-            }
-
-            // Add disabled tools if extensions are enabled and there are disabled tools
-            if (includeExtensions && server.getDisabledTools() != null && !server.getDisabledTools().isEmpty()) {
-                JsonArray disabledToolsArray = new JsonArray();
-                for (String tool : server.getDisabledTools()) {
-                    disabledToolsArray.add(tool);
-                }
-                serverConfig.add("disabledTools", disabledToolsArray);
-            }
-
-            mcpServers.add(serverName, serverConfig);
+            mcpServers.add(entry.getKey(), buildServerConfig(entry.getValue(), includeExtensions));
         }
 
         root.add("mcpServers", mcpServers);
         return gson.toJson(root);
+    }
+
+    /**
+     * Builds the JSON configuration object for a single MCP server.
+     */
+    private @NotNull JsonObject buildServerConfig(@NotNull MCPServer server, boolean includeExtensions) {
+        JsonObject serverConfig = new JsonObject();
+
+        if (includeExtensions && server.getTransportType() != MCPServer.TransportType.STDIO) {
+            serverConfig.addProperty("transport", getTransportString(server.getTransportType()));
+        }
+
+        addTransportSpecificFields(serverConfig, server, includeExtensions);
+
+        if (server.getEnv() != null && !server.getEnv().isEmpty()) {
+            serverConfig.add("env", mapToJsonObject(server.getEnv()));
+        }
+
+        if (includeExtensions && !server.isEnabled()) {
+            serverConfig.addProperty("enabled", false);
+        }
+
+        if (includeExtensions) {
+            addDisabledToolsArray(serverConfig, server);
+        }
+
+        return serverConfig;
+    }
+
+    /**
+     * Returns the transport string identifier for a given transport type.
+     */
+    private @NotNull String getTransportString(@NotNull MCPServer.TransportType transportType) {
+        return switch (transportType) {
+            case HTTP -> "http";
+            case HTTP_SSE -> "http-sse";
+            default -> "stdio";
+        };
+    }
+
+    /**
+     * Adds transport-specific fields (URL/headers for HTTP, command/args for STDIO).
+     */
+    private void addTransportSpecificFields(@NotNull JsonObject config, @NotNull MCPServer server,
+                                            boolean includeExtensions) {
+        if (server.getTransportType() == MCPServer.TransportType.HTTP ||
+            server.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
+            if (server.getUrl() != null) {
+                config.addProperty("url", server.getUrl());
+            }
+            if (includeExtensions && server.getHeaders() != null && !server.getHeaders().isEmpty()) {
+                config.add("headers", mapToJsonObject(server.getHeaders()));
+            }
+        } else {
+            if (server.getCommand() != null) {
+                config.addProperty("command", server.getCommand());
+            }
+            if (server.getArgs() != null && !server.getArgs().isEmpty()) {
+                config.add("args", listToJsonArray(server.getArgs()));
+            }
+        }
+    }
+
+    /**
+     * Adds the disabledTools array to the config if the server has disabled tools.
+     */
+    private void addDisabledToolsArray(@NotNull JsonObject config, @NotNull MCPServer server) {
+        if (server.getDisabledTools() == null || server.getDisabledTools().isEmpty()) {
+            return;
+        }
+        JsonArray disabledToolsArray = new JsonArray();
+        for (String tool : server.getDisabledTools()) {
+            disabledToolsArray.add(tool);
+        }
+        config.add("disabledTools", disabledToolsArray);
     }
 
     /**

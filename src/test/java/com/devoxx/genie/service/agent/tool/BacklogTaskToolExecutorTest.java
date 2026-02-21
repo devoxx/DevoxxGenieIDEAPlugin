@@ -454,4 +454,168 @@ class BacklogTaskToolExecutorTest {
         String result = executor.execute(request, null);
         assertThat(result).contains("Error").contains("IO fail");
     }
+
+    @Test
+    void editTask_listFieldUpdates() throws Exception {
+        TaskSpec task = TaskSpec.builder().id("TASK-1").title("Test").build();
+        when(specService.getSpec("TASK-1")).thenReturn(task);
+
+        String args = """
+                {
+                    "id": "TASK-1",
+                    "assignee": ["bob"],
+                    "labels": ["feature"],
+                    "dependencies": ["TASK-0"]
+                }
+                """;
+
+        executor.execute(ToolExecutionRequest.builder()
+                .name("backlog_task_edit").arguments(args).build(), null);
+
+        assertThat(task.getAssignees()).containsExactly("bob");
+        assertThat(task.getLabels()).containsExactly("feature");
+        assertThat(task.getDependencies()).containsExactly("TASK-0");
+    }
+
+    @Test
+    void editTask_notesSetAndAppend() throws Exception {
+        TaskSpec task = TaskSpec.builder().id("TASK-1").title("Test").build();
+        when(specService.getSpec("TASK-1")).thenReturn(task);
+
+        String args = """
+                {
+                    "id": "TASK-1",
+                    "notesSet": "Initial note",
+                    "notesAppend": ["Extra note"]
+                }
+                """;
+
+        executor.execute(ToolExecutionRequest.builder()
+                .name("backlog_task_edit").arguments(args).build(), null);
+
+        assertThat(task.getImplementationNotes()).isEqualTo("Initial note\n\nExtra note");
+    }
+
+    @Test
+    void editTask_notesClear() throws Exception {
+        TaskSpec task = TaskSpec.builder().id("TASK-1").title("Test")
+                .implementationNotes("old notes").build();
+        when(specService.getSpec("TASK-1")).thenReturn(task);
+
+        String args = """
+                {
+                    "id": "TASK-1",
+                    "notesClear": true
+                }
+                """;
+
+        executor.execute(ToolExecutionRequest.builder()
+                .name("backlog_task_edit").arguments(args).build(), null);
+
+        assertThat(task.getImplementationNotes()).isNull();
+    }
+
+    @Test
+    void editTask_acceptanceCriteriaUncheck() throws Exception {
+        List<AcceptanceCriterion> ac = new ArrayList<>();
+        ac.add(AcceptanceCriterion.builder().index(0).text("AC1").checked(true).build());
+        ac.add(AcceptanceCriterion.builder().index(1).text("AC2").checked(true).build());
+        TaskSpec task = TaskSpec.builder().id("TASK-1").title("Test")
+                .acceptanceCriteria(ac).build();
+        when(specService.getSpec("TASK-1")).thenReturn(task);
+
+        String args = """
+                {
+                    "id": "TASK-1",
+                    "acceptanceCriteriaUncheck": [2]
+                }
+                """;
+
+        executor.execute(ToolExecutionRequest.builder()
+                .name("backlog_task_edit").arguments(args).build(), null);
+
+        assertThat(task.getAcceptanceCriteria().get(0).isChecked()).isTrue();
+        assertThat(task.getAcceptanceCriteria().get(1).isChecked()).isFalse();
+    }
+
+    @Test
+    void archiveDoneTasks_noCompleted_returnsNoTasksMessage() throws Exception {
+        when(specService.archiveDoneTasks()).thenReturn(0);
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_archive_done")
+                .arguments("{}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("No completed tasks to archive");
+    }
+
+    @Test
+    void archiveDoneTasks_withCompleted_returnsCount() throws Exception {
+        when(specService.archiveDoneTasks()).thenReturn(3);
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_archive_done")
+                .arguments("{}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("3").contains("archived successfully");
+    }
+
+    @Test
+    void unarchiveTask_missingId_returnsError() {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_unarchive")
+                .arguments("{}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("Error").contains("id");
+    }
+
+    @Test
+    void unarchiveTask_success() throws Exception {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_unarchive")
+                .arguments("{\"id\": \"TASK-1\"}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("Task TASK-1").contains("restored from archive");
+        verify(specService).unarchiveTask("TASK-1");
+    }
+
+    @Test
+    void listArchivedTasks_empty_returnsNoArchivedMessage() {
+        when(specService.getArchivedTasks()).thenReturn(List.of());
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_list_archived")
+                .arguments("{}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("No archived tasks found");
+    }
+
+    @Test
+    void listArchivedTasks_withResults_returnsFormattedList() {
+        TaskSpec task = TaskSpec.builder()
+                .id("TASK-1").title("Old Task").status("Done").priority("low")
+                .build();
+        when(specService.getArchivedTasks()).thenReturn(List.of(task));
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_list_archived")
+                .arguments("{}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("Archived tasks (1)");
+        assertThat(result).contains("TASK-1: Old Task");
+        assertThat(result).contains("[Done]");
+        assertThat(result).contains("[low]");
+    }
 }

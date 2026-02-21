@@ -28,12 +28,13 @@ import java.util.stream.Stream;
 public final class BacklogConfigService {
 
     private static final Pattern TASK_ID_PATTERN = Pattern.compile("^id:\\s*(.+)$", Pattern.MULTILINE);
+    private static final String TASKS_DIR = "tasks";
 
     /**
      * All subdirectories that Backlog.md creates during initialization.
      */
     private static final List<String> BACKLOG_SUBDIRECTORIES = List.of(
-            "tasks", "drafts", "completed",
+            TASKS_DIR, "drafts", "completed",
             "archive/tasks", "archive/drafts", "archive/milestones",
             "docs", "decisions", "milestones"
     );
@@ -99,7 +100,7 @@ public final class BacklogConfigService {
      */
     public @Nullable Path getTasksDir() {
         Path specDir = getSpecDirectoryPath();
-        return specDir != null ? specDir.resolve("tasks") : null;
+        return specDir != null ? specDir.resolve(TASKS_DIR) : null;
     }
 
     /**
@@ -123,7 +124,7 @@ public final class BacklogConfigService {
      */
     public @Nullable Path getArchiveTasksDir() {
         Path specDir = getSpecDirectoryPath();
-        return specDir != null ? specDir.resolve("archive").resolve("tasks") : null;
+        return specDir != null ? specDir.resolve("archive").resolve(TASKS_DIR) : null;
     }
 
     /**
@@ -230,89 +231,100 @@ public final class BacklogConfigService {
     }
 
     /**
+     * Mutable state holder used while parsing config.yml line-by-line.
+     */
+    private static final class ParseState {
+        String currentKey = null;
+        List<String> currentList = null;
+        final List<BacklogConfig.BacklogMilestone> milestones = new ArrayList<>();
+        boolean inMilestones = false;
+        String milestoneName = null;
+    }
+
+    /**
      * Simple YAML parser for config.yml. Handles scalar fields and simple lists.
      */
     private @NotNull BacklogConfig parseConfig(@NotNull String content) {
         BacklogConfig.BacklogConfigBuilder builder = BacklogConfig.builder();
-        String currentKey = null;
-        List<String> currentList = null;
-        List<BacklogConfig.BacklogMilestone> milestones = new ArrayList<>();
-        boolean inMilestones = false;
-        String milestoneName = null;
+        ParseState state = new ParseState();
 
         for (String line : content.split("\\n")) {
             String trimmed = line.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
                 continue;
             }
-
-            // Detect indented list items
-            if (trimmed.startsWith("- ") && currentKey != null) {
-                String value = SpecFrontmatterParser.stripQuotes(trimmed.substring(2).trim());
-                if (inMilestones) {
-                    // Milestone list items might be "- name: value" or just "- value"
-                    if (value.startsWith("name:")) {
-                        milestoneName = SpecFrontmatterParser.stripQuotes(value.substring(5).trim());
-                    } else if (value.startsWith("description:") && milestoneName != null) {
-                        String desc = SpecFrontmatterParser.stripQuotes(value.substring(12).trim());
-                        milestones.add(BacklogConfig.BacklogMilestone.builder()
-                                .name(milestoneName).description(desc).build());
-                        milestoneName = null;
-                    } else {
-                        // Simple milestone name without description
-                        milestones.add(BacklogConfig.BacklogMilestone.builder()
-                                .name(value).build());
-                    }
-                } else if (currentList != null) {
-                    currentList.add(value);
-                }
-                continue;
-            }
-
-            // Key-value pair
-            int colonIndex = trimmed.indexOf(':');
-            if (colonIndex > 0) {
-                // Flush previous list
-                if (currentKey != null && currentList != null && !inMilestones) {
-                    applyConfigList(currentKey, currentList, builder);
-                }
-                if (inMilestones && milestoneName != null) {
-                    milestones.add(BacklogConfig.BacklogMilestone.builder()
-                            .name(milestoneName).build());
-                    milestoneName = null;
-                }
-
-                currentKey = trimmed.substring(0, colonIndex).trim();
-                String value = trimmed.substring(colonIndex + 1).trim();
-                inMilestones = "milestones".equalsIgnoreCase(currentKey);
-
-                if (value.isEmpty()) {
-                    currentList = new ArrayList<>();
-                } else if (value.startsWith("[")) {
-                    // Inline array: ["To Do", "In Progress", "Done"] or []
-                    currentList = null;
-                    List<String> inlineItems = parseInlineArray(value);
-                    applyConfigList(currentKey, inlineItems, builder);
-                } else {
-                    currentList = null;
-                    value = SpecFrontmatterParser.stripQuotes(value);
-                    applyConfigScalar(currentKey, value, builder);
-                }
+            if (trimmed.startsWith("- ") && state.currentKey != null) {
+                processListItem(trimmed.substring(2).trim(), state);
+            } else {
+                processKeyValue(trimmed, builder, state);
             }
         }
 
-        // Flush
-        if (currentKey != null && currentList != null && !inMilestones) {
-            applyConfigList(currentKey, currentList, builder);
-        }
-        if (milestoneName != null) {
-            milestones.add(BacklogConfig.BacklogMilestone.builder().name(milestoneName).build());
-        }
-        if (!milestones.isEmpty()) {
-            builder.milestones(milestones);
-        }
-
+        flushParseState(state, builder);
         return builder.build();
+    }
+
+    private void processListItem(@NotNull String rawValue, @NotNull ParseState state) {
+        String value = SpecFrontmatterParser.stripQuotes(rawValue);
+        if (state.inMilestones) {
+            processMilestoneListItem(value, state);
+        } else if (state.currentList != null) {
+            state.currentList.add(value);
+        }
+    }
+
+    private void processMilestoneListItem(@NotNull String value, @NotNull ParseState state) {
+        if (value.startsWith("name:")) {
+            state.milestoneName = SpecFrontmatterParser.stripQuotes(value.substring(5).trim());
+        } else if (value.startsWith("description:") && state.milestoneName != null) {
+            String desc = SpecFrontmatterParser.stripQuotes(value.substring(12).trim());
+            state.milestones.add(BacklogConfig.BacklogMilestone.builder()
+                    .name(state.milestoneName).description(desc).build());
+            state.milestoneName = null;
+        } else {
+            state.milestones.add(BacklogConfig.BacklogMilestone.builder().name(value).build());
+        }
+    }
+
+    private void processKeyValue(@NotNull String trimmed, BacklogConfig.BacklogConfigBuilder builder, @NotNull ParseState state) {
+        int colonIndex = trimmed.indexOf(':');
+        if (colonIndex <= 0) return;
+
+        // Flush previous list before processing new key
+        if (state.currentKey != null && state.currentList != null && !state.inMilestones) {
+            applyConfigList(state.currentKey, state.currentList, builder);
+        }
+        if (state.inMilestones && state.milestoneName != null) {
+            state.milestones.add(BacklogConfig.BacklogMilestone.builder()
+                    .name(state.milestoneName).build());
+            state.milestoneName = null;
+        }
+
+        state.currentKey = trimmed.substring(0, colonIndex).trim();
+        String value = trimmed.substring(colonIndex + 1).trim();
+        state.inMilestones = "milestones".equalsIgnoreCase(state.currentKey);
+
+        if (value.isEmpty()) {
+            state.currentList = new ArrayList<>();
+        } else if (value.startsWith("[")) {
+            state.currentList = null;
+            applyConfigList(state.currentKey, parseInlineArray(value), builder);
+        } else {
+            state.currentList = null;
+            applyConfigScalar(state.currentKey, SpecFrontmatterParser.stripQuotes(value), builder);
+        }
+    }
+
+    private void flushParseState(@NotNull ParseState state, BacklogConfig.BacklogConfigBuilder builder) {
+        if (state.currentKey != null && state.currentList != null && !state.inMilestones) {
+            applyConfigList(state.currentKey, state.currentList, builder);
+        }
+        if (state.milestoneName != null) {
+            state.milestones.add(BacklogConfig.BacklogMilestone.builder().name(state.milestoneName).build());
+        }
+        if (!state.milestones.isEmpty()) {
+            builder.milestones(state.milestones);
+        }
     }
 
     private void applyConfigScalar(@NotNull String key, @NotNull String value, BacklogConfig.BacklogConfigBuilder builder) {
@@ -428,30 +440,44 @@ public final class BacklogConfigService {
                     .toList();
 
             for (Path file : mdFiles) {
-                try {
-                    String content = Files.readString(file, StandardCharsets.UTF_8);
-                    Matcher m = TASK_ID_PATTERN.matcher(content);
-                    if (m.find()) {
-                        String id = SpecFrontmatterParser.stripQuotes(m.group(1).trim());
-                        int dashIdx = id.lastIndexOf('-');
-                        if (dashIdx >= 0) {
-                            try {
-                                int num = Integer.parseInt(id.substring(dashIdx + 1));
-                                if (num > max) {
-                                    max = num;
-                                }
-                            } catch (NumberFormatException ignored) {
-                                // Not a numeric suffix
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    log.debug("Failed to read file for ID scan: {}", file);
+                int num = extractMaxIdFromFile(file);
+                if (num > max) {
+                    max = num;
                 }
             }
         } catch (IOException e) {
             log.debug("Failed to scan directory for IDs: {}", dir);
         }
         return max;
+    }
+
+    /**
+     * Extract the maximum numeric ID from a single markdown file.
+     * Returns -1 if no valid ID is found.
+     */
+    private int extractMaxIdFromFile(@NotNull Path file) {
+        try {
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            Matcher m = TASK_ID_PATTERN.matcher(content);
+            if (m.find()) {
+                String id = SpecFrontmatterParser.stripQuotes(m.group(1).trim());
+                return parseNumericSuffix(id);
+            }
+        } catch (IOException e) {
+            log.debug("Failed to read file for ID scan: {}", file);
+        }
+        return -1;
+    }
+
+    private int parseNumericSuffix(String id) {
+        int dashIdx = id.lastIndexOf('-');
+        if (dashIdx >= 0) {
+            try {
+                return Integer.parseInt(id.substring(dashIdx + 1));
+            } catch (NumberFormatException ignored) {
+                // Not a numeric suffix
+            }
+        }
+        return -1;
     }
 }

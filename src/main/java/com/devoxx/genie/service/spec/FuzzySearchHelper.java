@@ -95,19 +95,7 @@ public final class FuzzySearchHelper {
             } else {
                 // Check if any word in text starts with this token (prefix match)
                 String[] textWords = text.split("\\s+");
-                double bestWordScore = 0.0;
-                for (String word : textWords) {
-                    if (word.startsWith(token)) {
-                        bestWordScore = Math.max(bestWordScore, 0.8);
-                    } else if (word.contains(token)) {
-                        bestWordScore = Math.max(bestWordScore, 0.6);
-                    } else {
-                        // Check edit distance for short tokens (typo tolerance)
-                        double editScore = editDistanceScore(token, word);
-                        bestWordScore = Math.max(bestWordScore, editScore);
-                    }
-                }
-                totalScore += bestWordScore;
+                totalScore += scoreTokenAgainstWords(token, textWords);
             }
         }
 
@@ -212,6 +200,22 @@ public final class FuzzySearchHelper {
         }
 
         return (1.0 - (double) distance / maxLen) * 0.6;
+    }
+
+    private static double scoreTokenAgainstWords(@NotNull String token, @NotNull String[] textWords) {
+        double bestWordScore = 0.0;
+        for (String word : textWords) {
+            if (word.startsWith(token)) {
+                bestWordScore = Math.max(bestWordScore, 0.8);
+            } else if (word.contains(token)) {
+                bestWordScore = Math.max(bestWordScore, 0.6);
+            } else {
+                // Check edit distance for short tokens (typo tolerance)
+                double editScore = editDistanceScore(token, word);
+                bestWordScore = Math.max(bestWordScore, editScore);
+            }
+        }
+        return bestWordScore;
     }
 
     private static int levenshteinDistance(@NotNull String a, @NotNull String b) {

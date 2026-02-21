@@ -34,104 +34,30 @@ public final class TaskDependencySorter {
             return Collections.emptyList();
         }
 
-        // Build lookup maps
-        Set<String> selectedIds = tasks.stream()
-                .map(TaskSpec::getId)
-                .filter(Objects::nonNull)
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
+        Set<String> selectedIds = buildSelectedIds(tasks);
+        Map<String, TaskSpec> selectedById = buildSelectedById(tasks);
 
-        Map<String, TaskSpec> selectedById = new LinkedHashMap<>();
-        for (TaskSpec t : tasks) {
-            if (t.getId() != null) {
-                selectedById.put(t.getId().toLowerCase(), t);
-            }
-        }
-
-        Map<String, TaskSpec> allById = new HashMap<>();
-        for (TaskSpec s : allSpecs) {
-            if (s.getId() != null) {
-                allById.put(s.getId().toLowerCase(), s);
-            }
-        }
-
-        // Build adjacency list and in-degree map (only within selected set)
-        Map<String, Set<String>> dependents = new HashMap<>();  // dep -> tasks that depend on it
+        Map<String, Set<String>> dependents = new HashMap<>();
         Map<String, Integer> inDegree = new HashMap<>();
+        initializeGraphNodes(selectedIds, dependents, inDegree);
+        addInternalEdges(tasks, selectedIds, dependents, inDegree);
 
-        for (String id : selectedIds) {
-            inDegree.put(id, 0);
-            dependents.put(id, new HashSet<>());
-        }
-
-        for (TaskSpec task : tasks) {
-            if (task.getId() == null) continue;
-            String taskId = task.getId().toLowerCase();
-            List<String> deps = task.getDependencies();
-            if (deps == null) continue;
-
-            for (String dep : deps) {
-                String depLower = dep.toLowerCase();
-                if (selectedIds.contains(depLower)) {
-                    // Internal dependency: add edge dep -> task
-                    dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId);
-                    inDegree.merge(taskId, 1, Integer::sum);
-                }
-                // External dependencies are not edges in the graph;
-                // they are checked at runtime by the runner
-            }
-        }
-
-        // BFS (Kahn's algorithm)
-        Queue<String> queue = new LinkedList<>();
-        for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                queue.add(entry.getKey());
-            }
-        }
-
+        Queue<String> queue = buildInitialQueue(inDegree);
         List<TaskSpec> sorted = new ArrayList<>();
-        // Process layer by layer; within a layer, sort by ordinal then numeric ID
+
         while (!queue.isEmpty()) {
-            List<String> layer = new ArrayList<>(queue);
-            queue.clear();
-
-            layer.sort((a, b) -> {
-                TaskSpec ta = selectedById.get(a);
-                TaskSpec tb = selectedById.get(b);
-                int cmp = Integer.compare(
-                        ta != null ? ta.getOrdinal() : 1000,
-                        tb != null ? tb.getOrdinal() : 1000);
-                if (cmp != 0) return cmp;
-                return Integer.compare(extractNumber(a), extractNumber(b));
-            });
-
+            List<String> layer = drainQueue(queue);
+            layer.sort(layerComparator(selectedById));
             for (String id : layer) {
                 TaskSpec spec = selectedById.get(id);
                 if (spec != null) {
                     sorted.add(spec);
                 }
-                for (String dependent : dependents.getOrDefault(id, Collections.emptySet())) {
-                    int newDegree = inDegree.merge(dependent, -1, Integer::sum);
-                    if (newDegree == 0) {
-                        queue.add(dependent);
-                    }
-                }
+                processLayerDependents(id, dependents, inDegree, queue);
             }
         }
 
-        // Check for cycle
-        if (sorted.size() < selectedIds.size()) {
-            List<String> cycleIds = selectedIds.stream()
-                    .filter(id -> inDegree.getOrDefault(id, 0) > 0)
-                    .map(id -> {
-                        TaskSpec t = selectedById.get(id);
-                        return t != null && t.getId() != null ? t.getId() : id;
-                    })
-                    .toList();
-            throw new CircularDependencyException(cycleIds);
-        }
-
+        checkForCycles(sorted.size(), selectedIds, selectedById, inDegree);
         return sorted;
     }
 
@@ -152,12 +78,7 @@ public final class TaskDependencySorter {
             return Collections.emptyList();
         }
 
-        Map<String, TaskSpec> allById = new HashMap<>();
-        for (TaskSpec s : allSpecs) {
-            if (s.getId() != null) {
-                allById.put(s.getId().toLowerCase(), s);
-            }
-        }
+        Map<String, TaskSpec> allById = buildAllById(allSpecs);
 
         List<String> unsatisfied = new ArrayList<>();
         for (String dep : deps) {
@@ -196,69 +117,21 @@ public final class TaskDependencySorter {
             return Collections.emptyList();
         }
 
-        // Build lookup maps
-        Set<String> selectedIds = tasks.stream()
-                .map(TaskSpec::getId)
-                .filter(Objects::nonNull)
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
+        Set<String> selectedIds = buildSelectedIds(tasks);
+        Map<String, TaskSpec> selectedById = buildSelectedById(tasks);
 
-        Map<String, TaskSpec> selectedById = new LinkedHashMap<>();
-        for (TaskSpec t : tasks) {
-            if (t.getId() != null) {
-                selectedById.put(t.getId().toLowerCase(), t);
-            }
-        }
-
-        // Build adjacency list and in-degree map (only within selected set)
         Map<String, Set<String>> dependents = new HashMap<>();
         Map<String, Integer> inDegree = new HashMap<>();
+        initializeGraphNodes(selectedIds, dependents, inDegree);
+        addInternalEdges(tasks, selectedIds, dependents, inDegree);
 
-        for (String id : selectedIds) {
-            inDegree.put(id, 0);
-            dependents.put(id, new HashSet<>());
-        }
-
-        for (TaskSpec task : tasks) {
-            if (task.getId() == null) continue;
-            String taskId = task.getId().toLowerCase();
-            List<String> deps = task.getDependencies();
-            if (deps == null) continue;
-
-            for (String dep : deps) {
-                String depLower = dep.toLowerCase();
-                if (selectedIds.contains(depLower)) {
-                    dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId);
-                    inDegree.merge(taskId, 1, Integer::sum);
-                }
-            }
-        }
-
-        // BFS (Kahn's algorithm) — collect layers
-        Queue<String> queue = new LinkedList<>();
-        for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                queue.add(entry.getKey());
-            }
-        }
-
+        Queue<String> queue = buildInitialQueue(inDegree);
         List<List<TaskSpec>> layers = new ArrayList<>();
         int processedCount = 0;
 
         while (!queue.isEmpty()) {
-            List<String> layerIds = new ArrayList<>(queue);
-            queue.clear();
-
-            // Sort within layer by ordinal then numeric ID
-            layerIds.sort((a, b) -> {
-                TaskSpec ta = selectedById.get(a);
-                TaskSpec tb = selectedById.get(b);
-                int cmp = Integer.compare(
-                        ta != null ? ta.getOrdinal() : 1000,
-                        tb != null ? tb.getOrdinal() : 1000);
-                if (cmp != 0) return cmp;
-                return Integer.compare(extractNumber(a), extractNumber(b));
-            });
+            List<String> layerIds = drainQueue(queue);
+            layerIds.sort(layerComparator(selectedById));
 
             List<TaskSpec> layer = new ArrayList<>();
             for (String id : layerIds) {
@@ -267,12 +140,7 @@ public final class TaskDependencySorter {
                     layer.add(spec);
                     processedCount++;
                 }
-                for (String dependent : dependents.getOrDefault(id, Collections.emptySet())) {
-                    int newDegree = inDegree.merge(dependent, -1, Integer::sum);
-                    if (newDegree == 0) {
-                        queue.add(dependent);
-                    }
-                }
+                processLayerDependents(id, dependents, inDegree, queue);
             }
 
             if (!layer.isEmpty()) {
@@ -280,19 +148,126 @@ public final class TaskDependencySorter {
             }
         }
 
-        // Check for cycle
+        checkForCycles(processedCount, selectedIds, selectedById, inDegree);
+        return layers;
+    }
+
+    // ---- Private helpers ----
+
+    private static @NotNull Set<String> buildSelectedIds(@NotNull List<TaskSpec> tasks) {
+        return tasks.stream()
+                .map(TaskSpec::getId)
+                .filter(Objects::nonNull)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+    }
+
+    private static @NotNull Map<String, TaskSpec> buildSelectedById(@NotNull List<TaskSpec> tasks) {
+        Map<String, TaskSpec> map = new LinkedHashMap<>();
+        for (TaskSpec t : tasks) {
+            if (t.getId() != null) {
+                map.put(t.getId().toLowerCase(), t);
+            }
+        }
+        return map;
+    }
+
+    private static @NotNull Map<String, TaskSpec> buildAllById(@NotNull List<TaskSpec> allSpecs) {
+        Map<String, TaskSpec> map = new HashMap<>();
+        for (TaskSpec s : allSpecs) {
+            if (s.getId() != null) {
+                map.put(s.getId().toLowerCase(), s);
+            }
+        }
+        return map;
+    }
+
+    private static void initializeGraphNodes(@NotNull Set<String> ids,
+                                              @NotNull Map<String, Set<String>> dependents,
+                                              @NotNull Map<String, Integer> inDegree) {
+        for (String id : ids) {
+            inDegree.put(id, 0);
+            dependents.put(id, new HashSet<>());
+        }
+    }
+
+    private static void addInternalEdges(@NotNull List<TaskSpec> tasks,
+                                          @NotNull Set<String> selectedIds,
+                                          @NotNull Map<String, Set<String>> dependents,
+                                          @NotNull Map<String, Integer> inDegree) {
+        for (TaskSpec task : tasks) {
+            if (task.getId() == null) continue;
+            String taskId = task.getId().toLowerCase();
+            List<String> deps = task.getDependencies();
+            if (deps == null) continue;
+            for (String dep : deps) {
+                String depLower = dep.toLowerCase();
+                if (selectedIds.contains(depLower)) {
+                    dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId);
+                    inDegree.merge(taskId, 1, Integer::sum);
+                }
+            }
+        }
+    }
+
+    private static @NotNull Queue<String> buildInitialQueue(@NotNull Map<String, Integer> inDegree) {
+        Queue<String> queue = new LinkedList<>();
+        for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                queue.add(entry.getKey());
+            }
+        }
+        return queue;
+    }
+
+    private static @NotNull List<String> drainQueue(@NotNull Queue<String> queue) {
+        List<String> snapshot = new ArrayList<>(queue);
+        queue.clear();
+        return snapshot;
+    }
+
+    private static @NotNull Comparator<String> layerComparator(@NotNull Map<String, TaskSpec> selectedById) {
+        return (a, b) -> {
+            TaskSpec ta = selectedById.get(a);
+            TaskSpec tb = selectedById.get(b);
+            int cmp = Integer.compare(
+                    ta != null ? ta.getOrdinal() : 1000,
+                    tb != null ? tb.getOrdinal() : 1000);
+            if (cmp != 0) return cmp;
+            return Integer.compare(extractNumber(a), extractNumber(b));
+        };
+    }
+
+    private static void processLayerDependents(@NotNull String id,
+                                                @NotNull Map<String, Set<String>> dependents,
+                                                @NotNull Map<String, Integer> inDegree,
+                                                @NotNull Queue<String> queue) {
+        for (String dependent : dependents.getOrDefault(id, Collections.emptySet())) {
+            int newDegree = inDegree.merge(dependent, -1, Integer::sum);
+            if (newDegree == 0) {
+                queue.add(dependent);
+            }
+        }
+    }
+
+    private static void checkForCycles(int processedCount,
+                                        @NotNull Set<String> selectedIds,
+                                        @NotNull Map<String, TaskSpec> selectedById,
+                                        @NotNull Map<String, Integer> inDegree)
+            throws CircularDependencyException {
         if (processedCount < selectedIds.size()) {
             List<String> cycleIds = selectedIds.stream()
                     .filter(id -> inDegree.getOrDefault(id, 0) > 0)
-                    .map(id -> {
-                        TaskSpec t = selectedById.get(id);
-                        return t != null && t.getId() != null ? t.getId() : id;
-                    })
+                    .map(id -> resolveTaskId(selectedById, id))
                     .toList();
             throw new CircularDependencyException(cycleIds);
         }
+    }
 
-        return layers;
+    private static @NotNull String resolveTaskId(@NotNull Map<String, TaskSpec> selectedById,
+                                                  @NotNull String id) {
+        TaskSpec t = selectedById.get(id);
+        return t != null && t.getId() != null ? t.getId() : id;
     }
 
     private static int extractNumber(String id) {

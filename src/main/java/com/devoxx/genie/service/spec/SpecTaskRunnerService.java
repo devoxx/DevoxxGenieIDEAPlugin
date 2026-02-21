@@ -828,20 +828,16 @@ public final class SpecTaskRunnerService implements Disposable {
 
         for (TaskSpec task : layerTasks) {
             String tid = task.getId() != null ? task.getId() : "?";
+            String title = task.getTitle() != null ? task.getTitle() : "";
             LayerTaskResult result = layerTaskResults.get(tid);
-            if (result != null) {
-                if (result.completed) {
-                    layerCompleted++;
-                    sb.append(String.format("  [OK]   %s: %s%n", tid,
-                            task.getTitle() != null ? task.getTitle() : ""));
-                } else if (result.skipped) {
-                    layerSkipped++;
-                    sb.append(String.format("  [SKIP] %s: %s (%s)%n", tid,
-                            task.getTitle() != null ? task.getTitle() : "",
-                            result.skipReason != null ? result.skipReason : "unknown"));
-                }
-            } else {
+            if (result == null) {
                 sb.append(String.format("  [???]  %s%n", tid));
+            } else if (result.completed) {
+                layerCompleted++;
+                sb.append(String.format("  [OK]   %s: %s%n", tid, title));
+            } else if (result.skipped) {
+                layerSkipped++;
+                sb.append(formatSkipLine(tid, title, result.skipReason));
             }
         }
 
@@ -849,17 +845,25 @@ public final class SpecTaskRunnerService implements Disposable {
                 layerCompleted, layerSkipped, layerTasks.size()));
 
         log.info(sb.toString());
+        printToCliConsole(sb.toString());
+    }
 
-        // Print to CLI console if in CLI mode
-        if (cliMode) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                try {
-                    CliConsoleManager.getInstance(project).printSystem(sb.toString());
-                } catch (Exception ignored) {
-                    // Console might not be available
-                }
-            });
+    static String formatSkipLine(String tid, String title, String skipReason) {
+        String reason = skipReason != null ? skipReason : "unknown";
+        return String.format("  [SKIP] %s: %s (%s)%n", tid, title, reason);
+    }
+
+    private void printToCliConsole(String text) {
+        if (!cliMode) {
+            return;
         }
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                CliConsoleManager.getInstance(project).printSystem(text);
+            } catch (Exception ignored) {
+                // Console might not be available
+            }
+        });
     }
 
     private void finish(@NotNull RunnerState finalState) {
