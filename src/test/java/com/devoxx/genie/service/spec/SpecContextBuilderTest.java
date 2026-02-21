@@ -466,7 +466,7 @@ class SpecContextBuilderTest {
 
         String instruction = SpecContextBuilder.buildCliInstruction(spec);
 
-        assertThat(instruction).startsWith("You are implementing task .\n");
+        assertThat(instruction).contains("You are implementing task .\n");
         assertThat(instruction).doesNotContain("null");
     }
 

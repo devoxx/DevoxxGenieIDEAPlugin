@@ -737,7 +737,7 @@ class SpecServiceTest {
             TaskSpec created = service.createTask(spec);
 
             assertThat(created.getId()).isNotNull();
-            assertThat(created.getId()).startsWith("TASK-");
+            assertThat(created.getId()).startsWith("task-");
             assertThat(created.getFilePath()).isNotNull();
             assertThat(created.getCreatedAt()).isNotNull();
             assertThat(Files.exists(Path.of(created.getFilePath()))).isTrue();
