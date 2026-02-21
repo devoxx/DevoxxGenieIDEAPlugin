@@ -31,6 +31,12 @@ public final class ExternalTaskService {
     /**
      * Creates a backlog task. Initializes the backlog if needed.
      * Returns the created task ID (e.g., "TASK-5").
+     *
+     * THIS METHOD IS NOT DEAD CODE. It is the public integration API called by
+     * external plugins (e.g. SonarLint) via runtime reflection. Removing it
+     * silently breaks the "Create DevoxxGenie Tasks" action.
+     *
+     * @see org.sonarlint.intellij.actions.CreateDevoxxGenieTasksFromNodeAction (SonarLint plugin caller)
      */
     public String createBacklogTask(String title, String description,
                                     String priority, List<String> labels) throws IOException {
