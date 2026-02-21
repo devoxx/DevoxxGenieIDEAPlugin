@@ -5,7 +5,6 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.gpt4all.Model;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -21,9 +20,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
+public class GPT4AllChatModelFactoryTest {
 
     private GPT4AllChatModelFactory factory;
 
@@ -41,10 +41,8 @@ public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
     private final Model model2 = createTestModel("model2", "Model Two");
     private final Model[] testModels = new Model[] { model1, model2 };
 
-    @Override
     @BeforeEach
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
 
         // Set up the factory
@@ -52,6 +50,11 @@ public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
             @Override
             protected String getModelUrl() {
                 return "http://localhost:8080";
+            }
+
+            @Override
+            public java.util.List<dev.langchain4j.model.chat.listener.ChatModelListener> getListener() {
+                return java.util.List.of();
             }
         };
 
@@ -161,17 +164,13 @@ public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
             assertTrue(foundModel1);
             assertTrue(foundModel2);
 
-            // Test caching - create spy to verify method calls
-            GPT4AllChatModelFactory spyFactory = spy(testFactory);
+            // Test caching - call getModels() again on the same instance
+            // providerChecked=true so checkAndFetchModels() is NOT called again
+            List<LanguageModel> cachedModels = testFactory.getModels();
 
-            // Get models again - should use cached version
-            List<LanguageModel> cachedModels = spyFactory.getModels();
-
-            // Verify models are the same
+            // Verify models are the same cached list (same object reference)
             assertEquals(models, cachedModels);
-
-            // Verify fetchModels was not called again
-            verify(spyFactory, never()).fetchModels();
+            assertSame(models, cachedModels);
         }
     }
 
@@ -190,6 +189,11 @@ public class GPT4AllChatModelFactoryTest extends BasePlatformTestCase {
 
                 @Override
                 protected void handleGeneralFetchError(IOException e) {
+                    // No-op for testing
+                }
+
+                @Override
+                protected void handleProviderNotRunning() {
                     // No-op for testing
                 }
             };

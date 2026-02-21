@@ -199,6 +199,11 @@ tasks {
     }
 
     test {
+        doFirst {
+            val tmpDir = File("/tmp/test")
+            tmpDir.deleteRecursively()
+            tmpDir.mkdirs()
+        }
         systemProperty("java.io.tmpdir", "/tmp/test")
         // Add these to help with platform tests
         systemProperty("idea.home.path", file("build/idea-sandbox"))
@@ -208,7 +213,7 @@ tasks {
 
         maxHeapSize = "1g"
 
-        forkEvery = 1
+        forkEvery = 10
 
         // Configure JaCoCo agent to include plugin classes loaded from sandbox JARs
         extensions.configure<JacocoTaskExtension> {

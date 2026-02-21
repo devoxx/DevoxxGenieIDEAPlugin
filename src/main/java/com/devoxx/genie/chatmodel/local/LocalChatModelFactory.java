@@ -84,11 +84,15 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
             checkAndFetchModels();
         }
         if (!providerRunning) {
-            NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
-                    "LLM provider is not running. Please start it and try again.");
+            handleProviderNotRunning();
             return List.of();
         }
         return cachedModels;
+    }
+
+    protected void handleProviderNotRunning() {
+        NotificationUtil.sendNotification(ProjectManager.getInstance().getDefaultProject(),
+                "LLM provider is not running. Please start it and try again.");
     }
 
     private void checkAndFetchModels() {
