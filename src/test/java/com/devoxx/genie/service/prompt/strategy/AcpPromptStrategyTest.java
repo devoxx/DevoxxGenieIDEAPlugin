@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -177,8 +178,8 @@ class AcpPromptStrategyTest {
 
     @Test
     void cancel_withoutActiveClient_doesNotThrow() {
-        strategy.cancel();
-        // Should not throw any exception
+        // Verify that cancel() completes without throwing an exception
+        assertDoesNotThrow(() -> strategy.cancel());
     }
 
     @Test

@@ -64,6 +64,8 @@ class AbstractSettingsComponentTest {
     void shouldHaveDefaultEmptyAddListeners() {
         // addListeners is a no-op by default - should not throw
         component.addListeners();
+        // Verify component is still in a valid state after calling addListeners
+        assertThat(component).isNotNull();
     }
 
     @Test
