@@ -79,9 +79,8 @@ public final class BacklogConfigService {
     public @NotNull String getNextTaskId() {
         String prefix = getConfig().getTaskPrefix();
         if (prefix == null || prefix.isEmpty()) {
-            prefix = "TASK";
+            prefix = "task";
         }
-        prefix = prefix.toUpperCase();
         int maxNum = Math.max(scanMaxId(getTasksDir()),
                 Math.max(scanMaxId(getCompletedDir()), scanMaxId(getArchiveTasksDir())));
         return prefix + "-" + (maxNum + 1);
