@@ -52,43 +52,43 @@ public class MCPListenerService implements ChatModelListener {
     public void onRequest(@NotNull ChatModelRequestContext requestContext) {
         log.debug("onRequest: {}", requestContext.chatRequest().toString());
 
-        boolean agentMode = agentModeSupplier.get();
-
         List<ChatMessage> messages = requestContext.chatRequest().messages();
         if (messages.isEmpty() || messages.size() <= 2) {
             return;
         }
 
         ChatMessage chatMessage = messages.get(messages.size() - 2);
+        boolean agentMode = agentModeSupplier.get();
 
         if (chatMessage instanceof ToolExecutionResultMessage toolExecutionResultMessage) {
             log.debug(">>> Tool args: {}", toolExecutionResultMessage.toolName());
         } else if (chatMessage instanceof AiMessage aiMessage) {
-            if (aiMessage.text() != null && !aiMessage.text().isEmpty()) {
-                log.debug(">>> AI msg: {}", aiMessage.text());
-                if (agentMode) {
-                    // Route LLM intermediate reasoning to Agent Logs
-                    postAgentMessage(aiMessage.text());
-                } else {
-                    postMcpMessage(MCPMessage.builder()
-                            .type(MCPType.AI_MSG)
-                            .content(aiMessage.text())
-                            .build());
-                }
+            handleAiMessage(aiMessage, agentMode);
+        }
+    }
+
+    private void handleAiMessage(@NotNull AiMessage aiMessage, boolean agentMode) {
+        if (aiMessage.text() != null && !aiMessage.text().isEmpty()) {
+            log.debug(">>> AI msg: {}", aiMessage.text());
+            if (agentMode) {
+                // Route LLM intermediate reasoning to Agent Logs
+                postAgentMessage(aiMessage.text());
+            } else {
+                postMcpMessage(MCPMessage.builder()
+                        .type(MCPType.AI_MSG)
+                        .content(aiMessage.text())
+                        .build());
             }
-            // Tool execution requests: only log to MCP panel when NOT in agent mode.
-            // In agent mode, AgentLoopTracker already logs tool calls to Agent Logs.
-            if (!agentMode && aiMessage.hasToolExecutionRequests() && !aiMessage.toolExecutionRequests().isEmpty()) {
-                List<ToolExecutionRequest> toolExecutionRequests = aiMessage.toolExecutionRequests();
-                if (toolExecutionRequests != null && !toolExecutionRequests.isEmpty()) {
-                    ToolExecutionRequest toolExecutionRequest = toolExecutionRequests.get(0);
-                    log.debug(">>> Tool msg: {}", toolExecutionRequest.arguments());
-                    postMcpMessage(MCPMessage.builder()
-                            .type(MCPType.TOOL_MSG)
-                            .content(toolExecutionRequest.arguments())
-                            .build());
-                }
-            }
+        }
+        // Tool execution requests: only log to MCP panel when NOT in agent mode.
+        // In agent mode, AgentLoopTracker already logs tool calls to Agent Logs.
+        if (!agentMode && aiMessage.hasToolExecutionRequests() && !aiMessage.toolExecutionRequests().isEmpty()) {
+            ToolExecutionRequest toolExecutionRequest = aiMessage.toolExecutionRequests().get(0);
+            log.debug(">>> Tool msg: {}", toolExecutionRequest.arguments());
+            postMcpMessage(MCPMessage.builder()
+                    .type(MCPType.TOOL_MSG)
+                    .content(toolExecutionRequest.arguments())
+                    .build());
         }
     }
 

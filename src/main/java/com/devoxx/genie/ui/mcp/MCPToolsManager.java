@@ -19,8 +19,10 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.HammerIcon;
 
@@ -125,146 +127,158 @@ public class MCPToolsManager {
         if (!MCPService.isMCPEnabled()) {
             return;
         }
-        
-        // Get all MCP servers
+
         Map<String, MCPServer> mcpServers = DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers();
         if (mcpServers.isEmpty()) {
             return;
         }
-        
-        // Create a panel with checkboxes for each MCP server
-        JPanel popupPanel = new JPanel(new BorderLayout());
-        JPanel mcpListPanel = new JPanel();
-        mcpListPanel.setLayout(new BoxLayout(mcpListPanel, BoxLayout.Y_AXIS));
-        
-        // Add buttons at the top
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        JButton showAllToolsButton = new JButton("Show All Tools");
-        showAllToolsButton.addActionListener(e -> showAllMCPTools(mcpServers));
-        buttonsPanel.add(showAllToolsButton);
-        
-        // Title
-        JLabel titleLabel = new JLabel("Available MCP Servers");
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
-        
-        // Add the title and buttons panel
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(buttonsPanel, BorderLayout.EAST);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        mcpListPanel.add(headerPanel);
-        
-        // Add a checkbox for each MCP server
-        List<MCPServer> serverList = new ArrayList<>(mcpServers.values());
-        // Sort alphabetically by name
-        serverList.sort(Comparator.comparing(MCPServer::getName));
 
-        for (MCPServer server : serverList) {
-            JPanel serverPanel = new JPanel(new BorderLayout());
-            serverPanel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        JPanel mcpListPanel = buildMCPListPanel(mcpServers);
 
-            JCheckBox enabledCheckbox = new JCheckBox(server.getName());
-            enabledCheckbox.setSelected(server.isEnabled());
-            enabledCheckbox.setFont(enabledCheckbox.getFont().deriveFont(Font.BOLD));
-
-            // Add tooltip with tool count
-            int toolCount = server.getAvailableTools().size();
-            int disabledCount = server.getDisabledTools() != null ? server.getDisabledTools().size() : 0;
-            int enabledToolCount = toolCount - disabledCount;
-            enabledCheckbox.setToolTipText(String.format("%s - %d/%d tool%s enabled",
-                    server.getName(), enabledToolCount, toolCount, toolCount == 1 ? "" : "s"));
-
-            // Add label with tool count
-            JLabel toolCountLabel = new JLabel(String.format("(%d/%d tools)",
-                    enabledToolCount, toolCount));
-            toolCountLabel.setFont(toolCountLabel.getFont().deriveFont(Font.PLAIN));
-            toolCountLabel.setForeground(JBColor.GRAY);
-
-            serverPanel.add(enabledCheckbox, BorderLayout.WEST);
-            serverPanel.add(toolCountLabel, BorderLayout.EAST);
-
-            mcpListPanel.add(serverPanel);
-
-            // Add per-tool checkboxes (collapsible, shown under the server)
-            JPanel toolsPanel = new JPanel();
-            toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
-            toolsPanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 5, 5));
-
-            java.util.Set<String> disabledTools = server.getDisabledTools() != null
-                    ? server.getDisabledTools() : new java.util.HashSet<>();
-
-            for (String toolName : server.getAvailableTools()) {
-                JCheckBox toolCheckbox = new JCheckBox(toolName);
-                toolCheckbox.setSelected(!disabledTools.contains(toolName));
-                toolCheckbox.setFont(toolCheckbox.getFont().deriveFont(Font.PLAIN));
-                toolCheckbox.setEnabled(server.isEnabled());
-
-                String desc = server.getToolDescriptions() != null
-                        ? server.getToolDescriptions().getOrDefault(toolName, "") : "";
-                if (!desc.isEmpty()) {
-                    toolCheckbox.setToolTipText(desc);
-                }
-
-                toolCheckbox.addActionListener(e -> {
-                    if (toolCheckbox.isSelected()) {
-                        server.getDisabledTools().remove(toolName);
-                    } else {
-                        server.getDisabledTools().add(toolName);
-                    }
-                    DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers()
-                            .put(server.getName(), server);
-                    updateMCPToolsCounter();
-                });
-
-                toolsPanel.add(toolCheckbox);
-            }
-
-            // Collapse/expand toggle
-            toolsPanel.setVisible(server.isEnabled() && !server.getAvailableTools().isEmpty());
-            mcpListPanel.add(toolsPanel);
-
-            // Add action listener to auto-apply changes when server checkbox is toggled
-            enabledCheckbox.addActionListener(e -> {
-                boolean newState = enabledCheckbox.isSelected();
-                if (server.isEnabled() != newState) {
-                    server.setEnabled(newState);
-
-                    DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers()
-                            .put(server.getName(), server);
-
-                    MCPService.refreshToolWindowVisibility();
-                    updateMCPToolsCounter();
-
-                    // Enable/disable individual tool checkboxes based on server state
-                    toolsPanel.setVisible(newState && !server.getAvailableTools().isEmpty());
-                    for (Component c : toolsPanel.getComponents()) {
-                        if (c instanceof JCheckBox cb) {
-                            cb.setEnabled(newState);
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Add some padding at the bottom
-        mcpListPanel.add(Box.createVerticalStrut(10));
-        
         JScrollPane scrollPane = new JBScrollPane(mcpListPanel);
         scrollPane.setPreferredSize(new Dimension(500, 400));
-        
+
+        JPanel popupPanel = new JPanel(new BorderLayout());
         popupPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        // Create the popup
-        JBPopup popup = JBPopupFactory.getInstance()
+
+        JBPopupFactory.getInstance()
                 .createComponentPopupBuilder(popupPanel, null)
                 .setTitle("Enable/Disable MCP Servers")
                 .setResizable(true)
                 .setMovable(true)
                 .setRequestFocus(true)
-                .createPopup();
-        
-        popup.showUnderneathOf(mcpToolsCountLabel);
+                .createPopup()
+                .showUnderneathOf(mcpToolsCountLabel);
+    }
+
+    private @NotNull JPanel buildMCPListPanel(@NotNull Map<String, MCPServer> mcpServers) {
+        JPanel mcpListPanel = new JPanel();
+        mcpListPanel.setLayout(new BoxLayout(mcpListPanel, BoxLayout.Y_AXIS));
+        mcpListPanel.add(createMCPHeader(mcpServers));
+
+        List<MCPServer> serverList = new ArrayList<>(mcpServers.values());
+        serverList.sort(Comparator.comparing(MCPServer::getName));
+        serverList.forEach(server -> addServerEntry(server, mcpListPanel));
+
+        mcpListPanel.add(Box.createVerticalStrut(10));
+        return mcpListPanel;
+    }
+
+    private @NotNull JPanel createMCPHeader(@NotNull Map<String, MCPServer> mcpServers) {
+        JButton showAllToolsButton = new JButton("Show All Tools");
+        showAllToolsButton.addActionListener(e -> showAllMCPTools(mcpServers));
+
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        buttonsPanel.add(showAllToolsButton);
+
+        JLabel titleLabel = new JLabel("Available MCP Servers");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        headerPanel.add(buttonsPanel, BorderLayout.EAST);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        return headerPanel;
+    }
+
+    private void addServerEntry(@NotNull MCPServer server, @NotNull JPanel mcpListPanel) {
+        int toolCount = server.getAvailableTools().size();
+        int disabledCount = server.getDisabledTools() != null ? server.getDisabledTools().size() : 0;
+        int enabledToolCount = toolCount - disabledCount;
+
+        JPanel toolsPanel = buildToolsPanel(server);
+        JCheckBox enabledCheckbox = createServerCheckbox(server, toolsPanel, toolCount, enabledToolCount);
+
+        JLabel toolCountLabel = new JLabel(String.format("(%d/%d tools)", enabledToolCount, toolCount));
+        toolCountLabel.setFont(toolCountLabel.getFont().deriveFont(Font.PLAIN));
+        toolCountLabel.setForeground(JBColor.GRAY);
+
+        JPanel serverPanel = new JPanel(new BorderLayout());
+        serverPanel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+        serverPanel.add(enabledCheckbox, BorderLayout.WEST);
+        serverPanel.add(toolCountLabel, BorderLayout.EAST);
+
+        mcpListPanel.add(serverPanel);
+        mcpListPanel.add(toolsPanel);
+    }
+
+    private @NotNull JCheckBox createServerCheckbox(@NotNull MCPServer server,
+                                                     @NotNull JPanel toolsPanel,
+                                                     int toolCount,
+                                                     int enabledToolCount) {
+        JCheckBox enabledCheckbox = new JCheckBox(server.getName());
+        enabledCheckbox.setSelected(server.isEnabled());
+        enabledCheckbox.setFont(enabledCheckbox.getFont().deriveFont(Font.BOLD));
+        enabledCheckbox.setToolTipText(String.format("%s - %d/%d tool%s enabled",
+                server.getName(), enabledToolCount, toolCount, toolCount == 1 ? "" : "s"));
+        enabledCheckbox.addActionListener(e -> onServerCheckboxToggled(server, enabledCheckbox, toolsPanel));
+        return enabledCheckbox;
+    }
+
+    private void onServerCheckboxToggled(@NotNull MCPServer server,
+                                          @NotNull JCheckBox enabledCheckbox,
+                                          @NotNull JPanel toolsPanel) {
+        boolean newState = enabledCheckbox.isSelected();
+        if (server.isEnabled() == newState) {
+            return;
+        }
+        server.setEnabled(newState);
+        DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers().put(server.getName(), server);
+        MCPService.refreshToolWindowVisibility();
+        updateMCPToolsCounter();
+        toolsPanel.setVisible(newState && !server.getAvailableTools().isEmpty());
+        for (Component c : toolsPanel.getComponents()) {
+            if (c instanceof JCheckBox cb) {
+                cb.setEnabled(newState);
+            }
+        }
+    }
+
+    private @NotNull JPanel buildToolsPanel(@NotNull MCPServer server) {
+        JPanel toolsPanel = new JPanel();
+        toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
+        toolsPanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 5, 5));
+
+        Set<String> disabledTools = server.getDisabledTools() != null
+                ? server.getDisabledTools() : new HashSet<>();
+
+        for (String toolName : server.getAvailableTools()) {
+            toolsPanel.add(createToolCheckbox(toolName, server, disabledTools));
+        }
+
+        toolsPanel.setVisible(server.isEnabled() && !server.getAvailableTools().isEmpty());
+        return toolsPanel;
+    }
+
+    private @NotNull JCheckBox createToolCheckbox(String toolName,
+                                                   @NotNull MCPServer server,
+                                                   @NotNull Set<String> disabledTools) {
+        JCheckBox toolCheckbox = new JCheckBox(toolName);
+        toolCheckbox.setSelected(!disabledTools.contains(toolName));
+        toolCheckbox.setFont(toolCheckbox.getFont().deriveFont(Font.PLAIN));
+        toolCheckbox.setEnabled(server.isEnabled());
+
+        String desc = server.getToolDescriptions() != null
+                ? server.getToolDescriptions().getOrDefault(toolName, "") : "";
+        if (!desc.isEmpty()) {
+            toolCheckbox.setToolTipText(desc);
+        }
+
+        toolCheckbox.addActionListener(e -> onToolCheckboxToggled(toolName, server, toolCheckbox));
+        return toolCheckbox;
+    }
+
+    private void onToolCheckboxToggled(String toolName,
+                                        @NotNull MCPServer server,
+                                        @NotNull JCheckBox toolCheckbox) {
+        if (toolCheckbox.isSelected()) {
+            server.getDisabledTools().remove(toolName);
+        } else {
+            server.getDisabledTools().add(toolName);
+        }
+        DevoxxGenieStateService.getInstance().getMcpSettings().getMcpServers().put(server.getName(), server);
+        updateMCPToolsCounter();
     }
     
     /**

@@ -216,40 +216,54 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         MCPRegistryService registryService = MCPRegistryService.getInstance();
 
         List<MCPRegistryServerEntry> filtered = allServers.stream()
-                .filter(entry -> {
-                    MCPRegistryServerInfo info = entry.getServer();
-                    if (info == null) return false;
-
-                    // Text search
-                    if (!query.isEmpty()) {
-                        String lowerQuery = query.toLowerCase(Locale.ROOT);
-                        String name = info.getName() != null ? info.getName().toLowerCase(Locale.ROOT) : "";
-                        String desc = info.getDescription() != null ? info.getDescription().toLowerCase(Locale.ROOT) : "";
-                        if (!name.contains(lowerQuery) && !desc.contains(lowerQuery)) {
-                            return false;
-                        }
-                    }
-
-                    // Location filter
-                    if (selectedLocation != null && !ALL_FILTER.equals(selectedLocation)) {
-                        boolean isRemote = info.getRemotes() != null && !info.getRemotes().isEmpty();
-                        if (REMOTE_FILTER.equals(selectedLocation) && !isRemote) return false;
-                        if (LOCAL_FILTER.equals(selectedLocation) && isRemote) return false;
-                    }
-
-                    // Type filter
-                    if (selectedType != null && !ALL_FILTER.equals(selectedType)) {
-                        String serverType = registryService.getServerType(info);
-                        if (!selectedType.equals(serverType)) return false;
-                    }
-
-                    return true;
-                })
+                .filter(entry -> SERVER_FILTER.matches(entry, query, selectedLocation, selectedType, registryService))
                 .toList();
 
         tableModel.setServers(filtered);
         statusLabel.setText("Showing " + filtered.size() + " of " + allServers.size() + " servers");
         updateOkAction();
+    }
+
+    private static final ServerEntryFilter SERVER_FILTER = new ServerEntryFilter();
+
+    /**
+     * Pure filter logic for MCP registry server entries.
+     * Extracted as a static nested class to allow unit testing without IntelliJ platform.
+     */
+    static class ServerEntryFilter {
+
+        boolean matches(MCPRegistryServerEntry entry,
+                        String query,
+                        String selectedLocation,
+                        String selectedType,
+                        MCPRegistryService registryService) {
+            MCPRegistryServerInfo info = entry.getServer();
+            if (info == null) return false;
+            return matchesText(info, query)
+                    && matchesLocation(info, selectedLocation)
+                    && matchesType(info, selectedType, registryService);
+        }
+
+        boolean matchesText(MCPRegistryServerInfo info, String query) {
+            if (query.isEmpty()) return true;
+            String lowerQuery = query.toLowerCase(Locale.ROOT);
+            String name = info.getName() != null ? info.getName().toLowerCase(Locale.ROOT) : "";
+            String desc = info.getDescription() != null ? info.getDescription().toLowerCase(Locale.ROOT) : "";
+            return name.contains(lowerQuery) || desc.contains(lowerQuery);
+        }
+
+        boolean matchesLocation(MCPRegistryServerInfo info, String selectedLocation) {
+            if (selectedLocation == null || ALL_FILTER.equals(selectedLocation)) return true;
+            boolean isRemote = info.getRemotes() != null && !info.getRemotes().isEmpty();
+            if (REMOTE_FILTER.equals(selectedLocation)) return isRemote;
+            if (LOCAL_FILTER.equals(selectedLocation)) return !isRemote;
+            return true;
+        }
+
+        boolean matchesType(MCPRegistryServerInfo info, String selectedType, MCPRegistryService registryService) {
+            if (selectedType == null || ALL_FILTER.equals(selectedType)) return true;
+            return selectedType.equals(registryService.getServerType(info));
+        }
     }
 
     /**

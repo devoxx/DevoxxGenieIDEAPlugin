@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.cli;
 
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.cli.command.CliCommand;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -17,7 +18,9 @@ import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -173,6 +176,54 @@ class CliTaskExecutorServiceTest {
         service.dispose();
     }
 
+    // Tests for resolveCliType()
+
+    @Test
+    void resolveCliType_withExplicitNonCustomType_returnsIt() {
+        CliToolConfig tool = CliToolConfig.builder()
+                .type(CliToolConfig.CliType.CLAUDE)
+                .name("anything")
+                .build();
+        assertThat(service.resolveCliType(tool)).isEqualTo(CliToolConfig.CliType.CLAUDE);
+    }
+
+    @Test
+    void resolveCliType_withCustomTypeAndMatchingName_autoDetects() {
+        CliToolConfig tool = CliToolConfig.builder()
+                .type(CliToolConfig.CliType.CUSTOM)
+                .name("Claude")
+                .build();
+        assertThat(service.resolveCliType(tool)).isEqualTo(CliToolConfig.CliType.CLAUDE);
+    }
+
+    @Test
+    void resolveCliType_withCustomTypeAndMatchingNameCaseInsensitive_autoDetects() {
+        CliToolConfig tool = CliToolConfig.builder()
+                .type(CliToolConfig.CliType.CUSTOM)
+                .name("CODEX")
+                .build();
+        assertThat(service.resolveCliType(tool)).isEqualTo(CliToolConfig.CliType.CODEX);
+    }
+
+    @Test
+    void resolveCliType_withCustomTypeAndUnknownName_remainsCustom() {
+        CliToolConfig tool = CliToolConfig.builder()
+                .type(CliToolConfig.CliType.CUSTOM)
+                .name("MyCustomTool")
+                .build();
+        assertThat(service.resolveCliType(tool)).isEqualTo(CliToolConfig.CliType.CUSTOM);
+    }
+
+    @Test
+    void resolveCliType_withNullType_defaultsToCustomAndMatchesByName() {
+        CliToolConfig tool = CliToolConfig.builder()
+                .name("Gemini")
+                .build();
+        // Builder default is CUSTOM, so name-based detection applies
+        tool.setType(null);
+        assertThat(service.resolveCliType(tool)).isEqualTo(CliToolConfig.CliType.GEMINI);
+    }
+
     @Test
     void generateMcpConfig_producesValidJsonFile() throws Exception {
         Method method = CliTaskExecutorService.class.getDeclaredMethod("generateMcpConfig", String.class);
@@ -207,6 +258,64 @@ class CliTaskExecutorServiceTest {
         assertThat(content).contains("\"backlog\"");
 
         file.delete();
+    }
+
+    // Tests for processStreamLine behaviour (extracted from createStreamReader refactor)
+
+    @Test
+    void processStreamLine_withLineCollector_addsLine() throws Exception {
+        List<String> collector = new ArrayList<>();
+        invokeProcessStreamLine("hello", 1, true, collector, false);
+        assertThat(collector).containsExactly("hello");
+    }
+
+    @Test
+    void processStreamLine_withNullCollector_doesNotThrow() throws Exception {
+        // Should complete without NPE and dispatch via invokeLater
+        invokeProcessStreamLine("hello", 1, true, null, false);
+        verify(application, atLeastOnce()).invokeLater(any(Runnable.class));
+    }
+
+    @Test
+    void processStreamLine_stdout_dispatchesToPrintOutput() throws Exception {
+        CliConsoleManager mockConsole = mock(CliConsoleManager.class);
+        // Capture the Runnable passed to invokeLater and execute it synchronously
+        doAnswer(inv -> { inv.getArgument(0, Runnable.class).run(); return null; })
+                .when(application).invokeLater(any(Runnable.class));
+
+        invokeProcessStreamLineWithConsole("output-line", 1, true, null, false, mockConsole);
+        verify(mockConsole).printOutput("output-line");
+        verify(mockConsole, never()).printError(any());
+    }
+
+    @Test
+    void processStreamLine_stderr_dispatchesToPrintError() throws Exception {
+        CliConsoleManager mockConsole = mock(CliConsoleManager.class);
+        doAnswer(inv -> { inv.getArgument(0, Runnable.class).run(); return null; })
+                .when(application).invokeLater(any(Runnable.class));
+
+        invokeProcessStreamLineWithConsole("error-line", 1, false, null, false, mockConsole);
+        verify(mockConsole).printError("error-line");
+        verify(mockConsole, never()).printOutput(any());
+    }
+
+    /** Calls processStreamLine via reflection using the service's own CliConsoleManager mock. */
+    private void invokeProcessStreamLine(String line, int lineCount, boolean isStdout,
+                                          List<String> collector, boolean parseJson) throws Exception {
+        invokeProcessStreamLineWithConsole(line, lineCount, isStdout, collector, parseJson,
+                mock(CliConsoleManager.class));
+    }
+
+    private void invokeProcessStreamLineWithConsole(String line, int lineCount, boolean isStdout,
+                                                      List<String> collector, boolean parseJson,
+                                                      CliConsoleManager console) throws Exception {
+        Method method = CliTaskExecutorService.class.getDeclaredMethod(
+                "processStreamLine",
+                String.class, int.class, boolean.class, String.class, String.class,
+                List.class, boolean.class, CliConsoleManager.class);
+        method.setAccessible(true);
+        method.invoke(service, line, lineCount, isStdout, isStdout ? "stdout" : "stderr",
+                TEST_TASK_ID, collector, parseJson, console);
     }
 
     // Helper methods to manipulate private state via reflection

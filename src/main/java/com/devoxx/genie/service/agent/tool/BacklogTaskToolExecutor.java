@@ -243,7 +243,17 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
             return "Error: Task with ID '" + id + "' not found.";
         }
 
-        // Apply scalar updates
+        applyScalarUpdates(spec, arguments);
+        applyListUpdates(spec, arguments);
+        applyAcceptanceCriteriaUpdates(spec, arguments);
+        applyPlanUpdates(spec, arguments);
+        applyNotesUpdates(spec, arguments);
+
+        specService.updateTask(spec);
+        return "Updated task " + id + " successfully.";
+    }
+
+    private void applyScalarUpdates(@NotNull TaskSpec spec, @NotNull String arguments) {
         String title = ToolArgumentParser.getString(arguments, TITLE);
         if (title != null) spec.setTitle(title);
 
@@ -261,8 +271,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
 
         String finalSummary = ToolArgumentParser.getString(arguments, "finalSummary");
         if (finalSummary != null) spec.setFinalSummary(finalSummary);
+    }
 
-        // Apply list replacements
+    private void applyListUpdates(@NotNull TaskSpec spec, @NotNull String arguments) {
         List<String> assignees = ToolArgumentParser.getStringArray(arguments, ASSIGNEE);
         if (!assignees.isEmpty()) spec.setAssignees(new ArrayList<>(assignees));
 
@@ -271,8 +282,9 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
 
         List<String> dependencies = ToolArgumentParser.getStringArray(arguments, DEPENDENCIES);
         if (!dependencies.isEmpty()) spec.setDependencies(new ArrayList<>(dependencies));
+    }
 
-        // Acceptance criteria modifications
+    private void applyAcceptanceCriteriaUpdates(@NotNull TaskSpec spec, @NotNull String arguments) {
         List<String> acAdd = ToolArgumentParser.getStringArray(arguments, "acceptanceCriteriaAdd");
         if (!acAdd.isEmpty()) {
             List<AcceptanceCriterion> existing = spec.getAcceptanceCriteria();
@@ -300,39 +312,38 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
                 spec.getAcceptanceCriteria().get(zeroIdx).setChecked(false);
             }
         }
+    }
 
-        // Implementation plan
+    private void applyPlanUpdates(@NotNull TaskSpec spec, @NotNull String arguments) {
         if (ToolArgumentParser.getBoolean(arguments, "planClear", false)) {
             spec.setImplementationPlan(null);
-        } else {
-            String planSet = ToolArgumentParser.getString(arguments, "planSet");
-            if (planSet != null) {
-                spec.setImplementationPlan(planSet);
-            }
-            List<String> planAppend = ToolArgumentParser.getStringArray(arguments, "planAppend");
-            if (!planAppend.isEmpty()) {
-                String existing = spec.getImplementationPlan() != null ? spec.getImplementationPlan() : "";
-                spec.setImplementationPlan(existing + (existing.isEmpty() ? "" : "\n\n") + String.join("\n\n", planAppend));
-            }
+            return;
         }
+        String planSet = ToolArgumentParser.getString(arguments, "planSet");
+        if (planSet != null) {
+            spec.setImplementationPlan(planSet);
+        }
+        List<String> planAppend = ToolArgumentParser.getStringArray(arguments, "planAppend");
+        if (!planAppend.isEmpty()) {
+            String existing = spec.getImplementationPlan() != null ? spec.getImplementationPlan() : "";
+            spec.setImplementationPlan(existing + (existing.isEmpty() ? "" : "\n\n") + String.join("\n\n", planAppend));
+        }
+    }
 
-        // Implementation notes
+    private void applyNotesUpdates(@NotNull TaskSpec spec, @NotNull String arguments) {
         if (ToolArgumentParser.getBoolean(arguments, "notesClear", false)) {
             spec.setImplementationNotes(null);
-        } else {
-            String notesSet = ToolArgumentParser.getString(arguments, "notesSet");
-            if (notesSet != null) {
-                spec.setImplementationNotes(notesSet);
-            }
-            List<String> notesAppend = ToolArgumentParser.getStringArray(arguments, "notesAppend");
-            if (!notesAppend.isEmpty()) {
-                String existing = spec.getImplementationNotes() != null ? spec.getImplementationNotes() : "";
-                spec.setImplementationNotes(existing + (existing.isEmpty() ? "" : "\n\n") + String.join("\n\n", notesAppend));
-            }
+            return;
         }
-
-        specService.updateTask(spec);
-        return "Updated task " + id + " successfully.";
+        String notesSet = ToolArgumentParser.getString(arguments, "notesSet");
+        if (notesSet != null) {
+            spec.setImplementationNotes(notesSet);
+        }
+        List<String> notesAppend = ToolArgumentParser.getStringArray(arguments, "notesAppend");
+        if (!notesAppend.isEmpty()) {
+            String existing = spec.getImplementationNotes() != null ? spec.getImplementationNotes() : "";
+            spec.setImplementationNotes(existing + (existing.isEmpty() ? "" : "\n\n") + String.join("\n\n", notesAppend));
+        }
     }
 
     private @NotNull String completeTask(@NotNull String arguments) throws Exception {

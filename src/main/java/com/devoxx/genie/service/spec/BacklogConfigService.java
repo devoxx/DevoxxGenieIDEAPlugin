@@ -440,24 +440,33 @@ public final class BacklogConfigService {
                     .toList();
 
             for (Path file : mdFiles) {
-                try {
-                    String content = Files.readString(file, StandardCharsets.UTF_8);
-                    Matcher m = TASK_ID_PATTERN.matcher(content);
-                    if (m.find()) {
-                        String id = SpecFrontmatterParser.stripQuotes(m.group(1).trim());
-                        int num = parseNumericSuffix(id);
-                        if (num > max) {
-                            max = num;
-                        }
-                    }
-                } catch (IOException e) {
-                    log.debug("Failed to read file for ID scan: {}", file);
+                int num = extractMaxIdFromFile(file);
+                if (num > max) {
+                    max = num;
                 }
             }
         } catch (IOException e) {
             log.debug("Failed to scan directory for IDs: {}", dir);
         }
         return max;
+    }
+
+    /**
+     * Extract the maximum numeric ID from a single markdown file.
+     * Returns -1 if no valid ID is found.
+     */
+    private int extractMaxIdFromFile(@NotNull Path file) {
+        try {
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            Matcher m = TASK_ID_PATTERN.matcher(content);
+            if (m.find()) {
+                String id = SpecFrontmatterParser.stripQuotes(m.group(1).trim());
+                return parseNumericSuffix(id);
+            }
+        } catch (IOException e) {
+            log.debug("Failed to read file for ID scan: {}", file);
+        }
+        return -1;
     }
 
     private int parseNumericSuffix(String id) {

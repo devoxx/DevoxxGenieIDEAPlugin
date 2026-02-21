@@ -74,18 +74,7 @@ public final class CliTaskExecutorService implements Disposable {
         consoleManager.printTaskHeader(taskId, taskTitle, cliTool.getName());
         consoleManager.activateToolWindow();
 
-        // Resolve the Command for this CLI type
-        CliToolConfig.CliType cliType = cliTool.getType() != null ? cliTool.getType() : CliToolConfig.CliType.CUSTOM;
-        // Auto-detect type from tool name when stored type is CUSTOM (backwards compat)
-        if (cliType == CliToolConfig.CliType.CUSTOM) {
-            for (CliToolConfig.CliType t : CliToolConfig.CliType.values()) {
-                if (t != CliToolConfig.CliType.CUSTOM &&
-                        t.getDisplayName().equalsIgnoreCase(cliTool.getName())) {
-                    cliType = t;
-                    break;
-                }
-            }
-        }
+        CliToolConfig.CliType cliType = resolveCliType(cliTool);
         CliCommand cliCommand = cliType.createCommand();
 
         // Generate MCP config and let the command build the full process command
@@ -95,9 +84,6 @@ public final class CliTaskExecutorService implements Disposable {
         log.info("CLI execute: task={}, tool={}, type={}, command={}, promptLength={}",
                 taskId, cliTool.getName(), cliType, command, prompt.length());
 
-        // Detect Claude CLI stream-json mode here (outside the lambda) because cliType is not
-        // effectively final after the auto-detection loop above, so it cannot be captured directly.
-        // parseClaudeStreamJson is assigned once and IS effectively final for lambda capture.
         final boolean parseClaudeStreamJson = cliType == CliToolConfig.CliType.CLAUDE
                 && cliTool.getExtraArgs() != null
                 && cliTool.getExtraArgs().stream()
@@ -109,104 +95,137 @@ public final class CliTaskExecutorService implements Disposable {
         String basePath = project.getBasePath();
         log.info("CLI working directory: {}", basePath);
 
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            log.info("CLI pooled thread started for task {}", taskId);
-            long startTime = System.currentTimeMillis();
-
-            try {
-                ProcessBuilder pb = new ProcessBuilder(command);
-                pb.redirectErrorStream(false);
-
-                if (basePath != null) {
-                    pb.directory(new java.io.File(basePath));
-                }
-
-                // Inherit the user's shell environment (PATH, tokens, etc.)
-                // IntelliJ launched from Dock doesn't inherit ~/.zshrc env vars
-                pb.environment().putAll(com.intellij.util.EnvironmentUtil.getEnvironmentMap());
-
-                // Overlay with tool-specific env var overrides
-                if (cliTool.getEnvVars() != null && !cliTool.getEnvVars().isEmpty()) {
-                    pb.environment().putAll(cliTool.getEnvVars());
-                    log.info("CLI env vars overrides: {}", cliTool.getEnvVars().keySet());
-                }
-
-                log.info("CLI starting process...");
-                Process process = pb.start();
-                log.info("CLI process started successfully (pid={})", process.pid());
-
-                // Register the active task
-                ActiveCliTask activeTask = new ActiveCliTask(process, cliCommand);
-                activeTasks.put(taskId, activeTask);
-
-                // Delegate prompt delivery to the command
-                cliCommand.writePrompt(process, prompt);
-                log.info("CLI prompt delivered via {} ({} chars)",
-                        cliCommand.getClass().getSimpleName(), prompt.length());
-
-                // Collect stderr lines for error reporting
-                List<String> stderrLines = Collections.synchronizedList(new ArrayList<>());
-
-                // Stream stdout and stderr concurrently
-                Thread stdoutThread = createStreamReader(
-                        process, true, consoleManager, taskId, null, parseClaudeStreamJson);
-                Thread stderrThread = createStreamReader(
-                        process, false, consoleManager, taskId, stderrLines, false);
-
-                stdoutThread.start();
-                stderrThread.start();
-
-                log.info("CLI waiting for process to finish (task={})", taskId);
-                int exitCode = process.waitFor();
-                long elapsed = System.currentTimeMillis() - startTime;
-                stdoutThread.join(5000);
-                stderrThread.join(5000);
-
-                boolean completedKill = activeTask.taskCompletedKill;
-                activeTasks.remove(taskId);
-
-                log.info("CLI process exited: task={}, exitCode={}, completedKill={}, elapsed={}ms",
-                        taskId, exitCode, completedKill, elapsed);
-
-                String exitMsg = "\n=== Process exited with code " + exitCode + " (after " + elapsed + "ms) ===\n";
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (exitCode == 0 || completedKill) {
-                        consoleManager.printSystem(exitMsg);
-                        log.info("CLI notifying prompt execution completed for task {}", taskId);
-                        SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
-                    } else {
-                        consoleManager.printError(exitMsg);
-                        String errorOutput = String.join("\n", stderrLines).trim();
-                        log.warn("CLI task {} failed with exit code {}: {}", taskId, exitCode,
-                                errorOutput.length() > 300 ? errorOutput.substring(0, 300) + "..." : errorOutput);
-                        SpecTaskRunnerService.getInstance(project)
-                                .notifyCliTaskFailed(exitCode, errorOutput, taskId);
-                    }
-                });
-
-            } catch (IOException e) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                activeTasks.remove(taskId);
-                log.error("CLI failed to start process: task={}, elapsed={}ms, error={}",
-                        taskId, elapsed, e.getMessage(), e);
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    consoleManager.printError("Failed to start process: " + e.getMessage());
-                    SpecTaskRunnerService.getInstance(project)
-                            .notifyCliTaskFailed(-1, e.getMessage(), taskId);
-                });
-            } catch (InterruptedException e) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                activeTasks.remove(taskId);
-                Thread.currentThread().interrupt();
-                log.info("CLI process interrupted: task={}, elapsed={}ms", taskId, elapsed);
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    consoleManager.printSystem("[" + taskId + "] Process interrupted");
-                    SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
-                });
-            }
-        });
+        ApplicationManager.getApplication().executeOnPooledThread(
+                () -> runCliTaskAsync(cliCommand, cliTool, command, taskId, prompt, basePath,
+                        parseClaudeStreamJson, consoleManager));
 
         log.info("CLI execute() returned (process running async) for task {}", taskId);
+    }
+
+    /**
+     * Resolves the CLI type for the given tool configuration.
+     * Auto-detects the type from the tool name when the stored type is CUSTOM (backwards compat).
+     */
+    CliToolConfig.CliType resolveCliType(@NotNull CliToolConfig cliTool) {
+        CliToolConfig.CliType cliType = cliTool.getType() != null ? cliTool.getType() : CliToolConfig.CliType.CUSTOM;
+        if (cliType != CliToolConfig.CliType.CUSTOM) {
+            return cliType;
+        }
+        for (CliToolConfig.CliType t : CliToolConfig.CliType.values()) {
+            if (t != CliToolConfig.CliType.CUSTOM &&
+                    t.getDisplayName().equalsIgnoreCase(cliTool.getName())) {
+                return t;
+            }
+        }
+        return cliType;
+    }
+
+    /**
+     * Executes the CLI process on the current (pooled) thread.
+     * Handles process lifecycle: start, stream I/O, wait for exit, and notify completion.
+     */
+    private void runCliTaskAsync(@NotNull CliCommand cliCommand,
+                                 @NotNull CliToolConfig cliTool,
+                                 @NotNull List<String> command,
+                                 @NotNull String taskId,
+                                 @NotNull String prompt,
+                                 @Nullable String basePath,
+                                 boolean parseClaudeStreamJson,
+                                 @NotNull CliConsoleManager consoleManager) {
+        log.info("CLI pooled thread started for task {}", taskId);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(false);
+
+            if (basePath != null) {
+                pb.directory(new java.io.File(basePath));
+            }
+
+            // Inherit the user's shell environment (PATH, tokens, etc.)
+            // IntelliJ launched from Dock doesn't inherit ~/.zshrc env vars
+            pb.environment().putAll(com.intellij.util.EnvironmentUtil.getEnvironmentMap());
+
+            // Overlay with tool-specific env var overrides
+            if (cliTool.getEnvVars() != null && !cliTool.getEnvVars().isEmpty()) {
+                pb.environment().putAll(cliTool.getEnvVars());
+                log.info("CLI env vars overrides: {}", cliTool.getEnvVars().keySet());
+            }
+
+            log.info("CLI starting process...");
+            Process process = pb.start();
+            log.info("CLI process started successfully (pid={})", process.pid());
+
+            // Register the active task
+            ActiveCliTask activeTask = new ActiveCliTask(process, cliCommand);
+            activeTasks.put(taskId, activeTask);
+
+            // Delegate prompt delivery to the command
+            cliCommand.writePrompt(process, prompt);
+            log.info("CLI prompt delivered via {} ({} chars)",
+                    cliCommand.getClass().getSimpleName(), prompt.length());
+
+            // Collect stderr lines for error reporting
+            List<String> stderrLines = Collections.synchronizedList(new ArrayList<>());
+
+            // Stream stdout and stderr concurrently
+            Thread stdoutThread = createStreamReader(
+                    process, true, consoleManager, taskId, null, parseClaudeStreamJson);
+            Thread stderrThread = createStreamReader(
+                    process, false, consoleManager, taskId, stderrLines, false);
+
+            stdoutThread.start();
+            stderrThread.start();
+
+            log.info("CLI waiting for process to finish (task={})", taskId);
+            int exitCode = process.waitFor();
+            long elapsed = System.currentTimeMillis() - startTime;
+            stdoutThread.join(5000);
+            stderrThread.join(5000);
+
+            boolean completedKill = activeTask.taskCompletedKill;
+            activeTasks.remove(taskId);
+
+            log.info("CLI process exited: task={}, exitCode={}, completedKill={}, elapsed={}ms",
+                    taskId, exitCode, completedKill, elapsed);
+
+            String exitMsg = "\n=== Process exited with code " + exitCode + " (after " + elapsed + "ms) ===\n";
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (exitCode == 0 || completedKill) {
+                    consoleManager.printSystem(exitMsg);
+                    log.info("CLI notifying prompt execution completed for task {}", taskId);
+                    SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
+                } else {
+                    consoleManager.printError(exitMsg);
+                    String errorOutput = String.join("\n", stderrLines).trim();
+                    log.warn("CLI task {} failed with exit code {}: {}", taskId, exitCode,
+                            errorOutput.length() > 300 ? errorOutput.substring(0, 300) + "..." : errorOutput);
+                    SpecTaskRunnerService.getInstance(project)
+                            .notifyCliTaskFailed(exitCode, errorOutput, taskId);
+                }
+            });
+
+        } catch (IOException e) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            activeTasks.remove(taskId);
+            log.error("CLI failed to start process: task={}, elapsed={}ms, error={}",
+                    taskId, elapsed, e.getMessage(), e);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                consoleManager.printError("Failed to start process: " + e.getMessage());
+                SpecTaskRunnerService.getInstance(project)
+                        .notifyCliTaskFailed(-1, e.getMessage(), taskId);
+            });
+        } catch (InterruptedException e) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            activeTasks.remove(taskId);
+            Thread.currentThread().interrupt();
+            log.info("CLI process interrupted: task={}, elapsed={}ms", taskId, elapsed);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                consoleManager.printSystem("[" + taskId + "] Process interrupted");
+                SpecTaskRunnerService.getInstance(project).notifyPromptExecutionCompleted(taskId);
+            });
+        }
     }
 
     /**
@@ -322,47 +341,59 @@ public final class CliTaskExecutorService implements Disposable {
                                                @Nullable List<String> lineCollector,
                                                boolean parseClaudeStreamJson) {
         String streamName = isStdout ? "stdout" : "stderr";
-        Thread thread = new Thread(() -> {
-            log.debug("CLI {}-reader started for task {}", streamName, taskId);
-            int lineCount = 0;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    isStdout ? process.getInputStream() : process.getErrorStream(),
-                    StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    lineCount++;
-                    final String text = line;
-                    if (lineCollector != null) {
-                        lineCollector.add(text);
-                    }
-                    // Log first 5 lines and every 50th line to IDE log for debugging
-                    if (lineCount <= 5 || lineCount % 50 == 0) {
-                        log.info("CLI {} [{}] line {}: {}", streamName, taskId, lineCount,
-                                text.length() > 200 ? text.substring(0, 200) + "..." : text);
-                    }
-                    // Parse Claude stream-json events and forward to Activity Logs panel
-                    if (parseClaudeStreamJson && text.startsWith("{")) {
-                        publishClaudeStreamJsonEvents(text);
-                    }
-                    // Prefix with task ID for parallel execution traceability
-                    final boolean isParallel = activeTasks.size() > 1;
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        String displayText = isParallel ? "[" + taskId + "] " + text : text;
-                        if (isStdout) {
-                            consoleManager.printOutput(displayText);
-                        } else {
-                            consoleManager.printError(displayText);
-                        }
-                    });
-                }
-            } catch (IOException e) {
-                log.debug("CLI {}-reader ended for task {} ({}): {}", streamName, taskId,
-                        lineCount > 0 ? lineCount + " lines read" : "no output", e.getMessage());
-            }
-            log.info("CLI {}-reader finished for task {}: {} lines total", streamName, taskId, lineCount);
-        }, "cli-" + streamName + "-reader-" + taskId);
+        Thread thread = new Thread(
+                () -> runStreamReader(process, isStdout, streamName, consoleManager, taskId, lineCollector, parseClaudeStreamJson),
+                "cli-" + streamName + "-reader-" + taskId);
         thread.setDaemon(true);
         return thread;
+    }
+
+    private void runStreamReader(@NotNull Process process, boolean isStdout, @NotNull String streamName,
+                                  @NotNull CliConsoleManager consoleManager, @NotNull String taskId,
+                                  @Nullable List<String> lineCollector, boolean parseClaudeStreamJson) {
+        log.debug("CLI {}-reader started for task {}", streamName, taskId);
+        int lineCount = 0;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                isStdout ? process.getInputStream() : process.getErrorStream(),
+                StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lineCount++;
+                processStreamLine(line, lineCount, isStdout, streamName, taskId, lineCollector, parseClaudeStreamJson, consoleManager);
+            }
+        } catch (IOException e) {
+            String summary = lineCount > 0 ? lineCount + " lines read" : "no output";
+            log.debug("CLI {}-reader ended for task {} ({}): {}", streamName, taskId, summary, e.getMessage());
+        }
+        log.info("CLI {}-reader finished for task {}: {} lines total", streamName, taskId, lineCount);
+    }
+
+    private void processStreamLine(@NotNull String line, int lineCount, boolean isStdout,
+                                    @NotNull String streamName, @NotNull String taskId,
+                                    @Nullable List<String> lineCollector, boolean parseClaudeStreamJson,
+                                    @NotNull CliConsoleManager consoleManager) {
+        if (lineCollector != null) {
+            lineCollector.add(line);
+        }
+        // Log first 5 lines and every 50th line to IDE log for debugging
+        if (lineCount <= 5 || lineCount % 50 == 0) {
+            log.info("CLI {} [{}] line {}: {}", streamName, taskId, lineCount,
+                    line.length() > 200 ? line.substring(0, 200) + "..." : line);
+        }
+        // Parse Claude stream-json events and forward to Activity Logs panel
+        if (parseClaudeStreamJson && line.startsWith("{")) {
+            publishClaudeStreamJsonEvents(line);
+        }
+        // Prefix with task ID for parallel execution traceability
+        final boolean isParallel = activeTasks.size() > 1;
+        ApplicationManager.getApplication().invokeLater(() -> {
+            String displayText = isParallel ? "[" + taskId + "] " + line : line;
+            if (isStdout) {
+                consoleManager.printOutput(displayText);
+            } else {
+                consoleManager.printError(displayText);
+            }
+        });
     }
 
     /**

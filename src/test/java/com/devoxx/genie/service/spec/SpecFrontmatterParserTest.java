@@ -334,6 +334,27 @@ class SpecFrontmatterParserTest {
         assertThat(spec.getDocumentation()).containsExactly("readme.md");
     }
 
+    @Test
+    void shouldHandleExplicitEmptyArrayInFrontmatter() {
+        // "labels: []" should result in an empty list (not null)
+        String content = """
+                ---
+                id: TASK-X1
+                title: Explicit empty array
+                status: To Do
+                labels: []
+                assignees: []
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getId()).isEqualTo("TASK-X1");
+        assertThat(spec.getLabels()).isEmpty();
+        assertThat(spec.getAssignees()).isEmpty();
+    }
+
     // --- parseFrontmatter() branch coverage ---
 
     @Test

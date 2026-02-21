@@ -34,70 +34,65 @@ public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
         // Process C/C++-specific information
         try {
             Map<String, Object> cppInfo = new HashMap<>();
-            
-            // Check for various build systems
-            boolean hasCMake = baseDir.findChild("CMakeLists.txt") != null;
-            boolean hasMakefile = baseDir.findChild("Makefile") != null;
-            boolean hasBazel = baseDir.findChild("BUILD") != null || baseDir.findChild("WORKSPACE") != null;
-            boolean hasConanfile = baseDir.findChild("conanfile.txt") != null || baseDir.findChild("conanfile.py") != null;
-            boolean hasVcxproj = baseDir.findChild("*.vcxproj") != null; // Visual Studio
-            
-            // Determine build system
-            if (hasCMake) {
-                cppInfo.put("buildSystem", "CMake");
-                extractCMakeInfo(baseDir, cppInfo);
-            } else if (hasMakefile) {
-                cppInfo.put("buildSystem", "Make");
-            } else if (hasBazel) {
-                cppInfo.put("buildSystem", "Bazel");
-            } else if (hasVcxproj) {
-                cppInfo.put("buildSystem", "Visual Studio");
-            }
-            
-            // Check for dependency management
-            if (hasConanfile) {
-                cppInfo.put("dependencyManager", "Conan");
-            }
-            
-            // Check for clang-tidy
-            boolean hasClangTidy = baseDir.findChild(".clang-tidy") != null;
-            if (hasClangTidy) {
-                cppInfo.put("staticAnalyzer", "clang-tidy");
-            }
-            
-            // Check for clang-format
-            boolean hasClangFormat = baseDir.findChild(".clang-format") != null;
-            if (hasClangFormat) {
-                cppInfo.put("formatter", "clang-format");
-            }
-            
-            // Check for testing frameworks
-            boolean hasGTest = findInFile(baseDir, "CMakeLists.txt", "gtest") ||
-                               findInFile(baseDir, "conanfile.txt", "gtest");
-            boolean hasCatch = findInFile(baseDir, "CMakeLists.txt", "Catch2") ||
-                               findInFile(baseDir, "conanfile.txt", "catch2");
-            boolean hasBoostTest = findInFile(baseDir, "CMakeLists.txt", "Boost.Test") ||
-                                  findInFile(baseDir, "conanfile.txt", "boost/test");
-            
-            if (hasGTest) {
-                cppInfo.put("testFramework", "GoogleTest");
-            } else if (hasCatch) {
-                cppInfo.put("testFramework", "Catch2");
-            } else if (hasBoostTest) {
-                cppInfo.put("testFramework", "Boost.Test");
-            }
-            
-            // Add C++ information to project info
+            detectBuildSystem(baseDir, cppInfo);
+            detectQualityTools(baseDir, cppInfo);
+            detectTestFramework(baseDir, cppInfo);
             projectInfo.put("cpp", cppInfo);
-            
-            // Add C++ specific build commands to build system
             enhanceBuildSystem(projectInfo, cppInfo);
-            
         } catch (Exception e) {
             // Handle exception gracefully
         }
     }
     
+    private void detectBuildSystem(@NotNull VirtualFile baseDir, Map<String, Object> cppInfo) {
+        boolean hasCMake = baseDir.findChild("CMakeLists.txt") != null;
+        boolean hasMakefile = baseDir.findChild("Makefile") != null;
+        boolean hasBazel = baseDir.findChild("BUILD") != null || baseDir.findChild("WORKSPACE") != null;
+        boolean hasConanfile = baseDir.findChild("conanfile.txt") != null || baseDir.findChild("conanfile.py") != null;
+        boolean hasVcxproj = baseDir.findChild("*.vcxproj") != null; // Visual Studio
+
+        if (hasCMake) {
+            cppInfo.put("buildSystem", "CMake");
+            extractCMakeInfo(baseDir, cppInfo);
+        } else if (hasMakefile) {
+            cppInfo.put("buildSystem", "Make");
+        } else if (hasBazel) {
+            cppInfo.put("buildSystem", "Bazel");
+        } else if (hasVcxproj) {
+            cppInfo.put("buildSystem", "Visual Studio");
+        }
+
+        if (hasConanfile) {
+            cppInfo.put("dependencyManager", "Conan");
+        }
+    }
+
+    private void detectQualityTools(@NotNull VirtualFile baseDir, Map<String, Object> cppInfo) {
+        if (baseDir.findChild(".clang-tidy") != null) {
+            cppInfo.put("staticAnalyzer", "clang-tidy");
+        }
+        if (baseDir.findChild(".clang-format") != null) {
+            cppInfo.put("formatter", "clang-format");
+        }
+    }
+
+    private void detectTestFramework(@NotNull VirtualFile baseDir, Map<String, Object> cppInfo) {
+        boolean hasGTest = findInFile(baseDir, "CMakeLists.txt", "gtest") ||
+                           findInFile(baseDir, "conanfile.txt", "gtest");
+        boolean hasCatch = findInFile(baseDir, "CMakeLists.txt", "Catch2") ||
+                           findInFile(baseDir, "conanfile.txt", "catch2");
+        boolean hasBoostTest = findInFile(baseDir, "CMakeLists.txt", "Boost.Test") ||
+                               findInFile(baseDir, "conanfile.txt", "boost/test");
+
+        if (hasGTest) {
+            cppInfo.put("testFramework", "GoogleTest");
+        } else if (hasCatch) {
+            cppInfo.put("testFramework", "Catch2");
+        } else if (hasBoostTest) {
+            cppInfo.put("testFramework", "Boost.Test");
+        }
+    }
+
     private void extractCMakeInfo(@NotNull VirtualFile baseDir, Map<String, Object> cppInfo) {
         VirtualFile cmakeFile = baseDir.findChild("CMakeLists.txt");
         if (cmakeFile == null) return;

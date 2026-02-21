@@ -60,6 +60,8 @@ class SearchOptionsPanelTest {
 
         appManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
         appManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
+        // Prevent NPE when IntelliJ UI infrastructure calls getService() during component construction
+        lenient().when(application.getService(any(Class.class))).thenReturn(null);
 
         when(project.getMessageBus()).thenReturn(messageBus);
         when(messageBus.syncPublisher(any())).thenReturn((com.devoxx.genie.ui.listener.RAGStateListener) selected -> {});

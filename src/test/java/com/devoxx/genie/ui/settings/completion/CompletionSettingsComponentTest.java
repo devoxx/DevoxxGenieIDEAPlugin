@@ -1,5 +1,9 @@
 package com.devoxx.genie.ui.settings.completion;
 
+import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService;
+import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
+import com.devoxx.genie.model.lmstudio.LMStudioModelEntryDTO;
+import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -16,11 +20,14 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -28,6 +35,10 @@ class CompletionSettingsComponentTest {
 
     @Mock
     private Application application;
+    @Mock
+    private OllamaModelService ollamaModelService;
+    @Mock
+    private LMStudioModelService lmStudioModelService;
 
     private MockedStatic<ApplicationManager> applicationManagerMockedStatic;
     private MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic;
@@ -42,6 +53,8 @@ class CompletionSettingsComponentTest {
         applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
         applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
         lenient().when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
+        lenient().when(application.getService(OllamaModelService.class)).thenReturn(ollamaModelService);
+        lenient().when(application.getService(LMStudioModelService.class)).thenReturn(lmStudioModelService);
         // The loadModelsForProvider calls executeOnPooledThread - mock it to run inline
         lenient().doAnswer(invocation -> {
             Runnable runnable = invocation.getArgument(0);
@@ -278,6 +291,149 @@ class CompletionSettingsComponentTest {
             assertThat(component.isModified()).isTrue();
             component.apply();
             assertThat(component.isModified()).isFalse();
+        }
+    }
+
+    @Nested
+    class UpdateModelComboBox {
+
+        @Test
+        void shouldPopulateComboBoxWithModelNames() throws Exception {
+            List<String> modelNames = List.of("model-a", "model-b");
+            invokeUpdateModelComboBox(modelNames, null);
+
+            JComboBox<String> modelComboBox = getModelComboBox();
+            assertThat(modelComboBox.getItemCount()).isEqualTo(2);
+            assertThat(modelComboBox.getItemAt(0)).isEqualTo("model-a");
+            assertThat(modelComboBox.getItemAt(1)).isEqualTo("model-b");
+        }
+
+        @Test
+        void shouldSelectSpecifiedModelWhenPresent() throws Exception {
+            List<String> modelNames = List.of("model-a", "model-b");
+            invokeUpdateModelComboBox(modelNames, "model-b");
+
+            assertThat(getModelComboBox().getSelectedItem()).isEqualTo("model-b");
+        }
+
+        @Test
+        void shouldClearExistingItemsBeforePopulating() throws Exception {
+            getModelComboBox().addItem("old-model");
+            invokeUpdateModelComboBox(List.of("new-model"), null);
+
+            JComboBox<String> modelComboBox = getModelComboBox();
+            assertThat(modelComboBox.getItemCount()).isEqualTo(1);
+            assertThat(modelComboBox.getItemAt(0)).isEqualTo("new-model");
+        }
+
+        private void invokeUpdateModelComboBox(List<String> modelNames, String selectedModel) throws Exception {
+            Method method = CompletionSettingsComponent.class.getDeclaredMethod("updateModelComboBox", List.class, String.class);
+            method.setAccessible(true);
+            method.invoke(component, modelNames, selectedModel);
+        }
+    }
+
+    @Nested
+    class HandleModelLoadFailure {
+
+        @Test
+        void shouldRestoreRefreshButtonOnFailure() throws Exception {
+            JButton refreshButton = getRefreshButton();
+            refreshButton.setText("Loading...");
+            refreshButton.setEnabled(false);
+
+            invokeHandleModelLoadFailure(null);
+
+            assertThat(refreshButton.getText()).isEqualTo("Refresh Models");
+        }
+
+        @Test
+        void shouldAddFallbackModelWhenComboBoxIsEmpty() throws Exception {
+            invokeHandleModelLoadFailure("my-saved-model");
+
+            assertThat(getModelComboBox().getItemCount()).isEqualTo(1);
+            assertThat(getModelComboBox().getSelectedItem()).isEqualTo("my-saved-model");
+        }
+
+        @Test
+        void shouldNotAddFallbackModelWhenSelectedModelIsNull() throws Exception {
+            invokeHandleModelLoadFailure(null);
+
+            assertThat(getModelComboBox().getItemCount()).isEqualTo(0);
+        }
+
+        @Test
+        void shouldNotAddFallbackModelWhenSelectedModelIsBlank() throws Exception {
+            invokeHandleModelLoadFailure("   ");
+
+            assertThat(getModelComboBox().getItemCount()).isEqualTo(0);
+        }
+
+        @Test
+        void shouldNotAddFallbackModelWhenComboBoxAlreadyHasItems() throws Exception {
+            getModelComboBox().addItem("existing-model");
+            invokeHandleModelLoadFailure("my-saved-model");
+
+            assertThat(getModelComboBox().getItemCount()).isEqualTo(1);
+            assertThat(getModelComboBox().getItemAt(0)).isEqualTo("existing-model");
+        }
+
+        private void invokeHandleModelLoadFailure(String selectedModel) throws Exception {
+            Method method = CompletionSettingsComponent.class.getDeclaredMethod("handleModelLoadFailure", String.class);
+            method.setAccessible(true);
+            method.invoke(component, selectedModel);
+        }
+    }
+
+    @Nested
+    class FetchModelNames {
+
+        @Test
+        void shouldReturnOllamaModelNames() throws Exception {
+            OllamaModelEntryDTO dto = new OllamaModelEntryDTO();
+            dto.setName("starcoder2:3b");
+            when(ollamaModelService.getModels()).thenReturn(new OllamaModelEntryDTO[]{dto});
+
+            List<String> result = invokeFetchModelNames("Ollama");
+
+            assertThat(result).containsExactly("starcoder2:3b");
+        }
+
+        @Test
+        void shouldReturnLMStudioModelNames() throws Exception {
+            LMStudioModelEntryDTO dto = new LMStudioModelEntryDTO();
+            dto.setId("deepseek-coder");
+            when(lmStudioModelService.getModels()).thenReturn(new LMStudioModelEntryDTO[]{dto});
+
+            List<String> result = invokeFetchModelNames("LM Studio");
+
+            assertThat(result).containsExactly("deepseek-coder");
+        }
+
+        @Test
+        void shouldReturnEmptyListForUnknownProvider() throws Exception {
+            List<String> result = invokeFetchModelNames("Unknown");
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        void shouldPropagateIOExceptionFromOllamaService() throws Exception {
+            when(ollamaModelService.getModels()).thenThrow(new IOException("connection refused"));
+
+            try {
+                invokeFetchModelNames("Ollama");
+                org.junit.jupiter.api.Assertions.fail("Expected exception");
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                assertThat(e.getCause()).isInstanceOf(IOException.class);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<String> invokeFetchModelNames(String provider) throws Exception {
+            Method method = CompletionSettingsComponent.class.getDeclaredMethod("fetchModelNames", String.class);
+            method.setAccessible(true);
+            return (List<String>) method.invoke(component, provider);
         }
     }
 

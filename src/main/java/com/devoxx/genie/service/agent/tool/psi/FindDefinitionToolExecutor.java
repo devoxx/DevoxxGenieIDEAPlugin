@@ -100,20 +100,29 @@ public class FindDefinitionToolExecutor implements ToolExecutor {
      */
     @Nullable
     private PsiElement resolveAtPosition(@NotNull PsiFile psiFile, int line, int column, @Nullable String symbol) {
-        // Strategy 1: Exact position with column
-        if (column > 0) {
-            int lineOffset = PsiToolUtils.lineToOffset(psiFile, line);
-            if (lineOffset >= 0) {
-                int offset = lineOffset + column - 1;
-                PsiElement element = psiFile.findElementAt(offset);
-                if (element != null) {
-                    PsiElement resolved = resolveElement(element);
-                    if (resolved != null) return resolved;
-                }
-            }
-        }
+        PsiElement fromColumn = resolveAtColumn(psiFile, line, column);
+        if (fromColumn != null) return fromColumn;
 
-        // Strategy 2: Search for the symbol name on the line by resolving references
+        PsiElement fromLine = resolveBySearchingLine(psiFile, line, symbol);
+        if (fromLine != null) return fromLine;
+
+        return PsiToolUtils.findNamedElementOnLine(psiFile, line, symbol);
+    }
+
+    /** Strategy 1: resolve the element at the exact column offset. */
+    @Nullable
+    private PsiElement resolveAtColumn(@NotNull PsiFile psiFile, int line, int column) {
+        if (column <= 0) return null;
+        int lineOffset = PsiToolUtils.lineToOffset(psiFile, line);
+        if (lineOffset < 0) return null;
+        PsiElement element = psiFile.findElementAt(lineOffset + column - 1);
+        if (element == null) return null;
+        return resolveElement(element);
+    }
+
+    /** Strategy 2: walk all elements on the line and return the first resolvable reference. */
+    @Nullable
+    private PsiElement resolveBySearchingLine(@NotNull PsiFile psiFile, int line, @Nullable String symbol) {
         int startOffset = PsiToolUtils.lineToOffset(psiFile, line);
         int endOffset = PsiToolUtils.lineEndOffset(psiFile, line);
         if (startOffset < 0 || endOffset < 0) return null;
@@ -131,11 +140,6 @@ public class FindDefinitionToolExecutor implements ToolExecutor {
             // Skip to end of this element to avoid processing it multiple times
             offset = element.getTextRange().getEndOffset() - 1;
         }
-
-        // Strategy 3: If the line has a definition, return that
-        PsiNameIdentifierOwner namedElement = PsiToolUtils.findNamedElementOnLine(psiFile, line, symbol);
-        if (namedElement != null) return namedElement;
-
         return null;
     }
 
