@@ -15,52 +15,22 @@ public class GlobTool {
         StringBuilder regex = new StringBuilder();
         int inGroup = 0;
         int inClass = 0;
-        
+
         for (int i = 0; i < glob.length(); i++) {
             char c = glob.charAt(i);
             switch (c) {
                 case '\\':
-                    if (++i >= glob.length()) {
-                        regex.append('\\');
-                    } else {
-                        char next = glob.charAt(i);
-                        if (next == ',') {
-                            regex.append("\\,");
-                        } else {
-                            regex.append('\\');
-                            regex.append(next);
-                        }
-                    }
+                    i = handleBackslash(glob, i, regex);
                     break;
                 case '*':
-                    if (inClass == 0) {
-                        if (i + 1 < glob.length() && glob.charAt(i + 1) == '*') {
-                            // ** means any number of directories (including none)
-                            regex.append(".*");
-                            i++; // Skip the second *
-                        } else {
-                            regex.append("[^/]*");
-                        }
-                    } else {
-                        regex.append(".*");
-                    }
+                    i = handleAsterisk(glob, i, inClass, regex);
                     break;
                 case '?':
-                    if (inClass == 0) {
-                        regex.append("[^/]");
-                    } else {
-                        regex.append(".");
-                    }
+                    handleQuestion(inClass, regex);
                     break;
                 case '[':
                     inClass++;
-                    regex.append('[');
-                    if (i + 1 < glob.length() && glob.charAt(i + 1) == '!') {
-                        regex.append('^');
-                        i++;
-                    } else if (i + 1 < glob.length() && glob.charAt(i + 1) == '^') {
-                        regex.append('\\');
-                    }
+                    i = handleOpenBracket(glob, i, regex);
                     break;
                 case ']':
                     inClass--;
@@ -75,11 +45,7 @@ public class GlobTool {
                     regex.append(')');
                     break;
                 case ',':
-                    if (inGroup > 0) {
-                        regex.append('|');
-                    } else {
-                        regex.append(',');
-                    }
+                    handleComma(inGroup, regex);
                     break;
                 case '.':
                 case '(':
@@ -97,7 +63,63 @@ public class GlobTool {
                     regex.append(c);
             }
         }
-        
+
         return regex.toString();
+    }
+
+    private static int handleBackslash(@NotNull String glob, int i, @NotNull StringBuilder regex) {
+        if (++i >= glob.length()) {
+            regex.append('\\');
+        } else {
+            char next = glob.charAt(i);
+            if (next == ',') {
+                regex.append("\\,");
+            } else {
+                regex.append('\\');
+                regex.append(next);
+            }
+        }
+        return i;
+    }
+
+    private static int handleAsterisk(@NotNull String glob, int i, int inClass, @NotNull StringBuilder regex) {
+        if (inClass == 0) {
+            if (i + 1 < glob.length() && glob.charAt(i + 1) == '*') {
+                regex.append(".*");
+                i++;
+            } else {
+                regex.append("[^/]*");
+            }
+        } else {
+            regex.append(".*");
+        }
+        return i;
+    }
+
+    private static void handleQuestion(int inClass, @NotNull StringBuilder regex) {
+        if (inClass == 0) {
+            regex.append("[^/]");
+        } else {
+            regex.append(".");
+        }
+    }
+
+    private static int handleOpenBracket(@NotNull String glob, int i, @NotNull StringBuilder regex) {
+        regex.append('[');
+        if (i + 1 < glob.length() && glob.charAt(i + 1) == '!') {
+            regex.append('^');
+            i++;
+        } else if (i + 1 < glob.length() && glob.charAt(i + 1) == '^') {
+            regex.append('\\');
+        }
+        return i;
+    }
+
+    private static void handleComma(int inGroup, @NotNull StringBuilder regex) {
+        if (inGroup > 0) {
+            regex.append('|');
+        } else {
+            regex.append(',');
+        }
     }
 }

@@ -98,43 +98,7 @@ public class GoProjectScannerExtension implements ProjectAnalyzerExtension {
         // Check for common Go web frameworks
         VirtualFile goSum = baseDir.findChild("go.sum");
         if (goSum != null) {
-            try {
-                String content = VfsUtil.loadText(goSum);
-                
-                // Check for Echo framework
-                if (content.contains("github.com/labstack/echo")) {
-                    goInfo.put("webFramework", "Echo");
-                }
-                // Check for Gin
-                else if (content.contains("github.com/gin-gonic/gin")) {
-                    goInfo.put("webFramework", "Gin");
-                }
-                // Check for Gorilla
-                else if (content.contains("github.com/gorilla/mux")) {
-                    goInfo.put("webFramework", "Gorilla");
-                }
-                // Check for Fiber
-                else if (content.contains("github.com/gofiber/fiber")) {
-                    goInfo.put("webFramework", "Fiber");
-                }
-                // Check for Chi
-                else if (content.contains("github.com/go-chi/chi")) {
-                    goInfo.put("webFramework", "Chi");
-                }
-                
-                // Check for GORM
-                if (content.contains("gorm.io/gorm")) {
-                    goInfo.put("orm", "GORM");
-                }
-                
-                // Check for GraphQL libraries
-                if (content.contains("github.com/graphql-go/graphql")) {
-                    goInfo.put("graphql", "graphql-go");
-                } else if (content.contains("github.com/99designs/gqlgen")) {
-                    goInfo.put("graphql", "gqlgen");
-                }
-                
-            } catch (IOException ignored) {}
+            detectGoFrameworksFromGoSum(goSum, goInfo);
         }
         
         // Check for specific file patterns
@@ -157,6 +121,38 @@ public class GoProjectScannerExtension implements ProjectAnalyzerExtension {
         }
     }
     
+    private void detectGoFrameworksFromGoSum(VirtualFile goSum, Map<String, Object> goInfo) {
+        try {
+            String content = VfsUtil.loadText(goSum);
+
+            // Check for Echo framework
+            if (content.contains("github.com/labstack/echo")) {
+                goInfo.put("webFramework", "Echo");
+            } else if (content.contains("github.com/gin-gonic/gin")) {
+                goInfo.put("webFramework", "Gin");
+            } else if (content.contains("github.com/gorilla/mux")) {
+                goInfo.put("webFramework", "Gorilla");
+            } else if (content.contains("github.com/gofiber/fiber")) {
+                goInfo.put("webFramework", "Fiber");
+            } else if (content.contains("github.com/go-chi/chi")) {
+                goInfo.put("webFramework", "Chi");
+            }
+
+            // Check for GORM
+            if (content.contains("gorm.io/gorm")) {
+                goInfo.put("orm", "GORM");
+            }
+
+            // Check for GraphQL libraries
+            if (content.contains("github.com/graphql-go/graphql")) {
+                goInfo.put("graphql", "graphql-go");
+            } else if (content.contains("github.com/99designs/gqlgen")) {
+                goInfo.put("graphql", "gqlgen");
+            }
+
+        } catch (IOException ignored) {}
+    }
+
     private void detectGoTools(VirtualFile baseDir, Map<String, Object> goInfo) {
         // Check for golangci-lint configuration
         VirtualFile golangciYaml = baseDir.findChild(".golangci.yml");
