@@ -112,12 +112,31 @@ public final class SpecContextBuilder {
         return sb.toString();
     }
 
+    private static final String BACKLOG_WORKFLOW_INSTRUCTION =
+            "<CRITICAL_INSTRUCTION>\n\n" +
+            "## BACKLOG WORKFLOW INSTRUCTIONS\n\n" +
+            "This project uses Backlog.md MCP for all task and project management activities.\n\n" +
+            "**CRITICAL GUIDANCE**\n\n" +
+            "- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.\n" +
+            "- If your client only supports tools or the above request fails, call `backlog.get_workflow_overview()` tool to load the tool-oriented overview (it lists the matching guide tools).\n\n" +
+            "- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow\n" +
+            "- **Already familiar?** You should have the overview cached (\"## Backlog.md Overview (MCP)\")\n" +
+            "- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work\n\n" +
+            "These guides cover:\n" +
+            "- Decision framework for when to create tasks\n" +
+            "- Search-first workflow to avoid duplicates\n" +
+            "- Links to detailed guides for task creation, execution, and finalization\n" +
+            "- MCP tools reference\n\n" +
+            "You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.\n\n" +
+            "</CRITICAL_INSTRUCTION>\n\n";
+
     /**
      * Build instruction prefix for CLI tools that have the Backlog MCP server installed.
      * Same backlog task management workflow as the LLM agent path.
      */
     public static @NotNull String buildCliInstruction(@NotNull TaskSpec spec) {
         StringBuilder sb = new StringBuilder();
+        sb.append(BACKLOG_WORKFLOW_INSTRUCTION);
         sb.append("You are implementing task ");
         if (spec.getId() != null) {
             sb.append(spec.getId());

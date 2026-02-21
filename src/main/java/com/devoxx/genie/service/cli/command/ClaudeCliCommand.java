@@ -15,7 +15,7 @@ public class ClaudeCliCommand extends AbstractCliCommand {
 
     @Override
     public @NotNull String defaultExtraArgs() {
-        return "-p --dangerously-skip-permissions --model opus --allowedTools Backlog.md";
+        return "-p --verbose --dangerously-skip-permissions --model opus --allowedTools Backlog.md --output-format stream-json";
     }
 
     @Override

@@ -1,8 +1,11 @@
 package com.devoxx.genie.service.cli;
 
+import com.devoxx.genie.model.agent.AgentMessage;
 import com.devoxx.genie.model.spec.CliToolConfig;
+import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.service.cli.command.CliCommand;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -92,6 +95,17 @@ public final class CliTaskExecutorService implements Disposable {
         log.info("CLI execute: task={}, tool={}, type={}, command={}, promptLength={}",
                 taskId, cliTool.getName(), cliType, command, prompt.length());
 
+        // Detect Claude CLI stream-json mode here (outside the lambda) because cliType is not
+        // effectively final after the auto-detection loop above, so it cannot be captured directly.
+        // parseClaudeStreamJson is assigned once and IS effectively final for lambda capture.
+        final boolean parseClaudeStreamJson = cliType == CliToolConfig.CliType.CLAUDE
+                && cliTool.getExtraArgs() != null
+                && cliTool.getExtraArgs().stream()
+                        .anyMatch(a -> a.contains(ClaudeStreamJsonParser.STREAM_JSON_FLAG));
+        if (parseClaudeStreamJson) {
+            log.info("CLI task {}: Claude stream-json mode enabled — events will be forwarded to Activity Logs", taskId);
+        }
+
         String basePath = project.getBasePath();
         log.info("CLI working directory: {}", basePath);
 
@@ -135,9 +149,9 @@ public final class CliTaskExecutorService implements Disposable {
 
                 // Stream stdout and stderr concurrently
                 Thread stdoutThread = createStreamReader(
-                        process, true, consoleManager, taskId, null);
+                        process, true, consoleManager, taskId, null, parseClaudeStreamJson);
                 Thread stderrThread = createStreamReader(
-                        process, false, consoleManager, taskId, stderrLines);
+                        process, false, consoleManager, taskId, stderrLines, false);
 
                 stdoutThread.start();
                 stderrThread.start();
@@ -305,7 +319,8 @@ public final class CliTaskExecutorService implements Disposable {
                                                boolean isStdout,
                                                @NotNull CliConsoleManager consoleManager,
                                                @NotNull String taskId,
-                                               @Nullable List<String> lineCollector) {
+                                               @Nullable List<String> lineCollector,
+                                               boolean parseClaudeStreamJson) {
         String streamName = isStdout ? "stdout" : "stderr";
         Thread thread = new Thread(() -> {
             log.debug("CLI {}-reader started for task {}", streamName, taskId);
@@ -324,6 +339,10 @@ public final class CliTaskExecutorService implements Disposable {
                     if (lineCount <= 5 || lineCount % 50 == 0) {
                         log.info("CLI {} [{}] line {}: {}", streamName, taskId, lineCount,
                                 text.length() > 200 ? text.substring(0, 200) + "..." : text);
+                    }
+                    // Parse Claude stream-json events and forward to Activity Logs panel
+                    if (parseClaudeStreamJson && text.startsWith("{")) {
+                        publishClaudeStreamJsonEvents(text);
                     }
                     // Prefix with task ID for parallel execution traceability
                     final boolean isParallel = activeTasks.size() > 1;
@@ -344,6 +363,26 @@ public final class CliTaskExecutorService implements Disposable {
         }, "cli-" + streamName + "-reader-" + taskId);
         thread.setDaemon(true);
         return thread;
+    }
+
+    /**
+     * Parse a Claude CLI stream-json line and publish each resulting {@link AgentMessage}
+     * to the application message bus so that {@code AgentMcpLogPanel} can display it.
+     * Called from a background (pooled) thread; message bus delivery is thread-safe.
+     */
+    private void publishClaudeStreamJsonEvents(@NotNull String jsonLine) {
+        ClaudeStreamJsonParser.parse(jsonLine, project.getLocationHash()).ifPresent(messages -> {
+            AgentLoggingMessage publisher = ApplicationManager.getApplication()
+                    .getMessageBus()
+                    .syncPublisher(AppTopics.AGENT_LOG_MSG);
+            for (AgentMessage msg : messages) {
+                try {
+                    publisher.onAgentLoggingMessage(msg);
+                } catch (Exception e) {
+                    log.debug("Failed to publish Claude stream-json event: {}", e.getMessage());
+                }
+            }
+        });
     }
 
     @Override

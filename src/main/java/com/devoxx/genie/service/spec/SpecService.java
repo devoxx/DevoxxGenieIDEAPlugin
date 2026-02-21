@@ -1,10 +1,14 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
 import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
+import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -29,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
@@ -46,6 +51,7 @@ public final class SpecService implements Disposable {
     private final Map<String, BacklogDocument> documentCache = new ConcurrentHashMap<>();
     private final List<Runnable> changeListeners = new ArrayList<>();
     private final ReentrantLock writeLock = new ReentrantLock();
+    private final AtomicBoolean pendingCliBacklogMutation = new AtomicBoolean(false);
     private MessageBusConnection messageBusConnection;
 
     public SpecService(@NotNull Project project) {
@@ -710,6 +716,27 @@ public final class SpecService implements Disposable {
                 }
             }
         });
+
+        // Subscribe to CLI stream-json events so we can detect when an external Backlog MCP
+        // server call completes and refresh the spec panel without waiting for VFS focus-regain.
+        String projectHash = project.getLocationHash();
+        messageBusConnection.subscribe(AppTopics.AGENT_LOG_MSG, (AgentMessage message) -> {
+            if (message == null) return;
+            String hash = message.getProjectLocationHash();
+            if (hash != null && !hash.equals(projectHash)) return;
+
+            if (message.getType() == AgentType.TOOL_REQUEST
+                    && isCliBacklogMutation(message.getToolName())) {
+                pendingCliBacklogMutation.set(true);
+            } else if (message.getType() == AgentType.TOOL_RESPONSE
+                    && pendingCliBacklogMutation.compareAndSet(true, false)) {
+                ApplicationManager.getApplication().executeOnPooledThread(this::refresh);
+            }
+        });
+    }
+
+    private static boolean isCliBacklogMutation(@Nullable String toolName) {
+        return toolName != null && toolName.startsWith("mcp__backlog__task");
     }
 
     private boolean isSpecFileEvent(@NotNull VFileEvent event) {
@@ -736,10 +763,11 @@ public final class SpecService implements Disposable {
     }
 
     /**
-     * Builds a task filename like "task-3 - My-Task-Title.md" (lowercase filename, ID stays uppercase in frontmatter).
+     * Builds a task filename like "TASK-3 - My-Task-Title.md".
+     * The ID preserves its original case so Backlog MCP can locate the file by ID.
      */
     private static @NotNull String buildTaskFileName(@NotNull String id, @Nullable String title) {
-        String idPart = id.toLowerCase().replace(' ', '-');
+        String idPart = id.replace(' ', '-');
         if (title == null || title.isBlank()) {
             return idPart + ".md";
         }
