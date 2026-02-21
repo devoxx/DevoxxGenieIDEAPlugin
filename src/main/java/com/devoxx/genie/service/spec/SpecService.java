@@ -767,7 +767,7 @@ public final class SpecService implements Disposable {
      * The ID preserves its original case so Backlog MCP can locate the file by ID.
      */
     private static @NotNull String buildTaskFileName(@NotNull String id, @Nullable String title) {
-        String idPart = id.replace(' ', '-');
+        String idPart = id.toLowerCase().replace(' ', '-');
         if (title == null || title.isBlank()) {
             return idPart + ".md";
         }

@@ -73,17 +73,10 @@ public class SpecStatisticsPanel extends JPanel {
         contentPanel.removeAll();
 
         if (specs.isEmpty() && archivedCount == 0) {
-            JBLabel emptyLabel = new JBLabel("No tasks found");
-            emptyLabel.setForeground(JBColor.GRAY);
-            emptyLabel.setFont(emptyLabel.getFont().deriveFont(emptyLabel.getFont().getSize() - 1f));
-            emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            contentPanel.add(emptyLabel);
-            contentPanel.revalidate();
-            contentPanel.repaint();
+            addEmptyState();
             return;
         }
 
-        // Gather stats
         Map<String, Integer> statusCounts = countByStatus(specs);
         Map<String, Integer> priorityCounts = countByPriority(specs);
         int total = specs.size();
@@ -91,88 +84,111 @@ public class SpecStatisticsPanel extends JPanel {
         int inProgressCount = statusCounts.getOrDefault("In Progress", 0);
         int todoCount = statusCounts.getOrDefault("To Do", 0);
         int otherCount = total - doneCount - inProgressCount - todoCount;
-
-        // Row 1: Total + completion percentage + archived
         double completionPct = total > 0 ? (doneCount * 100.0) / total : 0;
+
+        addSummaryRow(total, doneCount, inProgressCount, todoCount, otherCount, completionPct, archivedCount);
+        addProgressBarRow(todoCount, inProgressCount, doneCount, otherCount);
+        addPriorityRow(priorityCounts);
+        addChecklistRow(specs);
+
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void addEmptyState() {
+        JBLabel emptyLabel = new JBLabel("No tasks found");
+        emptyLabel.setForeground(JBColor.GRAY);
+        emptyLabel.setFont(emptyLabel.getFont().deriveFont(emptyLabel.getFont().getSize() - 1f));
+        emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentPanel.add(emptyLabel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+    }
+
+    private void addSummaryRow(int total, int doneCount, int inProgressCount, int todoCount,
+                               int otherCount, double completionPct, int archivedCount) {
+        String otherSuffix = otherCount > 0 ? ", " + otherCount + " other" : "";
         String archivedSuffix = archivedCount > 0 ? "  |  " + archivedCount + " archived" : "";
         String summaryText = String.format("%d tasks  |  %d%% complete  (%d done, %d in progress, %d to do%s)%s",
-                total,
-                Math.round(completionPct),
-                doneCount, inProgressCount, todoCount,
-                otherCount > 0 ? ", " + otherCount + " other" : "",
-                archivedSuffix);
+                total, Math.round(completionPct), doneCount, inProgressCount, todoCount,
+                otherSuffix, archivedSuffix);
         JBLabel summaryLabel = new JBLabel(summaryText);
         summaryLabel.setFont(summaryLabel.getFont().deriveFont(summaryLabel.getFont().getSize() - 1f));
         summaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(summaryLabel);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 3)));
+    }
 
-        // Row 2: Status progress bar
+    private void addProgressBarRow(int todoCount, int inProgressCount, int doneCount, int otherCount) {
         StatusProgressBar progressBar = new StatusProgressBar(todoCount, inProgressCount, doneCount, otherCount);
         progressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
         progressBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 12));
         progressBar.setPreferredSize(new Dimension(200, 12));
         contentPanel.add(progressBar);
         contentPanel.add(Box.createRigidArea(new Dimension(0, 3)));
+    }
 
-        // Row 3: Priority breakdown
-        StringBuilder priorityText = new StringBuilder("Priority:  ");
-        boolean first = true;
-        for (String priority : List.of("high", "medium", "low")) {
-            int count = priorityCounts.getOrDefault(priority, 0);
-            if (count > 0) {
-                if (!first) priorityText.append("  |  ");
-                priorityText.append(count).append(" ").append(priority);
-                first = false;
-            }
-        }
-        // Add any other priorities
-        for (Map.Entry<String, Integer> entry : priorityCounts.entrySet()) {
-            if (!List.of("high", "medium", "low").contains(entry.getKey()) && entry.getValue() > 0) {
-                if (!first) priorityText.append("  |  ");
-                priorityText.append(entry.getValue()).append(" ").append(entry.getKey());
-                first = false;
-            }
-        }
-        JBLabel priorityLabel = new JBLabel(priorityText.toString());
+    private void addPriorityRow(Map<String, Integer> priorityCounts) {
+        JBLabel priorityLabel = new JBLabel(buildPriorityText(priorityCounts));
         priorityLabel.setFont(priorityLabel.getFont().deriveFont(priorityLabel.getFont().getSize() - 1f));
         priorityLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(priorityLabel);
+    }
 
-        // Row 4: Acceptance Criteria + DoD aggregate progress (only if any exist)
+    private static String buildPriorityText(Map<String, Integer> priorityCounts) {
+        List<String> standardPriorities = List.of("high", "medium", "low");
+        StringBuilder text = new StringBuilder("Priority:  ");
+        boolean first = true;
+        for (String priority : standardPriorities) {
+            int count = priorityCounts.getOrDefault(priority, 0);
+            if (count > 0) {
+                if (!first) text.append("  |  ");
+                text.append(count).append(" ").append(priority);
+                first = false;
+            }
+        }
+        for (Map.Entry<String, Integer> entry : priorityCounts.entrySet()) {
+            if (!standardPriorities.contains(entry.getKey()) && entry.getValue() > 0) {
+                if (!first) text.append("  |  ");
+                text.append(entry.getValue()).append(" ").append(entry.getKey());
+                first = false;
+            }
+        }
+        return text.toString();
+    }
+
+    private void addChecklistRow(@NotNull List<TaskSpec> specs) {
         long totalAc = 0, checkedAc = 0, totalDod = 0, checkedDod = 0;
         for (TaskSpec spec : specs) {
             if (spec.getAcceptanceCriteria() != null) {
                 totalAc += spec.getAcceptanceCriteria().size();
-                checkedAc += spec.getAcceptanceCriteria().stream()
-                        .filter(AcceptanceCriterion::isChecked).count();
+                checkedAc += spec.getAcceptanceCriteria().stream().filter(AcceptanceCriterion::isChecked).count();
             }
             if (spec.getDefinitionOfDone() != null) {
                 totalDod += spec.getDefinitionOfDone().size();
-                checkedDod += spec.getDefinitionOfDone().stream()
-                        .filter(DefinitionOfDoneItem::isChecked).count();
+                checkedDod += spec.getDefinitionOfDone().stream().filter(DefinitionOfDoneItem::isChecked).count();
             }
         }
-        if (totalAc > 0 || totalDod > 0) {
-            contentPanel.add(Box.createRigidArea(new Dimension(0, 2)));
-            StringBuilder checklistText = new StringBuilder("Checklists:  ");
-            boolean hasAc = false;
-            if (totalAc > 0) {
-                checklistText.append(checkedAc).append("/").append(totalAc).append(" acceptance criteria");
-                hasAc = true;
-            }
-            if (totalDod > 0) {
-                if (hasAc) checklistText.append("  |  ");
-                checklistText.append(checkedDod).append("/").append(totalDod).append(" definition of done");
-            }
-            JBLabel checklistLabel = new JBLabel(checklistText.toString());
-            checklistLabel.setFont(checklistLabel.getFont().deriveFont(checklistLabel.getFont().getSize() - 1f));
-            checklistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            contentPanel.add(checklistLabel);
-        }
+        if (totalAc == 0 && totalDod == 0) return;
 
-        contentPanel.revalidate();
-        contentPanel.repaint();
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 2)));
+        JBLabel checklistLabel = new JBLabel(buildChecklistText(checkedAc, totalAc, checkedDod, totalDod));
+        checklistLabel.setFont(checklistLabel.getFont().deriveFont(checklistLabel.getFont().getSize() - 1f));
+        checklistLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        contentPanel.add(checklistLabel);
+    }
+
+    private static String buildChecklistText(long checkedAc, long totalAc, long checkedDod, long totalDod) {
+        StringBuilder text = new StringBuilder("Checklists:  ");
+        boolean hasAc = totalAc > 0;
+        if (hasAc) {
+            text.append(checkedAc).append("/").append(totalAc).append(" acceptance criteria");
+        }
+        if (totalDod > 0) {
+            if (hasAc) text.append("  |  ");
+            text.append(checkedDod).append("/").append(totalDod).append(" definition of done");
+        }
+        return text.toString();
     }
 
     private void toggleCollapsed() {
