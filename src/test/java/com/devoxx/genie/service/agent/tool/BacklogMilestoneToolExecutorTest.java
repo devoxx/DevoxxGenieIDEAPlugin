@@ -358,6 +358,17 @@ class BacklogMilestoneToolExecutorTest {
     }
 
     @Test
+    void removeMilestone_reassignHandlingWithoutReassignTo_returnsError() {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_milestone_remove")
+                .arguments("{\"name\": \"v1.0\", \"taskHandling\": \"reassign\"}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("Error").contains("reassignTo");
+    }
+
+    @Test
     void archiveMilestone_missingName_returnsError() {
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("backlog_milestone_archive")
