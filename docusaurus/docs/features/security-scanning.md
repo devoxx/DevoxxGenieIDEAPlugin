@@ -136,6 +136,8 @@ You can ask the agent to use them with natural language:
 - *"Check my dependencies for known CVEs."*
 - *"Run a full security scan and create backlog tasks for everything you find."*
 
+![Security Scanner prompt example](/img/SecurityScanner-Prompt.png)
+
 ---
 
 ## Backlog Integration
