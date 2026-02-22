@@ -2,6 +2,26 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.17]
+
+### Added
+- Security Scanning feature — Gitleaks (secret detection), OpenGrep (SAST) and Trivy (SCA/CVE) exposed as LLM agent tools (`run_gitleaks_scan`, `run_opengrep_scan`, `run_trivy_scan`) (#954)
+- Dedicated Security Scanning settings panel with per-scanner path browser, Test button and install guidance (#954)
+- Security scan findings auto-created as prioritised Backlog.md tasks (gated by "Create Spec Tasks" toggle) (#954)
+- Security Scan toolbar action in Spec Browser with live progress indicator (#954)
+- Security Scanning documentation page and homepage feature block (#954)
+
+### Fixed
+- SonarLint: use explicit assertions instead of implicit no-throw checks (#953)
+- Backlog task naming prefix normalisation (#952)
+- WebView aggressive repaint after long idle in CEF rendering pipeline (#808)
+
+### Documentation
+- Add GEMINI.md with Backlog.md workflow instructions for Gemini AI
+
+### Chore
+- Add Lychee link checker CI workflow (#950, #951)
+
 ## [0.9.16]
 
 ### Fixed

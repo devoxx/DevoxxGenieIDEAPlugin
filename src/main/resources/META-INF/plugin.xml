@@ -45,6 +45,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.9.17</h2>
+        <UL>
+            <LI>Feat: Security Scanning feature — Gitleaks (secret detection), OpenGrep (SAST) and Trivy (SCA/CVE) as LLM agent tools (#954)</LI>
+            <LI>Feat: Dedicated Security Scanning settings panel with per-scanner path browser and Test button (#954)</LI>
+            <LI>Feat: Security scan findings auto-created as prioritised Backlog.md tasks (#954)</LI>
+            <LI>Feat: Security Scan toolbar action in Spec Browser (#954)</LI>
+            <LI>Fix: SonarLint — use explicit assertions instead of implicit no-throw checks (#953)</LI>
+            <LI>Fix: Backlog task naming prefix normalisation (#952)</LI>
+            <LI>Fix: WebView aggressive repaint after long idle in CEF pipeline (#808)</LI>
+            <LI>Chore: add Lychee link checker CI workflow (#950, #951)</LI>
+        </UL>
         <h2>v0.9.16</h2>
         <UL>
             <LI>Fix: conversation history popup now closes after selecting an old chat (#946)</LI>
