@@ -339,7 +339,7 @@ milestone: v2.0
                 <strong>Gitleaks</strong> detects hardcoded secrets, API keys and tokens. <strong>OpenGrep</strong> performs SAST analysis to catch injection flaws and insecure patterns. <strong>Trivy</strong> scans your dependencies for known CVEs.
               </p>
               <p>
-                Each finding is automatically created as a prioritised task in the <strong>Spec Browser (Backlog.md)</strong> — labelled by scanner and severity — so nothing falls through the cracks. Ask the agent to <em>"run a security scan and fix the findings"</em> and it will do exactly that.
+                Each finding is automatically created as a prioritised task in the <strong>Spec Browser</strong> — labelled by scanner and severity — so nothing falls through the cracks. Ask the agent to <em>"run a security scan and fix the findings"</em> and it will do exactly that.
               </p>
               <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
                 <Link
