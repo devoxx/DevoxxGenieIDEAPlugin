@@ -255,6 +255,16 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String specExecutionMode = "SEQUENTIAL"; // "SEQUENTIAL" or "PARALLEL"
     private Integer specMaxConcurrency = 4;          // max parallel tasks per layer (1–8)
 
+    // Security scanning settings
+    private Boolean securityScanEnabled = false;
+    private Boolean securityScanCreateSpecTasks = true;
+    private String gitleaksPath = "";
+    private String opengrepPath = "";
+    private String trivyPath = "";
+    private Boolean gitleaksScanToolEnabled = true;
+    private Boolean opengrepScanToolEnabled = true;
+    private Boolean trivyScanToolEnabled = true;
+
     // ACP tool runner settings (used by ACP Runners LLM provider in chat panel)
     private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();
 

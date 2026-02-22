@@ -338,6 +338,32 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             }
         });
 
+        // Security scan action
+        actionGroup.add(new AnAction("Security Scan", "Run gitleaks, opengrep, trivy security scanners",
+                AllIcons.General.InspectionsEye) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                runSecurityScan();
+            }
+
+            @Override
+            public void update(@NotNull AnActionEvent e) {
+                DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+                boolean enabled = Boolean.TRUE.equals(state.getSecurityScanEnabled());
+                e.getPresentation().setVisible(enabled);
+                if (enabled) {
+                    com.devoxx.genie.service.security.SecurityScannerService scannerService =
+                            com.devoxx.genie.service.security.SecurityScannerService.getInstance(project);
+                    e.getPresentation().setEnabled(!scannerService.isRunning());
+                }
+            }
+
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+        });
+
         actionGroup.addSeparator();
 
         cancelRunAction = new AnAction("Cancel Run", "Stop after current task finishes", AllIcons.Actions.Suspend) {
@@ -493,6 +519,57 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
                 throw e;
             }
         }
+    }
+
+    private void runSecurityScan() {
+        com.devoxx.genie.service.security.SecurityScannerService scannerService =
+                com.devoxx.genie.service.security.SecurityScannerService.getInstance(project);
+
+        scannerService.runScan(new com.devoxx.genie.service.security.SecurityScanListener() {
+            @Override
+            public void onScanStarted() {
+                progressPanel.update("Starting security scan...", 0, 3);
+            }
+
+            @Override
+            public void onScannerStarted(String name, int index, int total) {
+                progressPanel.update("Scanning with " + name + "...", index, total);
+            }
+
+            @Override
+            public void onScannerCompleted(String name, int findingsCount) {
+                log.info("{} completed with {} findings", name, findingsCount);
+            }
+
+            @Override
+            public void onScannerSkipped(String name, String reason) {
+                log.info("{} skipped: {}", name, reason);
+            }
+
+            @Override
+            public void onTasksCreated(int count) {
+                if (count > 0) {
+                    refreshSpecs();
+                }
+            }
+
+            @Override
+            public void onScanCompleted(com.devoxx.genie.model.security.SecurityScanResult result) {
+                int total = result.getFindings().size();
+                String msg = "Security scan complete: " + total + " finding(s)";
+                if (!result.getErrors().isEmpty()) {
+                    msg += ", " + result.getErrors().size() + " error(s)";
+                }
+                progressPanel.showCompleted(total, result.getErrors().size(), total + result.getErrors().size());
+                NotificationUtil.sendNotification(project, msg);
+            }
+
+            @Override
+            public void onScanFailed(String error) {
+                progressPanel.hidePanel();
+                NotificationUtil.sendErrorNotification(project, "Security scan failed: " + error);
+            }
+        }, null);
     }
 
     private void runAllTodoTasks() {

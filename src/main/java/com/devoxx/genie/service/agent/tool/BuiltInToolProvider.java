@@ -159,6 +159,22 @@ public class BuiltInToolProvider implements ToolProvider {
             registerBacklogTools(project);
         }
 
+        // Security scan tools — only when security scanning is enabled
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSecurityScanEnabled())) {
+            DevoxxGenieStateService secState = DevoxxGenieStateService.getInstance();
+            SecurityScanToolExecutor secExecutor = new SecurityScanToolExecutor(project);
+            tools.put(SecurityScanToolSpecification.securityScan(), secExecutor);
+            if (Boolean.TRUE.equals(secState.getGitleaksScanToolEnabled())) {
+                tools.put(SecurityScanToolSpecification.gitleaksScan(), secExecutor);
+            }
+            if (Boolean.TRUE.equals(secState.getOpengrepScanToolEnabled())) {
+                tools.put(SecurityScanToolSpecification.opengrepScan(), secExecutor);
+            }
+            if (Boolean.TRUE.equals(secState.getTrivyScanToolEnabled())) {
+                tools.put(SecurityScanToolSpecification.trivyScan(), secExecutor);
+            }
+        }
+
         // parallel_explore — only when enabled in settings
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getParallelExploreEnabled())) {
             parallelExploreExecutor = new ParallelExploreToolExecutor(project);

@@ -384,6 +384,11 @@
                              instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
                              displayName="Spec Driven Development (BETA)"/>
 
+        <projectConfigurable id="com.devoxx.genie.securityScan"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.security.SecurityScanSettingsConfigurable"
+                             displayName="Security Scanning"/>
+
         <projectConfigurable id="com.devoxx.genie.runners"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.runner.RunnerSettingsConfigurable"
@@ -435,6 +440,7 @@
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.security.SecurityScannerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>

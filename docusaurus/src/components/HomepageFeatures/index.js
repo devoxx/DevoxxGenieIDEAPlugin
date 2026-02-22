@@ -10,7 +10,7 @@ import MultipleLLMIcon from './icons/MultipleLLM';
 import MCPSupportIcon from './icons/MCPSupport';
 import MCPMarketplaceIcon from './icons/MCPMarketplace';
 import SubAgentsIcon from './icons/SubAgents';
-import ProjectScannerIcon from './icons/ProjectScanner';
+import SecurityScannerIcon from './icons/SecurityScanner';
 import InlineCompletionIcon from './icons/InlineCompletion';
 import CliRunnersIcon from './icons/CliRunners';
 import DragDropIcon from './icons/DragDrop';
@@ -67,12 +67,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Project Scanner',
-    icon: ProjectScannerIcon,
-    link: '/docs/features/project-scanner',
+    title: 'Security Scanning',
+    icon: SecurityScannerIcon,
+    link: '/docs/features/security-scanning',
     description: (
       <>
-        Add source code (full project or by package) to prompt context when using compatible LLM providers for better code-aware responses.
+        Detect hardcoded secrets (Gitleaks), SAST issues (OpenGrep) and vulnerable dependencies (Trivy) as LLM agent tools. Findings are automatically created as prioritised backlog tasks.
       </>
     ),
   },

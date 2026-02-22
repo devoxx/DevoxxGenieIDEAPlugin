@@ -382,6 +382,7 @@ public class SpecSettingsComponent extends AbstractSettingsComponent {
         maxConcurrencySpinner.setValue(state.getSpecMaxConcurrency() != null ? state.getSpecMaxConcurrency() : 4);
         maxConcurrencySpinner.setEnabled(executionModeCombo.getSelectedItem() == ExecutionMode.PARALLEL);
         loadDodFromConfig();
+
     }
 
     private ExecutionMode resolveExecutionMode() {

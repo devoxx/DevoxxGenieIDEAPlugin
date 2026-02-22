@@ -24,7 +24,8 @@ public class AgentApprovalProvider implements ToolProvider {
             "find_symbols", "document_symbols", "find_references", "find_definition", "find_implementations",
             "backlog_task_list", "backlog_task_search", "backlog_task_view",
             "backlog_document_list", "backlog_document_view", "backlog_document_search",
-            "backlog_milestone_list"
+            "backlog_milestone_list",
+            "run_security_scan", "run_gitleaks_scan", "run_opengrep_scan", "run_trivy_scan"
     );
 
     private final ToolProvider delegate;

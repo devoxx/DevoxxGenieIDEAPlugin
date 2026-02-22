@@ -44,6 +44,7 @@ const sidebars = {
         'features/project-scanner',
         'features/chat-memory',
         'features/inline-completion',
+        'features/security-scanning',
       ],
     },
     {
