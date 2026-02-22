@@ -45,7 +45,7 @@ Connect to a wide range of LLM providers:
 ### Advanced Context Features
 
 - **RAG Support**: Retrieval-Augmented Generation for automatically finding and incorporating relevant code from your project
-- **Project Scanner**: Add source code (full project or by package) to prompt context
+- **Security Scanning**: Detect hardcoded secrets (Gitleaks), SAST issues (OpenGrep) and vulnerable dependencies (Trivy) via LLM agent tools, with automatic backlog task creation from findings
 - **DEVOXXGENIE.md**: Generate and customize a project description file that gets included in the system prompt
 - **Abstract Syntax Tree (AST) context**: Automatically include parent class and class/field references
 
@@ -100,6 +100,6 @@ For detailed information about specific features, check out the dedicated pages:
 - [Web Search](web-search.md)
 - [RAG Support](rag.md)
 - [Drag & Drop Images](dnd-images.md)
-- [Project Scanner](project-scanner.md)
+- [Security Scanning](security-scanning.md)
 - [Chat Memory](chat-memory.md)
 - [Inline Completion](inline-completion.md)
