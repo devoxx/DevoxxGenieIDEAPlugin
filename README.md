@@ -9,6 +9,8 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
+**🆕 [Security Scanning](https://genie.devoxx.com/docs/features/security-scanning)** — Run **Gitleaks** (secret detection), **OpenGrep** (SAST) and **Trivy** (dependency CVEs) directly from the LLM agent. Findings are automatically created as prioritised tasks in the Spec Browser for tracking and remediation!
+
 **🆕 [Spec Driven Development (SDD)](https://genie.devoxx.com/docs/features/spec-driven-development)** — Define tasks in `Backlog.md`, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously! Use the **Agent Loop** to run multiple tasks in a single batch with dependency ordering and automatic advancement.
 
 **🆕 [AI-powered Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)** — Get context-aware code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio!
@@ -35,6 +37,7 @@ Quick links:
 - [Installation Guide](https://genie.devoxx.com/docs/category/installation) - Local and cloud LLM setup
 - [Configuration](https://genie.devoxx.com/docs/category/configuration) - API keys, settings, and customization
 - [Features](https://genie.devoxx.com/docs/category/features) - Explore all capabilities
+- [Security Scanning](https://genie.devoxx.com/docs/features/security-scanning) - Gitleaks, OpenGrep and Trivy as LLM agent tools with auto-backlog task creation
 - [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode) - Autonomous code tools with parallel sub-agents
 - [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development) - Task management with Backlog.md, Kanban Board, and Agent implementation
 - [Agent Loop](https://genie.devoxx.com/docs/features/sdd-agent-loop) - Batch task execution with dependency ordering and progress tracking
@@ -45,6 +48,24 @@ Quick links:
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
 - [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
 - [Troubleshooting](https://genie.devoxx.com/docs/troubleshooting) - Common issues and solutions
+
+### 🔒 Security Scanning
+
+**[📖 Full Security Scanning Documentation](https://genie.devoxx.com/docs/features/security-scanning)**
+
+DevoxxGenie integrates three best-in-class open-source security scanners as **LLM agent tools**. When Agent Mode is active, the LLM can invoke them on demand, interpret the results in context, and automatically create prioritised backlog tasks for every finding.
+
+| Scanner | What it detects | Install |
+|---------|----------------|---------|
+| **Gitleaks** | Hardcoded secrets, API keys, tokens | `brew install gitleaks` |
+| **OpenGrep** | SAST issues — injection flaws, insecure patterns | `brew install opengrep` |
+| **Trivy** | Dependency CVEs (SCA) | `brew install trivy` |
+
+Ask the agent: *"Run a full security scan and create backlog tasks for everything you find."*
+
+<img width="800" alt="Security scan findings as Spec Browser tasks" src="docusaurus/static/img/SecurityScanner-Tasks.jpg" />
+
+Enable in **Settings → DevoxxGenie → Security Scanning**. Each scanner has a path browser, a Test button, and install guidance. Findings are deduplicated — re-running a scan will not create duplicate tasks.
 
 ### Spec Driven Development (SDD)
 
@@ -98,6 +119,7 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 
 ### Key Features:
 
+- **🔒 [Security Scanning](https://genie.devoxx.com/docs/features/security-scanning)** *(v0.9.17+)*: Run Gitleaks (secret detection), OpenGrep (SAST) and Trivy (SCA/CVEs) as LLM agent tools. Each finding is auto-created as a prioritised Backlog.md task. Enable in Settings → Security Scanning.
 - **📋 [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser (Task List + Kanban Board), and let the Agent implement them. 17 built-in backlog tools for full CRUD on tasks, documents, and milestones. Use the [Agent Loop](https://genie.devoxx.com/docs/features/sdd-agent-loop) to run multiple tasks in batch with dependency ordering *(v0.9.8+)*.
 - **🆕 [ACP Runners](https://genie.devoxx.com/docs/features/acp-runners)** *(v0.9.10+)*: Communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol with structured streaming, conversation history, and capability negotiation.
 - **🔌 [Plugin Integration API](https://genie.devoxx.com/blog/devoxxgenie-plugin-integrations)** *(v0.9.12+)*: Let other IntelliJ plugins send prompts or create Backlog tasks via a reflection-based `ExternalPromptService` — no compile-time dependency required. Two POC integrations available: [SonarLint DevoxxGenie](https://github.com/stephanj/sonarlint-devoxxgenie-intellij) and [SpotBugs DevoxxGenie](https://github.com/stephanj/spotbugs-devoxxgenie-plugin).
