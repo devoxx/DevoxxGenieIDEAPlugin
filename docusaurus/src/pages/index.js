@@ -330,6 +330,32 @@ milestone: v2.0
         </div>
         <div className="container home-section">
           <div className="row">
+            <div className="col col--6">
+              <h2>Security Scanning</h2>
+              <p>
+                DevoxxGenie integrates three best-in-class open-source security scanners as <strong>LLM agent tools</strong> — so your AI assistant can actively find and help fix security issues in your codebase.
+              </p>
+              <p>
+                <strong>Gitleaks</strong> detects hardcoded secrets, API keys and tokens. <strong>OpenGrep</strong> performs SAST analysis to catch injection flaws and insecure patterns. <strong>Trivy</strong> scans your dependencies for known CVEs.
+              </p>
+              <p>
+                Each finding is automatically created as a prioritised task in the <strong>Spec Browser (Backlog.md)</strong> — labelled by scanner and severity — so nothing falls through the cracks. Ask the agent to <em>"run a security scan and fix the findings"</em> and it will do exactly that.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/features/security-scanning')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+            <div className="col col--6">
+              <img src={useBaseUrl('/img/SecurityScanner-Tasks.jpg')} alt="Security scan findings as backlog tasks" className="feature-image" />
+            </div>
+          </div>
+        </div>
+        <div className="container home-section">
+          <div className="row">
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>
               <p>Join over 45,000 developers who are already using DevoxxGenie to improve their productivity.</p>
