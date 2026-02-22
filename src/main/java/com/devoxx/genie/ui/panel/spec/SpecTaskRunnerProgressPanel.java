@@ -49,6 +49,17 @@ public class SpecTaskRunnerProgressPanel extends JPanel {
     }
 
     /**
+     * Update progress with a string-based label (for security scans or other non-TaskSpec progress).
+     */
+    public void update(@NotNull String label, int index, int total) {
+        statusLabel.setText(label);
+        progressBar.setMinimum(0);
+        progressBar.setMaximum(total);
+        progressBar.setValue(index);
+        setVisible(true);
+    }
+
+    /**
      * Show completion summary.
      */
     public void showCompleted(int completed, int skipped, int total) {
