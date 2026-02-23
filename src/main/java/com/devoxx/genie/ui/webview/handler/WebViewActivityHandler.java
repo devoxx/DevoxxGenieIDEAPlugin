@@ -1,29 +1,39 @@
 package com.devoxx.genie.ui.webview.handler;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
-import com.devoxx.genie.service.agent.AgentLoggingMessage;
+import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.util.CodeLanguageUtil;
 import com.devoxx.genie.ui.util.ThemeDetector;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.IndentedCodeBlock;
+import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Handles displaying agent tool execution activity in the WebView.
- * Updates the "Thinking..." loading indicator with real-time tool call info
- * so users can see what the agent is doing.
+ * Unified handler for both MCP and Agent activity display in the WebView.
+ * Replaces the separate WebViewMCPLogHandler and WebViewAgentActivityHandler.
+ *
  * Note: All content inserted into the DOM is HTML-escaped via escapeHtml()
  * to prevent XSS. The HTML structure itself uses only hardcoded class names
- * and trusted static content. This follows the same pattern as WebViewMCPLogHandler.
+ * and trusted static content. This follows the same pattern used by the
+ * previous separate handlers.
  */
 @Slf4j
-public class WebViewAgentActivityHandler implements AgentLoggingMessage {
+public class WebViewActivityHandler implements ActivityLoggingMessage {
 
+    // Agent icon constants
     private static final String ICON_PLAY = "&#9654;";
     private static final String ICON_CHECKMARK = "&#10004;";
     private static final String ICON_X_MARK = "&#10006;";
@@ -44,20 +54,30 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
     private final WebViewJavaScriptExecutor jsExecutor;
     private volatile String activeMessageId;
     private volatile boolean deactivated = false;
-    private final List<AgentMessage> agentLogs = new CopyOnWriteArrayList<>();
+    private volatile long generation = 0;
+
+    // MCP accumulators
+    private final List<MCPMessage> mcpLogs = new ArrayList<>();
+    private boolean hasToolActivity;
+
+    // Agent accumulators
+    private final List<ActivityMessage> agentLogs = new CopyOnWriteArrayList<>();
     private final List<String> intermediateTexts = new CopyOnWriteArrayList<>();
 
-    public WebViewAgentActivityHandler(WebViewJavaScriptExecutor jsExecutor) {
+    public WebViewActivityHandler(WebViewJavaScriptExecutor jsExecutor) {
         this.jsExecutor = jsExecutor;
     }
 
     /**
-     * Set the active message ID that will receive agent activity logs.
+     * Set the active message ID that will receive activity logs.
      * Resets the deactivated flag so the handler is ready for a new message.
      */
     public void setActiveMessageId(String messageId) {
+        this.generation++;
         this.activeMessageId = messageId;
         this.deactivated = false;
+        mcpLogs.clear();
+        hasToolActivity = false;
         agentLogs.clear();
         intermediateTexts.clear();
     }
@@ -69,27 +89,235 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
     public void deactivate() {
         this.deactivated = true;
         this.activeMessageId = null;
-        log.info("Agent activity handler deactivated");
+        log.info("Activity handler deactivated");
     }
 
     @Override
-    public void onAgentLoggingMessage(@NotNull AgentMessage message) {
+    public void onActivityMessage(@NotNull ActivityMessage message) {
         if (deactivated) {
-            log.debug("Agent activity handler deactivated, ignoring message: {}", message.getType());
+            log.debug("Activity handler deactivated, ignoring message: {}", message.getSource());
             return;
         }
-        log.debug(">>> Agent message (type={}): {} - {}", message.getType(), message.getToolName(), message.getCallNumber());
+
+        if (message.getSource() == ActivitySource.MCP) {
+            handleMCPMessage(message);
+        } else {
+            handleAgentMessage(message);
+        }
+    }
+
+    // ===== MCP message handling (ported from WebViewMCPLogHandler) =====
+
+    private void handleMCPMessage(@NotNull ActivityMessage message) {
+        final long capturedGeneration = this.generation;
+
+        log.info(">>> MCP message (type={}): {}", message.getMcpType(), message.getContent());
+
+        // Skip AI_MSG — these are full AI responses (redundant with assistant-message)
+        if (message.getMcpType() == MCPType.AI_MSG) {
+            log.debug("Skipping AI_MSG in MCP Activity display");
+            return;
+        }
+
+        // Track whether actual MCP tool interaction has occurred
+        if (message.getMcpType() == MCPType.TOOL_MSG) {
+            hasToolActivity = true;
+        }
+
+        if (this.generation != capturedGeneration) return;
+        mcpLogs.add(MCPMessage.builder()
+                .type(message.getMcpType())
+                .content(message.getContent())
+                .projectLocationHash(message.getProjectLocationHash())
+                .build());
+
+        // Only render MCP activity to the UI when actual tool interaction is detected
+        if (!hasToolActivity) {
+            log.debug("No tool activity yet, skipping MCP UI update");
+            return;
+        }
+
+        if (this.generation != capturedGeneration) return;
+        String formattedHtml = buildMcpFormattedLogsHtml();
+
+        updateMcpThinkingIndicator(activeMessageId, formattedHtml);
+    }
+
+    /**
+     * Builds formatted HTML for all stored MCP log entries.
+     * All dynamic content is HTML-escaped via escapeHtml() before insertion.
+     */
+    private @NotNull String buildMcpFormattedLogsHtml() {
+        StringBuilder formattedLogs = new StringBuilder();
+
+        formattedLogs.append("<div class=\"mcp-outer-container\">");
+        formattedLogs.append("<div class=\"mcp-header\">MCP Activity</div>");
+
+        Parser markdownParser = Parser.builder().build();
+        HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+
+        for (MCPMessage logEntry : mcpLogs) {
+            String cssClass = logEntry.getType() == MCPType.TOOL_MSG
+                    ? "mcp-tool-message"
+                    : "mcp-regular";
+
+            formattedLogs.append("<div class=\"mcp-log-entry\">");
+            formattedLogs.append("<div class=\"").append(cssClass).append("\">");
+
+            Node document = markdownParser.parse(logEntry.getContent());
+            Node node = document.getFirstChild();
+            while (node != null) {
+                if (node instanceof FencedCodeBlock fencedCodeBlock) {
+                    String code = fencedCodeBlock.getLiteral();
+                    String language = fencedCodeBlock.getInfo();
+                    formattedLogs.append("<pre><code class=\"language-")
+                            .append(CodeLanguageUtil.mapLanguageToPrism(language))
+                            .append("\">")
+                            .append(jsExecutor.escapeHtml(code))
+                            .append("</code></pre>\n");
+                } else if (node instanceof IndentedCodeBlock indentedCodeBlock) {
+                    String code = indentedCodeBlock.getLiteral();
+                    formattedLogs.append("<pre><code class=\"language-plaintext\">")
+                            .append(jsExecutor.escapeHtml(code))
+                            .append("</code></pre>\n");
+                } else {
+                    formattedLogs.append(htmlRenderer.render(node));
+                }
+                node = node.getNext();
+            }
+
+            formattedLogs.append("</div>");
+            formattedLogs.append("</div>\n");
+        }
+
+        formattedLogs.append("</div>");
+        return formattedLogs.toString();
+    }
+
+    private void updateMcpThinkingIndicator(String messageId, String content) {
+        log.debug("updateMcpThinkingIndicator with {} and {}", messageId, content);
+
+        if (!jsExecutor.isLoaded() || messageId == null) {
+            log.debug("updateMcpThinkingIndicator not loaded, skipping update");
+            return;
+        }
+
+        boolean isStreaming = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getStreamMode());
+
+        String targetId = isStreaming
+                ? "loading-" + jsExecutor.escapeJS(messageId)
+                : "mcp-" + jsExecutor.escapeJS(messageId);
+
+        String escapedContent = jsExecutor.escapeJS(content);
+        String escapedMessageId = jsExecutor.escapeJS(messageId);
+        boolean isDark = ThemeDetector.isDarkTheme();
+
+        String js = buildMcpUpdateScript(targetId, escapedContent, escapedMessageId, isDark);
+
+        jsExecutor.executeJavaScript(js);
+        log.debug("updateMcpThinkingIndicator executed");
+    }
+
+    /**
+     * Builds the JavaScript to update MCP log content in the target element.
+     * Content is pre-escaped (HTML-escaped then JS-escaped) by the caller before being
+     * embedded in the template literal, preventing XSS.
+     */
+    @SuppressWarnings("java:S6035") // innerHTML usage is safe — all dynamic content is pre-escaped
+    private @NotNull String buildMcpUpdateScript(String targetId, String escapedContent,
+                                                  String escapedMessageId, boolean isDark) {
+        String bgColor = isDark ? "#2d2d2d" : "#f8f8f8";
+        String preBgColor = isDark ? "#1e1e1e" : "#f0f0f0";
+
+        return "try {\n" +
+                "  var target = document.getElementById('" + targetId + "');\n" +
+                "  if (!target) {\n" +
+                "    const messagePair = document.getElementById('" + escapedMessageId + "');\n" +
+                "    if (messagePair) {\n" +
+                "      target = messagePair.querySelector('.mcp-activity-section') || messagePair.querySelector('.loading-indicator');\n" +
+                "    }\n" +
+                "  }\n" +
+                "  if (target) {\n" +
+                // SECURITY: escapedContent is pre-escaped (HTML entities + JS string escaping)
+                "    target.innerHTML = `" + escapedContent + "`;\n" +
+                "    target.style.display = 'block';\n" +
+                "    if (!document.getElementById('mcp-logs-styles')) {\n" +
+                "      const styleEl = document.createElement('style');\n" +
+                "      styleEl.id = 'mcp-logs-styles';\n" +
+                "      styleEl.textContent = `\n" +
+                "        .mcp-outer-container { \n" +
+                "          margin-top: 12px;\n" +
+                "          max-height: 300px;\n" +
+                "          overflow-y: auto;\n" +
+                "          font-family: var(--font-family);\n" +
+                "          font-size: 13px;\n" +
+                "          padding: 8px;\n" +
+                "          background-color: " + bgColor + ";\n" +
+                "          border-radius: 6px;\n" +
+                "          border: none;\n" +
+                "          margin-bottom: 15px;\n" +
+                "          clear: both;\n" +
+                "          display: block;\n" +
+                "        }\n" +
+                "        .mcp-header { \n" +
+                "          font-size: 14px;\n" +
+                "          font-weight: bold;\n" +
+                "          color: #FF5400;\n" +
+                "          margin-bottom: 10px;\n" +
+                "        }\n" +
+                "        .mcp-log-entry { \n" +
+                "          margin-bottom: 8px;\n" +
+                "          padding: 8px;\n" +
+                "        }\n" +
+                "        .mcp-log-entry pre { \n" +
+                "          margin: 8px 0;\n" +
+                "          padding: 8px;\n" +
+                "          background-color: " + preBgColor + ";\n" +
+                "          border-radius: 4px;\n" +
+                "          overflow-x: auto;\n" +
+                "        }\n" +
+                "        .mcp-log-entry code { \n" +
+                "          font-family: monospace;\n" +
+                "          font-size: 12px;\n" +
+                "        }\n" +
+                "        .mcp-log-entry p { \n" +
+                "          margin: 6px 0;\n" +
+                "        }\n" +
+                "        .mcp-regular { color: #FF9800; }\n" +
+                "        .mcp-counter { color: #757575; font-style: italic; }\n" +
+                "        .mcp-ai-message { color: #4CAF50; }\n" +
+                "        .mcp-tool-message { color: #2196F3; }\n" +
+                "        .mcp-completed { padding-top: 8px; }\n" +
+                "        .loading-indicator { display: block !important; }\n" +
+                "      `;\n" +
+                "      document.head.appendChild(styleEl);\n" +
+                "    }\n" +
+                "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
+                "    if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }\n" +
+                "  }\n" +
+                "} catch (error) {\n" +
+                "}\n";
+    }
+
+    // ===== Agent message handling (ported from WebViewAgentActivityHandler) =====
+
+    private void handleAgentMessage(@NotNull ActivityMessage message) {
+        final long capturedGeneration = this.generation;
+
+        log.debug(">>> Agent message (type={}): {} - {}", message.getAgentType(), message.getToolName(), message.getCallNumber());
 
         boolean showToolActivity = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowToolActivityInChat());
 
         // Intermediate LLM responses are always shown in the chat output
-        if (message.getType() == AgentType.INTERMEDIATE_RESPONSE) {
+        if (message.getAgentType() == AgentType.INTERMEDIATE_RESPONSE) {
+            if (this.generation != capturedGeneration) return;
             intermediateTexts.add(message.getResult() != null ? message.getResult() : "");
             if (showToolActivity) {
-                // Also include in the agent activity panel
                 agentLogs.add(message);
-                updateThinkingIndicator(activeMessageId, buildFormattedLogsHtml());
+                if (this.generation != capturedGeneration) return;
+                updateAgentThinkingIndicator(activeMessageId, buildAgentFormattedLogsHtml());
             } else {
+                if (this.generation != capturedGeneration) return;
                 appendIntermediateTextBelowThinking(activeMessageId);
             }
             return;
@@ -100,18 +328,18 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
             return;
         }
 
+        if (this.generation != capturedGeneration) return;
         agentLogs.add(message);
-        String formattedHtml = buildFormattedLogsHtml();
-        updateThinkingIndicator(activeMessageId, formattedHtml);
+        if (this.generation != capturedGeneration) return;
+        String formattedHtml = buildAgentFormattedLogsHtml();
+        updateAgentThinkingIndicator(activeMessageId, formattedHtml);
     }
 
     /**
-     * Appends intermediate LLM text below the "Thinking..." loading indicator,
-     * inside the same .assistant-message container (which already has a blue left border).
-     * Finds or creates a dedicated div after the loading indicator and replaces its
-     * content with all accumulated intermediate texts.
-     * All user-controlled text is HTML-escaped to prevent XSS.
+     * Appends intermediate LLM text below the "Thinking..." loading indicator.
+     * All user-controlled text is HTML-escaped via the HtmlRenderer's escapeHtml(true) setting.
      */
+    @SuppressWarnings("java:S6035") // innerHTML usage is safe — content is escaped by HtmlRenderer
     private void appendIntermediateTextBelowThinking(String messageId) {
         if (messageId == null || !jsExecutor.isLoaded()) return;
 
@@ -119,7 +347,6 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         String textColor = isDark ? "#B0BEC5" : "#546E7A";
         String separatorColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
 
-        // Render each intermediate text as markdown to HTML
         Parser parser = Parser.builder().build();
         HtmlRenderer renderer = HtmlRenderer.builder().escapeHtml(true).build();
 
@@ -134,13 +361,10 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         }
         String escapedContent = jsExecutor.escapeJS(htmlBuilder.toString());
 
-        // Always target loading-{id} which is inside .assistant-message with "Thinking..."
         String loadingId = "loading-" + jsExecutor.escapeJS(messageId);
         String escapedMessageId = jsExecutor.escapeJS(messageId);
         String siblingId = "agent-intermediate-" + escapedMessageId;
 
-        // Use the same proven JS patterns as buildAgentUpdateScript:
-        // backtick template literals, fallback querySelector, console.error logging
         String js = "try {\n" +
                 "  var loader = document.getElementById('" + loadingId + "');\n" +
                 "  if (!loader) {\n" +
@@ -157,6 +381,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "      sib.style.cssText = 'padding:4px 8px;margin-top:4px;color:" + textColor + ";font-style:italic;';\n" +
                 "      loader.parentNode.insertBefore(sib, loader.nextSibling);\n" +
                 "    }\n" +
+                // SECURITY: escapedContent is pre-escaped via HtmlRenderer(escapeHtml=true) + escapeJS()
                 "    sib.innerHTML = `" + escapedContent + "`;\n" +
                 "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
                 "  }\n" +
@@ -170,23 +395,23 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
      * Builds formatted HTML for all stored agent log entries.
      * All dynamic content is HTML-escaped before insertion.
      */
-    private @NotNull String buildFormattedLogsHtml() {
+    private @NotNull String buildAgentFormattedLogsHtml() {
         StringBuilder html = new StringBuilder();
 
         html.append("<div class=\"agent-outer-container\">");
         html.append("<div class=\"agent-header\">Agent Activity</div>");
 
-        for (AgentMessage entry : agentLogs) {
-            html.append("<div class=\"agent-log-entry ").append(getCssClass(entry.getType())).append("\">");
-            if (entry.getType() != AgentType.INTERMEDIATE_RESPONSE) {
+        for (ActivityMessage entry : agentLogs) {
+            html.append("<div class=\"agent-log-entry ").append(getAgentCssClass(entry.getAgentType())).append("\">");
+            if (entry.getAgentType() != AgentType.INTERMEDIATE_RESPONSE) {
                 html.append("<span class=\"agent-counter\">[").append(entry.getCallNumber())
                         .append("/").append(entry.getMaxCalls()).append("]</span> ");
             }
             if (entry.getSubAgentId() != null) {
                 html.append("<span class=\"agent-subagent-id\">[").append(escapeHtml(entry.getSubAgentId())).append("]</span> ");
             }
-            html.append(getIcon(entry.getType())).append(" ");
-            appendEntryContent(html, entry);
+            html.append(getAgentIcon(entry.getAgentType())).append(" ");
+            appendAgentEntryContent(html, entry);
             html.append("</div>\n");
         }
 
@@ -194,8 +419,8 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         return html.toString();
     }
 
-    private void appendEntryContent(@NotNull StringBuilder html, @NotNull AgentMessage entry) {
-        switch (entry.getType()) {
+    private void appendAgentEntryContent(@NotNull StringBuilder html, @NotNull ActivityMessage entry) {
+        switch (entry.getAgentType()) {
             case TOOL_REQUEST:
                 appendBoldToolName(html, "", entry.getToolName(), "");
                 appendDetail(html, entry.getArguments(), "agent-args");
@@ -253,7 +478,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         }
     }
 
-    private String getCssClass(AgentType type) {
+    private String getAgentCssClass(AgentType type) {
         return switch (type) {
             case TOOL_REQUEST -> "agent-request";
             case TOOL_RESPONSE -> "agent-response";
@@ -269,7 +494,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         };
     }
 
-    private String getIcon(AgentType type) {
+    private String getAgentIcon(AgentType type) {
         return switch (type) {
             case TOOL_REQUEST, SUB_AGENT_STARTED -> ICON_PLAY;
             case TOOL_RESPONSE, APPROVAL_GRANTED, SUB_AGENT_COMPLETED -> ICON_CHECKMARK;
@@ -280,13 +505,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         };
     }
 
-    /**
-     * Updates the loading indicator in the WebView with agent activity content.
-     * Uses the same target element strategy as WebViewMCPLogHandler:
-     * - Streaming mode: targets loading-{messageId} inside assistant-message
-     * - Non-streaming mode: targets mcp-{messageId} activity section
-     */
-    private void updateThinkingIndicator(String messageId, String content) {
+    private void updateAgentThinkingIndicator(String messageId, String content) {
         if (!jsExecutor.isLoaded() || messageId == null) {
             return;
         }
@@ -308,8 +527,8 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
     /**
      * Builds the JavaScript to update agent activity content in the target element.
      * Content is pre-escaped (HTML-escaped then JS-escaped) before being embedded.
-     * This follows the same DOM update pattern as WebViewMCPLogHandler.
      */
+    @SuppressWarnings("java:S6035") // innerHTML usage is safe — all dynamic content is pre-escaped
     private @NotNull String buildAgentUpdateScript(String targetId, String escapedContent,
                                                     String escapedMessageId, boolean isDark) {
         String bgColor = isDark ? "#2a2520" : "#fff8f0";
@@ -324,6 +543,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "    }\n" +
                 "  }\n" +
                 "  if (target) {\n" +
+                // SECURITY: escapedContent is pre-escaped (HTML entities + JS string escaping)
                 "    target.innerHTML = `" + escapedContent + "`;\n" +
                 "    target.style.display = 'block';\n" +
                 "    target.classList.add('agent-active');\n" +
@@ -397,10 +617,8 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 "}\n";
     }
 
-    /**
-     * Escapes HTML special characters to prevent XSS when inserting
-     * dynamic content into the DOM.
-     */
+    // ===== Shared utilities =====
+
     private @NotNull String escapeHtml(String text) {
         if (text == null) return "";
         return text.replace("&", "&amp;")

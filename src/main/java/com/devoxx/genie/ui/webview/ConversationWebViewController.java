@@ -1,10 +1,8 @@
 package com.devoxx.genie.ui.webview;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.mcp.MCPMessage;
-import com.devoxx.genie.service.agent.AgentLoggingMessage;
-import com.devoxx.genie.service.mcp.MCPLoggingMessage;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.webview.handler.*;
 import com.devoxx.genie.ui.webview.template.ConversationTemplate;
@@ -31,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * new content to the conversation without creating new WebView instances.
  */
 @Slf4j
-public class ConversationWebViewController implements ThemeChangeNotifier, MCPLoggingMessage, AgentLoggingMessage {
+public class ConversationWebViewController implements ThemeChangeNotifier, ActivityLoggingMessage {
 
     @Getter
     private JBCefBrowser browser;
@@ -46,8 +44,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
     private final WebViewMessageRenderer messageRenderer;
     private final WebViewAIMessageUpdater aiMessageUpdater;
     private final WebViewFileReferenceManager fileReferenceManager;
-    private final WebViewMCPLogHandler mcpLogHandler;
-    private final WebViewAgentActivityHandler agentActivityHandler;
+    private final WebViewActivityHandler activityHandler;
     private final WebViewBrowserInitializer browserInitializer;
     private final WebViewSleepWakeRecoveryHandler sleepWakeRecoveryHandler;
     private final WebViewExternalLinkHandler externalLinkHandler;
@@ -149,8 +146,7 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
         messageRenderer = new WebViewMessageRenderer(webServer, jsExecutor, initialized);
         aiMessageUpdater = new WebViewAIMessageUpdater(jsExecutor, initialized);
         fileReferenceManager = new WebViewFileReferenceManager(jsExecutor);
-        mcpLogHandler = new WebViewMCPLogHandler(jsExecutor);
-        agentActivityHandler = new WebViewAgentActivityHandler(jsExecutor);
+        activityHandler = new WebViewActivityHandler(jsExecutor);
         browserInitializer = new WebViewBrowserInitializer(initialized, jsExecutor);
         themeManager = new WebViewThemeManager(browser, webServer, jsExecutor, this::showWelcomeContent);
         sleepWakeRecoveryHandler = new WebViewSleepWakeRecoveryHandler(browser);
@@ -540,38 +536,33 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
      * @param chatMessageContext The chat message context containing the user prompt
      */
     public void addUserPromptMessage(ChatMessageContext chatMessageContext) {
+        // Deactivate first to reject in-flight messages from previous prompt
+        activityHandler.deactivate();
+
         aiMessageUpdater.addUserPromptMessage(chatMessageContext);
-        // Set the active message ID for MCP logging
-        mcpLogHandler.setActiveMessageId(chatMessageContext.getId());
-        // Set the active message ID for agent activity display
-        agentActivityHandler.setActiveMessageId(chatMessageContext.getId());
+
+        // Re-activate with new message ID (increments generation counter)
+        activityHandler.setActiveMessageId(chatMessageContext.getId());
     }
 
     /**
-     * Implements the MCPLoggingMessage interface to receive MCP log messages.
-     * Delegated to the MCP log handler.
+     * Implements the ActivityLoggingMessage interface to receive unified activity messages.
+     * Delegated to the activity handler.
      *
-     * @param message The MCP message received
+     * @param message The activity message received
      */
     @Override
-    public void onMCPLoggingMessage(@NotNull MCPMessage message) {
-        log.info("Received MCP logging message: {}", message.getContent());
-        mcpLogHandler.onMCPLoggingMessage(message);
-    }
-
-    @Override
-    public void onAgentLoggingMessage(@NotNull AgentMessage message) {
-        log.info("Received agent logging message: {} - {}", message.getType(), message.getToolName());
-        agentActivityHandler.onAgentLoggingMessage(message);
+    public void onActivityMessage(@NotNull ActivityMessage message) {
+        log.info("Received activity message: {} - {}", message.getSource(), message.getContent());
+        activityHandler.onActivityMessage(message);
     }
 
     /**
-     * Deactivates both activity handlers so stale events from cancelled tool calls
+     * Deactivates the activity handler so stale events from cancelled tool calls
      * cannot re-show the loading indicator. Must be called BEFORE hiding the indicator.
      */
     public void deactivateActivityHandlers() {
-        agentActivityHandler.deactivate();
-        mcpLogHandler.deactivate();
+        activityHandler.deactivate();
     }
 
     /**

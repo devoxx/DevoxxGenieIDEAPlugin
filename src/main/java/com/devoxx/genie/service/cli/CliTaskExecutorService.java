@@ -1,8 +1,9 @@
 package com.devoxx.genie.service.cli;
 
+import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.agent.AgentMessage;
 import com.devoxx.genie.model.spec.CliToolConfig;
-import com.devoxx.genie.service.agent.AgentLoggingMessage;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.service.cli.command.CliCommand;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -403,12 +404,12 @@ public final class CliTaskExecutorService implements Disposable {
      */
     private void publishClaudeStreamJsonEvents(@NotNull String jsonLine) {
         ClaudeStreamJsonParser.parse(jsonLine, project.getLocationHash()).ifPresent(messages -> {
-            AgentLoggingMessage publisher = ApplicationManager.getApplication()
+            ActivityLoggingMessage publisher = ApplicationManager.getApplication()
                     .getMessageBus()
-                    .syncPublisher(AppTopics.AGENT_LOG_MSG);
+                    .syncPublisher(AppTopics.ACTIVITY_LOG_MSG);
             for (AgentMessage msg : messages) {
                 try {
-                    publisher.onAgentLoggingMessage(msg);
+                    publisher.onActivityMessage(ActivityMessage.fromAgent(msg));
                 } catch (Exception e) {
                     log.debug("Failed to publish Claude stream-json event: {}", e.getMessage());
                 }

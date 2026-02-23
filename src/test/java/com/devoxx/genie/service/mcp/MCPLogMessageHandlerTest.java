@@ -1,6 +1,9 @@
 package com.devoxx.genie.service.mcp;
 
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -36,7 +39,7 @@ class MCPLogMessageHandlerTest {
     private MessageBus messageBus;
 
     @Mock
-    private MCPLoggingMessage loggingMessagePublisher;
+    private ActivityLoggingMessage activityPublisher;
 
     private MCPLogMessageHandler handler;
     private MockedStatic<ApplicationManager> mockedAppManager;
@@ -47,7 +50,7 @@ class MCPLogMessageHandlerTest {
         mockedAppManager = Mockito.mockStatic(ApplicationManager.class);
         mockedAppManager.when(ApplicationManager::getApplication).thenReturn(application);
         when(application.getMessageBus()).thenReturn(messageBus);
-        when(messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)).thenReturn(loggingMessagePublisher);
+        when(messageBus.syncPublisher(AppTopics.ACTIVITY_LOG_MSG)).thenReturn(activityPublisher);
 
         mockedMCPService = Mockito.mockStatic(MCPService.class);
         mockedMCPService.when(MCPService::isDebugLogsEnabled).thenReturn(true);
@@ -73,7 +76,7 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "test message");
         handler.handleLogMessage(message);
 
-        verify(loggingMessagePublisher, never()).onMCPLoggingMessage(any());
+        verify(activityPublisher, never()).onActivityMessage(any());
     }
 
     @Test
@@ -81,12 +84,12 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"content\": \"hello\"}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        com.devoxx.genie.model.mcp.MCPMessage mcpMsg = captor.getValue();
-        assertThat(mcpMsg.getType()).isEqualTo(MCPType.AI_MSG);
+        ActivityMessage activityMsg = captor.getValue();
+        assertThat(activityMsg.getSource()).isEqualTo(ActivitySource.MCP);
+        assertThat(activityMsg.getMcpType()).isEqualTo(MCPType.AI_MSG);
     }
 
     @Test
@@ -94,12 +97,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"name\": \"read_file\"}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        com.devoxx.genie.model.mcp.MCPMessage mcpMsg = captor.getValue();
-        assertThat(mcpMsg.getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     @Test
@@ -107,12 +108,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "POST /api/tools/call");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        com.devoxx.genie.model.mcp.MCPMessage mcpMsg = captor.getValue();
-        assertThat(mcpMsg.getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     @Test
@@ -120,14 +119,12 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "Some plain log message");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        com.devoxx.genie.model.mcp.MCPMessage mcpMsg = captor.getValue();
-        assertThat(mcpMsg.getType()).isEqualTo(MCPType.LOG_MSG);
-        // LOG_MSG format should not have direction markers stripped
-        assertThat(mcpMsg.getContent()).isEqualTo("Some plain log message");
+        ActivityMessage activityMsg = captor.getValue();
+        assertThat(activityMsg.getMcpType()).isEqualTo(MCPType.LOG_MSG);
+        assertThat(activityMsg.getContent()).isEqualTo("Some plain log message");
     }
 
     @Test
@@ -135,12 +132,11 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"id\": 1, \"result\": \"ok\"}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
         // Default for JSON without specific content/name keys is AI_MSG
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.AI_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.AI_MSG);
     }
 
     @Test
@@ -148,16 +144,15 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "[{\"tool\": \"test\"}]");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.AI_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.AI_MSG);
     }
 
     @Test
     void handleLogMessage_messageBusException_doesNotThrow() {
-        when(messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG))
+        when(messageBus.syncPublisher(AppTopics.ACTIVITY_LOG_MSG))
                 .thenThrow(new RuntimeException("bus error"));
 
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "test message");
@@ -172,7 +167,7 @@ class MCPLogMessageHandlerTest {
 
         // Should not throw
         handler.handleLogMessage(message);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(any());
+        verify(activityPublisher).onActivityMessage(any());
     }
 
     @Test
@@ -181,7 +176,7 @@ class MCPLogMessageHandlerTest {
 
         // Should not throw
         handler.handleLogMessage(message);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(any());
+        verify(activityPublisher).onActivityMessage(any());
     }
 
     // ─── Additional classification branch tests ─────────────────
@@ -191,11 +186,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "GET /api/tools/list");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     @Test
@@ -203,11 +197,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "calling function(arg1, arg2)");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     @Test
@@ -215,11 +208,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"response\": \"hello world\"}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.AI_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.AI_MSG);
     }
 
     @Test
@@ -227,11 +219,10 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"function\": \"read_file\", \"args\": {}}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     // ─── publishToBus direction stripping tests ─────────────────
@@ -241,9 +232,8 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "{\"content\": \"response data\"}");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
         // The "< " prefix should be stripped by publishToBus
         assertThat(captor.getValue().getContent()).doesNotStartWith("< ");
@@ -255,9 +245,8 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "POST /api/call");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
         // The "> " prefix should be stripped by publishToBus
         assertThat(captor.getValue().getContent()).doesNotStartWith("> ");
@@ -269,12 +258,11 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "plain log with no markers");
         handler.handleLogMessage(message);
 
-        ArgumentCaptor<com.devoxx.genie.model.mcp.MCPMessage> captor =
-                ArgumentCaptor.forClass(com.devoxx.genie.model.mcp.MCPMessage.class);
-        verify(loggingMessagePublisher).onMCPLoggingMessage(captor.capture());
+        ArgumentCaptor<ActivityMessage> captor = ArgumentCaptor.forClass(ActivityMessage.class);
+        verify(activityPublisher).onActivityMessage(captor.capture());
 
         assertThat(captor.getValue().getContent()).isEqualTo("plain log with no markers");
-        assertThat(captor.getValue().getType()).isEqualTo(MCPType.LOG_MSG);
+        assertThat(captor.getValue().getMcpType()).isEqualTo(MCPType.LOG_MSG);
     }
 
     // ─── logAtLevel default case tests ──────────────────────────
@@ -285,7 +273,7 @@ class MCPLogMessageHandlerTest {
         handler.handleLogMessage(message);
 
         // Should not throw, falls through to default (info)
-        verify(loggingMessagePublisher).onMCPLoggingMessage(any());
+        verify(activityPublisher).onActivityMessage(any());
     }
 
     @Test
@@ -293,7 +281,7 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.INFO, "info message");
         handler.handleLogMessage(message);
 
-        verify(loggingMessagePublisher).onMCPLoggingMessage(any());
+        verify(activityPublisher).onActivityMessage(any());
     }
 
     @Test
@@ -301,6 +289,6 @@ class MCPLogMessageHandlerTest {
         McpLogMessage message = createLogMessage(McpLogLevel.CRITICAL, "critical message");
         handler.handleLogMessage(message);
 
-        verify(loggingMessagePublisher).onMCPLoggingMessage(any());
+        verify(activityPublisher).onActivityMessage(any());
     }
 }
