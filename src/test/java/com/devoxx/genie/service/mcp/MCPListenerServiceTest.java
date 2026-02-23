@@ -136,9 +136,11 @@ class MCPListenerServiceTest {
     }
 
     // -- AiMessage with text, agent mode but debug logs disabled --
+    // Intermediate responses are always published regardless of debug log setting
+    // (the UI decides how to display them based on showToolActivityInChat setting)
 
     @Test
-    void onRequest_aiMessageWithText_agentMode_debugLogsDisabled_doesNotPostAgentMessage() {
+    void onRequest_aiMessageWithText_agentMode_debugLogsDisabled_stillPostsAgentMessage() {
         listener = createListener(true, false);
 
         AiMessage aiMessage = AiMessage.from("Thinking...");
@@ -149,7 +151,9 @@ class MCPListenerServiceTest {
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedAgentMessages).hasSize(1);
+        assertThat(capturedAgentMessages.get(0).getType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
+        assertThat(capturedAgentMessages.get(0).getResult()).isEqualTo("Thinking...");
         assertThat(capturedMcpMessages).isEmpty();
     }
 

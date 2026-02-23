@@ -40,6 +40,7 @@ class WebViewAgentActivityHandlerTest {
 
         DevoxxGenieStateService mockState = mock(DevoxxGenieStateService.class);
         when(mockState.getStreamMode()).thenReturn(false);
+        when(mockState.getShowToolActivityInChat()).thenReturn(true);
 
         mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class);
         mockedStateService.when(DevoxxGenieStateService::getInstance).thenReturn(mockState);
