@@ -220,6 +220,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
+    private Boolean showToolActivityInChat = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 
     // PSI (Program Structure Interface) tools

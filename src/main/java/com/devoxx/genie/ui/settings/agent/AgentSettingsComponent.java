@@ -33,6 +33,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             new JBCheckBox("Write tools always require approval (write_file, run_command)", Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired()));
     private final JBCheckBox enableDebugLogsCheckbox =
             new JBCheckBox("Enable agent debug logs", Boolean.TRUE.equals(stateService.getAgentDebugLogsEnabled()));
+    private final JBCheckBox showToolActivityInChatCheckbox =
+            new JBCheckBox("Show tool activity in chat output", Boolean.TRUE.equals(stateService.getShowToolActivityInChat()));
 
     // Test execution settings
     private final JBCheckBox enableTestExecutionCheckbox =
@@ -228,6 +230,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Agent tool calls, arguments, and results are logged in the " +
                 "'DevoxxGenie Agent Logs' tool window (View → Tool Windows).");
+
+        addFullWidthRow(contentPanel, gbc, showToolActivityInChatCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, tool call details (arguments, results) are shown in the chat output panel. " +
+                "Agent reasoning messages are always shown.");
 
         // Filler
         gbc.weighty = 1.0;
@@ -705,6 +712,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
                 || enableDebugLogsCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled())
+                || showToolActivityInChatCheckbox.isSelected() != Boolean.TRUE.equals(state.getShowToolActivityInChat())
                 || enableTestExecutionCheckbox.isSelected() != Boolean.TRUE.equals(state.getTestExecutionEnabled())
                 || testTimeoutSpinner.getNumber() != (state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT)
                 || !Objects.equals(customTestCommandField.getText(), state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "")
@@ -737,6 +745,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
         stateService.setAgentDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
+        stateService.setShowToolActivityInChat(showToolActivityInChatCheckbox.isSelected());
         stateService.setTestExecutionEnabled(enableTestExecutionCheckbox.isSelected());
         stateService.setTestExecutionTimeoutSeconds(testTimeoutSpinner.getNumber());
         stateService.setTestExecutionCustomCommand(customTestCommandField.getText());
@@ -766,6 +775,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
         enableDebugLogsCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentDebugLogsEnabled()));
+        showToolActivityInChatCheckbox.setSelected(Boolean.TRUE.equals(state.getShowToolActivityInChat()));
         enableTestExecutionCheckbox.setSelected(Boolean.TRUE.equals(state.getTestExecutionEnabled()));
         testTimeoutSpinner.setNumber(state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT);
         customTestCommandField.setText(state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "");
