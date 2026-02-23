@@ -35,6 +35,75 @@ public final class ClaudeStreamJsonParser {
     }
 
     /**
+     * Extract only human-readable text from a stream-json line for display in the chat panel.
+     * Returns the assistant's text content, or {@code null} if the line is a system/tool/result
+     * event that should not be shown to the user.
+     *
+     * @param line raw stdout line (expected to start with "{")
+     * @return extracted text content, or null to suppress the line
+     */
+    @Nullable
+    public static String extractHumanReadableText(@NotNull String line) {
+        try {
+            JsonObject obj = JsonParser.parseString(line).getAsJsonObject();
+            String type = getStringOrNull(obj, "type");
+            if (type == null) {
+                return null;
+            }
+            return switch (type) {
+                case "assistant" -> extractAssistantText(obj);
+                case "result" -> extractResultText(obj);
+                default -> null; // system, user (tool_result), tool, rate_limit_event, etc.
+            };
+        } catch (Exception e) {
+            // Not valid JSON — return as plain text
+            return line;
+        }
+    }
+
+    /**
+     * Extract text content blocks from an assistant event.
+     */
+    @Nullable
+    private static String extractAssistantText(@NotNull JsonObject obj) {
+        JsonObject message = getObjectOrNull(obj, "message");
+        if (message == null) return null;
+
+        JsonArray content = getArrayOrNull(message, "content");
+        if (content == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (JsonElement item : content) {
+            if (!item.isJsonObject()) continue;
+            JsonObject block = item.getAsJsonObject();
+            if (!"text".equals(getStringOrNull(block, "type"))) continue;
+
+            String text = getStringOrNull(block, "text");
+            if (text != null && !text.isBlank()) {
+                if (!sb.isEmpty()) sb.append("\n");
+                sb.append(text.trim());
+            }
+        }
+        return sb.isEmpty() ? null : sb.toString();
+    }
+
+    /**
+     * Extract the final result text from a result event.
+     */
+    @Nullable
+    private static String extractResultText(@NotNull JsonObject obj) {
+        String result = getStringOrNull(obj, "result");
+        if (result != null && !result.isBlank()) {
+            return result.trim();
+        }
+        if ("error".equals(getStringOrNull(obj, "subtype"))) {
+            String error = getStringOrNull(obj, "error");
+            return error != null ? "Error: " + error : null;
+        }
+        return null;
+    }
+
+    /**
      * Parse a single stdout line from Claude CLI {@code --output-format stream-json}.
      *
      * @param line                raw stdout line

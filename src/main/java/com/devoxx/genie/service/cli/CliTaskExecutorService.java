@@ -381,9 +381,14 @@ public final class CliTaskExecutorService implements Disposable {
             log.info("CLI {} [{}] line {}: {}", streamName, taskId, lineCount,
                     line.length() > 200 ? line.substring(0, 200) + "..." : line);
         }
-        // Parse Claude stream-json events and forward to Activity Logs panel
+        // Parse Claude stream-json events and forward to Activity Logs panel.
+        // When a line is a stream-json event, suppress it from the console output
+        // to avoid showing raw JSON dumps to the user.
         if (parseClaudeStreamJson && line.startsWith("{")) {
             publishClaudeStreamJsonEvents(line);
+            if (isStdout) {
+                return; // Don't print parsed JSON events to console
+            }
         }
         // Prefix with task ID for parallel execution traceability
         final boolean isParallel = activeTasks.size() > 1;
