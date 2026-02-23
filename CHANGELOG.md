@@ -2,6 +2,18 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0]
+
+### Added
+- Show agent intermediate reasoning messages in the chat output panel below "Thinking..." with full markdown rendering
+- New "Show tool activity in chat output" setting in Agent Mode settings to optionally display tool call details in the chat panel
+- Preserve agent reasoning text when final AI response replaces the loading area
+- Show actual LLM text in Agent Activity panel instead of hardcoded "LLM intermediate response" placeholder
+
+### Documentation
+- Security Scanning feature blog post
+- Security Scanning announcement in README and welcome.json
+
 ## [0.9.17]
 
 ### Added

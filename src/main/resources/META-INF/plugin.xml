@@ -45,6 +45,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.10.0</h2>
+        <UL>
+            <LI>Feat: Show agent intermediate reasoning messages in chat output panel with markdown rendering</LI>
+            <LI>Feat: New "Show tool activity in chat output" setting in Agent Mode settings</LI>
+            <LI>Feat: Preserve agent reasoning text when final AI response is rendered</LI>
+        </UL>
         <h2>v0.9.17</h2>
         <UL>
             <LI>Feat: Security Scanning feature — Gitleaks (secret detection), OpenGrep (SAST) and Trivy (SCA/CVE) as LLM agent tools (#954)</LI>
