@@ -83,7 +83,12 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         super(true);
         this.project = project;
 
-        logList = new JBList<>(logListModel);
+        logList = new JBList<>(logListModel) {
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return false;
+            }
+        };
         logList.setCellRenderer(new CombinedLogEntryRenderer());
         logList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         logList.setFixedCellHeight(24);
@@ -371,27 +376,21 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("▶ ").append(message.getToolName());
         if (message.getArguments() != null) {
-            String args = message.getArguments();
-            if (args.length() > 100) args = args.substring(0, 100) + "...";
-            sb.append(" ← ").append(args);
+            sb.append(" ← ").append(message.getArguments().replace("\n", " "));
         }
     }
 
     private void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("✔ ").append(message.getToolName());
         if (message.getResult() != null) {
-            String result = message.getResult();
-            if (result.length() > 120) result = result.substring(0, 120) + "...";
-            sb.append(" → ").append(result.replace("\n", " "));
+            sb.append(" → ").append(message.getResult().replace("\n", " "));
         }
     }
 
     private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("\uD83D\uDCAC ");
         if (message.getResult() != null) {
-            String text = message.getResult().replace("\n", " ");
-            if (text.length() > 150) text = text.substring(0, 150) + "...";
-            sb.append(text);
+            sb.append(message.getResult().replace("\n", " "));
         } else {
             sb.append("LLM intermediate response");
         }
