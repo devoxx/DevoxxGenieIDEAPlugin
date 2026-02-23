@@ -364,4 +364,106 @@ class ClaudeStreamJsonParserTest {
     void streamJsonFlag_containsExpectedSubstring() {
         assertThat(ClaudeStreamJsonParser.STREAM_JSON_FLAG).isEqualTo("stream-json");
     }
+
+    // ── extractHumanReadableText ─────────────────────────────────────────────
+
+    @Test
+    void extractHumanReadableText_systemInit_returnsNull() {
+        String line = """
+                {"type":"system","subtype":"init","cwd":"/project","session_id":"sess123",\
+                "model":"claude-opus-4-5","tools":["Task","Bash"]}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_assistantText_returnsText() {
+        String line = """
+                {"type":"assistant","message":{"content":[{"type":"text","text":"Hello, I can help with that."}]}}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
+                .isEqualTo("Hello, I can help with that.");
+    }
+
+    @Test
+    void extractHumanReadableText_assistantToolUse_returnsNull() {
+        String line = """
+                {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read",\
+                "input":{"file_path":"/some/file.java"}}]}}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_assistantMixedContent_returnsOnlyText() {
+        String line = """
+                {"type":"assistant","message":{"content":[\
+                {"type":"text","text":"Let me read that file."},\
+                {"type":"tool_use","name":"Read","input":{"file_path":"/foo.java"}}\
+                ]}}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
+                .isEqualTo("Let me read that file.");
+    }
+
+    @Test
+    void extractHumanReadableText_assistantThinkingOnly_returnsNull() {
+        String line = """
+                {"type":"assistant","message":{"content":[{"type":"thinking","thinking":"Let me think..."}]}}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_userToolResult_returnsNull() {
+        String line = """
+                {"type":"user","message":{"role":"user","content":[
+                  {"type":"tool_result","tool_use_id":"toolu_abc","content":"file contents"}
+                ]}}""".replace("\n", "").replace("  ", "");
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_resultSuccess_returnsResultText() {
+        String line = """
+                {"type":"result","subtype":"success","result":"Task completed successfully.",\
+                "duration_ms":5000,"total_cost_usd":0.03}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
+                .isEqualTo("Task completed successfully.");
+    }
+
+    @Test
+    void extractHumanReadableText_resultError_returnsError() {
+        String line = "{\"type\":\"result\",\"subtype\":\"error\",\"error\":\"Something went wrong\"}";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
+                .isEqualTo("Error: Something went wrong");
+    }
+
+    @Test
+    void extractHumanReadableText_rateLimitEvent_returnsNull() {
+        String line = "{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"allowed\"}}";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_invalidJson_returnsLineAsIs() {
+        String line = "{not valid json at all";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isEqualTo(line);
+    }
+
+    @Test
+    void extractHumanReadableText_plainText_returnsLineAsIs() {
+        // Non-JSON should not reach this method normally (caller checks for "{"),
+        // but if it does, it should pass through
+        String line = "some plain text";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isEqualTo(line);
+    }
+
+    @Test
+    void extractHumanReadableText_assistantBlankText_returnsNull() {
+        String line = """
+                {"type":"assistant","message":{"content":[{"type":"text","text":"   "}]}}""";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
+
+    @Test
+    void extractHumanReadableText_resultSuccessNoResult_returnsNull() {
+        String line = "{\"type\":\"result\",\"subtype\":\"success\"}";
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
+    }
 }
