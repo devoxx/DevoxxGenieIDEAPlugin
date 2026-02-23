@@ -590,9 +590,11 @@ public class ConversationWebViewController implements ThemeChangeNotifier, MCPLo
                     "    indicator.style.setProperty('display', 'none', 'important');" +
                     "    indicator.classList.remove('agent-active');" +
                     "    while (indicator.firstChild) { indicator.removeChild(indicator.firstChild); }" +
-                    // Also hide the parent assistant-message container (the blue-bordered bar)
+                    // Hide the parent assistant-message ONLY if there's no intermediate agent text to preserve
                     "    var assistantMsg = indicator.closest('.assistant-message');" +
-                    "    if (assistantMsg) { assistantMsg.style.setProperty('display', 'none', 'important'); }" +
+                    "    if (assistantMsg && !assistantMsg.querySelector('[id^=\"agent-intermediate-\"]')) {" +
+                    "      assistantMsg.style.setProperty('display', 'none', 'important');" +
+                    "    }" +
                     "  }" +
                     "  var messagePair = document.getElementById('" + escapedId + "');" +
                     "  if (messagePair) {" +

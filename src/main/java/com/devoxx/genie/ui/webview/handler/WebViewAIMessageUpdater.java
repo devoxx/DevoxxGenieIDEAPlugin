@@ -124,6 +124,14 @@ public class WebViewAIMessageUpdater {
 
         // Build mode-aware JavaScript to update the assistant message content
         String js;
+        // JS helper: detach intermediate agent text from DOM before content replacement,
+        // then re-attach it at the top afterward (pure DOM node manipulation, no innerHTML for this part)
+        String detachIntermediateJs =
+                "      var _intEl = assistantMessage.querySelector('[id^=\"agent-intermediate-\"]');" +
+                "      if (_intEl) _intEl.parentNode.removeChild(_intEl);";
+        String reattachIntermediateJs =
+                "      if (_intEl) assistantMessage.insertBefore(_intEl, assistantMessage.firstChild);";
+
         if (isStreaming) {
             // Streaming: preserve MCP activity at top of assistant-message with mcp-inline class
             js = "try {" +
@@ -131,6 +139,7 @@ public class WebViewAIMessageUpdater {
                     "  if (messagePair) {" +
                     "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
                     "    if (assistantMessage) {" +
+                    detachIntermediateJs +
                     "      const loadingIndicator = assistantMessage.querySelector('.loading-indicator');" +
                     "      const hasMcpContent = loadingIndicator && loadingIndicator.querySelector('.mcp-outer-container');" +
                     "      if (hasMcpContent) {" +
@@ -142,6 +151,7 @@ public class WebViewAIMessageUpdater {
                     "        if (loadingIndicator) loadingIndicator.style.display = 'none';" +
                     "        assistantMessage.innerHTML = `" + escapedContent + "`;" +
                     "      }" +
+                    reattachIntermediateJs +
                     "      setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                     "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                     "    }" +
@@ -158,7 +168,9 @@ public class WebViewAIMessageUpdater {
                     "  if (messagePair) {" +
                     "    const assistantMessage = messagePair.querySelector('.assistant-message');" +
                     "    if (assistantMessage) {" +
+                    detachIntermediateJs +
                     "      assistantMessage.innerHTML = `" + escapedContent + "`;" +
+                    reattachIntermediateJs +
                     "      setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);" +
                     "      if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }" +
                     "    }" +

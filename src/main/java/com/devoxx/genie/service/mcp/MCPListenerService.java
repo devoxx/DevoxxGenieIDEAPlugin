@@ -99,9 +99,6 @@ public class MCPListenerService implements ChatModelListener {
     }
 
     private void postAgentMessage(@NotNull String text) {
-        if (!agentDebugLogsEnabledSupplier.get()) {
-            return;
-        }
         try {
             AgentMessage message = AgentMessage.builder()
                     .type(AgentType.INTERMEDIATE_RESPONSE)

@@ -6,6 +6,8 @@ import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.ThemeDetector;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -43,6 +45,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
     private volatile String activeMessageId;
     private volatile boolean deactivated = false;
     private final List<AgentMessage> agentLogs = new CopyOnWriteArrayList<>();
+    private final List<String> intermediateTexts = new CopyOnWriteArrayList<>();
 
     public WebViewAgentActivityHandler(WebViewJavaScriptExecutor jsExecutor) {
         this.jsExecutor = jsExecutor;
@@ -56,6 +59,7 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         this.activeMessageId = messageId;
         this.deactivated = false;
         agentLogs.clear();
+        intermediateTexts.clear();
     }
 
     /**
@@ -76,10 +80,90 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
         }
         log.debug(">>> Agent message (type={}): {} - {}", message.getType(), message.getToolName(), message.getCallNumber());
 
-        agentLogs.add(message);
+        boolean showToolActivity = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowToolActivityInChat());
 
+        // Intermediate LLM responses are always shown in the chat output
+        if (message.getType() == AgentType.INTERMEDIATE_RESPONSE) {
+            intermediateTexts.add(message.getResult() != null ? message.getResult() : "");
+            if (showToolActivity) {
+                // Also include in the agent activity panel
+                agentLogs.add(message);
+                updateThinkingIndicator(activeMessageId, buildFormattedLogsHtml());
+            } else {
+                appendIntermediateTextBelowThinking(activeMessageId);
+            }
+            return;
+        }
+
+        // Tool calls: only show in chat when "Show tool activity in chat" is enabled
+        if (!showToolActivity) {
+            return;
+        }
+
+        agentLogs.add(message);
         String formattedHtml = buildFormattedLogsHtml();
         updateThinkingIndicator(activeMessageId, formattedHtml);
+    }
+
+    /**
+     * Appends intermediate LLM text below the "Thinking..." loading indicator,
+     * inside the same .assistant-message container (which already has a blue left border).
+     * Finds or creates a dedicated div after the loading indicator and replaces its
+     * content with all accumulated intermediate texts.
+     * All user-controlled text is HTML-escaped to prevent XSS.
+     */
+    private void appendIntermediateTextBelowThinking(String messageId) {
+        if (messageId == null || !jsExecutor.isLoaded()) return;
+
+        boolean isDark = ThemeDetector.isDarkTheme();
+        String textColor = isDark ? "#B0BEC5" : "#546E7A";
+        String separatorColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+
+        // Render each intermediate text as markdown to HTML
+        Parser parser = Parser.builder().build();
+        HtmlRenderer renderer = HtmlRenderer.builder().escapeHtml(true).build();
+
+        StringBuilder htmlBuilder = new StringBuilder();
+        for (int i = 0; i < intermediateTexts.size(); i++) {
+            if (i > 0) {
+                htmlBuilder.append("<hr style=\"border:none;border-top:1px solid ")
+                        .append(separatorColor).append(";margin:8px 0;\">");
+            }
+            String rendered = renderer.render(parser.parse(intermediateTexts.get(i)));
+            htmlBuilder.append("<div class=\"intermediate-msg\">").append(rendered).append("</div>");
+        }
+        String escapedContent = jsExecutor.escapeJS(htmlBuilder.toString());
+
+        // Always target loading-{id} which is inside .assistant-message with "Thinking..."
+        String loadingId = "loading-" + jsExecutor.escapeJS(messageId);
+        String escapedMessageId = jsExecutor.escapeJS(messageId);
+        String siblingId = "agent-intermediate-" + escapedMessageId;
+
+        // Use the same proven JS patterns as buildAgentUpdateScript:
+        // backtick template literals, fallback querySelector, console.error logging
+        String js = "try {\n" +
+                "  var loader = document.getElementById('" + loadingId + "');\n" +
+                "  if (!loader) {\n" +
+                "    const messagePair = document.getElementById('" + escapedMessageId + "');\n" +
+                "    if (messagePair) {\n" +
+                "      loader = messagePair.querySelector('.loading-indicator');\n" +
+                "    }\n" +
+                "  }\n" +
+                "  if (loader) {\n" +
+                "    var sib = document.getElementById('" + siblingId + "');\n" +
+                "    if (!sib) {\n" +
+                "      sib = document.createElement('div');\n" +
+                "      sib.id = '" + siblingId + "';\n" +
+                "      sib.style.cssText = 'padding:4px 8px;margin-top:4px;color:" + textColor + ";font-style:italic;';\n" +
+                "      loader.parentNode.insertBefore(sib, loader.nextSibling);\n" +
+                "    }\n" +
+                "    sib.innerHTML = `" + escapedContent + "`;\n" +
+                "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
+                "  }\n" +
+                "} catch (error) {\n" +
+                "  console.error('Error appending intermediate text:', error);\n" +
+                "}\n";
+        jsExecutor.executeJavaScript(js);
     }
 
     /**
@@ -94,8 +178,10 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
 
         for (AgentMessage entry : agentLogs) {
             html.append("<div class=\"agent-log-entry ").append(getCssClass(entry.getType())).append("\">");
-            html.append("<span class=\"agent-counter\">[").append(entry.getCallNumber())
-                    .append("/").append(entry.getMaxCalls()).append("]</span> ");
+            if (entry.getType() != AgentType.INTERMEDIATE_RESPONSE) {
+                html.append("<span class=\"agent-counter\">[").append(entry.getCallNumber())
+                        .append("/").append(entry.getMaxCalls()).append("]</span> ");
+            }
             if (entry.getSubAgentId() != null) {
                 html.append("<span class=\"agent-subagent-id\">[").append(escapeHtml(entry.getSubAgentId())).append("]</span> ");
             }
@@ -136,7 +222,11 @@ public class WebViewAgentActivityHandler implements AgentLoggingMessage {
                 appendBoldToolName(html, "Denied: ", entry.getToolName(), "");
                 break;
             case INTERMEDIATE_RESPONSE:
-                html.append("LLM intermediate response");
+                if (entry.getResult() != null) {
+                    html.append(escapeHtml(truncate(entry.getResult())));
+                } else {
+                    html.append("LLM intermediate response");
+                }
                 break;
             case SUB_AGENT_STARTED:
                 appendBoldToolName(html, "Sub-agent started: ", entry.getToolName(), "");
