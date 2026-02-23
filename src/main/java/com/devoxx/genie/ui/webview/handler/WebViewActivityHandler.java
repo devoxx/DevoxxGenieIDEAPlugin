@@ -80,6 +80,7 @@ public class WebViewActivityHandler implements ActivityLoggingMessage {
         hasToolActivity = false;
         agentLogs.clear();
         intermediateTexts.clear();
+        log.info("Activity handler activated: messageId={}, generation={}", messageId, generation);
     }
 
     /**
@@ -95,7 +96,7 @@ public class WebViewActivityHandler implements ActivityLoggingMessage {
     @Override
     public void onActivityMessage(@NotNull ActivityMessage message) {
         if (deactivated) {
-            log.debug("Activity handler deactivated, ignoring message: {}", message.getSource());
+            log.info("Activity handler deactivated, ignoring {} message", message.getSource());
             return;
         }
 
@@ -304,14 +305,18 @@ public class WebViewActivityHandler implements ActivityLoggingMessage {
     private void handleAgentMessage(@NotNull ActivityMessage message) {
         final long capturedGeneration = this.generation;
 
-        log.debug(">>> Agent message (type={}): {} - {}", message.getAgentType(), message.getToolName(), message.getCallNumber());
+        log.info(">>> Agent activity (type={}, messageId={}, deactivated={}): {} - {}",
+                message.getAgentType(), activeMessageId, deactivated, message.getToolName(), message.getCallNumber());
 
         boolean showToolActivity = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowToolActivityInChat());
 
         // Intermediate LLM responses are always shown in the chat output
         if (message.getAgentType() == AgentType.INTERMEDIATE_RESPONSE) {
             if (this.generation != capturedGeneration) return;
-            intermediateTexts.add(message.getResult() != null ? message.getResult() : "");
+            String text = message.getResult() != null ? message.getResult() : "";
+            intermediateTexts.add(text);
+            log.info("Intermediate response #{} for messageId={}, showToolActivity={}, text length={}",
+                    intermediateTexts.size(), activeMessageId, showToolActivity, text.length());
             if (showToolActivity) {
                 agentLogs.add(message);
                 if (this.generation != capturedGeneration) return;
@@ -341,8 +346,22 @@ public class WebViewActivityHandler implements ActivityLoggingMessage {
      */
     @SuppressWarnings("java:S6035") // innerHTML usage is safe — content is escaped by HtmlRenderer
     private void appendIntermediateTextBelowThinking(String messageId) {
-        if (messageId == null || !jsExecutor.isLoaded()) return;
+        if (messageId == null || !jsExecutor.isLoaded()) {
+            log.info("appendIntermediateTextBelowThinking skipped: messageId={}, loaded={}", messageId, jsExecutor.isLoaded());
+            return;
+        }
 
+        log.info("appendIntermediateTextBelowThinking: messageId={}, intermediateTexts.size={}",
+                messageId, intermediateTexts.size());
+
+        String js = buildIntermediateTextScript(messageId);
+        jsExecutor.executeJavaScript(js);
+    }
+
+    /**
+     * Builds the JavaScript for inserting/updating intermediate text below the loading indicator.
+     */
+    private String buildIntermediateTextScript(String messageId) {
         boolean isDark = ThemeDetector.isDarkTheme();
         String textColor = isDark ? "#B0BEC5" : "#546E7A";
         String separatorColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
@@ -365,30 +384,43 @@ public class WebViewActivityHandler implements ActivityLoggingMessage {
         String escapedMessageId = jsExecutor.escapeJS(messageId);
         String siblingId = "agent-intermediate-" + escapedMessageId;
 
-        String js = "try {\n" +
+        // Find the loading indicator or assistant-message container and insert/update the
+        // intermediate text div. The assistant-message fallback handles the case where the
+        // loading indicator element has not yet been rendered by JCEF (async JS execution).
+        return "try {\n" +
                 "  var loader = document.getElementById('" + loadingId + "');\n" +
                 "  if (!loader) {\n" +
-                "    const messagePair = document.getElementById('" + escapedMessageId + "');\n" +
+                "    var messagePair = document.getElementById('" + escapedMessageId + "');\n" +
                 "    if (messagePair) {\n" +
                 "      loader = messagePair.querySelector('.loading-indicator');\n" +
                 "    }\n" +
                 "  }\n" +
-                "  if (loader) {\n" +
+                "  var container = loader ? loader.parentNode : null;\n" +
+                "  if (!container) {\n" +
+                "    var mp = document.getElementById('" + escapedMessageId + "');\n" +
+                "    if (mp) { container = mp.querySelector('.assistant-message'); }\n" +
+                "  }\n" +
+                "  if (container) {\n" +
                 "    var sib = document.getElementById('" + siblingId + "');\n" +
                 "    if (!sib) {\n" +
                 "      sib = document.createElement('div');\n" +
                 "      sib.id = '" + siblingId + "';\n" +
                 "      sib.style.cssText = 'padding:4px 8px;margin-top:4px;color:" + textColor + ";font-style:italic;';\n" +
-                "      loader.parentNode.insertBefore(sib, loader.nextSibling);\n" +
+                "      if (loader) {\n" +
+                "        loader.parentNode.insertBefore(sib, loader.nextSibling);\n" +
+                "      } else {\n" +
+                "        container.appendChild(sib);\n" +
+                "      }\n" +
                 "    }\n" +
                 // SECURITY: escapedContent is pre-escaped via HtmlRenderer(escapeHtml=true) + escapeJS()
                 "    sib.innerHTML = `" + escapedContent + "`;\n" +
                 "    setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);\n" +
+                "  } else {\n" +
+                "    console.error('appendIntermediateText: no container found for messageId=" + escapedMessageId + "');\n" +
                 "  }\n" +
                 "} catch (error) {\n" +
                 "  console.error('Error appending intermediate text:', error);\n" +
                 "}\n";
-        jsExecutor.executeJavaScript(js);
     }
 
     /**
