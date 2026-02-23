@@ -52,6 +52,7 @@ class SearchOptionsPanelTest {
 
     private MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic;
     private MockedStatic<ApplicationManager> appManagerMockedStatic;
+    private SearchOptionsPanel createdPanel;
 
     @BeforeEach
     void setUp() {
@@ -69,8 +70,17 @@ class SearchOptionsPanelTest {
 
     @AfterEach
     void tearDown() {
+        if (createdPanel != null) {
+            createdPanel.getSwitches().forEach(InputSwitch::dispose);
+            createdPanel = null;
+        }
         stateServiceMockedStatic.close();
         appManagerMockedStatic.close();
+    }
+
+    private SearchOptionsPanel createPanel() {
+        createdPanel = new SearchOptionsPanel(project);
+        return createdPanel;
     }
 
     @Test
@@ -80,7 +90,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.isVisible()).isFalse();
     }
@@ -92,7 +102,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.isVisible()).isTrue();
     }
@@ -104,7 +114,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.isVisible()).isTrue();
     }
@@ -116,7 +126,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.isVisible()).isTrue();
     }
@@ -128,7 +138,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         assertThat(switches).hasSize(2);
@@ -141,7 +151,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(true);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         assertThat(switches.get(0).isSelected()).isTrue(); // RAG switch
@@ -155,7 +165,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(true);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         assertThat(switches.get(0).isSelected()).isFalse(); // RAG switch
@@ -170,7 +180,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(true);
         when(stateService.getWebSearchActivated()).thenReturn(true);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         // enforceInitialSingleSelection finds first selected+visible, deactivates others
@@ -185,7 +195,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.getPreferredSize().height).isEqualTo(0);
         assertThat(panel.getPreferredSize().width).isEqualTo(0);
@@ -198,7 +208,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.getMinimumSize().height).isEqualTo(0);
     }
@@ -210,7 +220,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         assertThat(panel.getMinimumSize().height).isGreaterThan(0);
     }
@@ -222,7 +232,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         // Manually hide both switches
         panel.getSwitches().forEach(sw -> sw.setVisible(false));
@@ -238,7 +248,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         assertThat(switches.get(0).isVisible()).isTrue(); // RAG visible
@@ -252,7 +262,7 @@ class SearchOptionsPanelTest {
         when(stateService.getRagActivated()).thenReturn(false);
         when(stateService.getWebSearchActivated()).thenReturn(false);
 
-        SearchOptionsPanel panel = new SearchOptionsPanel(project);
+        SearchOptionsPanel panel = createPanel();
 
         List<InputSwitch> switches = panel.getSwitches();
         assertThat(switches.get(0).isVisible()).isFalse(); // RAG not visible

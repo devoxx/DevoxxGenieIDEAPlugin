@@ -53,6 +53,7 @@ public class AcpTransport implements AutoCloseable {
     @Getter
     private Process process;
     private BufferedWriter writer;
+    private Thread readerThread;
     private final AtomicInteger idCounter = new AtomicInteger(1);
     private final ConcurrentHashMap<Integer, CompletableFuture<JsonRpcMessage>> pendingRequests = new ConcurrentHashMap<>();
 
@@ -88,9 +89,9 @@ public class AcpTransport implements AutoCloseable {
         writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        Thread readerThread = new Thread(() -> readLoop(reader), "acp-reader");
-        readerThread.setDaemon(true);
-        readerThread.start();
+        this.readerThread = new Thread(() -> readLoop(reader), "acp-reader");
+        this.readerThread.setDaemon(true);
+        this.readerThread.start();
     }
 
     private void readLoop(BufferedReader reader) {
@@ -262,11 +263,21 @@ public class AcpTransport implements AutoCloseable {
         if (process != null) {
             process.destroy();
             try {
-                process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
+                if (!process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {
+                    process.destroyForcibly();
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 process.destroyForcibly();
             }
+        }
+        if (readerThread != null) {
+            try {
+                readerThread.join(TimeUnit.SECONDS.toMillis(SHUTDOWN_WAIT_SECONDS));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            readerThread = null;
         }
     }
 }

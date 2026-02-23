@@ -48,6 +48,21 @@ public class InputSwitch extends JBPanel<InputSwitch> {
         timer = new Timer(0, new MyActionListener());
     }
 
+    /**
+     * Stops the animation timer and releases resources.
+     * Must be called when this component is no longer needed.
+     */
+    public void dispose() {
+        timer.stop();
+        events.clear();
+    }
+
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        timer.stop();
+    }
+
     public void addEventSelected(EventSwitchSelected event) {
         events.add(event);
     }
