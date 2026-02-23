@@ -1,8 +1,8 @@
 package com.devoxx.genie.service.mcp;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
-import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPType;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -26,14 +25,16 @@ import static org.mockito.Mockito.when;
 
 class MCPListenerServiceTest {
 
-    private List<MCPMessage> capturedMcpMessages;
-    private List<AgentMessage> capturedAgentMessages;
+    private List<ActivityMessage> capturedMessages;
     private MCPListenerService listener;
+
+    // Simulates the last message in an agent loop turn (tool result followed by next LLM call)
+    private static final ToolExecutionResultMessage TOOL_RESULT =
+            ToolExecutionResultMessage.from("id-1", "some_tool", "result");
 
     @BeforeEach
     void setUp() {
-        capturedMcpMessages = new ArrayList<>();
-        capturedAgentMessages = new ArrayList<>();
+        capturedMessages = new ArrayList<>();
     }
 
     // -- Early return cases --
@@ -45,8 +46,7 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContextWithMockedMessages(List.of());
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).isEmpty();
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedMessages).isEmpty();
     }
 
     @Test
@@ -58,8 +58,7 @@ class MCPListenerServiceTest {
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).isEmpty();
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedMessages).isEmpty();
     }
 
     @Test
@@ -72,8 +71,42 @@ class MCPListenerServiceTest {
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).isEmpty();
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedMessages).isEmpty();
+    }
+
+    // -- Last message is UserMessage → skip (prevents stale response flash) --
+
+    @Test
+    void onRequest_lastMessageIsUserMessage_skipsToPreventStaleFlash() {
+        listener = createListener(true, true);
+
+        // Simulates: 2nd prompt's first LLM call where the second-to-last message
+        // is the previous prompt's final AI response. Publishing this would flash
+        // old content under the new "Thinking..." indicator.
+        AiMessage previousResponse = AiMessage.from("Previous prompt's final response");
+        ChatModelRequestContext ctx = createContext(List.of(
+                SystemMessage.from("system"),
+                previousResponse,
+                UserMessage.from("New user prompt")
+        ));
+        listener.onRequest(ctx);
+
+        assertThat(capturedMessages).isEmpty();
+    }
+
+    @Test
+    void onRequest_lastMessageIsUserMessage_nonAgentMode_alsoSkips() {
+        listener = createListener(false, true);
+
+        AiMessage previousResponse = AiMessage.from("Previous response");
+        ChatModelRequestContext ctx = createContext(List.of(
+                SystemMessage.from("system"),
+                previousResponse,
+                UserMessage.from("New prompt")
+        ));
+        listener.onRequest(ctx);
+
+        assertThat(capturedMessages).isEmpty();
     }
 
     // -- ToolExecutionResultMessage at penultimate position --
@@ -83,19 +116,20 @@ class MCPListenerServiceTest {
         listener = createListener(false, true);
 
         ToolExecutionResultMessage toolResult = ToolExecutionResultMessage.from("id-1", "read_file", "file contents");
-        ChatModelRequestContext ctx = createContext(List.of(
+        // Use a simpler setup: toolResult at penultimate, followed by non-UserMessage
+        ChatModelRequestContext ctx2 = createContext(List.of(
                 SystemMessage.from("system"),
                 toolResult,
-                UserMessage.from("continue")
+                AiMessage.from("continue processing")
         ));
-        listener.onRequest(ctx);
+        listener.onRequest(ctx2);
 
         // ToolExecutionResultMessage only triggers debug logging, no publishing
-        assertThat(capturedMcpMessages).isEmpty();
-        assertThat(capturedAgentMessages).isEmpty();
+        // (the penultimate message is toolResult, not AiMessage)
+        assertThat(capturedMessages).isEmpty();
     }
 
-    // -- AiMessage with text, non-agent mode --
+    // -- AiMessage with text, non-agent mode (in agent loop: last msg is tool result) --
 
     @Test
     void onRequest_aiMessageWithText_nonAgentMode_postsMcpMessage() {
@@ -105,14 +139,14 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).hasSize(1);
-        assertThat(capturedMcpMessages.get(0).getType()).isEqualTo(MCPType.AI_MSG);
-        assertThat(capturedMcpMessages.get(0).getContent()).isEqualTo("Here is my analysis...");
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.MCP);
+        assertThat(capturedMessages.get(0).getMcpType()).isEqualTo(MCPType.AI_MSG);
+        assertThat(capturedMessages.get(0).getContent()).isEqualTo("Here is my analysis...");
     }
 
     // -- AiMessage with text, agent mode --
@@ -125,14 +159,14 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedAgentMessages).hasSize(1);
-        assertThat(capturedAgentMessages.get(0).getType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
-        assertThat(capturedAgentMessages.get(0).getResult()).isEqualTo("Thinking step by step...");
-        assertThat(capturedMcpMessages).isEmpty();
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.AGENT);
+        assertThat(capturedMessages.get(0).getAgentType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
+        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Thinking step by step...");
     }
 
     // -- AiMessage with text, agent mode but debug logs disabled --
@@ -147,14 +181,14 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedAgentMessages).hasSize(1);
-        assertThat(capturedAgentMessages.get(0).getType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
-        assertThat(capturedAgentMessages.get(0).getResult()).isEqualTo("Thinking...");
-        assertThat(capturedMcpMessages).isEmpty();
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.AGENT);
+        assertThat(capturedMessages.get(0).getAgentType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
+        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Thinking...");
     }
 
     // -- AiMessage with null/empty text --
@@ -170,13 +204,13 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
         // Should post TOOL_MSG but not AI_MSG
-        assertThat(capturedMcpMessages).hasSize(1);
-        assertThat(capturedMcpMessages.get(0).getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     @Test
@@ -190,13 +224,13 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
         // Should only post TOOL_MSG, not AI_MSG (empty text is skipped)
-        assertThat(capturedMcpMessages).hasSize(1);
-        assertThat(capturedMcpMessages.get(0).getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getMcpType()).isEqualTo(MCPType.TOOL_MSG);
     }
 
     // -- AiMessage with tool execution requests --
@@ -214,13 +248,14 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).hasSize(1);
-        MCPMessage msg = capturedMcpMessages.get(0);
-        assertThat(msg.getType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(capturedMessages).hasSize(1);
+        ActivityMessage msg = capturedMessages.get(0);
+        assertThat(msg.getSource()).isEqualTo(ActivitySource.MCP);
+        assertThat(msg.getMcpType()).isEqualTo(MCPType.TOOL_MSG);
         assertThat(msg.getContent()).isEqualTo("{\"path\": \"/tmp/test.txt\"}");
     }
 
@@ -237,13 +272,13 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
         // In agent mode: text goes to agent message, tool requests are NOT posted to MCP panel
-        assertThat(capturedAgentMessages).hasSize(1);
-        assertThat(capturedMcpMessages).isEmpty();
+        assertThat(capturedMessages).hasSize(1);
+        assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.AGENT);
     }
 
     // -- AiMessage with both text and tool requests, non-agent mode --
@@ -261,38 +296,33 @@ class MCPListenerServiceTest {
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
         listener.onRequest(ctx);
 
         // Should post both AI_MSG and TOOL_MSG
-        assertThat(capturedMcpMessages).hasSize(2);
-        assertThat(capturedMcpMessages.get(0).getType()).isEqualTo(MCPType.AI_MSG);
-        assertThat(capturedMcpMessages.get(0).getContent()).isEqualTo("Let me read that file");
-        assertThat(capturedMcpMessages.get(1).getType()).isEqualTo(MCPType.TOOL_MSG);
-        assertThat(capturedMcpMessages.get(1).getContent()).isEqualTo("{\"path\": \"/tmp/test.txt\"}");
+        assertThat(capturedMessages).hasSize(2);
+        assertThat(capturedMessages.get(0).getMcpType()).isEqualTo(MCPType.AI_MSG);
+        assertThat(capturedMessages.get(0).getContent()).isEqualTo("Let me read that file");
+        assertThat(capturedMessages.get(1).getMcpType()).isEqualTo(MCPType.TOOL_MSG);
+        assertThat(capturedMessages.get(1).getContent()).isEqualTo("{\"path\": \"/tmp/test.txt\"}");
     }
 
-    // -- Agent message publisher exception --
+    // -- Activity message publisher exception --
 
     @Test
-    void onRequest_agentMessagePublisherThrows_doesNotPropagate() {
-        Consumer<AgentMessage> throwingPublisher = msg -> {
-            throw new RuntimeException("bus error");
-        };
-
+    void onRequest_activityMessagePublisherThrows_doesNotPropagate() {
         listener = new MCPListenerService(
                 () -> true,
                 () -> true,
-                capturedMcpMessages::add,
-                throwingPublisher
+                msg -> { throw new RuntimeException("bus error"); }
         );
 
         AiMessage aiMessage = AiMessage.from("Some reasoning");
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
-                UserMessage.from("continue")
+                TOOL_RESULT
         ));
 
         // Should not throw
@@ -312,8 +342,7 @@ class MCPListenerServiceTest {
         ));
         listener.onRequest(ctx);
 
-        assertThat(capturedMcpMessages).isEmpty();
-        assertThat(capturedAgentMessages).isEmpty();
+        assertThat(capturedMessages).isEmpty();
     }
 
     // -- Helpers --
@@ -322,8 +351,7 @@ class MCPListenerServiceTest {
         return new MCPListenerService(
                 () -> agentMode,
                 () -> agentDebugLogsEnabled,
-                capturedMcpMessages::add,
-                capturedAgentMessages::add
+                capturedMessages::add
         );
     }
 

@@ -427,8 +427,8 @@ class ParallelExploreToolExecutorTest {
         when(project.getLocationHash()).thenReturn("test-hash");
 
         // Mock the message bus publisher
-        var agentLogger = mock(com.devoxx.genie.service.agent.AgentLoggingMessage.class);
-        when(messageBus.syncPublisher(any())).thenReturn(agentLogger);
+        var activityLogger = mock(com.devoxx.genie.service.activity.ActivityLoggingMessage.class);
+        when(messageBus.syncPublisher(any())).thenReturn(activityLogger);
 
         ExecutorService directExecutor = Executors.newSingleThreadExecutor();
         when(threadPoolManager.getSubAgentPool()).thenReturn(directExecutor);
@@ -444,7 +444,7 @@ class ParallelExploreToolExecutorTest {
             executor.execute(request, null);
 
             // Should have published events (started + sub-agent started + sub-agent completed)
-            verify(agentLogger, atLeastOnce()).onAgentLoggingMessage(any());
+            verify(activityLogger, atLeastOnce()).onActivityMessage(any());
         } finally {
             directExecutor.shutdownNow();
         }

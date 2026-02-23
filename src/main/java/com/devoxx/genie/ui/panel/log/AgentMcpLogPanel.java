@@ -1,9 +1,10 @@
 package com.devoxx.genie.ui.panel.log;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.mcp.MCPMessage;
-import com.devoxx.genie.service.agent.AgentLoggingMessage;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -45,7 +46,7 @@ import java.util.List;
  * Double-click a log entry to open full content in a new editor tab.
  */
 @Slf4j
-public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLoggingMessage, MCPLoggingMessage, Disposable {
+public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, Disposable {
 
     private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
     private static final int BATCH_SIZE = 20;
@@ -108,8 +109,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
 
         ApplicationManager.getApplication().invokeLater(() ->
                 MessageBusUtil.connect(project, connection -> {
-                    MessageBusUtil.subscribe(connection, AppTopics.AGENT_LOG_MSG, this);
-                    MessageBusUtil.subscribe(connection, AppTopics.MCP_LOGGING_MSG, this);
+                    MessageBusUtil.subscribe(connection, AppTopics.ACTIVITY_LOG_MSG, this);
                     MessageBusUtil.subscribe(connection, AppTopics.MCP_TRAFFIC_MSG, this);
                     Disposer.register(this, connection);
                 }));
@@ -223,8 +223,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
     }
 
     @Override
-    public void onAgentLoggingMessage(AgentMessage message) {
-        if (message == null || isPaused) {
+    public void onActivityMessage(@NotNull ActivityMessage message) {
+        if (isPaused) {
             return;
         }
         String hash = message.getProjectLocationHash();
@@ -232,18 +232,34 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
             return;
         }
 
-        String displayText = formatAgentMessage(message);
-        String fullContent = buildAgentFullContent(message);
-        LogEntry entry = new LogEntry(
-                LocalDateTime.now().format(TIME_FORMATTER),
-                LogSource.AGENT,
-                message.getType(),
-                displayText,
-                fullContent
-        );
-        addToPending(entry);
+        if (message.getSource() == ActivitySource.AGENT) {
+            String displayText = formatAgentActivityMessage(message);
+            String fullContent = buildAgentActivityFullContent(message);
+            LogEntry entry = new LogEntry(
+                    LocalDateTime.now().format(TIME_FORMATTER),
+                    LogSource.AGENT,
+                    message.getAgentType(),
+                    displayText,
+                    fullContent
+            );
+            addToPending(entry);
+        } else {
+            String content = message.getContent();
+            LogEntry entry = new LogEntry(
+                    LocalDateTime.now().format(TIME_FORMATTER),
+                    LogSource.MCP,
+                    null,
+                    content,
+                    content
+            );
+            addToPending(entry);
+        }
     }
 
+    /**
+     * Receives MCP traffic messages (low-level protocol debug).
+     * This is kept on the separate MCP_TRAFFIC_MSG topic.
+     */
     @Override
     public void onMCPLoggingMessage(MCPMessage message) {
         if (message == null || isPaused) {
@@ -310,15 +326,15 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
     }
 
-    private @NotNull String formatAgentMessage(@NotNull AgentMessage message) {
+    private @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message) {
         StringBuilder sb = new StringBuilder();
-        if (message.getType() != AgentType.INTERMEDIATE_RESPONSE) {
+        if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE) {
             sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
         }
         if (message.getSubAgentId() != null) {
             sb.append("[").append(message.getSubAgentId()).append("] ");
         }
-        switch (message.getType()) {
+        switch (message.getAgentType()) {
             case TOOL_REQUEST:    formatToolRequest(sb, message);    break;
             case TOOL_RESPONSE:   formatToolResponse(sb, message);   break;
             case TOOL_ERROR:
@@ -352,7 +368,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         return sb.toString();
     }
 
-    private void formatToolRequest(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+    private void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("▶ ").append(message.getToolName());
         if (message.getArguments() != null) {
             String args = message.getArguments();
@@ -361,7 +377,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
     }
 
-    private void formatToolResponse(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+    private void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("✔ ").append(message.getToolName());
         if (message.getResult() != null) {
             String result = message.getResult();
@@ -370,7 +386,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
     }
 
-    private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull AgentMessage message) {
+    private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("\uD83D\uDCAC ");
         if (message.getResult() != null) {
             String text = message.getResult().replace("\n", " ");
@@ -381,9 +397,9 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements AgentLogg
         }
     }
 
-    private @NotNull String buildAgentFullContent(@NotNull AgentMessage message) {
+    private @NotNull String buildAgentActivityFullContent(@NotNull ActivityMessage message) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Type: ").append(message.getType()).append("\n");
+        sb.append("Type: ").append(message.getAgentType()).append("\n");
         if (message.getToolName() != null) sb.append("Tool: ").append(message.getToolName()).append("\n");
         if (message.getCallNumber() > 0) {
             sb.append("Call: ").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("\n");

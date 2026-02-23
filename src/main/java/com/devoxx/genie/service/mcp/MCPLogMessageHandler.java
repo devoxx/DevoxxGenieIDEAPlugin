@@ -1,10 +1,10 @@
 package com.devoxx.genie.service.mcp;
 
-import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.mcp.client.logging.McpLogLevel;
 import dev.langchain4j.mcp.client.logging.McpLogMessage;
 import dev.langchain4j.mcp.client.logging.McpLogMessageHandler;
@@ -114,14 +114,12 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
      */
     private void publishToBus(String message) {
         try {
-            MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
-            
             // Strip direction markers for cleaner display
             String cleanMessage = message;
             if (message.startsWith("< ") || message.startsWith("> ")) {
                 cleanMessage = message.substring(2);
             }
-            
+
             // Determine message type based on content
             MCPType messageType = MCPType.LOG_MSG;
             if (message.startsWith("< ")) {
@@ -129,10 +127,12 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
             } else if (message.startsWith("> ")) {
                 messageType = MCPType.TOOL_MSG;
             }
-            
-            messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
-                    .onMCPLoggingMessage(MCPMessage.builder()
-                            .type(messageType)
+
+            ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(AppTopics.ACTIVITY_LOG_MSG)
+                    .onActivityMessage(ActivityMessage.builder()
+                            .source(ActivitySource.MCP)
+                            .mcpType(messageType)
                             .content(cleanMessage)
                             .build());
         } catch (Exception e) {

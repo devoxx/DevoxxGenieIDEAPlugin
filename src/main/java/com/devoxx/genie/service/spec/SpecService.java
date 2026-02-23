@@ -1,12 +1,12 @@
 package com.devoxx.genie.service.spec;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.spec.BacklogConfig;
 import com.devoxx.genie.model.spec.BacklogDocument;
 import com.devoxx.genie.model.spec.DefinitionOfDoneItem;
 import com.devoxx.genie.model.spec.TaskSpec;
-import com.devoxx.genie.service.agent.AgentLoggingMessage;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
@@ -720,15 +720,15 @@ public final class SpecService implements Disposable {
         // Subscribe to CLI stream-json events so we can detect when an external Backlog MCP
         // server call completes and refresh the spec panel without waiting for VFS focus-regain.
         String projectHash = project.getLocationHash();
-        messageBusConnection.subscribe(AppTopics.AGENT_LOG_MSG, (AgentMessage message) -> {
-            if (message == null) return;
+        messageBusConnection.subscribe(AppTopics.ACTIVITY_LOG_MSG, (ActivityMessage message) -> {
+            if (message == null || message.getSource() != ActivitySource.AGENT) return;
             String hash = message.getProjectLocationHash();
             if (hash != null && !hash.equals(projectHash)) return;
 
-            if (message.getType() == AgentType.TOOL_REQUEST
+            if (message.getAgentType() == AgentType.TOOL_REQUEST
                     && isCliBacklogMutation(message.getToolName())) {
                 pendingCliBacklogMutation.set(true);
-            } else if (message.getType() == AgentType.TOOL_RESPONSE
+            } else if (message.getAgentType() == AgentType.TOOL_RESPONSE
                     && pendingCliBacklogMutation.compareAndSet(true, false)) {
                 ApplicationManager.getApplication().executeOnPooledThread(this::refresh);
             }

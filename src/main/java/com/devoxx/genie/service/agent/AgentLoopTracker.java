@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -107,8 +108,9 @@ public class AgentLoopTracker implements ToolProvider {
             return;
         }
         try {
-            AgentMessage message = AgentMessage.builder()
-                    .type(type)
+            ActivityMessage message = ActivityMessage.builder()
+                    .source(ActivitySource.AGENT)
+                    .agentType(type)
                     .toolName(toolName)
                     .arguments(arguments)
                     .result(result)
@@ -119,8 +121,8 @@ public class AgentLoopTracker implements ToolProvider {
                     .build();
 
             ApplicationManager.getApplication().getMessageBus()
-                    .syncPublisher(AppTopics.AGENT_LOG_MSG)
-                    .onAgentLoggingMessage(message);
+                    .syncPublisher(AppTopics.ACTIVITY_LOG_MSG)
+                    .onActivityMessage(message);
         } catch (Exception e) {
             log.debug("Failed to publish agent log event", e);
         }

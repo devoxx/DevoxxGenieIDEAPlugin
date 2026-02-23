@@ -1,8 +1,7 @@
 package com.devoxx.genie.ui.panel.conversation;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.conversation.Conversation;
-import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.ChatService;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
@@ -113,21 +112,14 @@ public class ConversationPanel
         messageBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
 
-        // Filter MCP/Agent log messages to only show messages from this project
+        // Filter activity log messages to only show messages from this project
         String projectHash = project.getLocationHash();
-        messageBusConnection.subscribe(AppTopics.MCP_LOGGING_MSG, (MCPMessage message) -> {
+        messageBusConnection.subscribe(AppTopics.ACTIVITY_LOG_MSG, (ActivityMessage message) -> {
             String hash = message.getProjectLocationHash();
             if (hash != null && !hash.equals(projectHash)) {
                 return;
             }
-            webViewController.onMCPLoggingMessage(message);
-        });
-        messageBusConnection.subscribe(AppTopics.AGENT_LOG_MSG, (AgentMessage message) -> {
-            String hash = message.getProjectLocationHash();
-            if (hash != null && !hash.equals(projectHash)) {
-                return;
-            }
-            webViewController.onAgentLoggingMessage(message);
+            webViewController.onActivityMessage(message);
         });
     }
 

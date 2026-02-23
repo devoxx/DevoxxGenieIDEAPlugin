@@ -1,17 +1,17 @@
 package com.devoxx.genie.service.mcp;
 
-import com.devoxx.genie.model.agent.AgentMessage;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
-import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
 import lombok.extern.slf4j.Slf4j;
@@ -26,26 +26,22 @@ public class MCPListenerService implements ChatModelListener {
 
     private final Supplier<Boolean> agentModeSupplier;
     private final Supplier<Boolean> agentDebugLogsEnabledSupplier;
-    private final Consumer<MCPMessage> mcpMessagePublisher;
-    private final Consumer<AgentMessage> agentMessagePublisher;
+    private final Consumer<ActivityMessage> activityMessagePublisher;
 
     public MCPListenerService() {
         this(
                 () -> Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()),
                 () -> Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled()),
-                MCPListenerService::publishMcpMessage,
-                MCPListenerService::publishAgentMessage
+                MCPListenerService::publishActivityMessage
         );
     }
 
     MCPListenerService(Supplier<Boolean> agentModeSupplier,
                        Supplier<Boolean> agentDebugLogsEnabledSupplier,
-                       Consumer<MCPMessage> mcpMessagePublisher,
-                       Consumer<AgentMessage> agentMessagePublisher) {
+                       Consumer<ActivityMessage> activityMessagePublisher) {
         this.agentModeSupplier = agentModeSupplier;
         this.agentDebugLogsEnabledSupplier = agentDebugLogsEnabledSupplier;
-        this.mcpMessagePublisher = mcpMessagePublisher;
-        this.agentMessagePublisher = agentMessagePublisher;
+        this.activityMessagePublisher = activityMessagePublisher;
     }
 
     @Override
@@ -54,6 +50,14 @@ public class MCPListenerService implements ChatModelListener {
 
         List<ChatMessage> messages = requestContext.chatRequest().messages();
         if (messages.isEmpty() || messages.size() <= 2) {
+            return;
+        }
+
+        // When the last message is a UserMessage, the second-to-last AI message is from a
+        // previous conversation turn — not an intermediate agent response. Publishing it
+        // would flash the old response under the new prompt's "Thinking..." indicator.
+        ChatMessage lastMessage = messages.get(messages.size() - 1);
+        if (lastMessage instanceof UserMessage) {
             return;
         }
 
@@ -74,10 +78,7 @@ public class MCPListenerService implements ChatModelListener {
                 // Route LLM intermediate reasoning to Agent Logs
                 postAgentMessage(aiMessage.text());
             } else {
-                postMcpMessage(MCPMessage.builder()
-                        .type(MCPType.AI_MSG)
-                        .content(aiMessage.text())
-                        .build());
+                postMcpMessage(MCPType.AI_MSG, aiMessage.text());
             }
         }
         // Tool execution requests: only log to MCP panel when NOT in agent mode.
@@ -85,40 +86,35 @@ public class MCPListenerService implements ChatModelListener {
         if (!agentMode && aiMessage.hasToolExecutionRequests() && !aiMessage.toolExecutionRequests().isEmpty()) {
             ToolExecutionRequest toolExecutionRequest = aiMessage.toolExecutionRequests().get(0);
             log.debug(">>> Tool msg: {}", toolExecutionRequest.arguments());
-            postMcpMessage(MCPMessage.builder()
-                    .type(MCPType.TOOL_MSG)
-                    .content(toolExecutionRequest.arguments())
-                    .build());
+            postMcpMessage(MCPType.TOOL_MSG, toolExecutionRequest.arguments());
         }
     }
 
-    private void postMcpMessage(MCPMessage mcpMessage) {
-        if (mcpMessage != null) {
-            mcpMessagePublisher.accept(mcpMessage);
-        }
+    private void postMcpMessage(@NotNull MCPType type, @NotNull String content) {
+        ActivityMessage message = ActivityMessage.builder()
+                .source(ActivitySource.MCP)
+                .mcpType(type)
+                .content(content)
+                .build();
+        activityMessagePublisher.accept(message);
     }
 
     private void postAgentMessage(@NotNull String text) {
         try {
-            AgentMessage message = AgentMessage.builder()
-                    .type(AgentType.INTERMEDIATE_RESPONSE)
+            ActivityMessage message = ActivityMessage.builder()
+                    .source(ActivitySource.AGENT)
+                    .agentType(AgentType.INTERMEDIATE_RESPONSE)
                     .result(text)
                     .build();
-            agentMessagePublisher.accept(message);
+            activityMessagePublisher.accept(message);
         } catch (Exception e) {
             log.debug("Failed to publish agent intermediate response", e);
         }
     }
 
-    private static void publishMcpMessage(MCPMessage mcpMessage) {
-        MessageBus messageBus = ApplicationManager.getApplication().getMessageBus();
-        messageBus.syncPublisher(AppTopics.MCP_LOGGING_MSG)
-                .onMCPLoggingMessage(mcpMessage);
-    }
-
-    private static void publishAgentMessage(AgentMessage message) {
+    private static void publishActivityMessage(ActivityMessage message) {
         ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(AppTopics.AGENT_LOG_MSG)
-                .onAgentLoggingMessage(message);
+                .syncPublisher(AppTopics.ACTIVITY_LOG_MSG)
+                .onActivityMessage(message);
     }
 }
