@@ -2,6 +2,15 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.2]
+
+### Fixed
+- Agent intermediate reasoning text now reliably appears below "Thinking..." indicator in chat webview with fallback DOM lookup (#958)
+- Added info-level logging throughout the activity message flow for easier debugging (#958)
+
+### Testing
+- Comprehensive test suite for `WebViewActivityHandler` covering lifecycle, intermediate response display, tool call filtering, MCP messages, and JS content validation (18 tests) (#958)
+
 ## [0.10.1]
 
 ### Changed

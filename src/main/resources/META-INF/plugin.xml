@@ -45,6 +45,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.10.2</h2>
+        <UL>
+            <LI>Fix: Agent intermediate reasoning text now reliably appears below "Thinking..." indicator in chat (#958)</LI>
+            <LI>Test: Comprehensive test suite for unified WebViewActivityHandler (18 tests)</LI>
+        </UL>
         <h2>v0.10.1</h2>
         <UL>
             <LI>Refactor: Unify MCP and Agent activity logging into single ActivityMessage system (#957)</LI>
