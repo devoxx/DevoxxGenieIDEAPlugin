@@ -2,6 +2,14 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1]
+
+### Changed
+- Unified MCP and Agent activity logging into single `ActivityMessage` system, eliminating duplicated handler logic (#957)
+
+### Fixed
+- DevoxxGenie Logs panel now shows full log text with horizontal scrolling instead of truncating tool arguments and results (#957)
+
 ## [0.10.0]
 
 ### Added

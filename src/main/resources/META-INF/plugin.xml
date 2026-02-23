@@ -45,6 +45,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v0.10.1</h2>
+        <UL>
+            <LI>Refactor: Unify MCP and Agent activity logging into single ActivityMessage system (#957)</LI>
+            <LI>Fix: Show full log text in DevoxxGenie Logs panel with horizontal scrolling (#957)</LI>
+        </UL>
         <h2>v0.10.0</h2>
         <UL>
             <LI>Feat: Show agent intermediate reasoning messages in chat output panel with markdown rendering</LI>
