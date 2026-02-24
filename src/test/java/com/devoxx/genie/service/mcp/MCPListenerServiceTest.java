@@ -188,7 +188,7 @@ class MCPListenerServiceTest {
         assertThat(capturedMessages).hasSize(1);
         assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.AGENT);
         assertThat(capturedMessages.get(0).getAgentType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
-        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Thinking...");
+        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Thinking");
     }
 
     // -- AiMessage with null/empty text --
