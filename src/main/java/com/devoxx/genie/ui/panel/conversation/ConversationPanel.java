@@ -11,7 +11,8 @@ import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.FileReferencesListener;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ComposeConversationViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBPanel;
@@ -41,7 +42,7 @@ public class ConversationPanel
     private final ConversationUIController uiController;
     private final MessageBusConnection messageBusConnection;
 
-    public final ConversationWebViewController webViewController;
+    public final ConversationViewController viewController;
 
     /**
      * Creates a new conversation panel.
@@ -52,9 +53,9 @@ public class ConversationPanel
     public ConversationPanel(Project project, ResourceBundle resourceBundle) {
         super(new BorderLayout());
 
-        webViewController = new ConversationWebViewController();
-        
-        messageRenderer = new MessageRenderer(project, webViewController);
+        viewController = new ComposeConversationViewController(project, s -> kotlin.Unit.INSTANCE);
+
+        messageRenderer = new MessageRenderer(project, viewController);
         
         ConversationHistoryPanel historyPanel = new ConversationHistoryPanel(project);
         ConversationHistoryManager historyManager = new ConversationHistoryManager(project, historyPanel, messageRenderer);
@@ -74,7 +75,7 @@ public class ConversationPanel
                 historyManager,
             messageRenderer, 
             uiController.getConversationLabel(),
-            this::refreshWebViewForNewConversation
+            this::refreshForNewConversation
         );
         
         // Set the conversation manager in the chat service for conversation tracking
@@ -92,7 +93,7 @@ public class ConversationPanel
         add(uiController.createButtonPanel(), BorderLayout.NORTH);
 
         // Set component layout and sizing
-        JComponent displayComponent = webViewController.getComponent();
+        JComponent displayComponent = viewController.getComponent();
         displayComponent.setOpaque(true);
         Color editorBg = UIUtil.getPanelBackground();
         displayComponent.setBackground(editorBg);
@@ -119,7 +120,7 @@ public class ConversationPanel
             if (hash != null && !hash.equals(projectHash)) {
                 return;
             }
-            webViewController.onActivityMessage(message);
+            viewController.onActivityMessage(message);
         });
     }
 
@@ -223,28 +224,18 @@ public class ConversationPanel
         if (messageBusConnection != null) {
             messageBusConnection.disconnect();
         }
-        if (webViewController != null) {
-            webViewController.dispose();
+        if (viewController != null) {
+            viewController.dispose();
         }
     }
-    
+
     /**
-     * Manually trigger recovery from sleep/wake issues when the webview appears corrupted.
-     * This is a convenience method that can be called externally if needed.
+     * Force refresh the view for a new conversation.
+     * This ensures a clean state.
      */
-    public void triggerWebViewRecovery() {
-        if (webViewController != null) {
-            webViewController.triggerRecovery();
-        }
-    }
-    
-    /**
-     * Force refresh the webview for a new conversation.
-     * This ensures a clean state and can help recover from any rendering issues.
-     */
-    public void refreshWebViewForNewConversation() {
-        if (webViewController != null) {
-            webViewController.refreshForNewConversation();
+    public void refreshForNewConversation() {
+        if (viewController != null) {
+            viewController.refreshForNewConversation();
         }
     }
 }

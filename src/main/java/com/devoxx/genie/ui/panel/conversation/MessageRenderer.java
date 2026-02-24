@@ -2,7 +2,7 @@ package com.devoxx.genie.ui.panel.conversation;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.listener.FileReferencesListener;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -21,17 +21,17 @@ import java.util.ResourceBundle;
 @Slf4j
 public class MessageRenderer implements FileReferencesListener {
 
-    private final ConversationWebViewController webViewController;
+    private final ConversationViewController viewController;
 
     /**
      * Creates a new message renderer.
      *
      * @param project The active project
-     * @param webViewController The web view controller to use for rendering
+     * @param viewController The web view controller to use for rendering
      */
     public MessageRenderer(@NotNull Project project,
-                           ConversationWebViewController webViewController) {
-        this.webViewController = webViewController;
+                           ConversationViewController viewController) {
+        this.viewController = viewController;
         
         // Subscribe to file references topic
         MessageBusConnection msgBusConnection = project.getMessageBus().connect();
@@ -44,7 +44,7 @@ public class MessageRenderer implements FileReferencesListener {
      * @param chatMessageContext The chat message context containing both user and AI messages
      */
     public void addChatMessage(ChatMessageContext chatMessageContext) {
-        webViewController.addChatMessage(chatMessageContext);
+        viewController.addChatMessage(chatMessageContext);
         scrollToBottom();
     }
 
@@ -55,7 +55,7 @@ public class MessageRenderer implements FileReferencesListener {
      * @param chatMessageContext The chat message context with the user prompt
      */
     public void addUserPromptMessage(@NotNull ChatMessageContext chatMessageContext) {
-        webViewController.addUserPromptMessage(chatMessageContext);
+        viewController.addUserPromptMessage(chatMessageContext);
         // Don't automatically scroll to bottom for first messages in a new conversation
         // This is handled specifically for the first message to maintain header spacing
     }
@@ -67,7 +67,7 @@ public class MessageRenderer implements FileReferencesListener {
      * @param chatMessageContext The chat message context with the complete AI response
      */
     public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {
-        webViewController.updateAiMessageContent(chatMessageContext);
+        viewController.updateAiMessageContent(chatMessageContext);
         scrollToBottom();
     }
 
@@ -75,14 +75,14 @@ public class MessageRenderer implements FileReferencesListener {
      * Show the welcome content in the conversation view.
      */
     public void showWelcome(ResourceBundle resourceBundle) {
-        webViewController.loadWelcomeContent(resourceBundle);
+        viewController.loadWelcomeContent(resourceBundle);
     }
 
     /**
      * Clear the conversation content.
      */
     public void clear() {
-        webViewController.clearConversation();
+        viewController.clearConversation();
     }
 
     /**
@@ -91,10 +91,10 @@ public class MessageRenderer implements FileReferencesListener {
      */
     public void clearWithoutWelcome() {
         // Cancel any pending deferred welcome load to prevent it from overwriting chat messages
-        webViewController.cancelPendingWelcomeLoad();
+        viewController.cancelPendingWelcomeLoad();
         // Set the restoration flag to prevent welcome content during theme changes
-        webViewController.setRestoringConversation(true);
-        webViewController.clearConversation();
+        viewController.setRestoringConversation(true);
+        viewController.clearConversation();
     }
 
     /**
@@ -102,7 +102,7 @@ public class MessageRenderer implements FileReferencesListener {
      * This allows normal welcome content loading to resume.
      */
     public void clearRestorationFlag() {
-        webViewController.setRestoringConversation(false);
+        viewController.setRestoringConversation(false);
         log.debug("Cleared conversation restoration flag");
     }
     
@@ -113,7 +113,7 @@ public class MessageRenderer implements FileReferencesListener {
      * @param inProgress true if restoration is in progress, false otherwise
      */
     public void setRestorationInProgress(boolean inProgress) {
-        webViewController.setRestoringConversation(inProgress);
+        viewController.setRestoringConversation(inProgress);
         log.debug("Set conversation restoration in progress: {}", inProgress);
     }
 
@@ -121,29 +121,24 @@ public class MessageRenderer implements FileReferencesListener {
      * Update custom prompts in the welcome screen.
      */
     public void updateCustomPrompts(ResourceBundle resourceBundle) {
-        webViewController.updateCustomPrompts(resourceBundle);
+        viewController.updateCustomPrompts(resourceBundle);
     }
 
     /**
      * Scrolls the conversation view to the bottom.
-     * This is used both when a user submits a prompt and when a response is received.
+     * With Compose, scrolling is handled automatically by LazyColumn's auto-scroll logic.
      */
     public void scrollToBottom() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            webViewController.executeJavaScript("setTimeout(function() { window.scrollTo(0, document.body.scrollHeight); }, 0);");
-        });
+        // No-op: Compose LazyColumn handles auto-scrolling
     }
 
     /**
      * Scrolls the conversation view to the top.
-     * This is used after restoring a conversation.
+     * With Compose, scrolling is handled automatically.
      */
     public void scrollToTop() {
-        // Use setTimeout in JS to delay scroll until rendering is complete, avoiding EDT blocking
-        ApplicationManager.getApplication().invokeLater(() -> {
-            webViewController.executeJavaScript("setTimeout(function() { window.scrollTo(0, 0); }, 300);");
-            log.debug("Scheduled scroll-to-top");
-        });
+        // No-op: Compose LazyColumn handles scrolling
+        log.debug("Scheduled scroll-to-top (no-op in Compose)");
     }
 
     /**
@@ -153,7 +148,7 @@ public class MessageRenderer implements FileReferencesListener {
     public void addCompleteChatMessage(ChatMessageContext context) {
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
-                webViewController.addChatMessage(context);
+                viewController.addChatMessage(context);
                 log.debug("Successfully added message pair with ID: {}", context.getId());
             } catch (Exception e) {
                 log.error("Error adding chat message: {}", e.getMessage(), e);
@@ -168,7 +163,7 @@ public class MessageRenderer implements FileReferencesListener {
     public void addUserMessageOnly(ChatMessageContext context) {
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
-                webViewController.addUserPromptMessage(context);
+                viewController.addUserPromptMessage(context);
                 log.debug("Added user-only message with ID: {}", context.getId());
             } catch (Exception e) {
                 log.error("Error adding user message: {}", e.getMessage(), e);
@@ -191,7 +186,7 @@ public class MessageRenderer implements FileReferencesListener {
         // Use the web view controller to add file references to the conversation
         if (!files.isEmpty()) {
             ApplicationManager.getApplication().invokeLater(() -> {
-                webViewController.addFileReferences(chatMessageContext, files);
+                viewController.addFileReferences(chatMessageContext, files);
             });
         }
     }
@@ -200,28 +195,13 @@ public class MessageRenderer implements FileReferencesListener {
      * Check if the web view controller is initialized
      */
     public boolean isInitialized() {
-        return webViewController.isInitialized();
-    }
-    
-    /**
-     * Check if there are black screen issues with the webview.
-     * This delegates to the webview controller to check for rendering problems.
-     * 
-     * @return true if black screen issues are detected, false otherwise
-     */
-    public boolean hasBlackScreenIssues() {
-        try {
-            return webViewController.hasBlackScreenIssues();
-        } catch (Exception e) {
-            log.error("Error checking for black screen issues", e);
-            return false;
-        }
+        return viewController.isInitialized();
     }
     
     /**
      * Ensure the browser is initialized before executing a runnable
      */
     public void ensureBrowserInitialized(Runnable runnable) {
-        webViewController.ensureBrowserInitialized(runnable);
+        viewController.ensureBrowserInitialized(runnable);
     }
 }

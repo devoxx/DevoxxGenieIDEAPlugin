@@ -7,7 +7,7 @@ import com.devoxx.genie.service.prompt.error.StreamingException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -29,7 +29,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private Consumer<ChatResponse> onCompleteCallback;
     private Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
-    private ConversationWebViewController conversationWebViewController;
+    private ConversationViewController conversationViewController;
 
     // Track if we've added the initial message and accumulate the streamed tokens
     private boolean hasAddedInitialMessage = false;
@@ -39,13 +39,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
      * Creates a new streaming response handler
      *
      * @param context The chat message context
-     * @param conversationWebViewController The web view controller to display conversation (can be null in tests)
+     * @param conversationViewController The web view controller to display conversation (can be null in tests)
      * @param onCompleteCallback Called when streaming completes successfully
      * @param onErrorCallback Called when streaming encounters an error
      */
     public StreamingResponseHandler(
             @NotNull ChatMessageContext context,
-            ConversationWebViewController conversationWebViewController,
+            ConversationViewController conversationViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
         log.debug("Created streaming handler for context {}", context.getId());
@@ -54,7 +54,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         this.onCompleteCallback = onCompleteCallback;
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
-        this.conversationWebViewController = conversationWebViewController;
+        this.conversationViewController = conversationViewController;
     }
 
     @Override
@@ -71,14 +71,14 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         String fullText = accumulatedResponse.toString();
         
         // Only update the UI if we have a valid controller (might be null in tests)
-        if (conversationWebViewController != null) {
+        if (conversationViewController != null) {
             ApplicationManager.getApplication().invokeLater(() -> {
                 // Set the AI message with accumulated tokens so far
                 context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
                 
                 // Always update the existing message - we already created a placeholder
                 // when the user submitted the prompt
-                conversationWebViewController.updateAiMessageContent(context);
+                conversationViewController.updateAiMessageContent(context);
                 
                 // Mark that we've started streaming
                 hasAddedInitialMessage = true;
@@ -101,18 +101,18 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             context.setExecutionTimeMs(endTime - startTime);
             context.setAiMessage(response.aiMessage());
 
-            // Update the web view with the final response (if webViewController is available)
-            if (conversationWebViewController != null) {
+            // Update the view with the final response (if viewController is available)
+            if (conversationViewController != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     // If we've already shown partial responses, just update the AI content
                     // Otherwise add a new message pair (when we get complete response without partials)
                     if (hasAddedInitialMessage) {
-                        conversationWebViewController.updateAiMessageContent(context);
+                        conversationViewController.updateAiMessageContent(context);
                     } else {
-                        conversationWebViewController.addChatMessage(context);
+                        conversationViewController.addChatMessage(context);
                     }
                     // Mark MCP logs as completed now that streaming is finished
-                    conversationWebViewController.markMCPLogsAsCompleted(context.getId());
+                    conversationViewController.markMCPLogsAsCompleted(context.getId());
                 });
             }
 
@@ -123,10 +123,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             ChatMemoryManager.getInstance().addAiResponse(context);
             
             // Add file references if any
-            if (!FileListManager.getInstance().isEmpty(context.getProject()) && conversationWebViewController != null) {
+            if (!FileListManager.getInstance().isEmpty(context.getProject()) && conversationViewController != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     // Add file references to the web view instead of creating a dialog
-                    conversationWebViewController.addFileReferences(context, 
+                    conversationViewController.addFileReferences(context, 
                         FileListManager.getInstance().getFiles(context.getProject()));
                 });
             }
@@ -144,8 +144,8 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
 
         // Deactivate activity handlers BEFORE hiding to prevent race condition
-        if (conversationWebViewController != null) {
-            conversationWebViewController.deactivateActivityHandlers();
+        if (conversationViewController != null) {
+            conversationViewController.deactivateActivityHandlers();
         }
 
         // Hide the loading indicator in the WebView
@@ -159,13 +159,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
     /**
      * Hides the "Thinking..." loading indicator and any agent activity in the WebView.
-     * Delegates to ConversationWebViewController.hideLoadingIndicator().
+     * Delegates to ConversationViewController.hideLoadingIndicator().
      */
     private void hideLoadingIndicator() {
-        if (conversationWebViewController == null) {
+        if (conversationViewController == null) {
             return;
         }
-        conversationWebViewController.hideLoadingIndicator(context.getId());
+        conversationViewController.hideLoadingIndicator(context.getId());
     }
 
     /**
@@ -185,8 +185,8 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             }
 
             // Deactivate activity handlers BEFORE hiding to prevent race condition
-            if (conversationWebViewController != null) {
-                conversationWebViewController.deactivateActivityHandlers();
+            if (conversationViewController != null) {
+                conversationViewController.deactivateActivityHandlers();
             }
 
             // Hide the loading indicator in the WebView

@@ -92,33 +92,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
     /**
      * Displays help text in the panel.
-     * Now creates a help message as a direct AI response in the conversation panel
-     * without showing a separate user prompt for it.
+     * Uses the ConversationViewController's addSystemMessage to render help content.
      */
     public void showHelpText() {
-        String helpId = "help_" + System.currentTimeMillis();
-        
-        // Create special help content that doesn't include a user message
-        String helpContent = HelpUtil.getHelpMessage();
-        
-        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
-        // and duplicate /help command display
-        conversationPanel.webViewController.executeJavaScript(
-            "const container = document.getElementById('conversation-container');" +
-            "const messagePair = document.createElement('div');" +
-            "messagePair.className = 'message-pair';" +
-            "messagePair.id = '" + helpId + "';" +
-            "const aiMessage = document.createElement('div');" +
-            "aiMessage.className = 'assistant-message';" +
-            "aiMessage.innerHTML = `" + 
-            "<div class='metadata-info'>Available commands:</div>" +
-            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
-            helpContent + "`;" +
-            "messagePair.appendChild(aiMessage);" +
-            "container.appendChild(messagePair);" +
-            "window.scrollTo(0, document.body.scrollHeight);" +
-            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
-        );
+        String helpMarkdown = HelpUtil.getHelpMarkdown();
+        conversationPanel.viewController.addSystemMessage(helpMarkdown);
     }
 
     /**
@@ -165,29 +143,8 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * Called when custom prompts have changed.
      */
     public void updateHelpText() {
-        String helpId = "help_updated_" + System.currentTimeMillis();
-        
-        // Create special help content that doesn't include a user message
-        String helpContent = HelpUtil.getHelpMessage();
-        
-        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
-        // and duplicate /help command display
-        conversationPanel.webViewController.executeJavaScript(
-            "const container = document.getElementById('conversation-container');" +
-            "const messagePair = document.createElement('div');" +
-            "messagePair.className = 'message-pair';" +
-            "messagePair.id = '" + helpId + "';" +
-            "const aiMessage = document.createElement('div');" +
-            "aiMessage.className = 'assistant-message';" +
-            "aiMessage.innerHTML = `" + 
-            "<div class='metadata-info'>Updated commands:</div>" +
-            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
-            helpContent + "`;" +
-            "messagePair.appendChild(aiMessage);" +
-            "container.appendChild(messagePair);" +
-            "window.scrollTo(0, document.body.scrollHeight);" +
-            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
-        );
+        String helpMarkdown = HelpUtil.getHelpMarkdown();
+        conversationPanel.viewController.addSystemMessage(helpMarkdown);
     }
 
     /**

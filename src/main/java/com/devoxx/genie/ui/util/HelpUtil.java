@@ -61,6 +61,25 @@ public class HelpUtil {
     }
     
     /**
+     * Returns help content as plain Markdown for the Compose UI.
+     *
+     * @return Markdown-formatted help string
+     */
+    public static @NotNull String getHelpMarkdown() {
+        String commands = DevoxxGenieStateService.getInstance()
+            .getCustomPrompts()
+            .stream()
+            .map(customPrompt -> "- **/" + customPrompt.getName() + "** : " + customPrompt.getPrompt())
+            .collect(Collectors.joining("\n"));
+
+        return "### Available commands\n\n" +
+            commands + "\n\n" +
+            "The Devoxx Genie is open source and available at " +
+            "[GitHub](https://github.com/devoxx/DevoxxGenieIDEAPlugin). " +
+            "Follow us on [Bluesky](https://bsky.app/profile/devoxxgenie.bsky.social).";
+    }
+
+    /**
      * Get the custom prompt commands formatted for modern HTML display in WebView.
      * This provides better formatting with strong text for command names.
      *

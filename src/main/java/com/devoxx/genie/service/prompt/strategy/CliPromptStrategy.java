@@ -9,7 +9,7 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
@@ -79,11 +79,11 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         consoleManager.printTaskHeader("chat", prompt.length() > 60 ? prompt.substring(0, 60) + "..." : prompt, toolName);
         consoleManager.activateToolWindow();
 
-        ConversationWebViewController webViewController =
-                panel.getConversationPanel() != null ? panel.getConversationPanel().webViewController : null;
+        ConversationViewController viewController =
+                panel.getConversationPanel() != null ? panel.getConversationPanel().viewController : null;
 
         threadPoolManager.getPromptExecutionPool().execute(() ->
-                runCliProcess(context, cliTool, cliCommand, command, prompt, consoleManager, webViewController, resultTask));
+                runCliProcess(context, cliTool, cliCommand, command, prompt, consoleManager, viewController, resultTask));
 
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {
@@ -98,7 +98,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                                @NotNull List<String> command,
                                @NotNull String prompt,
                                @NotNull CliConsoleManager consoleManager,
-                               @Nullable ConversationWebViewController webViewController,
+                               @Nullable ConversationViewController viewController,
                                @NotNull PromptTask<PromptResult> resultTask) {
         long startTime = System.currentTimeMillis();
         try {
@@ -112,7 +112,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
             List<String> stderrLines = Collections.synchronizedList(new ArrayList<>());
 
             Thread stderrThread = startStderrReader(process, stderrLines, consoleManager);
-            streamStdoutToViews(process, cliCommand, accumulatedResponse, consoleManager, webViewController, context, resultTask);
+            streamStdoutToViews(process, cliCommand, accumulatedResponse, consoleManager, viewController, context, resultTask);
 
             log.info("CLI stdout captured {} chars: [{}]", accumulatedResponse.length(),
                     accumulatedResponse.length() > 300 ? accumulatedResponse.substring(0, 300) + "..." : accumulatedResponse);
@@ -125,7 +125,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
             log.info("CLI chat process exited: exitCode={}, elapsed={}ms", exitCode, elapsed);
 
             finalizeProcessResult(exitCode, elapsed, startTime, accumulatedResponse, stderrLines,
-                    consoleManager, webViewController, context, resultTask);
+                    consoleManager, viewController, context, resultTask);
 
         } catch (IOException e) {
             activeProcess = null;
@@ -182,7 +182,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                                      @NotNull CliCommand cliCommand,
                                      @NotNull StringBuilder accumulatedResponse,
                                      @NotNull CliConsoleManager consoleManager,
-                                     @Nullable ConversationWebViewController webViewController,
+                                     @Nullable ConversationViewController viewController,
                                      @NotNull ChatMessageContext context,
                                      @NotNull PromptTask<PromptResult> resultTask) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -207,9 +207,9 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     consoleManager.printOutput(consoleLine);
 
-                    if (webViewController != null && !fullText.isEmpty()) {
+                    if (viewController != null && !fullText.isEmpty()) {
                         context.setAiMessage(AiMessage.from(fullText));
-                        webViewController.updateAiMessageContent(context);
+                        viewController.updateAiMessageContent(context);
                     }
                 });
             }
@@ -222,7 +222,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                                        @NotNull StringBuilder accumulatedResponse,
                                        @NotNull List<String> stderrLines,
                                        @NotNull CliConsoleManager consoleManager,
-                                       @Nullable ConversationWebViewController webViewController,
+                                       @Nullable ConversationViewController viewController,
                                        @NotNull ChatMessageContext context,
                                        @NotNull PromptTask<PromptResult> resultTask) {
         String exitMsg = "\n=== Process exited with code " + exitCode + " (after " + elapsed + "ms) ===\n";
@@ -230,7 +230,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (exitCode == 0) {
                 finalizeSuccess(exitMsg, startTime, accumulatedResponse, consoleManager,
-                        webViewController, context, resultTask);
+                        viewController, context, resultTask);
             } else {
                 finalizeError(exitCode, exitMsg, stderrLines, consoleManager, context, resultTask);
             }
@@ -241,7 +241,7 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                                  long startTime,
                                  @NotNull StringBuilder accumulatedResponse,
                                  @NotNull CliConsoleManager consoleManager,
-                                 @Nullable ConversationWebViewController webViewController,
+                                 @Nullable ConversationViewController viewController,
                                  @NotNull ChatMessageContext context,
                                  @NotNull PromptTask<PromptResult> resultTask) {
         consoleManager.printSystem(exitMsg);
@@ -252,9 +252,9 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
             context.setAiMessage(AiMessage.from(finalText));
         }
 
-        if (webViewController != null) {
-            webViewController.updateAiMessageContent(context);
-            webViewController.markMCPLogsAsCompleted(context.getId());
+        if (viewController != null) {
+            viewController.updateAiMessageContent(context);
+            viewController.markMCPLogsAsCompleted(context.getId());
         }
 
         ChatMemoryManager.getInstance().addAiResponse(context);

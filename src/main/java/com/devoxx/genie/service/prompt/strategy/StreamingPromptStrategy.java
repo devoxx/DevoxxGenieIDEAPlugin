@@ -128,10 +128,10 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                 .newInstance(context, onComplete, onError);
         } catch (ClassNotFoundException e) {
             return new StreamingResponseHandler(
-                context, panel.getConversationPanel().webViewController, onComplete, onError);
+                context, panel.getConversationPanel().viewController, onComplete, onError);
         } catch (Exception e) {
-            log.error("Failed to create test handler, conversationWebViewController is null!", e);
-            throw new IllegalStateException("ConversationWebViewController is null in the panel", e);
+            log.error("Failed to create test handler, viewController is null!", e);
+            throw new IllegalStateException("ConversationViewController is null in the panel", e);
         }
     }
 
