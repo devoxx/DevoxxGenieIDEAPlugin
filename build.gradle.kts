@@ -56,6 +56,7 @@ tasks.jacocoTestReport {
 // Configure test task for JaCoCo
 tasks.test {
     finalizedBy(tasks.jacocoTestReport)
+    forkEvery = 10
 }
 
 tasks.register("updateProperties") {
