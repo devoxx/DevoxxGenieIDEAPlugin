@@ -2,6 +2,26 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0]
+
+### Added
+- Native Compose Desktop conversation UI replacing JCEF WebView (#961)
+- New Compose UI components: chat bubbles (AI & user), activity section, thinking indicator, copy button, file references section
+- Dynamic fonts and markdown rendering in user message bubbles
+
+### Fixed
+- Hide loading indicator on successful prompt completion
+- Restore correct `shouldIncludeSystemMessage` logic for o1 models
+- Filter raw JSON from CLI Runner output — show only human-readable text
+
+### Removed
+- JCEF WebView implementation, handlers, templates, and all associated CSS/JS/HTML resources
+- Dead code: `WelcomeContentService`, `CodeGeneratorService` (TDG), `NodeProcessorFactory`, `FillerPanel`, `HelpPanel`
+
+### Refactored
+- Improve thread safety, error handling, and code clarity across prompt strategies and conversation panels
+- Apply Lombok annotations and enforce field modifiers for cleaner Java code
+
 ## [0.10.2]
 
 ### Fixed

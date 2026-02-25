@@ -45,6 +45,18 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.0.0</h2>
+        <UL>
+            <LI>Feat: Replace JCEF WebView with native Compose Desktop conversation UI (#961)</LI>
+            <LI>Feat: New Compose UI components — chat bubbles, activity section, thinking indicator, copy button, file references</LI>
+            <LI>Feat: Enhance Compose UI with dynamic fonts, markdown rendering in user bubbles, and UX polish</LI>
+            <LI>Fix: Hide loading indicator on successful prompt completion</LI>
+            <LI>Fix: Restore correct shouldIncludeSystemMessage logic for o1 models</LI>
+            <LI>Fix: Filter raw JSON from CLI Runner output, show only human-readable text</LI>
+            <LI>Refactor: Remove JCEF WebView implementation, handlers, templates, and all WebView CSS/JS/HTML resources</LI>
+            <LI>Refactor: Remove dead code (WelcomeContentService, CodeGeneratorService, NodeProcessorFactory, FillerPanel, HelpPanel)</LI>
+            <LI>Refactor: Improve thread safety, error handling, and code clarity across prompt strategies and conversation panels</LI>
+        </UL>
         <h2>v0.10.2</h2>
         <UL>
             <LI>Fix: Agent intermediate reasoning text now reliably appears below "Thinking..." indicator in chat (#958)</LI>
