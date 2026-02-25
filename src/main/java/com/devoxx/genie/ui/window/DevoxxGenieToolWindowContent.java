@@ -129,7 +129,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private @NotNull JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(llmProviderPanel, BorderLayout.NORTH);
-        // topPanel.add(new ConversationHistoryPanel(project), BorderLayout.CENTER);
         return topPanel;
     }
 

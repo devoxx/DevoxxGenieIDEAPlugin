@@ -86,8 +86,7 @@ public class PromptCancellationService {
         
         // Get the strategy and panel for this specific context
         PromptExecutionStrategy strategy = getStrategy(projectHash, contextId);
-        PromptOutputPanel panel = getPanel(projectHash, contextId);
-        
+
         if (strategy != null) {
             log.debug("Cancelling specific execution: project={}, contextId={}", 
                     projectHash, contextId);
@@ -99,7 +98,7 @@ public class PromptCancellationService {
         taskTracker.cancelTaskByContextId(project, contextId);
         
         // Clean up UI if needed
-        cleanupCancelledExecution(project, contextId, panel);
+        cleanupCancelledExecution(project, contextId);
         
         // Finally unregister this execution
         unregisterExecution(project, contextId);
@@ -122,13 +121,12 @@ public class PromptCancellationService {
             for (Map.Entry<String, PromptExecutionStrategy> entry : strategies.entrySet()) {
                 String contextId = entry.getKey();
                 PromptExecutionStrategy strategy = entry.getValue();
-                PromptOutputPanel panel = getPanel(projectHash, contextId);
-                
+
                 // Cancel the strategy
                 strategy.cancel();
                 
                 // Clean up UI if needed
-                cleanupCancelledExecution(project, contextId, panel);
+                cleanupCancelledExecution(project, contextId);
             }
             
             // Clear the maps for this project
@@ -147,8 +145,7 @@ public class PromptCancellationService {
      */
     private void cleanupCancelledExecution(
             @NotNull Project project, 
-            @NotNull String contextId,
-            @Nullable PromptOutputPanel panel) {
+            @NotNull String contextId) {
         
         // Get the corresponding task to access its context
         PromptTask<?> task = PromptTaskTracker.getInstance().getTaskByContextId(project, contextId);
@@ -158,12 +155,6 @@ public class PromptCancellationService {
 
                 // Remove last user message from memory
                 ChatMemoryManager.getInstance().removeLastUserMessage(context);
-                
-                // Update UI if needed
-//                if (panel != null) {
-//                    ApplicationManager.getApplication().invokeLater(() ->
-//                        panel.removeLastUserPrompt(context));
-//                }
                 
                 log.debug("Cleaned up cancelled execution: contextId={}", contextId);
             }

@@ -66,10 +66,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         // Subscribe to MCP messages and file references
         ApplicationManager.getApplication().invokeLater(() ->
-                MessageBusUtil.connect(project, connection -> {
+                MessageBusUtil.connect(project, connection ->
                     MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC,
-                        conversationPanel); // Delegate to the conversation panel
-                }));
+                        conversationPanel) // Delegate to the conversation panel
+                )
+        );
     }
 
     /**
@@ -109,7 +110,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
             chatMessageContext.getSemanticReferences() != null &&
             !chatMessageContext.getSemanticReferences().isEmpty()) {
-            // TODO: Handle find command results in the WebView
             // For now, create a separate panel for find results
             JPanel findResultsContainer = new JPanel(new BorderLayout());
             findResultsContainer.add(new FindResultsPanel(project, chatMessageContext.getSemanticReferences()), BorderLayout.CENTER);
@@ -123,19 +123,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
             // Update the existing message pair instead of creating a new one
             conversationPanel.updateUserPromptWithResponse(chatMessageContext);
         }
-    }
-
-    /**
-     * Adds file references from a streaming response to the panel.
-     * This method is kept for backward compatibility but no longer shows a dialog.
-     * Instead, file references are now embedded directly in the HTML.
-     *
-     * @param fileListPanel The panel containing file references.
-     * @deprecated File references are now shown inline in the web view
-     */
-    @Deprecated
-    public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
-        // No longer creating a dialog - references are shown in the HTML now
     }
 
     /**

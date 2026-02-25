@@ -142,19 +142,6 @@ public class AcpClient implements AutoCloseable {
         }
 
         /**
-         * Sets a listener that receives structured ACP notifications.
-         * The listener receives (updateType, detail) pairs for each {@code session/update}
-         * notification from the agent.
-         *
-         * @param notificationListener callback receiving (updateType, detail) pairs
-         * @return this builder
-         */
-        public Builder notificationListener(BiConsumer<String, String> notificationListener) {
-            this.notificationListener = notificationListener;
-            return this;
-        }
-
-        /**
          * Sets the timeout in seconds used for ACP JSON-RPC requests.
          *
          * @param requestTimeoutSeconds timeout in seconds, must be greater than 0
@@ -230,7 +217,7 @@ public class AcpClient implements AutoCloseable {
             InitializeResult result = AcpTransport.MAPPER.treeToValue(response.getResult(), InitializeResult.class);
             initialized = true;
             log.info("[ACP] Connected to agent (protocolVersion={}, timeout={}s)",
-                    result.protocolVersion, requestTimeoutSeconds);
+                    result.getProtocolVersion(), requestTimeoutSeconds);
         } catch (AcpConnectionException e) {
             throw e;
         } catch (InterruptedException e) {
@@ -280,7 +267,7 @@ public class AcpClient implements AutoCloseable {
             }
 
             SessionNewResult result = AcpTransport.MAPPER.treeToValue(response.getResult(), SessionNewResult.class);
-            this.sessionId = result.sessionId;
+            this.sessionId = result.getSessionId();
             log.info("[ACP] Session created (sessionId={}, cwd={})", sessionId, cwd);
         } catch (AcpSessionException e) {
             throw e;
