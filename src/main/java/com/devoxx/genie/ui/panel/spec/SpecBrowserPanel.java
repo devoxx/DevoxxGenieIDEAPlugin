@@ -53,14 +53,15 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private static final String ARCHIVED_GROUP = "Archived";
 
     private static final int HORIZONTAL_LAYOUT_MIN_WIDTH = 600;
+    public static final String CANNOT_RUN_TASKS = "Cannot run tasks: ";
 
-    private final Project project;
+    private final transient Project project;
     private final Tree specTree;
     private final DefaultMutableTreeNode rootNode;
     private final DefaultTreeModel treeModel;
     private final SpecPreviewPanel previewPanel;
     private final JBSplitter splitter;
-    private final SpecTreeCellRenderer cellRenderer;
+    private final transient SpecTreeCellRenderer cellRenderer;
     private final SpecTaskRunnerProgressPanel progressPanel;
     private final SpecStatisticsPanel statisticsPanel;
 
@@ -491,10 +492,9 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
             DefaultMutableTreeNode statusNode = (DefaultMutableTreeNode) rootNode.getChildAt(i);
             for (int j = 0; j < statusNode.getChildCount(); j++) {
                 DefaultMutableTreeNode taskNode = (DefaultMutableTreeNode) statusNode.getChildAt(j);
-                if (taskNode.getUserObject() instanceof TaskSpec spec) {
-                    if (spec.getId() != null && checkedTaskIds.contains(spec.getId())) {
-                        tasks.add(spec);
-                    }
+                if (taskNode.getUserObject() instanceof TaskSpec spec &&
+                    spec.getId() != null && checkedTaskIds.contains(spec.getId())) {
+                    tasks.add(spec);
                 }
             }
         }
@@ -514,7 +514,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
-                        "Cannot run tasks: " + e.getMessage());
+                        CANNOT_RUN_TASKS + e.getMessage());
             } else {
                 throw e;
             }
@@ -578,7 +578,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
-                        "Cannot run tasks: " + e.getMessage());
+                        CANNOT_RUN_TASKS + e.getMessage());
             } else {
                 throw e;
             }
@@ -597,7 +597,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
-                        "Cannot run tasks: " + e.getMessage());
+                        CANNOT_RUN_TASKS + e.getMessage());
             } else {
                 throw e;
             }
@@ -610,7 +610,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
-                        "Cannot run tasks: " + e.getMessage());
+                        CANNOT_RUN_TASKS + e.getMessage());
             } else {
                 throw e;
             }
@@ -805,50 +805,15 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         statisticsPanel.update(specs, archivedTasks.size());
 
         // Remove checked IDs that no longer exist or are no longer To Do
-        Set<String> validIds = new HashSet<>();
-        for (TaskSpec spec : specs) {
-            if (spec.getId() != null && "To Do".equalsIgnoreCase(spec.getStatus())) {
-                validIds.add(spec.getId());
-            }
-        }
-        checkedTaskIds.retainAll(validIds);
+        retainValidCheckedIds(specs);
 
-        // Group by status
-        Map<String, List<TaskSpec>> grouped = new LinkedHashMap<>();
-        // Add known statuses first to maintain order
-        for (String status : STATUS_ORDER) {
-            grouped.put(status, new ArrayList<>());
-        }
-
-        for (TaskSpec spec : specs) {
-            String status = spec.getStatus() != null ? spec.getStatus() : "To Do";
-            grouped.computeIfAbsent(status, k -> new ArrayList<>()).add(spec);
-        }
-
-        // Build tree nodes, sorting tasks by ID number within each status group
-        for (Map.Entry<String, List<TaskSpec>> entry : grouped.entrySet()) {
-            List<TaskSpec> statusSpecs = entry.getValue();
-            if (statusSpecs.isEmpty()) {
-                continue;
-            }
-
-            statusSpecs.sort((a, b) -> Integer.compare(extractTaskNumber(a.getId()), extractTaskNumber(b.getId())));
-
-            DefaultMutableTreeNode statusNode = new DefaultMutableTreeNode(entry.getKey());
-            for (TaskSpec spec : statusSpecs) {
-                statusNode.add(new DefaultMutableTreeNode(spec));
-            }
-            rootNode.add(statusNode);
-        }
+        // Group by status and build tree nodes
+        Map<String, List<TaskSpec>> grouped = groupByStatus(specs);
+        buildStatusTreeNodes(grouped);
 
         // Add archived tasks group when toggled on
         if (showArchived && !archivedTasks.isEmpty()) {
-            archivedTasks.sort((a, b) -> Integer.compare(extractTaskNumber(a.getId()), extractTaskNumber(b.getId())));
-            DefaultMutableTreeNode archivedNode = new DefaultMutableTreeNode(ARCHIVED_GROUP);
-            for (TaskSpec spec : archivedTasks) {
-                archivedNode.add(new DefaultMutableTreeNode(spec));
-            }
-            rootNode.add(archivedNode);
+            buildSortedTreeNode(ARCHIVED_GROUP, archivedTasks);
         }
 
         treeModel.reload();
@@ -857,6 +822,45 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         for (int i = 0; i < specTree.getRowCount(); i++) {
             specTree.expandRow(i);
         }
+    }
+
+    private void retainValidCheckedIds(List<TaskSpec> specs) {
+        Set<String> validIds = new HashSet<>();
+        for (TaskSpec spec : specs) {
+            if (spec.getId() != null && "To Do".equalsIgnoreCase(spec.getStatus())) {
+                validIds.add(spec.getId());
+            }
+        }
+        checkedTaskIds.retainAll(validIds);
+    }
+
+    private Map<String, List<TaskSpec>> groupByStatus(List<TaskSpec> specs) {
+        Map<String, List<TaskSpec>> grouped = new LinkedHashMap<>();
+        for (String status : STATUS_ORDER) {
+            grouped.put(status, new ArrayList<>());
+        }
+        for (TaskSpec spec : specs) {
+            String status = spec.getStatus() != null ? spec.getStatus() : "To Do";
+            grouped.computeIfAbsent(status, k -> new ArrayList<>()).add(spec);
+        }
+        return grouped;
+    }
+
+    private void buildStatusTreeNodes(Map<String, List<TaskSpec>> grouped) {
+        for (Map.Entry<String, List<TaskSpec>> entry : grouped.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                buildSortedTreeNode(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void buildSortedTreeNode(String groupName, List<TaskSpec> specs) {
+        specs.sort((a, b) -> Integer.compare(extractTaskNumber(a.getId()), extractTaskNumber(b.getId())));
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(groupName);
+        for (TaskSpec spec : specs) {
+            node.add(new DefaultMutableTreeNode(spec));
+        }
+        rootNode.add(node);
     }
 
     private static int extractTaskNumber(String id) {

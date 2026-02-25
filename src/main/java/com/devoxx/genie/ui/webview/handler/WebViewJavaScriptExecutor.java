@@ -3,8 +3,6 @@ package com.devoxx.genie.ui.webview.handler;
 import com.devoxx.genie.ui.webview.JCEFChecker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.jcef.JBCefBrowser;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +32,9 @@ public class WebViewJavaScriptExecutor {
     private Timer pendingExecutionTimer;
     private static final int MAX_PENDING_EXECUTIONS = 100;
     private static final int MAX_CONSECUTIVE_FAILURES = 10;
+    private static final int BATCH_SIZE = 10;
+    private static final int MAX_PENDING_AGE_MS = 30_000;
+    private static final int MAX_PENDING_RETRY_ATTEMPTS = 3;
 
     /**
      * After this many milliseconds of inactivity, a plain repaint() may not be
@@ -100,72 +101,81 @@ public class WebViewJavaScriptExecutor {
             return;
         }
 
-        // Skip JavaScript execution if JCEF is not available or browser is null
         if (!JCEFChecker.isJCEFAvailable() || browser == null) {
             log.debug("JCEF not available or browser is null, skipping JavaScript execution: {}",
-                    script.length() > 50 ? script.substring(0, 50) + "..." : script);
+                    truncateForLog(script, 50));
             return;
         }
 
         int execNumber = executionCounter.incrementAndGet();
-        log.debug("JavaScript execution #{}: {}", execNumber,
-                         script.length() > 100 ? script.substring(0, 100) + "..." : script);
+        log.debug("JavaScript execution #{}: {}", execNumber, truncateForLog(script, 100));
 
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
-                if (isLoaded.get() && browser.getCefBrowser() != null) {
-                    long startTime = System.currentTimeMillis();
-                    long idleMs = lastExecutionTime.get() > 0 ? startTime - lastExecutionTime.get() : 0;
-
-                    browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
-                    lastExecutionTime.set(System.currentTimeMillis());
-                    failureCount.set(0); // Reset failure count on success
-
-                    // Force JCEF component repaint — in OSR mode, DOM changes via
-                    // executeJavaScript may not trigger the Swing paint cycle automatically
-                    browser.getComponent().repaint();
-
-                    // After a long idle (e.g. Ollama model cold-start), a single repaint()
-                    // is sometimes not enough to wake CEF's rendering pipeline.  Schedule a
-                    // second, more aggressive repaint shortly after to guarantee the content
-                    // becomes visible without the user having to click/move the panel.
-                    if (idleMs > LONG_IDLE_THRESHOLD_MS) {
-                        log.debug("Long idle detected ({}ms) — scheduling aggressive repaint after JS execution", idleMs);
-                        Timer aggressiveRepaint = new Timer(150, e -> {
-                            Component comp = browser.getComponent();
-                            if (comp != null) {
-                                comp.invalidate();
-                                comp.revalidate();
-                                comp.repaint();
-                                for (Container parent = comp.getParent(); parent != null; parent = parent.getParent()) {
-                                    parent.invalidate();
-                                    parent.revalidate();
-                                    parent.repaint();
-                                }
-                            }
-                        });
-                        aggressiveRepaint.setRepeats(false);
-                        aggressiveRepaint.start();
-                    }
-
-                    log.debug("JS execution #{} completed in {}ms", execNumber, System.currentTimeMillis() - startTime);
-                } else {
-                    String reason = !isLoaded.get() ? "not loaded" : "CEF browser is null";
-                    log.warn("Browser not ready for JavaScript execution ({}), queueing script #{}", reason, execNumber);
-                    queuePendingExecution(script);
-                }
+                doExecuteJavaScript(script, execNumber);
             } catch (Exception e) {
-                int failures = failureCount.incrementAndGet();
-                log.error("Error executing JavaScript #{} (failure #{}): {}", execNumber, failures, e.getMessage());
-
-                if (failures < MAX_CONSECUTIVE_FAILURES) {
-                    log.debug("Queueing failed execution for retry");
-                    queuePendingExecution(script);
-                } else {
-                    log.error("Max consecutive failures reached, dropping JavaScript execution");
-                }
+                handleExecutionFailure(script, execNumber, e);
             }
         });
+    }
+
+    private void doExecuteJavaScript(String script, int execNumber) {
+        if (!isLoaded.get()) {
+            String reason = !isLoaded.get() ? "not loaded" : "CEF browser is null";
+            log.warn("Browser not ready for JavaScript execution ({}), queueing script #{}", reason, execNumber);
+            queuePendingExecution(script);
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        long idleMs = lastExecutionTime.get() > 0 ? startTime - lastExecutionTime.get() : 0;
+
+        browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
+        lastExecutionTime.set(System.currentTimeMillis());
+        failureCount.set(0);
+
+        browser.getComponent().repaint();
+
+        if (idleMs > LONG_IDLE_THRESHOLD_MS) {
+            scheduleAggressiveRepaint(idleMs);
+        }
+
+        log.debug("JS execution #{} completed in {}ms", execNumber, System.currentTimeMillis() - startTime);
+    }
+
+    private void handleExecutionFailure(String script, int execNumber, Exception e) {
+        int failures = failureCount.incrementAndGet();
+        log.error("Error executing JavaScript #{} (failure #{}): {}", execNumber, failures, e.getMessage());
+
+        if (failures < MAX_CONSECUTIVE_FAILURES) {
+            log.debug("Queueing failed execution for retry");
+            queuePendingExecution(script);
+        } else {
+            log.error("Max consecutive failures reached, dropping JavaScript execution");
+        }
+    }
+
+    private void scheduleAggressiveRepaint(long idleMs) {
+        log.debug("Long idle detected ({}ms) — scheduling aggressive repaint after JS execution", idleMs);
+        Timer aggressiveRepaint = new Timer(150, e -> repaintComponentHierarchy());
+        aggressiveRepaint.setRepeats(false);
+        aggressiveRepaint.start();
+    }
+
+    private void repaintComponentHierarchy() {
+        Component comp = browser.getComponent();
+        comp.invalidate();
+        comp.revalidate();
+        comp.repaint();
+        for (Container parent = comp.getParent(); parent != null; parent = parent.getParent()) {
+            parent.invalidate();
+            parent.revalidate();
+            parent.repaint();
+        }
+    }
+
+    private static String truncateForLog(String text, int maxLength) {
+        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
     }
 
     /**
@@ -201,43 +211,44 @@ public class WebViewJavaScriptExecutor {
      * Process pending JavaScript executions.
      */
     private void processPendingExecutions() {
-        if (pendingExecutions.isEmpty() || !isLoaded.get() || browser == null || browser.getCefBrowser() == null) {
+        if (pendingExecutions.isEmpty() || !isLoaded.get() || browser == null) {
             return;
         }
 
         int processed = 0;
         int failed = 0;
 
-        while (!pendingExecutions.isEmpty() && processed < 10) { // Limit batch size
-            PendingJSExecution pending = pendingExecutions.poll();
-            if (pending == null) break;
-
-            // Check if execution is too old (avoid executing stale JavaScript)
-            if (System.currentTimeMillis() - pending.timestamp > 30000) { // 30 seconds
+        PendingJSExecution pending;
+        while (!pendingExecutions.isEmpty() && processed < BATCH_SIZE
+                && (pending = pendingExecutions.poll()) != null) {
+            if (System.currentTimeMillis() - pending.timestamp > MAX_PENDING_AGE_MS) {
                 log.debug("Discarded stale pending execution");
-                continue;
-            }
-
-            try {
-                browser.getCefBrowser().executeJavaScript(pending.script, browser.getCefBrowser().getURL(), 0);
+            } else if (executePendingScript(pending)) {
                 processed++;
-                log.debug("Executed pending JavaScript (attempt {})", pending.attempts + 1);
-            } catch (Exception e) {
+            } else {
                 failed++;
-                log.warn("Failed to execute pending JavaScript (attempt {}): {}", pending.attempts + 1, e.getMessage());
-
-                // Retry with increased attempt count
-                if (pending.attempts < 3) {
-                    pendingExecutions.offer(new PendingJSExecution(pending.script, pending.attempts + 1));
-                } else {
-                    log.error("Dropping JavaScript execution after {} attempts", pending.attempts + 1);
-                }
             }
         }
 
         if (processed > 0 || failed > 0) {
             log.info("Processed pending executions: {} successful, {} failed, {} remaining",
                            processed, failed, pendingExecutions.size());
+        }
+    }
+
+    private boolean executePendingScript(PendingJSExecution pending) {
+        try {
+            browser.getCefBrowser().executeJavaScript(pending.script, browser.getCefBrowser().getURL(), 0);
+            log.debug("Executed pending JavaScript (attempt {})", pending.attempts + 1);
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to execute pending JavaScript (attempt {}): {}", pending.attempts + 1, e.getMessage());
+            if (pending.attempts < MAX_PENDING_RETRY_ATTEMPTS) {
+                pendingExecutions.offer(new PendingJSExecution(pending.script, pending.attempts + 1));
+            } else {
+                log.error("Dropping JavaScript execution after {} attempts", pending.attempts + 1);
+            }
+            return false;
         }
     }
 
@@ -275,7 +286,7 @@ public class WebViewJavaScriptExecutor {
 
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
-                if (isLoaded.get() && browser.getCefBrowser() != null) {
+                if (isLoaded.get()) {
                     browser.getCefBrowser().executeJavaScript(script, browser.getCefBrowser().getURL(), 0);
                     log.debug("JavaScript execution successful on attempt {}", currentAttempt + 1);
                 } else if (currentAttempt < maxRetries) {

@@ -20,6 +20,11 @@ import java.util.List;
 @Slf4j
 public class BacklogMilestoneToolExecutor implements ToolExecutor {
 
+    public static final String ERROR_NO_MILESTONES_CONFIGURED = "Error: No milestones configured.";
+    public static final String NOT_FOUND = "' not found.";
+    public static final String ERROR_MILESTONE = "Error: Milestone '";
+    public static final String ERROR_NAME_PARAMETER_IS_REQUIRED = "Error: 'name' parameter is required.";
+
     private final Project project;
 
     public BacklogMilestoneToolExecutor(@NotNull Project project) {
@@ -88,10 +93,10 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
         return sb.toString();
     }
 
-    private @NotNull String addMilestone(@NotNull String arguments) throws Exception {
+    private @NotNull String addMilestone(@NotNull String arguments) throws IOException {
         String name = ToolArgumentParser.getString(arguments, "name");
         if (name == null || name.isEmpty()) {
-            return "Error: 'name' parameter is required.";
+            return ERROR_NAME_PARAMETER_IS_REQUIRED;
         }
 
         String description = ToolArgumentParser.getString(arguments, "description");
@@ -99,13 +104,8 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
         BacklogConfigService configService = BacklogConfigService.getInstance(project);
         BacklogConfig config = configService.getConfig();
 
-        // Check for duplicate
-        if (config.getMilestones() != null) {
-            boolean exists = config.getMilestones().stream()
-                    .anyMatch(m -> m.getName().equalsIgnoreCase(name));
-            if (exists) {
-                return "Error: Milestone '" + name + "' already exists.";
-            }
+        if (isMilestoneExists(config, name)) {
+            return ERROR_MILESTONE + name + "' already exists.";
         }
 
         List<BacklogConfig.BacklogMilestone> milestones = config.getMilestones() != null
@@ -116,6 +116,14 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
 
         configService.saveConfig(config);
         return "Added milestone: " + name;
+    }
+
+    private boolean isMilestoneExists(@NotNull BacklogConfig config, @NotNull String name) {
+        if (config.getMilestones() == null) {
+            return false;
+        }
+        return config.getMilestones().stream()
+                .anyMatch(m -> m.getName().equalsIgnoreCase(name));
     }
 
     private @NotNull String renameMilestone(@NotNull String arguments) throws Exception {
@@ -134,45 +142,34 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
         BacklogConfig config = configService.getConfig();
 
         if (config.getMilestones() == null) {
-            return "Error: No milestones configured.";
+            return ERROR_NO_MILESTONES_CONFIGURED;
         }
 
-        boolean found = false;
-        for (BacklogConfig.BacklogMilestone m : config.getMilestones()) {
-            if (m.getName().equalsIgnoreCase(from)) {
-                m.setName(to);
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            return "Error: Milestone '" + from + "' not found.";
+        if (!renameMilestoneInConfig(config, from, to)) {
+            return ERROR_MILESTONE + from + NOT_FOUND;
         }
 
         configService.saveConfig(config);
 
-        // Update tasks if requested
-        int updatedCount = 0;
-        if (updateTasks) {
-            SpecService specService = SpecService.getInstance(project);
-            for (TaskSpec spec : specService.getAllSpecs()) {
-                if (from.equalsIgnoreCase(spec.getMilestone())) {
-                    spec.setMilestone(to);
-                    specService.updateTask(spec);
-                    updatedCount++;
-                }
-            }
-        }
-
+        int updatedCount = updateTasks ? updateMatchingTasks(from, to) : 0;
         return "Renamed milestone '" + from + "' to '" + to + "'." +
                 (updateTasks ? " Updated " + updatedCount + " task(s)." : "");
+    }
+
+    private boolean renameMilestoneInConfig(@NotNull BacklogConfig config, @NotNull String from, @NotNull String to) {
+        for (BacklogConfig.BacklogMilestone m : config.getMilestones()) {
+            if (m.getName().equalsIgnoreCase(from)) {
+                m.setName(to);
+                return true;
+            }
+        }
+        return false;
     }
 
     private @NotNull String removeMilestone(@NotNull String arguments) throws Exception {
         String name = ToolArgumentParser.getString(arguments, "name");
         if (name == null || name.isEmpty()) {
-            return "Error: 'name' parameter is required.";
+            return ERROR_NAME_PARAMETER_IS_REQUIRED;
         }
 
         String taskHandling = ToolArgumentParser.getString(arguments, "taskHandling");
@@ -189,12 +186,12 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
         BacklogConfig config = configService.getConfig();
 
         if (config.getMilestones() == null) {
-            return "Error: No milestones configured.";
+            return ERROR_NO_MILESTONES_CONFIGURED;
         }
 
         boolean removed = config.getMilestones().removeIf(m -> m.getName().equalsIgnoreCase(name));
         if (!removed) {
-            return "Error: Milestone '" + name + "' not found.";
+            return ERROR_MILESTONE + name + NOT_FOUND;
         }
 
         configService.saveConfig(config);
@@ -224,22 +221,22 @@ public class BacklogMilestoneToolExecutor implements ToolExecutor {
         return count;
     }
 
-    private @NotNull String archiveMilestone(@NotNull String arguments) throws Exception {
+    private @NotNull String archiveMilestone(@NotNull String arguments) throws IOException {
         String name = ToolArgumentParser.getString(arguments, "name");
         if (name == null || name.isEmpty()) {
-            return "Error: 'name' parameter is required.";
+            return ERROR_NAME_PARAMETER_IS_REQUIRED;
         }
 
         BacklogConfigService configService = BacklogConfigService.getInstance(project);
         BacklogConfig config = configService.getConfig();
 
         if (config.getMilestones() == null) {
-            return "Error: No milestones configured.";
+            return ERROR_NO_MILESTONES_CONFIGURED;
         }
 
         boolean removed = config.getMilestones().removeIf(m -> m.getName().equalsIgnoreCase(name));
         if (!removed) {
-            return "Error: Milestone '" + name + "' not found.";
+            return ERROR_MILESTONE + name + NOT_FOUND;
         }
 
         configService.saveConfig(config);
