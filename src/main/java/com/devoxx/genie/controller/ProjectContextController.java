@@ -21,6 +21,7 @@ public class ProjectContextController {
     private final ComboBox<ModelProvider> modelProviderComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final ActionButtonsPanel actionButtonsPanel;
+    @Getter
     private boolean isProjectContextAdded = false;
     @Getter
     private String projectContext;
@@ -85,10 +86,6 @@ public class ProjectContextController {
                     });
                     return null;
                 });
-    }
-
-    public boolean isProjectContextAdded() {
-        return isProjectContextAdded;
     }
 
     public boolean isProjectContextSupportedProvider() {

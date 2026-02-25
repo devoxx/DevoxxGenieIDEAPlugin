@@ -1,5 +1,7 @@
 package com.devoxx.genie.service.acp.model;
 
+import lombok.Getter;
+
 import java.util.List;
 
 /**
@@ -7,10 +9,11 @@ import java.util.List;
  * the session identifier and the user's prompt as a list of content blocks.
  */
 public class SessionPromptParams {
+    @Getter
     public String sessionId;
-    public List<ContentBlock> prompt;
 
-    public SessionPromptParams() {}
+    @Getter
+    public List<ContentBlock> prompt;
 
     public SessionPromptParams(String sessionId, String text) {
         this.sessionId = sessionId;

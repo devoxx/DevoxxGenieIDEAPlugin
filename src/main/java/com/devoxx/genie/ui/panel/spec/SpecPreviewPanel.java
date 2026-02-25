@@ -21,17 +21,17 @@ import java.awt.*;
  */
 public class SpecPreviewPanel extends JPanel {
 
-    private final Project project;
+    private final transient Project project;
     private final JPanel contentPanel;
     private final JButton implementButton;
     private final JButton openFileButton;
     private final JButton archiveButton;
     private final JButton unarchiveButton;
-    private TaskSpec currentSpec;
+    private transient TaskSpec currentSpec;
     private boolean currentSpecIsArchived;
-    private Runnable onImplementAction;
-    private Runnable onArchiveAction;
-    private Runnable onUnarchiveAction;
+    private transient Runnable onImplementAction;
+    private transient Runnable onArchiveAction;
+    private transient Runnable onUnarchiveAction;
 
     public SpecPreviewPanel(@NotNull Project project) {
         super(new BorderLayout());

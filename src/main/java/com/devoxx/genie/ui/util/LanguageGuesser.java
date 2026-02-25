@@ -14,7 +14,7 @@ import java.util.Map;
  * fails.
  * Also, it is pretty common for markdown to use language identifier that not always match
  * the language id used by IntelliJ.
- * Inspired by https://github.com/asciidoctor/asciidoctor-intellij-plugin/blob/3ac99c53b21bc5d0ecb4961dc5d9c2095c3ea342/src/main/java/org/asciidoc/intellij/injection/LanguageGuesser.java
+ * Inspired by <a href="https://github.com/asciidoctor/asciidoctor-intellij-plugin/blob/3ac99c53b21bc5d0ecb4961dc5d9c2095c3ea342/src/main/java/org/asciidoc/intellij/injection/LanguageGuesser.java">...</a>
  */
 public class LanguageGuesser {
     private static final Map<String, Language> langToLanguageMap = new HashMap<>();

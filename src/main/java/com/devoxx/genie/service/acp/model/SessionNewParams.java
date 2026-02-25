@@ -3,20 +3,15 @@ package com.devoxx.genie.service.acp.model;
 import java.util.List;
 import java.util.Map;
 
+import lombok.Getter;
+
 /**
  * Parameters for the ACP {@code session/new} request, specifying the working
  * directory and MCP server configurations for the new session.
  */
 public class SessionNewParams {
-    public String cwd;
-    public List<Object> mcpServers;
-
-    public SessionNewParams() {}
-
-    public SessionNewParams(String cwd) {
-        this.cwd = cwd;
-        this.mcpServers = List.of();
-    }
+    @Getter private String cwd;
+    @Getter private List<Object> mcpServers;
 
     /**
      * Creates params with the Backlog MCP server included.

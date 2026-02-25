@@ -35,6 +35,8 @@ public class SubAgentRunner {
             "Use the provided tools to read files, list directories, and search for patterns. " +
             "Be thorough but efficient — stay focused on your assigned query. " +
             "Always respond in markdown format.";
+    public static final String SUB_AGENT = "Sub-agent #";
+    public static final String OLLAMA = "Ollama";
 
     private final Project project;
     private final int agentIndex;
@@ -58,13 +60,13 @@ public class SubAgentRunner {
      */
     public @NotNull String execute(@NotNull String query) {
         if (cancelled.get()) {
-            return "Sub-agent #" + (agentIndex + 1) + " cancelled before starting.";
+            return SUB_AGENT + (agentIndex + 1) + " cancelled before starting.";
         }
 
         try {
             ChatModel model = resolveModel();
             if (model == null) {
-                return "Sub-agent #" + (agentIndex + 1) + " error: Could not create model. " +
+                return SUB_AGENT + (agentIndex + 1) + " error: Could not create model. " +
                        "Check that a sub-agent model is configured in Settings > Agent.";
             }
 
@@ -84,7 +86,7 @@ public class SubAgentRunner {
 
             // Share cancellation state
             if (cancelled.get()) {
-                return "Sub-agent #" + (agentIndex + 1) + " cancelled.";
+                return SUB_AGENT + (agentIndex + 1) + " cancelled.";
             }
 
             SubAssistant assistant = AiServices.builder(SubAssistant.class)
@@ -108,7 +110,7 @@ public class SubAgentRunner {
             return result;
         } catch (Exception e) {
             log.error("Sub-agent #{} failed", agentIndex + 1, e);
-            return "Sub-agent #" + (agentIndex + 1) + " error: " + e.getMessage();
+            return SUB_AGENT + (agentIndex + 1) + " error: " + e.getMessage();
         }
     }
 
@@ -162,9 +164,9 @@ public class SubAgentRunner {
     @Nullable
     private ChatModel tryDefaultModel() {
         // Try Ollama first (free, local), then OpenAI
-        ChatModel model = createModelForProvider("Ollama", null);
+        ChatModel model = createModelForProvider(OLLAMA, null);
         if (model != null) {
-            resolvedProviderName = "Ollama";
+            resolvedProviderName = OLLAMA;
             return model;
         }
         model = createModelForProvider("OpenAI", null);
@@ -223,7 +225,7 @@ public class SubAgentRunner {
         if (resolvedProviderName == null) return;
 
         switch (resolvedProviderName) {
-            case "Ollama" -> config.setBaseUrl(settings.getOllamaModelUrl());
+            case OLLAMA -> config.setBaseUrl(settings.getOllamaModelUrl());
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
             case "GPT4All" -> config.setBaseUrl(settings.getGpt4allModelUrl());
             case "Jan" -> config.setBaseUrl(settings.getJanModelUrl());

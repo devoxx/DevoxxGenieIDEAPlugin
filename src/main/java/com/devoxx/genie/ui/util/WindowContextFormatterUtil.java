@@ -4,6 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class WindowContextFormatterUtil {
 
+    private WindowContextFormatterUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     public static @NotNull String format(int tokens, String suffix) {
         if (tokens >= 1_000_000_000) {
             return String.format("%dB %s", (tokens / 1_000_000_000), suffix);

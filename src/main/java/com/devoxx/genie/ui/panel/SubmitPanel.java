@@ -19,8 +19,8 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
 
     private static final int MIN_INPUT_HEIGHT = 200;
 
-    private final Project project;
-    private final DevoxxGenieToolWindowContent toolWindowContent;
+    private final transient Project project;
+    private final transient DevoxxGenieToolWindowContent toolWindowContent;
 
     @Getter
     private final PromptInputArea promptInputArea;
@@ -45,8 +45,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         actionButtonsPanel = createActionButtonsPanel();
 
         // Set up file selection callback for @ key trigger
-        promptInputArea.setFileSelectionCallback(() ->
-            actionButtonsPanel.selectFilesForPromptContext());
+        promptInputArea.setFileSelectionCallback(actionButtonsPanel::selectFilesForPromptContext);
 
         add(createSubmitPanel(actionButtonsPanel), BorderLayout.CENTER);
     }

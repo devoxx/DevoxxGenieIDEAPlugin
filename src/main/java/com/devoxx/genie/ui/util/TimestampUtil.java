@@ -9,6 +9,10 @@ import java.time.format.DateTimeFormatter;
 
 public class TimestampUtil {
 
+    private TimestampUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Get the current timestamp.
      *

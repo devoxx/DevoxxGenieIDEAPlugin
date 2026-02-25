@@ -15,7 +15,7 @@ public class TokenCalculationController {
     private final ComboBox<ModelProvider> modelProviderComboBox;
     private final ComboBox<LanguageModel> modelNameComboBox;
     private final TokenCalculationService tokenCalculationService;
-    private TokenCalculationListener listener;
+    private final TokenCalculationListener listener;
 
     public TokenCalculationController(Project project,
                                       ComboBox<ModelProvider> modelProviderComboBox,

@@ -12,7 +12,7 @@ import java.awt.geom.RoundRectangle2D;
 
 public class GlowingBorder extends AbstractBorder {
     private final Color glowColor;
-    private final int glowWidth = 4;
+    private static final int GLOW_WIDTH = 4;
 
     @Getter
     @Setter
@@ -30,7 +30,7 @@ public class GlowingBorder extends AbstractBorder {
         int arcWidth = 15;
         int arcHeight = 15;
         RoundRectangle2D.Float outer = new RoundRectangle2D.Float(x, y, width - 1, height - 1, arcWidth, arcHeight);
-        RoundRectangle2D.Float inner = new RoundRectangle2D.Float(x + glowWidth, y + glowWidth, width - glowWidth * 2 - 1, height - glowWidth * 2 - 1, arcWidth, arcHeight);
+        RoundRectangle2D.Float inner = new RoundRectangle2D.Float(x + GLOW_WIDTH, y + GLOW_WIDTH, width - GLOW_WIDTH * 2 - 1, height - GLOW_WIDTH * 2 - 1, arcWidth, arcHeight);
 
         Area area = new Area(outer);
         area.subtract(new Area(inner));
@@ -44,7 +44,7 @@ public class GlowingBorder extends AbstractBorder {
 
     @Override
     public Insets getBorderInsets(Component c) {
-        return JBUI.insets(glowWidth);
+        return JBUI.insets(GLOW_WIDTH);
     }
 
 }

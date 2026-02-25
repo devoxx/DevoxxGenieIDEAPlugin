@@ -1,11 +1,8 @@
 package com.devoxx.genie.ui.util;
 
-import com.intellij.ide.ui.LafManager;
 import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.JBColor;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,15 +22,12 @@ public class ThemeDetector {
         var application = ApplicationManager.getApplication();
         if (application != null) {
             application.getMessageBus().connect()
-                .subscribe(LafManagerListener.TOPIC, new LafManagerListener() {
-                    @Override
-                    public void lookAndFeelChanged(@NotNull LafManager source) {
-                        boolean newIsDarkTheme = !JBColor.isBright();
-                        // Only notify if the theme type (dark/light) has actually changed
-                        if (newIsDarkTheme != isDarkThemeValue) {
-                            isDarkThemeValue = newIsDarkTheme;
-                            notifyThemeChangeListeners(isDarkThemeValue);
-                        }
+                .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> {
+                    boolean newIsDarkTheme = !JBColor.isBright();
+                    // Only notify if the theme type (dark/light) has actually changed
+                    if (newIsDarkTheme != isDarkThemeValue) {
+                        isDarkThemeValue = newIsDarkTheme;
+                        notifyThemeChangeListeners(isDarkThemeValue);
                     }
                 });
         }
