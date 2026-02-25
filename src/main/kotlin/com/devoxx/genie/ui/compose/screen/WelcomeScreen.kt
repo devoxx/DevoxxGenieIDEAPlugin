@@ -22,7 +22,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.text.font.FontWeight
@@ -73,18 +72,10 @@ fun WelcomeScreen(
                 ?.use { loadSvgPainter(it, density) }
         }
         if (logoPainter != null) {
-            // SVG viewBox is 316×506 (full body incl. legs).
-            // Show only the head+WiFi portion (top ~380/506 units) by cropping from the top.
-            // aspectRatio(316/380) gives a box wide enough that ContentScale.Crop fills the
-            // width and clips everything below y≈380 (the shoulders), hiding the legs.
             Image(
                 painter = logoPainter,
                 contentDescription = "DevoxxGenie",
-                modifier = Modifier
-                    .height(80.dp)
-                    .aspectRatio(316f / 380f),
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
+                modifier = Modifier.height(80.dp),
             )
             Spacer(Modifier.height(12.dp))
         }
