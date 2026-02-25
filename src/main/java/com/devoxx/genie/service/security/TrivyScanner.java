@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -110,8 +111,12 @@ public class TrivyScanner extends AbstractScanner {
         };
     }
 
-    private String buildDescription(String vulnId, String description, String pkgName,
-                                     String installed, String fixed, String target) {
+    private @NonNull String buildDescription(String vulnId,
+                                             @NonNull String description,
+                                             String pkgName,
+                                             String installed,
+                                             String fixed,
+                                             String target) {
         StringBuilder sb = new StringBuilder();
         sb.append("**Vulnerability:** ").append(vulnId).append("\n");
         if (!description.isEmpty()) {

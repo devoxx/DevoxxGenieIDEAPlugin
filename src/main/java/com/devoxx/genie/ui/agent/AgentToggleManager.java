@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.agent;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -19,13 +18,10 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.AgentIcon;
  */
 public class AgentToggleManager {
 
-    private final Project project;
-
     @Getter
     private final JLabel agentToggleLabel;
 
-    public AgentToggleManager(@NotNull Project project) {
-        this.project = project;
+    public AgentToggleManager() {
         this.agentToggleLabel = createAgentToggleLabel();
         updateAgentToggle();
     }

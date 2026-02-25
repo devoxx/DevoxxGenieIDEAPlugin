@@ -162,7 +162,7 @@ class AcpClientTest {
                 "read line; echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"1\"}}'",
                 "read line; echo '{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"sessionId\":\"s1\"}}'",
                 // Thought chunk — should be filtered
-                "read line; echo '{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"s1\",\"update\":{\"sessionUpdate\":\"thought_chunk\",\"content\":{\"type\":\"text\",\"text\":\"thinking...\"}}}}'",
+                "read line; echo '{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"s1\",\"update\":{\"sessionUpdate\":\"thought_chunk\",\"content\":{\"type\":\"text\",\"text\":\"thinking\"}}}}'",
                 // Agent message chunk — should pass through
                 "echo '{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"s1\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"Result\"}}}}'",
                 "sleep 0.1",

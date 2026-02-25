@@ -285,6 +285,7 @@ public class JavaScriptProjectScannerExtension implements ProjectAnalyzerExtensi
         } catch (IOException ignored) {}
     }
     
+    @SuppressWarnings("unchecked")
     private void enhanceBuildSystem(Map<String, Object> projectInfo, Map<String, Object> jsInfo) {
         Map<String, Object> buildSystem = (Map<String, Object>) projectInfo.get("buildSystem");
         if (buildSystem == null) {

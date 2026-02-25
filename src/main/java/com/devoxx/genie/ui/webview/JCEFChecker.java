@@ -36,19 +36,21 @@ public class JCEFChecker {
                 return false;
             }
             
-            try {
-                // Try to get an instance to ensure it's initialized properly
-                // This is done in a separate try-catch to handle specific JCEF initialization failures
-                JBCefApp.getInstance();
-                return true;
-            } catch (UnsatisfiedLinkError | IllegalStateException e) {
-                log.warn("JCEF is supported but failed to initialize: {}", e.getMessage());
-                cachedJcefAvailability = false;
-                return false;
-            }
+            return initializeJcef();
         } catch (Throwable e) {
             // Catch any other exceptions that might occur when checking JCEF availability
             log.warn("JCEF checking failed with exception: {}", e.getMessage());
+            cachedJcefAvailability = false;
+            return false;
+        }
+    }
+
+    private static boolean initializeJcef() {
+        try {
+            JBCefApp.getInstance();
+            return true;
+        } catch (UnsatisfiedLinkError | IllegalStateException e) {
+            log.warn("JCEF is supported but failed to initialize: {}", e.getMessage());
             cachedJcefAvailability = false;
             return false;
         }

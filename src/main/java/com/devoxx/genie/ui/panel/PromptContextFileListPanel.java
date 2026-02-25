@@ -22,10 +22,10 @@ import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 public class PromptContextFileListPanel extends JPanel
     implements FileRemoveListener, FileListObserver {
 
-    private final FileListManager fileListManager;
+    private final transient FileListManager fileListManager;
     private final JBScrollPane filesScrollPane;
     private final JPanel filesPanel; // new panel for files
-    private final Project project;
+    private final transient Project project;
 
     public PromptContextFileListPanel(Project project) {
         this.project = project;
@@ -82,8 +82,8 @@ public class PromptContextFileListPanel extends JPanel
             filesScrollPane.setPreferredSize(new Dimension(0, 0));
         } else {
             filesScrollPane.setVisible(true);
-            int MAX_VISIBLE_FILES = 3;
-            int fileCount = Math.min(fileListManager.size(project), MAX_VISIBLE_FILES);
+            int maxVisibleFiles = 3;
+            int fileCount = Math.min(fileListManager.size(project), maxVisibleFiles);
             int heightPerFile = 35; // Increased height per file to accommodate path
             int prefHeight = fileCount * heightPerFile;
             filesScrollPane.setPreferredSize(new Dimension(getPreferredSize().width, prefHeight));

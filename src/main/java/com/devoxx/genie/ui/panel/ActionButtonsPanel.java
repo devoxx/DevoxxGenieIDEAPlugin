@@ -99,7 +99,7 @@ public class ActionButtonsPanel extends JPanel
         this.mcpToolsManager = new MCPToolsManager(project);
 
         // Initialize the Agent toggle manager
-        this.agentToggleManager = new AgentToggleManager(project);
+        this.agentToggleManager = new AgentToggleManager();
 
         llmProvidersComboBox.addActionListener(e -> controller.updateButtonVisibility());
 

@@ -41,10 +41,8 @@ public class KanbanTemplate extends HtmlTemplate {
 
     private @NotNull String generateScripts() {
         String kanbanJs = ResourceLoader.loadResource("webview/js/kanban.js");
-        StringBuilder sb = new StringBuilder();
-        sb.append("<script>\n");
-        sb.append(kanbanJs);
-        sb.append("\n</script>\n");
-        return sb.toString();
+        return "<script>\n" +
+                kanbanJs +
+                "\n</script>\n";
     }
 }

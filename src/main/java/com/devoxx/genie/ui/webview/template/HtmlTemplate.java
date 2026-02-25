@@ -42,7 +42,6 @@ public abstract class HtmlTemplate {
     }
     
     /**
-     * TODO Re-introduce the Escape IF REQUIRED JavaScript string literals.
      * This prevents issues when inserting HTML into JavaScript template literals.
      *
      * @param text The text to escape

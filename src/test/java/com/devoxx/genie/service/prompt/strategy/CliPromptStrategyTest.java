@@ -31,6 +31,7 @@ import org.mockito.quality.Strictness;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -195,10 +196,12 @@ class CliPromptStrategyTest {
             return null;
         }).when(mockApp).invokeLater(any(Runnable.class));
 
-        // Set the activeProcess field via reflection
+        // Set the value inside the final AtomicReference via reflection
         java.lang.reflect.Field processField = CliPromptStrategy.class.getDeclaredField("activeProcess");
         processField.setAccessible(true);
-        processField.set(strategy, mockProcess);
+        @SuppressWarnings("unchecked")
+        AtomicReference<Process> atomicRef = (AtomicReference<Process>) processField.get(strategy);
+        atomicRef.set(mockProcess);
 
         strategy.cancel();
 

@@ -8,6 +8,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class CodeLanguageUtil {
 
+    private CodeLanguageUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Maps language identifier to PrismJS language class.
      *

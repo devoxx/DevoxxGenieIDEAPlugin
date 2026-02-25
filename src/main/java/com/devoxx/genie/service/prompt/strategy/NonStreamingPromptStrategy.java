@@ -119,9 +119,14 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 // Add file references if any
                 if (context.getFileReferences() != null && !context.getFileReferences().isEmpty()) {
                     log.debug("Adding file references to conversation: {} files", context.getFileReferences().size());
-                    panel.getConversationPanel().webViewController.addFileReferences(context, context.getFileReferences());
+                    panel.getConversationPanel().viewController.addFileReferences(context, context.getFileReferences());
                 }
-                
+
+                // Hide loading indicator on successful completion
+                if (panel.getConversationPanel() != null && panel.getConversationPanel().viewController != null) {
+                    panel.getConversationPanel().viewController.hideLoadingIndicator(context.getId());
+                }
+
                 resultTask.complete(PromptResult.success(context));
             } catch (Exception e) {
                 if (e instanceof CancellationException || 
@@ -156,14 +161,14 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
 
         PromptOutputPanel panel = currentPanel.get();
         if (panel != null && panel.getConversationPanel() != null
-                && panel.getConversationPanel().webViewController != null) {
-            var webViewController = panel.getConversationPanel().webViewController;
+                && panel.getConversationPanel().viewController != null) {
+            var viewController = panel.getConversationPanel().viewController;
             // Deactivate handlers first to prevent stale events from re-showing indicator
-            webViewController.deactivateActivityHandlers();
+            viewController.deactivateActivityHandlers();
             // Then hide the loading indicator
             String messageId = currentMessageId.get();
             if (messageId != null) {
-                webViewController.hideLoadingIndicator(messageId);
+                viewController.hideLoadingIndicator(messageId);
             }
         }
     }

@@ -9,7 +9,7 @@ public class DockerValidator implements Validator {
 
     @Override
     public boolean isValid() {
-        try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
+        try (DockerClient ignored = DockerUtil.getDockerClient()) {
            return true;
         } catch (Exception e) {
             this.message = "Docker is not installed";

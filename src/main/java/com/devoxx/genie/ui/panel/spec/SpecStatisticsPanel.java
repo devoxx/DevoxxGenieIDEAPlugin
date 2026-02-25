@@ -25,6 +25,7 @@ public class SpecStatisticsPanel extends JPanel {
     private static final JBColor BAR_DONE = new JBColor(new Color(40, 167, 69), new Color(60, 180, 90));
     private static final JBColor BAR_OTHER = new JBColor(new Color(255, 193, 7), new Color(200, 160, 30));
     private static final JBColor BAR_BACKGROUND = new JBColor(new Color(233, 236, 239), new Color(60, 63, 65));
+    public static final String PROJECT_OVERVIEW = "Project Overview";
 
     private final JPanel contentPanel;
     private boolean collapsed = false;
@@ -38,7 +39,7 @@ public class SpecStatisticsPanel extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
-        JBLabel titleLabel = new JBLabel("Project Overview");
+        JBLabel titleLabel = new JBLabel(PROJECT_OVERVIEW);
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, titleLabel.getFont().getSize() - 1f));
         header.add(titleLabel, BorderLayout.WEST);
 
@@ -158,7 +159,10 @@ public class SpecStatisticsPanel extends JPanel {
     }
 
     private void addChecklistRow(@NotNull List<TaskSpec> specs) {
-        long totalAc = 0, checkedAc = 0, totalDod = 0, checkedDod = 0;
+        long totalAc = 0;
+        long checkedAc = 0;
+        long totalDod = 0;
+        long checkedDod = 0;
         for (TaskSpec spec : specs) {
             if (spec.getAcceptanceCriteria() != null) {
                 totalAc += spec.getAcceptanceCriteria().size();
@@ -243,19 +247,18 @@ public class SpecStatisticsPanel extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             int w = getWidth();
-            int h = getHeight();
-            int arc = h;
+            int arc = getHeight();
 
             // Background
             g2.setColor(BAR_BACKGROUND);
-            g2.fillRoundRect(0, 0, w, h, arc, arc);
+            g2.fillRoundRect(0, 0, w, arc, arc, arc);
 
             // Segments: Done | In Progress | Other | To Do
             int x = 0;
-            x = drawSegment(g2, x, h, w, arc, done, BAR_DONE);
-            x = drawSegment(g2, x, h, w, arc, inProgress, BAR_IN_PROGRESS);
-            x = drawSegment(g2, x, h, w, arc, other, BAR_OTHER);
-            drawSegment(g2, x, h, w, arc, todo, BAR_TODO);
+            x = drawSegment(g2, x, arc, w, arc, done, BAR_DONE);
+            x = drawSegment(g2, x, arc, w, arc, inProgress, BAR_IN_PROGRESS);
+            x = drawSegment(g2, x, arc, w, arc, other, BAR_OTHER);
+            drawSegment(g2, x, arc, w, arc, todo, BAR_TODO);
 
             g2.dispose();
         }

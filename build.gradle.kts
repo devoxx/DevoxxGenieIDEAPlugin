@@ -5,6 +5,8 @@ plugins {
     java
     kotlin("jvm") version "2.3.10"
     kotlin("plugin.lombok") version "2.3.10"
+    kotlin("plugin.compose") version "2.3.10"
+    id("org.jetbrains.compose") version "1.7.3"
     id("org.jetbrains.intellij.platform") version "2.11.0"
     jacoco
 }
@@ -17,6 +19,7 @@ repositories {
     intellijPlatform {
         defaultRepositories()
     }
+    google()
 }
 
 jacoco {
@@ -53,9 +56,12 @@ tasks.jacocoTestReport {
 // Configure test task for JaCoCo
 tasks.test {
     finalizedBy(tasks.jacocoTestReport)
+    forkEvery = 10
 }
 
 tasks.register("updateProperties") {
+    group = "build"
+    description = "Updates application.properties with the current project version"
     doLast {
         val projectVersion = version
         val propertiesFile = file("src/main/resources/application.properties")
@@ -93,16 +99,38 @@ dependencies {
     intellijPlatform {
         create("IC", "2024.3")
         bundledPlugin("com.intellij.java")
+        composeUI()
         testFramework(TestFrameworkType.Platform)
     }
 
     val lg4j_version = "1.11.0"
-    var lg4j_beta_version = "1.11.0-beta19"
+    val lg4j_beta_version = "1.11.0-beta19"
+    val awsSdkVersion = "2.41.34"
+    val retrofitVersion = "3.0.0"
+    val sqliteVersion = "3.51.2.0"
+    val dockerJavaVersion = "3.7.0"
+    val jtokkitVersion = "1.1.0"
+    val commonmarkVersion = "0.27.1"
+    val jsoupVersion = "1.22.1"
+    val nettyVersion = "4.2.10.Final"
+    val composeVersion = "1.7.3"
+    val markdownRendererVersion = "0.28.0"
+    val logbackVersion = "1.5.32"
+    val gitignoreReaderVersion = "1.14.1"
+    val junitJupiterVersion = "6.1.0-M1"
+    val junitPlatformVersion = "6.0.3"
+    val lombokVersion = "1.18.42"
+    val mockitoVersion = "5.21.0"
+    val mockitoInlineVersion = "5.2.0"
+    val assertjVersion = "3.27.7"
+    val mockwebserverVersion = "5.3.2"
+    val dotenvVersion = "5.2.2"
+    val opentest4jVersion = "1.3.0"
 
     // Langchain4J dependencies
     implementation("dev.langchain4j:langchain4j:$lg4j_version")
-    implementation("dev.langchain4j:langchain4j-core:${lg4j_version}")
-    implementation("dev.langchain4j:langchain4j-http-client-jdk:${lg4j_version}")
+    implementation("dev.langchain4j:langchain4j-core:$lg4j_version")
+    implementation("dev.langchain4j:langchain4j-http-client-jdk:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-ollama:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-open-ai:$lg4j_version")
     implementation("dev.langchain4j:langchain4j-anthropic:$lg4j_version")
@@ -115,52 +143,60 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
-    implementation(platform("software.amazon.awssdk:bom:2.41.34"))
+    implementation(platform("software.amazon.awssdk:bom:$awsSdkVersion"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")
     implementation("software.amazon.awssdk:sso")
     implementation("software.amazon.awssdk:ssooidc")
-
-    // Retrofit dependencies
-    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-    implementation("org.xerial:sqlite-jdbc:3.51.2.0")
-
-    // Docker dependencies
-    implementation("com.github.docker-java:docker-java:3.7.0")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
-
-    // JTokkit dependencies
-    implementation("com.knuddels:jtokkit:1.1.0")
-    implementation("org.commonmark:commonmark:0.27.1")
-    implementation("org.jsoup:jsoup:1.22.1")
-    implementation("io.netty:netty-all:4.2.10.Final")
-
+    // Retrofit
+    implementation("com.squareup.retrofit2:converter-gson:$retrofitVersion")
+    implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
+    // Docker
+    implementation("com.github.docker-java:docker-java:$dockerJavaVersion")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:$dockerJavaVersion")
+    // Tokenizer, markdown, HTML, networking
+    implementation("com.knuddels:jtokkit:$jtokkitVersion")
+    implementation("org.commonmark:commonmark:$commonmarkVersion")
+    implementation("org.jsoup:jsoup:$jsoupVersion")
+    implementation("io.netty:netty-all:$nettyVersion")
+    // Compose Markdown Renderer
+    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion") {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
     // Logging
-    implementation("ch.qos.logback:logback-classic:1.5.32")
-
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
     // GitIgnore Reader
-    implementation("nl.basjes.gitignore:gitignore-reader:1.14.1")
+    implementation("nl.basjes.gitignore:gitignore-reader:$gitignoreReaderVersion")
+    // TDG
+    implementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
+    implementation("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
+    implementation("org.junit.platform:junit-platform-launcher:$junitPlatformVersion")
 
-    // TDG : Add other TDG dependencies
-    implementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
-    implementation("org.junit.jupiter:junit-jupiter-engine:6.1.0-M1")
-    implementation("org.junit.platform:junit-platform-launcher:6.0.3")
+    // Compose Desktop (provided by IntelliJ Platform at runtime via composeUI())
+    compileOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeVersion")
+    compileOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeVersion")
+    compileOnly("org.jetbrains.compose.ui:ui-desktop:$composeVersion")
+    // Material removed — causes classloader conflicts with platform coroutines.
+    // Using custom CompositionLocal-based theming with foundation primitives instead.
+    compileOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeVersion")
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
 
-    compileOnly("org.projectlombok:lombok:1.18.42")
-    annotationProcessor("org.projectlombok:lombok:1.18.42")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.1.0-M1")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:6.0.3")
-    testImplementation("org.mockito:mockito-core:5.21.0")
-    testImplementation("org.mockito:mockito-inline:5.2.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
-    testImplementation("org.assertj:assertj-core:3.27.7")
-    testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
-    testImplementation("io.github.cdimascio:java-dotenv:5.2.2")
-    testImplementation("org.opentest4j:opentest4j:1.3.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:$junitPlatformVersion")
+    testImplementation("org.mockito:mockito-core:$mockitoVersion")
+    testImplementation("org.mockito:mockito-inline:$mockitoInlineVersion")
+    testImplementation("org.mockito:mockito-junit-jupiter:$mockitoVersion")
+    testImplementation("org.assertj:assertj-core:$assertjVersion")
+    testImplementation("com.squareup.okhttp3:mockwebserver:$mockwebserverVersion")
+    testImplementation("io.github.cdimascio:java-dotenv:$dotenvVersion")
+    testImplementation("org.opentest4j:opentest4j:$opentest4jVersion")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:6.1.0-M1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
 }
 
 intellijPlatform {
@@ -212,8 +248,6 @@ tasks {
         testLogging { events("passed", "skipped", "failed") }
 
         maxHeapSize = "1g"
-
-        forkEvery = 10
 
         // Configure JaCoCo agent to include plugin classes loaded from sandbox JARs
         extensions.configure<JacocoTaskExtension> {

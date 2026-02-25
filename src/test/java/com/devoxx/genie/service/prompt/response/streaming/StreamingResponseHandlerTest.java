@@ -6,7 +6,7 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -40,7 +40,7 @@ class StreamingResponseHandlerTest {
 
     @Mock private Project mockProject;
     @Mock private ChatMessageContext mockContext;
-    @Mock private ConversationWebViewController mockWebViewController;
+    @Mock private ConversationViewController mockViewController;
     @Mock private ChatMemoryManager mockChatMemoryManager;
     @Mock private ChatMemoryService mockChatMemoryService;
     @Mock private FileListManager mockFileListManager;
@@ -104,14 +104,14 @@ class StreamingResponseHandlerTest {
     }
 
     private StreamingResponseHandler createHandler() {
-        return createHandler(mockWebViewController);
+        return createHandler(mockViewController);
     }
 
     private StreamingResponseHandler createHandlerWithNullWebView() {
         return createHandler(null);
     }
 
-    private StreamingResponseHandler createHandler(ConversationWebViewController webViewController) {
+    private StreamingResponseHandler createHandler(ConversationViewController viewController) {
         Consumer<ChatResponse> onComplete = response -> {
             completedResponse.set(response);
             onCompleteCalled.set(true);
@@ -120,7 +120,7 @@ class StreamingResponseHandlerTest {
             capturedError.set(error);
             onErrorCalled.set(true);
         };
-        return new StreamingResponseHandler(mockContext, webViewController, onComplete, onError);
+        return new StreamingResponseHandler(mockContext, viewController, onComplete, onError);
     }
 
     @Test
@@ -131,7 +131,7 @@ class StreamingResponseHandlerTest {
         handler.onPartialResponse(" World");
 
         verify(mockContext, atLeast(2)).setAiMessage(any(AiMessage.class));
-        verify(mockWebViewController, atLeast(2)).updateAiMessageContent(mockContext);
+        verify(mockViewController, atLeast(2)).updateAiMessageContent(mockContext);
     }
 
     @Test
@@ -141,7 +141,7 @@ class StreamingResponseHandlerTest {
 
         handler.onPartialResponse("Should be ignored");
 
-        verify(mockWebViewController, never()).updateAiMessageContent(any());
+        verify(mockViewController, never()).updateAiMessageContent(any());
     }
 
     @Test
@@ -226,7 +226,7 @@ class StreamingResponseHandlerTest {
         handler.onCompleteResponse(response);
 
         // Should call updateAiMessageContent (not addChatMessage) since partials were received
-        verify(mockWebViewController, atLeast(2)).updateAiMessageContent(mockContext);
+        verify(mockViewController, atLeast(2)).updateAiMessageContent(mockContext);
     }
 
     @Test
@@ -239,7 +239,7 @@ class StreamingResponseHandlerTest {
             .build();
         handler.onCompleteResponse(response);
 
-        verify(mockWebViewController).addChatMessage(mockContext);
+        verify(mockViewController).addChatMessage(mockContext);
     }
 
     @Test
@@ -252,7 +252,7 @@ class StreamingResponseHandlerTest {
 
         handler.onCompleteResponse(response);
 
-        verify(mockWebViewController).markMCPLogsAsCompleted("test-context-id");
+        verify(mockViewController).markMCPLogsAsCompleted("test-context-id");
     }
 
     @Test
@@ -282,7 +282,7 @@ class StreamingResponseHandlerTest {
 
         handler.onCompleteResponse(response);
 
-        verify(mockWebViewController).addFileReferences(eq(mockContext), any());
+        verify(mockViewController).addFileReferences(eq(mockContext), any());
     }
 
     @Test
@@ -302,7 +302,7 @@ class StreamingResponseHandlerTest {
 
         handler.onError(new RuntimeException("Error"));
 
-        verify(mockWebViewController).hideLoadingIndicator("test-context-id");
+        verify(mockViewController).hideLoadingIndicator("test-context-id");
     }
 
     @Test
@@ -311,7 +311,7 @@ class StreamingResponseHandlerTest {
 
         handler.onError(new RuntimeException("Error"));
 
-        verify(mockWebViewController).deactivateActivityHandlers();
+        verify(mockViewController).deactivateActivityHandlers();
     }
 
     @Test
@@ -322,7 +322,7 @@ class StreamingResponseHandlerTest {
 
         // Subsequent calls should be ignored
         handler.onPartialResponse("Should be ignored");
-        verify(mockWebViewController, never()).updateAiMessageContent(any());
+        verify(mockViewController, never()).updateAiMessageContent(any());
     }
 
     @Test
@@ -331,7 +331,7 @@ class StreamingResponseHandlerTest {
 
         handler.stop();
 
-        verify(mockWebViewController).deactivateActivityHandlers();
+        verify(mockViewController).deactivateActivityHandlers();
     }
 
     @Test
@@ -340,7 +340,7 @@ class StreamingResponseHandlerTest {
 
         handler.stop();
 
-        verify(mockWebViewController).hideLoadingIndicator("test-context-id");
+        verify(mockViewController).hideLoadingIndicator("test-context-id");
     }
 
     @Test
@@ -372,7 +372,7 @@ class StreamingResponseHandlerTest {
         handler.stop();
 
         // Should only be called once
-        verify(mockWebViewController, times(1)).deactivateActivityHandlers();
+        verify(mockViewController, times(1)).deactivateActivityHandlers();
     }
 
     @Test

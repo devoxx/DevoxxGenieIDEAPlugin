@@ -484,7 +484,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPRegistryService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.service.welcome.WelcomeContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
         <!-- New service for WebView implementation -->

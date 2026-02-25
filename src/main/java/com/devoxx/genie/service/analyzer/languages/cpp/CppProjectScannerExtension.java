@@ -4,6 +4,7 @@ import com.devoxx.genie.service.analyzer.ProjectAnalyzerExtension;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,6 +18,13 @@ import java.util.regex.Pattern;
  * Extension to enhance project scanning with C/C++-specific details
  */
 public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
+
+    public static final String TEST_FRAMEWORK = "testFramework";
+    public static final String BUILD = "build";
+    public static final String CLEAN = "clean";
+    public static final String INSTALL = "install";
+    public static final String CONFIGURE = "configure";
+
     @Override
     public void enhanceProjectInfo(@NotNull Project project, @NotNull Map<String, Object> projectInfo) {
         // Check if C/C++ is detected as a language
@@ -85,11 +93,11 @@ public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
                                findInFile(baseDir, "conanfile.txt", "boost/test");
 
         if (hasGTest) {
-            cppInfo.put("testFramework", "GoogleTest");
+            cppInfo.put(TEST_FRAMEWORK, "GoogleTest");
         } else if (hasCatch) {
-            cppInfo.put("testFramework", "Catch2");
+            cppInfo.put(TEST_FRAMEWORK, "Catch2");
         } else if (hasBoostTest) {
-            cppInfo.put("testFramework", "Boost.Test");
+            cppInfo.put(TEST_FRAMEWORK, "Boost.Test");
         }
     }
 
@@ -98,17 +106,17 @@ public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
         if (cmakeFile == null) return;
         
         try {
-            String content = VfsUtil.loadText(cmakeFile);
+            String content = VfsUtilCore.loadText(cmakeFile);
             
             // Extract project name
-            Pattern projectPattern = Pattern.compile("project\\s*\\(\\s*([^\\s\\)]+)");
+            Pattern projectPattern = Pattern.compile("project\\s*\\(\\s*([^\\s)]+)");
             Matcher projectMatcher = projectPattern.matcher(content);
             if (projectMatcher.find()) {
                 cppInfo.put("projectName", projectMatcher.group(1));
             }
             
             // Extract CMake minimum version
-            Pattern versionPattern = Pattern.compile("cmake_minimum_required\\s*\\(\\s*VERSION\\s+([^\\s\\)]+)");
+            Pattern versionPattern = Pattern.compile("cmake_minimum_required\\s*\\(\\s*VERSION\\s+([^\\s)]+)");
             Matcher versionMatcher = versionPattern.matcher(content);
             if (versionMatcher.find()) {
                 cppInfo.put("cmakeVersion", versionMatcher.group(1));
@@ -128,13 +136,14 @@ public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
         VirtualFile file = baseDir.findChild(fileName);
         if (file != null && !file.isDirectory()) {
             try {
-                String text = VfsUtil.loadText(file);
+                String text = VfsUtilCore.loadText(file);
                 return text.contains(content);
             } catch (IOException ignored) {}
         }
         return false;
     }
     
+    @SuppressWarnings("unchecked")
     private void enhanceBuildSystem(@NotNull Map<String, Object> projectInfo, Map<String, Object> cppInfo) {
         Map<String, Object> buildSystem = (Map<String, Object>) projectInfo.get("buildSystem");
         if (buildSystem == null) {
@@ -152,22 +161,22 @@ public class CppProjectScannerExtension implements ProjectAnalyzerExtension {
         // Add build commands based on detected build system
         String buildSystemType = (String) cppInfo.get("buildSystem");
         if ("CMake".equals(buildSystemType)) {
-            commands.put("configure", "cmake -B build");
-            commands.put("build", "cmake --build build");
-            commands.put("clean", "cmake --build build --target clean");
-            commands.put("install", "cmake --install build");
+            commands.put(CONFIGURE, "cmake -B build");
+            commands.put(BUILD, "cmake --build build");
+            commands.put(CLEAN, "cmake --build build --target clean");
+            commands.put(INSTALL, "cmake --install build");
             
             // Add testing commands if a test framework was detected
-            if (cppInfo.containsKey("testFramework")) {
+            if (cppInfo.containsKey(TEST_FRAMEWORK)) {
                 commands.put("test", "cd build && ctest");
                 commands.put("singleTest", "cd build && ctest -R Test_Name");
             }
-        } else if ("Make".equals(buildSystemType)) {
-            commands.put("build", "make");
-            commands.put("clean", "make clean");
+        } else if ("Make".equalsIgnoreCase(buildSystemType)) {
+            commands.put(BUILD, "make");
+            commands.put(CLEAN, "make clean");
             commands.put("test", "make test");
-        } else if ("Bazel".equals(buildSystemType)) {
-            commands.put("build", "bazel build //...");
+        } else if ("Bazel".equalsIgnoreCase(buildSystemType)) {
+            commands.put(BUILD, "bazel build //...");
             commands.put("test", "bazel test //...");
         }
         

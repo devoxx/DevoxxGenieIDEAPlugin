@@ -277,10 +277,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Double inlineCompletionTemperature = 0.0;
     private Integer inlineCompletionDebounceMs = 300;
 
-    // Welcome content cache
-    private String welcomeContentCachedJson = "";
-    private long welcomeContentLastFetchTimestamp = 0L;
-    private String welcomeContentPluginVersion = "";
 
     // Model config cache
     private String modelConfigCachedJson = "";

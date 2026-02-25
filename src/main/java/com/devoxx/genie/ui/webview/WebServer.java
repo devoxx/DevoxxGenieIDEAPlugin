@@ -20,6 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.devoxx.genie.ui.webview.template.ResourceLoader.loadResource;
 
 @Slf4j
+@SuppressWarnings("java:S6548") // Singleton is intentional — single web server instance per IDE
 public class WebServer {
     private static WebServer instance;
     private int port = -1;
@@ -28,12 +29,6 @@ public class WebServer {
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
     private final Map<String, String> scripts = new ConcurrentHashMap<>();
-    public static final String PRISM_CSS_RESOURCE = "/prism.css";
-    public static final String PRISM_JS_RESOURCE = "/prism.js";
-    public static final String BASE_CSS_RESOURCE = "/base.css";
-    public static final String BASE_JS_RESOURCE = "/base.js";
-    public static final String MCP_LOG_HANDLER_JS_RESOURCE = "/mcpLogHandler.js";
-    public static final String BASE_HTML_RESOURCE = "/base.html";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -73,6 +68,10 @@ public class WebServer {
             ChannelFuture future = bootstrap.bind(port).sync();
             serverChannel = future.channel();
             log.info("Web server started on port {}", port);
+        } catch (InterruptedException e) {
+            log.error("Web server start interrupted", e);
+            Thread.currentThread().interrupt();
+            stop();
         } catch (Exception e) {
             log.error("Failed to start web server", e);
             stop();
@@ -141,9 +140,9 @@ public class WebServer {
     private int findAvailablePort() {
         try {
             java.net.ServerSocket socket = new java.net.ServerSocket(0);
-            int port = socket.getLocalPort();
+            int availablePort = socket.getLocalPort();
             socket.close();
-            return port;
+            return availablePort;
         } catch (Exception e) {
             log.error("Failed to find available port", e);
             return 8090; // Fallback port
@@ -151,14 +150,6 @@ public class WebServer {
     }
 
     public void initializeEmbeddedResources() {
-        String baseHTML = loadResource("webview/html/base.html")
-                .replace("${prismCssUrl}", getPrismCssUrl())
-                .replace("${baseCssUrl}", getBaseCssUrl())
-                .replace("${prismJsUrl}", getPrismJsUrl())
-                .replace("${baseJsUrl}", getBaseJsUrl());
-        resources.put(BASE_HTML_RESOURCE, baseHTML);
-        
-        // Add static icon resources
         addStaticResource("/icons/copy.svg", "icons/copy.svg");
         addStaticResource("/icons/copy_dark.svg", "icons/copy_dark.svg");
     }
@@ -181,26 +172,6 @@ public class WebServer {
         } catch (Exception e) {
             log.error("Error loading static resource: " + resourcePath, e);
         }
-    }
-
-    public String getPrismCssUrl() {
-        resources.put(PRISM_CSS_RESOURCE, loadResource("webview/prism/prism.css"));
-        return getServerUrl() + PRISM_CSS_RESOURCE;
-    }
-
-    public String getPrismJsUrl() {
-        resources.put(PRISM_JS_RESOURCE, loadResource("webview/prism/prism.js"));
-        return getServerUrl() + PRISM_JS_RESOURCE;
-    }
-    
-    public String getBaseCssUrl() {
-        resources.put(BASE_CSS_RESOURCE, loadResource("webview/css/base.css"));
-        return getServerUrl() + BASE_CSS_RESOURCE;
-    }
-
-    public String getBaseJsUrl() {
-        resources.put(BASE_JS_RESOURCE, loadResource("webview/js/base.js"));
-        return getServerUrl() + BASE_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {

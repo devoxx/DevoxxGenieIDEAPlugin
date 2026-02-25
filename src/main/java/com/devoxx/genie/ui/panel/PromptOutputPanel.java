@@ -66,10 +66,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
         // Subscribe to MCP messages and file references
         ApplicationManager.getApplication().invokeLater(() ->
-                MessageBusUtil.connect(project, connection -> {
+                MessageBusUtil.connect(project, connection ->
                     MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC,
-                        conversationPanel); // Delegate to the conversation panel
-                }));
+                        conversationPanel) // Delegate to the conversation panel
+                )
+        );
     }
 
     /**
@@ -92,33 +93,11 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
 
     /**
      * Displays help text in the panel.
-     * Now creates a help message as a direct AI response in the conversation panel
-     * without showing a separate user prompt for it.
+     * Uses the ConversationViewController's addSystemMessage to render help content.
      */
     public void showHelpText() {
-        String helpId = "help_" + System.currentTimeMillis();
-        
-        // Create special help content that doesn't include a user message
-        String helpContent = HelpUtil.getHelpMessage();
-        
-        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
-        // and duplicate /help command display
-        conversationPanel.webViewController.executeJavaScript(
-            "const container = document.getElementById('conversation-container');" +
-            "const messagePair = document.createElement('div');" +
-            "messagePair.className = 'message-pair';" +
-            "messagePair.id = '" + helpId + "';" +
-            "const aiMessage = document.createElement('div');" +
-            "aiMessage.className = 'assistant-message';" +
-            "aiMessage.innerHTML = `" + 
-            "<div class='metadata-info'>Available commands:</div>" +
-            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
-            helpContent + "`;" +
-            "messagePair.appendChild(aiMessage);" +
-            "container.appendChild(messagePair);" +
-            "window.scrollTo(0, document.body.scrollHeight);" +
-            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
-        );
+        String helpMarkdown = HelpUtil.getHelpMarkdown();
+        conversationPanel.viewController.addSystemMessage(helpMarkdown);
     }
 
     /**
@@ -131,7 +110,6 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
             chatMessageContext.getSemanticReferences() != null &&
             !chatMessageContext.getSemanticReferences().isEmpty()) {
-            // TODO: Handle find command results in the WebView
             // For now, create a separate panel for find results
             JPanel findResultsContainer = new JPanel(new BorderLayout());
             findResultsContainer.add(new FindResultsPanel(project, chatMessageContext.getSemanticReferences()), BorderLayout.CENTER);
@@ -148,46 +126,12 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     }
 
     /**
-     * Adds file references from a streaming response to the panel.
-     * This method is kept for backward compatibility but no longer shows a dialog.
-     * Instead, file references are now embedded directly in the HTML.
-     *
-     * @param fileListPanel The panel containing file references.
-     * @deprecated File references are now shown inline in the web view
-     */
-    @Deprecated
-    public void addStreamFileReferencesResponse(ExpandablePanel fileListPanel) {
-        // No longer creating a dialog - references are shown in the HTML now
-    }
-
-    /**
      * Creates a new help context and shows it in the conversation panel.
      * Called when custom prompts have changed.
      */
     public void updateHelpText() {
-        String helpId = "help_updated_" + System.currentTimeMillis();
-        
-        // Create special help content that doesn't include a user message
-        String helpContent = HelpUtil.getHelpMessage();
-        
-        // Use direct JavaScript to add the help message to avoid the "Thinking..." indicator
-        // and duplicate /help command display
-        conversationPanel.webViewController.executeJavaScript(
-            "const container = document.getElementById('conversation-container');" +
-            "const messagePair = document.createElement('div');" +
-            "messagePair.className = 'message-pair';" +
-            "messagePair.id = '" + helpId + "';" +
-            "const aiMessage = document.createElement('div');" +
-            "aiMessage.className = 'assistant-message';" +
-            "aiMessage.innerHTML = `" + 
-            "<div class='metadata-info'>Updated commands:</div>" +
-            "<button class='copy-response-button' onclick='copyMessageResponse(this)'>Copy</button>" +
-            helpContent + "`;" +
-            "messagePair.appendChild(aiMessage);" +
-            "container.appendChild(messagePair);" +
-            "window.scrollTo(0, document.body.scrollHeight);" +
-            "if (typeof highlightCodeBlocks === 'function') { highlightCodeBlocks(); }"
-        );
+        String helpMarkdown = HelpUtil.getHelpMarkdown();
+        conversationPanel.viewController.addSystemMessage(helpMarkdown);
     }
 
     /**

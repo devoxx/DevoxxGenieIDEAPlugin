@@ -5,7 +5,6 @@ import com.devoxx.genie.service.chromadb.exception.DockerException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.*;
 import com.intellij.openapi.application.ApplicationManager;
@@ -147,33 +146,39 @@ public final class ChromaDockerService {
                         .withBinds(new Bind(volumePath, new Volume("/chroma/chroma")));
 
                 // Create new container if none exists
-                CreateContainerResponse container = dockerClient.createContainerCmd(CHROMA_IMAGE)
+                String containerId;
+                try (var createCmd = dockerClient.createContainerCmd(CHROMA_IMAGE)
                         .withName(CONTAINER_NAME)
-                        .withHostConfig(hostConfig)
-                        .exec();
+                        .withHostConfig(hostConfig)) {
+                    containerId = createCmd.exec().getId();
+                }
 
                 // Start the container
-                dockerClient.startContainerCmd(container.getId()).exec();
+                dockerClient.startContainerCmd(containerId).exec();
             } else {
                 // Reuse existing container
-                Container existingContainer = existingContainers.get(0);
+                Container existingContainer = existingContainers.getFirst();
 
                 // Check the actual container state
                 String containerState = existingContainer.getState();
 
                 // Only start if the container is stopped or created
                 if (EXITED.equalsIgnoreCase(containerState) || CREATED.equalsIgnoreCase(containerState)) {
-                    try {
-                        dockerClient.startContainerCmd(existingContainer.getId()).exec();
-                        callback.onSuccess();
-                    } catch (NotModifiedException ignored) {
-                        callback.onError("Container is already running or in transition");
-                    }
+                    startExistingContainer(dockerClient, existingContainer.getId(), callback);
                 }
             }
         } catch (IOException e) {
             callback.onError("Failed to start ChromaDB container: " + e.getMessage());
             throw new ChromaDBException("Failed to start ChromaDB container", e);
+        }
+    }
+
+    private void startExistingContainer(DockerClient dockerClient, String containerId, ChromaDBStatusCallback callback) {
+        try {
+            dockerClient.startContainerCmd(containerId).exec();
+            callback.onSuccess();
+        } catch (NotModifiedException ignored) {
+            callback.onError("Container is already running or in transition");
         }
     }
 

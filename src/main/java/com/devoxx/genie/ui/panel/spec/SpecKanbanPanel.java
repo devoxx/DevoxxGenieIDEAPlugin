@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Kanban board panel for the Spec Browser tool window.
  * Renders an HTML5 drag-and-drop board in JCEF, or a read-only Swing fallback.
  * Uses lazy initialization — the JCEF browser is only created when the panel first becomes visible.
- *
  * JS→Java communication uses document.title changes caught by CefDisplayHandler:
  *   "SC:{json}"  — status change (drag-drop)
  *   "TC:taskId"  — task card clicked
@@ -46,13 +45,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class SpecKanbanPanel extends SimpleToolWindowPanel implements Disposable {
 
-    private final Project project;
+    private final transient Project project;
     private final AtomicBoolean disposed = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    private JBCefBrowser browser;
-    private WebViewJavaScriptExecutor jsExecutor;
-    private ThemeDetector.ThemeChangeListener themeListener;
+    private transient JBCefBrowser browser;
+    private transient WebViewJavaScriptExecutor jsExecutor;
+    private transient ThemeDetector.ThemeChangeListener themeListener;
 
     public SpecKanbanPanel(@NotNull Project project) {
         super(true, true);

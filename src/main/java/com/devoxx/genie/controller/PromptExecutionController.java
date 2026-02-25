@@ -8,6 +8,7 @@ import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
+import lombok.Getter;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,6 +21,7 @@ public class PromptExecutionController implements PromptExecutionListener {
     private final PromptInputArea promptInputArea;
     private final PromptOutputPanel promptOutputPanel;
     private final ActionButtonsPanel actionButtonsPanel;
+    @Getter
     private boolean isPromptRunning = false;
     private long currentExecutionId = 0;
     private ChatMessageContext currentChatMessageContext;
@@ -34,10 +36,6 @@ public class PromptExecutionController implements PromptExecutionListener {
         this.promptExecutionService = PromptExecutionService.getInstance(project);
         this.commandProcessor = PromptCommandProcessor.getInstance();
         this.actionButtonsPanel = actionButtonsPanel;
-    }
-
-    public boolean isPromptRunning() {
-        return isPromptRunning;
     }
 
     public boolean handlePromptSubmission(ChatMessageContext currentChatMessageContext) {

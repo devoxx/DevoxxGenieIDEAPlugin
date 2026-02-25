@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.util;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.service.tdg.CodeGeneratorService;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Document;
@@ -48,15 +47,6 @@ public class CodeSnippetAction {
                         e -> insertCode(fencedCodeBlock.getLiteral()))
         );
 
-        String commandName = chatMessageContext.getCommandName();
-        if (commandName != null && commandName.equalsIgnoreCase("tdg")) {
-            buttonPanel.add(
-                    createActionButton(CreateIcon,
-                            "Create class",
-                            e -> createClass(fencedCodeBlock.getLiteral()))
-            );
-        }
-
         return buttonPanel;
     }
 
@@ -77,16 +67,6 @@ public class CodeSnippetAction {
                     log.error(e.getMessage());
                 }
             });
-        }
-    }
-
-    /**
-     * Create a class from the given code snippet.
-     * @param codeSnippet The code snippet to create the class from
-     */
-    private void createClass(String codeSnippet) {
-        if (chatMessageContext.getCommandName().equalsIgnoreCase("tdg")) {
-            CodeGeneratorService.createClassFromCodeSnippet(chatMessageContext, codeSnippet);
         }
     }
 }

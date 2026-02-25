@@ -53,8 +53,8 @@ public class PromptErrorHandler {
      * Convert any exception to a PromptException
      */
     private static PromptException convertToPromptException(Throwable exception) {
-        if (exception instanceof PromptException) {
-            return (PromptException) exception;
+        if (exception instanceof PromptException promptException) {
+            return promptException;
         }
         
         // Map known exception types to appropriate PromptExceptions

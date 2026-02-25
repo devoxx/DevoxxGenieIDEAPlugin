@@ -8,6 +8,10 @@ public class WindowPluginUtil {
 
     public static final String TOOL_WINDOW_ID = "DevoxxGenie";
 
+    private WindowPluginUtil() {
+        /* This utility class should not be instantiated */
+    }
+
     /**
      * Open the tool window if it is not visible.
      *

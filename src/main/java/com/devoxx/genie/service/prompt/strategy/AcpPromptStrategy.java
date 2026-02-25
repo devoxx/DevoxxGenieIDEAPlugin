@@ -9,7 +9,7 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
@@ -62,11 +62,11 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
         consoleManager.printTaskHeader("acp-chat", prompt.length() > 60 ? prompt.substring(0, 60) + "..." : prompt, toolName);
         consoleManager.activateToolWindow();
 
-        ConversationWebViewController webViewController =
-                panel.getConversationPanel() != null ? panel.getConversationPanel().webViewController : null;
+        ConversationViewController viewController =
+                panel.getConversationPanel() != null ? panel.getConversationPanel().viewController : null;
 
         threadPoolManager.getPromptExecutionPool().execute(() ->
-                runAcpSession(context, acpTool, prompt, consoleManager, webViewController, resultTask));
+                runAcpSession(context, acpTool, prompt, consoleManager, viewController, resultTask));
 
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {
@@ -79,7 +79,7 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
                                 @NotNull AcpToolConfig acpTool,
                                 @NotNull String prompt,
                                 @NotNull CliConsoleManager consoleManager,
-                                @Nullable ConversationWebViewController webViewController,
+                                @Nullable ConversationViewController viewController,
                                 @NotNull PromptTask<PromptResult> resultTask) {
         long startTime = System.currentTimeMillis();
         StringBuilder accumulatedResponse = new StringBuilder();
@@ -93,9 +93,9 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
                         ApplicationManager.getApplication().invokeLater(() -> {
                             consoleManager.printOutput(textChunk);
 
-                            if (webViewController != null && !fullText.isEmpty()) {
+                            if (viewController != null && !fullText.isEmpty()) {
                                 context.setAiMessage(AiMessage.from(fullText));
-                                webViewController.updateAiMessageContent(context);
+                                viewController.updateAiMessageContent(context);
                             }
                         });
                     })
@@ -134,9 +134,9 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
                     context.setAiMessage(AiMessage.from(finalText));
                 }
 
-                if (webViewController != null) {
-                    webViewController.updateAiMessageContent(context);
-                    webViewController.markMCPLogsAsCompleted(context.getId());
+                if (viewController != null) {
+                    viewController.updateAiMessageContent(context);
+                    viewController.markMCPLogsAsCompleted(context.getId());
                 }
 
                 ChatMemoryManager.getInstance().addAiResponse(context);

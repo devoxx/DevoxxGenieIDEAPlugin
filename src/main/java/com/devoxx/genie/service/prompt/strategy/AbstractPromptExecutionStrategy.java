@@ -5,7 +5,6 @@ import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
-import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
@@ -238,12 +237,12 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      */
     protected void hideLoadingIndicator(@NotNull PromptOutputPanel panel, @NotNull String messageId) {
         if (panel.getConversationPanel() != null 
-                && panel.getConversationPanel().webViewController != null) {
-            var webViewController = panel.getConversationPanel().webViewController;
+                && panel.getConversationPanel().viewController != null) {
+            var viewController = panel.getConversationPanel().viewController;
             // Deactivate handlers first to prevent stale events from re-showing indicator
-            webViewController.deactivateActivityHandlers();
+            viewController.deactivateActivityHandlers();
             // Then hide the loading indicator
-            webViewController.hideLoadingIndicator(messageId);
+            viewController.hideLoadingIndicator(messageId);
         }
     }
     

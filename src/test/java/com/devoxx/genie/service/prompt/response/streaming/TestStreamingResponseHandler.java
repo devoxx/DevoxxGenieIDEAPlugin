@@ -1,19 +1,19 @@
 package com.devoxx.genie.service.prompt.response.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.ui.webview.ConversationWebViewController;
+import com.devoxx.genie.ui.compose.ConversationViewController;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 /**
- * A test implementation of StreamingResponseHandler that doesn't require a real webViewController.
+ * A test implementation of StreamingResponseHandler that doesn't require a real viewController.
  * Only used for testing to avoid the need for complex reflection.
  */
 public class TestStreamingResponseHandler extends StreamingResponseHandler {
     /**
-     * Creates a test streaming response handler that works with a null webViewController.
+     * Creates a test streaming response handler that works with a null viewController.
      *
      * @param context The chat message context
      * @param onCompleteCallback Called when streaming completes successfully
@@ -29,13 +29,13 @@ public class TestStreamingResponseHandler extends StreamingResponseHandler {
     @Override
     public void onPartialResponse(String partialResponse) {
         // Do nothing in the test implementation to avoid NullPointerException
-        // due to null webViewController
+        // due to null viewController
     }
 
     @Override
     public void onCompleteResponse(ChatResponse response) {
         // We can use the parent method since it will eventually call the callback
-        // even with a null webViewController in the constructor
+        // even with a null viewController in the constructor
         super.onCompleteResponse(response);
     }
 }

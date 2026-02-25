@@ -33,10 +33,10 @@ import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionBut
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
 public class ConversationHistoryPanel extends JPanel implements ConversationSelectionListener {
-    private final ConversationStorageService storageService;
+    private final transient ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
-    private final Project project;
-    private JBPopup activePopup;
+    private final transient Project project;
+    private transient JBPopup activePopup;
 
     public ConversationHistoryPanel(Project project) {
         this.project = project;
@@ -151,10 +151,10 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     @Override
     public void onConversationSelected(Conversation conversation) {
         // Find the ConversationPanel instance and notify it about the selected conversation
-        Project project = this.project;
-        if (project != null) {
+        Project currentProject = this.project;
+        if (currentProject != null) {
             // Get the message bus connection
-            project.getMessageBus()
+            currentProject.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_SELECTION_TOPIC)
                 .onConversationSelected(conversation);
         }
@@ -162,7 +162,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     // Table model class
     private static class ConversationTableModel extends AbstractTableModel {
-        private List<Conversation> conversations = new ArrayList<>();
+        private transient List<Conversation> conversations = new ArrayList<>();
         private final String[] columnNames = {"Delete", "Title", "Time"};
 
         public void setConversations(List<Conversation> conversations) {
@@ -213,6 +213,31 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         @Override
         public boolean isCellEditable(int row, int column) {
             return column == 0; // Only delete buttons are editable
+        }
+
+        private static @NotNull String formatTimeSince(String timestamp) {
+            try {
+                LocalDateTime messageTime = LocalDateTime.parse(timestamp);
+                LocalDateTime now = LocalDateTime.now();
+                Duration duration = Duration.between(messageTime, now);
+
+                long minutes = duration.toMinutes();
+                if (minutes < 1) {
+                    return "Just now";
+                } else if (minutes < 60) {
+                    return minutes + " minute" + (minutes != 1 ? "s" : "") + " ago";
+                } else {
+                    long hours = duration.toHours();
+                    if (hours < 24) {
+                        return hours + " hour" + (hours != 1 ? "s" : "") + " ago";
+                    } else {
+                        long days = duration.toDays();
+                        return days + " day" + (days != 1 ? "s" : "") + " ago";
+                    }
+                }
+            } catch (Exception e) {
+                return "";
+            }
         }
     }
 
@@ -291,8 +316,8 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     // Custom editor for buttons
     private static class ButtonEditor extends DefaultCellEditor {
         private final JButton button;
-        private final Function<Conversation, Boolean> action;
-        private Conversation currentConversation;
+        private final transient Function<Conversation, Boolean> action;
+        private transient Conversation currentConversation;
 
         public ButtonEditor(@NotNull JButton button,
                             Function<Conversation, Boolean> action) {
@@ -320,31 +345,6 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     private void updateChatMemory(Conversation conversation) {
         ChatMemoryManager.getInstance().restoreConversation(project, conversation);
-    }
-
-    private static @NotNull String formatTimeSince(String timestamp) {
-        try {
-            LocalDateTime messageTime = LocalDateTime.parse(timestamp);
-            LocalDateTime now = LocalDateTime.now();
-            Duration duration = Duration.between(messageTime, now);
-
-            long minutes = duration.toMinutes();
-            if (minutes < 1) {
-                return "Just now";
-            } else if (minutes < 60) {
-                return minutes + " minute" + (minutes != 1 ? "s" : "") + " ago";
-            } else {
-                long hours = duration.toHours();
-                if (hours < 24) {
-                    return hours + " hour" + (hours != 1 ? "s" : "") + " ago";
-                } else {
-                    long days = duration.toDays();
-                    return days + " day" + (days != 1 ? "s" : "") + " ago";
-                }
-            }
-        } catch (Exception e) {
-            return "";
-        }
     }
 
     private void showDeleteAllConfirmationDialog() {

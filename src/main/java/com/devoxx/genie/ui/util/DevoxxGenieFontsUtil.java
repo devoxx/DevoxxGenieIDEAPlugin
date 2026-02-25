@@ -15,12 +15,7 @@ public class DevoxxGenieFontsUtil {
     public static final String SOURCE_CODE_PRO_FONT = "Source Code Pro";
     public static final String DROPDOWN_FONT_FAMILY = Font.DIALOG;
     public static final int DROPDOWN_FONT_SIZE = 14; // Increased base size for better readability
-    
-    /**
-     * Get a standardized font for code blocks
-     */
-    public static final Font SourceCodeProFontPlan14 = new Font(SOURCE_CODE_PRO_FONT, Font.PLAIN, 14);
-    
+
     /**
      * Get a standardized scaled font for dropdown menus that respects IDE scaling
      * @return The font to use for dropdown menus

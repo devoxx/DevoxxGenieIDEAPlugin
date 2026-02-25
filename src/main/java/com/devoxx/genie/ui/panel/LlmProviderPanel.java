@@ -21,6 +21,7 @@ import com.intellij.ui.components.JBPanel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -161,69 +162,83 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             return;
         }
 
-        if (selectedProvider == ModelProvider.LMStudio ||
-            selectedProvider == ModelProvider.Ollama ||
-            selectedProvider == ModelProvider.Jan ||
-            selectedProvider == ModelProvider.GPT4All ||
-            selectedProvider == ModelProvider.OpenRouter ||
-            selectedProvider == ModelProvider.Bedrock) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                refreshButton.setEnabled(false);
-
-                ChatModelFactory factory = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                        .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + selectedProvider));
-                factory.resetModels();
-
-                updateModelNamesComboBox(selectedProvider.getName());
-                modelNameComboBox.setRenderer(new ModelInfoRenderer());
-                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
-                modelNameComboBox.revalidate();
-                modelNameComboBox.repaint();
-                refreshButton.setEnabled(true);
-
-            });
+        if (isLocalProvider(selectedProvider)) {
+            refreshLocalModels(selectedProvider);
         } else {
+            refreshCloudModels(selectedProvider);
+        }
+    }
+
+    private static boolean isLocalProvider(ModelProvider provider) {
+        return provider == ModelProvider.LMStudio ||
+               provider == ModelProvider.Ollama ||
+               provider == ModelProvider.Jan ||
+               provider == ModelProvider.GPT4All ||
+               provider == ModelProvider.OpenRouter ||
+               provider == ModelProvider.Bedrock;
+    }
+
+    private void refreshLocalModels(ModelProvider selectedProvider) {
+        ApplicationManager.getApplication().invokeLater(() -> {
             refreshButton.setEnabled(false);
 
-            // Capture current model names before refresh
-            Set<String> beforeNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                    .map(f -> f.getModels().stream()
-                            .map(LanguageModel::getModelName)
-                            .collect(Collectors.toSet()))
-                    .orElse(Collections.emptySet());
+            ChatModelFactory factory = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                    .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + selectedProvider));
+            factory.resetModels();
 
-            ModelConfigService.getInstance().forceRefresh(() -> {
-                ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                        .ifPresent(ChatModelFactory::resetModels);
-                updateModelNamesComboBox(selectedProvider.getName());
-                modelNameComboBox.setRenderer(new ModelInfoRenderer());
-                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
-                modelNameComboBox.revalidate();
-                modelNameComboBox.repaint();
-                refreshButton.setEnabled(true);
+            refreshModelComboBox(selectedProvider);
+            refreshButton.setEnabled(true);
+        });
+    }
 
-                // Compute diff and show notification
-                Set<String> afterNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                        .map(f -> f.getModels().stream()
-                                .map(LanguageModel::getModelName)
-                                .collect(Collectors.toSet()))
-                        .orElse(Collections.emptySet());
+    private void refreshCloudModels(@NonNull ModelProvider selectedProvider) {
+        refreshButton.setEnabled(false);
 
-                long added = afterNames.stream().filter(n -> !beforeNames.contains(n)).count();
-                long removed = beforeNames.stream().filter(n -> !afterNames.contains(n)).count();
+        Set<String> beforeNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                .map(f -> f.getModels().stream()
+                        .map(LanguageModel::getModelName)
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
 
-                String message;
-                if (added == 0 && removed == 0) {
-                    message = selectedProvider.getName() + " models are up to date (" + afterNames.size() + " models).";
-                } else {
-                    List<String> parts = new ArrayList<>();
-                    if (added > 0) parts.add(added + " new");
-                    if (removed > 0) parts.add(removed + " removed");
-                    message = selectedProvider.getName() + " models refreshed: " + String.join(", ", parts) + ".";
-                }
-                NotificationUtil.sendNotification(project, message);
-            });
+        ModelConfigService.getInstance().forceRefresh(() -> {
+            ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                    .ifPresent(ChatModelFactory::resetModels);
+            refreshModelComboBox(selectedProvider);
+            refreshButton.setEnabled(true);
+
+            notifyModelChanges(selectedProvider, beforeNames);
+        });
+    }
+
+    private void refreshModelComboBox(@NonNull ModelProvider selectedProvider) {
+        updateModelNamesComboBox(selectedProvider.getName());
+        modelNameComboBox.setRenderer(new ModelInfoRenderer());
+        modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+        modelNameComboBox.revalidate();
+        modelNameComboBox.repaint();
+    }
+
+    private void notifyModelChanges(@NonNull ModelProvider selectedProvider,
+                                    @NonNull Set<String> beforeNames) {
+        Set<String> afterNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                .map(f -> f.getModels().stream()
+                        .map(LanguageModel::getModelName)
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
+
+        long added = afterNames.stream().filter(n -> !beforeNames.contains(n)).count();
+        long removed = beforeNames.stream().filter(n -> !afterNames.contains(n)).count();
+
+        String message;
+        if (added == 0 && removed == 0) {
+            message = selectedProvider.getName() + " models are up to date (" + afterNames.size() + " models).";
+        } else {
+            List<String> parts = new ArrayList<>();
+            if (added > 0) parts.add(added + " new");
+            if (removed > 0) parts.add(removed + " removed");
+            message = selectedProvider.getName() + " models refreshed: " + String.join(", ", parts) + ".";
         }
+        NotificationUtil.sendNotification(project, message);
     }
 
     /**

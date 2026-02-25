@@ -10,6 +10,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public final class SecurityScannerService implements Disposable {
 
     private final Project project;
+    @Getter
     private volatile boolean running;
     private volatile boolean cancelled;
 
@@ -35,10 +37,6 @@ public final class SecurityScannerService implements Disposable {
 
     public static SecurityScannerService getInstance(@NotNull Project project) {
         return project.getService(SecurityScannerService.class);
-    }
-
-    public boolean isRunning() {
-        return running;
     }
 
     public void cancel() {

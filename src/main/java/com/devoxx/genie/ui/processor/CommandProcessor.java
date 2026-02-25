@@ -18,6 +18,9 @@ import org.jetbrains.annotations.NotNull;
  */
 @Slf4j
 public class CommandProcessor {
+    private CommandProcessor() {
+        /* This utility class should not be instantiated */
+    }
 
     /**
      * Process the command and return true if the command was processed and handled here,
@@ -50,7 +53,7 @@ public class CommandProcessor {
         log.info("Processing /init command to generate DEVOXXGENIE.md file");
         
         // Ensure the setting is temporarily enabled to generate the file
-        boolean wasEnabled = DevoxxGenieStateService.getInstance().getCreateDevoxxGenieMd();
+
         boolean includeProjectTree = DevoxxGenieStateService.getInstance().getIncludeProjectTree();
         Integer treeDepth = DevoxxGenieStateService.getInstance().getProjectTreeDepth();
         
@@ -69,11 +72,11 @@ public class CommandProcessor {
                     log.error("Error generating DEVOXXGENIE.md file", e);
                     
                     // Show error notification
-                    ApplicationManager.getApplication().invokeLater(() -> {
+                    ApplicationManager.getApplication().invokeLater(() ->
                         NotificationUtil.sendNotification(
                                 project, 
-                                "Error generating DEVOXXGENIE.md file: " + e.getMessage());
-                    });
+                                "Error generating DEVOXXGENIE.md file: " + e.getMessage())
+                    );
                 }
             }
         });

@@ -27,8 +27,6 @@ public class ClientCapabilities {
         public boolean readTextFile;
         public boolean writeTextFile;
 
-        public FileSystemCapability() {}
-
         public FileSystemCapability(boolean readTextFile, boolean writeTextFile) {
             this.readTextFile = readTextFile;
             this.writeTextFile = writeTextFile;
