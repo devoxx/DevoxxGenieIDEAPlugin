@@ -121,7 +121,12 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                     log.debug("Adding file references to conversation: {} files", context.getFileReferences().size());
                     panel.getConversationPanel().viewController.addFileReferences(context, context.getFileReferences());
                 }
-                
+
+                // Hide loading indicator on successful completion
+                if (panel.getConversationPanel() != null && panel.getConversationPanel().viewController != null) {
+                    panel.getConversationPanel().viewController.hideLoadingIndicator(context.getId());
+                }
+
                 resultTask.complete(PromptResult.success(context));
             } catch (Exception e) {
                 if (e instanceof CancellationException || 

@@ -23,13 +23,13 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
-    private ChatMessageContext context;
-    private long startTime;
-    private Project project;
-    private Consumer<ChatResponse> onCompleteCallback;
-    private Consumer<Throwable> onErrorCallback;
+    private final ChatMessageContext context;
+    private final long startTime;
+    private final Project project;
+    private final Consumer<ChatResponse> onCompleteCallback;
+    private final Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
-    private ConversationViewController conversationViewController;
+    private final ConversationViewController conversationViewController;
 
     // Track if we've added the initial message and accumulate the streamed tokens
     private boolean hasAddedInitialMessage = false;
@@ -113,6 +113,8 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
                     }
                     // Mark MCP logs as completed now that streaming is finished
                     conversationViewController.markMCPLogsAsCompleted(context.getId());
+                    // Hide loading indicator on successful completion
+                    conversationViewController.hideLoadingIndicator(context.getId());
                 });
             }
 
@@ -124,11 +126,11 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             
             // Add file references if any
             if (!FileListManager.getInstance().isEmpty(context.getProject()) && conversationViewController != null) {
-                ApplicationManager.getApplication().invokeLater(() -> {
+                ApplicationManager.getApplication().invokeLater(() ->
                     // Add file references to the web view instead of creating a dialog
                     conversationViewController.addFileReferences(context, 
-                        FileListManager.getInstance().getFiles(context.getProject()));
-                });
+                        FileListManager.getInstance().getFiles(context.getProject()))
+                );
             }
             
             log.debug("Streaming completed for context {}", context.getId());
