@@ -27,10 +27,12 @@ data class DevoxxColors(
     val textPrimary: Color,
     val textSecondary: Color,
     val codeBackground: Color,
+    val isDark: Boolean,
 )
 
 /**
  * Custom typography replacing Material Typography.
+ * Font sizes are derived from the user's appearance settings.
  */
 @Stable
 data class DevoxxTypography(
@@ -38,6 +40,10 @@ data class DevoxxTypography(
     val body1: TextStyle = TextStyle(fontSize = 13.sp),
     val body2: TextStyle = TextStyle(fontSize = 12.sp),
     val caption: TextStyle = TextStyle(fontSize = 11.sp),
+    /** Body font size in sp — used by markdown renderers for base text. */
+    val bodyFontSize: Float = 13f,
+    /** Code font size in sp — used by markdown renderers for code blocks. */
+    val codeFontSize: Float = 12f,
 )
 
 val LocalDevoxxColors = staticCompositionLocalOf<DevoxxColors> {
@@ -93,6 +99,8 @@ object DevoxxGenieColors {
 @Composable
 fun DevoxxGenieTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    bodyFontSize: Int = 13,
+    codeFontSize: Int = 12,
     content: @Composable () -> Unit,
 ) {
     val colors = DevoxxColors(
@@ -105,9 +113,20 @@ fun DevoxxGenieTheme(
         textPrimary = DevoxxGenieColors.textPrimary(darkTheme),
         textSecondary = DevoxxGenieColors.textSecondary(darkTheme),
         codeBackground = DevoxxGenieColors.codeBackground(darkTheme),
+        isDark = darkTheme,
     )
 
-    val typography = DevoxxTypography()
+    val bodySp = bodyFontSize.coerceIn(8, 24)
+    val codeSp = codeFontSize.coerceIn(8, 24)
+
+    val typography = DevoxxTypography(
+        h5 = TextStyle(fontSize = (bodySp + 11).sp, fontWeight = FontWeight.Normal),
+        body1 = TextStyle(fontSize = bodySp.sp),
+        body2 = TextStyle(fontSize = (bodySp - 1).sp),
+        caption = TextStyle(fontSize = (bodySp - 2).sp),
+        bodyFontSize = bodySp.toFloat(),
+        codeFontSize = codeSp.toFloat(),
+    )
 
     CompositionLocalProvider(
         LocalDevoxxColors provides colors,

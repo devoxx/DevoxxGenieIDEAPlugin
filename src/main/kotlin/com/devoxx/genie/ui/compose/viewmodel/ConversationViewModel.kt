@@ -30,8 +30,33 @@ class ConversationViewModel {
     )
         private set
 
+    var customFontSize: Int by mutableStateOf(readFontSize())
+        private set
+
+    var customCodeFontSize: Int by mutableStateOf(readCodeFontSize())
+        private set
+
     fun onThemeChanged(dark: Boolean) {
         isDarkTheme = dark
+    }
+
+    fun onAppearanceSettingsChanged() {
+        customFontSize = readFontSize()
+        customCodeFontSize = readCodeFontSize()
+    }
+
+    private fun readFontSize(): Int {
+        return try {
+            val state = DevoxxGenieStateService.getInstance()
+            if (state.useCustomFontSize == true) state.customFontSize ?: 13 else 13
+        } catch (_: Exception) { 13 }
+    }
+
+    private fun readCodeFontSize(): Int {
+        return try {
+            val state = DevoxxGenieStateService.getInstance()
+            if (state.useCustomCodeFontSize == true) state.customCodeFontSize ?: 12 else 12
+        } catch (_: Exception) { 12 }
     }
 
     private var activeMessageId: String? = null
@@ -151,14 +176,18 @@ class ConversationViewModel {
 
         val msgId = activeMessageId ?: return
 
-        // Agent intermediate responses (reasoning text) — append to AI response markdown
+        // Agent intermediate responses (reasoning text) — show as activity entry
+        // instead of appending to aiResponseMarkdown (which gets overwritten by streaming updates)
         if (message.source == ActivitySource.AGENT &&
             message.agentType == AgentType.INTERMEDIATE_RESPONSE
         ) {
             val reasoning = message.result ?: return
+            val entry = ActivityEntryUiModel(
+                source = "AGENT",
+                content = reasoning,
+            )
             updateMessage(msgId) { msg ->
-                val separator = if (msg.aiResponseMarkdown.isNotBlank()) "\n\n" else ""
-                msg.copy(aiResponseMarkdown = msg.aiResponseMarkdown + separator + reasoning)
+                msg.copy(activityEntries = msg.activityEntries + entry)
             }
             return
         }
@@ -186,10 +215,7 @@ class ConversationViewModel {
 
     fun hideLoadingIndicator(messageId: String) {
         updateMessage(messageId) { msg ->
-            msg.copy(
-                isLoadingIndicatorVisible = false,
-                activitySectionVisible = false,
-            )
+            msg.copy(isLoadingIndicatorVisible = false)
         }
     }
 

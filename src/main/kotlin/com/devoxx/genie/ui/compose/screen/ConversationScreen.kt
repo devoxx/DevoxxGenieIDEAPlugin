@@ -15,7 +15,11 @@ fun ConversationScreen(
 ) {
     val state = viewModel.state
 
-    DevoxxGenieTheme(darkTheme = viewModel.isDarkTheme) {
+    DevoxxGenieTheme(
+        darkTheme = viewModel.isDarkTheme,
+        bodyFontSize = viewModel.customFontSize,
+        codeFontSize = viewModel.customCodeFontSize,
+    ) {
         when (val s = state) {
             is ConversationState.Welcome -> {
                 WelcomeScreen(

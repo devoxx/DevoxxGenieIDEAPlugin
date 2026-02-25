@@ -121,9 +121,12 @@ fun AiBubble(
 
         // AI Response content — rendered as Markdown
         if (message.aiResponseMarkdown.isNotBlank()) {
+            val typography = DevoxxGenieThemeAccessor.typography
             val textColor = colors.textPrimary
             val secondaryColor = colors.textSecondary
             val codeBg = colors.codeBackground
+            val bodySize = typography.bodyFontSize.sp
+            val codeSize = typography.codeFontSize.sp
 
             val mdColors = DefaultMarkdownColors(
                 text = textColor,
@@ -137,19 +140,19 @@ fun AiBubble(
                 tableBackground = Color.Transparent,
             )
 
-            val baseStyle = TextStyle(fontSize = 13.sp, color = textColor)
-            val codeStyle = TextStyle(fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor)
+            val baseStyle = TextStyle(fontSize = bodySize, color = textColor)
+            val codeStyle = TextStyle(fontSize = codeSize, fontFamily = FontFamily.Monospace, color = textColor)
 
             val mdTypography = DefaultMarkdownTypography(
-                h1 = baseStyle.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold),
-                h2 = baseStyle.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                h3 = baseStyle.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
-                h4 = baseStyle.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
-                h5 = baseStyle.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
-                h6 = baseStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                h1 = baseStyle.copy(fontSize = (typography.bodyFontSize + 9).sp, fontWeight = FontWeight.Bold),
+                h2 = baseStyle.copy(fontSize = (typography.bodyFontSize + 7).sp, fontWeight = FontWeight.Bold),
+                h3 = baseStyle.copy(fontSize = (typography.bodyFontSize + 5).sp, fontWeight = FontWeight.Bold),
+                h4 = baseStyle.copy(fontSize = (typography.bodyFontSize + 3).sp, fontWeight = FontWeight.SemiBold),
+                h5 = baseStyle.copy(fontSize = (typography.bodyFontSize + 1).sp, fontWeight = FontWeight.SemiBold),
+                h6 = baseStyle.copy(fontSize = bodySize, fontWeight = FontWeight.SemiBold),
                 text = baseStyle,
                 code = codeStyle,
-                inlineCode = codeStyle.copy(fontSize = 12.sp, color = DevoxxBlue),
+                inlineCode = codeStyle.copy(color = DevoxxBlue),
                 quote = baseStyle.copy(color = secondaryColor),
                 paragraph = baseStyle,
                 ordered = baseStyle,

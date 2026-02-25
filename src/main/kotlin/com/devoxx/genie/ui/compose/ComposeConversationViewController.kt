@@ -116,4 +116,8 @@ class ComposeConversationViewController(
     override fun themeChanged(isDarkTheme: Boolean) {
         viewModel.onThemeChanged(isDarkTheme)
     }
+
+    override fun appearanceSettingsChanged() {
+        viewModel.onAppearanceSettingsChanged()
+    }
 }

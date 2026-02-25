@@ -4,7 +4,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -12,19 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.devoxx.genie.ui.compose.theme.DevoxxBlue
-import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
 
 @Composable
 fun ThinkingIndicator(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition()
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-    )
 
     Row(
         modifier = modifier.padding(8.dp),
@@ -47,12 +37,5 @@ fun ThinkingIndicator(modifier: Modifier = Modifier) {
                     .background(DevoxxBlue, CircleShape),
             )
         }
-        Spacer(Modifier.width(8.dp))
-        BasicText(
-            text = "Thinking",
-            style = DevoxxGenieThemeAccessor.typography.caption.copy(
-                color = DevoxxGenieThemeAccessor.colors.onSurface.copy(alpha = alpha),
-            ),
-        )
     }
 }

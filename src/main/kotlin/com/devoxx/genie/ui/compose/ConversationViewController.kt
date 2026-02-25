@@ -55,4 +55,7 @@ interface ConversationViewController {
     // ---- theme ----
 
     fun themeChanged(isDarkTheme: Boolean)
+
+    /** Called when appearance settings (font size, etc.) change. */
+    fun appearanceSettingsChanged()
 }

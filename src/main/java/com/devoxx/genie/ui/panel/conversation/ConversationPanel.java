@@ -10,9 +10,11 @@ import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.FileReferencesListener;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
+import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBPanel;
@@ -74,8 +76,7 @@ public class ConversationPanel
             chatService,
                 historyManager,
             messageRenderer, 
-            uiController.getConversationLabel(),
-            this::refreshForNewConversation
+            uiController.getConversationLabel()
         );
         
         // Set the conversation manager in the chat service for conversation tracking
@@ -112,6 +113,11 @@ public class ConversationPanel
         messageBusConnection = project.getMessageBus().connect();
         messageBusConnection.subscribe(AppTopics.FILE_REFERENCES_TOPIC, this);
         messageBusConnection.subscribe(AppTopics.CONVERSATION_SELECTION_TOPIC, this);
+
+        // Subscribe to appearance settings changes (application-level bus)
+        ApplicationManager.getApplication().getMessageBus().connect(messageBusConnection)
+            .subscribe(AppTopics.APPEARANCE_SETTINGS_TOPIC, (AppearanceSettingsEvents) () ->
+                viewController.appearanceSettingsChanged());
 
         // Filter activity log messages to only show messages from this project
         String projectHash = project.getLocationHash();

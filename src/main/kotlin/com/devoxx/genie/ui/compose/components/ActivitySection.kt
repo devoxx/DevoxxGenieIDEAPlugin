@@ -84,7 +84,10 @@ private fun ActivityEntryRow(entry: ActivityEntryUiModel) {
     val colors = DevoxxGenieThemeAccessor.colors
     val typography = DevoxxGenieThemeAccessor.typography
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             BasicText(
                 text = "[${entry.source}]",
                 style = typography.caption.copy(
@@ -94,13 +97,15 @@ private fun ActivityEntryRow(entry: ActivityEntryUiModel) {
             )
             if (entry.toolName != null) {
                 Spacer(Modifier.width(4.dp))
+                val summary = summarizeToolAction(entry.toolName, entry.arguments)
                 BasicText(
-                    text = entry.toolName,
+                    text = summary,
                     style = typography.caption.copy(
                         fontSize = 11.sp,
                         color = colors.textPrimary,
                         fontFamily = FontFamily.Monospace,
                     ),
+                    modifier = Modifier.weight(1f, fill = false),
                 )
             }
             if (entry.callNumber > 0) {
@@ -119,4 +124,28 @@ private fun ActivityEntryRow(entry: ActivityEntryUiModel) {
             )
         }
     }
+}
+
+/**
+ * Extracts a concise action summary from tool name and its JSON arguments.
+ * For example: "edit_file /src/Main.java" or "list_files /src".
+ */
+private fun summarizeToolAction(toolName: String, arguments: String?): String {
+    if (arguments.isNullOrBlank()) return toolName
+    // Extract the first string value from the JSON arguments as a key identifier
+    // Typical keys: "path", "file_path", "directory", "url", "query", "pattern", "command"
+    val target = extractFirstStringArg(arguments)
+    return if (target != null) "$toolName: $target" else toolName
+}
+
+private fun extractFirstStringArg(json: String): String? {
+    // Lightweight extraction — look for common key names first, then fall back to first string value
+    val priorityKeys = listOf("path", "file_path", "directory", "url", "query", "pattern", "command", "name")
+    for (key in priorityKeys) {
+        val match = Regex(""""$key"\s*:\s*"([^"]+)"""").find(json)
+        if (match != null) return match.groupValues[1]
+    }
+    // Fall back to first string value in the JSON
+    val firstValue = Regex(""":\s*"([^"]+)"""").find(json)
+    return firstValue?.groupValues?.get(1)
 }

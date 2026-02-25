@@ -18,8 +18,9 @@ fun ChatScreen(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    var previousMessageCount by remember { mutableStateOf(messages.size) }
 
-    // Auto-scroll only when user is already near the bottom
+    // Auto-scroll only when user is already near the bottom (for streaming updates)
     val shouldAutoScroll by remember {
         derivedStateOf {
             val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -27,7 +28,16 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(messages.size, messages.lastOrNull()?.aiResponseMarkdown) {
+    // Always scroll when a new message is added (user just submitted a prompt)
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty() && messages.size > previousMessageCount) {
+            listState.animateScrollToItem(messages.lastIndex)
+        }
+        previousMessageCount = messages.size
+    }
+
+    // Scroll on streaming updates only if user is near the bottom
+    LaunchedEffect(messages.lastOrNull()?.aiResponseMarkdown) {
         if (shouldAutoScroll && messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.lastIndex)
         }

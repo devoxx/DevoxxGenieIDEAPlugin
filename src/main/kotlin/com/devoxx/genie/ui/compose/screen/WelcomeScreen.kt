@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.compose.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
@@ -21,6 +22,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
@@ -31,6 +34,7 @@ import com.devoxx.genie.ui.compose.model.FEATURES
 import com.devoxx.genie.ui.compose.model.FeatureDoc
 import com.devoxx.genie.ui.compose.theme.*
 import com.devoxx.genie.ui.compose.util.fireTrackingPixel
+import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil
 import com.intellij.ide.BrowserUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -59,6 +63,24 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(28.dp))
+
+        // DevoxxGenie logo
+        val density = LocalDensity.current
+        val iconPath = if (colors.isDark) "/icons/pluginIcon_dark.svg" else "/icons/pluginIcon.svg"
+        val logoPainter = remember(density, iconPath) {
+            DevoxxGenieIconsUtil::class.java.getResourceAsStream(iconPath)
+                ?.use { loadSvgPainter(it, density) }
+        }
+        if (logoPainter != null) {
+            Image(
+                painter = logoPainter,
+                contentDescription = "DevoxxGenie",
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(64.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+        }
 
         // Greeting
         val greeting = remember {
