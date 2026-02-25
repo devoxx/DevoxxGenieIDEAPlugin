@@ -29,9 +29,10 @@ class HelpUtilTest {
 
     @Test
     void testGetCustomPromptCommands() {
+        DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(customPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getCustomPromptCommands();
 
@@ -44,9 +45,10 @@ class HelpUtilTest {
 
     @Test
     void testGetCustomPromptCommandsForWebView() {
+        DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(customPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getCustomPromptCommandsForWebView();
 
@@ -60,10 +62,11 @@ class HelpUtilTest {
     @Test
     void testGetCustomPromptCommandsForWebView_EmptyList() {
         List<CustomPrompt> emptyPrompts = new ArrayList<>();
+        DevoxxGenieStateService mockState = createMockStateService(emptyPrompts);
 
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(emptyPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getCustomPromptCommandsForWebView();
 
@@ -73,9 +76,10 @@ class HelpUtilTest {
 
     @Test
     void testGetHelpMarkdown() {
+        DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(customPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getHelpMarkdown();
 
@@ -91,10 +95,11 @@ class HelpUtilTest {
     @Test
     void testGetHelpMarkdown_EmptyList() {
         List<CustomPrompt> emptyPrompts = new ArrayList<>();
+        DevoxxGenieStateService mockState = createMockStateService(emptyPrompts);
 
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(emptyPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getHelpMarkdown();
 
@@ -107,9 +112,10 @@ class HelpUtilTest {
 
     @Test
     void testGetHelpMessage() {
+        DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(customPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getHelpMessage();
 
@@ -119,9 +125,9 @@ class HelpUtilTest {
             assertThat(result).contains("body {");
             assertThat(result).contains("font-family: 'Source Code Pro', monospace;");
             assertThat(result).contains("Available commands:");
-            assertThat(result).contains("/test : Test prompt");
-            assertThat(result).contains("/explain : Explain this code");
-            assertThat(result).contains("/review : Review this code");
+            assertThat(result).contains("feature-name\">/test</span> : Test prompt");
+            assertThat(result).contains("feature-name\">/explain</span> : Explain this code");
+            assertThat(result).contains("feature-name\">/review</span> : Review this code");
             assertThat(result).contains("Devoxx Genie is open source");
             assertThat(result).contains("github.com/devoxx/DevoxxGenieIDEAPlugin");
             assertThat(result).contains("bsky.app/profile/devoxxgenie.bsky.social");
@@ -131,9 +137,10 @@ class HelpUtilTest {
 
     @Test
     void testGetHelpMessage_WithCustomScaleFactor() {
+        DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(customPrompts));
+                    .thenReturn(mockState);
 
             // The method uses JBUIScale.scale(1f) which should return 1.0f
             // So the zoom should be "normal"
@@ -150,15 +157,16 @@ class HelpUtilTest {
         multiplePrompts.add(new CustomPrompt("custom2", "Custom prompt 2"));
         multiplePrompts.add(new CustomPrompt("custom3", "Custom prompt 3"));
 
+        DevoxxGenieStateService mockState = createMockStateService(multiplePrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(multiplePrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getHelpMessage();
 
-            assertThat(result).contains("/custom1 : Custom prompt 1");
-            assertThat(result).contains("/custom2 : Custom prompt 2");
-            assertThat(result).contains("/custom3 : Custom prompt 3");
+            assertThat(result).contains("feature-name\">/custom1</span> : Custom prompt 1");
+            assertThat(result).contains("feature-name\">/custom2</span> : Custom prompt 2");
+            assertThat(result).contains("feature-name\">/custom3</span> : Custom prompt 3");
         }
     }
 
@@ -168,9 +176,10 @@ class HelpUtilTest {
         specialPrompts.add(new CustomPrompt("test:with:colons", "Prompt with : colons"));
         specialPrompts.add(new CustomPrompt("test-with-dashes", "Prompt with - dashes"));
 
+        DevoxxGenieStateService mockState = createMockStateService(specialPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(specialPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getCustomPromptCommands();
 
@@ -185,9 +194,10 @@ class HelpUtilTest {
         specialPrompts.add(new CustomPrompt("test:with:colons", "Prompt with : colons"));
         specialPrompts.add(new CustomPrompt("test-with-dashes", "Prompt with - dashes"));
 
+        DevoxxGenieStateService mockState = createMockStateService(specialPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(specialPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getCustomPromptCommandsForWebView();
 
@@ -202,9 +212,10 @@ class HelpUtilTest {
         specialPrompts.add(new CustomPrompt("test:with:colons", "Prompt with : colons"));
         specialPrompts.add(new CustomPrompt("test-with-dashes", "Prompt with - dashes"));
 
+        DevoxxGenieStateService mockState = createMockStateService(specialPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
-                    .thenReturn(createMockStateService(specialPrompts));
+                    .thenReturn(mockState);
 
             String result = HelpUtil.getHelpMarkdown();
 

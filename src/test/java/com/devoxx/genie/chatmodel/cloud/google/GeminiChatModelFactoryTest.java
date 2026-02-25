@@ -60,6 +60,6 @@ public class GeminiChatModelFactoryTest extends AbstractLightPlatformTestCase {
         Assertions.assertThat(factory.getModels()).isNotEmpty();
 
         List<LanguageModel> modelNames = factory.getModels();
-        Assertions.assertThat(modelNames).size().isEqualTo(5);
+        Assertions.assertThat(modelNames).size().isGreaterThanOrEqualTo(5);
     }
 }

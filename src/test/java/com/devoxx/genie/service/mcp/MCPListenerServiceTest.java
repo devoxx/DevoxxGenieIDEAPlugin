@@ -177,7 +177,7 @@ class MCPListenerServiceTest {
     void onRequest_aiMessageWithText_agentMode_debugLogsDisabled_stillPostsAgentMessage() {
         listener = createListener(true, false);
 
-        AiMessage aiMessage = AiMessage.from("Thinking...");
+        AiMessage aiMessage = AiMessage.from("Analyzing the codebase...");
         ChatModelRequestContext ctx = createContext(List.of(
                 SystemMessage.from("system"),
                 aiMessage,
@@ -188,7 +188,7 @@ class MCPListenerServiceTest {
         assertThat(capturedMessages).hasSize(1);
         assertThat(capturedMessages.get(0).getSource()).isEqualTo(ActivitySource.AGENT);
         assertThat(capturedMessages.get(0).getAgentType()).isEqualTo(AgentType.INTERMEDIATE_RESPONSE);
-        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Thinking");
+        assertThat(capturedMessages.get(0).getResult()).isEqualTo("Analyzing the codebase...");
     }
 
     // -- AiMessage with null/empty text --
