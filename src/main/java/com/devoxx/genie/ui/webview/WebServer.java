@@ -29,12 +29,6 @@ public class WebServer {
     private Channel serverChannel;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
     private final Map<String, String> scripts = new ConcurrentHashMap<>();
-    public static final String PRISM_CSS_RESOURCE = "/prism.css";
-    public static final String PRISM_JS_RESOURCE = "/prism.js";
-    public static final String BASE_CSS_RESOURCE = "/base.css";
-    public static final String BASE_JS_RESOURCE = "/base.js";
-    public static final String MCP_LOG_HANDLER_JS_RESOURCE = "/mcpLogHandler.js";
-    public static final String BASE_HTML_RESOURCE = "/base.html";
 
     private WebServer() {
         initializeEmbeddedResources();
@@ -156,14 +150,6 @@ public class WebServer {
     }
 
     public void initializeEmbeddedResources() {
-        String baseHTML = loadResource("webview/html/base.html")
-                .replace("${prismCssUrl}", getPrismCssUrl())
-                .replace("${baseCssUrl}", getBaseCssUrl())
-                .replace("${prismJsUrl}", getPrismJsUrl())
-                .replace("${baseJsUrl}", getBaseJsUrl());
-        resources.put(BASE_HTML_RESOURCE, baseHTML);
-        
-        // Add static icon resources
         addStaticResource("/icons/copy.svg", "icons/copy.svg");
         addStaticResource("/icons/copy_dark.svg", "icons/copy_dark.svg");
     }
@@ -186,26 +172,6 @@ public class WebServer {
         } catch (Exception e) {
             log.error("Error loading static resource: " + resourcePath, e);
         }
-    }
-
-    public String getPrismCssUrl() {
-        resources.put(PRISM_CSS_RESOURCE, loadResource("webview/prism/prism.css"));
-        return getServerUrl() + PRISM_CSS_RESOURCE;
-    }
-
-    public String getPrismJsUrl() {
-        resources.put(PRISM_JS_RESOURCE, loadResource("webview/prism/prism.js"));
-        return getServerUrl() + PRISM_JS_RESOURCE;
-    }
-    
-    public String getBaseCssUrl() {
-        resources.put(BASE_CSS_RESOURCE, loadResource("webview/css/base.css"));
-        return getServerUrl() + BASE_CSS_RESOURCE;
-    }
-
-    public String getBaseJsUrl() {
-        resources.put(BASE_JS_RESOURCE, loadResource("webview/js/base.js"));
-        return getServerUrl() + BASE_JS_RESOURCE;
     }
 
     private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
