@@ -161,7 +161,10 @@ dependencies {
     implementation("io.netty:netty-all:$nettyVersion")
     // Compose Markdown Renderer
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion")
-    implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion") {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
     // Logging
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     // GitIgnore Reader
