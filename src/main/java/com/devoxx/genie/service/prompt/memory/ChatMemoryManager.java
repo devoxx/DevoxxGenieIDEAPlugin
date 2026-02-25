@@ -265,8 +265,8 @@ public class ChatMemoryManager {
      */
     private boolean shouldIncludeSystemMessage(@NotNull ChatMessageContext context) {
         LanguageModel model = context.getLanguageModel();
-        // If the language model is OpenAI o1 model, do not include system message
-        return ChatMessageContextUtil.isOpenAIo1Model(model);
+        // OpenAI o1 models do not support system messages
+        return !ChatMessageContextUtil.isOpenAIo1Model(model);
     }
 
     /**
