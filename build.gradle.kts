@@ -245,8 +245,6 @@ tasks {
 
         maxHeapSize = "1g"
 
-        forkEvery = 10
-
         // Configure JaCoCo agent to include plugin classes loaded from sandbox JARs
         extensions.configure<JacocoTaskExtension> {
             includes = listOf("com.devoxx.genie.*")
