@@ -5,6 +5,7 @@ import com.devoxx.genie.model.security.SecurityFinding;
 import com.intellij.util.EnvironmentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -69,12 +70,15 @@ public abstract class AbstractScanner {
                 String errMsg = stderr.toString().trim();
                 if (errMsg.isEmpty()) errMsg = stdout.toString().trim();
                 throw new SecurityScanException(getType().getDisplayName() +
-                        " failed (exit code " + exitCode + "): " + truncate(errMsg, 500));
+                        " failed (exit code " + exitCode + "): " + truncate(errMsg));
             }
 
             return parseOutput(stdout.toString(), tempFile.toString());
         } catch (SecurityScanException e) {
             throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SecurityScanException(getType().getDisplayName() + " interrupted", e);
         } catch (Exception e) {
             throw new SecurityScanException(getType().getDisplayName() + " error: " + e.getMessage(), e);
         } finally {
@@ -120,7 +124,7 @@ public abstract class AbstractScanner {
         }
     }
 
-    private static String truncate(String s, int maxLen) {
-        return s.length() <= maxLen ? s : s.substring(0, maxLen) + "...";
+    private static String truncate(@NonNull String s) {
+        return s.length() <= 500 ? s : s.substring(0, 500) + "...";
     }
 }

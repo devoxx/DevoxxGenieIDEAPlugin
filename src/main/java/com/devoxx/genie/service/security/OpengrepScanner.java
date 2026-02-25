@@ -7,7 +7,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,7 +135,8 @@ public class OpengrepScanner extends AbstractScanner {
         return exitCode == 0 || exitCode == 1;
     }
 
-    private static String mapSarifLevel(String level) {
+    @Contract(pure = true)
+    private static @NonNull String mapSarifLevel(String level) {
         if (level == null) return "medium";
         return switch (level.toLowerCase()) {
             case "error" -> "high";
@@ -143,7 +146,7 @@ public class OpengrepScanner extends AbstractScanner {
         };
     }
 
-    private String buildDescription(String ruleId, String message, String filePath, int startLine) {
+    private @NonNull String buildDescription(String ruleId, @NonNull String message, String filePath, int startLine) {
         StringBuilder sb = new StringBuilder();
         sb.append("**Rule:** ").append(ruleId).append("\n");
         if (!message.isEmpty()) {
@@ -154,12 +157,12 @@ public class OpengrepScanner extends AbstractScanner {
         return sb.toString();
     }
 
-    private static String getStr(JsonObject obj, String key) {
+    private static String getStr(@NonNull JsonObject obj, String key) {
         JsonElement el = obj.get(key);
         return el != null && !el.isJsonNull() ? el.getAsString() : "";
     }
 
-    private static int getInt(JsonObject obj, String key) {
+    private static int getInt(@NonNull JsonObject obj, String key) {
         JsonElement el = obj.get(key);
         return el != null && !el.isJsonNull() ? el.getAsInt() : 0;
     }

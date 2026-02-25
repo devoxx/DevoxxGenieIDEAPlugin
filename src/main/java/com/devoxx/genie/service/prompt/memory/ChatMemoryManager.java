@@ -20,6 +20,7 @@ import dev.langchain4j.memory.ChatMemory;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -160,27 +161,10 @@ public class ChatMemoryManager {
                 // Create user message if not already set
                 context.setUserMessage(UserMessage.from(TemplateVariableEscaper.escape(context.getUserPrompt())));
             }
-            
+
             if (context.getUserMessage() != null) {
                 log.debug("Adding user message to memory for context ID: {}", context.getId());
-                UserMessage userMessage = context.getUserMessage();
-
-                if (!userMessage.hasSingleText()) {
-                    // Multimodal message (contains images) — preserve all content types
-                    List<Content> escapedContents = new ArrayList<>();
-                    for (Content content : userMessage.contents()) {
-                        if (content instanceof TextContent textContent) {
-                            escapedContents.add(TextContent.from(TemplateVariableEscaper.escape(textContent.text())));
-                        } else {
-                            escapedContents.add(content);
-                        }
-                    }
-                    chatMemoryService.addMessage(context.getProject(), UserMessage.from(escapedContents));
-                } else {
-                    String cleanValue = TemplateVariableEscaper.escape(userMessage.singleText());
-                    chatMemoryService.addMessage(context.getProject(), UserMessage.from(cleanValue));
-                }
-
+                chatMemoryService.addMessage(context.getProject(), buildEscapedUserMessage(context.getUserMessage()));
                 log.debug("Successfully added user message to memory");
             } else {
                 log.warn("Attempted to add null user message to memory for context ID: {}", context.getId());
@@ -191,21 +175,24 @@ public class ChatMemoryManager {
     }
 
     /**
-     * Removes only the last AI message from memory
-     * @param context The chat message context containing the AI message to remove
+     * Escapes template variables in a user message, preserving multimodal content.
+     * @param userMessage The user message to escape
+     * @return A new UserMessage with escaped text content
      */
-    public void removeLastAIMessage(@NotNull ChatMessageContext context) {
-        try {
-            if (context.getAiMessage() != null) {
-                chatMemoryService.removeMessages(
-                        context.getProject(),
-                        List.of(context.getAiMessage())
-                );
-                log.debug("Removed last AI message from memory");
+    private @NonNull UserMessage buildEscapedUserMessage(@NotNull UserMessage userMessage) {
+        if (!userMessage.hasSingleText()) {
+            // Multimodal message (contains images) — preserve all content types
+            List<Content> escapedContents = new ArrayList<>();
+            for (Content content : userMessage.contents()) {
+                if (content instanceof TextContent textContent) {
+                    escapedContents.add(TextContent.from(TemplateVariableEscaper.escape(textContent.text())));
+                } else {
+                    escapedContents.add(content);
+                }
             }
-        } catch (Exception e) {
-            throw new MemoryException("Failed to remove last AI message from memory", e);
+            return UserMessage.from(escapedContents);
         }
+        return UserMessage.from(TemplateVariableEscaper.escape(userMessage.singleText()));
     }
 
     /**
@@ -278,19 +265,8 @@ public class ChatMemoryManager {
      */
     private boolean shouldIncludeSystemMessage(@NotNull ChatMessageContext context) {
         LanguageModel model = context.getLanguageModel();
-
         // If the language model is OpenAI o1 model, do not include system message
-        if (ChatMessageContextUtil.isOpenAIo1Model(model)) {
-            return false;
-        }
-
-        // Check for Bedrock Mistral AI model
-        //        if (context.getChatLanguageModel() instanceof BedrockChatModel bedrockChatModel) {
-        //            // TODO Test if this refactoring still works because BedrockMistralChatModel is deprecated
-        //            return bedrockChatModel.provider().name().startsWith("mistral.");
-        //        }
-
-        return true;
+        return ChatMessageContextUtil.isOpenAIo1Model(model);
     }
 
     /**
@@ -310,11 +286,13 @@ public class ChatMemoryManager {
 
         // Add test execution instruction if enabled
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
-            systemPrompt += "\n<TESTING_INSTRUCTION>" +
-                    "After modifying code using write_file or edit_file, run relevant tests " +
-                    "using the run_tests tool to verify your changes. If tests fail, analyze " +
-                    "the failures, fix the code, and re-run tests until they pass." +
-                    "</TESTING_INSTRUCTION>\n";
+            systemPrompt += """
+                    <TESTING_INSTRUCTION>
+                    After modifying code using write_file or edit_file, run relevant tests
+                    using the run_tests tool to verify your changes. If tests fail, analyze
+                    the failures, fix the code, and re-run tests until they pass.
+                    </TESTING_INSTRUCTION>
+                    """;
         }
 
         // Add MCP instructions to system prompt if MCP is enabled

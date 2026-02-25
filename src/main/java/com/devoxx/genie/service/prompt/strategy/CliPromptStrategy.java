@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Prompt execution strategy for CLI Runners.
@@ -33,7 +34,7 @@ import java.util.List;
 @Slf4j
 public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
 
-    private volatile Process activeProcess;
+    private final AtomicReference<Process> activeProcess = new AtomicReference<>();
 
     public CliPromptStrategy(@NotNull Project project) {
         super(project);
@@ -43,6 +44,19 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
     protected String getStrategyName() {
         return "CLI Runner";
     }
+
+    private record CliExecutionParams(
+            @NotNull CliToolConfig cliTool,
+            @NotNull CliCommand cliCommand,
+            @NotNull List<String> command,
+            @NotNull String prompt) {}
+
+    private record ProcessOutcome(
+            int exitCode,
+            long elapsed,
+            long startTime,
+            @NotNull StringBuilder accumulatedResponse,
+            @NotNull List<String> stderrLines) {}
 
     @Override
     protected void executeStrategySpecific(@NotNull ChatMessageContext context,
@@ -82,8 +96,9 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         ConversationViewController viewController =
                 panel.getConversationPanel() != null ? panel.getConversationPanel().viewController : null;
 
+        CliExecutionParams params = new CliExecutionParams(cliTool, cliCommand, command, prompt);
         threadPoolManager.getPromptExecutionPool().execute(() ->
-                runCliProcess(context, cliTool, cliCommand, command, prompt, consoleManager, viewController, resultTask));
+                runCliProcess(context, params, consoleManager, viewController, resultTask));
 
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {
@@ -93,45 +108,42 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
     }
 
     private void runCliProcess(@NotNull ChatMessageContext context,
-                               @NotNull CliToolConfig cliTool,
-                               @NotNull CliCommand cliCommand,
-                               @NotNull List<String> command,
-                               @NotNull String prompt,
+                               @NotNull CliExecutionParams params,
                                @NotNull CliConsoleManager consoleManager,
                                @Nullable ConversationViewController viewController,
                                @NotNull PromptTask<PromptResult> resultTask) {
         long startTime = System.currentTimeMillis();
         try {
-            Process process = startProcess(command, cliTool);
-            activeProcess = process;
+            Process process = startProcess(params.command(), params.cliTool());
+            activeProcess.set(process);
             log.info("CLI chat process started (pid={})", process.pid());
 
-            cliCommand.writePrompt(process, prompt);
+            params.cliCommand().writePrompt(process, params.prompt());
 
             StringBuilder accumulatedResponse = new StringBuilder();
             List<String> stderrLines = Collections.synchronizedList(new ArrayList<>());
 
             Thread stderrThread = startStderrReader(process, stderrLines, consoleManager);
-            streamStdoutToViews(process, cliCommand, accumulatedResponse, consoleManager, viewController, context, resultTask);
+            streamStdoutToViews(process, params.cliCommand(), accumulatedResponse, consoleManager, viewController, context, resultTask);
 
             log.info("CLI stdout captured {} chars: [{}]", accumulatedResponse.length(),
                     accumulatedResponse.length() > 300 ? accumulatedResponse.substring(0, 300) + "..." : accumulatedResponse);
 
             int exitCode = process.waitFor();
             stderrThread.join(5000);
-            activeProcess = null;
+            activeProcess.set(null);
 
             long elapsed = System.currentTimeMillis() - startTime;
             log.info("CLI chat process exited: exitCode={}, elapsed={}ms", exitCode, elapsed);
 
-            finalizeProcessResult(exitCode, elapsed, startTime, accumulatedResponse, stderrLines,
-                    consoleManager, viewController, context, resultTask);
+            ProcessOutcome outcome = new ProcessOutcome(exitCode, elapsed, startTime, accumulatedResponse, stderrLines);
+            finalizeProcessResult(outcome, consoleManager, viewController, context, resultTask);
 
         } catch (IOException e) {
-            activeProcess = null;
+            activeProcess.set(null);
             handleProcessStartFailure(e, consoleManager, context, resultTask);
         } catch (InterruptedException e) {
-            activeProcess = null;
+            activeProcess.set(null);
             handleProcessInterrupted(consoleManager, resultTask);
         }
     }
@@ -216,23 +228,19 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         }
     }
 
-    private void finalizeProcessResult(int exitCode,
-                                       long elapsed,
-                                       long startTime,
-                                       @NotNull StringBuilder accumulatedResponse,
-                                       @NotNull List<String> stderrLines,
+    private void finalizeProcessResult(@NotNull ProcessOutcome outcome,
                                        @NotNull CliConsoleManager consoleManager,
                                        @Nullable ConversationViewController viewController,
                                        @NotNull ChatMessageContext context,
                                        @NotNull PromptTask<PromptResult> resultTask) {
-        String exitMsg = "\n=== Process exited with code " + exitCode + " (after " + elapsed + "ms) ===\n";
+        String exitMsg = "\n=== Process exited with code " + outcome.exitCode() + " (after " + outcome.elapsed() + "ms) ===\n";
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (exitCode == 0) {
-                finalizeSuccess(exitMsg, startTime, accumulatedResponse, consoleManager,
+            if (outcome.exitCode() == 0) {
+                finalizeSuccess(exitMsg, outcome.startTime(), outcome.accumulatedResponse(), consoleManager,
                         viewController, context, resultTask);
             } else {
-                finalizeError(exitCode, exitMsg, stderrLines, consoleManager, context, resultTask);
+                finalizeError(outcome.exitCode(), exitMsg, outcome.stderrLines(), consoleManager, context, resultTask);
             }
         });
     }
@@ -302,11 +310,10 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
     }
 
     private void destroyProcess() {
-        Process process = activeProcess;
+        Process process = activeProcess.getAndSet(null);
         if (process != null && process.isAlive()) {
             log.info("Destroying CLI chat process (pid={})", process.pid());
             process.destroyForcibly();
-            activeProcess = null;
             ApplicationManager.getApplication().invokeLater(() ->
                     CliConsoleManager.getInstance(project).printSystem("\n=== Process cancelled ===\n"));
         }

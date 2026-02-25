@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,21 +97,21 @@ public class GitleaksScanner extends AbstractScanner {
         return sb.toString();
     }
 
-    private static String maskSecret(String secret) {
+    private static @NonNull String maskSecret(@NonNull String secret) {
         if (secret.length() <= 8) return "****";
         return secret.substring(0, 4) + "****" + secret.substring(secret.length() - 4);
     }
 
-    private static String truncateMatch(String match) {
+    private static String truncateMatch(@NonNull String match) {
         return match.length() > 100 ? match.substring(0, 100) + "..." : match;
     }
 
-    private static String getStr(JsonObject obj, String key) {
+    private static String getStr(@NonNull JsonObject obj, String key) {
         JsonElement el = obj.get(key);
         return el != null && !el.isJsonNull() ? el.getAsString() : "";
     }
 
-    private static int getInt(JsonObject obj, String key) {
+    private static int getInt(@NonNull JsonObject obj, String key) {
         JsonElement el = obj.get(key);
         return el != null && !el.isJsonNull() ? el.getAsInt() : 0;
     }

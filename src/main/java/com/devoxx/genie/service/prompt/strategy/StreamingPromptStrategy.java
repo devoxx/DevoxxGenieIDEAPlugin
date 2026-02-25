@@ -26,6 +26,7 @@ import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -106,7 +107,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
      * Creates the streaming response handler, using a test handler when available (test environments)
      * or the standard handler otherwise.
      */
-    private StreamingResponseHandler createStreamingResponseHandler(
+    private @NonNull StreamingResponseHandler createStreamingResponseHandler(
             @NotNull ChatMessageContext context,
             @NotNull PromptOutputPanel panel,
             @NotNull PromptTask<PromptResult> resultTask) {
