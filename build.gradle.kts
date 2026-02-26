@@ -97,11 +97,14 @@ tasks.named("buildPlugin") {
 
 dependencies {
     intellijPlatform {
-        create("IC", "2024.3")
+        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2025.1.1
+        create("IC", providers.gradleProperty("ideVersion").orElse("2024.3"))
         bundledPlugin("com.intellij.java")
         composeUI()
         testFramework(TestFrameworkType.Platform)
     }
+    
+    // Note: Plugin bundles its own Kotlin runtime for Compose compatibility
 
     val lg4j_version = "1.11.0"
     val lg4j_beta_version = "1.11.0-beta19"
@@ -174,13 +177,22 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     implementation("org.junit.platform:junit-platform-launcher:$junitPlatformVersion")
 
-    // Compose Desktop (provided by IntelliJ Platform at runtime via composeUI())
-    compileOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeVersion")
-    compileOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeVersion")
-    compileOnly("org.jetbrains.compose.ui:ui-desktop:$composeVersion")
-    // Material removed — causes classloader conflicts with platform coroutines.
-    // Using custom CompositionLocal-based theming with foundation primitives instead.
-    compileOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeVersion")
+    // Compose Desktop - bundled with plugin (required for runtime)
+    implementation("org.jetbrains.compose.runtime:runtime-desktop:$composeVersion")
+    implementation("org.jetbrains.compose.foundation:foundation-desktop:$composeVersion")
+    implementation("org.jetbrains.compose.ui:ui-desktop:$composeVersion")
+    implementation("org.jetbrains.compose.components:components-animatedimage-desktop:$composeVersion")
+    
+    // Bundle Kotlin stdlib matching Compose requirements (must load before IDE's version)
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.1")
+    
+    // Skiko native libraries for all platforms (required for Compose Desktop)
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.8.18")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.8.18")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.8.18")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.8.18")
     compileOnly("org.projectlombok:lombok:$lombokVersion")
 
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
@@ -227,6 +239,12 @@ intellijPlatform {
 }
 
 tasks {
+    // Run plugin on different IntelliJ versions for testing
+    // Usage: ./gradlew runIde -PideVersion=2024.3.5
+    //        ./gradlew runIde -PideVersion=2025.1.1
+    //        ./gradlew runIde -PideVersion=2025.2.2
+    //        ./gradlew runIde -PideVersion=2025.3.3
+    
     withType<Jar> {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
