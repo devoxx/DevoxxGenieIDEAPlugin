@@ -362,6 +362,36 @@ You'll find it in the build/distributions/ directory
 ./gradlew buildPlugin 
 ```
 
+### Testing on Different IntelliJ Versions
+
+You can test the plugin on multiple IntelliJ IDEA versions to ensure compatibility:
+
+```shell
+# Test on IntelliJ 2024.3 (default baseline)
+./gradlew runIde
+
+# Test on IntelliJ 2025.1
+./gradlew runIde -PideVersion=2025.1.1
+
+# Test on IntelliJ 2025.2
+./gradlew runIde -PideVersion=2025.2.2
+
+# Test on IntelliJ 2025.3 (latest stable)
+./gradlew runIde -PideVersion=2025.3.3
+```
+
+> **Note**: First run on a new version will download the IDE (~500MB-1GB), which may take several minutes.
+
+#### Automated Compatibility Verification
+
+Run the automated plugin verification against multiple IDE versions:
+
+```shell
+./gradlew verifyPlugin
+```
+
+This checks API compatibility without launching the full IDE.
+
 ### Publish plugin
 
 It is recommended to use the publishPlugin task for releasing the plugin
