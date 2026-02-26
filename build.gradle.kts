@@ -100,6 +100,7 @@ dependencies {
         // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2025.1.1
         create("IC", providers.gradleProperty("ideVersion").orElse("2024.3"))
         bundledPlugin("com.intellij.java")
+        bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
         composeUI()
         testFramework(TestFrameworkType.Platform)
     }
@@ -163,10 +164,13 @@ dependencies {
     implementation("org.jsoup:jsoup:$jsoupVersion")
     implementation("io.netty:netty-all:$nettyVersion")
     // Compose Markdown Renderer
-    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion") {
+        exclude(group = "org.intellij.markdown")
+    }
     implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+        exclude(group = "org.intellij.markdown")
     }
     // Logging
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
