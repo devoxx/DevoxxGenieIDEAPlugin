@@ -1,0 +1,45 @@
+.starBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.starBadge:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  color: #fff;
+  text-decoration: none;
+}
+
+.starIcon {
+  color: #ffd700;
+  flex-shrink: 0;
+}
+
+.starCount {
+  font-variant-numeric: tabular-nums;
+}
+
+.starLabel {
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+@media (max-width: 600px) {
+  .starBadge {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}

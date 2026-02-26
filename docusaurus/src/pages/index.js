@@ -6,6 +6,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import Head from '@docusaurus/Head';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import GitHubStars from '@site/src/components/GitHubStars';
 
 const softwareSchema = {
   '@context': 'https://schema.org',
@@ -55,6 +56,7 @@ function HomepageHeader() {
           to={useBaseUrl('/docs/getting-started/introduction')}>
           Get Started with DevoxxGenie
           </Link>
+          <GitHubStars />
         </div>
       </div>
     </header>
