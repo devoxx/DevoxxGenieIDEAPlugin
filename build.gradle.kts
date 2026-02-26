@@ -6,7 +6,7 @@ plugins {
     kotlin("jvm") version "2.3.10"
     kotlin("plugin.lombok") version "2.3.10"
     kotlin("plugin.compose") version "2.3.10"
-    id("org.jetbrains.compose") version "1.7.3"
+    id("org.jetbrains.compose") version "1.10.1"
     id("org.jetbrains.intellij.platform") version "2.11.0"
     jacoco
 }
@@ -109,7 +109,7 @@ dependencies {
 
     val lg4j_version = "1.11.0"
     val lg4j_beta_version = "1.11.0-beta19"
-    val awsSdkVersion = "2.41.34"
+    val awsSdkVersion = "2.42.2"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.51.2.0"
     val dockerJavaVersion = "3.7.0"
@@ -117,8 +117,8 @@ dependencies {
     val commonmarkVersion = "0.27.1"
     val jsoupVersion = "1.22.1"
     val nettyVersion = "4.2.10.Final"
-    val composeVersion = "1.7.3"
-    val markdownRendererVersion = "0.28.0"
+    val composeVersion = "1.10.1"
+    val markdownRendererVersion = "0.39.2"
     val logbackVersion = "1.5.32"
     val gitignoreReaderVersion = "1.14.1"
     val junitJupiterVersion = "6.1.0-M1"
@@ -188,15 +188,15 @@ dependencies {
     implementation("org.jetbrains.compose.components:components-animatedimage-desktop:$composeVersion")
     
     // Bundle Kotlin stdlib matching Compose requirements (must load before IDE's version)
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.1")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
     
     // Skiko native libraries for all platforms (required for Compose Desktop)
-    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.8.18")
-    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.8.18")
-    implementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.8.18")
-    implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.8.18")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.9.47")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.9.47")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.9.47")
+    implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.9.47")
     compileOnly("org.projectlombok:lombok:$lombokVersion")
 
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
