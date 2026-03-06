@@ -45,6 +45,7 @@ const sidebars = {
         'features/chat-memory',
         'features/inline-completion',
         'features/security-scanning',
+        'features/event-automations',
       ],
     },
     {
