@@ -231,6 +231,139 @@ A data class that connects an event to an agent, with fields for: enabled, event
 
 Settings are persisted via `DevoxxGenieStateService` in IntelliJ's application-level XML storage (`DevoxxGenieSettingsPlugin.xml`).
 
+## Event Context & Template Variables
+
+When an IDE event fires, DevoxxGenie captures rich contextual information into an **EventContext** object and injects it into the agent's prompt. You can use **template variables** in your prompts to access specific parts of this context.
+
+### Template Variables
+
+Use double-brace syntax (`{{variable}}`) in your agent prompts to insert event-specific data:
+
+| Variable | Resolves To | Example Output |
+|----------|-------------|----------------|
+| `{{context}}` | Full rendered context block (event info, files, metadata, content) | See [Context Block Format](#context-block-format) below |
+| `{{content}}` | Primary text payload (diff, error output, stack trace) | `ERROR: cannot find symbol...` |
+| `{{files}}` | Newline-separated list of affected file paths | `src/Main.java\nsrc/Utils.java` |
+| `{{event}}` | Display name of the IDE event | `Build Failed` |
+| `{{timestamp}}` | ISO-8601 timestamp of when the event fired | `2026-03-06T10:39:35.123Z` |
+| `{{meta.KEY}}` | Value from the event's metadata map (replace `KEY` with the metadata key) | `{{meta.errorCount}}` → `3` |
+
+#### Fallback Behavior
+
+If your prompt contains **no template variables**, the full context block is automatically appended after the prompt text. This means simple prompts like *"Fix these build errors"* still receive all the context — no `{{variables}}` required.
+
+#### Example Prompts
+
+```
+# Using specific variables
+Analyze these {{meta.errorCount}} build errors in {{files}} and propose fixes:
+{{content}}
+
+# Using the full context block
+Review the following changes for bugs and security issues:
+{{context}}
+
+# No variables — context is auto-appended
+Fix these build errors and explain what went wrong.
+```
+
+### Context Block Format
+
+The `{{context}}` variable renders a structured block like this:
+
+```
+--- Event Context ---
+Event: Build Failed
+Time: 2026-03-06T10:39:35.123Z
+Files:
+  - src/main/java/com/example/UserDao.java
+  - src/main/java/com/example/AuthService.java
+Details:
+  errorCount: 3
+  warningCount: 1
+
+ERROR: cannot find symbol: method getUserById(String)
+ERROR: incompatible types: String cannot be converted to int
+ERROR: package com.example.utils does not exist
+--- End Context ---
+```
+
+### Event-Specific Context Variables
+
+Each IDE event listener populates different fields in the EventContext. Here's what each event provides:
+
+#### File Opened
+
+| Field | Content |
+|-------|---------|
+| **filePaths** | Path of the opened file |
+| **meta.fileName** | File name (e.g., `UserDao.java`) |
+| **meta.fileType** | File type (e.g., `Java`, `Python`) |
+| **meta.extension** | File extension (e.g., `java`, `py`) |
+
+#### File Saved
+
+| Field | Content |
+|-------|---------|
+| **filePaths** | Path of the saved file |
+| **meta.fileName** | File name |
+| **meta.lineCount** | Number of lines in the document |
+
+#### Before Commit
+
+| Field | Content |
+|-------|---------|
+| **content** | Change summary — one line per file with change type (e.g., `MODIFICATION: src/Main.java`) |
+| **filePaths** | All changed file paths |
+| **meta.changeCount** | Number of changed files |
+
+#### Build Failed
+
+| Field | Content |
+|-------|---------|
+| **content** | Compiler error messages (prefixed with `ERROR: `) |
+| **filePaths** | Files that contain errors |
+| **meta.errorCount** | Number of compilation errors |
+| **meta.warningCount** | Number of compilation warnings |
+
+#### Build Succeeded
+
+| Field | Content |
+|-------|---------|
+| **meta.warningCount** | Number of compilation warnings |
+
+#### Test Failed
+
+| Field | Content |
+|-------|---------|
+| **content** | Failed test names with error details (prefixed with `FAILED: `) |
+| **meta.failedCount** | Number of failed tests |
+| **meta.totalCount** | Total number of tests in the suite |
+| **meta.suiteName** | Name of the test suite |
+
+#### Test Suite Passed
+
+| Field | Content |
+|-------|---------|
+| **meta.totalCount** | Total number of tests in the suite |
+| **meta.suiteName** | Name of the test suite |
+
+#### Process Crashed
+
+| Field | Content |
+|-------|---------|
+| **meta.exitCode** | Non-zero exit code |
+| **meta.executorId** | The executor that ran the process (e.g., `Run`, `Debug`) |
+| **meta.runProfile** | Name of the run configuration |
+
+:::tip Using metadata variables
+To access any metadata field in your prompt, use `{{meta.KEY}}`. For example:
+- `{{meta.errorCount}}` — number of build errors
+- `{{meta.suiteName}}` — test suite name
+- `{{meta.exitCode}}` — process exit code
+- `{{meta.fileName}}` — name of the affected file
+:::
+
 ## MCP Integration
 
 Event Automations can be combined with [MCP servers](/docs/features/mcp_expanded) for even more powerful workflows:
@@ -245,8 +378,8 @@ This combination turns DevoxxGenie into a full **workflow automation platform** 
 
 This POC lays the groundwork for future enhancements:
 
-- **Event listener implementation** — Wire up actual IntelliJ platform listeners (`CheckinHandlerFactory`, `CompilationStatusListener`, `SMTRunnerEventsListener`, etc.)
-- **Context injection** — Pass rich event context to agents (error messages, stack traces, diff contents, file AST)
+- ~~**Event listener implementation**~~ ✅ Implemented — IntelliJ platform listeners wired up for file, build, test, VCS, and process events
+- ~~**Context injection**~~ ✅ Implemented — Rich event context with template variables (`{{context}}`, `{{content}}`, `{{files}}`, `{{event}}`, `{{timestamp}}`, `{{meta.KEY}}`)
 - **Agent chaining** — Trigger multiple agents in sequence (e.g., Build Fix → then re-build → then Test)
 - **Conditional triggers** — Add filters like "only for files in `src/main/`" or "only on branch `main`"
 - **Scheduled triggers** — Cron-style automations (daily tech debt report, weekly docs check)
