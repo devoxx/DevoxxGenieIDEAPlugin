@@ -4,6 +4,7 @@ import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.automation.EventAutomationSettings;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
@@ -271,6 +272,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // ACP tool runner settings (used by ACP Runners LLM provider in chat panel)
     private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();
+
+    // Event Automation settings
+    private EventAutomationSettings eventAutomationSettings = new EventAutomationSettings();
+    private Boolean eventAutomationEnabled = false;
 
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
