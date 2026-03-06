@@ -438,6 +438,11 @@
                              instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
                              displayName="Inline Completion"/>
 
+        <projectConfigurable id="com.devoxx.genie.eventAutomation"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.automation.EventAutomationSettingsConfigurable"
+                             displayName="Event Automations (POC)"/>
+
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
