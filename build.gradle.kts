@@ -97,7 +97,7 @@ tasks.named("buildPlugin") {
 
 dependencies {
     intellijPlatform {
-        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2025.1.1
+        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2024.3.7
         create("IC", providers.gradleProperty("ideVersion").orElse("2024.3"))
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
@@ -219,7 +219,7 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "243"
-            untilBuild = "253.*"
+            untilBuild = "261.*"
         }
     }
 
@@ -236,8 +236,6 @@ intellijPlatform {
     pluginVerification {
         ides {
             create("IC", "2024.3.7")
-            create("IC", "2025.1.7")
-            create("IC", "2025.2.6.1")
         }
     }
 }
