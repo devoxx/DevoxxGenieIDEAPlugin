@@ -512,6 +512,11 @@
         <!-- Inline completion provider -->
         <inline.completion.provider
             implementation="com.devoxx.genie.completion.DevoxxGenieInlineCompletionProvider"/>
+        <!-- Event Automation service -->
+        <applicationService serviceImplementation="com.devoxx.genie.service.automation.EventAutomationService"/>
+        <!-- Event Automation listeners -->
+        <checkinHandlerFactory implementation="com.devoxx.genie.service.automation.listeners.VcsCheckinHandlerFactory"/>
+        <testStatusListener implementation="com.devoxx.genie.service.automation.listeners.TestExecutionListener"/>
     </extensions>
 
     <extensionPoints>
