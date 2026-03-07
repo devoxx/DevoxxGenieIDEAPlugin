@@ -2,6 +2,25 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0]
+
+### Changed
+- Raise minimum IDE version to 2025.1, add support up to 2026.1.* (#972, #963)
+- Update Compose Desktop to 1.10.1 and markdown-renderer to 0.39.2
+- Bundle Compose runtime for 251+ IDEs and add configurable IDE version property
+- Exclude bundled markdown plugin and add it as bundled dependency
+
+### Fixed
+- Adapt markdown renderer API to v0.28.0 breaking changes
+- Correct markdown renderer exclude group coordinates
+- Compose runtime packaging for 251+ IDEs
+
+### Removed
+- Unused logo rendering from WelcomeScreen
+
+### Testing
+- Mock `LLMModelRegistryService` for deterministic cloud factory tests
+
 ## [1.0.0]
 
 ### Added

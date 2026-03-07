@@ -45,6 +45,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.1.0</h2>
+        <UL>
+            <LI>Build: Raise minimum IDE version to 2025.1, add support up to 2026.1.* (#972, #963)</LI>
+            <LI>Build: Update Compose Desktop to 1.10.1 and markdown-renderer to 0.39.2</LI>
+            <LI>Build: Bundle Compose runtime for 251+ IDEs and configurable IDE version property</LI>
+            <LI>Fix: Adapt markdown renderer API to v0.28.0 breaking changes</LI>
+            <LI>Fix: Correct markdown renderer exclude group coordinates</LI>
+            <LI>Fix: Compose runtime packaging for 251+ IDEs</LI>
+            <LI>Refactor: Remove unused logo rendering from WelcomeScreen</LI>
+            <LI>Test: Mock LLMModelRegistryService for deterministic cloud factory tests</LI>
+        </UL>
         <h2>v1.0.0</h2>
         <UL>
             <LI>Feat: Replace JCEF WebView with native Compose Desktop conversation UI (#961)</LI>
