@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -130,13 +132,9 @@ fun AiBubble(
 
             val mdColors = DefaultMarkdownColors(
                 text = textColor,
-                codeText = textColor,
-                inlineCodeText = DevoxxBlue,
-                linkText = DevoxxBlue,
                 codeBackground = codeBg,
                 inlineCodeBackground = codeBg,
                 dividerColor = secondaryColor,
-                tableText = textColor,
                 tableBackground = Color.Transparent,
             )
 
@@ -158,7 +156,8 @@ fun AiBubble(
                 ordered = baseStyle,
                 bullet = baseStyle,
                 list = baseStyle,
-                link = baseStyle.copy(color = DevoxxBlue),
+                textLink = TextLinkStyles(style = SpanStyle(color = DevoxxBlue)),
+                table = baseStyle,
             )
 
             SelectionContainer {
