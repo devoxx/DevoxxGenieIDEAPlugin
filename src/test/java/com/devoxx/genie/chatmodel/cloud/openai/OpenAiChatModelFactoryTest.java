@@ -3,6 +3,8 @@ package com.devoxx.genie.chatmodel.cloud.openai;
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
@@ -28,6 +30,19 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
+
+        LLMModelRegistryService modelRegistryServiceMock = mock(LLMModelRegistryService.class);
+        when(modelRegistryServiceMock.getModels()).thenReturn(List.of(
+            model("gpt-4.1"),
+            model("gpt-4.1-mini"),
+            model("gpt-4.1-nano"),
+            model("o3-mini"),
+            model("o1"),
+            model("gpt-4"),
+            model("gpt-4o"),
+            model("gpt-4o-mini")
+        ));
+        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), LLMModelRegistryService.class, modelRegistryServiceMock, getTestRootDisposable());
     }
 
     @Test
@@ -50,5 +65,17 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
         List<LanguageModel> models = factory.getModels();
         assertThat(models).size().isGreaterThan(7);
+    }
+
+    private static LanguageModel model(String modelName) {
+        return LanguageModel.builder()
+            .provider(ModelProvider.OpenAI)
+            .modelName(modelName)
+            .displayName(modelName)
+            .inputCost(1)
+            .outputCost(1)
+            .inputMaxTokens(1_000_000)
+            .apiKeyUsed(true)
+            .build();
     }
 }

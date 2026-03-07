@@ -3,6 +3,8 @@ package com.devoxx.genie.chatmodel.cloud.anthropic;
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
@@ -31,6 +33,16 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
+
+        // Mock model registry to make getModels() deterministic and avoid network/service side effects
+        LLMModelRegistryService modelRegistryServiceMock = mock(LLMModelRegistryService.class);
+        when(modelRegistryServiceMock.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.Anthropic).modelName("claude-1").displayName("Claude 1").inputCost(1).outputCost(1).inputMaxTokens(200_000).apiKeyUsed(true).build(),
+                LanguageModel.builder().provider(ModelProvider.Anthropic).modelName("claude-2").displayName("Claude 2").inputCost(1).outputCost(1).inputMaxTokens(200_000).apiKeyUsed(true).build(),
+                LanguageModel.builder().provider(ModelProvider.Anthropic).modelName("claude-3").displayName("Claude 3").inputCost(1).outputCost(1).inputMaxTokens(200_000).apiKeyUsed(true).build(),
+                LanguageModel.builder().provider(ModelProvider.Anthropic).modelName("claude-4").displayName("Claude 4").inputCost(1).outputCost(1).inputMaxTokens(200_000).apiKeyUsed(true).build()
+        ));
+        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), LLMModelRegistryService.class, modelRegistryServiceMock, getTestRootDisposable());
     }
 
     @Test
