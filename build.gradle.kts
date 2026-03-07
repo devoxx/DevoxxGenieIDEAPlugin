@@ -26,40 +26,10 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
-val platformProvidedUiRuntimeJarPatterns = listOf(
-    "animation-core-desktop-*.jar",
-    "animation-desktop-*.jar",
-    "annotation-jvm-*.jar",
-    "collection-jvm-*.jar",
-    "foundation-desktop-*.jar",
-    "foundation-layout-desktop-*.jar",
-    "library-desktop-*.jar",
-    "lifecycle-common-jvm-*.jar",
-    "lifecycle-runtime-compose-desktop-*.jar",
-    "lifecycle-runtime-desktop-*.jar",
-    "lifecycle-viewmodel-desktop-*.jar",
-    "lifecycle-viewmodel-savedstate-desktop-*.jar",
-    "navigationevent-desktop-*.jar",
-    "runtime-annotation-jvm-*.jar",
-    "runtime-desktop-*.jar",
-    "runtime-retain-desktop-*.jar",
-    "runtime-saveable-desktop-*.jar",
-    "savedstate-compose-desktop-*.jar",
-    "savedstate-desktop-*.jar",
-    "skiko-awt-*.jar",
-    "skiko-awt-runtime-*.jar",
-    "ui-backhandler-desktop-*.jar",
-    "ui-desktop-*.jar",
-    "ui-geometry-desktop-*.jar",
-    "ui-graphics-desktop-*.jar",
-    "ui-text-desktop-*.jar",
-    "ui-unit-desktop-*.jar",
-    "ui-util-desktop-*.jar",
-    "atomicfu-jvm-*.jar",
+val binaryIncompatibleRuntimeJarPatterns = listOf(
     "kotlin-stdlib-*.jar",
     "kotlin-stdlib-jdk7-*.jar",
     "kotlin-stdlib-jdk8-*.jar",
-    "kotlinx-collections-immutable-jvm-*.jar",
     "kotlinx-coroutines-core-*.jar",
     "kotlinx-coroutines-core-jvm-*.jar"
 )
@@ -72,9 +42,9 @@ val pluginVerifierUnifiedIdeVersions = listOf(
     "2025.3.3"    // 253 line
 )
 
-fun Project.stripPlatformProvidedUiRuntimeJars(sandboxPluginPath: String) {
+fun Project.stripBinaryIncompatibleRuntimeJars(sandboxPluginPath: String) {
     fileTree(layout.buildDirectory.dir("idea-sandbox")) {
-        platformProvidedUiRuntimeJarPatterns.forEach { pattern ->
+        binaryIncompatibleRuntimeJarPatterns.forEach { pattern ->
             include("**/$sandboxPluginPath/lib/$pattern")
         }
     }.files.forEach { file ->
@@ -173,6 +143,7 @@ dependencies {
     val nettyVersion = "4.2.10.Final"
     val composeCompileVersion = "1.7.3"
     val markdownRendererVersion = "0.28.0"
+    val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.32"
     val gitignoreReaderVersion = "1.14.1"
     val junitJupiterVersion = "6.1.0-M1"
@@ -217,7 +188,7 @@ dependencies {
     implementation("org.commonmark:commonmark:$commonmarkVersion")
     implementation("org.jsoup:jsoup:$jsoupVersion")
     implementation("io.netty:netty-all:$nettyVersion")
-    // Compose Markdown Renderer aligned with the 243 Compose/Kotlin toolchain
+    // Compose Markdown Renderer aligned with the 251 Compose/Kotlin toolchain
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion") {
         exclude(group = "org.jetbrains", module = "markdown")
     }
@@ -235,11 +206,54 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     implementation("org.junit.platform:junit-platform-launcher:$junitPlatformVersion")
 
-    // Compile against the 251-era Compose desktop API without packaging it.
+    // Compile against and package the 251-era Compose desktop API jars.
     compileOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeCompileVersion")
     compileOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeCompileVersion")
     compileOnly("org.jetbrains.compose.ui:ui-desktop:$composeCompileVersion")
     compileOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeCompileVersion")
+    runtimeOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeCompileVersion") {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
+    runtimeOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeCompileVersion") {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
+    runtimeOnly("org.jetbrains.compose.ui:ui-desktop:$composeCompileVersion") {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
+    runtimeOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeCompileVersion") {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
+    runtimeOnly("org.jetbrains.skiko:skiko-awt:$skikoVersion") {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+    }
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:$skikoVersion")
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:$skikoVersion")
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:$skikoVersion")
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:$skikoVersion")
 
     compileOnly("org.projectlombok:lombok:$lombokVersion")
 
@@ -352,20 +366,20 @@ tasks {
         // IntelliJ 2024.3 ships an older coroutines runtime than Compose 1.10 pulls in.
         // Keeping the plugin's transitive coroutines jars on the test worker classpath
         // causes IDE startup to fail inside LightPlatformTestCase before tests execute.
-        classpath = files(classpath.filterNot { file ->
-            file.name.startsWith("kotlinx-coroutines-core")
-        })
+        classpath = classpath.filter { file ->
+            !file.name.startsWith("kotlinx-coroutines-core")
+        }
     }
 
     named("prepareTestSandbox") {
         doLast {
-            project.stripPlatformProvidedUiRuntimeJars("plugins-test/$packagedPluginDirName")
+            project.stripBinaryIncompatibleRuntimeJars("plugins-test/$packagedPluginDirName")
         }
     }
 
     named("prepareSandbox") {
         doLast {
-            project.stripPlatformProvidedUiRuntimeJars("plugins/$packagedPluginDirName")
+            project.stripBinaryIncompatibleRuntimeJars("plugins/$packagedPluginDirName")
         }
     }
 }
