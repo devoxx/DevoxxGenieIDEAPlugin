@@ -132,9 +132,13 @@ fun AiBubble(
 
             val mdColors = DefaultMarkdownColors(
                 text = textColor,
+                codeText = textColor,
+                inlineCodeText = DevoxxBlue,
+                linkText = DevoxxBlue,
                 codeBackground = codeBg,
                 inlineCodeBackground = codeBg,
                 dividerColor = secondaryColor,
+                tableText = textColor,
                 tableBackground = Color.Transparent,
             )
 
@@ -156,8 +160,7 @@ fun AiBubble(
                 ordered = baseStyle,
                 bullet = baseStyle,
                 list = baseStyle,
-                textLink = TextLinkStyles(style = SpanStyle(color = DevoxxBlue)),
-                table = baseStyle,
+                link = baseStyle.copy(color = DevoxxBlue),
             )
 
             SelectionContainer {
