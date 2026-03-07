@@ -6,7 +6,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
@@ -32,7 +32,9 @@ fun CopyButton(
         modifier = modifier
             .padding(4.dp)
             .clickable {
-                clipboardManager.setText(AnnotatedString(textToCopy))
+                clipboardManager.setText(buildAnnotatedString {
+                    append(textToCopy)
+                })
                 copied = true
             },
     )
