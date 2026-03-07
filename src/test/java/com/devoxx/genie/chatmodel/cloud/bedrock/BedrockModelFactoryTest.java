@@ -2,6 +2,8 @@ package com.devoxx.genie.chatmodel.cloud.bedrock;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
@@ -36,6 +38,14 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
+
+        LLMModelRegistryService modelRegistryServiceMock = mock(LLMModelRegistryService.class);
+        when(modelRegistryServiceMock.getModels()).thenReturn(List.of(
+            model("anthropic.claude-sonnet-4-20250514-v1:0"),
+            model("anthropic.claude-3-7-sonnet-20250219-v1:0"),
+            model("mistral.mistral-large-2402-v1:0")
+        ));
+        ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), LLMModelRegistryService.class, modelRegistryServiceMock, getTestRootDisposable());
     }
 
     @Test
@@ -71,5 +81,17 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         when(settingsStateMock.getAwsProfileName()).thenReturn("bedrock");
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
         assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
+    }
+
+    private static LanguageModel model(String modelName) {
+        return LanguageModel.builder()
+            .provider(ModelProvider.Bedrock)
+            .modelName(modelName)
+            .displayName(modelName)
+            .inputCost(1)
+            .outputCost(1)
+            .inputMaxTokens(200_000)
+            .apiKeyUsed(true)
+            .build();
     }
 }

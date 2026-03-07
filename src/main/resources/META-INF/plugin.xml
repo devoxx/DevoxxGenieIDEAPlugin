@@ -11,7 +11,7 @@
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
 
-    <idea-version since-build="243"/>
+    <idea-version since-build="243" until-build="261.*"/>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
