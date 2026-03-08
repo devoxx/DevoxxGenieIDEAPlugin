@@ -58,10 +58,12 @@ export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Con
 
 ### Testing
 
+**IMPORTANT**: Always pipe test output to grep for failures so you can immediately focus on what failed:
+
 ```bash
-./gradlew test                                    # Run all tests
-./gradlew test --tests ClassName                  # Run specific test class
-./gradlew test --tests ClassName.methodName      # Run single test method
+./gradlew test 2>&1 | grep -E "FAILED|failed"
+./gradlew test --tests ClassName 2>&1 | grep -E "FAILED|failed"
+./gradlew test --tests ClassName.methodName 2>&1 | grep -E "FAILED|failed"
 ./gradlew verifyPlugin                            # Verify plugin (includes tests)
 ```
 
