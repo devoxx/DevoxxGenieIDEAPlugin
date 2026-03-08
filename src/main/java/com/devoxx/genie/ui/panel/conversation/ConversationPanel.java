@@ -9,9 +9,11 @@ import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.listener.FileReferencesListener;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
@@ -43,6 +45,8 @@ public class ConversationPanel
     private final ConversationManager conversationManager;
     private final ConversationUIController uiController;
     private final MessageBusConnection messageBusConnection;
+    private final ChatService chatService;
+    private final JComponent displayComponent;
 
     public final ConversationViewController viewController;
 
@@ -52,31 +56,41 @@ public class ConversationPanel
      * @param project The active project
      * @param resourceBundle The resource bundle for i18n
      */
+    private final String tabId;
+
     public ConversationPanel(Project project, ResourceBundle resourceBundle) {
+        this(project, resourceBundle, null);
+    }
+
+    public ConversationPanel(Project project, ResourceBundle resourceBundle, String tabId) {
         super(new BorderLayout());
+        this.tabId = tabId;
 
         viewController = new ComposeConversationViewController(project, s -> kotlin.Unit.INSTANCE);
 
         messageRenderer = new MessageRenderer(project, viewController);
-        
-        ConversationHistoryPanel historyPanel = new ConversationHistoryPanel(project);
+
+        ConversationHistoryPanel historyPanel = new ConversationHistoryPanel(project, tabId);
+        // Wire direct selection to avoid cross-tab fan-out via message bus
+        historyPanel.setDirectSelectionListener(this);
         ConversationHistoryManager historyManager = new ConversationHistoryManager(project, historyPanel, messageRenderer);
-        
+
         uiController = new ConversationUIController(
-            project, 
-            resourceBundle, 
-            messageRenderer, 
-            null, // We'll set this after creating conversationManager 
+            project,
+            resourceBundle,
+            messageRenderer,
+            null, // We'll set this after creating conversationManager
                 historyManager
         );
-        
-        ChatService chatService = new ChatService(project);
+
+        chatService = new ChatService(project, tabId);
         conversationManager = new ConversationManager(
-            project, 
+            project,
             chatService,
                 historyManager,
-            messageRenderer, 
-            uiController.getConversationLabel()
+            messageRenderer,
+            uiController.getConversationLabel(),
+            tabId
         );
         
         // Set the conversation manager in the chat service for conversation tracking
@@ -94,7 +108,7 @@ public class ConversationPanel
         add(uiController.createButtonPanel(), BorderLayout.NORTH);
 
         // Set component layout and sizing
-        JComponent displayComponent = viewController.getComponent();
+        displayComponent = viewController.getComponent();
         displayComponent.setOpaque(true);
         Color editorBg = UIUtil.getPanelBackground();
         displayComponent.setBackground(editorBg);
@@ -118,6 +132,15 @@ public class ConversationPanel
         ApplicationManager.getApplication().getMessageBus().connect(messageBusConnection)
             .subscribe(AppTopics.APPEARANCE_SETTINGS_TOPIC, (AppearanceSettingsEvents) () ->
                 viewController.appearanceSettingsChanged());
+        messageBusConnection.subscribe(ThemeChangeNotifier.THEME_CHANGED_TOPIC, isDarkTheme ->
+            ApplicationManager.getApplication().invokeLater(() -> {
+                Color updatedBg = UIUtil.getPanelBackground();
+                setBackground(updatedBg);
+                displayComponent.setBackground(updatedBg);
+                viewController.themeChanged(isDarkTheme);
+                revalidate();
+                repaint();
+            }));
 
         // Filter activity log messages to only show messages from this project
         String projectHash = project.getLocationHash();
@@ -128,6 +151,13 @@ public class ConversationPanel
             }
             viewController.onActivityMessage(message);
         });
+    }
+
+    /**
+     * Sets the owning PromptOutputPanel for tab-scoped operations.
+     */
+    public void setOwnPanel(PromptOutputPanel panel) {
+        conversationManager.setOwnPanel(panel);
     }
 
     /**
@@ -171,9 +201,15 @@ public class ConversationPanel
 
     /**
      * Called when a new conversation is created.
+     * Only processes events belonging to this tab.
      */
     @Override
     public void onNewConversation(ChatMessageContext chatMessageContext) {
+        // Filter: only handle events for this tab
+        if (tabId != null && chatMessageContext.getTabId() != null
+                && !tabId.equals(chatMessageContext.getTabId())) {
+            return;
+        }
         conversationManager.onNewConversation(chatMessageContext);
     }
 
@@ -229,6 +265,9 @@ public class ConversationPanel
     public void dispose() {
         if (messageBusConnection != null) {
             messageBusConnection.disconnect();
+        }
+        if (chatService != null) {
+            chatService.dispose();
         }
         if (viewController != null) {
             viewController.dispose();

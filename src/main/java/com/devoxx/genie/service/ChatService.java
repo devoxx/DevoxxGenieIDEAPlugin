@@ -18,15 +18,30 @@ public class ChatService implements ConversationEventListener {
 
     private final ConversationStorageService storageService;
     private final Project project;
+    private final String tabId;
     private ConversationManager conversationManager;
+    private final com.intellij.util.messages.MessageBusConnection messageBusConnection;
 
     public ChatService(@NotNull Project project) {
+        this(project, null);
+    }
+
+    public ChatService(@NotNull Project project, String tabId) {
         this.storageService = ConversationStorageService.getInstance();
         this.project = project;
+        this.tabId = tabId;
 
-        project.getMessageBus()
-                .connect()
-                .subscribe(AppTopics.CONVERSATION_TOPIC, this);
+        messageBusConnection = project.getMessageBus().connect();
+        messageBusConnection.subscribe(AppTopics.CONVERSATION_TOPIC, this);
+    }
+
+    /**
+     * Dispose message bus connection to prevent leaks on tab close.
+     */
+    public void dispose() {
+        if (messageBusConnection != null) {
+            messageBusConnection.disconnect();
+        }
     }
     
     /**
@@ -40,6 +55,11 @@ public class ChatService implements ConversationEventListener {
 
     @Override
     public void onNewConversation(@NotNull ChatMessageContext chatMessageContext) {
+        // Only process events for this tab (or accept all if no tabId is set)
+        if (tabId != null && chatMessageContext.getTabId() != null
+                && !tabId.equals(chatMessageContext.getTabId())) {
+            return;
+        }
         saveConversation(chatMessageContext);
     }
 

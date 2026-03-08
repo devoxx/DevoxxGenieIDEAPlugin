@@ -27,156 +27,232 @@ public final class FileListManager {
         return ApplicationManager.getApplication().getService(FileListManager.class);
     }
 
+    /**
+     * Returns a composite key for per-tab file list isolation.
+     * If tabId is non-null, returns "projectHash-tabId"; otherwise just projectHash.
+     */
+    private static String computeKey(@NotNull Project project, String tabId) {
+        String projectHash = project.getLocationHash();
+        return tabId != null ? projectHash + "-" + tabId : projectHash;
+    }
+
     public void storeAddedFiles(@NotNull Project project) {
-        filesMap.forEach((key, value) -> {
-            if (key.equals(project.getLocationHash())) {
-                previouslyAddedFiles.put(key, new ArrayList<>(value));
-            }
-        });
+        storeAddedFiles(project, null);
+    }
+
+    public void storeAddedFiles(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        List<VirtualFile> files = filesMap.get(key);
+        if (files != null) {
+            previouslyAddedFiles.put(key, new ArrayList<>(files));
+        }
     }
 
     public @NotNull List<VirtualFile> getPreviouslyAddedFiles(@NotNull Project project) {
-        return Collections.unmodifiableList(previouslyAddedFiles.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
+        return getPreviouslyAddedFiles(project, null);
+    }
+
+    public @NotNull List<VirtualFile> getPreviouslyAddedFiles(@NotNull Project project, String tabId) {
+        return Collections.unmodifiableList(previouslyAddedFiles.computeIfAbsent(computeKey(project, tabId), k -> new ArrayList<>()));
     }
 
     public void addFile(@NotNull Project project, VirtualFile file) {
-        addFile(project, file, true);
+        addFile(project, null, file, true);
     }
 
-    private void addFile(@NotNull Project project, VirtualFile file, boolean notify) {
-        List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+    public void addFile(@NotNull Project project, String tabId, VirtualFile file) {
+        addFile(project, tabId, file, true);
+    }
+
+    private void addFile(@NotNull Project project, String tabId, VirtualFile file, boolean notify) {
+        String key = computeKey(project, tabId);
+        List<VirtualFile> currentFiles = filesMap.computeIfAbsent(key, k -> new ArrayList<>());
         if (isImageFile(file)) {
-            List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+            List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>());
             imageFiles.add(file);
         } else {
             currentFiles.add(file);
         }
         if (notify) {
-            notifyObservers(project, file);
+            notifyObservers(project, tabId, file);
         }
     }
 
     public void addFiles(@NotNull Project project, @NotNull List<VirtualFile> newFiles) {
+        addFiles(project, null, newFiles);
+    }
+
+    public void addFiles(@NotNull Project project, String tabId, @NotNull List<VirtualFile> newFiles) {
         List<VirtualFile> actuallyAddedFiles = new ArrayList<>();
-        Set<VirtualFile> currentFilesSet = new HashSet<>(getFiles(project));
+        Set<VirtualFile> currentFilesSet = new HashSet<>(getFiles(project, tabId));
 
         for (VirtualFile file : newFiles) {
             if (!currentFilesSet.contains(file)) {
-                addFile(project, file, false);
+                addFile(project, tabId, file, false);
                 actuallyAddedFiles.add(file);
                 currentFilesSet.add(file);
             }
         }
         if (!actuallyAddedFiles.isEmpty()) {
             actuallyAddedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
-            notifyObserversOfBatchAdd(project, actuallyAddedFiles);
+            notifyObserversOfBatchAdd(project, tabId, actuallyAddedFiles);
         }
     }
 
-    private void notifyObserversOfBatchAdd(@NotNull Project project, @NotNull List<VirtualFile> addedFiles) {
-        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+    private void notifyObserversOfBatchAdd(@NotNull Project project, String tabId, @NotNull List<VirtualFile> addedFiles) {
+        String key = computeKey(project, tabId);
+        List<FileListObserver> observers = observersMap.computeIfAbsent(key, k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.filesAdded(addedFiles);
         }
     }
 
     public void removeFile(@NotNull Project project, VirtualFile file) {
+        removeFile(project, null, file);
+    }
+
+    public void removeFile(@NotNull Project project, String tabId, VirtualFile file) {
+        String key = computeKey(project, tabId);
         if (isImageFile(file)) {
-            List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+            List<VirtualFile> imageFiles = imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>());
             imageFiles.remove(file);
         } else {
-            List<VirtualFile> currentFiles = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+            List<VirtualFile> currentFiles = filesMap.computeIfAbsent(key, k -> new ArrayList<>());
             currentFiles.remove(file);
         }
         clearSelectionMetadata(file);
     }
 
     public @NotNull List<VirtualFile> getFiles(@NotNull Project project) {
-        List<VirtualFile> virtualFiles = Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
-        List<VirtualFile> imageFiles = Collections.unmodifiableList(imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
+        return getFiles(project, null);
+    }
+
+    public @NotNull List<VirtualFile> getFiles(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        List<VirtualFile> virtualFiles = Collections.unmodifiableList(filesMap.computeIfAbsent(key, k -> new ArrayList<>()));
+        List<VirtualFile> imageFiles = Collections.unmodifiableList(imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>()));
         List<VirtualFile> allFiles = new ArrayList<>(virtualFiles);
         allFiles.addAll(imageFiles);
         return allFiles;
     }
 
     public @NotNull List<VirtualFile> getNonImageFiles(@NotNull Project project) {
-        return Collections.unmodifiableList(filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
+        return getNonImageFiles(project, null);
+    }
+
+    public @NotNull List<VirtualFile> getNonImageFiles(@NotNull Project project, String tabId) {
+        return Collections.unmodifiableList(filesMap.computeIfAbsent(computeKey(project, tabId), k -> new ArrayList<>()));
     }
 
     public @NotNull List<VirtualFile> getImageFiles(@NotNull Project project) {
-        return Collections.unmodifiableList(imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()));
+        return getImageFiles(project, null);
+    }
+
+    public @NotNull List<VirtualFile> getImageFiles(@NotNull Project project, String tabId) {
+        return Collections.unmodifiableList(imageFilesMap.computeIfAbsent(computeKey(project, tabId), k -> new ArrayList<>()));
     }
 
     public boolean isEmpty(@NotNull Project project) {
-        boolean empty = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).isEmpty();
-        empty &= imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).isEmpty();
+        return isEmpty(project, null);
+    }
+
+    public boolean isEmpty(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        boolean empty = filesMap.computeIfAbsent(key, k -> new ArrayList<>()).isEmpty();
+        empty &= imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>()).isEmpty();
         return empty;
     }
 
     public int size(@NotNull Project project) {
-        int size = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).size();
-        size += imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).size();
+        return size(project, null);
+    }
+
+    public int size(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        int size = filesMap.computeIfAbsent(key, k -> new ArrayList<>()).size();
+        size += imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>()).size();
         return size;
     }
 
     public boolean contains(@NotNull Project project, VirtualFile file) {
-        boolean contains = filesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).contains(file);
-        contains |= imageFilesMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).contains(file);
+        return contains(project, null, file);
+    }
+
+    public boolean contains(@NotNull Project project, String tabId, VirtualFile file) {
+        String key = computeKey(project, tabId);
+        boolean contains = filesMap.computeIfAbsent(key, k -> new ArrayList<>()).contains(file);
+        contains |= imageFilesMap.computeIfAbsent(key, k -> new ArrayList<>()).contains(file);
         return contains;
     }
 
     public void addObserver(@NotNull Project project, FileListObserver observer) {
-        observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>()).add(observer);
+        addObserver(project, null, observer);
+    }
+
+    public void addObserver(@NotNull Project project, String tabId, FileListObserver observer) {
+        observersMap.computeIfAbsent(computeKey(project, tabId), k -> new ArrayList<>()).add(observer);
     }
 
     public void clear(@NotNull Project project) {
-        String projectHash = project.getLocationHash();
+        clear(project, null);
+    }
+
+    public void clear(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
 
         // Clear selection metadata from all files before removing them
-        clearSelectionMetadataForProject(projectHash);
+        clearSelectionMetadataForProject(key);
 
-        // Remove the entries for this project
-        filesMap.remove(projectHash);
-        imageFilesMap.remove(projectHash);
-        previouslyAddedFiles.remove(projectHash);
+        // Remove the entries
+        filesMap.remove(key);
+        imageFilesMap.remove(key);
+        previouslyAddedFiles.remove(key);
 
-        notifyAllObservers(project);
+        notifyAllObservers(project, tabId);
     }
 
     /**
      * Clear only the previously added files for a new conversation, keeping current files intact.
-     * This is used when starting a new conversation to ensure all current files are treated as "new".
      */
     public void clearPreviouslyAddedFiles(@NotNull Project project) {
-        String projectHash = project.getLocationHash();
-        previouslyAddedFiles.remove(projectHash);
+        clearPreviouslyAddedFiles(project, null);
+    }
+
+    public void clearPreviouslyAddedFiles(@NotNull Project project, String tabId) {
+        previouslyAddedFiles.remove(computeKey(project, tabId));
     }
 
     /**
      * Clear current files but keep previously added files.
-     * This is useful when replacing the current file list but preserving the conversation history.
      */
     public void clearCurrentFiles(@NotNull Project project) {
-        String projectHash = project.getLocationHash();
-        clearSelectionMetadataForProject(projectHash);
-        filesMap.remove(projectHash);
-        imageFilesMap.remove(projectHash);
-        notifyAllObservers(project);
+        clearCurrentFiles(project, null);
+    }
+
+    public void clearCurrentFiles(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        clearSelectionMetadataForProject(key);
+        filesMap.remove(key);
+        imageFilesMap.remove(key);
+        notifyAllObservers(project, tabId);
     }
 
     /**
      * Clear only non-image files and previously added files, preserving image files.
-     * Used when switching to editor context to avoid destroying attached images.
      */
     public void clearNonImageFiles(@NotNull Project project) {
-        String projectHash = project.getLocationHash();
-        List<VirtualFile> files = filesMap.get(projectHash);
+        clearNonImageFiles(project, null);
+    }
+
+    public void clearNonImageFiles(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        List<VirtualFile> files = filesMap.get(key);
         if (files != null) {
             files.forEach(FileListManager::clearSelectionMetadata);
         }
-        filesMap.remove(projectHash);
-        previouslyAddedFiles.remove(projectHash);
-        notifyAllObservers(project);
+        filesMap.remove(key);
+        previouslyAddedFiles.remove(key);
+        notifyAllObservers(project, tabId);
     }
 
     /**
@@ -208,15 +284,17 @@ public final class FileListManager {
         file.putUserData(SELECTION_END_LINE_KEY, null);
     }
 
-    private void notifyObservers(@NotNull Project project, VirtualFile file) {
-        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+    private void notifyObservers(@NotNull Project project, String tabId, VirtualFile file) {
+        String key = computeKey(project, tabId);
+        List<FileListObserver> observers = observersMap.computeIfAbsent(key, k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.fileAdded(file);
         }
     }
 
-    private void notifyAllObservers(@NotNull Project project) {
-        List<FileListObserver> observers = observersMap.computeIfAbsent(project.getLocationHash(), k -> new ArrayList<>());
+    private void notifyAllObservers(@NotNull Project project, String tabId) {
+        String key = computeKey(project, tabId);
+        List<FileListObserver> observers = observersMap.computeIfAbsent(key, k -> new ArrayList<>());
         for (FileListObserver observer : observers) {
             observer.allFilesRemoved();
         }

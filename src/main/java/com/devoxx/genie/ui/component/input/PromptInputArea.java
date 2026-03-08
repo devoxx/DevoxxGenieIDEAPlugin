@@ -33,10 +33,17 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
     private String newlineShortcut;
     private String lastActiveId = null;
 
+    private final String tabId;
+
     public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle) {
+        this(project, resourceBundle, null);
+    }
+
+    public PromptInputArea(Project project, @NotNull ResourceBundle resourceBundle, String tabId) {
         super(new BorderLayout());
         this.project = project;
         this.resourceBundle = resourceBundle;
+        this.tabId = tabId;
 
         // Create main input area panel
         JPanel inputAreaPanel = new JPanel(new BorderLayout());
@@ -56,8 +63,8 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
 
         setPlaceholderWithKeyboardShortcut(submitShortcut);
 
-        // Support DnD for images in input text area
-        new ImagePreviewHandler(project, inputField);
+        // Support DnD for images in input text area (tab-aware)
+        new ImagePreviewHandler(project, inputField, tabId);
 
         inputField.setRows(3);
 

@@ -36,10 +36,17 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     private final transient ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
     private final transient Project project;
+    private final String tabId;
     private transient JBPopup activePopup;
+    private transient ConversationSelectionListener directSelectionListener;
 
     public ConversationHistoryPanel(Project project) {
+        this(project, null);
+    }
+
+    public ConversationHistoryPanel(Project project, String tabId) {
         this.project = project;
+        this.tabId = tabId;
 
         setLayout(new BorderLayout());
 
@@ -137,6 +144,15 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         loadConversations();
     }
 
+    /**
+     * Set a direct selection listener to avoid broadcasting via message bus.
+     * When set, conversation selection is routed directly to this listener
+     * instead of fan-out to all tabs.
+     */
+    public void setDirectSelectionListener(ConversationSelectionListener listener) {
+        this.directSelectionListener = listener;
+    }
+
     public void setPopup(JBPopup popup) {
         this.activePopup = popup;
     }
@@ -150,10 +166,15 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     @Override
     public void onConversationSelected(Conversation conversation) {
-        // Find the ConversationPanel instance and notify it about the selected conversation
+        // Use direct listener if available (tab-scoped, avoids cross-tab fan-out)
+        if (directSelectionListener != null) {
+            directSelectionListener.onConversationSelected(conversation);
+            return;
+        }
+
+        // Fallback: broadcast via message bus (legacy path)
         Project currentProject = this.project;
         if (currentProject != null) {
-            // Get the message bus connection
             currentProject.getMessageBus()
                 .syncPublisher(AppTopics.CONVERSATION_SELECTION_TOPIC)
                 .onConversationSelected(conversation);
@@ -344,7 +365,13 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     }
 
     private void updateChatMemory(Conversation conversation) {
-        ChatMemoryManager.getInstance().restoreConversation(project, conversation);
+        // Use tab-scoped memory key if available
+        if (tabId != null) {
+            String memoryKey = project.getLocationHash() + "-" + tabId;
+            ChatMemoryManager.getInstance().restoreConversationByKey(memoryKey, conversation);
+        } else {
+            ChatMemoryManager.getInstance().restoreConversation(project, conversation);
+        }
     }
 
     private void showDeleteAllConfirmationDialog() {

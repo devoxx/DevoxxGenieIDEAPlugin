@@ -106,7 +106,12 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     @Override
     public void stopPromptExecution() {
-        promptExecutionService.stopExecution(project);
+        // Stop execution for this tab only if we have a context with tabId
+        if (currentChatMessageContext != null && currentChatMessageContext.getTabId() != null) {
+            promptExecutionService.stopExecution(project, currentChatMessageContext.getTabId());
+        } else {
+            promptExecutionService.stopExecution(project);
+        }
         endPromptExecution();
     }
 

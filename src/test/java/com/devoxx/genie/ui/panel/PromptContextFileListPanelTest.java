@@ -16,6 +16,7 @@ import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -60,9 +61,11 @@ class PromptContextFileListPanelTest {
         modalityStateMockedStatic.when(ModalityState::defaultModalityState).thenReturn(modalityState);
         modalityStateMockedStatic.when(ModalityState::nonModal).thenReturn(modalityState);
 
-        // Initially empty
+        // Initially empty (both 1-arg and 2-arg overloads)
         lenient().when(fileListManager.isEmpty(project)).thenReturn(true);
+        lenient().when(fileListManager.isEmpty(project, null)).thenReturn(true);
         lenient().when(fileListManager.size(project)).thenReturn(0);
+        lenient().when(fileListManager.size(project, null)).thenReturn(0);
 
         panel = new PromptContextFileListPanel(project);
     }
@@ -76,7 +79,7 @@ class PromptContextFileListPanelTest {
 
     @Test
     void testConstructor_RegistersAsObserver() {
-        verify(fileListManager).addObserver(eq(project), eq(panel));
+        verify(fileListManager).addObserver(eq(project), isNull(), eq(panel));
     }
 
     @Test
@@ -110,7 +113,7 @@ class PromptContextFileListPanelTest {
 
         panel.onFileRemoved(mockFile);
 
-        verify(fileListManager).removeFile(project, mockFile);
+        verify(fileListManager).removeFile(project, null, mockFile);
     }
 
     @Test
@@ -147,7 +150,7 @@ class PromptContextFileListPanelTest {
         panel.onFileRemoved(file1);
         panel.onFileRemoved(file2);
 
-        verify(fileListManager).removeFile(project, file1);
-        verify(fileListManager).removeFile(project, file2);
+        verify(fileListManager).removeFile(project, null, file1);
+        verify(fileListManager).removeFile(project, null, file2);
     }
 }

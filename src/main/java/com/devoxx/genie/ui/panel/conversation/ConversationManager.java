@@ -11,8 +11,11 @@ import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.PromptPanelRegistry;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.content.Content;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,13 +37,18 @@ public class ConversationManager implements ConversationEventListener, Conversat
     private final ConversationHistoryManager historyManager;
     private final MessageRenderer messageRenderer;
     private final JLabel conversationLabel;
+    private final String tabId;
     private static final int MAX_TITLE_LENGTH = 50;
 
     // Track the current active conversation
     @Setter
     @Getter
     private Conversation currentConversation;
-    
+
+    // Reference to this tab's own output panel (set externally)
+    @Setter
+    private PromptOutputPanel ownPanel;
+
     /**
      * Creates a new conversation manager with webview refresh callback.
      *
@@ -50,29 +58,45 @@ public class ConversationManager implements ConversationEventListener, Conversat
      * @param messageRenderer The message renderer
      * @param conversationLabel The conversation label to update
      */
-    public ConversationManager(Project project, 
+    public ConversationManager(Project project,
                               ChatService chatService,
                               ConversationHistoryManager historyManager,
                               MessageRenderer messageRenderer,
                               JLabel conversationLabel) {
+        this(project, chatService, historyManager, messageRenderer, conversationLabel, null);
+    }
+
+    public ConversationManager(Project project,
+                              ChatService chatService,
+                              ConversationHistoryManager historyManager,
+                              MessageRenderer messageRenderer,
+                              JLabel conversationLabel,
+                              String tabId) {
         this.project = project;
         this.chatService = chatService;
         this.historyManager = historyManager;
         this.messageRenderer = messageRenderer;
         this.conversationLabel = conversationLabel;
+        this.tabId = tabId;
     }
 
     /**
      * Start a new conversation.
      * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
-     * Also check for and recover from black screen issues.
+     * Uses tab-scoped clearing when tabId is available.
      */
     @Override
     public void startNewConversation() {
-        // Clear everything for a new conversation - this is the correct behavior
-        FileListManager.getInstance().clear(project);
-        ChatMemoryService.getInstance().clearMemory(project);
-        
+        // Clear everything for a new conversation using tab-scoped operations
+        if (tabId != null) {
+            FileListManager.getInstance().clear(project, tabId);
+            String memoryKey = project.getLocationHash() + "-" + tabId;
+            ChatMemoryService.getInstance().clearMemoryByKey(memoryKey);
+        } else {
+            FileListManager.getInstance().clear(project);
+            ChatMemoryService.getInstance().clearMemory(project);
+        }
+
         // Clear the current conversation state
         currentConversation = null;
 
@@ -85,10 +109,14 @@ public class ConversationManager implements ConversationEventListener, Conversat
             ResourceBundle resourceBundle = ResourceBundle.getBundle(Constant.MESSAGES);
             messageRenderer.showWelcome(resourceBundle);
 
-            // Make sure all panels know this is a new conversation
-            for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
-                // The clear() method already resets isNewConversation = true
-                panel.clear();
+            // Only clear this tab's output panel, not all panels
+            if (ownPanel != null) {
+                ownPanel.clear();
+            } else {
+                // Fallback: clear all panels for this project
+                for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+                    panel.clear();
+                }
             }
         });
     }
@@ -109,16 +137,52 @@ public class ConversationManager implements ConversationEventListener, Conversat
         // Update the conversation label with the title
         conversationLabel.setText(displayTitle);
 
+        // Update the tab display name to reflect the restored conversation
+        updateTabDisplayName(conversation);
+
         // Clear the current conversation in the web view without showing welcome screen
         messageRenderer.clearWithoutWelcome();
 
-        // Mark this as not a new conversation in any panel that might be registered
-        for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
-            panel.markConversationAsStarted();
+        // Mark this as not a new conversation in this tab's panel
+        if (ownPanel != null) {
+            ownPanel.markConversationAsStarted();
+        } else {
+            for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+                panel.markConversationAsStarted();
+            }
         }
 
         // Restore all messages for this conversation
         historyManager.restoreConversation(conversation);
+    }
+
+    /**
+     * Update the tab display name to match the restored conversation title.
+     */
+    private void updateTabDisplayName(@NotNull Conversation conversation) {
+        if (tabId == null) {
+            return;
+        }
+        ConversationTabRegistry registry = ConversationTabRegistry.getInstance();
+        for (DevoxxGenieToolWindowContent twc : registry.getContentsForProject(project)) {
+            if (tabId.equals(twc.getTabId())) {
+                Content content = twc.getTabContent();
+                if (content != null) {
+                    String title = conversation.getTitle();
+                    if (title != null && !title.isEmpty()) {
+                        String modelName = conversation.getModelName();
+                        String displayName = modelName != null && !modelName.isEmpty()
+                                ? modelName + ": " + title
+                                : title;
+                        if (displayName.length() > 40) {
+                            displayName = displayName.substring(0, 40) + "...";
+                        }
+                        content.setDisplayName(displayName);
+                    }
+                }
+                break;
+            }
+        }
     }
 
     /**

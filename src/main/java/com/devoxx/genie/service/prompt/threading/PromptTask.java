@@ -25,24 +25,34 @@ public class PromptTask<T> extends CompletableFuture<T> {
     @Getter
     private final String id;
     private final Project project;
+    @Getter
+    private final String tabId;
 
     @Getter
     private volatile boolean cancelled = false;
-    
+
     // User data for additional context
     private Object userData;
     private String userDataKey;
-    
+
     /**
      * Create a new prompt task for the specified project
      */
     public PromptTask(@NotNull Project project) {
+        this(project, null);
+    }
+
+    /**
+     * Create a new prompt task for the specified project and tab
+     */
+    public PromptTask(@NotNull Project project, String tabId) {
         this.project = project;
+        this.tabId = tabId;
         this.id = project.getLocationHash() + "-" + System.nanoTime();
-        
+
         // Self-register with task tracker
         PromptTaskTracker.getInstance().registerTask(this);
-        log.debug("Created task {} for project {}", id, project.getName());
+        log.debug("Created task {} for project {} tab {}", id, project.getName(), tabId);
     }
     
     /**

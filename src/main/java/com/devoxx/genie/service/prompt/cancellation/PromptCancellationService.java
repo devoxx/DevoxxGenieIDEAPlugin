@@ -24,9 +24,12 @@ public class PromptCancellationService {
 
     // Map to store active strategies by project hash and context id
     private final Map<String, Map<String, PromptExecutionStrategy>> activeStrategies = new ConcurrentHashMap<>();
-    
+
     // Map to store active output panels by project hash and context id
     private final Map<String, Map<String, PromptOutputPanel>> activeOutputPanels = new ConcurrentHashMap<>();
+
+    // Map to store tabId by project hash and context id (set at registration time)
+    private final Map<String, Map<String, String>> contextTabIds = new ConcurrentHashMap<>();
 
     public static PromptCancellationService getInstance() {
         return ApplicationManager.getApplication().getService(PromptCancellationService.class);
@@ -35,22 +38,39 @@ public class PromptCancellationService {
     /**
      * Register an active strategy and panel for potential cancellation
      */
-    public void registerExecution(@NotNull Project project, 
+    public void registerExecution(@NotNull Project project,
                                @NotNull String contextId,
                                @NotNull PromptExecutionStrategy strategy,
                                @NotNull PromptOutputPanel panel) {
+        registerExecution(project, contextId, strategy, panel, null);
+    }
+
+    /**
+     * Register an active strategy and panel for potential cancellation, with tab awareness
+     */
+    public void registerExecution(@NotNull Project project,
+                               @NotNull String contextId,
+                               @NotNull PromptExecutionStrategy strategy,
+                               @NotNull PromptOutputPanel panel,
+                               @Nullable String tabId) {
         String projectHash = project.getLocationHash();
-        
+
         // Register the strategy
         activeStrategies.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
                       .put(contextId, strategy);
-                      
+
         // Register the output panel
         activeOutputPanels.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
                         .put(contextId, panel);
-                        
-        log.debug("Registered execution for cancellation: project={}, contextId={}", 
-                 projectHash, contextId);
+
+        // Store tabId for this context
+        if (tabId != null) {
+            contextTabIds.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
+                        .put(contextId, tabId);
+        }
+
+        log.debug("Registered execution for cancellation: project={}, contextId={}, tabId={}",
+                 projectHash, contextId, tabId);
     }
 
     /**
@@ -58,7 +78,7 @@ public class PromptCancellationService {
      */
     public void unregisterExecution(@NotNull Project project, @NotNull String contextId) {
         String projectHash = project.getLocationHash();
-        
+
         Map<String, PromptExecutionStrategy> strategies = activeStrategies.get(projectHash);
         if (strategies != null) {
             strategies.remove(contextId);
@@ -66,7 +86,7 @@ public class PromptCancellationService {
                 activeStrategies.remove(projectHash);
             }
         }
-        
+
         Map<String, PromptOutputPanel> panels = activeOutputPanels.get(projectHash);
         if (panels != null) {
             panels.remove(contextId);
@@ -74,7 +94,16 @@ public class PromptCancellationService {
                 activeOutputPanels.remove(projectHash);
             }
         }
-        
+
+        // Clean up tabId mapping
+        Map<String, String> tabIds = contextTabIds.get(projectHash);
+        if (tabIds != null) {
+            tabIds.remove(contextId);
+            if (tabIds.isEmpty()) {
+                contextTabIds.remove(projectHash);
+            }
+        }
+
         log.debug("Unregistered execution: project={}, contextId={}", projectHash, contextId);
     }
 
@@ -105,6 +134,42 @@ public class PromptCancellationService {
     }
 
     /**
+     * Cancel all executions for a specific tab within a project.
+     * Uses the tabId stored at registration time (no dependency on task tracker indexing).
+     */
+    public int cancelExecutionsForTab(@NotNull Project project, @NotNull String tabId) {
+        String projectHash = project.getLocationHash();
+        int count = 0;
+
+        Map<String, String> tabIds = contextTabIds.get(projectHash);
+        Map<String, PromptExecutionStrategy> strategies = activeStrategies.get(projectHash);
+
+        if (strategies != null && tabIds != null) {
+            for (Map.Entry<String, String> tabEntry : new java.util.ArrayList<>(tabIds.entrySet())) {
+                String contextId = tabEntry.getKey();
+                if (tabId.equals(tabEntry.getValue())) {
+                    PromptExecutionStrategy strategy = strategies.remove(contextId);
+                    if (strategy != null) {
+                        strategy.cancel();
+                        count++;
+                    }
+                    cleanupCancelledExecution(project, contextId);
+                    tabIds.remove(contextId);
+                    Map<String, PromptOutputPanel> panels = activeOutputPanels.get(projectHash);
+                    if (panels != null) {
+                        panels.remove(contextId);
+                    }
+                }
+            }
+        }
+
+        // Also cancel matching tasks via tracker (uses PromptTask.getTabId())
+        count += PromptTaskTracker.getInstance().cancelTasksForTab(project, tabId);
+
+        return count;
+    }
+
+    /**
      * Cancel all executions for a project
      */
     public int cancelAllExecutions(@NotNull Project project) {
@@ -132,8 +197,9 @@ public class PromptCancellationService {
             // Clear the maps for this project
             activeStrategies.remove(projectHash);
             activeOutputPanels.remove(projectHash);
+            contextTabIds.remove(projectHash);
         }
-        
+
         // Also use PromptTaskTracker for compatibility with existing code
         count += PromptTaskTracker.getInstance().cancelAllTasks(project);
         

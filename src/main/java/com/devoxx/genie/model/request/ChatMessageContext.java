@@ -39,6 +39,7 @@ public class ChatMessageContext {
     private boolean mcpActivated;
     private boolean ragActivated;
     private boolean webSearchActivated;
+    private String tabId;
 
     @Builder.Default
     private boolean webSearchRequested = false;
@@ -55,6 +56,15 @@ public class ChatMessageContext {
     @Setter
     private List<VirtualFile> pendingAttachedFiles;
 
+
+    /**
+     * Returns a composite key for chat memory isolation.
+     * If tabId is set, returns "projectHash-tabId"; otherwise just projectHash.
+     */
+    public String getMemoryKey() {
+        String projectHash = project.getLocationHash();
+        return tabId != null ? projectHash + "-" + tabId : projectHash;
+    }
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;

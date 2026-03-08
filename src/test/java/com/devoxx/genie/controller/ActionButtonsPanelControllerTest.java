@@ -102,7 +102,8 @@ class ActionButtonsPanelControllerTest {
 
         controller = new ActionButtonsPanelController(
                 project, promptInputArea, promptOutputPanel,
-                modelProviderComboBox, modelNameComboBox, actionButtonsPanel
+                modelProviderComboBox, modelNameComboBox, actionButtonsPanel,
+                "test-tab-id"
         );
     }
 

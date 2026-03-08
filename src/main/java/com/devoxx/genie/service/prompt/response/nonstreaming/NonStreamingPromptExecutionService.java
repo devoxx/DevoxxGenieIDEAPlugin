@@ -30,21 +30,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class NonStreamingPromptExecutionService {
 
     @Getter
     private volatile boolean running = false;
-    
+
     private final ChatMemoryManager chatMemoryManager;
     private final ThreadPoolManager threadPoolManager;
-    private final AtomicReference<CompletableFuture<ChatResponse>> currentQueryFuture = new AtomicReference<>();
-    private final AtomicReference<AgentLoopTracker> currentTracker = new AtomicReference<>();
+    // Per-tab state for parallel execution support
+    private final Map<String, CompletableFuture<ChatResponse>> queryFutures = new ConcurrentHashMap<>();
+    private final Map<String, AgentLoopTracker> trackers = new ConcurrentHashMap<>();
 
     public NonStreamingPromptExecutionService() {
         this.chatMemoryManager = ChatMemoryManager.getInstance();
@@ -65,9 +67,10 @@ public class NonStreamingPromptExecutionService {
     public @NotNull CompletableFuture<ChatResponse> executeQuery(@NotNull ChatMessageContext chatMessageContext) {
         log.debug("Execute query : {}", chatMessageContext);
 
-        // Cancel any existing query
-        cancelExecutingQuery();
-        
+        // Cancel any existing query for this tab only (not all tabs)
+        String tabKey = chatMessageContext.getTabId() != null ? chatMessageContext.getTabId() : "default";
+        cancelExecutingQueryForTab(tabKey);
+
         Project project = chatMessageContext.getProject();
 
         long startTime = System.currentTimeMillis();
@@ -110,42 +113,50 @@ public class NonStreamingPromptExecutionService {
                 return null;
             })
             .whenComplete((response, throwable) -> {
-                // Always clear the current future reference when done
-                currentQueryFuture.set(null);
-                running = false;
-                
+                // Clear the per-tab future reference when done
+                queryFutures.remove(tabKey);
+                trackers.remove(tabKey);
+                running = !queryFutures.isEmpty(); // Still running if other tabs have active queries
+
                 // Add file references if any, similar to StreamingResponseHandler
-                if (response != null && !FileListManager.getInstance().isEmpty(project)) {
+                String tabIdForFiles = chatMessageContext.getTabId();
+                if (response != null && !FileListManager.getInstance().isEmpty(project, tabIdForFiles)) {
                     log.debug("Adding file references for non-streaming response");
-                    // Store the file references in the context for later use
-                    chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project));
+                    chatMessageContext.setFileReferences(FileListManager.getInstance().getFiles(project, tabIdForFiles));
                 }
             });
-        
-        // Store the future for potential cancellation
-        currentQueryFuture.set(queryFuture);
-        
+
+        // Store the future for potential cancellation (per tab)
+        queryFutures.put(tabKey, queryFuture);
+
         return queryFuture;
     }
 
     /**
-     * Cancel the currently executing query if one exists.
+     * Cancel the executing query for a specific tab.
      */
-    public void cancelExecutingQuery() {
-        // Cancel the agent loop tracker so tool executors stop immediately
-        AgentLoopTracker tracker = currentTracker.getAndSet(null);
+    public void cancelExecutingQueryForTab(@NotNull String tabKey) {
+        AgentLoopTracker tracker = trackers.remove(tabKey);
         if (tracker != null) {
             tracker.cancel();
         }
 
-        CompletableFuture<ChatResponse> future = currentQueryFuture.get();
+        CompletableFuture<ChatResponse> future = queryFutures.remove(tabKey);
         if (future != null && !future.isDone()) {
             future.cancel(true);
             if (MCPService.isMCPEnabled()) {
                 MCPExecutionService.getInstance().clearClientCache();
             }
-            currentQueryFuture.set(null);
-            running = false;
+        }
+        running = !queryFutures.isEmpty();
+    }
+
+    /**
+     * Cancel all executing queries (legacy project-wide cancel).
+     */
+    public void cancelExecutingQuery() {
+        for (String key : new java.util.ArrayList<>(queryFutures.keySet())) {
+            cancelExecutingQueryForTab(key);
         }
     }
 
@@ -157,9 +168,7 @@ public class NonStreamingPromptExecutionService {
             Project project = chatMessageContext.getProject();
             ChatModel chatModel = chatMessageContext.getChatModel();
 
-            String projectId = project.getLocationHash();
-
-            ChatMemory chatMemory = chatMemoryManager.getChatMemory(projectId);
+            ChatMemory chatMemory = chatMemoryManager.getChatMemory(chatMessageContext.getMemoryKey());
 
             // When images are present, bypass AiServices (which only supports text)
             // and call chatModel directly with the multimodal UserMessage
@@ -177,7 +186,8 @@ public class NonStreamingPromptExecutionService {
             // Try agent mode first, then fall back to MCP-only
             ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
             if (toolProvider instanceof AgentLoopTracker tracker) {
-                currentTracker.set(tracker);
+                String tKey = chatMessageContext.getTabId() != null ? chatMessageContext.getTabId() : "default";
+                trackers.put(tKey, tracker);
             }
             if (toolProvider == null && MCPService.isMCPEnabled()) {
                 toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
@@ -216,8 +226,8 @@ public class NonStreamingPromptExecutionService {
                     "Selected Jan model is not active. Download and make it active or add API Key in Jan settings.", e);
             }
 
-            // Let the ChatMemoryManager handle removing the last message on error
-            chatMemoryManager.removeLastMessage(chatMessageContext.getProject());
+            // Let the ChatMemoryManager handle removing the last message on error (tab-aware)
+            chatMemoryManager.removeLastMessageByKey(chatMessageContext.getMemoryKey());
 
             // Use our own ModelException instead of the generic ProviderUnavailableException
             throw new ModelException("Provider unavailable: " + e.getMessage(), e);

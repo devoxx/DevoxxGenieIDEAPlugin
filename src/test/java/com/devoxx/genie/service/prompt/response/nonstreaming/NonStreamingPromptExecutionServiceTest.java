@@ -98,6 +98,7 @@ class NonStreamingPromptExecutionServiceTest {
         when(mockStateService.getAgentModeEnabled()).thenReturn(false);
         when(mockStateService.getSystemPrompt()).thenReturn("You are a helpful assistant");
         when(mockFileListManager.isEmpty(any(Project.class))).thenReturn(true);
+        when(mockFileListManager.isEmpty(any(Project.class), any())).thenReturn(true);
         when(mockLanguageModel.getProvider()).thenReturn(ModelProvider.OpenAI);
         when(mockContext.getLanguageModel()).thenReturn(mockLanguageModel);
 
@@ -148,14 +149,14 @@ class NonStreamingPromptExecutionServiceTest {
 
     @Test
     void cancelExecutingQuery_withActiveQuery_cancelsIt() {
-        // Create an incomplete future and set it via reflection
+        // Create an incomplete future and put it in the queryFutures map via reflection
         CompletableFuture<ChatResponse> incompleteFuture = new CompletableFuture<>();
         try {
-            var field = NonStreamingPromptExecutionService.class.getDeclaredField("currentQueryFuture");
+            var field = NonStreamingPromptExecutionService.class.getDeclaredField("queryFutures");
             field.setAccessible(true);
             @SuppressWarnings("unchecked")
-            var ref = (java.util.concurrent.atomic.AtomicReference<CompletableFuture<ChatResponse>>) field.get(service);
-            ref.set(incompleteFuture);
+            var map = (java.util.Map<String, CompletableFuture<ChatResponse>>) field.get(service);
+            map.put("test-tab", incompleteFuture);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -172,11 +173,11 @@ class NonStreamingPromptExecutionServiceTest {
         // Create an incomplete future
         CompletableFuture<ChatResponse> incompleteFuture = new CompletableFuture<>();
         try {
-            var field = NonStreamingPromptExecutionService.class.getDeclaredField("currentQueryFuture");
+            var field = NonStreamingPromptExecutionService.class.getDeclaredField("queryFutures");
             field.setAccessible(true);
             @SuppressWarnings("unchecked")
-            var ref = (java.util.concurrent.atomic.AtomicReference<CompletableFuture<ChatResponse>>) field.get(service);
-            ref.set(incompleteFuture);
+            var map = (java.util.Map<String, CompletableFuture<ChatResponse>>) field.get(service);
+            map.put("test-tab", incompleteFuture);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -196,11 +197,11 @@ class NonStreamingPromptExecutionServiceTest {
     void cancelExecutingQuery_withCompletedFuture_doesNotCancel() {
         CompletableFuture<ChatResponse> completedFuture = CompletableFuture.completedFuture(null);
         try {
-            var field = NonStreamingPromptExecutionService.class.getDeclaredField("currentQueryFuture");
+            var field = NonStreamingPromptExecutionService.class.getDeclaredField("queryFutures");
             field.setAccessible(true);
             @SuppressWarnings("unchecked")
-            var ref = (java.util.concurrent.atomic.AtomicReference<CompletableFuture<ChatResponse>>) field.get(service);
-            ref.set(completedFuture);
+            var map = (java.util.Map<String, CompletableFuture<ChatResponse>>) field.get(service);
+            map.put("test-tab", completedFuture);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

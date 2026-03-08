@@ -1,6 +1,7 @@
 package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -68,10 +69,11 @@ public class AddSnippetAction extends DumbAwareAction {
      */
     private static void addSelectedFile(Project project, VirtualFile selectedFile) {
         FileListManager fileListManager = FileListManager.getInstance();
-        if (fileListManager.contains(project, selectedFile)) {
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
+        if (fileListManager.contains(project, tabId, selectedFile)) {
             return;
         }
-        fileListManager.addFile(project, selectedFile);
+        fileListManager.addFile(project, tabId, selectedFile);
     }
 
     /**
@@ -107,7 +109,8 @@ public class AddSnippetAction extends DumbAwareAction {
         virtualFile.putUserData(SELECTION_START_LINE_KEY, startLine);
         virtualFile.putUserData(SELECTION_END_LINE_KEY, endLine);
 
-        FileListManager.getInstance().addFile(project, virtualFile);
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
+        FileListManager.getInstance().addFile(project, tabId, virtualFile);
     }
 
     @Override

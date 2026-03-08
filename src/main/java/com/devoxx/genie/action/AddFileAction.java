@@ -2,6 +2,7 @@ package com.devoxx.genie.action;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -27,18 +28,19 @@ public class AddFileAction extends DumbAwareAction {
         ensureToolWindowVisible(project);
 
         FileListManager fileListManager = FileListManager.getInstance();
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
         VirtualFile[] selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 
         if (selectedFiles != null && selectedFiles.length > 0) {
             List<VirtualFile> filesToAdd = new ArrayList<>();
             for (VirtualFile file : selectedFiles) {
-                if (!file.isDirectory() && !fileListManager.contains(project, file)) {
+                if (!file.isDirectory() && !fileListManager.contains(project, tabId, file)) {
                     filesToAdd.add(file);
                 }
             }
 
             if (!filesToAdd.isEmpty()) {
-                fileListManager.addFiles(project, filesToAdd);
+                fileListManager.addFiles(project, tabId, filesToAdd);
                 NotificationUtil.sendNotification(project, "Added " + filesToAdd.size() + " file(s) to prompt context");
             } else {
                 NotificationUtil.sendNotification(project, "No new files to add or only directories selected");

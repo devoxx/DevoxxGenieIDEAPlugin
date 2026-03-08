@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,16 +19,22 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Instead of using the IntelliJ State API, we use a separate database to store conversations.
  * SQLite is a lightweight database that can be used for small applications like this.
- * The conversations.db is stored for mac in
- * /Users/[username]/Library/Caches/JetBrains/IntelliJIdea2024.3/DevoxxGenie/conversations.db
+ * The conversations.db is stored under the IDE config directory (durable across cache invalidation):
+ * macOS:   ~/Library/Application Support/JetBrains/IntelliJIdea2024.3/DevoxxGenie/conversations.db
+ * Linux:   ~/.config/JetBrains/IntelliJIdea2024.3/DevoxxGenie/conversations.db
+ * Windows: %APPDATA%\JetBrains\IntelliJIdea2024.3\DevoxxGenie\conversations.db
  * You can connect to the SQLite db using IDEA's Database tool window.
  */
 @Slf4j
 public class ConversationStorageService {
-    
+
     private final String dbPath;
     private static final long MAX_DB_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB threshold
     private static final int DELETE_COUNT = 10; // Delete 10 oldest conversations
+
+    /** Legacy path (system/cache dir) — used only for migration detection. */
+    static final String LEGACY_DIR = "DevoxxGenie";
+    static final String DB_FILENAME = "conversations.db";
 
     public ConversationStorageService() {
         try {
@@ -36,19 +43,45 @@ public class ConversationStorageService {
             throw new RuntimeException("SQLite JDBC driver not found", e);
         }
 
-        this.dbPath = Path.of(PathManager.getSystemPath(), "DevoxxGenie", "conversations.db").toString();
+        // Use the durable config directory instead of the volatile system/cache directory
+        Path durablePath = Path.of(PathManager.getConfigPath(), LEGACY_DIR, DB_FILENAME);
+        this.dbPath = durablePath.toString();
         try {
-            Files.createDirectories(Path.of(dbPath).getParent());
-            log.info("Database directory created at " + dbPath);
+            Files.createDirectories(durablePath.getParent());
+            log.info("Database directory ensured at {}", durablePath.getParent());
         } catch (Exception e) {
             throw new RuntimeException("Failed to create database directory", e);
         }
+
+        // Migrate from the legacy system/cache location if it exists and the new one doesn't yet
+        migrateLegacyDatabase(durablePath);
+
         createTableIfNotExists();
         migrateDatabase();
     }
 
     public static @NotNull ConversationStorageService getInstance() {
         return new ConversationStorageService();
+    }
+
+    /**
+     * Migrates the conversation database from the legacy system/cache location to the
+     * durable config location. The migration is a simple file copy — it only runs when
+     * the legacy file exists and the new file does not, so it is safe to call repeatedly.
+     */
+    static void migrateLegacyDatabase(@NotNull Path durablePath) {
+        Path legacyPath = Path.of(PathManager.getSystemPath(), LEGACY_DIR, DB_FILENAME);
+        if (Files.exists(legacyPath) && !Files.exists(durablePath)) {
+            try {
+                Files.copy(legacyPath, durablePath, StandardCopyOption.COPY_ATTRIBUTES);
+                log.info("Migrated conversation history from legacy location {} to {}",
+                        legacyPath, durablePath);
+            } catch (IOException e) {
+                log.warn("Failed to migrate legacy conversation database from {} to {}: {}",
+                        legacyPath, durablePath, e.getMessage());
+                // Non-fatal: a fresh database will be created instead
+            }
+        }
     }
 
     private Connection getConnection() throws SQLException {

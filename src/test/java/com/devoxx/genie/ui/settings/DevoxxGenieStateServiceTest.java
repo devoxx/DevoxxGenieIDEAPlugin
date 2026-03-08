@@ -698,4 +698,78 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getDefaultWindowContext()).isEqualTo(8000);
         }
     }
+
+    @Nested
+    class TabPersistence {
+
+        private static final String PROJECT_HASH = "projectHash123";
+        private static final String OTHER_PROJECT_HASH = "otherProject456";
+
+        @Test
+        void getOpenTabIds_shouldReturnEmptyListWhenNothingSaved() {
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH)).isEmpty();
+        }
+
+        @Test
+        void setAndGetOpenTabIds_shouldRoundTrip() {
+            List<String> tabIds = List.of("tab-1", "tab-2", "tab-3");
+
+            stateService.setOpenTabIds(PROJECT_HASH, tabIds);
+
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH))
+                    .containsExactly("tab-1", "tab-2", "tab-3");
+        }
+
+        @Test
+        void setOpenTabIds_shouldOverwritePreviousValue() {
+            stateService.setOpenTabIds(PROJECT_HASH, List.of("old-tab"));
+            stateService.setOpenTabIds(PROJECT_HASH, List.of("new-tab-1", "new-tab-2"));
+
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH))
+                    .containsExactly("new-tab-1", "new-tab-2");
+        }
+
+        @Test
+        void setOpenTabIds_shouldIsolateByProjectHash() {
+            stateService.setOpenTabIds(PROJECT_HASH, List.of("tab-a"));
+            stateService.setOpenTabIds(OTHER_PROJECT_HASH, List.of("tab-b"));
+
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH))
+                    .containsExactly("tab-a");
+            assertThat(stateService.getOpenTabIds(OTHER_PROJECT_HASH))
+                    .containsExactly("tab-b");
+        }
+
+        @Test
+        void getOpenTabIds_shouldReturnDefensiveCopy() {
+            stateService.setOpenTabIds(PROJECT_HASH, List.of("tab-1"));
+
+            List<String> retrieved = stateService.getOpenTabIds(PROJECT_HASH);
+            retrieved.add("tab-mutated");
+
+            // Original should be unaffected
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH))
+                    .containsExactly("tab-1");
+        }
+
+        @Test
+        void setOpenTabIds_shouldStoreDefensiveCopy() {
+            List<String> original = new ArrayList<>(List.of("tab-1"));
+            stateService.setOpenTabIds(PROJECT_HASH, original);
+
+            original.add("tab-mutated");
+
+            // Stored value should be unaffected
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH))
+                    .containsExactly("tab-1");
+        }
+
+        @Test
+        void setOpenTabIds_shouldAllowEmptyList() {
+            stateService.setOpenTabIds(PROJECT_HASH, List.of("tab-1"));
+            stateService.setOpenTabIds(PROJECT_HASH, List.of());
+
+            assertThat(stateService.getOpenTabIds(PROJECT_HASH)).isEmpty();
+        }
+    }
 }

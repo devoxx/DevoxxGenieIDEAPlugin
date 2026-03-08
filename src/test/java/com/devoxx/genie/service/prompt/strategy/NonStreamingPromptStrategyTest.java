@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -114,6 +115,7 @@ class NonStreamingPromptStrategyTest {
         
         // Mock file list methods to avoid NullPointerException
         when(mockFileListManager.isEmpty(any(Project.class))).thenReturn(true);
+        when(mockFileListManager.isEmpty(any(Project.class), any())).thenReturn(true);
         
         // Mock the language model and provider to avoid NullPointerException in ResponseHeaderPanel
         when(mockModelProvider.getName()).thenReturn("Test Provider");
@@ -182,7 +184,7 @@ class NonStreamingPromptStrategyTest {
     @Test
     void cancel_cancelsExecutingQuery() {
         strategy.cancel();
-        verify(mockPromptExecutionService).cancelExecutingQuery();
+        verify(mockPromptExecutionService).cancelExecutingQueryForTab(anyString());
     }
 
     @Test
@@ -249,6 +251,6 @@ class NonStreamingPromptStrategyTest {
     void cancel_withNullPanel_doesNotThrow() {
         // No panel set - cancel should not throw
         strategy.cancel();
-        verify(mockPromptExecutionService).cancelExecutingQuery();
+        verify(mockPromptExecutionService).cancelExecutingQueryForTab(anyString());
     }
 }

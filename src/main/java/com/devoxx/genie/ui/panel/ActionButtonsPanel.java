@@ -92,8 +92,10 @@ public class ActionButtonsPanel extends JPanel
 
         this.controller = new ActionButtonsPanelController(
                 project, promptInputArea, promptOutputPanel,
-                llmProvidersComboBox, modelNameComboBox, this
+                llmProvidersComboBox, modelNameComboBox, this,
+                devoxxGenieToolWindowContent.getTabId()
         );
+        this.controller.setToolWindowContent(devoxxGenieToolWindowContent);
         
         // Initialize the MCP tools manager
         this.mcpToolsManager = new MCPToolsManager(project);
@@ -268,7 +270,7 @@ public class ActionButtonsPanel extends JPanel
         }
 
         ApplicationManager.getApplication().invokeLater(() ->
-                onPromptSubmitted(project, prompt));
+                onPromptSubmitted(project, prompt, devoxxGenieToolWindowContent.getTabId()));
     }
 
     public void disableButtons() {
@@ -326,9 +328,23 @@ public class ActionButtonsPanel extends JPanel
     }
 
     @Override
-    public void onPromptSubmitted(@NotNull Project projectPrompt, String prompt) {
+    public void onPromptSubmitted(@NotNull Project projectPrompt, String prompt, @org.jetbrains.annotations.Nullable String tabId) {
         if (!this.project.getName().equals(projectPrompt.getName())) {
             return;
+        }
+        // Tab filter: if a tabId is specified, only the matching tab handles it.
+        // If tabId is null, route to the active/selected tab only.
+        String myTabId = devoxxGenieToolWindowContent.getTabId();
+        if (tabId != null) {
+            if (!tabId.equals(myTabId)) {
+                return;
+            }
+        } else {
+            // Null tabId means "route to active tab" — check if this tab is the active one
+            String activeTabId = com.devoxx.genie.ui.window.ConversationTabRegistry.getInstance().getActiveTabId(project);
+            if (activeTabId != null && !activeTabId.equals(myTabId)) {
+                return;
+            }
         }
         ApplicationManager.getApplication().invokeLater(() -> {
             if (controller.isPromptRunning()) {

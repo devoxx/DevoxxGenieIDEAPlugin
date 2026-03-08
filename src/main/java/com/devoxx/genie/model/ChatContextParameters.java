@@ -13,6 +13,23 @@ public record ChatContextParameters(
         @NotNull String actionCommand,
         EditorFileButtonManager editorFileButtonManager,
         String projectContext,
-        boolean isProjectContextAdded
-) {}
+        boolean isProjectContextAdded,
+        String tabId
+) {
+    /**
+     * Backward-compatible constructor without tabId.
+     */
+    public ChatContextParameters(
+            Project project,
+            String userPromptText,
+            LanguageModel languageModel,
+            ChatModelProvider chatModelProvider,
+            @NotNull String actionCommand,
+            EditorFileButtonManager editorFileButtonManager,
+            String projectContext,
+            boolean isProjectContextAdded) {
+        this(project, userPromptText, languageModel, chatModelProvider,
+                actionCommand, editorFileButtonManager, projectContext, isProjectContextAdded, null);
+    }
+}
 

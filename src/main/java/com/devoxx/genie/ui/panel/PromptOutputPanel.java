@@ -44,13 +44,19 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param resourceBundle The resource bundle for localization.
      */
     public PromptOutputPanel(Project project, ResourceBundle resourceBundle) {
+        this(project, resourceBundle, null);
+    }
+
+    public PromptOutputPanel(Project project, ResourceBundle resourceBundle, String tabId) {
         super(new BorderLayout());
 
         this.project = project;
 
-        // Initialize conversation panel
-        conversationPanel = new ConversationPanel(project, resourceBundle);
-        
+        // Initialize conversation panel with tab awareness
+        conversationPanel = new ConversationPanel(project, resourceBundle, tabId);
+        // Wire the owning panel reference for tab-scoped operations
+        conversationPanel.setOwnPanel(this);
+
         // Add conversation panel directly to this panel
         add(conversationPanel, BorderLayout.CENTER);
 

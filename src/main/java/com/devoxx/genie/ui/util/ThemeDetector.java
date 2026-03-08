@@ -2,7 +2,7 @@ package com.devoxx.genie.ui.util;
 
 import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.ui.JBColor;
+import com.intellij.util.ui.StartupUiUtil;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,14 +16,14 @@ public class ThemeDetector {
 
     static {
         // Initialize the current theme value
-        isDarkThemeValue = !JBColor.isBright();
+        isDarkThemeValue = StartupUiUtil.isUnderDarcula();
         
         // Register a listener for theme changes with the LAF manager
         var application = ApplicationManager.getApplication();
         if (application != null) {
             application.getMessageBus().connect()
                 .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> {
-                    boolean newIsDarkTheme = !JBColor.isBright();
+                    boolean newIsDarkTheme = StartupUiUtil.isUnderDarcula();
                     // Only notify if the theme type (dark/light) has actually changed
                     if (newIsDarkTheme != isDarkThemeValue) {
                         isDarkThemeValue = newIsDarkTheme;

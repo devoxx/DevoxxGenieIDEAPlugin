@@ -142,7 +142,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
             if (!text.isEmpty()) {
                 project.getMessageBus()
                         .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                        .onPromptSubmitted(project, text);
+                        .onPromptSubmitted(project, text, null);
             }
         }
 

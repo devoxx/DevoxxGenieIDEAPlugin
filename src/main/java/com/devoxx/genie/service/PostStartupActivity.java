@@ -42,12 +42,8 @@ public class PostStartupActivity implements ProjectActivity {
             log.error("threadPoolManager is null");
         }
 
-        // Register theme change listener
-        if (project.isDefault()) {
-            // Only register the listener once during application startup
-            ThemeChangeListener.register();
-            log.debug("Registered ThemeChangeListener for theme changes");
-        }
+        ThemeChangeListener.register();
+        log.debug("Registered ThemeChangeListener for theme changes");
 
         return Unit.INSTANCE;
     }

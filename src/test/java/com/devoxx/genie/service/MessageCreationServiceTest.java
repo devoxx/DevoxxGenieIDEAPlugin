@@ -115,7 +115,7 @@ class MessageCreationServiceTest {
 
             try (MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
                 fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
-                when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
+                when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
                 messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
@@ -140,7 +140,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagActivated()).thenReturn(false);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
@@ -174,7 +174,7 @@ class MessageCreationServiceTest {
             when(mockStateService.getRagActivated()).thenReturn(false);
             
             // Initially return no images, then return our test image when called later
-            when(mockFileListManager.getImageFiles(any(Project.class)))
+            when(mockFileListManager.getImageFiles(any(Project.class), any()))
                 .thenReturn(Collections.emptyList())
                 .thenReturn(imageFiles);
             
@@ -240,7 +240,7 @@ class MessageCreationServiceTest {
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
             when(mockStateService.getRagActivated()).thenReturn(true);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
             when(mockSemanticSearchService.search(any(), any())).thenReturn(searchResults);
 
             Path mockPath = mock(Path.class);
@@ -271,7 +271,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagActivated()).thenReturn(false);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
@@ -298,7 +298,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagActivated()).thenReturn(false);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(Collections.emptyList());
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             // mock file content
             byte[] fileContent = "Test file content".getBytes(StandardCharsets.UTF_8);
@@ -535,7 +535,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagActivated()).thenReturn(false);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(imageFiles);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(imageFiles);
 
             imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(mockImage1)).thenReturn("image/png");
             imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(mockImage2)).thenReturn("image/jpeg");
@@ -601,7 +601,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagActivated()).thenReturn(false);
-            when(mockFileListManager.getImageFiles(any(Project.class))).thenReturn(imageFiles);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(imageFiles);
             imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(any())).thenReturn("image/png");
 
             // Make getUserMessage() return the last value set via setUserMessage()

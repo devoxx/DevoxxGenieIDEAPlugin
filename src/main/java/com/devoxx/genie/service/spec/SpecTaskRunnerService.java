@@ -484,7 +484,7 @@ public final class SpecTaskRunnerService implements Disposable {
 
         project.getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                .onPromptSubmitted(project, prompt);
+                .onPromptSubmitted(project, prompt, null);
     }
 
     private void submitTaskViaCli(@NotNull TaskSpec task) {
