@@ -23,6 +23,8 @@ import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeBlock
 import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
+import dev.snipme.highlights.Highlights
+import dev.snipme.highlights.model.SyntaxThemes
 
 @Composable
 fun UserBubble(
@@ -74,15 +76,17 @@ fun UserBubble(
         link = baseStyle.copy(color = DevoxxOrange),
     )
 
+    val highlightsBuilder = Highlights.Builder().theme(SyntaxThemes.default(darkMode = colors.isDark))
+
     val codeFence: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeFence(model.content, model.node)
+            MarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder)
         }
     }
 
     val codeBlock: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeBlock(model.content, model.node)
+            MarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder)
         }
     }
 
