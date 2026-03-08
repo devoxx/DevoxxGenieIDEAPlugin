@@ -1,10 +1,11 @@
 ---
 id: TASK-192
 title: Update Docusaurus static API model lists with latest Google and OpenAI models
-status: To Do
+status: Done
+priority: medium
 assignee: []
 created_date: '2026-03-07 15:14'
-updated_date: '2026-03-07 15:19'
+updated_date: '2026-03-08 12:13'
 labels:
   - documentation
   - models
@@ -13,20 +14,16 @@ dependencies: []
 references:
   - docusaurus/static/api/models.json
   - docusaurus/docs/llm-providers/cloud-models.md
-  - 'https://developers.openai.com/api/docs/pricing'
-  - 'https://ai.google.dev/gemini-api/docs/pricing'
-  - 'https://ai.google.dev/gemini-api/docs/models'
-priority: medium
+  - "https://developers.openai.com/api/docs/pricing"
+  - "https://ai.google.dev/gemini-api/docs/pricing"
+  - "https://ai.google.dev/gemini-api/docs/models"
+documentation: []
+ordinal: 1000
 ---
 
-## Description
-
 <!-- SECTION:DESCRIPTION:BEGIN -->
-## Summary
-The `docusaurus/static/api/models.json` file and `docusaurus/docs/llm-providers/cloud-models.md` need updating with newly available LLMs from Google and OpenAI. Last updated: 2026-02-19.
 
-## Research Findings (March 2026)
-
+## research findings (march 2026)
 ### Google Gemini - Models to ADD
 
 | Model ID | Display Name | Input $/1M | Output $/1M | Context | Max Output |
@@ -66,33 +63,11 @@ The `docusaurus/static/api/models.json` file and `docusaurus/docs/llm-providers/
 - [Gemini 3.1 Flash-Lite announcement](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-flash-lite/)
 - [Gemini 3 Pro deprecation](https://ai.google.dev/gemini-api/docs/gemini-3)
 
-## Files to Update
+## files to update
 1. `docusaurus/static/api/models.json` — Add new models, remove deprecated ones, update `lastUpdated`
 2. `docusaurus/docs/llm-providers/cloud-models.md` — Update model references in text if needed
 
-## Notes
-- Prices are per 1M tokens
-- Verify exact model IDs against official API docs before committing
-- GPT-5.4 has a 272K default context, 1M with experimental flag — document as 1M (matches OpenAI docs)
-- GPT-5.4 Thinking has same input price as GPT-5.4 ($2.50/1M) but higher output ($15.00/1M vs $10.00/1M) due to reasoning tokens
-- GPT-5.4 Pro is OpenAI's most expensive model at $30/$180 per 1M tokens
-- Google Gemini 3 Pro Preview sunsets March 9, 2026 — time-sensitive removal
-<!-- SECTION:DESCRIPTION:END -->
-
-## Acceptance Criteria
-<!-- AC:BEGIN -->
-- [ ] #1 All newly available Google and OpenAI models are added to models.json with correct model IDs, pricing, and token limits
-- [ ] #2 Deprecated/sunset models are removed from models.json
-- [ ] #3 cloud-models.md is updated to reflect the new model landscape
-- [ ] #4 lastUpdated field in models.json is set to the date of the update
-- [ ] #5 All prices verified against official provider pricing pages before committing
-<!-- AC:END -->
-
-## Implementation Notes
-
-<!-- SECTION:NOTES:BEGIN -->
-## Corrected OpenAI GPT-5.4 Models (verified from official docs)
-
+## corrected openai gpt-5.4 models (verified from official docs)
 **Source:** https://developers.openai.com/api/docs/models/gpt-5.4 and https://developers.openai.com/api/docs/pricing
 
 ### Models to ADD
@@ -133,3 +108,19 @@ The `docusaurus/static/api/models.json` file and `docusaurus/docs/llm-providers/
 - `docusaurus/docs/models/google.md`
 - Any related pricing/model list files in docusaurus/
 <!-- SECTION:NOTES:END -->
+
+## Acceptance Criteria
+
+- [ ] #1 All newly available Google and OpenAI models are added to models.json with correct model IDs, pricing, and token limits
+- [ ] #2 Deprecated/sunset models are removed from models.json
+- [ ] #3 cloud-models.md is updated to reflect the new model landscape
+- [ ] #4 lastUpdated field in models.json is set to the date of the update
+- [ ] #5 All prices verified against official provider pricing pages before committing
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+
+## Final Summary
+
+The `docusaurus/static/api/models.json` file and `docusaurus/docs/llm-providers/cloud-models.md` need updating with newly available LLMs from Google and OpenAI. Last updated: 2026-02-19.
