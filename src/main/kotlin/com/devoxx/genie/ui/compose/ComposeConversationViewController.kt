@@ -115,9 +115,13 @@ class ComposeConversationViewController(
 
     override fun themeChanged(isDarkTheme: Boolean) {
         viewModel.onThemeChanged(isDarkTheme)
+        composePanel.revalidate()
+        composePanel.repaint()
     }
 
     override fun appearanceSettingsChanged() {
         viewModel.onAppearanceSettingsChanged()
+        composePanel.revalidate()
+        composePanel.repaint()
     }
 }

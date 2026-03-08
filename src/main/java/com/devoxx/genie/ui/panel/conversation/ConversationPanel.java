@@ -13,6 +13,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.conversationhistory.ConversationHistoryPanel;
 import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
@@ -45,6 +46,7 @@ public class ConversationPanel
     private final ConversationUIController uiController;
     private final MessageBusConnection messageBusConnection;
     private final ChatService chatService;
+    private final JComponent displayComponent;
 
     public final ConversationViewController viewController;
 
@@ -106,7 +108,7 @@ public class ConversationPanel
         add(uiController.createButtonPanel(), BorderLayout.NORTH);
 
         // Set component layout and sizing
-        JComponent displayComponent = viewController.getComponent();
+        displayComponent = viewController.getComponent();
         displayComponent.setOpaque(true);
         Color editorBg = UIUtil.getPanelBackground();
         displayComponent.setBackground(editorBg);
@@ -130,6 +132,15 @@ public class ConversationPanel
         ApplicationManager.getApplication().getMessageBus().connect(messageBusConnection)
             .subscribe(AppTopics.APPEARANCE_SETTINGS_TOPIC, (AppearanceSettingsEvents) () ->
                 viewController.appearanceSettingsChanged());
+        messageBusConnection.subscribe(ThemeChangeNotifier.THEME_CHANGED_TOPIC, isDarkTheme ->
+            ApplicationManager.getApplication().invokeLater(() -> {
+                Color updatedBg = UIUtil.getPanelBackground();
+                setBackground(updatedBg);
+                displayComponent.setBackground(updatedBg);
+                viewController.themeChanged(isDarkTheme);
+                revalidate();
+                repaint();
+            }));
 
         // Filter activity log messages to only show messages from this project
         String projectHash = project.getLocationHash();
