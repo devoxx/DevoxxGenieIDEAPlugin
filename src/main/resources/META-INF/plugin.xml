@@ -45,6 +45,20 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.2.0</h2>
+        <UL>
+            <LI>Feat: Add conversation tabs for parallel model usage across independent chat sessions</LI>
+            <LI>Feat: Add DevoxxGenie Workshop link to welcome page banner</LI>
+            <LI>Fix: Update tab name when restoring conversation from history (was staying "New Chat")</LI>
+            <LI>Fix: Use theme-aware syntax highlighting to prevent invisible mark characters in code blocks</LI>
+            <LI>Fix: Improve theme change detection using StartupUiUtil.isUnderDarcula() with EDT-safe propagation</LI>
+            <LI>Fix: Initialize chat memory before restoring conversation from history</LI>
+            <LI>Fix: Move conversation DB to durable config directory with legacy migration</LI>
+            <LI>Fix: Persist CLI runner conversations to conversation history</LI>
+            <LI>Fix: Prevent duplicate response text in Claude CLI runner</LI>
+            <LI>Fix: Strip ANSI escape codes from CLI test connection errors</LI>
+            <LI>Fix: Omit top_p parameter for GPT-5 models in OpenAI provider</LI>
+        </UL>
         <h2>v1.1.0</h2>
         <UL>
             <LI>Build: Raise minimum IDE version to 2025.1, add support up to 2026.1.* (#972, #963)</LI>

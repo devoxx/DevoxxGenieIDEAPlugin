@@ -2,6 +2,23 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0]
+
+### Added
+- Conversation tabs for parallel model usage across independent chat sessions
+- DevoxxGenie Workshop link to welcome page banner
+
+### Fixed
+- Tab name not updating when restoring conversation from history (stayed "New Chat")
+- Theme-aware syntax highlighting to prevent invisible mark characters in code blocks
+- Theme change detection using `StartupUiUtil.isUnderDarcula()` with EDT-safe propagation
+- Chat memory initialization before restoring conversation from history
+- CLI runner conversations not persisting to conversation history
+- Duplicate response text in Claude CLI runner
+- ANSI escape codes in CLI test connection errors
+- `top_p` parameter omitted for GPT-5 models in OpenAI provider
+- Conversation DB moved to durable config directory with legacy migration
+
 ## [1.1.0]
 
 ### Changed
