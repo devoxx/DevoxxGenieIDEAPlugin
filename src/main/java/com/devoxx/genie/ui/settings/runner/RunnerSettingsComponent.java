@@ -16,11 +16,14 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Settings panel for CLI and ACP Runners configuration.
  */
 public class RunnerSettingsComponent extends AbstractSettingsComponent {
+    private static final Pattern ANSI_ESCAPE =
+            Pattern.compile("\\x1B(?:\\[[0-?]*[ -/]*[@-~]|\\].*?(?:\\x07|\\x1B\\\\))");
 
     private final CliToolTableModel cliToolTableModel = new CliToolTableModel();
     private final JBTable cliToolTable = new JBTable(cliToolTableModel);
@@ -609,10 +612,26 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
         }
 
         private static @NonNull String resolveErrorMessage(int exitCode, String stdout, @NonNull String stderr) {
-            String err = stderr.trim();
-            if (err.isEmpty()) err = stdout.trim();
+            String err = lastMeaningfulLine(stderr);
+            if (err.isEmpty()) err = lastMeaningfulLine(stdout);
             if (err.isEmpty()) err = "Exit code " + exitCode;
             return err;
+        }
+
+        private static @NonNull String lastMeaningfulLine(String output) {
+            if (output == null || output.isBlank()) return "";
+
+            String[] lines = output.split("\\R");
+            for (int i = lines.length - 1; i >= 0; i--) {
+                String line = sanitizeOutputLine(lines[i]);
+                if (!line.isEmpty()) return line;
+            }
+            return "";
+        }
+
+        private static @NonNull String sanitizeOutputLine(String line) {
+            if (line == null || line.isBlank()) return "";
+            return ANSI_ESCAPE.matcher(line).replaceAll("").trim();
         }
 
         private void showTestResult(boolean success, String message) {
