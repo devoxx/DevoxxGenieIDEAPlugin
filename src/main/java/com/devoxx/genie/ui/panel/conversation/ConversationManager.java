@@ -11,8 +11,11 @@ import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.PromptPanelRegistry;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.content.Content;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -134,6 +137,9 @@ public class ConversationManager implements ConversationEventListener, Conversat
         // Update the conversation label with the title
         conversationLabel.setText(displayTitle);
 
+        // Update the tab display name to reflect the restored conversation
+        updateTabDisplayName(conversation);
+
         // Clear the current conversation in the web view without showing welcome screen
         messageRenderer.clearWithoutWelcome();
 
@@ -148,6 +154,35 @@ public class ConversationManager implements ConversationEventListener, Conversat
 
         // Restore all messages for this conversation
         historyManager.restoreConversation(conversation);
+    }
+
+    /**
+     * Update the tab display name to match the restored conversation title.
+     */
+    private void updateTabDisplayName(@NotNull Conversation conversation) {
+        if (tabId == null) {
+            return;
+        }
+        ConversationTabRegistry registry = ConversationTabRegistry.getInstance();
+        for (DevoxxGenieToolWindowContent twc : registry.getContentsForProject(project)) {
+            if (tabId.equals(twc.getTabId())) {
+                Content content = twc.getTabContent();
+                if (content != null) {
+                    String title = conversation.getTitle();
+                    if (title != null && !title.isEmpty()) {
+                        String modelName = conversation.getModelName();
+                        String displayName = modelName != null && !modelName.isEmpty()
+                                ? modelName + ": " + title
+                                : title;
+                        if (displayName.length() > 40) {
+                            displayName = displayName.substring(0, 40) + "...";
+                        }
+                        content.setDisplayName(displayName);
+                    }
+                }
+                break;
+            }
+        }
     }
 
     /**
