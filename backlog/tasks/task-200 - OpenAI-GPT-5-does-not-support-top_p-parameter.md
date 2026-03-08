@@ -1,9 +1,11 @@
 ---
 id: TASK-200
 title: OpenAI GPT-5 does not support top_p parameter
-status: To Do
+status: Done
+priority: medium
 assignee: []
 created_date: '2026-03-08 11:29'
+updated_date: '2026-03-08 11:35'
 labels:
   - bug
   - openai
@@ -11,11 +13,9 @@ labels:
 dependencies: []
 references:
   - >-
-    src/main/java/com/devoxx/genie/chatmodel/cloud/openai/OpenAiChatModelFactory.java
-priority: medium
+documentation: []
+ordinal: 1000
 ---
-
-## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 When using OpenAI GPT-5, the plugin sends the `top_p` parameter which is not supported by this model, causing a runtime error.
@@ -40,8 +40,8 @@ Caused by: CompletionException - com.devoxx.genie.service.prompt.error.ModelExce
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
-<!-- AC:BEGIN -->
+
 - [ ] #1 GPT-5 model works without top_p error
 - [ ] #2 Other OpenAI models that support top_p continue to work as before
 - [ ] #3 No regression in other cloud providers
-<!-- AC:END -->
+
