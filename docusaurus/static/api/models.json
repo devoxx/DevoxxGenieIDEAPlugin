@@ -1,6 +1,19 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-02-19",
+  "lastUpdated": "2026-03-08",
+  "_sources": {
+    "Anthropic": "https://docs.anthropic.com/en/docs/about-claude/models",
+    "OpenAI": "https://platform.openai.com/docs/models",
+    "Google": "https://ai.google.dev/gemini-api/docs/models",
+    "Mistral": "https://docs.mistral.ai/getting-started/models/models_overview/",
+    "Grok": "https://docs.x.ai/developers/models",
+    "Groq": "https://console.groq.com/docs/models",
+    "DeepInfra": "https://deepinfra.com/models",
+    "DeepSeek": "https://api-docs.deepseek.com/quick_start/pricing",
+    "Bedrock": "https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html",
+    "GLM": "https://open.bigmodel.cn/dev/howuse/model",
+    "Kimi": "https://platform.moonshot.cn/docs/pricing"
+  },
   "providers": {
     "Anthropic": [
       {
@@ -9,6 +22,7 @@
         "inputCost": 1,
         "outputCost": 5,
         "inputMaxTokens": 200000,
+        "outputMaxTokens": 64000,
         "apiKeyUsed": true
       },
       {
@@ -17,6 +31,7 @@
         "inputCost": 3,
         "outputCost": 15,
         "inputMaxTokens": 200000,
+        "outputMaxTokens": 64000,
         "apiKeyUsed": true
       },
       {
@@ -25,6 +40,7 @@
         "inputCost": 5,
         "outputCost": 25,
         "inputMaxTokens": 200000,
+        "outputMaxTokens": 64000,
         "apiKeyUsed": true
       },
       {
@@ -33,6 +49,7 @@
         "inputCost": 5,
         "outputCost": 25,
         "inputMaxTokens": 200000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
@@ -41,97 +58,45 @@
         "inputCost": 3,
         "outputCost": 15,
         "inputMaxTokens": 200000,
+        "outputMaxTokens": 64000,
         "apiKeyUsed": true
       }
     ],
     "OpenAI": [
       {
-        "modelName": "gpt-4.1",
-        "displayName": "GPT 4.1 (2025-04-14)",
-        "inputCost": 2,
-        "outputCost": 8,
-        "inputMaxTokens": 1000000,
-        "outputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gpt-4.1-mini",
-        "displayName": "GPT 4.1 Mini (2025-04-14)",
-        "inputCost": 0.4,
-        "outputCost": 1.6,
-        "inputMaxTokens": 1000000,
-        "outputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gpt-4.1-nano",
-        "displayName": "GPT 4.1 Nano (2025-04-14)",
-        "inputCost": 0.1,
-        "outputCost": 0.4,
-        "inputMaxTokens": 1000000,
-        "outputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "o3-mini",
-        "displayName": "o3-mini",
-        "inputCost": 1.10,
-        "outputCost": 4.40,
-        "inputMaxTokens": 200000,
-        "outputMaxTokens": 100000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "o1",
-        "displayName": "o1",
-        "inputCost": 15.00,
-        "outputCost": 60.00,
-        "inputMaxTokens": 200000,
-        "outputMaxTokens": 100000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gpt-4",
-        "displayName": "GPT 4",
-        "inputCost": 30,
-        "outputCost": 60,
-        "inputMaxTokens": 8192,
-        "outputMaxTokens": 8192,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gpt-4o",
-        "displayName": "GPT 4o",
+        "modelName": "gpt-5.4",
+        "displayName": "GPT 5.4",
         "inputCost": 2.50,
-        "outputCost": 10.00,
-        "inputMaxTokens": 128000,
+        "outputCost": 15,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gpt-4o-mini",
-        "displayName": "GPT 4o mini",
-        "inputCost": 0.15,
-        "outputCost": 0.6,
-        "inputMaxTokens": 128000,
-        "outputMaxTokens": 16384,
+        "modelName": "gpt-5.4-pro",
+        "displayName": "GPT 5.4 Pro",
+        "inputCost": 30,
+        "outputCost": 180,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gpt-4-turbo-preview",
-        "displayName": "GPT 4 Turbo",
-        "inputCost": 10,
-        "outputCost": 30,
-        "inputMaxTokens": 128000,
-        "outputMaxTokens": 4096,
+        "modelName": "gpt-5.2",
+        "displayName": "GPT 5.2",
+        "inputCost": 1.75,
+        "outputCost": 14,
+        "inputMaxTokens": 400000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gpt-3.5-turbo",
-        "displayName": "GPT 3.5 Turbo",
-        "inputCost": 0.5,
-        "outputCost": 1.5,
-        "inputMaxTokens": 16385,
-        "outputMaxTokens": 4096,
+        "modelName": "gpt-5.1",
+        "displayName": "GPT 5.1",
+        "inputCost": 1.25,
+        "outputCost": 10,
+        "inputMaxTokens": 400000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
@@ -162,46 +127,142 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "gpt-5.1",
-        "displayName": "GPT 5.1",
-        "inputCost": 1.25,
-        "outputCost": 10,
-        "inputMaxTokens": 400000,
-        "outputMaxTokens": 128000,
+        "modelName": "o4-mini",
+        "displayName": "o4-mini",
+        "inputCost": 1.10,
+        "outputCost": 4.40,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 100000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gpt-5.2",
-        "displayName": "GPT 5.2",
-        "inputCost": 1.75,
-        "outputCost": 14,
-        "inputMaxTokens": 400000,
-        "outputMaxTokens": 128000,
+        "modelName": "o3",
+        "displayName": "o3",
+        "inputCost": 2.00,
+        "outputCost": 8.00,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 100000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "o3-pro",
+        "displayName": "o3-pro",
+        "inputCost": 20.00,
+        "outputCost": 80.00,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 100000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "o3-mini",
+        "displayName": "o3-mini",
+        "inputCost": 1.10,
+        "outputCost": 4.40,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 100000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "o1",
+        "displayName": "o1",
+        "inputCost": 15.00,
+        "outputCost": 60.00,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 100000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-4.1",
+        "displayName": "GPT 4.1",
+        "inputCost": 2,
+        "outputCost": 8,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 32000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-4.1-mini",
+        "displayName": "GPT 4.1 Mini",
+        "inputCost": 0.4,
+        "outputCost": 1.6,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 32000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-4.1-nano",
+        "displayName": "GPT 4.1 Nano",
+        "inputCost": 0.1,
+        "outputCost": 0.4,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 32000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-4o",
+        "displayName": "GPT 4o",
+        "inputCost": 2.50,
+        "outputCost": 10.00,
+        "inputMaxTokens": 128000,
+        "outputMaxTokens": 16384,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-4o-mini",
+        "displayName": "GPT 4o mini",
+        "inputCost": 0.15,
+        "outputCost": 0.6,
+        "inputMaxTokens": 128000,
+        "outputMaxTokens": 16384,
         "apiKeyUsed": true
       }
     ],
     "DeepInfra": [
       {
-        "modelName": "meta-llama/Meta-Llama-3.1-405B-Instruct",
-        "displayName": "Meta Llama 3.1 405B",
-        "inputCost": 2.7,
-        "outputCost": 2.7,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "meta-llama/Meta-Llama-3.1-70B-Instruct",
-        "displayName": "Meta Llama 3.1 70B",
-        "inputCost": 0.35,
-        "outputCost": 0.4,
+        "modelName": "meta-llama/Llama-3.3-70B-Instruct",
+        "displayName": "Llama 3.3 70B",
+        "inputCost": 0.20,
+        "outputCost": 0.20,
         "inputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
         "modelName": "meta-llama/Meta-Llama-3.1-8B-Instruct",
         "displayName": "Meta Llama 3.1 8B",
-        "inputCost": 0.055,
-        "outputCost": 0.055,
+        "inputCost": 0.02,
+        "outputCost": 0.05,
+        "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "deepseek-ai/DeepSeek-V3-0324",
+        "displayName": "DeepSeek V3",
+        "inputCost": 0.20,
+        "outputCost": 0.77,
+        "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "deepseek-ai/DeepSeek-R1",
+        "displayName": "DeepSeek R1",
+        "inputCost": 0.55,
+        "outputCost": 2.19,
+        "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "Qwen/Qwen3-235B-A22B",
+        "displayName": "Qwen3 235B",
+        "inputCost": 0.15,
+        "outputCost": 0.60,
+        "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "google/gemma-3-27b-it",
+        "displayName": "Gemma 3 27B",
+        "inputCost": 0.10,
+        "outputCost": 0.10,
         "inputMaxTokens": 128000,
         "apiKeyUsed": true
       },
@@ -212,88 +273,23 @@
         "outputCost": 0.13,
         "inputMaxTokens": 128000,
         "apiKeyUsed": true
-      },
-      {
-        "modelName": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "displayName": "Mixtral 8x7B Instruct v0.1",
-        "inputCost": 0.24,
-        "outputCost": 0.24,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "mistralai/Mixtral-8x22B-Instruct-v0.1",
-        "displayName": "Mixtral 8x22B Instruct v0.1",
-        "inputCost": 0.65,
-        "outputCost": 0.65,
-        "inputMaxTokens": 64000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "mistralai/Mistral-7B-Instruct-v0.3",
-        "displayName": "Mistral 7B Instruct v0.3",
-        "inputCost": 0.07,
-        "outputCost": 0.07,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "microsoft/WizardLM-2-8x22B",
-        "displayName": "Wizard LM 2 8x22B",
-        "inputCost": 0.5,
-        "outputCost": 0.5,
-        "inputMaxTokens": 64000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "microsoft/WizardLM-2-7B",
-        "displayName": "Wizard LM 2 7B",
-        "inputCost": 0.055,
-        "outputCost": 0.055,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "openchat/openchat_3.5",
-        "displayName": "OpenChat 3.5",
-        "inputCost": 0.055,
-        "outputCost": 0.055,
-        "inputMaxTokens": 8000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "google/gemma-2-9b-it",
-        "displayName": "Gemma 2 9B it",
-        "inputCost": 0.06,
-        "outputCost": 0.06,
-        "inputMaxTokens": 4000,
-        "apiKeyUsed": true
       }
     ],
     "Google": [
       {
-        "modelName": "gemini-2.5-pro",
-        "displayName": "Gemini 2.5 Pro",
-        "inputCost": 1.25,
-        "outputCost": 10,
+        "modelName": "gemini-3.1-pro-preview",
+        "displayName": "Gemini 3.1 Pro Preview",
+        "inputCost": 2,
+        "outputCost": 12,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gemini-2.5-flash-lite",
-        "displayName": "Gemini 2.5 Flash-Lite",
-        "inputCost": 0.10,
-        "outputCost": 0.40,
-        "inputMaxTokens": 1048576,
-        "outputMaxTokens": 65536,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gemini-2.5-flash",
-        "displayName": "Gemini 2.5 Flash",
-        "inputCost": 0.30,
-        "outputCost": 2.50,
+        "modelName": "gemini-3.1-flash-lite-preview",
+        "displayName": "Gemini 3.1 Flash Lite Preview",
+        "inputCost": 0.25,
+        "outputCost": 1.50,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
@@ -308,19 +304,28 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "gemini-3-pro-preview",
-        "displayName": "Gemini 3 Pro Preview",
-        "inputCost": 2,
-        "outputCost": 12,
+        "modelName": "gemini-2.5-pro",
+        "displayName": "Gemini 2.5 Pro",
+        "inputCost": 1.25,
+        "outputCost": 10,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gemini-3.1-pro-preview",
-        "displayName": "Gemini 3.1 Pro Preview",
-        "inputCost": 2,
-        "outputCost": 12,
+        "modelName": "gemini-2.5-flash",
+        "displayName": "Gemini 2.5 Flash",
+        "inputCost": 0.30,
+        "outputCost": 2.50,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-2.5-flash-lite",
+        "displayName": "Gemini 2.5 Flash-Lite",
+        "inputCost": 0.10,
+        "outputCost": 0.40,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
@@ -328,26 +333,26 @@
     ],
     "Groq": [
       {
-        "modelName": "gemma2-9b-it",
-        "displayName": "Gemma 2 9B it",
-        "inputCost": 0.2,
-        "outputCost": 0.2,
-        "inputMaxTokens": 8192,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "llama3-8b-8192",
-        "displayName": "Llama 3 8B",
-        "inputCost": 0.05,
-        "outputCost": 0.05,
-        "inputMaxTokens": 8000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "llama-3.1-70b-versatile",
-        "displayName": "Llama 3.1 70B",
+        "modelName": "llama-3.3-70b-versatile",
+        "displayName": "Llama 3.3 70B",
         "inputCost": 0.59,
         "outputCost": 0.79,
+        "inputMaxTokens": 131072,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "displayName": "Llama 4 Scout",
+        "inputCost": 0.11,
+        "outputCost": 0.34,
+        "inputMaxTokens": 131072,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "displayName": "Llama 4 Maverick",
+        "inputCost": 0.20,
+        "outputCost": 0.60,
         "inputMaxTokens": 131072,
         "apiKeyUsed": true
       },
@@ -360,95 +365,114 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "mixtral-8x7b-32768",
-        "displayName": "Mixtral 8x7B",
-        "inputCost": 0.24,
-        "outputCost": 0.24,
-        "inputMaxTokens": 32000,
+        "modelName": "deepseek-r1-distill-llama-70b",
+        "displayName": "DeepSeek R1 Distill 70B",
+        "inputCost": 0.75,
+        "outputCost": 0.99,
+        "inputMaxTokens": 131072,
         "apiKeyUsed": true
       },
       {
-        "modelName": "llama3-70b-8192",
-        "displayName": "Llama 3 70B",
-        "inputCost": 0.59,
+        "modelName": "qwen/qwen3-32b",
+        "displayName": "Qwen3 32B",
+        "inputCost": 0.29,
+        "outputCost": 0.59,
+        "inputMaxTokens": 131072,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "mistral-saba-24b",
+        "displayName": "Mistral Saba 24B",
+        "inputCost": 0.79,
         "outputCost": 0.79,
+        "inputMaxTokens": 32768,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemma2-9b-it",
+        "displayName": "Gemma 2 9B",
+        "inputCost": 0.20,
+        "outputCost": 0.20,
         "inputMaxTokens": 8192,
         "apiKeyUsed": true
       }
     ],
     "Mistral": [
       {
-        "modelName": "open-mistral-7b",
-        "displayName": "Mistral 7B",
-        "inputCost": 0.25,
-        "outputCost": 0.25,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "open-mixtral-8x7b",
-        "displayName": "Mistral 8x7B",
-        "inputCost": 0.7,
-        "outputCost": 0.7,
-        "inputMaxTokens": 32000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "open-mixtral-8x22b",
-        "displayName": "Mistral 8x22b",
-        "inputCost": 2,
-        "outputCost": 6,
-        "inputMaxTokens": 64000,
-        "apiKeyUsed": true
-      },
-      {
         "modelName": "mistral-small-latest",
-        "displayName": "Mistral Small",
-        "inputCost": 1,
-        "outputCost": 3,
-        "inputMaxTokens": 32000,
+        "displayName": "Mistral Small 3.2",
+        "inputCost": 0.2,
+        "outputCost": 0.6,
+        "inputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
         "modelName": "mistral-medium-latest",
-        "displayName": "Mistral Medium",
-        "inputCost": 2.7,
-        "outputCost": 8.1,
-        "inputMaxTokens": 32000,
+        "displayName": "Mistral Medium 3.1",
+        "inputCost": 0.4,
+        "outputCost": 2,
+        "inputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
         "modelName": "mistral-large-latest",
-        "displayName": "Mistral Large",
-        "inputCost": 4,
-        "outputCost": 12,
-        "inputMaxTokens": 32000,
+        "displayName": "Mistral Large 3",
+        "inputCost": 0.5,
+        "outputCost": 1.5,
+        "inputMaxTokens": 256000,
+        "outputMaxTokens": 256000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "codestral-2405",
+        "modelName": "codestral-2508",
         "displayName": "Codestral",
-        "inputCost": 1,
-        "outputCost": 3,
-        "inputMaxTokens": 32000,
+        "inputCost": 0.3,
+        "outputCost": 0.9,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "devstral-2-25-12",
+        "displayName": "Devstral 2",
+        "inputCost": 0.4,
+        "outputCost": 2,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "magistral-medium-2509",
+        "displayName": "Magistral Medium",
+        "inputCost": 2,
+        "outputCost": 5,
+        "inputMaxTokens": 40000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "magistral-small-2509",
+        "displayName": "Magistral Small",
+        "inputCost": 0.5,
+        "outputCost": 1.5,
+        "inputMaxTokens": 128000,
         "apiKeyUsed": true
       }
     ],
     "DeepSeek": [
       {
-        "modelName": "deepseek-coder",
-        "displayName": "DeepSeek Coder",
+        "modelName": "deepseek-chat",
+        "displayName": "DeepSeek Chat (V3.2)",
         "inputCost": 0.28,
         "outputCost": 0.42,
         "inputMaxTokens": 128000,
+        "outputMaxTokens": 8000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "deepseek-chat",
-        "displayName": "DeepSeek Chat",
+        "modelName": "deepseek-reasoner",
+        "displayName": "DeepSeek Reasoner (V3.2)",
         "inputCost": 0.28,
         "outputCost": 0.42,
         "inputMaxTokens": 128000,
+        "outputMaxTokens": 64000,
         "apiKeyUsed": true
       }
     ],
@@ -603,61 +627,64 @@
     ],
     "Grok": [
       {
+        "modelName": "grok-4",
+        "displayName": "Grok 4",
+        "inputCost": 3.00,
+        "outputCost": 15.00,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-4-1-fast-reasoning",
+        "displayName": "Grok 4.1 Fast (Reasoning)",
+        "inputCost": 0.20,
+        "outputCost": 0.50,
+        "inputMaxTokens": 2000000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-4-fast-reasoning",
+        "displayName": "Grok 4 Fast (Reasoning)",
+        "inputCost": 0.20,
+        "outputCost": 0.50,
+        "inputMaxTokens": 2000000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-code-fast-1",
+        "displayName": "Grok Code Fast",
+        "inputCost": 0.20,
+        "outputCost": 1.50,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
         "modelName": "grok-3",
-        "displayName": "Grok-3",
+        "displayName": "Grok 3",
         "inputCost": 3.00,
         "outputCost": 15.00,
         "inputMaxTokens": 131072,
-        "outputMaxTokens": 131072,
         "apiKeyUsed": true
       },
       {
         "modelName": "grok-3-mini",
-        "displayName": "Grok-3-mini",
+        "displayName": "Grok 3 Mini",
         "inputCost": 0.30,
         "outputCost": 0.50,
         "inputMaxTokens": 131072,
-        "outputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-3-fast",
-        "displayName": "Grok-3-fast",
-        "inputCost": 5.00,
-        "outputCost": 25.00,
-        "inputMaxTokens": 131072,
-        "outputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-3-mini-fast",
-        "displayName": "Grok-3-mini-fast",
-        "inputCost": 0.60,
-        "outputCost": 4.00,
-        "inputMaxTokens": 131072,
-        "outputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-2-vision-1212",
-        "displayName": "Grok-2-vision-1212",
-        "inputCost": 2.00,
-        "outputCost": 10.00,
-        "inputMaxTokens": 32768,
-        "outputMaxTokens": 32768,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-2-1212",
-        "displayName": "Grok-2-1212",
-        "inputCost": 2.00,
-        "outputCost": 10.00,
-        "inputMaxTokens": 131072,
-        "outputMaxTokens": 131072,
         "apiKeyUsed": true
       }
     ],
     "GLM": [
+      {
+        "modelName": "glm-5",
+        "displayName": "GLM-5",
+        "inputCost": 0.80,
+        "outputCost": 2.56,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "glm-4.7",
         "displayName": "GLM-4.7",
@@ -685,35 +712,27 @@
     ],
     "Kimi": [
       {
-        "modelName": "moonshot-v1-8k",
-        "displayName": "Moonshot v1 8K",
-        "inputCost": 0.84,
-        "outputCost": 0.84,
-        "inputMaxTokens": 8000,
+        "modelName": "kimi-k2.5",
+        "displayName": "Kimi K2.5",
+        "inputCost": 0.60,
+        "outputCost": 3.00,
+        "inputMaxTokens": 262144,
         "apiKeyUsed": true
       },
       {
-        "modelName": "moonshot-v1-32k",
-        "displayName": "Moonshot v1 32K",
-        "inputCost": 1.68,
-        "outputCost": 1.68,
-        "inputMaxTokens": 32000,
+        "modelName": "kimi-k2-0905-preview",
+        "displayName": "Kimi K2 (0905)",
+        "inputCost": 0.39,
+        "outputCost": 1.90,
+        "inputMaxTokens": 262144,
         "apiKeyUsed": true
       },
       {
-        "modelName": "moonshot-v1-128k",
-        "displayName": "Moonshot v1 128K",
-        "inputCost": 8.40,
-        "outputCost": 8.40,
-        "inputMaxTokens": 128000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "kimi-k2-turbo-preview",
-        "displayName": "Kimi K2 Turbo Preview",
-        "inputCost": 0.55,
-        "outputCost": 2.19,
-        "inputMaxTokens": 131072,
+        "modelName": "kimi-k2-thinking",
+        "displayName": "Kimi K2 Thinking",
+        "inputCost": 0.60,
+        "outputCost": 2.50,
+        "inputMaxTokens": 262144,
         "apiKeyUsed": true
       }
     ]
