@@ -12,11 +12,17 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
+import dev.langchain4j.data.message.AiMessage;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.MessageBusConnection;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -180,6 +186,46 @@ class CliPromptStrategyTest {
     void cancel_withoutActiveProcess_doesNotThrow() {
         strategy.cancel();
         // Should not throw any exception
+    }
+
+    @Test
+    void finalizeSuccess_publishesConversationTopic() throws Exception {
+        // Verify that CLI runner persists conversations to history (regression test for TASK-198.1)
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        Application mockApp = mock(Application.class);
+        applicationManagerMock.when(ApplicationManager::getApplication).thenReturn(mockApp);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        ConversationViewController mockViewController = mock(ConversationViewController.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("test-finalize")
+                .tabId("tab-1")
+                .userPrompt("hello")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        // Invoke private finalizeSuccess via reflection
+        java.lang.reflect.Method finalizeMethod = CliPromptStrategy.class.getDeclaredMethod(
+                "finalizeSuccess", String.class, long.class, StringBuilder.class,
+                CliConsoleManager.class, ConversationViewController.class,
+                ChatMessageContext.class, PromptTask.class);
+        finalizeMethod.setAccessible(true);
+
+        StringBuilder response = new StringBuilder("Test response");
+        finalizeMethod.invoke(strategy, "exit msg", System.currentTimeMillis(),
+                response, localConsoleManager, mockViewController, context, localResultTask);
+
+        // The critical assertion: CONVERSATION_TOPIC event must be published
+        verify(mockListener).onNewConversation(context);
+        verify(localResultTask).complete(any(PromptResult.class));
     }
 
     @Test

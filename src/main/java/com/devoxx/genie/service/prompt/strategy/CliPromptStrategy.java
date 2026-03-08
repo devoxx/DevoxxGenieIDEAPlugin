@@ -9,6 +9,7 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -266,6 +267,12 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         }
 
         ChatMemoryManager.getInstance().addAiResponse(context);
+
+        // Persist to conversation history (matching Streaming/NonStreaming strategies)
+        project.getMessageBus()
+                .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                .onNewConversation(context);
+
         resultTask.complete(PromptResult.success(context));
     }
 
