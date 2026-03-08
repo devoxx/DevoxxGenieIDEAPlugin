@@ -52,8 +52,10 @@ public final class ClaudeStreamJsonParser {
             }
             return switch (type) {
                 case "assistant" -> extractAssistantText(obj);
-                case "result" -> extractResultText(obj);
-                default -> null; // system, user (tool_result), tool, rate_limit_event, etc.
+                // "result" events are NOT extracted here — the same text was already
+                // emitted via the preceding "assistant" event, so including it would
+                // cause duplicate content in the chat panel.
+                default -> null; // system, result, user (tool_result), tool, rate_limit_event, etc.
             };
         } catch (Exception e) {
             // Not valid JSON — return as plain text

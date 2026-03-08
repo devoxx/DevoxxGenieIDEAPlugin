@@ -419,19 +419,21 @@ class ClaudeStreamJsonParserTest {
     }
 
     @Test
-    void extractHumanReadableText_resultSuccess_returnsResultText() {
+    void extractHumanReadableText_resultSuccess_returnsNull() {
+        // Result events are suppressed to avoid duplicate text — the same content
+        // was already emitted via the preceding "assistant" event.
         String line = """
                 {"type":"result","subtype":"success","result":"Task completed successfully.",\
                 "duration_ms":5000,"total_cost_usd":0.03}""";
-        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
-                .isEqualTo("Task completed successfully.");
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
     }
 
     @Test
-    void extractHumanReadableText_resultError_returnsError() {
+    void extractHumanReadableText_resultError_returnsNull() {
+        // Result events (including errors) are suppressed from extractHumanReadableText
+        // to avoid duplicate content. Error results are still parsed by the full parse() method.
         String line = "{\"type\":\"result\",\"subtype\":\"error\",\"error\":\"Something went wrong\"}";
-        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line))
-                .isEqualTo("Error: Something went wrong");
+        assertThat(ClaudeStreamJsonParser.extractHumanReadableText(line)).isNull();
     }
 
     @Test
