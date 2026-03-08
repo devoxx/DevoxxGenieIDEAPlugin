@@ -72,9 +72,13 @@ export default function Home() {
       </Head>
       <HomepageHeader />
       <div style={{background: 'var(--ifm-color-primary)', padding: '0.6rem 1rem', textAlign: 'center', color: '#fff', fontSize: '0.95rem'}}>
-        Learn hands-on Agentic Engineering with the founder of DevoxxGenie —{' '}
-        <a href="https://stephanjanssen.be?utm_source=DevoxxGenie" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
+        Learn hands-on with the founder of DevoxxGenie —{' '}
+        <a href="https://stephanjanssen.be?utm_source=DevoxxGenie&utm_medium=banner&utm_campaign=agentic_workshop" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
           Agentic Engineering Workshop
+        </a>
+        {' '}or{' '}
+        <a href="https://stephanjanssen.be?utm_source=DevoxxGenie&utm_medium=banner&utm_campaign=devoxxgenie_workshop" target="_blank" rel="noopener noreferrer" style={{color: '#fff', fontWeight: 'bold', textDecoration: 'underline'}}>
+          DevoxxGenie Workshop
         </a>
       </div>
       <main>
