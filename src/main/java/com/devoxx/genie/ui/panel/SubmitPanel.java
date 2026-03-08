@@ -40,7 +40,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         this.project = toolWindowContent.getProject();
         ResourceBundle resourceBundle = toolWindowContent.getResourceBundle();
 
-        promptInputArea = new PromptInputArea(project, resourceBundle);
+        promptInputArea = new PromptInputArea(project, resourceBundle, toolWindowContent.getTabId());
 
         actionButtonsPanel = createActionButtonsPanel();
 
@@ -58,7 +58,7 @@ public class SubmitPanel extends JBPanel<SubmitPanel>  implements GlowingListene
         JPanel submitPanel = new JPanel(new BorderLayout());
         submitPanel.setMinimumSize(new Dimension(0, MIN_INPUT_HEIGHT));
         submitPanel.setPreferredSize(new Dimension(Integer.MAX_VALUE, MIN_INPUT_HEIGHT));
-        submitPanel.add(new PromptContextFileListPanel(project), BorderLayout.NORTH);
+        submitPanel.add(new PromptContextFileListPanel(project, toolWindowContent.getTabId()), BorderLayout.NORTH);
         submitPanel.add(new JBScrollPane(promptInputArea), BorderLayout.CENTER);
         submitPanel.add(actionButtonsPanel, BorderLayout.SOUTH);
         return submitPanel;

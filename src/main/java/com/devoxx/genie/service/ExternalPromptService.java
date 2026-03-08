@@ -1,8 +1,12 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.content.Content;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +40,7 @@ public class ExternalPromptService {
 
     /**
      * Sets prompt text in the DevoxxGenie chat input and opens the tool window.
+     * Routes to the currently selected tab's prompt input area.
      *
      * THIS METHOD IS NOT DEAD CODE. It is the public integration API called by
      * external plugins (e.g. SonarLint) via runtime reflection. Removing it
@@ -44,7 +49,24 @@ public class ExternalPromptService {
      * @see org.sonarlint.intellij.integration.DevoxxGenieBridge (SonarLint plugin caller)
      */
     public boolean setPromptText(@NotNull String text) {
-        ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenie").show(null);
+        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenie");
+        if (toolWindow != null) {
+            toolWindow.show(null);
+
+            // Route to the active/selected tab
+            Content selectedContent = toolWindow.getContentManager().getSelectedContent();
+            if (selectedContent != null) {
+                DevoxxGenieToolWindowContent twc = ConversationTabRegistry.getInstance().getToolWindowContent(selectedContent);
+                if (twc != null && twc.getSubmitPanel() != null) {
+                    PromptInputArea activeInput = twc.getSubmitPanel().getPromptInputArea();
+                    activeInput.setText(text);
+                    activeInput.requestInputFocus();
+                    return true;
+                }
+            }
+        }
+
+        // Fallback to the legacy single-tab approach
         if (promptInputArea != null) {
             promptInputArea.setText(text);
             promptInputArea.requestInputFocus();

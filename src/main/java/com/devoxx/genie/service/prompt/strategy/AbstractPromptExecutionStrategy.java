@@ -7,6 +7,7 @@ import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
+import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
@@ -85,9 +86,11 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                                          @NotNull PromptOutputPanel panel) {
         log.debug("Executing {} for context: {}", getStrategyName(), context.getId());
         
-        // Create a self-managed prompt task
-        PromptTask<PromptResult> resultTask = new PromptTask<>(project);
+        // Create a self-managed prompt task with tab awareness
+        PromptTask<PromptResult> resultTask = new PromptTask<>(project, context.getTabId());
         resultTask.putUserData(PromptTask.CONTEXT_KEY, context);
+        // Re-index now that context is attached (fixes timing gap from self-registration)
+        PromptTaskTracker.getInstance().indexByContextId(resultTask);
 
         // Execute strategy-specific logic
         try {
@@ -155,7 +158,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         prepareMemory(context);
         chatMemoryManager.addUserMessage(context);
 
-        List<ChatMessage> messages = chatMemoryManager.getMessages(project);
+        List<ChatMessage> messages = chatMemoryManager.getMessagesByKey(context.getMemoryKey());
 
         // Collect prior exchanges (skip SystemMessage and the last UserMessage which is the current prompt)
         StringBuilder history = new StringBuilder();

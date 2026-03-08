@@ -36,6 +36,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
     protected NonStreamingPromptExecutionService promptExecutionService;
     private final AtomicReference<PromptOutputPanel> currentPanel = new AtomicReference<>();
     private final AtomicReference<String> currentMessageId = new AtomicReference<>();
+    private final AtomicReference<String> currentTabKey = new AtomicReference<>("default");
 
     public NonStreamingPromptStrategy(Project project) {
         super(project);
@@ -73,6 +74,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         // Store references for cancellation
         currentPanel.set(panel);
         currentMessageId.set(context.getId());
+        currentTabKey.set(context.getTabId() != null ? context.getTabId() : "default");
 
         // Handle FIND command separately
         if (FIND_COMMAND.equalsIgnoreCase(context.getCommandName())) {
@@ -143,8 +145,8 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         // Additional cancellation handling for non-streaming strategy
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {
-                log.debug("Task cancelled, cancelling prompt execution");
-                promptExecutionService.cancelExecutingQuery();
+                log.debug("Task cancelled, cancelling prompt execution for tab {}", currentTabKey.get());
+                promptExecutionService.cancelExecutingQueryForTab(currentTabKey.get());
             }
         });
     }
@@ -156,8 +158,8 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
      */
     @Override
     public void cancel() {
-        log.info("Cancelling non-streaming strategy");
-        promptExecutionService.cancelExecutingQuery();
+        log.info("Cancelling non-streaming strategy for tab {}", currentTabKey.get());
+        promptExecutionService.cancelExecutingQueryForTab(currentTabKey.get());
 
         PromptOutputPanel panel = currentPanel.get();
         if (panel != null && panel.getConversationPanel() != null

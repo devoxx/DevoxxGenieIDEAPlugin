@@ -188,7 +188,7 @@ class SpecTaskRunnerServiceTest {
             assertThat(service.isCliMode()).isFalse();
 
             // Verify prompt was submitted
-            verify(ctx.promptSubmissionListener).onPromptSubmitted(eq(ctx.project), anyString());
+            verify(ctx.promptSubmissionListener).onPromptSubmitted(eq(ctx.project), anyString(), isNull());
             verify(ctx.chatMemoryService).clearMemory(ctx.project);
             verify(ctx.fileListManager).clear(ctx.project);
 

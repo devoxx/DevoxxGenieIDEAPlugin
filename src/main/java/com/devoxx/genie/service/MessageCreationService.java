@@ -94,7 +94,7 @@ public class MessageCreationService {
     }
 
     private void addImages(@NotNull ChatMessageContext chatMessageContext) {
-        List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject());
+        List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(chatMessageContext.getProject(), chatMessageContext.getTabId());
         log.debug("addImages: found {} image files in FileListManager", imageFiles.size());
 
         if (!imageFiles.isEmpty()) {

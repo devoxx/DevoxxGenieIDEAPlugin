@@ -23,13 +23,17 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.OnePixelSplitter;
+import com.intellij.ui.content.Content;
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 import static com.devoxx.genie.model.Constant.MESSAGES;
 
@@ -45,12 +49,23 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     @Getter
     private final Project project;
     @Getter
+    private final String tabId;
+    @Getter
     private final ResourceBundle resourceBundle = ResourceBundle.getBundle(MESSAGES);
     @Getter
     private final JPanel contentPanel = new JPanel();
     @Getter
     private final ConversationStorageService storageService = ConversationStorageService.getInstance();
     private final AnimatedGlowingBorder animatedBorder;
+
+    @Getter @Setter
+    @Nullable
+    private Content tabContent;
+
+    @Getter
+    private com.intellij.openapi.Disposable tabDisposable;
+
+    private boolean firstPromptSubmitted = false;
     @Getter
     private LlmProviderPanel llmProviderPanel;
     @Getter
@@ -65,7 +80,18 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
      * @param toolWindow the tool window
      */
     public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow) {
+        this(toolWindow, UUID.randomUUID().toString());
+    }
+
+    /**
+     * The Devoxx Genie Tool Window Content constructor with explicit tabId (for restoring tabs).
+     *
+     * @param toolWindow the tool window
+     * @param tabId the unique tab identifier
+     */
+    public DevoxxGenieToolWindowContent(@NotNull ToolWindow toolWindow, @NotNull String tabId) {
         project = toolWindow.getProject();
+        this.tabId = tabId;
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         stateService.addLoadListener(this::onStateLoaded);
@@ -94,8 +120,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     }
 
     private void initializeComponents() {
-        llmProviderPanel = new LlmProviderPanel(project);
-        promptOutputPanel = new PromptOutputPanel(project, resourceBundle);
+        llmProviderPanel = new LlmProviderPanel(project, tabId);
+        promptOutputPanel = new PromptOutputPanel(project, resourceBundle, tabId);
         submitPanel = new SubmitPanel(this);
 
         ExternalPromptService.getInstance(project).setPromptInputArea(submitPanel.getPromptInputArea());
@@ -153,6 +179,10 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
      * @param toolWindow the tool window
      */
     private void setupMessageBusConnection(@NotNull ToolWindow toolWindow) {
+        // Create a per-tab disposable so we can clean up listeners when the tab closes
+        tabDisposable = Disposer.newDisposable("DevoxxGenieTab-" + tabId);
+        Disposer.register(toolWindow.getDisposable(), tabDisposable);
+
         MessageBusUtil.connect(project, connection -> {
             MessageBusUtil.subscribe(connection, AppTopics.LLM_SETTINGS_CHANGED_TOPIC, llmProviderPanel);
             MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel);
@@ -190,7 +220,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                 submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
             });
 
-            Disposer.register(toolWindow.getDisposable(), connection);
+            Disposer.register(tabDisposable, connection);
         });
     }
 
@@ -226,9 +256,33 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) && isInitializationComplete) {
             LanguageModel selectedModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
             if (selectedModel != null) {
-                DevoxxGenieStateService.getInstance().setSelectedLanguageModel(project.getLocationHash(), selectedModel.getModelName());
+                DevoxxGenieStateService.getInstance().setSelectedLanguageModel(getMemoryKey(), selectedModel.getModelName());
                 submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getInputMaxTokens());
             }
         }
+    }
+
+    /**
+     * Updates the tab display name after first prompt submission.
+     * Format: "[Model]: [First ~30 chars of prompt]..."
+     */
+    public void updateTabTitle(@NotNull String modelName, @NotNull String promptText) {
+        if (firstPromptSubmitted || tabContent == null) {
+            return;
+        }
+        firstPromptSubmitted = true;
+
+        String truncatedPrompt = promptText.length() > 30
+                ? promptText.substring(0, 30) + "..."
+                : promptText;
+        String title = modelName + ": " + truncatedPrompt;
+        tabContent.setDisplayName(title);
+    }
+
+    /**
+     * Returns the memory key for this tab (composite of project hash and tab ID).
+     */
+    public @NotNull String getMemoryKey() {
+        return project.getLocationHash() + "-" + tabId;
     }
 }

@@ -55,13 +55,21 @@ public class ChatMemoryManager {
      * @param project The project to initialize memory for
      */
     public void initializeMemory(@NotNull Project project) {
+        initializeMemoryByKey(project.getLocationHash());
+    }
+
+    /**
+     * Initializes memory for a composite key (e.g., projectHash-tabId) with the configured size
+     * @param memoryKey The composite key
+     */
+    public void initializeMemoryByKey(@NotNull String memoryKey) {
         try {
             int chatMemorySize = DevoxxGenieStateService.getInstance().getChatMemorySize();
             if (chatMemorySize <= 0) {
                 chatMemorySize = 10;
             }
-            chatMemoryService.initialize(project, chatMemorySize);
-            log.debug("Chat memory initialized for project: {}", project.getLocationHash());
+            chatMemoryService.initializeByKey(memoryKey, chatMemorySize);
+            log.debug("Chat memory initialized for key: {}", memoryKey);
         } catch (Exception e) {
             throw new MemoryException("Failed to initialize chat memory", e);
         }
@@ -73,15 +81,19 @@ public class ChatMemoryManager {
      */
     public void prepareMemory(@NotNull ChatMessageContext context) {
         try {
-            Project project = context.getProject();
+            String memoryKey = context.getMemoryKey();
 
             // If memory isn't initialized yet, do it now
-            if (chatMemoryService.isEmpty(project)) {
+            if (!chatMemoryService.hasMemory(memoryKey)) {
+                initializeMemoryByKey(memoryKey);
+            }
+
+            if (chatMemoryService.isEmptyByKey(memoryKey)) {
                 log.debug("Preparing memory with initial system message if needed");
 
                 if (shouldIncludeSystemMessage(context)) {
                     String systemPrompt = buildSystemPrompt(context);
-                    chatMemoryService.addMessage(project, SystemMessage.from(systemPrompt));
+                    chatMemoryService.addMessageByKey(memoryKey, SystemMessage.from(systemPrompt));
                     log.debug("Added system message to memory");
                 }
             }
@@ -98,7 +110,7 @@ public class ChatMemoryManager {
         try {
             if (context.getAiMessage() != null) {
                 log.debug("Adding AI response to memory for context ID: {}", context.getId());
-                chatMemoryService.addMessage(context.getProject(), context.getAiMessage());
+                chatMemoryService.addMessageByKey(context.getMemoryKey(), context.getAiMessage());
                 log.debug("Successfully added AI response to memory");
             } else {
                 log.warn("Attempted to add null AI message to memory for context ID: {}", context.getId());
@@ -125,7 +137,7 @@ public class ChatMemoryManager {
             }
 
             if (!messagesToRemove.isEmpty()) {
-                chatMemoryService.removeMessages(context.getProject(), messagesToRemove);
+                chatMemoryService.removeMessagesByKey(context.getMemoryKey(), messagesToRemove);
                 log.debug("Removed last exchange from memory");
             }
         } catch (Exception e) {
@@ -140,8 +152,8 @@ public class ChatMemoryManager {
     public void removeLastUserMessage(@NotNull ChatMessageContext context) {
         try {
             if (context.getUserMessage() != null) {
-                chatMemoryService.removeMessages(
-                        context.getProject(),
+                chatMemoryService.removeMessagesByKey(
+                        context.getMemoryKey(),
                         List.of(context.getUserMessage())
                 );
                 log.debug("Removed last user message from memory");
@@ -164,7 +176,7 @@ public class ChatMemoryManager {
 
             if (context.getUserMessage() != null) {
                 log.debug("Adding user message to memory for context ID: {}", context.getId());
-                chatMemoryService.addMessage(context.getProject(), buildEscapedUserMessage(context.getUserMessage()));
+                chatMemoryService.addMessageByKey(context.getMemoryKey(), buildEscapedUserMessage(context.getUserMessage()));
                 log.debug("Successfully added user message to memory");
             } else {
                 log.warn("Attempted to add null user message to memory for context ID: {}", context.getId());
@@ -200,8 +212,16 @@ public class ChatMemoryManager {
      * @param project The project to remove the last message from
      */
     public void removeLastMessage(@NotNull Project project) {
+        removeLastMessageByKey(project.getLocationHash());
+    }
+
+    /**
+     * Removes the last message from memory by key
+     * @param memoryKey The memory key
+     */
+    public void removeLastMessageByKey(@NotNull String memoryKey) {
         try {
-            chatMemoryService.removeLastMessage(project);
+            chatMemoryService.removeLastMessageByKey(memoryKey);
             log.debug("Removed last message from memory");
         } catch (Exception e) {
             throw new MemoryException("Failed to remove last message from memory", e);
@@ -214,8 +234,17 @@ public class ChatMemoryManager {
      * @return List of chat messages
      */
     public List<ChatMessage> getMessages(@NotNull Project project) {
+        return getMessagesByKey(project.getLocationHash());
+    }
+
+    /**
+     * Gets all messages from memory for a given key
+     * @param memoryKey The memory key
+     * @return List of chat messages
+     */
+    public List<ChatMessage> getMessagesByKey(@NotNull String memoryKey) {
         try {
-            return chatMemoryService.getMessages(project);
+            return chatMemoryService.getMessagesByKey(memoryKey);
         } catch (Exception e) {
             throw new MemoryException("Failed to get messages from memory", e);
         }
@@ -240,22 +269,37 @@ public class ChatMemoryManager {
      * @param conversation The conversation to restore
      */
     public void restoreConversation(@NotNull Project project, @NotNull Conversation conversation) {
-        try {
-            // First clear existing memory
-            chatMemoryService.clearMemory(project);
+        restoreConversationByKey(project.getLocationHash(), conversation);
+    }
 
-            // Convert and add each message
+    /**
+     * Restores a conversation from a saved model into a specific memory key
+     * @param memoryKey The memory key (e.g., projectHash-tabId)
+     * @param conversation The conversation to restore
+     */
+    public void restoreConversationByKey(@NotNull String memoryKey, @NotNull Conversation conversation) {
+        try {
+            chatMemoryService.clearMemoryByKey(memoryKey);
+
             for (com.devoxx.genie.model.conversation.ChatMessage message : conversation.getMessages()) {
                 if (message.isUser()) {
-                    chatMemoryService.addMessage(project, UserMessage.from(message.getContent()));
+                    chatMemoryService.addMessageByKey(memoryKey, UserMessage.from(message.getContent()));
                 } else {
-                    chatMemoryService.addMessage(project, AiMessage.from(message.getContent()));
+                    chatMemoryService.addMessageByKey(memoryKey, AiMessage.from(message.getContent()));
                 }
             }
-            log.debug("Restored conversation from saved model");
+            log.debug("Restored conversation from saved model for key: {}", memoryKey);
         } catch (Exception e) {
             throw new MemoryException("Failed to restore conversation", e);
         }
+    }
+
+    /**
+     * Removes a memory entry entirely (used for tab cleanup)
+     * @param memoryKey The memory key to remove
+     */
+    public void removeMemory(@NotNull String memoryKey) {
+        chatMemoryService.removeByKey(memoryKey);
     }
 
     /**

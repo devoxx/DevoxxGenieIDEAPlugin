@@ -35,10 +35,13 @@ class ChatMemoryManagerTest {
 
     private ChatMemoryManager chatMemoryManager;
 
+    private static final String TEST_MEMORY_KEY = "test-project-hash";
+
     @BeforeEach
     void setUp() {
         lenient().when(mockContext.getProject()).thenReturn(mockProject);
         lenient().when(mockContext.getId()).thenReturn("test-id");
+        lenient().when(mockContext.getMemoryKey()).thenReturn(TEST_MEMORY_KEY);
 
         try (MockedStatic<ChatMemoryService> chatMemoryServiceMockedStatic = Mockito.mockStatic(ChatMemoryService.class)) {
             chatMemoryServiceMockedStatic.when(ChatMemoryService::getInstance).thenReturn(mockChatMemoryService);
@@ -61,7 +64,7 @@ class ChatMemoryManagerTest {
 
         chatMemoryManager.addUserMessage(mockContext);
 
-        verify(mockChatMemoryService).addMessage(eq(mockProject), messageCaptor.capture());
+        verify(mockChatMemoryService).addMessageByKey(eq(TEST_MEMORY_KEY), messageCaptor.capture());
 
         ChatMessage captured = messageCaptor.getValue();
         assertInstanceOf(UserMessage.class, captured);
@@ -90,7 +93,7 @@ class ChatMemoryManagerTest {
 
         chatMemoryManager.addUserMessage(mockContext);
 
-        verify(mockChatMemoryService).addMessage(eq(mockProject), messageCaptor.capture());
+        verify(mockChatMemoryService).addMessageByKey(eq(TEST_MEMORY_KEY), messageCaptor.capture());
 
         ChatMessage captured = messageCaptor.getValue();
         assertInstanceOf(UserMessage.class, captured);
@@ -115,7 +118,7 @@ class ChatMemoryManagerTest {
 
         chatMemoryManager.addUserMessage(mockContext);
 
-        verify(mockChatMemoryService).addMessage(eq(mockProject), messageCaptor.capture());
+        verify(mockChatMemoryService).addMessageByKey(eq(TEST_MEMORY_KEY), messageCaptor.capture());
 
         ChatMessage captured = messageCaptor.getValue();
         UserMessage capturedUserMessage = (UserMessage) captured;

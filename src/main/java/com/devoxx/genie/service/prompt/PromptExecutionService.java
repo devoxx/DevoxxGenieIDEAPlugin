@@ -19,6 +19,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
@@ -57,12 +58,20 @@ public class PromptExecutionService {
                              @NotNull PromptOutputPanel panel,
                              @NotNull Runnable enableButtons) {
 
-        // Cancel any running executions for this project before starting a new one.
-        // We always proceed with the new execution rather than aborting — the caller
-        // (PromptExecutionController / task runner) has already decided to submit.
-        int cancelled = cancellationService.cancelAllExecutions(project);
-        if (cancelled > 0) {
-            log.debug("Cancelled {} existing execution(s) for project before starting new one", cancelled);
+        // Cancel any running executions for this TAB before starting a new one.
+        // Only cancel within the same tab so parallel tabs can run independently.
+        String tabId = context.getTabId();
+        if (tabId != null) {
+            int cancelled = cancellationService.cancelExecutionsForTab(project, tabId);
+            if (cancelled > 0) {
+                log.debug("Cancelled {} existing execution(s) for tab {} before starting new one", cancelled, tabId);
+            }
+        } else {
+            // Legacy path: no tabId, cancel all for project
+            int cancelled = cancellationService.cancelAllExecutions(project);
+            if (cancelled > 0) {
+                log.debug("Cancelled {} existing execution(s) for project before starting new one", cancelled);
+            }
         }
 
         // Process commands
@@ -85,7 +94,11 @@ public class PromptExecutionService {
                 public void onCancel() {
                     super.onCancel();
                     log.info("Prompt execution was cancelled by user.");
-                    cancellationService.cancelAllExecutions(project);
+                    if (tabId != null) {
+                        cancellationService.cancelExecutionsForTab(project, tabId);
+                    } else {
+                        cancellationService.cancelAllExecutions(project);
+                    }
                 }
             }
         );
@@ -93,8 +106,8 @@ public class PromptExecutionService {
         // Create appropriate strategy
         PromptExecutionStrategy strategy = strategyFactory.createStrategy(context);
         
-        // Register the strategy and panel with cancellation service
-        cancellationService.registerExecution(project, context.getId(), strategy, panel);
+        // Register the strategy and panel with cancellation service (tab-aware)
+        cancellationService.registerExecution(project, context.getId(), strategy, panel, tabId);
         
         // Execute the prompt and handle completion
         PromptTask<PromptResult> task = strategy.execute(context, panel);
@@ -113,7 +126,7 @@ public class PromptExecutionService {
                     // Unregister from cancellation service upon completion
                     cancellationService.unregisterExecution(project, context.getId());
 
-                    cleanupAfterExecution(project, enableButtons);
+                    cleanupAfterExecution(project, enableButtons, tabId);
                 }));
     }
 
@@ -125,6 +138,17 @@ public class PromptExecutionService {
     public void stopExecution(Project project) {
         int count = cancellationService.cancelAllExecutions(project);
         log.debug("Cancelled {} executions for project {}", count, project.getName());
+    }
+
+    /**
+     * Stop execution for a specific tab within a project.
+     *
+     * @param project The project
+     * @param tabId The tab to stop execution for
+     */
+    public void stopExecution(Project project, @NotNull String tabId) {
+        int count = cancellationService.cancelExecutionsForTab(project, tabId);
+        log.debug("Cancelled {} executions for tab {} in project {}", count, tabId, project.getName());
     }
     
     /**
@@ -168,8 +192,8 @@ public class PromptExecutionService {
     /**
      * Clean up after execution completes.
      */
-    private void cleanupAfterExecution(Project project, @NotNull Runnable enableButtons) {
+    private void cleanupAfterExecution(Project project, @NotNull Runnable enableButtons, @Nullable String tabId) {
         enableButtons.run();
-        FileListManager.getInstance().storeAddedFiles(project);
+        FileListManager.getInstance().storeAddedFiles(project, tabId);
     }
 }

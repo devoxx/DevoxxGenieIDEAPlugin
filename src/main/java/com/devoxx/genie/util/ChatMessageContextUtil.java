@@ -37,7 +37,8 @@ public class ChatMessageContextUtil {
 
         ChatMessageContext chatMessageContext = ChatMessageContext.builder()
                 .project(chatContextParameters.project())
-                                .id(String.valueOf(System.currentTimeMillis()))
+                .id(String.valueOf(System.currentTimeMillis()))
+                .tabId(chatContextParameters.tabId())
                 .userPrompt(chatContextParameters.userPromptText())
                 .languageModel(chatContextParameters.languageModel())
                 .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
@@ -106,12 +107,13 @@ public class ChatMessageContextUtil {
      */
     private static void processAttachedFiles(@NotNull ChatMessageContext chatMessageContext) {
         FileListManager fileListManager = FileListManager.getInstance();
+        String tabId = chatMessageContext.getTabId();
         // Only process non-image files for text context; images are handled by addImages()
-        List<VirtualFile> files = fileListManager.getNonImageFiles(chatMessageContext.getProject());
+        List<VirtualFile> files = fileListManager.getNonImageFiles(chatMessageContext.getProject(), tabId);
 
         log.debug("processAttachedFiles: {} non-image files, {} image files",
                 files.size(),
-                fileListManager.getImageFiles(chatMessageContext.getProject()).size());
+                fileListManager.getImageFiles(chatMessageContext.getProject(), tabId).size());
 
         if (!files.isEmpty()) {
             // Defer file content loading to background thread to avoid EDT freeze on large files
@@ -123,7 +125,7 @@ public class ChatMessageContextUtil {
                                                              @NotNull ChatMessageContext chatMessageContext) {
 
         // Only clear non-image files; image files are preserved for addImages() processing
-        FileListManager.getInstance().clearNonImageFiles(chatMessageContext.getProject());
+        FileListManager.getInstance().clearNonImageFiles(chatMessageContext.getProject(), chatMessageContext.getTabId());
 
         EditorInfo editorInfo = EditorUtil.getEditorInfo(editor);
         chatMessageContext.setEditorInfo(editorInfo);
@@ -146,12 +148,12 @@ public class ChatMessageContextUtil {
             originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
             originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
             // When text is selected, always add the file to FileListManager
-            FileListManager.getInstance().addFile(chatMessageContext.getProject(), originalFile);
+            FileListManager.getInstance().addFile(chatMessageContext.getProject(), chatMessageContext.getTabId(), originalFile);
         } else {
             originalFile.putUserData(SELECTED_TEXT_KEY, "");
             // When no text is selected, only add file if useFileInEditor is enabled
             if (originalFile != null && Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
-                FileListManager.getInstance().addFile(chatMessageContext.getProject(), originalFile);
+                FileListManager.getInstance().addFile(chatMessageContext.getProject(), chatMessageContext.getTabId(), originalFile);
             }
         }
 

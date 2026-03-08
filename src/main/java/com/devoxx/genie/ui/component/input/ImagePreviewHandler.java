@@ -22,12 +22,18 @@ public class ImagePreviewHandler implements DropTargetListener {
     private final CommandAutoCompleteTextField dropTextArea;
     private JBPopup currentPopup;
     private final Project project;
+    private final String tabId;
     private static final Color HOVER_BACKGROUND = new JBColor(new Color(0, 122, 255, 30), new Color(0, 122, 255, 30));
     private static final Color DEFAULT_BACKGROUND = new JBColor(JBColor.background(), JBColor.background());
 
     public ImagePreviewHandler(Project project, @NotNull CommandAutoCompleteTextField dropTextArea) {
+        this(project, dropTextArea, null);
+    }
+
+    public ImagePreviewHandler(Project project, @NotNull CommandAutoCompleteTextField dropTextArea, String tabId) {
         this.project = project;
         this.dropTextArea = dropTextArea;
+        this.tabId = tabId;
 
         DropTarget dropTarget = new DropTarget(dropTextArea, DnDConstants.ACTION_COPY_OR_MOVE, this, true);
 
@@ -84,7 +90,7 @@ public class ImagePreviewHandler implements DropTargetListener {
                         for (File file : files) {
                             VirtualFile fileByIoFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
                             if (fileByIoFile != null) {
-                                FileListManager.getInstance().addFile(project, fileByIoFile);
+                                FileListManager.getInstance().addFile(project, tabId, fileByIoFile);
                             } else {
                                 NotificationUtil.sendNotification(project, "File type not supported: " + file.getName());
                             }

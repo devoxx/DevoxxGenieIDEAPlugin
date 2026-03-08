@@ -81,7 +81,9 @@ class StreamingResponseHandlerTest {
 
         when(mockContext.getId()).thenReturn("test-context-id");
         when(mockContext.getProject()).thenReturn(mockProject);
+        when(mockContext.getMemoryKey()).thenReturn("test-memory-key");
         when(mockFileListManager.isEmpty(any(Project.class))).thenReturn(true);
+        when(mockFileListManager.isEmpty(any(Project.class), any())).thenReturn(true);
 
         // Mock message bus
         when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
@@ -271,8 +273,8 @@ class StreamingResponseHandlerTest {
 
     @Test
     void onCompleteResponse_withFileReferences_addsToWebView() {
-        when(mockFileListManager.isEmpty(mockProject)).thenReturn(false);
-        when(mockFileListManager.getFiles(mockProject)).thenReturn(new java.util.ArrayList<>());
+        when(mockFileListManager.isEmpty(any(Project.class), any())).thenReturn(false);
+        when(mockFileListManager.getFiles(any(Project.class), any())).thenReturn(new java.util.ArrayList<>());
 
         StreamingResponseHandler handler = createHandler();
         AiMessage aiMessage = AiMessage.from("Response");
@@ -350,7 +352,7 @@ class StreamingResponseHandlerTest {
 
         handler.stop();
 
-        verify(mockChatMemoryService).removeLastMessage(mockProject);
+        verify(mockChatMemoryService).removeLastMessageByKey("test-memory-key");
     }
 
     @Test
@@ -382,6 +384,6 @@ class StreamingResponseHandlerTest {
 
         handler.stop();
 
-        verify(mockChatMemoryService).removeLastMessage(mockProject);
+        verify(mockChatMemoryService).removeLastMessageByKey("test-memory-key");
     }
 }

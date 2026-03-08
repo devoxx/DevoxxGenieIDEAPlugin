@@ -145,7 +145,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             @NotNull StreamingChatModel streamingModel,
             @NotNull StreamingResponseHandler handler) {
         try {
-            ChatMemory chatMemory = chatMemoryManager.getChatMemory(project.getLocationHash());
+            ChatMemory chatMemory = chatMemoryManager.getChatMemory(context.getMemoryKey());
 
             if (ChatMessageContextUtil.hasMultimodalContent(context)) {
                 log.info("Multimodal content detected — using direct streaming model call (bypassing AiServices)");
@@ -184,8 +184,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         }
         if (toolProvider != null) {
             log.debug("Tool provider created for streaming prompt");
-            if (!FileListManager.getInstance().isEmpty(project)) {
-                context.setFileReferences(FileListManager.getInstance().getFiles(project));
+            String tabIdForFiles = context.getTabId();
+            if (!FileListManager.getInstance().isEmpty(project, tabIdForFiles)) {
+                context.setFileReferences(FileListManager.getInstance().getFiles(project, tabIdForFiles));
             }
         }
         return toolProvider;

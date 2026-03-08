@@ -34,13 +34,18 @@ public class ConversationManager implements ConversationEventListener, Conversat
     private final ConversationHistoryManager historyManager;
     private final MessageRenderer messageRenderer;
     private final JLabel conversationLabel;
+    private final String tabId;
     private static final int MAX_TITLE_LENGTH = 50;
 
     // Track the current active conversation
     @Setter
     @Getter
     private Conversation currentConversation;
-    
+
+    // Reference to this tab's own output panel (set externally)
+    @Setter
+    private PromptOutputPanel ownPanel;
+
     /**
      * Creates a new conversation manager with webview refresh callback.
      *
@@ -50,29 +55,45 @@ public class ConversationManager implements ConversationEventListener, Conversat
      * @param messageRenderer The message renderer
      * @param conversationLabel The conversation label to update
      */
-    public ConversationManager(Project project, 
+    public ConversationManager(Project project,
                               ChatService chatService,
                               ConversationHistoryManager historyManager,
                               MessageRenderer messageRenderer,
                               JLabel conversationLabel) {
+        this(project, chatService, historyManager, messageRenderer, conversationLabel, null);
+    }
+
+    public ConversationManager(Project project,
+                              ChatService chatService,
+                              ConversationHistoryManager historyManager,
+                              MessageRenderer messageRenderer,
+                              JLabel conversationLabel,
+                              String tabId) {
         this.project = project;
         this.chatService = chatService;
         this.historyManager = historyManager;
         this.messageRenderer = messageRenderer;
         this.conversationLabel = conversationLabel;
+        this.tabId = tabId;
     }
 
     /**
      * Start a new conversation.
      * Clear the conversation panel, prompt input area, prompt output panel, file list and chat memory.
-     * Also check for and recover from black screen issues.
+     * Uses tab-scoped clearing when tabId is available.
      */
     @Override
     public void startNewConversation() {
-        // Clear everything for a new conversation - this is the correct behavior
-        FileListManager.getInstance().clear(project);
-        ChatMemoryService.getInstance().clearMemory(project);
-        
+        // Clear everything for a new conversation using tab-scoped operations
+        if (tabId != null) {
+            FileListManager.getInstance().clear(project, tabId);
+            String memoryKey = project.getLocationHash() + "-" + tabId;
+            ChatMemoryService.getInstance().clearMemoryByKey(memoryKey);
+        } else {
+            FileListManager.getInstance().clear(project);
+            ChatMemoryService.getInstance().clearMemory(project);
+        }
+
         // Clear the current conversation state
         currentConversation = null;
 
@@ -85,10 +106,14 @@ public class ConversationManager implements ConversationEventListener, Conversat
             ResourceBundle resourceBundle = ResourceBundle.getBundle(Constant.MESSAGES);
             messageRenderer.showWelcome(resourceBundle);
 
-            // Make sure all panels know this is a new conversation
-            for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
-                // The clear() method already resets isNewConversation = true
-                panel.clear();
+            // Only clear this tab's output panel, not all panels
+            if (ownPanel != null) {
+                ownPanel.clear();
+            } else {
+                // Fallback: clear all panels for this project
+                for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+                    panel.clear();
+                }
             }
         });
     }
@@ -112,9 +137,13 @@ public class ConversationManager implements ConversationEventListener, Conversat
         // Clear the current conversation in the web view without showing welcome screen
         messageRenderer.clearWithoutWelcome();
 
-        // Mark this as not a new conversation in any panel that might be registered
-        for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
-            panel.markConversationAsStarted();
+        // Mark this as not a new conversation in this tab's panel
+        if (ownPanel != null) {
+            ownPanel.markConversationAsStarted();
+        } else {
+            for (PromptOutputPanel panel : PromptPanelRegistry.getInstance().getPanels(project)) {
+                panel.markConversationAsStarted();
+            }
         }
 
         // Restore all messages for this conversation

@@ -124,12 +124,13 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
             ChatMemoryManager.getInstance().addAiResponse(context);
             
-            // Add file references if any
-            if (!FileListManager.getInstance().isEmpty(context.getProject()) && conversationViewController != null) {
+            // Add file references if any (tab-aware)
+            String tabIdForFiles = context.getTabId();
+            if (!FileListManager.getInstance().isEmpty(context.getProject(), tabIdForFiles) && conversationViewController != null) {
                 ApplicationManager.getApplication().invokeLater(() ->
                     // Add file references to the web view instead of creating a dialog
-                    conversationViewController.addFileReferences(context, 
-                        FileListManager.getInstance().getFiles(context.getProject()))
+                    conversationViewController.addFileReferences(context,
+                        FileListManager.getInstance().getFiles(context.getProject(), tabIdForFiles))
                 );
             }
             
@@ -180,10 +181,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             isStopped = true;
             log.info("Stopping streaming handler for context {}, deactivating activity handlers", context.getId());
 
-            // Clean up partial response from memory
+            // Clean up partial response from memory using the tab-aware memory key
             if (context.getAiMessage() != null) {
-                ChatMemoryService.getInstance().removeLastMessage(context.getProject());
-                log.debug("Cleaned up partial AI response from memory");
+                ChatMemoryService.getInstance().removeLastMessageByKey(context.getMemoryKey());
+                log.debug("Cleaned up partial AI response from memory for key {}", context.getMemoryKey());
             }
 
             // Deactivate activity handlers BEFORE hiding to prevent race condition

@@ -5,6 +5,7 @@ import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -53,13 +54,14 @@ public class AddDirectoryAction extends DumbAwareAction {
 
     private void addDirectoryToContext(Project project, @NotNull VirtualFile directory) {
         FileListManager fileListManager = FileListManager.getInstance();
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
         List<VirtualFile> filesToAdd = new ArrayList<>();
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
-        addFilesRecursively(project, directory, fileListManager, filesToAdd, settings);
+        addFilesRecursively(project, tabId, directory, fileListManager, filesToAdd, settings);
 
         if (!filesToAdd.isEmpty()) {
-            fileListManager.addFiles(project, filesToAdd);
+            fileListManager.addFiles(project, tabId, filesToAdd);
 
             ModelProvider selectedProvider = ModelProvider.fromString(settings.getSelectedProvider(project.getLocationHash()));
             String selectedModel = settings.getSelectedLanguageModel(project.getLocationHash());
@@ -86,15 +88,15 @@ public class AddDirectoryAction extends DumbAwareAction {
         }
     }
 
-    private void addFilesRecursively(Project project, @NotNull VirtualFile directory, FileListManager fileListManager,
+    private void addFilesRecursively(Project project, String tabId, @NotNull VirtualFile directory, FileListManager fileListManager,
                                      List<VirtualFile> filesToAdd, DevoxxGenieSettingsService settings) {
         VirtualFile[] children = directory.getChildren();
         for (VirtualFile child : children) {
             if (child.isDirectory()) {
                 if (!settings.getExcludedDirectories().contains(child.getName())) {
-                    addFilesRecursively(project, child, fileListManager, filesToAdd, settings);
+                    addFilesRecursively(project, tabId, child, fileListManager, filesToAdd, settings);
                 }
-            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(project, child)) {
+            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(project, tabId, child)) {
                 filesToAdd.add(child);
             }
         }

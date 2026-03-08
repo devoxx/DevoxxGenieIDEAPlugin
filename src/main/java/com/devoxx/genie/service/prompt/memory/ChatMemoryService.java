@@ -46,19 +46,27 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param chatMemorySize The maximum number of messages to retain
      */
     public void initialize(@NotNull Project project, int chatMemorySize) {
-        String projectHash = project.getLocationHash();
-        try {
-            log.debug("Initializing chat memory for project: {} with size: {}", projectHash, chatMemorySize);
+        initializeByKey(project.getLocationHash(), chatMemorySize);
+    }
 
-            // If memory already exists for this project, clear it first
-            if (projectConversations.containsKey(projectHash)) {
-                projectConversations.get(projectHash).clear();
-                log.debug("Cleared existing memory for project: {}", projectHash);
+    /**
+     * Initializes chat memory for a composite key (e.g., projectHash-tabId) with the specified size
+     * @param memoryKey The composite key to initialize
+     * @param chatMemorySize The maximum number of messages to retain
+     */
+    public void initializeByKey(@NotNull String memoryKey, int chatMemorySize) {
+        try {
+            log.debug("Initializing chat memory for key: {} with size: {}", memoryKey, chatMemorySize);
+
+            // If memory already exists for this key, clear it first
+            if (projectConversations.containsKey(memoryKey)) {
+                projectConversations.get(memoryKey).clear();
+                log.debug("Cleared existing memory for key: {}", memoryKey);
             }
 
-            createChatMemory(projectHash, chatMemorySize);
+            createChatMemory(memoryKey, chatMemorySize);
         } catch (Exception e) {
-            throw new MemoryException(FAILED_TO_INITIALIZE_CHAT_MEMORY_FOR_PROJECT + projectHash, e);
+            throw new MemoryException(FAILED_TO_INITIALIZE_CHAT_MEMORY_FOR_PROJECT + memoryKey, e);
         }
     }
 
@@ -67,14 +75,21 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param project The project to clear memory for
      */
     public void clearMemory(@NotNull Project project) {
+        clearMemoryByKey(project.getLocationHash());
+    }
+
+    /**
+     * Clears all messages for a given memory key
+     * @param memoryKey The memory key to clear
+     */
+    public void clearMemoryByKey(@NotNull String memoryKey) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 memory.clear();
-                log.debug("Cleared memory for project: {}", projectHash);
+                log.debug("Cleared memory for key: {}", memoryKey);
             } else {
-                log.warn("Attempted to clear memory for non-existent project: {}", projectHash);
+                log.warn("Attempted to clear memory for non-existent key: {}", memoryKey);
             }
         } catch (Exception e) {
             throw new MemoryException(FAILED_TO_CLEAR_MEMORY, e);
@@ -87,31 +102,39 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param chatMessage The message to add
      */
     public void addMessage(@NotNull Project project, ChatMessage chatMessage) {
+        addMessageByKey(project.getLocationHash(), chatMessage);
+    }
+
+    /**
+     * Adds a chat message to the memory identified by key
+     * @param memoryKey The memory key
+     * @param chatMessage The message to add
+     */
+    public void addMessageByKey(@NotNull String memoryKey, ChatMessage chatMessage) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 // Check for duplicate messages to prevent adding the same message multiple times
                 List<ChatMessage> currentMessages = memory.messages();
                 if (!currentMessages.isEmpty()) {
                     ChatMessage lastMessage = currentMessages.get(currentMessages.size() - 1);
-                    
+
                     // Check if the last message is of the same type and has the same content
                     if (lastMessage.getClass().equals(chatMessage.getClass()) &&
                         lastMessage.toString().equals(chatMessage.toString())) {
-                        log.warn("Prevented duplicate message addition for project: {}", projectHash);
+                        log.warn("Prevented duplicate message addition for key: {}", memoryKey);
                         return; // Skip adding duplicate message
                     }
                 }
-                
+
                 // Log the message content for debugging XML issues
-                log.debug("Adding message to memory - Type: {}, Content: {}", 
+                log.debug("Adding message to memory - Type: {}, Content: {}",
                         chatMessage.getClass().getSimpleName(), chatMessage);
-                
+
                 memory.add(chatMessage);
-                log.debug("Successfully added message to project: {}, message type: {}", projectHash, chatMessage.getClass().getSimpleName());
+                log.debug("Successfully added message to key: {}, message type: {}", memoryKey, chatMessage.getClass().getSimpleName());
             } else {
-                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + memoryKey);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
@@ -127,13 +150,21 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @return List of chat messages
      */
     public List<ChatMessage> getMessages(@NotNull Project project) {
+        return getMessagesByKey(project.getLocationHash());
+    }
+
+    /**
+     * Gets all messages for a memory key
+     * @param memoryKey The memory key
+     * @return List of chat messages
+     */
+    public List<ChatMessage> getMessagesByKey(@NotNull String memoryKey) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 return memory.messages();
             } else {
-                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + memoryKey);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
@@ -144,18 +175,34 @@ public class ChatMemoryService implements ChatMemoryProvider {
     }
 
     /**
+     * Checks if a memory entry exists for the given key
+     * @param memoryKey The memory key to check
+     * @return true if memory exists, false otherwise
+     */
+    public boolean hasMemory(@NotNull String memoryKey) {
+        return projectConversations.containsKey(memoryKey);
+    }
+
+    /**
      * Checks if memory is empty for a project
      * @param project The project to check
      * @return true if empty, false otherwise
      */
     public boolean isEmpty(@NotNull Project project) {
+        return isEmptyByKey(project.getLocationHash());
+    }
+
+    /**
+     * Checks if memory is empty for a given key
+     * @param memoryKey The memory key to check
+     * @return true if empty, false otherwise
+     */
+    public boolean isEmptyByKey(@NotNull String memoryKey) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 return memory.messages().isEmpty();
             } else {
-                // If memory doesn't exist, consider it empty
                 return true;
             }
         } catch (Exception e) {
@@ -168,13 +215,19 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param project The project to remove from
      */
     public void removeLastMessage(@NotNull Project project) {
+        removeLastMessageByKey(project.getLocationHash());
+    }
+
+    /**
+     * Removes the last message from memory identified by key
+     * @param memoryKey The memory key
+     */
+    public void removeLastMessageByKey(@NotNull String memoryKey) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 List<ChatMessage> messages = memory.messages();
                 if (!messages.isEmpty()) {
-                    // Clear and re-add all messages except the last one
                     ChatMessage lastMessage = messages.get(messages.size() - 1);
                     memory.clear();
 
@@ -182,11 +235,11 @@ public class ChatMemoryService implements ChatMemoryProvider {
                         memory.add(messages.get(i));
                     }
 
-                    log.debug("Removed last message ({}) from project: {}",
-                            lastMessage.getClass().getSimpleName(), projectHash);
+                    log.debug("Removed last message ({}) from key: {}",
+                            lastMessage.getClass().getSimpleName(), memoryKey);
                 }
             } else {
-                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + memoryKey);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
@@ -202,14 +255,21 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param messagesToRemove The messages to remove
      */
     public void removeMessages(@NotNull Project project, List<ChatMessage> messagesToRemove) {
+        removeMessagesByKey(project.getLocationHash(), messagesToRemove);
+    }
+
+    /**
+     * Removes specific messages from memory identified by key
+     * @param memoryKey The memory key
+     * @param messagesToRemove The messages to remove
+     */
+    public void removeMessagesByKey(@NotNull String memoryKey, List<ChatMessage> messagesToRemove) {
         try {
-            String projectHash = project.getLocationHash();
-            MessageWindowChatMemory memory = projectConversations.get(projectHash);
+            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 List<ChatMessage> currentMessages = memory.messages();
 
                 if (!currentMessages.isEmpty() && !messagesToRemove.isEmpty()) {
-                    // Create a new list excluding the messages to remove
                     memory.clear();
 
                     for (ChatMessage message : currentMessages) {
@@ -218,17 +278,29 @@ public class ChatMemoryService implements ChatMemoryProvider {
                         }
                     }
 
-                    log.debug("Removed {} messages from project: {}",
-                            messagesToRemove.size(), projectHash);
+                    log.debug("Removed {} messages from key: {}",
+                            messagesToRemove.size(), memoryKey);
                 }
             } else {
-                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + projectHash);
+                throw new MemoryException(CHAT_MEMORY_NOT_INITIALIZED_FOR_PROJECT + memoryKey);
             }
         } catch (Exception e) {
             if (!(e instanceof MemoryException)) {
                 throw new MemoryException(FAILED_TO_REMOVE_MESSAGES_FROM_MEMORY, e);
             }
             throw e;
+        }
+    }
+
+    /**
+     * Completely removes a memory entry by key (used for tab cleanup)
+     * @param memoryKey The memory key to remove
+     */
+    public void removeByKey(@NotNull String memoryKey) {
+        MessageWindowChatMemory memory = projectConversations.remove(memoryKey);
+        if (memory != null) {
+            memory.clear();
+            log.debug("Removed memory for key: {}", memoryKey);
         }
     }
 

@@ -151,6 +151,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Map<String, String> lastSelectedProvider;
     private Map<String, String> lastSelectedLanguageModel;
 
+    // Per-project open tab descriptors: projectHash -> list of tabId strings
+    private Map<String, List<String>> openTabIds;
+
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;
 
@@ -402,6 +405,30 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         } else {
             return ModelProvider.Ollama.getName();
         }
+    }
+
+    /**
+     * Save open tab IDs for a project (for restoring tabs across restarts).
+     */
+    public void setOpenTabIds(@NotNull String projectHash, @NotNull List<String> tabIds) {
+        if (openTabIds == null) {
+            openTabIds = new HashMap<>();
+        }
+        openTabIds.put(projectHash, new ArrayList<>(tabIds));
+    }
+
+    /**
+     * Get saved open tab IDs for a project.
+     */
+    @NotNull
+    public List<String> getOpenTabIds(@NotNull String projectHash) {
+        if (openTabIds != null) {
+            List<String> ids = openTabIds.get(projectHash);
+            if (ids != null) {
+                return new ArrayList<>(ids);
+            }
+        }
+        return new ArrayList<>();
     }
 
     public boolean isAzureOpenAIEnabled() {

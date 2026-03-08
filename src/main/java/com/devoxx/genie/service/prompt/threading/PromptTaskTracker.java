@@ -192,6 +192,44 @@ public class PromptTaskTracker {
 //    }
 
     /**
+     * Index a task by its context ID after the context has been attached.
+     * Called after {@code putUserData(CONTEXT_KEY, context)} to fix the timing gap
+     * where a task self-registers before its context is available.
+     */
+    public <T> void indexByContextId(@NotNull PromptTask<T> task) {
+        Object userData = task.getUserData(PromptTask.CONTEXT_KEY);
+        if (userData instanceof ChatMessageContext context) {
+            String projectHash = task.getProject().getLocationHash();
+            String contextId = context.getId();
+            tasksByContextId.computeIfAbsent(projectHash, k -> new ConcurrentHashMap<>())
+                          .put(contextId, task);
+            log.debug("Indexed task {} by context ID {} for project {}",
+                     task.getId(), contextId, projectHash);
+        }
+    }
+
+    /**
+     * Cancel all tasks for a specific tab within a project.
+     * Uses the tabId stored directly on PromptTask (available at construction time).
+     */
+    public int cancelTasksForTab(@NotNull Project project, @NotNull String tabId) {
+        String projectHash = project.getLocationHash();
+        int count = 0;
+
+        Set<PromptTask<?>> tasks = projectTasks.get(projectHash);
+        if (tasks != null) {
+            for (PromptTask<?> task : new HashSet<>(tasks)) {
+                if (tabId.equals(task.getTabId())) {
+                    task.cancel(true);
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /**
      * Cancel a specific task by context ID
      */
     public boolean cancelTaskByContextId(@NotNull Project project, @NotNull String contextId) {

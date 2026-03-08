@@ -897,6 +897,6 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         // Submit via the prompt submission topic
         project.getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                .onPromptSubmitted(project, prompt);
+                .onPromptSubmitted(project, prompt, null);
     }
 }

@@ -41,6 +41,8 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {
 
     private final transient Project project;
+    // Composite key for per-tab provider/model persistence (projectHash or projectHash-tabId)
+    private final String stateKey;
 
     @Getter
     private final JPanel contentPanel = new JPanel();
@@ -57,14 +59,22 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     private boolean isInitializationComplete = false;
     private boolean isUpdatingModelNames = false;
 
+    public LlmProviderPanel(@NotNull Project project) {
+        this(project, null);
+    }
+
     /**
      * The conversation panel constructor.
      *
      * @param project the project instance
+     * @param tabId   the tab identifier for per-tab persistence (null for legacy behavior)
      */
-    public LlmProviderPanel(@NotNull Project project) {
+    public LlmProviderPanel(@NotNull Project project, String tabId) {
         super(new BorderLayout());
         this.project = project;
+        this.stateKey = tabId != null
+                ? project.getLocationHash() + "-" + tabId
+                : project.getLocationHash();
 
         // Set consistent renderers and fonts for both combo boxes
         modelProviderComboBox.setRenderer(new ModelProviderRenderer());
@@ -91,8 +101,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         modelProviderComboBox.setMaximumSize(comboBoxSize);
         modelNameComboBox.setMaximumSize(comboBoxSize);
 
-        lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash());
-        lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(project.getLocationHash());
+        lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(stateKey);
+        lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(stateKey);
 
         restoreLastSelectedProvider();
         restoreLastSelectedLanguageModel();
@@ -334,7 +344,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     public void setLastSelectedProvider() {
         ModelProvider modelProvider = modelProviderComboBox.getItemAt(0);
         if (modelProvider != null) {
-            DevoxxGenieStateService.getInstance().setSelectedProvider(project.getLocationHash(), modelProvider.getName());
+            DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, modelProvider.getName());
             updateModelNamesComboBox(modelProvider.getName());
         }
     }
@@ -342,7 +352,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     @Override
     public void llmSettingsChanged() {
         updateModelNamesComboBox(
-                DevoxxGenieStateService.getInstance().getSelectedProvider(project.getLocationHash())
+                DevoxxGenieStateService.getInstance().getSelectedProvider(stateKey)
         );
     }
 
@@ -363,7 +373,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
             if (modelProvider != null) {
-                stateInstance.setSelectedProvider(project.getLocationHash(), modelProvider.getName());
+                stateInstance.setSelectedProvider(stateKey, modelProvider.getName());
 
                 updateModelNamesComboBox(modelProvider.getName());
 

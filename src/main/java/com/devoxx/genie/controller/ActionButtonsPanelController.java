@@ -14,6 +14,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.processor.CommandProcessor;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -35,15 +36,19 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
     private final PromptExecutionController promptExecutionController;
     private final ProjectContextController projectContextController;
     private final TokenCalculationController tokenCalculationController;
+    private final String tabId;
+    private DevoxxGenieToolWindowContent toolWindowContent;
 
     public ActionButtonsPanelController(Project project,
                                         PromptInputArea promptInputArea,
                                         PromptOutputPanel promptOutputPanel,
                                         ComboBox<ModelProvider> modelProviderComboBox,
                                         ComboBox<LanguageModel> modelNameComboBox,
-                                        ActionButtonsPanel actionButtonsPanel) {
+                                        ActionButtonsPanel actionButtonsPanel,
+                                        String tabId) {
 
         this.project = project;
+        this.tabId = tabId;
         this.promptInputArea = promptInputArea;
         this.editorFileButtonManager = new EditorFileButtonManager(project, null);
         this.modelProviderComboBox = modelProviderComboBox;
@@ -84,11 +89,25 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                         actionCommand,
                         editorFileButtonManager,
                         projectContext,
-                        isProjectContextAdded
+                        isProjectContextAdded,
+                        tabId
                 )
         );
 
-        return promptExecutionController.handlePromptSubmission(currentChatMessageContext);
+        boolean result = promptExecutionController.handlePromptSubmission(currentChatMessageContext);
+
+        // Auto-name the tab after first successful prompt submission
+        if (result && toolWindowContent != null) {
+            LanguageModel model = getSelectedLanguageModel();
+            String modelName = model.getModelName() != null ? model.getModelName() : "Chat";
+            toolWindowContent.updateTabTitle(modelName, userPromptText);
+        }
+
+        return result;
+    }
+
+    public void setToolWindowContent(DevoxxGenieToolWindowContent toolWindowContent) {
+        this.toolWindowContent = toolWindowContent;
     }
 
     /**

@@ -232,7 +232,7 @@ class AbstractPromptExecutionStrategyTest {
         messagesWithHistory.add(UserMessage.from("Previous question"));
         messagesWithHistory.add(AiMessage.from("Previous answer"));
         messagesWithHistory.add(UserMessage.from(userPrompt)); // Current message
-        when(mockChatMemoryManager.getMessages(mockProject)).thenReturn(messagesWithHistory);
+        when(mockChatMemoryManager.getMessagesByKey(realContext.getMemoryKey())).thenReturn(messagesWithHistory);
         
         // When: Building the prompt
         String result = testStrategy.testBuildPromptWithHistory(realContext);
