@@ -1,11 +1,12 @@
 ---
 id: TASK-193
 title: Fix packaged plugin Skiko native runtime mismatch
-status: In Progress
+status: Done
+priority: medium
 assignee:
   - Codex
 created_date: '2026-03-07 15:22'
-updated_date: '2026-03-07 15:29'
+updated_date: '2026-03-08 11:35'
 labels:
   - build
   - plugin-distribution
@@ -14,21 +15,19 @@ dependencies: []
 references:
   - /Users/stephan/IdeaProjects/DevoxxGenieIDEAPlugin/build.gradle.kts
   - >-
-    /Users/stephan/IdeaProjects/DevoxxGenieIDEAPlugin/build/idea-sandbox/IC-2024.3/plugins/DevoxxGenie/lib
+documentation: []
+ordinal: 1000
 ---
-
-## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 The built plugin distribution currently packages Skiko AWT classes at version 0.9.37.4 while the platform-specific skiko-awt-runtime native jars are pinned to 0.8.18. On macOS this causes UnsatisfiedLinkError in MetalApiKt when the Compose tool window initializes. The build should package matching Skiko runtime artifacts so the distributed plugin starts cleanly.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
-<!-- AC:BEGIN -->
+
 - [x] #1 The plugin build configuration no longer mixes Skiko AWT classes and skiko-awt-runtime native jars from different versions.
 - [x] #2 Rebuilding the plugin distribution produces a ZIP whose packaged Skiko runtime jars match the resolved Skiko AWT version.
 - [x] #3 The packaged plugin no longer includes the previously mismatched 0.8.18 Skiko runtime jars alongside skiko-awt 0.9.37.4.
-<!-- AC:END -->
 
 ## Implementation Plan
 
@@ -47,3 +46,4 @@ User retested the rebuilt ZIP in IDEA and still hit the same MetalApi Unsatisfie
 
 Rebuilt the plugin after stripping platform-provided Compose/Kotlin runtime jars from `prepareSandbox`. Verified that neither `build/idea-sandbox/IC-2024.3/plugins/DevoxxGenie/lib` nor `build/distributions/DevoxxGenie-1.0.0.zip` contains `skiko-*`, Compose desktop jars, `kotlin-stdlib*`, or `kotlinx-coroutines-core*` anymore. Awaiting runtime retest in IDEA.
 <!-- SECTION:NOTES:END -->
+

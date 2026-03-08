@@ -9,10 +9,12 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +67,60 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
 
         List<LanguageModel> models = factory.getModels();
         assertThat(models).size().isGreaterThan(7);
+    }
+
+    @Test
+    void createChatModel_gpt5_omitsTopP() throws Exception {
+        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
+
+        Method method = OpenAIChatModelFactory.class.getDeclaredMethod("createChatContextParameters", CustomChatModel.class);
+        method.setAccessible(true);
+
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("gpt-5");
+        customChatModel.setTemperature(0.7);
+        customChatModel.setTopP(0.9);
+
+        ChatRequestParameters params = (ChatRequestParameters) method.invoke(factory, customChatModel);
+
+        assertThat(params.temperature()).isEqualTo(0.7);
+        assertThat(params.topP()).isNull();
+    }
+
+    @Test
+    void createChatModel_o1_omitsTemperatureAndTopP() throws Exception {
+        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
+
+        Method method = OpenAIChatModelFactory.class.getDeclaredMethod("createChatContextParameters", CustomChatModel.class);
+        method.setAccessible(true);
+
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("o1");
+        customChatModel.setTemperature(0.7);
+        customChatModel.setTopP(0.9);
+
+        ChatRequestParameters params = (ChatRequestParameters) method.invoke(factory, customChatModel);
+
+        assertThat(params.temperature()).isNull();
+        assertThat(params.topP()).isNull();
+    }
+
+    @Test
+    void createChatModel_gpt4_includesTopP() throws Exception {
+        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
+
+        Method method = OpenAIChatModelFactory.class.getDeclaredMethod("createChatContextParameters", CustomChatModel.class);
+        method.setAccessible(true);
+
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("gpt-4o");
+        customChatModel.setTemperature(0.7);
+        customChatModel.setTopP(0.9);
+
+        ChatRequestParameters params = (ChatRequestParameters) method.invoke(factory, customChatModel);
+
+        assertThat(params.temperature()).isEqualTo(0.7);
+        assertThat(params.topP()).isEqualTo(0.9);
     }
 
     private static LanguageModel model(String modelName) {
