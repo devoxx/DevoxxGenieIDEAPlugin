@@ -18,3 +18,8 @@ gradle/**
 .playwright-mcp/
 docusaurus/static/img/git-diff-settings.png
 docusaurus/static/img/git-diff-viewer.png
+.classpath
+.factorypath
+.project
+.settings/
+*.class
