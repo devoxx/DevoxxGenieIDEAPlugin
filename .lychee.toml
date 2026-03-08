@@ -31,6 +31,12 @@ exclude = [
   "https://genie\\.devoxx\\.com/static/img/.*",
   # Placeholder/example URLs used in documentation snippets.
   "https://github\\.com/myproject/.*",
+  "https://wiki\\.example\\.com/.*",
+  # OpenAI blocks automated crawlers with 403
+  "https://openai\\.com/.*",
+  "https://platform\\.openai\\.com/.*",
+  # JetBrains support blocks automated crawlers with 403
+  "https://intellij-support\\.jetbrains\\.com/.*",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)
