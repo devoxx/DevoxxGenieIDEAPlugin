@@ -573,7 +573,7 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
                 if (exitCode == 0) {
                     showTestResult(true, "Connected successfully");
                 } else {
-                    showTestResult(false, resolveErrorMessage(exitCode, stdout.toString(), stderr.toString()));
+                    showTestResult(false, CliTestErrorResolver.resolve(exitCode, stdout.toString(), stderr.toString()));
                 }
             } catch (java.io.IOException ex) {
                 showTestResult(false, "Not found: " + ex.getMessage());
@@ -611,40 +611,25 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
             return thread;
         }
 
-        private static @NonNull String resolveErrorMessage(int exitCode, String stdout, @NonNull String stderr) {
-            String err = lastMeaningfulLine(stderr);
-            if (err.isEmpty()) err = lastMeaningfulLine(stdout);
-            if (err.isEmpty()) err = "Exit code " + exitCode;
-            return err;
-        }
-
-        private static @NonNull String lastMeaningfulLine(String output) {
-            if (output == null || output.isBlank()) return "";
-
-            String[] lines = output.split("\\R");
-            for (int i = lines.length - 1; i >= 0; i--) {
-                String line = sanitizeOutputLine(lines[i]);
-                if (!line.isEmpty()) return line;
-            }
-            return "";
-        }
-
-        private static @NonNull String sanitizeOutputLine(String line) {
-            if (line == null || line.isBlank()) return "";
-            return ANSI_ESCAPE.matcher(line).replaceAll("").trim();
-        }
-
         private void showTestResult(boolean success, String message) {
             SwingUtilities.invokeLater(() -> {
-                String truncated = message.length() > 80 ? message.substring(0, 80) + "..." : message;
+                String display = message.length() > 200 ? message.substring(0, 200) + "..." : message;
                 if (success) {
                     testResultLabel.setForeground(new java.awt.Color(0, 128, 0));
-                    testResultLabel.setText(truncated);
                 } else {
                     testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
-                    testResultLabel.setText(truncated);
+                }
+                testResultLabel.setText("<html><body style='width:400px'>" + escapeHtml(display) + "</body></html>");
+                if (message.length() > 200) {
+                    testResultLabel.setToolTipText("<html><body style='width:500px'>" + escapeHtml(message) + "</body></html>");
+                } else {
+                    testResultLabel.setToolTipText(null);
                 }
             });
+        }
+
+        private static @NonNull String escapeHtml(String text) {
+            return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
         }
 
         private static @NonNull String formatEnvVars(java.util.Map<String, String> envVars) {
@@ -921,15 +906,23 @@ public class RunnerSettingsComponent extends AbstractSettingsComponent {
 
         private void showTestResult(boolean success, String message) {
             SwingUtilities.invokeLater(() -> {
-                String truncated = message.length() > 80 ? message.substring(0, 80) + "..." : message;
+                String display = message.length() > 200 ? message.substring(0, 200) + "..." : message;
                 if (success) {
                     testResultLabel.setForeground(new java.awt.Color(0, 128, 0));
-                    testResultLabel.setText(truncated);
                 } else {
                     testResultLabel.setForeground(UIManager.getColor("Component.errorFocusColor"));
-                    testResultLabel.setText(truncated);
+                }
+                testResultLabel.setText("<html><body style='width:400px'>" + escapeHtml(display) + "</body></html>");
+                if (message.length() > 200) {
+                    testResultLabel.setToolTipText("<html><body style='width:500px'>" + escapeHtml(message) + "</body></html>");
+                } else {
+                    testResultLabel.setToolTipText(null);
                 }
             });
+        }
+
+        private static @NonNull String escapeHtml(String text) {
+            return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
         }
 
         public AcpToolConfig getResult() {
