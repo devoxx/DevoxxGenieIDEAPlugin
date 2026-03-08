@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 
 public interface DevoxxGenieSettingsService {
@@ -32,9 +33,13 @@ public interface DevoxxGenieSettingsService {
 
     String getAwsAccessKeyId();
 
+    String getAwsBearerToken();
+
     String getAwsProfileName();
 
     String getAwsRegion();
+
+    AwsBedrockAuthMode getAwsBedrockAuthMode();
 
     String getMistralKey();
 
@@ -122,9 +127,13 @@ public interface DevoxxGenieSettingsService {
 
     void setAwsSecretKey(String secretKey);
 
+    void setAwsBearerToken(String bearerToken);
+
     void setAwsProfileName(String profileName);
 
     void setAwsRegion(String region);
+
+    void setAwsBedrockAuthMode(AwsBedrockAuthMode authMode);
 
     void setMistralKey(String key);
 

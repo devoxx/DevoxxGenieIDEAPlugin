@@ -91,8 +91,9 @@ public class LLMProvidersConfigurable implements Configurable {
 
         isModified |= !stateService.getShowAwsFields().equals(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAwsSecretKeyField(), stateService.getAwsSecretKey());
+        isModified |= isFieldModified(llmSettingsComponent.getAwsBearerTokenField(), stateService.getAwsBearerToken());
         isModified |= isFieldModified(llmSettingsComponent.getAwsAccessKeyIdField(), stateService.getAwsAccessKeyId());
-        isModified |= !stateService.getShouldPowerFromAWSProfile().equals(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        isModified |= stateService.getAwsBedrockAuthMode() != llmSettingsComponent.getAwsAuthModeComboBox().getSelectedItem();
         isModified |= !stateService.getShouldEnableAWSRegionalInference().equals(llmSettingsComponent.getEnableAWSRegionalInferenceCheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAwsProfileName(), stateService.getAwsProfileName());
         isModified |= isFieldModified(llmSettingsComponent.getAwsRegion(), stateService.getAwsRegion());
@@ -171,8 +172,9 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setShowAwsFields(llmSettingsComponent.getEnableAWSCheckBox().isSelected());
         settings.setAwsAccessKeyId(new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()));
         settings.setAwsSecretKey(new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()));
+        settings.setAwsBearerToken(new String(llmSettingsComponent.getAwsBearerTokenField().getPassword()));
         settings.setAwsRegion(llmSettingsComponent.getAwsRegion().getText());
-        settings.setShouldPowerFromAWSProfile(llmSettingsComponent.getEnableAWSProfileCheckBox().isSelected());
+        settings.setAwsBedrockAuthMode((com.devoxx.genie.model.enumarations.AwsBedrockAuthMode) llmSettingsComponent.getAwsAuthModeComboBox().getSelectedItem());
         settings.setShouldEnableAWSRegionalInference(llmSettingsComponent.getEnableAWSRegionalInferenceCheckBox().isSelected());
         settings.setAwsProfileName(llmSettingsComponent.getAwsProfileName().getText());
 
@@ -229,10 +231,7 @@ public class LLMProvidersConfigurable implements Configurable {
     }
 
     private boolean hasEnabledAwsOrAzureKey(DevoxxGenieStateService settings) {
-        return (!settings.getAwsAccessKeyId().isBlank() && !settings.getAwsSecretKey().isBlank() && settings.isAwsEnabled()) ||
-                (!settings.getAwsAccessKeyId().isBlank() && settings.getShowAwsFields()) ||
-                (!settings.getAwsProfileName().isBlank() && settings.getShowAwsFields() && settings.getShouldPowerFromAWSProfile()) ||
-                (!settings.getAwsRegion().isBlank() && settings.getShowAwsFields()) ||
+        return settings.isAwsEnabled() ||
                 (!settings.getAzureOpenAIKey().isBlank() && settings.getShowAzureOpenAIFields());
     }
 
@@ -275,6 +274,16 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getAzureOpenAIEndpointField().setText(settings.getAzureOpenAIEndpoint());
         llmSettingsComponent.getAzureOpenAIDeploymentField().setText(settings.getAzureOpenAIDeployment());
         llmSettingsComponent.getAzureOpenAIKeyField().setText(settings.getAzureOpenAIKey());
+
+        llmSettingsComponent.getEnableAWSCheckBox().setSelected(settings.getShowAwsFields());
+        llmSettingsComponent.getAwsAccessKeyIdField().setText(settings.getAwsAccessKeyId());
+        llmSettingsComponent.getAwsSecretKeyField().setText(settings.getAwsSecretKey());
+        llmSettingsComponent.getAwsBearerTokenField().setText(settings.getAwsBearerToken());
+        llmSettingsComponent.getAwsProfileName().setText(settings.getAwsProfileName());
+        llmSettingsComponent.getAwsRegion().setText(settings.getAwsRegion());
+        llmSettingsComponent.getAwsAuthModeComboBox().setSelectedItem(settings.getAwsBedrockAuthMode());
+        llmSettingsComponent.getEnableAWSRegionalInferenceCheckBox().setSelected(settings.getShouldEnableAWSRegionalInference());
+        llmSettingsComponent.refreshAwsSettingsVisibility();
 
         llmSettingsComponent.getOllamaEnabledCheckBox().setSelected(settings.isOllamaEnabled());
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());

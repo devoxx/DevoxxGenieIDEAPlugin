@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.automation.EventAutomationSettings;
 import com.devoxx.genie.model.mcp.MCPSettings;
@@ -134,8 +135,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String azureOpenAIKey = "";
     private String awsAccessKeyId = "";
     private String awsSecretKey = "";
+    private String awsBearerToken = "";
     private String awsProfileName = "";
     private String awsRegion = "";
+    private AwsBedrockAuthMode awsBedrockAuthMode;
 
     // Search API Keys
     private Boolean isWebSearchEnabled = ENABLE_WEB_SEARCH;
@@ -345,6 +348,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Override
     public void loadState(@NotNull DevoxxGenieStateService state) {
         XmlSerializerUtil.copyBean(state, this);
+        if (awsBedrockAuthMode == null) {
+            awsBedrockAuthMode = Boolean.TRUE.equals(shouldPowerFromAWSProfile)
+                    ? AwsBedrockAuthMode.PROFILE
+                    : AwsBedrockAuthMode.defaultMode();
+        }
+        shouldPowerFromAWSProfile = getAwsBedrockAuthMode() == AwsBedrockAuthMode.PROFILE;
         initializeDefaultCostsIfEmpty();
         initializeUserPrompt();
 
@@ -447,10 +456,40 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     public boolean isAwsEnabled() {
-        return showAwsFields &&
-                ((!awsAccessKeyId.isEmpty() && !awsSecretKey.isEmpty())
-                || (shouldPowerFromAWSProfile && !awsProfileName.isEmpty()))
-                && !awsRegion.isEmpty();
+        if (!showAwsFields || awsRegion.isEmpty()) {
+            return false;
+        }
+
+        return switch (getAwsBedrockAuthMode()) {
+            case ACCESS_KEY -> !awsAccessKeyId.isEmpty() && !awsSecretKey.isEmpty();
+            case PROFILE -> !awsProfileName.isEmpty();
+            case BEARER_TOKEN -> !awsBearerToken.isEmpty();
+        };
+    }
+
+    @Override
+    public @NotNull AwsBedrockAuthMode getAwsBedrockAuthMode() {
+        if (awsBedrockAuthMode == null) {
+            return Boolean.TRUE.equals(shouldPowerFromAWSProfile)
+                    ? AwsBedrockAuthMode.PROFILE
+                    : AwsBedrockAuthMode.defaultMode();
+        }
+        return awsBedrockAuthMode;
+    }
+
+    @Override
+    public void setAwsBedrockAuthMode(AwsBedrockAuthMode authMode) {
+        this.awsBedrockAuthMode = authMode != null ? authMode : AwsBedrockAuthMode.defaultMode();
+        this.shouldPowerFromAWSProfile = this.awsBedrockAuthMode == AwsBedrockAuthMode.PROFILE;
+    }
+
+    public void setShouldPowerFromAWSProfile(Boolean shouldPowerFromAWSProfile) {
+        this.shouldPowerFromAWSProfile = shouldPowerFromAWSProfile;
+        if (Boolean.TRUE.equals(shouldPowerFromAWSProfile)) {
+            this.awsBedrockAuthMode = AwsBedrockAuthMode.PROFILE;
+        } else if (this.awsBedrockAuthMode == null || this.awsBedrockAuthMode == AwsBedrockAuthMode.PROFILE) {
+            this.awsBedrockAuthMode = AwsBedrockAuthMode.ACCESS_KEY;
+        }
     }
 
     public List<SubAgentConfig> getSubAgentConfigs() {

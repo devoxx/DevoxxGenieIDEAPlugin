@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.CustomPrompt;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,6 +115,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getGeminiKey()).isEmpty();
             assertThat(stateService.getDeepSeekKey()).isEmpty();
             assertThat(stateService.getOpenRouterKey()).isEmpty();
+            assertThat(stateService.getAwsBearerToken()).isEmpty();
         }
 
         @Test
@@ -372,6 +374,7 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeDisabledWhenShowFieldsIsFalse() {
             stateService.setShowAwsFields(false);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.ACCESS_KEY);
             stateService.setAwsAccessKeyId("access-key");
             stateService.setAwsSecretKey("secret-key");
             stateService.setAwsRegion("us-east-1");
@@ -381,6 +384,7 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeEnabledWithAccessKeyAndSecretAndRegion() {
             stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.ACCESS_KEY);
             stateService.setAwsAccessKeyId("access-key");
             stateService.setAwsSecretKey("secret-key");
             stateService.setAwsRegion("us-east-1");
@@ -390,6 +394,7 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeDisabledWithoutRegion() {
             stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.ACCESS_KEY);
             stateService.setAwsAccessKeyId("access-key");
             stateService.setAwsSecretKey("secret-key");
             stateService.setAwsRegion("");
@@ -399,7 +404,7 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeEnabledWithProfileAndRegion() {
             stateService.setShowAwsFields(true);
-            stateService.setShouldPowerFromAWSProfile(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.PROFILE);
             stateService.setAwsProfileName("my-profile");
             stateService.setAwsRegion("eu-west-1");
             assertThat(stateService.isAwsEnabled()).isTrue();
@@ -408,7 +413,7 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeDisabledWithEmptyProfile() {
             stateService.setShowAwsFields(true);
-            stateService.setShouldPowerFromAWSProfile(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.PROFILE);
             stateService.setAwsProfileName("");
             stateService.setAwsRegion("eu-west-1");
             assertThat(stateService.isAwsEnabled()).isFalse();
@@ -417,11 +422,47 @@ class DevoxxGenieStateServiceTest {
         @Test
         void shouldBeDisabledWithProfileModeButEmptyKeys() {
             stateService.setShowAwsFields(true);
-            stateService.setShouldPowerFromAWSProfile(false);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.ACCESS_KEY);
             stateService.setAwsAccessKeyId("");
             stateService.setAwsSecretKey("");
             stateService.setAwsRegion("us-east-1");
             assertThat(stateService.isAwsEnabled()).isFalse();
+        }
+
+        @Test
+        void shouldBeEnabledWithBearerTokenAndRegion() {
+            stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.BEARER_TOKEN);
+            stateService.setAwsBearerToken("bedrock-token");
+            stateService.setAwsRegion("us-east-1");
+            assertThat(stateService.isAwsEnabled()).isTrue();
+        }
+
+        @Test
+        void shouldBeDisabledWithBearerTokenModeAndEmptyToken() {
+            stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.BEARER_TOKEN);
+            stateService.setAwsBearerToken("");
+            stateService.setAwsRegion("us-east-1");
+            assertThat(stateService.isAwsEnabled()).isFalse();
+        }
+
+        @Test
+        void shouldSyncLegacyProfileFlagWhenSettingAuthMode() {
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.PROFILE);
+            assertThat(stateService.getShouldPowerFromAWSProfile()).isTrue();
+
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.BEARER_TOKEN);
+            assertThat(stateService.getShouldPowerFromAWSProfile()).isFalse();
+        }
+
+        @Test
+        void shouldMapLegacyProfileFlagToAuthMode() {
+            stateService.setShouldPowerFromAWSProfile(true);
+            assertThat(stateService.getAwsBedrockAuthMode()).isEqualTo(AwsBedrockAuthMode.PROFILE);
+
+            stateService.setShouldPowerFromAWSProfile(false);
+            assertThat(stateService.getAwsBedrockAuthMode()).isEqualTo(AwsBedrockAuthMode.ACCESS_KEY);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.spec.AcpToolConfig;
 import com.devoxx.genie.model.spec.CliToolConfig;
@@ -34,7 +35,12 @@ public class LLMProviderService {
         providerKeyMap.put(Kimi, () -> DevoxxGenieStateService.getInstance().getKimiKey());
         providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
         providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
-        providerKeyMap.put(Bedrock, () -> DevoxxGenieStateService.getInstance().getAwsSecretKey());
+        providerKeyMap.put(Bedrock, () -> switch (Optional.ofNullable(DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode())
+                .orElse(AwsBedrockAuthMode.defaultMode())) {
+            case ACCESS_KEY -> DevoxxGenieStateService.getInstance().getAwsSecretKey();
+            case PROFILE -> DevoxxGenieStateService.getInstance().getAwsProfileName();
+            case BEARER_TOKEN -> DevoxxGenieStateService.getInstance().getAwsBearerToken();
+        });
     }
 
     @NotNull

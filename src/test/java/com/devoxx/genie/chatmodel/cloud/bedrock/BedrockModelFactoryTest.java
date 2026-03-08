@@ -2,6 +2,7 @@ package com.devoxx.genie.chatmodel.cloud.bedrock;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -35,6 +36,7 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
         when(settingsStateMock.getAwsSecretKey()).thenReturn(DUMMY_AWS_SECRET_KEY);
         when(settingsStateMock.getAwsRegion()).thenReturn(US_EAST_1);
+        when(settingsStateMock.getAwsBedrockAuthMode()).thenReturn(AwsBedrockAuthMode.ACCESS_KEY);
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
@@ -77,7 +79,7 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     @Test
     void getCredentialsProviderForProfile() {
         BedrockModelFactory factory = new BedrockModelFactory();
-        when(settingsStateMock.getShouldPowerFromAWSProfile()).thenReturn(true);
+        when(settingsStateMock.getAwsBedrockAuthMode()).thenReturn(AwsBedrockAuthMode.PROFILE);
         when(settingsStateMock.getAwsProfileName()).thenReturn("bedrock");
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
         assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
