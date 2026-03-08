@@ -1,7 +1,7 @@
 ---
 id: TASK-191
 title: Add DevoxxGenie Workshop promotion to Docusaurus welcome page
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-07 15:11'
 labels:
@@ -30,9 +30,9 @@ Both workshops should be visually consistent (same styling, same banner area).
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 DevoxxGenie Workshop link added to the banner area on the welcome page
-- [ ] #2 Link points to https://stephanjanssen.be with utm_source=DevoxxGenie parameter
-- [ ] #3 DevoxxGenie Workshop link is visually consistent with the existing Agentic Engineering Workshop link
-- [ ] #4 Both workshop links are clearly visible and distinguishable from each other
-- [ ] #5 Page renders correctly on desktop and mobile
+- [x] #1 DevoxxGenie Workshop link added to the banner area on the welcome page
+- [x] #2 Link points to https://stephanjanssen.be with utm_source=DevoxxGenie parameter
+- [x] #3 DevoxxGenie Workshop link is visually consistent with the existing Agentic Engineering Workshop link
+- [x] #4 Both workshop links are clearly visible and distinguishable from each other
+- [x] #5 Page renders correctly on desktop and mobile
 <!-- AC:END -->
