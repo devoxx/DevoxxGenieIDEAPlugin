@@ -279,7 +279,9 @@ public class ChatMemoryManager {
      */
     public void restoreConversationByKey(@NotNull String memoryKey, @NotNull Conversation conversation) {
         try {
-            chatMemoryService.clearMemoryByKey(memoryKey);
+            // Initialize (or re-initialize) memory for this key — ensures it exists even if
+            // the tab was just opened or conversation is restored from history into a fresh session
+            initializeMemoryByKey(memoryKey);
 
             for (com.devoxx.genie.model.conversation.ChatMessage message : conversation.getMessages()) {
                 if (message.isUser()) {
