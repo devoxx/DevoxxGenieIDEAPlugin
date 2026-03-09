@@ -168,6 +168,8 @@ Each automation can be configured in two modes:
 - **Confirmation mode** (default): When the event fires, a notification appears asking "Run [Agent Name]?" — you choose to proceed or dismiss
 - **Auto-run mode**: The agent runs immediately without asking. Best for low-risk, high-frequency agents (e.g., Explainer on File Opened)
 
+![Event Automation Confirmation Popup](/img/EventAutomation-Popup.png)
+
 :::tip
 Start with confirmation mode for all agents. Once you're comfortable with an agent's behavior, switch to auto-run for a smoother workflow.
 :::
