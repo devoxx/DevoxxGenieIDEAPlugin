@@ -1,0 +1,53 @@
+package com.devoxx.genie.model.automation;
+
+import lombok.Getter;
+
+/**
+ * Built-in agent types that can be triggered by IDE events.
+ * Users can also create custom agents via the settings panel.
+ */
+@Getter
+public enum AgentType {
+
+    CODE_REVIEW("Code Review Agent",
+            "Reviews code changes for bugs, security issues, and style violations",
+            "Review the following code changes for potential bugs, security issues, and style violations. " +
+            "Be specific about file names and line numbers. Provide concrete fixes.\n\n{{context}}"),
+
+    BUILD_FIX("Build Fix Agent",
+            "Analyzes build failures and proposes fixes",
+            "Analyze the following build errors. For each error, identify the root cause, " +
+            "explain why it happened, and provide a concrete fix. Prioritize by severity.\n\n{{context}}"),
+
+    DEBUG("Debug Agent",
+            "Analyzes test failures and exceptions to find root causes",
+            "Analyze the following test failure or exception. Read the stack trace, " +
+            "identify the root cause, check recent changes that might have caused it, " +
+            "and propose a fix with explanation.\n\n{{context}}"),
+
+    TEST_GENERATOR("Test Generator Agent",
+            "Generates unit tests for new or changed code",
+            "Generate comprehensive unit tests for the code in these files: {{files}}\n" +
+            "Include edge cases, boundary conditions, and error scenarios. " +
+            "Use the project's existing test framework and conventions."),
+
+    EXPLAINER("Code Explainer Agent",
+            "Explains unfamiliar code files and their dependencies",
+            "Provide a brief summary of this file: {{files}}\n" +
+            "Cover its purpose, key methods/classes, dependencies, and how it fits " +
+            "into the broader architecture. Keep it concise."),
+
+    CUSTOM("Custom Agent",
+            "User-defined agent with custom prompt",
+            "");
+
+    private final String displayName;
+    private final String description;
+    private final String defaultPrompt;
+
+    AgentType(String displayName, String description, String defaultPrompt) {
+        this.displayName = displayName;
+        this.description = description;
+        this.defaultPrompt = defaultPrompt;
+    }
+}

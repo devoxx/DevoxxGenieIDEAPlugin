@@ -1,11 +1,21 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.service.automation.listeners.BuildCompilationListener;
+import com.devoxx.genie.service.automation.listeners.FileEventListener;
+import com.devoxx.genie.service.automation.listeners.FileSaveListener;
+import com.devoxx.genie.service.automation.listeners.ProcessExitListener;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
 import com.devoxx.genie.ui.util.ThemeChangeListener;
+import com.intellij.execution.ExecutionManager;
+import com.intellij.openapi.compiler.CompilationStatusListener;
+import com.intellij.openapi.compiler.CompilerTopics;
+import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
+import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
+import com.intellij.util.messages.MessageBusConnection;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +55,39 @@ public class PostStartupActivity implements ProjectActivity {
         ThemeChangeListener.register();
         log.debug("Registered ThemeChangeListener for theme changes");
 
+        // Register event automation listeners (project-scoped)
+        registerEventAutomationListeners(project);
+
         return Unit.INSTANCE;
+    }
+
+    /**
+     * Registers IDE event listeners that feed into the Event Automation system.
+     * Listeners are tied to the project lifecycle and disposed when the project closes.
+     */
+    private void registerEventAutomationListeners(@NotNull Project project) {
+        try {
+            MessageBusConnection connection = project.getMessageBus().connect();
+
+            // File editor events (FILE_OPENED)
+            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
+                    new FileEventListener(project));
+
+            // File save events (FILE_SAVED) — application-level topic
+            connection.subscribe(FileDocumentManagerListener.TOPIC,
+                    new FileSaveListener());
+
+            // Build/compilation events (BUILD_FAILED, BUILD_SUCCEEDED)
+            connection.subscribe(CompilerTopics.COMPILATION_STATUS,
+                    new BuildCompilationListener(project));
+
+            // Process exit events (PROCESS_CRASHED)
+            connection.subscribe(ExecutionManager.EXECUTION_TOPIC,
+                    new ProcessExitListener());
+
+            log.debug("Registered event automation listeners for project: {}", project.getName());
+        } catch (Exception e) {
+            log.warn("Failed to register some event automation listeners (IDE may lack required APIs)", e);
+        }
     }
 }
