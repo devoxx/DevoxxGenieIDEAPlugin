@@ -321,8 +321,12 @@ public class ChatMemoryManager {
      * @return The complete system prompt
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
+        return buildAugmentedSystemPrompt(context.getProject());
+    }
+
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project) {
         String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + MARKDOWN;
-        String projectPath = context.getProject().getBasePath();
+        String projectPath = project.getBasePath();
 
         // Always tell the LLM the project root when tools are active
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())) {
@@ -352,7 +356,7 @@ public class ChatMemoryManager {
 
         // Add DEVOXXGENIE.md content to system prompt (once per conversation)
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
-            String devoxxGenieMdContent = readDevoxxGenieMdFile(context.getProject());
+            String devoxxGenieMdContent = readDevoxxGenieMdFile(project);
             if (devoxxGenieMdContent != null && !devoxxGenieMdContent.isEmpty()) {
                 systemPrompt += "\n<ProjectContext>\n" + devoxxGenieMdContent + "\n</ProjectContext>\n";
             }
@@ -360,7 +364,7 @@ public class ChatMemoryManager {
 
         // Add CLAUDE.md or AGENTS.md content to system prompt (once per conversation)
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseClaudeOrAgentsMdInPrompt())) {
-            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(context.getProject());
+            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(project);
             if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
                 systemPrompt += "\n<ProjectContext>\n" + claudeOrAgentsMdContent + "\n</ProjectContext>\n";
             }

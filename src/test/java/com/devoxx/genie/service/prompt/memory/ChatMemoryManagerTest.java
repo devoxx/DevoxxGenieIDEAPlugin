@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -136,5 +140,30 @@ class ChatMemoryManagerTest {
         // Image should be preserved as-is
         ImageContent imageContent = (ImageContent) contents.get(1);
         assertEquals("imagedata", imageContent.image().base64Data());
+    }
+
+    @Test
+    void buildAugmentedSystemPrompt_includesAgentsMdContent() throws Exception {
+        Path tempDir = Files.createTempDirectory("chat-memory-manager-test");
+        Files.writeString(tempDir.resolve("AGENTS.md"), "Search existing backlog tasks before creating new ones.");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class)) {
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            when(stateService.getAgentModeEnabled()).thenReturn(false);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(true);
+            when(mockProject.getBasePath()).thenReturn(tempDir.toString());
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject);
+
+            assertTrue(prompt.contains("Base system prompt"));
+            assertTrue(prompt.contains("Search existing backlog tasks before creating new ones."));
+        }
     }
 }
