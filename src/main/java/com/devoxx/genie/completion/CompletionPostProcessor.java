@@ -37,6 +37,10 @@ public final class CompletionPostProcessor {
 
     /** Result of post-processing a completion. */
     public record ProcessedCompletion(@NotNull List<Element> elements) {
+        public ProcessedCompletion {
+            elements = List.copyOf(elements);
+        }
+
         public boolean isEmpty() {
             return elements.isEmpty();
         }
