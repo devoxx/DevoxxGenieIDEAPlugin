@@ -14,5 +14,6 @@ public class CustomChatModel {
     private int maxTokens = Constant.MAX_OUTPUT_TOKENS;
     private int maxRetries = Constant.MAX_RETRIES;
     private int timeout = Constant.TIMEOUT;
-    private Integer contextWindow; // Context window size (null = use provider default)
+    private Integer contextWindow; // Discovered context window used for UI/token calculations
+    private Integer contextWindowOverride; // Explicit request-time override (null = use provider default)
 }

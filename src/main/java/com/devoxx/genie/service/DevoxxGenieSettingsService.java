@@ -15,6 +15,8 @@ public interface DevoxxGenieSettingsService {
 
     String getOllamaModelUrl();
 
+    Boolean getOllamaContextWindowOverrideEnabled();
+
     String getLmstudioModelUrl();
 
     String getGpt4allModelUrl();
@@ -108,6 +110,8 @@ public interface DevoxxGenieSettingsService {
     void setLanguageModels(List<LanguageModel> languageModels);
 
     void setOllamaModelUrl(String url);
+
+    void setOllamaContextWindowOverrideEnabled(Boolean enabled);
 
     void setLmstudioModelUrl(String url);
 
