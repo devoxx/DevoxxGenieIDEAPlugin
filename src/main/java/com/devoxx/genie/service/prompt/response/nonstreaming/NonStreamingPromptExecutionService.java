@@ -181,7 +181,7 @@ public class NonStreamingPromptExecutionService {
                 return response;
             }
 
-            Assistant assistant = buildAssistant(chatModel, chatMemory);
+            Assistant assistant = buildAssistant(chatModel, chatMemory, project);
 
             // Try agent mode first, then fall back to MCP-only
             ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
@@ -195,11 +195,10 @@ public class NonStreamingPromptExecutionService {
 
             if (toolProvider != null) {
                 log.debug("Tool provider created for non-streaming prompt");
-                String basePath = project.getBasePath();
                 assistant = AiServices.builder(Assistant.class)
                         .chatModel(chatModel)
                         .chatMemoryProvider(memoryId -> chatMemory)
-                        .systemMessageProvider(memoryId -> buildToolSystemPrompt(basePath))
+                        .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
                         .toolProvider(toolProvider)
                         .build();
             }
@@ -234,24 +233,17 @@ public class NonStreamingPromptExecutionService {
         }
     }
 
-    private static @NotNull String buildToolSystemPrompt(String projectBasePath) {
-        StringBuilder sb = new StringBuilder(DevoxxGenieStateService.getInstance().getSystemPrompt());
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()) && projectBasePath != null) {
-            sb.append("\n<PROJECT_ROOT>").append(projectBasePath).append("</PROJECT_ROOT>")
-              .append("\nAll file paths in tool calls are relative to this project root directory.\n");
-        }
-        if (MCPService.isMCPEnabled() && projectBasePath != null) {
-            sb.append("<MCP_INSTRUCTION>The project base directory is ").append(projectBasePath)
-              .append("\nMake sure to use this information for your MCP tooling calls\n</MCP_INSTRUCTION>");
-        }
-        return TemplateVariableEscaper.escape(sb.toString());
+    private static @NotNull String buildToolSystemPrompt(@NotNull Project project) {
+        return ChatMemoryManager.buildAugmentedSystemPrompt(project);
     }
 
-    private static Assistant buildAssistant(ChatModel chatModel, ChatMemory chatMemory) {
+    private static Assistant buildAssistant(ChatModel chatModel,
+                                           ChatMemory chatMemory,
+                                           @NotNull Project project) {
         return AiServices.builder(Assistant.class)
                 .chatModel(chatModel)
                 .chatMemoryProvider(memoryId -> chatMemory)
-                .systemMessageProvider(memoryId -> TemplateVariableEscaper.escape(DevoxxGenieStateService.getInstance().getSystemPrompt()))
+                .systemMessageProvider(memoryId -> ChatMemoryManager.buildAugmentedSystemPrompt(project))
                 .build();
     }
 

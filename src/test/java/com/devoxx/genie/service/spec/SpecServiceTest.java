@@ -476,6 +476,27 @@ class SpecServiceTest {
         }
     }
 
+    @Test
+    void searchSpecs_includesArchivedTasks(@TempDir Path tempDir) throws IOException {
+        try (var mocks = new MockContext(tempDir)) {
+            mocks.initBacklog();
+            SpecService service = mocks.createService();
+
+            TaskSpec archivedTask = service.createTask(TaskSpec.builder()
+                    .title("Archived duplicate candidate")
+                    .status("Done")
+                    .priority("medium")
+                    .build());
+            service.archiveTask(archivedTask.getId());
+
+            List<TaskSpec> results = service.searchSpecs("Archived duplicate", null, null, 0);
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getId()).isEqualTo(archivedTask.getId());
+            assertThat(results.get(0).getFilePath().replace('\\', '/')).contains("/archive/tasks/");
+        }
+    }
+
     // ── Fuzzy search (getSpecsByFilters) ───────────────────────────────────
 
     @Test

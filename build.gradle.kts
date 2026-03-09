@@ -303,37 +303,33 @@ intellijPlatform {
     }
 }
 
+// Filter unsupported Compose compiler plugin option (Kotlin 2.1.10 / IntelliJ platform incompatibility)
+afterEvaluate {
+    tasks.withType<KotlinCompile>().configureEach {
+        val currentArgs = compilerOptions.freeCompilerArgs.get().toList()
+        val filtered = mutableListOf<String>()
+        var i = 0
+        while (i < currentArgs.size) {
+            if (currentArgs[i] == "-P" && currentArgs.getOrNull(i + 1)?.contains("generateFunctionKeyMetaAnnotations") == true) {
+                i += 2
+            } else {
+                filtered += currentArgs[i]
+                i++
+            }
+        }
+        compilerOptions.freeCompilerArgs.set(filtered)
+    }
+}
+
 tasks {
     // Run plugin on different IntelliJ versions for testing
     // Usage: ./gradlew runIde -PideVersion=2024.3.5
     //        ./gradlew runIde -PideVersion=2025.1.1
     //        ./gradlew runIde -PideVersion=2025.2.2
     //        ./gradlew runIde -PideVersion=2025.3.3
-    
+
     withType<Jar> {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
-
-    withType<JavaCompile> {
-    }
-
-    withType<KotlinCompile>().configureEach {
-        doFirst {
-            val filteredArgs = mutableListOf<String>()
-            val args = kotlinOptions.freeCompilerArgs
-            var index = 0
-            while (index < args.size) {
-                val arg = args[index]
-                val nextArg = args.getOrNull(index + 1)
-                if (arg == "-P" && nextArg == "plugin:androidx.compose.compiler.plugins.kotlin:generateFunctionKeyMetaAnnotations=true") {
-                    index += 2
-                    continue
-                }
-                filteredArgs += arg
-                index += 1
-            }
-            kotlinOptions.freeCompilerArgs = filteredArgs
-        }
     }
 
     test {
