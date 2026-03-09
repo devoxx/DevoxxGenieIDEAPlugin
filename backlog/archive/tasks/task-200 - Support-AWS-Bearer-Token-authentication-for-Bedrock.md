@@ -1,22 +1,22 @@
 ---
 id: TASK-200
 title: Support AWS Bearer Token authentication for Bedrock
-status: In Progress
+status: Done
+priority: medium
 assignee:
   - codex
 created_date: '2026-03-08 17:54'
-updated_date: '2026-03-08 18:17'
+updated_date: '2026-03-09 13:27'
 labels:
   - enhancement
   - bedrock
   - authentication
 dependencies: []
 references:
-  - 'https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/966'
-priority: medium
+  - "https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/966"
+documentation: []
+ordinal: 1000
 ---
-
-## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Add support for `AWS_BEARER_TOKEN_BEDROCK` as an alternative authentication method for Amazon Bedrock, allowing users to access Bedrock models without needing to configure `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` or an AWS profile.
@@ -33,12 +33,11 @@ Add support for `AWS_BEARER_TOKEN_BEDROCK` as an alternative authentication meth
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
-<!-- AC:BEGIN -->
+
 - [ ] #1 Users can authenticate to Bedrock using an AWS bearer token instead of access key/secret key
 - [ ] #2 Bearer token option is available in Bedrock provider settings UI
 - [ ] #3 Existing access key/secret key and profile authentication methods continue to work unchanged
 - [ ] #4 Clear error message when bearer token is invalid or expired
-<!-- AC:END -->
 
 ## Implementation Plan
 
@@ -84,3 +83,4 @@ Verification 2026-03-08: `./gradlew -q test --tests com.devoxx.genie.ui.settings
 
 Follow-up consideration: bearer-token auth now works through AWS SDK client configuration, but the task remains In Progress until we decide whether additional explicit user-facing rewording is needed for invalid/expired bearer-token runtime errors beyond current AWS/LangChain4j exception messages.
 <!-- SECTION:NOTES:END -->
+
