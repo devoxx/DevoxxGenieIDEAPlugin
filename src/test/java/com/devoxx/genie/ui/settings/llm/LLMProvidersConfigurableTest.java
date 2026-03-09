@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.Application;
@@ -120,6 +121,34 @@ class LLMProvidersConfigurableTest {
         void shouldReturnTrueWhenAwsRegionSetAndEnabled() {
             stateService.setAwsRegion("us-east-1");
             stateService.setShowAwsFields(true);
+            assertThat(invokeIsAnyApiKeyEnabled()).isFalse();
+        }
+
+        @Test
+        void shouldReturnTrueWhenAwsAccessKeysSetAndEnabled() {
+            stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.ACCESS_KEY);
+            stateService.setAwsAccessKeyId("access-key");
+            stateService.setAwsSecretKey("secret-key");
+            stateService.setAwsRegion("us-east-1");
+            assertThat(invokeIsAnyApiKeyEnabled()).isTrue();
+        }
+
+        @Test
+        void shouldReturnTrueWhenAwsProfileSetAndEnabled() {
+            stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.PROFILE);
+            stateService.setAwsProfileName("bedrock-profile");
+            stateService.setAwsRegion("eu-west-1");
+            assertThat(invokeIsAnyApiKeyEnabled()).isTrue();
+        }
+
+        @Test
+        void shouldReturnTrueWhenAwsBearerTokenSetAndEnabled() {
+            stateService.setShowAwsFields(true);
+            stateService.setAwsBedrockAuthMode(AwsBedrockAuthMode.BEARER_TOKEN);
+            stateService.setAwsBearerToken("bedrock-token");
+            stateService.setAwsRegion("us-east-1");
             assertThat(invokeIsAnyApiKeyEnabled()).isTrue();
         }
 

@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
@@ -76,6 +77,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
+    private final JPasswordField awsBearerTokenField = new JPasswordField(stateService.getAwsBearerToken());
+    @Getter
     private final JTextField awsProfileName = new JTextField(stateService.getAwsProfileName());
     @Getter
     private final JPasswordField awsAccessKeyIdField = new JPasswordField(stateService.getAwsAccessKeyId());
@@ -128,17 +131,19 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox enableAWSCheckBox = new JCheckBox("", stateService.getShowAwsFields());
     @Getter
-    private final JCheckBox enableAWSProfileCheckBox = new JCheckBox("", stateService.getShouldPowerFromAWSProfile());
-    @Getter
     private final JCheckBox enableAWSRegionalInferenceCheckBox = new JCheckBox("", stateService.getShouldEnableAWSRegionalInference());
+    @Getter
+    private final JComboBox<AwsBedrockAuthMode> awsAuthModeComboBox = new JComboBox<>(AwsBedrockAuthMode.values());
 
     private final List<JComponent> azureComponents = new ArrayList<>();
 
     private final List<JComponent> awsCommonComponents = new ArrayList<>();
-    private final List<JComponent> awsDirectCredentialsComponents = new ArrayList<>();
-    private final List<JComponent> awsProfileCredentialsComponents = new ArrayList<>();
+    private final List<JComponent> awsAccessKeyComponents = new ArrayList<>();
+    private final List<JComponent> awsProfileComponents = new ArrayList<>();
+    private final List<JComponent> awsBearerTokenComponents = new ArrayList<>();
 
     public LLMProvidersComponent() {
+        awsAuthModeComboBox.setSelectedItem(stateService.getAwsBedrockAuthMode());
         addListeners();
     }
 
@@ -231,13 +236,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         });
         enableAWSCheckBox.addItemListener(event -> {
             setNestedComponentsVisibility(awsCommonComponents, event.getStateChange() == ItemEvent.SELECTED, true);
-            setNestedComponentsVisibility(awsDirectCredentialsComponents, event.getStateChange() == ItemEvent.SELECTED && !enableAWSProfileCheckBox.isSelected(), true);
-            setNestedComponentsVisibility(awsProfileCredentialsComponents, event.getStateChange() == ItemEvent.SELECTED && enableAWSProfileCheckBox.isSelected(), true);
+            updateAwsAuthComponentsVisibility(true);
         });
-        enableAWSProfileCheckBox.addItemListener(event -> {
-            setNestedComponentsVisibility(awsDirectCredentialsComponents, enableAWSCheckBox.isSelected() && event.getStateChange() != ItemEvent.SELECTED, true);
-            setNestedComponentsVisibility(awsProfileCredentialsComponents, enableAWSCheckBox.isSelected() && event.getStateChange() == ItemEvent.SELECTED, true);
-        });
+        awsAuthModeComboBox.addActionListener(event -> updateAwsAuthComponentsVisibility(true));
 
         // Add new listeners for enable/disable checkboxes
         ollamaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(ollamaEnabledCheckBox, ollamaModelUrlField));
@@ -287,20 +288,20 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         final String awsProfileURL = "https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html";
         addSettingRow(panel, gbc, "Enable AWS Bedrock", enableAWSCheckBox);
 
-        addNestedSettingsRow(panel, gbc, "Power from AWS Profile", enableAWSProfileCheckBox, awsCommonComponents);
+        addNestedSettingsRow(panel, gbc, "Authentication Method", awsAuthModeComboBox, awsCommonComponents);
         addNestedSettingsRow(panel, gbc, "Enable Regional Inference", enableAWSRegionalInferenceCheckBox, awsCommonComponents);
         addNestedSettingsRow(panel, gbc, "AWS region", createTextWithPasswordButton(awsRegion, bedrockURL), awsCommonComponents);
 
-        addNestedSettingsRow(panel, gbc, "AWS Access Key ID", createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsDirectCredentialsComponents);
-        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key", createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsDirectCredentialsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Access Key ID", createTextWithLinkButton(awsAccessKeyIdField, bedrockURL), awsAccessKeyComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Secret Access Key", createTextWithLinkButton(awsSecretKeyField, bedrockURL), awsAccessKeyComponents);
 
-        addNestedSettingsRow(panel, gbc, "AWS Profile Name", createTextWithLinkButton(awsProfileName, awsProfileURL), awsProfileCredentialsComponents);
+        addNestedSettingsRow(panel, gbc, "AWS Profile Name", createTextWithLinkButton(awsProfileName, awsProfileURL), awsProfileComponents);
 
+        addNestedSettingsRow(panel, gbc, "AWS Bearer Token", createTextWithPasswordButton(awsBearerTokenField, bedrockURL), awsBearerTokenComponents);
 
         // Set initial visibility
         setNestedComponentsVisibility(awsCommonComponents, enableAWSCheckBox.isSelected(), false);
-        setNestedComponentsVisibility(awsDirectCredentialsComponents, enableAWSCheckBox.isSelected() && !enableAWSProfileCheckBox.isSelected(), false);
-        setNestedComponentsVisibility(awsProfileCredentialsComponents, enableAWSCheckBox.isSelected() && enableAWSProfileCheckBox.isSelected(), false);
+        updateAwsAuthComponentsVisibility(false);
     }
 
     /**
@@ -353,6 +354,25 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             panel.revalidate();
             panel.repaint();
         }
+    }
+
+    public void refreshAwsSettingsVisibility() {
+        updateAwsAuthComponentsVisibility(true);
+    }
+
+    private void updateAwsAuthComponentsVisibility(boolean repaintPanel) {
+        AwsBedrockAuthMode authMode = (AwsBedrockAuthMode) awsAuthModeComboBox.getSelectedItem();
+        if (authMode == null) {
+            authMode = AwsBedrockAuthMode.defaultMode();
+        }
+        boolean awsEnabled = enableAWSCheckBox.isSelected();
+
+        setNestedComponentsVisibility(awsAccessKeyComponents,
+                awsEnabled && authMode == AwsBedrockAuthMode.ACCESS_KEY, repaintPanel);
+        setNestedComponentsVisibility(awsProfileComponents,
+                awsEnabled && authMode == AwsBedrockAuthMode.PROFILE, repaintPanel);
+        setNestedComponentsVisibility(awsBearerTokenComponents,
+                awsEnabled && authMode == AwsBedrockAuthMode.BEARER_TOKEN, repaintPanel);
     }
     
     /**

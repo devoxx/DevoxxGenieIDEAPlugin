@@ -10,14 +10,11 @@ import dev.langchain4j.model.bedrock.BedrockStreamingChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 
 import java.util.List;
@@ -35,6 +32,8 @@ public class BedrockModelFactory implements ChatModelFactory {
 
     // Langchain4J doesn't support this yet
     private static final String MODEL_PREFIX_AMAZON = "amazon";
+
+    private final BedrockAuthResolver authResolver = new BedrockAuthResolver();
 
     /**
      * Creates a {@link ChatModel} based on the provided {@link CustomChatModel}.
@@ -91,10 +90,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createAnthropicChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(getModelId(customChatModel.getModelName()))
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -112,10 +108,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private BedrockStreamingChatModel createAnthropicStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockStreamingChatModel.builder()
                 .modelId(getModelId(customChatModel.getModelName()))
-                .client(BedrockRuntimeAsyncClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeAsyncClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -126,10 +119,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createMistralChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(customChatModel.getModelName())
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -140,10 +130,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createCohereChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(customChatModel.getModelName())
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -154,10 +141,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createLamaChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(getModelId(customChatModel.getModelName()))
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -168,10 +152,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createAI21ChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(customChatModel.getModelName())
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -182,10 +163,7 @@ public class BedrockModelFactory implements ChatModelFactory {
     private ChatModel createStabilityChatModel(@NotNull CustomChatModel customChatModel) {
         return BedrockChatModel.builder()
                 .modelId(customChatModel.getModelName())
-                .client(BedrockRuntimeClient.builder()
-                        .region(getRegion())
-                        .credentialsProvider(getCredentialsProvider())
-                        .build())
+                .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
                 .defaultRequestParameters(ChatRequestParameters.builder()
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
@@ -213,14 +191,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return An {@link AwsCredentialsProvider} for authenticating with AWS.
      */
     public @NotNull AwsCredentialsProvider getCredentialsProvider() {
-        String accessKeyId = DevoxxGenieStateService.getInstance().getAwsAccessKeyId();
-        String secretKey = DevoxxGenieStateService.getInstance().getAwsSecretKey();
-
-        boolean shouldPowerFromProfile = DevoxxGenieStateService.getInstance().getShouldPowerFromAWSProfile();
-        String profileName = DevoxxGenieStateService.getInstance().getAwsProfileName();
-
-        return shouldPowerFromProfile ? ProfileCredentialsProvider.create(profileName) :
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretKey));
+        return authResolver.getCredentialsProvider();
     }
 
     /**
@@ -229,9 +200,7 @@ public class BedrockModelFactory implements ChatModelFactory {
      * @return The AWS {@link Region}.
      */
     public Region getRegion() {
-        return Region.of(
-                DevoxxGenieStateService.getInstance().getAwsRegion()
-        );
+        return authResolver.getRegion();
     }
 
     /**
