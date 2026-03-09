@@ -183,6 +183,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // CLAUDE.md / AGENTS.md inclusion option
     private Boolean useClaudeOrAgentsMdInPrompt = true;
 
+    // Skiko rendering settings - force software rendering to fix GPU driver issues on Windows
+    private Boolean forceSkikoSoftwareRendering = false;
+
     private Boolean showAzureOpenAIFields = false;
     private Boolean showAwsFields = false;
     private Boolean shouldPowerFromAWSProfile = false;

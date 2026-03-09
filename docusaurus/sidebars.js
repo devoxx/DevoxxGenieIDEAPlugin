@@ -25,6 +25,7 @@ const sidebars = {
         'getting-started/use-ollama-in-intellij',
         'getting-started/why-devoxxgenie',
         'getting-started/faq',
+        'getting-started/troubleshooting',
       ],
     },
     {
