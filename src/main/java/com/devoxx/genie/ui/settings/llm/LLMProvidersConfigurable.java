@@ -70,6 +70,8 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGlmApiKeyField(), stateService.getGlmKey());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
+        isModified |= Boolean.TRUE.equals(stateService.getOllamaContextWindowOverrideEnabled())
+                != llmSettingsComponent.getOllamaContextWindowOverrideCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getLmStudioModelUrlField(), stateService.getLmstudioModelUrl());
         isModified |= (stateService.getLmStudioFallbackContextLength() != null) != llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected();
         if (llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected()) {
@@ -136,6 +138,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
 
         settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
+        settings.setOllamaContextWindowOverrideEnabled(llmSettingsComponent.getOllamaContextWindowOverrideCheckBox().isSelected());
         settings.setLmstudioModelUrl(llmSettingsComponent.getLmStudioModelUrlField().getText());
         settings.setLmStudioFallbackContextLength(
                 llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().isSelected()
@@ -245,6 +248,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
 
         llmSettingsComponent.getOllamaModelUrlField().setText(settings.getOllamaModelUrl());
+        llmSettingsComponent.getOllamaContextWindowOverrideCheckBox().setSelected(Boolean.TRUE.equals(settings.getOllamaContextWindowOverrideEnabled()));
         llmSettingsComponent.getLmStudioModelUrlField().setText(settings.getLmstudioModelUrl());
         llmSettingsComponent.getLmStudioFallbackContextEnabledCheckBox().setSelected(settings.getLmStudioFallbackContextLength() != null);
         llmSettingsComponent.getLmStudioFallbackContextField().setNumber(

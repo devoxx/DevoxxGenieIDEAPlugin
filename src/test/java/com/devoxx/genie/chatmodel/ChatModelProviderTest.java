@@ -187,6 +187,7 @@ class ChatModelProviderTest {
         assertThat(result.getTimeout()).isEqualTo(120);
         assertThat(result.getMaxTokens()).isEqualTo(8000);
         assertThat(result.getContextWindow()).isEqualTo(128000);
+        assertThat(result.getContextWindowOverride()).isNull();
     }
 
     @Test
@@ -220,6 +221,47 @@ class ChatModelProviderTest {
         CustomChatModel result = chatModelProvider.initChatModel(context);
 
         assertThat(result.getContextWindow()).isNull();
+        assertThat(result.getContextWindowOverride()).isNull();
+    }
+
+    @Test
+    void testInitChatModel_DoesNotSetOllamaContextWindowOverrideWhenSettingDisabled() {
+        LanguageModel languageModel = LanguageModel.builder()
+                .provider(ModelProvider.Ollama)
+                .modelName("llama3")
+                .inputMaxTokens(8192)
+                .build();
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .languageModel(languageModel)
+                .build();
+
+        when(stateService.getOllamaContextWindowOverrideEnabled()).thenReturn(false);
+
+        CustomChatModel result = chatModelProvider.initChatModel(context);
+
+        assertThat(result.getContextWindow()).isEqualTo(8192);
+        assertThat(result.getContextWindowOverride()).isNull();
+    }
+
+    @Test
+    void testInitChatModel_SetsOllamaContextWindowOverrideWhenSettingEnabled() {
+        LanguageModel languageModel = LanguageModel.builder()
+                .provider(ModelProvider.Ollama)
+                .modelName("llama3")
+                .inputMaxTokens(8192)
+                .build();
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .languageModel(languageModel)
+                .build();
+
+        when(stateService.getOllamaContextWindowOverrideEnabled()).thenReturn(true);
+
+        CustomChatModel result = chatModelProvider.initChatModel(context);
+
+        assertThat(result.getContextWindow()).isEqualTo(8192);
+        assertThat(result.getContextWindowOverride()).isEqualTo(8192);
     }
 
     @Test

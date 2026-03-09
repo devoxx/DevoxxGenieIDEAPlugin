@@ -2,10 +2,13 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
+import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +37,12 @@ class LLMProvidersConfigurableTest {
 
     @Mock
     private Project project;
+
+    @Mock
+    private MessageBus messageBus;
+
+    @Mock
+    private SettingsChangeListener settingsChangeListener;
 
     @Mock
     private PropertiesService propertiesService;
@@ -58,6 +68,8 @@ class LLMProvidersConfigurableTest {
         propertiesServiceMockedStatic = Mockito.mockStatic(PropertiesService.class);
         propertiesServiceMockedStatic.when(PropertiesService::getInstance).thenReturn(propertiesService);
         when(propertiesService.getVersion()).thenReturn("1.0.0-test");
+        lenient().when(project.getMessageBus()).thenReturn(messageBus);
+        lenient().when(messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)).thenReturn(settingsChangeListener);
 
         configurable = new LLMProvidersConfigurable(project);
     }
@@ -72,6 +84,30 @@ class LLMProvidersConfigurableTest {
     @Test
     void shouldHaveCorrectDisplayName() {
         assertThat(configurable.getDisplayName()).isEqualTo("Large Language Models");
+    }
+
+    @Test
+    void shouldApplyOllamaContextWindowOverrideSetting() {
+        configurable.createComponent();
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getOllamaContextWindowOverrideCheckBox().setSelected(true);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.getOllamaContextWindowOverrideEnabled()).isTrue();
+    }
+
+    @Test
+    void shouldResetOllamaContextWindowOverrideSetting() {
+        stateService.setOllamaContextWindowOverrideEnabled(true);
+        configurable.createComponent();
+
+        configurable.reset();
+
+        assertThat(getSettingsComponent().getOllamaContextWindowOverrideCheckBox().isSelected()).isTrue();
     }
 
     @Nested
@@ -165,6 +201,16 @@ class LLMProvidersConfigurableTest {
             Method method = LLMProvidersConfigurable.class.getDeclaredMethod("isAnyApiKeyEnabled", DevoxxGenieStateService.class);
             method.setAccessible(true);
             return (boolean) method.invoke(configurable, stateService);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private LLMProvidersComponent getSettingsComponent() {
+        try {
+            Field field = LLMProvidersConfigurable.class.getDeclaredField("llmSettingsComponent");
+            field.setAccessible(true);
+            return (LLMProvidersComponent) field.get(configurable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

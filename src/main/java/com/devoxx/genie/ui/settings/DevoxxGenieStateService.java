@@ -81,6 +81,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
+    private Boolean ollamaContextWindowOverrideEnabled = false;
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
     private Integer lmStudioFallbackContextLength;
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;

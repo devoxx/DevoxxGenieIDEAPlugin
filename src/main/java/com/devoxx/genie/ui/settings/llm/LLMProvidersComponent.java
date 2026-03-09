@@ -23,6 +23,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField ollamaModelUrlField = new JTextField(stateService.getOllamaModelUrl());
     @Getter
+    private final JCheckBox ollamaContextWindowOverrideCheckBox = new JCheckBox("", Boolean.TRUE.equals(stateService.getOllamaContextWindowOverrideEnabled()));
+    @Getter
     private final JTextField lmStudioModelUrlField = new JTextField(stateService.getLmstudioModelUrl());
     @Getter
     private final JCheckBox lmStudioFallbackContextEnabledCheckBox = new JCheckBox("", stateService.getLmStudioFallbackContextLength() != null);
@@ -170,6 +172,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         addProviderSettingRow(panel, gbc, "Ollama URL", ollamaEnabledCheckBox,
                 createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"));
+        addProviderSettingRow(panel, gbc, "Ollama Request Context Override", ollamaContextWindowOverrideCheckBox);
+        addHintText(panel, gbc, "When enabled, DevoxxGenie sends Ollama num_ctx from discovered model metadata; when disabled, Ollama keeps its own runtime default.");
         addProviderSettingRow(panel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
                 createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         // Add hint text for LMStudio URL

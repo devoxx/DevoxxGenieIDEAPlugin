@@ -33,9 +33,9 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .listeners(getListener());
 
-        // Pass context window to Ollama if available (fixes issue #804)
-        if (customChatModel.getContextWindow() != null) {
-            builder.numCtx(customChatModel.getContextWindow());
+        // Only send num_ctx when the user explicitly enabled request-time overriding.
+        if (customChatModel.getContextWindowOverride() != null) {
+            builder.numCtx(customChatModel.getContextWindowOverride());
         }
 
         return builder.build();
@@ -50,9 +50,9 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()));
 
-        // Pass context window to Ollama if available (fixes issue #804)
-        if (customChatModel.getContextWindow() != null) {
-            builder.numCtx(customChatModel.getContextWindow());
+        // Only send num_ctx when the user explicitly enabled request-time overriding.
+        if (customChatModel.getContextWindowOverride() != null) {
+            builder.numCtx(customChatModel.getContextWindowOverride());
         }
 
         return builder.build();
