@@ -37,23 +37,6 @@ public enum AgentType {
             "Cover its purpose, key methods/classes, dependencies, and how it fits " +
             "into the broader architecture. Keep it concise."),
 
-    SCAFFOLDER("Scaffold Agent",
-            "Generates boilerplate for new files matching project conventions",
-            "Generate appropriate boilerplate for the new file: {{files}}\n" +
-            "Base it on the file's location, type ({{meta.fileType}}), and the project's existing conventions. " +
-            "Include standard imports, class structure, and license headers if applicable."),
-
-    DEPENDENCY_CHECK("Dependency Check Agent",
-            "Checks for vulnerable or outdated dependencies",
-            "Check the project dependencies for known vulnerabilities (CVEs), available updates, " +
-            "and unused dependencies. Prioritize critical security issues.\n\n{{context}}"),
-
-    ONBOARDING("Onboarding Agent",
-            "Provides project overview and guidance when opening a project",
-            "Scan the project structure and provide a brief overview: tech stack, key entry points, " +
-            "build system, test status, and any configuration files that need attention. " +
-            "Suggest next steps for getting started.\n\n{{context}}"),
-
     CUSTOM("Custom Agent",
             "User-defined agent with custom prompt",
             "");

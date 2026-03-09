@@ -6,8 +6,8 @@ import com.devoxx.genie.service.automation.EventAutomationService;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.execution.testframework.TestStatusListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -21,7 +21,12 @@ public class TestExecutionListener extends TestStatusListener {
 
     @Override
     public void testSuiteFinished(@Nullable AbstractTestProxy root) {
-        if (root == null) {
+        // No-op: the project-aware overload below handles all logic.
+    }
+
+    @Override
+    public void testSuiteFinished(@Nullable AbstractTestProxy root, @NotNull Project project) {
+        if (root == null || project.isDisposed()) {
             return;
         }
 
@@ -30,15 +35,8 @@ public class TestExecutionListener extends TestStatusListener {
             return;
         }
 
-        // Collect failed tests
         List<AbstractTestProxy> failedTests = new ArrayList<>();
         collectFailed(root, failedTests);
-
-        // Resolve project — use the first non-disposed open project
-        Project project = findActiveProject();
-        if (project == null) {
-            return;
-        }
 
         if (!failedTests.isEmpty()) {
             handleTestsFailed(project, failedTests, root, automationService);
@@ -123,12 +121,4 @@ public class TestExecutionListener extends TestStatusListener {
         return count;
     }
 
-    private @Nullable Project findActiveProject() {
-        for (Project project : ProjectManager.getInstance().getOpenProjects()) {
-            if (!project.isDisposed() && !project.isDefault()) {
-                return project;
-            }
-        }
-        return null;
-    }
 }

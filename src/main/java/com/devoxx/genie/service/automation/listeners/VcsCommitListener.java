@@ -53,6 +53,25 @@ public class VcsCommitListener extends CheckinHandler {
             filePaths.add(path);
 
             diffContent.append("--- ").append(change.getType().name()).append(": ").append(path).append('\n');
+
+            // Include actual file content for line-level review
+            try {
+                String beforeContent = beforeRevision != null ? beforeRevision.getContent() : null;
+                String afterContent = afterRevision != null ? afterRevision.getContent() : null;
+
+                if (beforeContent != null && afterContent != null) {
+                    diffContent.append("BEFORE:\n").append(beforeContent).append('\n');
+                    diffContent.append("AFTER:\n").append(afterContent).append('\n');
+                } else if (afterContent != null) {
+                    // New file
+                    diffContent.append("NEW FILE:\n").append(afterContent).append('\n');
+                } else if (beforeContent != null) {
+                    // Deleted file
+                    diffContent.append("DELETED FILE:\n").append(beforeContent).append('\n');
+                }
+            } catch (com.intellij.openapi.vcs.VcsException e) {
+                log.debug("Could not read content for {}: {}", path, e.getMessage());
+            }
         }
 
         Map<String, String> metadata = new LinkedHashMap<>();

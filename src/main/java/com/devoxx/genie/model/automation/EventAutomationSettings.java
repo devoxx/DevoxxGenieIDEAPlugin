@@ -65,41 +65,9 @@ public class EventAutomationSettings {
 
         defaults.add(EventAgentMapping.builder()
                 .enabled(false)
-                .eventType(IdeEventType.FILE_CREATED.name())
-                .agentType(AgentType.SCAFFOLDER.name())
-                .prompt(AgentType.SCAFFOLDER.getDefaultPrompt())
-                .autoRun(false)
-                .build());
-
-        defaults.add(EventAgentMapping.builder()
-                .enabled(false)
                 .eventType(IdeEventType.FILE_OPENED.name())
                 .agentType(AgentType.EXPLAINER.name())
                 .prompt(AgentType.EXPLAINER.getDefaultPrompt())
-                .autoRun(false)
-                .build());
-
-        defaults.add(EventAgentMapping.builder()
-                .enabled(false)
-                .eventType(IdeEventType.METHOD_ADDED.name())
-                .agentType(AgentType.TEST_GENERATOR.name())
-                .prompt(AgentType.TEST_GENERATOR.getDefaultPrompt())
-                .autoRun(false)
-                .build());
-
-        defaults.add(EventAgentMapping.builder()
-                .enabled(false)
-                .eventType(IdeEventType.GRADLE_SYNC.name())
-                .agentType(AgentType.DEPENDENCY_CHECK.name())
-                .prompt(AgentType.DEPENDENCY_CHECK.getDefaultPrompt())
-                .autoRun(false)
-                .build());
-
-        defaults.add(EventAgentMapping.builder()
-                .enabled(false)
-                .eventType(IdeEventType.PROJECT_OPENED.name())
-                .agentType(AgentType.ONBOARDING.name())
-                .prompt(AgentType.ONBOARDING.getDefaultPrompt())
                 .autoRun(false)
                 .build());
 

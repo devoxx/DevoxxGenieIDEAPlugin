@@ -39,12 +39,12 @@ class EventContextTest {
     @Test
     void toPromptBlock_emptyOptionalFields() {
         EventContext ctx = EventContext.builder()
-                .eventType(IdeEventType.PROJECT_OPENED)
+                .eventType(IdeEventType.FILE_OPENED)
                 .build();
 
         String block = ctx.toPromptBlock();
 
-        assertThat(block).contains("Event: Project Opened");
+        assertThat(block).contains("Event: File Opened");
         assertThat(block).doesNotContain("Files:");
         assertThat(block).doesNotContain("Details:");
     }
