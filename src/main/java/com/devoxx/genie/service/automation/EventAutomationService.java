@@ -9,6 +9,8 @@ import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -77,15 +79,28 @@ public class EventAutomationService {
 
     /**
      * Submits a rendered prompt to the DevoxxGenie chat via the message bus.
+     * Ensures the tool window is initialized so the prompt subscriber exists.
      */
     private void submitPrompt(@NotNull Project project, @NotNull String prompt) {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (project.isDisposed()) {
                 return;
             }
+            // Ensure the DevoxxGenie tool window content is created so the
+            // PROMPT_SUBMISSION_TOPIC subscriber (ActionButtonsPanel) exists.
+            ToolWindow toolWindow = ToolWindowManager.getInstance(project)
+                    .getToolWindow("DevoxxGenie");
+            if (toolWindow == null) {
+                log.warn("DevoxxGenie tool window not found, cannot submit event automation prompt");
+                return;
+            }
+            if (toolWindow.getContentManager().getContentCount() == 0) {
+                // Force content creation — this wires up the message bus subscribers
+                toolWindow.show();
+            }
             project.getMessageBus()
                     .syncPublisher(com.devoxx.genie.ui.topic.AppTopics.PROMPT_SUBMISSION_TOPIC)
-                    .onPromptSubmitted(project, prompt);
+                    .onPromptSubmitted(project, prompt, null);
         });
     }
 

@@ -8,7 +8,7 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
 import com.devoxx.genie.ui.util.ThemeChangeListener;
-import com.intellij.execution.ExecutionListener;
+import com.intellij.execution.ExecutionManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
@@ -82,7 +82,7 @@ public class PostStartupActivity implements ProjectActivity {
                     new BuildCompilationListener(project));
 
             // Process exit events (PROCESS_CRASHED)
-            connection.subscribe(ExecutionListener.EXECUTION_TOPIC,
+            connection.subscribe(ExecutionManager.EXECUTION_TOPIC,
                     new ProcessExitListener());
 
             log.debug("Registered event automation listeners for project: {}", project.getName());
