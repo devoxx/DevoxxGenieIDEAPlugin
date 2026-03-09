@@ -2,6 +2,20 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1]
+
+### Added
+- Bedrock bearer token authentication support (#983)
+- 'Force software rendering' setting for Skiko/GPU issues (#981)
+
+### Fixed
+- Separate Ollama context window override from discovered metadata (#979) — `num_ctx` is now only sent when explicitly enabled via new "Ollama Request Context Override" setting
+- Catch Skiko/Direct3D init errors to prevent chat UI crash (#981)
+
+### Documentation
+- Add troubleshooting guide and FAQ entry for GPU rendering issues (#981)
+- Add confirmation popup screenshot to Event Automations docs page
+
 ## [1.3.0]
 
 ### Added

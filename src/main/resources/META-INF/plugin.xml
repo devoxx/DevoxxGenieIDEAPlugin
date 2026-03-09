@@ -45,6 +45,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.3.1</h2>
+        <UL>
+            <LI>Feat: Add Bedrock bearer token authentication support</LI>
+            <LI>Feat: Add 'Force software rendering' setting for Skiko/GPU issues (#981)</LI>
+            <LI>Fix: Separate Ollama context window override from discovered metadata (#979) — num_ctx is now only sent when explicitly enabled via new setting</LI>
+            <LI>Fix: Catch Skiko/Direct3D init errors to prevent chat UI crash (#981)</LI>
+            <LI>Docs: Add troubleshooting guide and FAQ entry for GPU rendering issues (#981)</LI>
+        </UL>
         <h2>v1.3.0</h2>
         <UL>
             <LI>Feat: Event Automations (BETA) — AI agents triggered by IDE events (file open/save, build failure, test failure, commit, process crash)</LI>
