@@ -164,7 +164,11 @@ public final class SpecService implements Disposable {
                                                 @Nullable String status,
                                                 @Nullable String priority,
                                                 int limit) {
-        Stream<TaskSpec> stream = specCache.values().stream();
+        java.util.Map<String, TaskSpec> candidates = new java.util.LinkedHashMap<>();
+        specCache.values().forEach(spec -> candidates.put(spec.getId().toUpperCase(java.util.Locale.ROOT), spec));
+        getArchivedTasks().forEach(spec -> candidates.putIfAbsent(spec.getId().toUpperCase(java.util.Locale.ROOT), spec));
+
+        Stream<TaskSpec> stream = candidates.values().stream();
 
         if (status != null && !status.isEmpty()) {
             stream = stream.filter(s -> status.equalsIgnoreCase(s.getStatus()));

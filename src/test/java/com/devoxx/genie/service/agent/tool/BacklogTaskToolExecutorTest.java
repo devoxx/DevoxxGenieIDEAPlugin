@@ -226,6 +226,28 @@ class BacklogTaskToolExecutorTest {
     }
 
     @Test
+    void searchTasks_archivedResults_areMarkedAsArchived() {
+        TaskSpec archivedTask = TaskSpec.builder()
+                .id("TASK-1")
+                .title("Archived Task")
+                .status("Done")
+                .priority("medium")
+                .filePath("/tmp/project/backlog/archive/tasks/TASK-1-archived-task.md")
+                .build();
+        when(specService.searchSpecs(eq("archived"), any(), any(), anyInt()))
+                .thenReturn(List.of(archivedTask));
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("backlog_task_search")
+                .arguments("{\"query\": \"archived\"}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(result).contains("TASK-1: Archived Task");
+        assertThat(result).contains("[archived]");
+    }
+
+    @Test
     void viewTask_missingId_returnsError() {
         ToolExecutionRequest request = ToolExecutionRequest.builder()
                 .name("backlog_task_view")

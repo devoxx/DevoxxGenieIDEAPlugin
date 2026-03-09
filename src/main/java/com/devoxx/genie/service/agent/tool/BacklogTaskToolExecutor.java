@@ -209,10 +209,21 @@ public class BacklogTaskToolExecutor implements ToolExecutor {
             if (spec.getPriority() != null) {
                 sb.append(" [").append(spec.getPriority()).append("]");
             }
+            if (isArchivedTask(spec)) {
+                sb.append(" [archived]");
+            }
             sb.append("\n");
         }
 
         return sb.toString();
+    }
+
+    private static boolean isArchivedTask(@NotNull TaskSpec spec) {
+        String filePath = spec.getFilePath();
+        if (filePath == null || filePath.isEmpty()) {
+            return false;
+        }
+        return filePath.replace('\\', '/').contains("/archive/tasks/");
     }
 
     private @NotNull String viewTask(@NotNull String arguments) {
