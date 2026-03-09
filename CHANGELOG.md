@@ -2,6 +2,28 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0]
+
+### Added
+- Event Automations (BETA) — AI agents triggered by IDE events (file open/save, build failure, test failure, commit, process crash)
+- Built-in agents: Code Review, Build Fix, Debug, Test Generator, Code Explainer, plus Custom agents
+- Event Automation settings panel with enable/disable, custom prompts, and auto-run per mapping
+- Template engine for agent prompts with `{{context}}`, `{{content}}`, `{{files}}`, `{{event}}`, `{{timestamp}}`, `{{meta.KEY}}` variables
+- Before-commit automation includes full staged diff (before/after file content) for line-level code review
+- "More Info" help link in Event Automations settings panel linking to documentation
+- Event Automations Docusaurus documentation page with settings screenshot
+
+### Fixed
+- Event automations ensure DevoxxGenie tool window is initialized before dispatching prompts (prevents silent prompt loss)
+- `TestExecutionListener` uses project-aware `testSuiteFinished(root, project)` overload for correct project in multi-project sessions
+- Removed 10 unsupported `IdeEventType` enum values and 3 `AgentType` entries that had no backing listeners
+- CLI runner error message readability on test connection failure (#971)
+
+### Testing
+- `IdeEventTypeTest` validates enum values match wired listeners to catch future drift
+- `EventAutomationSettingsTest` validates default mappings, agent/event type integrity, and boundary checks
+- Compose theme state retention test coverage
+
 ## [1.2.0]
 
 ### Added

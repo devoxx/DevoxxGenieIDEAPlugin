@@ -45,6 +45,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.3.0</h2>
+        <UL>
+            <LI>Feat: Event Automations (BETA) — AI agents triggered by IDE events (file open/save, build failure, test failure, commit, process crash)</LI>
+            <LI>Feat: Built-in agents for code review, build fix, debug, test generation, and code explanation</LI>
+            <LI>Feat: Template engine for agent prompts with {{context}}, {{content}}, {{files}}, {{event}}, {{timestamp}}, {{meta.KEY}} variables</LI>
+            <LI>Feat: Before-commit automation includes full staged diff (before/after content) for line-level review</LI>
+            <LI>Feat: "More Info" help link in Event Automations settings panel</LI>
+            <LI>Fix: Event automations ensure tool window is initialized before dispatching prompts</LI>
+            <LI>Fix: TestExecutionListener uses project-aware overload for correct project in multi-project sessions</LI>
+            <LI>Fix: CLI runner error message readability on test connection failure (#971)</LI>
+        </UL>
         <h2>v1.2.0</h2>
         <UL>
             <LI>Feat: Add conversation tabs for parallel model usage across independent chat sessions</LI>
