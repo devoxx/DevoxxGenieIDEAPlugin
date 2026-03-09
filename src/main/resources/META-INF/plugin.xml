@@ -466,7 +466,7 @@
         <projectConfigurable id="com.devoxx.genie.eventAutomation"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.automation.EventAutomationSettingsConfigurable"
-                             displayName="Event Automations (POC)"/>
+                             displayName="Event Automations (BETA)"/>
 
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"

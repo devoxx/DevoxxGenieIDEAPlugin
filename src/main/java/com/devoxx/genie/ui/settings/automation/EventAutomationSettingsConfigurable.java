@@ -25,14 +25,14 @@ public class EventAutomationSettingsConfigurable implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Event Automations (POC)";
+        return "Event Automations (BETA)";
     }
 
     @Nullable
     @Override
     public JComponent createComponent() {
         component = new EventAutomationSettingsComponent();
-        return component.createPanel();
+        return component.createPanelWithHelp();
     }
 
     @Override

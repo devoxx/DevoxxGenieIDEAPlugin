@@ -3,18 +3,18 @@ sidebar_position: 15
 title: Event Automations - AI Agents Triggered by IDE Events
 description: DevoxxGenie Event Automations let you configure AI agents that automatically activate in response to IDE events like commits, build failures, test failures, and more.
 image: /img/devoxxgenie-social-card.jpg
-keywords: [devoxxgenie, event automations, ide triggers, ai agents, code review, debug agent, test generator, build fix, scaffolder, onboarding, custom agents]
+keywords: [devoxxgenie, event automations, ide triggers, ai agents, code review, debug agent, test generator, build fix, custom agents]
 ---
 
-# Event Automations (POC)
+# Event Automations (BETA)
 
-:::info Proof of Concept
-Event Automations is an experimental feature that brings Cursor-style intelligent automations to IntelliJ IDEA. It allows AI agents to react to IDE events automatically — reviewing code before commits, debugging test failures, scaffolding new files, and more.
+:::info Beta
+Event Automations is a beta feature that brings Cursor-style intelligent automations to IntelliJ IDEA. It allows AI agents to react to IDE events automatically — reviewing code before commits, debugging test failures, and more.
 :::
 
 ## Overview
 
-Event Automations connects **IDE events** (triggers) to **AI agents** (actions). When an event occurs — such as a build failure, a test failing, or a file being created — the configured agent automatically activates with a tailored prompt, providing contextual assistance without manual intervention.
+Event Automations connects **IDE events** (triggers) to **AI agents** (actions). When an event occurs — such as a build failure, a test failing, or a file being opened — the configured agent automatically activates with a tailored prompt, providing contextual assistance without manual intervention.
 
 This turns DevoxxGenie from a reactive assistant (you ask, it answers) into a **proactive development partner** that watches what you do and offers help at exactly the right moment.
 
@@ -39,7 +39,9 @@ Each automation can be configured with:
 
 ## Settings Panel
 
-Navigate to **Settings → DevoxxGenie → Event Automations (POC)** to configure your automations.
+Navigate to **Settings → DevoxxGenie → Event Automations (BETA)** to configure your automations.
+
+![Event Automations Settings](/img/EventAutomations.png)
 
 The settings panel provides:
 - A **master toggle** to enable/disable all event automations
@@ -65,17 +67,12 @@ Events are organized into categories that map to natural development workflows:
 | Event | Trigger | Example Use Case |
 |-------|---------|-----------------|
 | **Before Commit** | Fires before a git commit is created | Run Code Review Agent to catch bugs before they're committed |
-| **After Commit** | Fires after a git commit is created | Generate changelog entry or update issue tracker |
-| **Branch Switch** | Fires when switching git branches | Summarize branch context and in-progress work |
-| **After Pull/Merge** | Fires after a git pull or merge | Detect and help resolve merge conflicts |
-| **Before Push** | Fires before pushing to remote | Final review of all commits being pushed |
 
 ### File & Editor
 
 | Event | Trigger | Example Use Case |
 |-------|---------|-----------------|
 | **File Saved** | Fires when a file is saved | Run related tests automatically |
-| **File Created** | Fires when a new file is created | Scaffold boilerplate matching project conventions |
 | **File Opened** | Fires when a file is opened in editor | Explain unfamiliar code and its dependencies |
 
 ### Build & Compilation
@@ -84,7 +81,6 @@ Events are organized into categories that map to natural development workflows:
 |-------|---------|-----------------|
 | **Build Failed** | Fires when a build fails with errors | Analyze errors and propose fixes |
 | **Build Succeeded** | Fires after a successful build | Check for deprecation warnings or optimization opportunities |
-| **Gradle Sync Complete** | Fires after Gradle sync finishes | Check for vulnerable or outdated dependencies |
 
 ### Testing
 
@@ -92,36 +88,21 @@ Events are organized into categories that map to natural development workflows:
 |-------|---------|-----------------|
 | **Test Failed** | Fires when a test fails | Debug agent analyzes failure, identifies root cause |
 | **Test Suite Passed** | Fires when all tests pass | Identify coverage gaps in recently changed code |
-| **Test Run Complete** | Fires when a test run finishes | Compare execution times, flag performance regressions |
-
-### Code Structure
-
-| Event | Trigger | Example Use Case |
-|-------|---------|-----------------|
-| **New Method Added** | Fires when a new method is added (PSI) | Generate unit tests for the new method |
-| **Interface Changed** | Fires when an interface is modified | Find and update implementations that are now out of sync |
 
 ### Run / Debug
 
 | Event | Trigger | Example Use Case |
 |-------|---------|-----------------|
-| **Exception During Debug** | Fires when an exception breakpoint is hit | Explain the exception with full variable context |
-| **Process Crashed** | Fires when a process exits with non-zero code | Post-mortem analysis of logs and heap dumps |
-
-### Project Lifecycle
-
-| Event | Trigger | Example Use Case |
-|-------|---------|-----------------|
-| **Project Opened** | Fires when a project is opened | Onboarding agent scans project and provides overview |
+| **Process Crashed** | Fires when a process exits with non-zero code | Post-mortem analysis of logs and exit code |
 
 ## Built-in Agents
 
-DevoxxGenie ships with eight built-in agents, each designed for a specific class of development task:
+DevoxxGenie ships with five built-in agents, each designed for a specific class of development task:
 
 ### Code Review Agent
-**Best paired with:** Before Commit, Before Push
+**Best paired with:** Before Commit
 
-Reviews code changes for bugs, security issues, and style violations. Provides specific line-number references and concrete fixes.
+Reviews code changes for bugs, security issues, and style violations. Includes the full staged diff (before/after content) for line-level review. Provides specific file references and concrete fixes.
 
 > *"You're introducing a SQL injection in UserDao.java:42. The `query` parameter is concatenated directly into the SQL string. Here's a parameterized version..."*
 
@@ -130,17 +111,17 @@ Reviews code changes for bugs, security issues, and style violations. Provides s
 
 Parses compiler errors, reads the failing source files, and proposes fixes with explanations. Handles missing imports, type mismatches, and ambiguous method calls.
 
-> *"Build failed: 3 errors. Missing import → added automatically. Type mismatch on line 87 → suggested cast. Ambiguous method call → 2 options shown."*
+> *"Build failed: 3 errors. Missing import - added automatically. Type mismatch on line 87 - suggested cast. Ambiguous method call - 2 options shown."*
 
 ### Debug Agent
-**Best paired with:** Test Failed, Exception During Debug
+**Best paired with:** Test Failed
 
 Reads the stack trace, the source under test, and recent changes to those files to identify root causes and suggest fixes.
 
 > *"testUserLogin failed: NullPointerException at AuthService:55. Root cause: commit abc123 removed null check in getUserById(). Suggested fix: [diff shown]"*
 
 ### Test Generator Agent
-**Best paired with:** New Method Added
+**Best paired with:** File Saved, File Opened
 
 Generates comprehensive unit tests for new or changed code, including edge cases, boundary conditions, and error scenarios. Follows the project's existing test framework and conventions.
 
@@ -150,25 +131,6 @@ Generates comprehensive unit tests for new or changed code, including edge cases
 Provides a brief summary of unfamiliar code files — purpose, key methods, dependencies, and architectural context.
 
 > *"This file handles JWT token validation. Key methods: validate(), refresh(). Called by AuthFilter. Last modified 3 weeks ago."*
-
-### Scaffold Agent
-**Best paired with:** File Created
-
-Generates appropriate boilerplate for new files based on location, type, and project conventions — imports, class structure, license headers, and framework annotations.
-
-### Dependency Check Agent
-**Best paired with:** Gradle Sync Complete
-
-Checks project dependencies for known CVEs, available updates, and unused dependencies. Prioritizes critical security issues.
-
-> *"2 dependencies have critical CVEs. log4j-core 2.14 → upgrade to 2.21. jackson-databind has CVE-2024-XXXXX."*
-
-### Onboarding Agent
-**Best paired with:** Project Opened
-
-Scans the project structure and provides an overview: tech stack, key entry points, build system, test status, and configuration files needing attention.
-
-> *"Welcome to payment-service. Stack: Spring Boot 3.2, PostgreSQL, Kafka. 47 open TODOs. 3 failing tests on main."*
 
 ## Custom Agents
 
@@ -182,11 +144,9 @@ Beyond the built-in agents, you can create **custom agents** for workflows speci
 
 | Agent Name | Event | What It Does |
 |-----------|-------|-------------|
-| Commit Message Writer | After Commit | Rewrites vague commit messages with proper conventional commit format |
-| Migration Generator | Interface Changed | Generates database migrations when entity classes change |
 | i18n Checker | File Saved | Scans for hardcoded strings that should be internationalized |
-| API Doc Sync | Method Added | Updates OpenAPI/Swagger docs when new endpoints are added |
-| Performance Guard | Test Run Complete | Compares test durations against baselines, flags regressions |
+| API Doc Sync | File Saved | Updates OpenAPI/Swagger docs when endpoint files change |
+| Performance Guard | Test Suite Passed | Compares test durations against baselines, flags regressions |
 
 ## Default Automations
 
@@ -194,14 +154,10 @@ When you first open the Event Automations settings, DevoxxGenie loads a set of *
 
 | IDE Event | Agent | Description |
 |-----------|-------|-------------|
-| Before Commit | Code Review Agent | Review changes before committing |
+| Before Commit | Code Review Agent | Review staged changes before committing |
 | Build Failed | Build Fix Agent | Analyze and fix build errors |
 | Test Failed | Debug Agent | Debug failing tests |
-| File Created | Scaffold Agent | Generate boilerplate for new files |
 | File Opened | Code Explainer Agent | Explain unfamiliar files |
-| New Method Added | Test Generator Agent | Generate tests for new methods |
-| Gradle Sync Complete | Dependency Check Agent | Check for vulnerable dependencies |
-| Project Opened | Onboarding Agent | Project overview on open |
 
 Enable the ones you want by checking the **Enabled** checkbox in the table.
 
@@ -209,27 +165,12 @@ Enable the ones you want by checking the **Enabled** checkbox in the table.
 
 Each automation can be configured in two modes:
 
-- **Confirmation mode** (default): When the event fires, a dialog appears asking "Run [Agent Name]?" — you choose to proceed or skip
+- **Confirmation mode** (default): When the event fires, a notification appears asking "Run [Agent Name]?" — you choose to proceed or dismiss
 - **Auto-run mode**: The agent runs immediately without asking. Best for low-risk, high-frequency agents (e.g., Explainer on File Opened)
 
 :::tip
 Start with confirmation mode for all agents. Once you're comfortable with an agent's behavior, switch to auto-run for a smoother workflow.
 :::
-
-## Architecture
-
-The Event Automations system is built on three core model classes:
-
-### IdeEventType
-An enum of all supported IDE events, organized by `Category` (VCS, File, Build, Test, Code, Debug, Lifecycle). Each event has a display name and description.
-
-### AgentType
-An enum of built-in agents (Code Review, Build Fix, Debug, Test Generator, Explainer, Scaffolder, Dependency Check, Onboarding) plus a `CUSTOM` type for user-defined agents. Each built-in agent carries a default prompt.
-
-### EventAgentMapping
-A data class that connects an event to an agent, with fields for: enabled, event type, agent type, custom agent name, prompt, and auto-run flag.
-
-Settings are persisted via `DevoxxGenieStateService` in IntelliJ's application-level XML storage (`DevoxxGenieSettingsPlugin.xml`).
 
 ## Event Context & Template Variables
 
@@ -246,7 +187,7 @@ Use double-brace syntax (`{{variable}}`) in your agent prompts to insert event-s
 | `{{files}}` | Newline-separated list of affected file paths | `src/Main.java\nsrc/Utils.java` |
 | `{{event}}` | Display name of the IDE event | `Build Failed` |
 | `{{timestamp}}` | ISO-8601 timestamp of when the event fired | `2026-03-06T10:39:35.123Z` |
-| `{{meta.KEY}}` | Value from the event's metadata map (replace `KEY` with the metadata key) | `{{meta.errorCount}}` → `3` |
+| `{{meta.KEY}}` | Value from the event's metadata map (replace `KEY` with the metadata key) | `{{meta.errorCount}}` -> `3` |
 
 #### Fallback Behavior
 
@@ -313,7 +254,7 @@ Each IDE event listener populates different fields in the EventContext. Here's w
 
 | Field | Content |
 |-------|---------|
-| **content** | Change summary — one line per file with change type (e.g., `MODIFICATION: src/Main.java`) |
+| **content** | Full staged diff with before/after file content for each changed file |
 | **filePaths** | All changed file paths |
 | **meta.changeCount** | Number of changed files |
 
@@ -376,11 +317,10 @@ This combination turns DevoxxGenie into a full **workflow automation platform** 
 
 ## Roadmap
 
-This POC lays the groundwork for future enhancements:
+Future enhancements planned for Event Automations:
 
-- ~~**Event listener implementation**~~ ✅ Implemented — IntelliJ platform listeners wired up for file, build, test, VCS, and process events
-- ~~**Context injection**~~ ✅ Implemented — Rich event context with template variables (`{{context}}`, `{{content}}`, `{{files}}`, `{{event}}`, `{{timestamp}}`, `{{meta.KEY}}`)
-- **Agent chaining** — Trigger multiple agents in sequence (e.g., Build Fix → then re-build → then Test)
+- **More event types** — VCS events (after commit, branch switch, after pull), code structure events (method added, interface changed), and project lifecycle events
+- **Agent chaining** — Trigger multiple agents in sequence (e.g., Build Fix -> then re-build -> then Test)
 - **Conditional triggers** — Add filters like "only for files in `src/main/`" or "only on branch `main`"
 - **Scheduled triggers** — Cron-style automations (daily tech debt report, weekly docs check)
 - **Agent history** — View past agent activations and their results
@@ -395,7 +335,10 @@ A: No. The settings panel is purely configuration. Agent activations happen asyn
 A: Yes. Event Automations use whichever LLM provider and model you have configured in DevoxxGenie's main settings. Local models (Ollama, LMStudio) and cloud models (OpenAI, Anthropic, etc.) all work.
 
 **Q: What happens if the same event fires rapidly?**
-A: A debounce mechanism prevents duplicate activations. For events like File Saved, the agent waits for a brief pause before activating.
+A: For events like File Saved, the agent waits for a brief pause before activating to avoid duplicate activations.
 
 **Q: Can I have multiple agents for the same event?**
 A: Yes. You can add multiple mappings for the same IDE event, each with a different agent. They will execute in the order listed.
+
+**Q: What if the DevoxxGenie tool window isn't open?**
+A: The tool window is automatically activated when an event automation fires, ensuring the prompt is always delivered to the chat panel.

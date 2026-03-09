@@ -23,6 +23,11 @@ import java.util.List;
  */
 public class EventAutomationSettingsComponent extends AbstractSettingsComponent {
 
+    @Override
+    protected String getHelpUrl() {
+        return "https://genie.devoxx.com/docs/features/event-automations";
+    }
+
     private final EventAutomationTableModel tableModel;
     private final JTable automationTable;
     private final JCheckBox enableAutomationCheckbox;
