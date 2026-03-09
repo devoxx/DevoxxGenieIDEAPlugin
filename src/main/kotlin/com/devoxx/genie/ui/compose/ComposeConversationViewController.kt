@@ -5,13 +5,16 @@ import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.request.ChatMessageContext
 import com.devoxx.genie.ui.compose.screen.ConversationScreen
 import com.devoxx.genie.ui.compose.viewmodel.ConversationViewModel
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import java.awt.BorderLayout
 import java.util.ResourceBundle
 import javax.swing.JComponent
+import javax.swing.JPanel
 
 /**
  * Compose for Desktop implementation of [ConversationViewController].
@@ -23,15 +26,41 @@ class ComposeConversationViewController(
 ) : ConversationViewController {
 
     private val viewModel = ConversationViewModel()
+    private var composeInitFailed = false
 
-    private val composePanel: ComposePanel = ComposePanel().apply {
-        setContent {
-            ConversationScreen(
-                viewModel = viewModel,
-                onFileClick = ::openFileInEditor,
-                onCustomPromptClick = onCustomPromptClick,
-            )
-        }
+    private val composePanel: JComponent = createComposePanel()
+
+    /**
+     * Creates the ComposePanel wrapped in a safe container that catches Skiko/Direct3D
+     * native library errors (UnsatisfiedLinkError) on certain Windows GPU configurations.
+     * Automatically retries with software rendering on failure, and only falls back to
+     * a Swing error panel if software rendering also fails.
+     */
+    private fun createComposePanel(): JComponent {
+        return SafeComposeContainer(
+            createCompose = {
+                ComposePanel().apply {
+                    setContent {
+                        ConversationScreen(
+                            viewModel = viewModel,
+                            onFileClick = ::openFileInEditor,
+                            onCustomPromptClick = onCustomPromptClick,
+                        )
+                    }
+                }
+            },
+            onInitFailure = { error ->
+                LOG.error("Compose/Skiko initialization failed. " +
+                    "Hardware rendering and software rendering fallback both failed. " +
+                    "Try updating your GPU drivers or enabling 'Force software rendering' " +
+                    "in DevoxxGenie Settings > Appearance.", error)
+                composeInitFailed = true
+            },
+            onSoftwareFallback = {
+                LOG.info("Compose/Skiko initialized with software rendering fallback " +
+                    "due to GPU driver incompatibility")
+            }
+        )
     }
 
     private fun openFileInEditor(path: String) {
@@ -114,14 +143,20 @@ class ComposeConversationViewController(
     }
 
     override fun themeChanged(isDarkTheme: Boolean) {
+        if (composeInitFailed) return
         viewModel.onThemeChanged(isDarkTheme)
         composePanel.revalidate()
         composePanel.repaint()
     }
 
     override fun appearanceSettingsChanged() {
+        if (composeInitFailed) return
         viewModel.onAppearanceSettingsChanged()
         composePanel.revalidate()
         composePanel.repaint()
+    }
+
+    companion object {
+        private val LOG = Logger.getInstance(ComposeConversationViewController::class.java)
     }
 }
