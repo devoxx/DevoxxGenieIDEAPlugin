@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBList;
@@ -26,9 +27,12 @@ import static org.mockito.Mockito.*;
  */
 class FileSelectionPanelFactoryTest {
 
+    private static final String TEST_TAB_ID = "test-tab-id";
+
     private Project project;
     private FileListManager fileListManager;
     private MockedStatic<FileListManager> fileListManagerMock;
+    private MockedStatic<ConversationTabRegistry> tabRegistryMock;
 
     @BeforeEach
     void setUp() {
@@ -36,10 +40,16 @@ class FileSelectionPanelFactoryTest {
         fileListManager = mock(FileListManager.class);
         fileListManagerMock = Mockito.mockStatic(FileListManager.class);
         fileListManagerMock.when(FileListManager::getInstance).thenReturn(fileListManager);
+
+        ConversationTabRegistry registry = mock(ConversationTabRegistry.class);
+        when(registry.getActiveTabId(any())).thenReturn(TEST_TAB_ID);
+        tabRegistryMock = Mockito.mockStatic(ConversationTabRegistry.class);
+        tabRegistryMock.when(ConversationTabRegistry::getInstance).thenReturn(registry);
     }
 
     @AfterEach
     void tearDown() {
+        tabRegistryMock.close();
         fileListManagerMock.close();
     }
 
@@ -105,13 +115,13 @@ class FileSelectionPanelFactoryTest {
         JBList<VirtualFile> resultList = new JBList<>(model);
         resultList.clearSelection();
 
-        when(fileListManager.contains(project, file)).thenReturn(false);
+        when(fileListManager.contains(project, TEST_TAB_ID, file)).thenReturn(false);
 
         KeyEvent event = keyEvent(KeyEvent.VK_ENTER);
         FileSelectionPanelFactory.handleFilterFieldKeyPressed(event, resultList, project);
 
         assertThat(event.isConsumed()).isTrue();
-        verify(fileListManager).addFile(project, file);
+        verify(fileListManager).addFile(project, TEST_TAB_ID, file);
     }
 
     @Test
@@ -122,13 +132,13 @@ class FileSelectionPanelFactoryTest {
         JBList<VirtualFile> resultList = new JBList<>(model);
         resultList.setSelectedIndex(0);
 
-        when(fileListManager.contains(project, file)).thenReturn(true);
+        when(fileListManager.contains(project, TEST_TAB_ID, file)).thenReturn(true);
 
         KeyEvent event = keyEvent(KeyEvent.VK_ENTER);
         FileSelectionPanelFactory.handleFilterFieldKeyPressed(event, resultList, project);
 
         assertThat(event.isConsumed()).isTrue();
-        verify(fileListManager, never()).addFile(any(), any());
+        verify(fileListManager, never()).addFile(any(), any(), any());
     }
 
     @Test
@@ -183,13 +193,13 @@ class FileSelectionPanelFactoryTest {
         JBList<VirtualFile> resultList = new JBList<>(model);
         resultList.setSelectedIndex(0);
 
-        when(fileListManager.contains(project, file)).thenReturn(false);
+        when(fileListManager.contains(project, TEST_TAB_ID, file)).thenReturn(false);
 
         KeyEvent event = keyEvent(KeyEvent.VK_ENTER);
         FileSelectionPanelFactory.handleResultListKeyPressed(event, new JBTextField(), resultList, project);
 
         assertThat(event.isConsumed()).isTrue();
-        verify(fileListManager).addFile(project, file);
+        verify(fileListManager).addFile(project, TEST_TAB_ID, file);
     }
 
     @Test
@@ -200,13 +210,13 @@ class FileSelectionPanelFactoryTest {
         JBList<VirtualFile> resultList = new JBList<>(model);
         resultList.setSelectedIndex(0);
 
-        when(fileListManager.contains(project, file)).thenReturn(true);
+        when(fileListManager.contains(project, TEST_TAB_ID, file)).thenReturn(true);
 
         KeyEvent event = keyEvent(KeyEvent.VK_ENTER);
         FileSelectionPanelFactory.handleResultListKeyPressed(event, new JBTextField(), resultList, project);
 
         assertThat(event.isConsumed()).isTrue();
-        verify(fileListManager, never()).addFile(any(), any());
+        verify(fileListManager, never()).addFile(any(), any(), any());
     }
 
     @Test

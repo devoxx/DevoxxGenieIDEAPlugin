@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.ide.util.gotoByName.GotoFileModel;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
@@ -263,11 +264,10 @@ public class FileSelectionPanelFactory implements DumbAware {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
             FileListManager fileListManager = FileListManager.getInstance();
+            String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
 
-            // Check if the file is already added
-            if (!fileListManager.contains(project, selectedFile)) {
-                // Add the file only if it is not already added
-                fileListManager.addFile(project, selectedFile);
+            if (!fileListManager.contains(project, tabId, selectedFile)) {
+                fileListManager.addFile(project, tabId, selectedFile);
             }
         }
     }
