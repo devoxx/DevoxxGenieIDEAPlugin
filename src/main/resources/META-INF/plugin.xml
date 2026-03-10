@@ -45,6 +45,18 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.3.2</h2>
+        <UL>
+            <LI>Feat: Integrate Spec-to-Code panels into main DevoxxGenie tool window (#987)</LI>
+            <LI>Feat: Force Skiko software rendering on Windows via AppLifecycleListener (#986)</LI>
+            <LI>Feat: Include archived tasks in backlog duplicate detection (#985)</LI>
+            <LI>Fix: File attachment double-click not adding file to window context (#988)</LI>
+            <LI>Fix: Remove flaky OpenRouterChatModelFactory tests</LI>
+            <LI>Fix: Defensive copy in ProcessedCompletion record constructor</LI>
+            <LI>Fix: Refactor Kotlin Compose compiler arg filter to use compilerOptions API</LI>
+            <LI>Refactor: Centralize system prompt construction in ChatMemoryManager</LI>
+            <LI>Docs: Update FAQ and troubleshooting for automatic Windows software rendering</LI>
+        </UL>
         <h2>v1.3.1</h2>
         <UL>
             <LI>Feat: Add Bedrock bearer token authentication support</LI>

@@ -2,6 +2,25 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2]
+
+### Added
+- Integrate Spec-to-Code panels into main DevoxxGenie tool window instead of separate sidebar (#987)
+- Force Skiko software rendering on Windows via AppLifecycleListener (#986)
+- Include archived tasks in backlog duplicate detection (#985)
+
+### Fixed
+- File attachment double-click not adding file to window context (#988)
+- Remove flaky OpenRouterChatModelFactory tests
+- Defensive copy in ProcessedCompletion record constructor
+- Refactor Kotlin Compose compiler arg filter to use compilerOptions API
+
+### Changed
+- Centralize system prompt construction in ChatMemoryManager
+
+### Documentation
+- Update FAQ and troubleshooting for automatic Windows software rendering
+
 ## [1.3.1]
 
 ### Added
