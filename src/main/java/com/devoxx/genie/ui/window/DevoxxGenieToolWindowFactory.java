@@ -2,12 +2,17 @@ package com.devoxx.genie.ui.window;
 
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.spec.SpecService;
+import com.devoxx.genie.ui.panel.spec.SpecBrowserPanel;
+import com.devoxx.genie.ui.panel.spec.SpecKanbanPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
@@ -22,10 +27,15 @@ import javax.swing.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
+public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     private static final int MAX_TABS = 8;
     private static final String NEW_CHAT_TAB_NAME = "New Chat";
+
+    /**
+     * Marker key to distinguish spec Content tabs from chat Content tabs.
+     */
+    static final Key<Boolean> IS_SPEC_CONTENT = Key.create("DevoxxGenie.isSpecContent");
 
     @Override
     public void createToolWindowContent(@NotNull Project project,
@@ -44,26 +54,44 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
             }
         }
 
-        // Add "New Chat" action to the tool window title bar
-        toolWindow.setTitleActions(List.of(new NewChatTabAction(project, toolWindow)));
+        // Add spec tabs if the feature is enabled
+        addSpecTabsIfEnabled(project, toolWindow);
+
+        // Add "New Chat" and "Settings" actions to the tool window title bar
+        toolWindow.setTitleActions(List.of(
+                new NewChatTabAction(project, toolWindow),
+                new OpenSettingsAction(project)
+        ));
 
         // Register listener for tab close cleanup and state persistence
         toolWindow.getContentManager().addContentManagerListener(new ContentManagerListener() {
             @Override
             public void contentRemoved(@NotNull ContentManagerEvent event) {
                 Content content = event.getContent();
+
+                // Skip cleanup for spec tabs — they are managed separately
+                if (Boolean.TRUE.equals(content.getUserData(IS_SPEC_CONTENT))) {
+                    return;
+                }
+
                 cleanupTab(project, content);
 
                 // Persist remaining open tabs
                 persistOpenTabs(project);
 
-                // If all tabs are closed, create a new default tab
-                if (toolWindow.getContentManager().getContentCount() == 0) {
+                // If all chat tabs are closed, create a new default tab
+                if (getChatTabCount(toolWindow.getContentManager()) == 0) {
                     SwingUtilities.invokeLater(() -> createNewTab(project, toolWindow));
                 }
             }
-
         });
+
+        // Listen for settings changes to dynamically add/remove spec tabs
+        MessageBusConnection settingsConnection = project.getMessageBus().connect(toolWindow.getDisposable());
+        settingsConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC,
+                (com.devoxx.genie.ui.listener.SettingsChangeListener) hasKey -> {
+                    SwingUtilities.invokeLater(() -> updateSpecTabs(project, toolWindow));
+                });
     }
 
     /**
@@ -82,7 +110,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                                                             String tabId) {
         ContentManager contentManager = toolWindow.getContentManager();
 
-        if (contentManager.getContentCount() >= MAX_TABS) {
+        if (getChatTabCount(contentManager) >= MAX_TABS) {
             return null;
         }
 
@@ -91,10 +119,12 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
                 : new DevoxxGenieToolWindowContent(toolWindow);
         Content content = ContentFactory.getInstance().createContent(
                 toolWindowContent.getContentPanel(), NEW_CHAT_TAB_NAME, false);
-        content.setCloseable(true); // All tabs are closeable; closing last tab auto-creates a new one
+        content.setCloseable(true); // All chat tabs are closeable; closing last tab auto-creates a new one
         toolWindowContent.setTabContent(content);
 
-        contentManager.addContent(content);
+        // Insert before spec tabs so chat tabs always come first
+        int insertIndex = getChatTabCount(contentManager);
+        contentManager.addContent(content, insertIndex);
         contentManager.setSelectedContent(content);
 
         // Register in tab registry for lifecycle management
@@ -111,6 +141,113 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         persistOpenTabs(project);
 
         return toolWindowContent;
+    }
+
+    /**
+     * Returns the number of chat (non-spec) tabs in the content manager.
+     */
+    static int getChatTabCount(@NotNull ContentManager cm) {
+        int count = 0;
+        for (Content c : cm.getContents()) {
+            if (!Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Add spec tabs (Task List + Kanban Board) if the SDD feature is enabled.
+     */
+    private void addSpecTabsIfEnabled(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        if (!isSpecEnabled(project)) {
+            return;
+        }
+
+        ContentManager contentManager = toolWindow.getContentManager();
+
+        // Task List tab
+        SpecBrowserPanel specBrowserPanel = new SpecBrowserPanel(project);
+        Content taskListContent = ContentFactory.getInstance().createContent(
+                specBrowserPanel, "Task List", false);
+        taskListContent.putUserData(IS_SPEC_CONTENT, true);
+        taskListContent.setCloseable(false);
+        taskListContent.setPinned(true);
+        contentManager.addContent(taskListContent);
+
+        // Kanban Board tab
+        SpecKanbanPanel kanbanPanel = new SpecKanbanPanel(project);
+        Content kanbanContent = ContentFactory.getInstance().createContent(
+                kanbanPanel, "Kanban Board", false);
+        kanbanContent.putUserData(IS_SPEC_CONTENT, true);
+        kanbanContent.setCloseable(false);
+        kanbanContent.setPinned(true);
+        contentManager.addContent(kanbanContent);
+
+        // Register kanban panel for disposal on IDE shutdown
+        Disposer.register(toolWindow.getDisposable(), kanbanPanel);
+    }
+
+    /**
+     * Dynamically add or remove spec tabs when settings change.
+     */
+    private void updateSpecTabs(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        ContentManager contentManager = toolWindow.getContentManager();
+        boolean hasSpecTabs = hasSpecTabs(contentManager);
+        boolean shouldHaveSpecTabs = isSpecEnabled(project);
+
+        if (shouldHaveSpecTabs && !hasSpecTabs) {
+            // Add spec tabs
+            addSpecTabsIfEnabled(project, toolWindow);
+        } else if (!shouldHaveSpecTabs && hasSpecTabs) {
+            // Remove spec tabs — switch to a chat tab first if a spec tab is selected
+            Content selected = contentManager.getSelectedContent();
+            if (selected != null && Boolean.TRUE.equals(selected.getUserData(IS_SPEC_CONTENT))) {
+                Content firstChatTab = findFirstChatTab(contentManager);
+                if (firstChatTab != null) {
+                    contentManager.setSelectedContent(firstChatTab);
+                }
+            }
+
+            // Remove and dispose spec tabs
+            for (Content c : contentManager.getContents()) {
+                if (Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))) {
+                    JComponent component = c.getComponent();
+                    if (component instanceof SpecBrowserPanel sbp) {
+                        sbp.dispose();
+                    } else if (component instanceof SpecKanbanPanel skp) {
+                        skp.dispose();
+                    }
+                    contentManager.removeContent(c, true);
+                }
+            }
+        }
+    }
+
+    private static boolean hasSpecTabs(@NotNull ContentManager cm) {
+        for (Content c : cm.getContents()) {
+            if (Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSpecEnabled(@NotNull Project project) {
+        return Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getSpecBrowserEnabled())
+                || SpecService.getInstance(project).hasSpecDirectory();
+    }
+
+    /**
+     * Find the first non-spec (chat) Content tab.
+     */
+    public static Content findFirstChatTab(@NotNull ContentManager cm) {
+        for (Content c : cm.getContents()) {
+            if (!Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))) {
+                return c;
+            }
+        }
+        return null;
     }
 
     /**
@@ -143,7 +280,7 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
 
             // Dispose the per-tab disposable (disconnects all message bus listeners)
             if (toolWindowContent.getTabDisposable() != null) {
-                com.intellij.openapi.util.Disposer.dispose(toolWindowContent.getTabDisposable());
+                Disposer.dispose(toolWindowContent.getTabDisposable());
             }
 
             // Dispose conversation panel resources
@@ -182,7 +319,24 @@ final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, DumbAware
         @Override
         public void update(@NotNull AnActionEvent e) {
             e.getPresentation().setEnabled(
-                    toolWindow.getContentManager().getContentCount() < MAX_TABS);
+                    getChatTabCount(toolWindow.getContentManager()) < MAX_TABS);
+        }
+    }
+
+    /**
+     * Action to open the DevoxxGenie settings dialog.
+     */
+    private static class OpenSettingsAction extends AnAction implements DumbAware {
+        private final Project project;
+
+        OpenSettingsAction(@NotNull Project project) {
+            super("Settings", "Open DevoxxGenie settings", com.intellij.icons.AllIcons.General.GearPlain);
+            this.project = project;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            com.devoxx.genie.ui.util.SettingsDialogUtil.showSettingsDialog(project);
         }
     }
 }

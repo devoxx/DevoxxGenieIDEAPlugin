@@ -71,6 +71,17 @@ public final class ConversationTabRegistry {
         Content selected = toolWindow.getContentManager().getSelectedContent();
         if (selected == null) return null;
         DevoxxGenieToolWindowContent twc = contentMap.get(selected);
-        return twc != null ? twc.getTabId() : null;
+        if (twc != null) {
+            return twc.getTabId();
+        }
+
+        // Selected content is a spec tab (not in contentMap) — fall back to first chat tab in tab order
+        for (Content c : toolWindow.getContentManager().getContents()) {
+            DevoxxGenieToolWindowContent chatTwc = contentMap.get(c);
+            if (chatTwc != null) {
+                return chatTwc.getTabId();
+            }
+        }
+        return null;
     }
 }

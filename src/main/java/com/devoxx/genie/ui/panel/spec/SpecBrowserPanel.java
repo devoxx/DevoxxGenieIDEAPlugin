@@ -13,6 +13,8 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowFactory;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -21,6 +23,10 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
@@ -32,8 +38,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -46,13 +50,12 @@ import java.util.List;
  * Supports checkbox selection of To Do tasks for batch sequential execution.
  */
 @Slf4j
-public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskRunnerListener {
+public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskRunnerListener, Disposable {
 
     // Preferred status ordering (others appended at end)
     private static final List<String> STATUS_ORDER = List.of("To Do", "In Progress", "Done");
     private static final String ARCHIVED_GROUP = "Archived";
 
-    private static final int HORIZONTAL_LAYOUT_MIN_WIDTH = 600;
     public static final String CANNOT_RUN_TASKS = "Cannot run tasks: ";
 
     private final transient Project project;
@@ -83,6 +86,10 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     private boolean refreshingCombo = false;
     private static final String LLM_PROVIDER_LABEL = "LLM Provider";
     private static final String CLI_PREFIX = "CLI: ";
+
+    // Stored listener references for cleanup on dispose
+    private Runnable specChangeListener;
+    private boolean disposed = false;
 
     public SpecBrowserPanel(@NotNull Project project) {
         super(true, true);
@@ -153,7 +160,7 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         // Statistics panel (collapsible overview at top)
         statisticsPanel = new SpecStatisticsPanel();
 
-        // Layout with splitter — orientation adapts to available width
+        // Layout with vertical splitter — tree on top, details below
         splitter = new JBSplitter(true, 0.5f);
         splitter.setFirstComponent(new JBScrollPane(specTree));
         splitter.setSecondComponent(previewPanel);
@@ -169,20 +176,13 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         contentWrapper.add(splitter, BorderLayout.CENTER);
         setContent(contentWrapper);
 
-        // Switch between vertical (narrow/sidebar) and horizontal (wide/bottom) layout
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                updateSplitterOrientation();
-            }
-        });
-
         // Toolbar
         setupToolbar();
 
-        // Listen for spec changes
+        // Listen for spec changes (store reference for cleanup)
         SpecService specService = SpecService.getInstance(project);
-        specService.addChangeListener(() -> ApplicationManager.getApplication().invokeLater(this::refreshTree));
+        specChangeListener = () -> ApplicationManager.getApplication().invokeLater(this::refreshTree);
+        specService.addChangeListener(specChangeListener);
 
         // Register as runner listener
         SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
@@ -779,21 +779,6 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         SpecService.getInstance(project).refresh();
     }
 
-    private void updateSplitterOrientation() {
-        int width = getWidth();
-        boolean shouldBeVertical = width < HORIZONTAL_LAYOUT_MIN_WIDTH;
-        if (splitter.getOrientation() != shouldBeVertical) {
-            splitter.setOrientation(shouldBeVertical);
-            if (!shouldBeVertical) {
-                // Horizontal: tree on left gets ~40%, details on right gets ~60%
-                splitter.setProportion(0.4f);
-            } else {
-                // Vertical: tree on top gets ~50%
-                splitter.setProportion(0.5f);
-            }
-        }
-    }
-
     private void refreshTree() {
         rootNode.removeAllChildren();
 
@@ -894,9 +879,34 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         String instruction = SpecContextBuilder.buildAgentInstruction(spec);
         String prompt = instruction + "\n\n" + taskDetails + "\n\nPlease implement the task described above, satisfying all acceptance criteria.";
 
+        // Switch to the first chat tab before submitting the prompt
+        ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenie");
+        if (tw != null) {
+            ContentManager cm = tw.getContentManager();
+            Content firstChatTab = DevoxxGenieToolWindowFactory.findFirstChatTab(cm);
+            if (firstChatTab != null) {
+                cm.setSelectedContent(firstChatTab);
+            }
+        }
+
         // Submit via the prompt submission topic
         project.getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
                 .onPromptSubmitted(project, prompt, null);
+    }
+
+    @Override
+    public void dispose() {
+        if (disposed) return;
+        disposed = true;
+
+        // Remove spec change listener
+        if (specChangeListener != null) {
+            SpecService.getInstance(project).removeChangeListener(specChangeListener);
+            specChangeListener = null;
+        }
+
+        // Remove runner listener
+        SpecTaskRunnerService.getInstance(project).removeListener(this);
     }
 }
