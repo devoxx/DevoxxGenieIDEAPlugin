@@ -506,13 +506,6 @@
                     canCloseContents="true"
                     factoryClass="com.devoxx.genie.ui.window.AgentMcpLogToolWindowFactory"/>
 
-        <toolWindow id="DevoxxGenieSpecs"
-                    anchor="right"
-                    icon="/icons/specIcon.svg"
-                    secondary="true"
-                    doNotActivateOnStart="true"
-                    factoryClass="com.devoxx.genie.ui.window.SpecBrowserToolWindowFactory"/>
-
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>

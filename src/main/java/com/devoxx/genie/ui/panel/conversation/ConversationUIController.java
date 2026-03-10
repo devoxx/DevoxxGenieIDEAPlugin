@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.panel.conversation;
 
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
-import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
@@ -28,9 +27,6 @@ public class ConversationUIController implements CustomPromptChangeListener {
     @Getter
     private final JLabel conversationLabel;
     
-    @Getter
-    private final JButton settingsButton;
-    
     /**
      * Creates a new conversation UI controller.
      *
@@ -54,7 +50,6 @@ public class ConversationUIController implements CustomPromptChangeListener {
         this.conversationLabel = new JLabel("New conversation " + getCurrentTimestamp());
         // Apply standard font that's used in other components
         this.conversationLabel.setFont(com.devoxx.genie.ui.util.DevoxxGenieFontsUtil.getDropdownFont());
-        this.settingsButton = createActionButton(CogIcon, e -> SettingsDialogUtil.showSettingsDialog(project));
     }
 
     /**
@@ -79,9 +74,9 @@ public class ConversationUIController implements CustomPromptChangeListener {
         conversationButtonPanel.setLayout(new BoxLayout(conversationButtonPanel, BoxLayout.X_AXIS));
         conversationButtonPanel.add(createActionButton(PlusIcon, e -> conversationManager.startNewConversation()));
         conversationButtonPanel.add(Box.createHorizontalStrut(JBUI.scale(5)));
-        conversationButtonPanel.add(createActionButton(ClockIcon, e -> historyManager.showConversationHistoryPopup(settingsButton)));
-        conversationButtonPanel.add(Box.createHorizontalStrut(JBUI.scale(5)));
-        conversationButtonPanel.add(settingsButton);
+        JButton historyButton = createActionButton(ClockIcon, e -> {});
+        historyButton.addActionListener(e -> historyManager.showConversationHistoryPopup(historyButton));
+        conversationButtonPanel.add(historyButton);
 
         headerButtonsPanel.add(conversationButtonPanel, BorderLayout.EAST);
         return headerButtonsPanel;

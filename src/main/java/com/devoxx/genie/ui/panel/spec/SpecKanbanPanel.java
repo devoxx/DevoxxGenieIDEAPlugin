@@ -52,6 +52,7 @@ public class SpecKanbanPanel extends SimpleToolWindowPanel implements Disposable
     private transient JBCefBrowser browser;
     private transient WebViewJavaScriptExecutor jsExecutor;
     private transient ThemeDetector.ThemeChangeListener themeListener;
+    private transient Runnable specChangeListener;
 
     public SpecKanbanPanel(@NotNull Project project) {
         super(true, true);
@@ -212,11 +213,12 @@ public class SpecKanbanPanel extends SimpleToolWindowPanel implements Disposable
     // ===== Listeners =====
 
     private void listenForSpecChanges() {
-        SpecService.getInstance(project).addChangeListener(() -> {
+        specChangeListener = () -> {
             if (!disposed.get()) {
                 ApplicationManager.getApplication().invokeLater(this::pushDataToBoard);
             }
-        });
+        };
+        SpecService.getInstance(project).addChangeListener(specChangeListener);
     }
 
     private void listenForThemeChanges() {
@@ -382,6 +384,12 @@ public class SpecKanbanPanel extends SimpleToolWindowPanel implements Disposable
     @Override
     public void dispose() {
         disposed.set(true);
+
+        // Remove spec change listener to prevent leaks
+        if (specChangeListener != null) {
+            SpecService.getInstance(project).removeChangeListener(specChangeListener);
+            specChangeListener = null;
+        }
 
         if (themeListener != null) {
             ThemeDetector.removeThemeChangeListener(themeListener);

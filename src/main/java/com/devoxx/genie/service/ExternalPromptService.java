@@ -3,6 +3,7 @@ package com.devoxx.genie.service;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -55,14 +56,25 @@ public class ExternalPromptService {
 
             // Route to the active/selected tab
             Content selectedContent = toolWindow.getContentManager().getSelectedContent();
+            DevoxxGenieToolWindowContent twc = null;
             if (selectedContent != null) {
-                DevoxxGenieToolWindowContent twc = ConversationTabRegistry.getInstance().getToolWindowContent(selectedContent);
-                if (twc != null && twc.getSubmitPanel() != null) {
-                    PromptInputArea activeInput = twc.getSubmitPanel().getPromptInputArea();
-                    activeInput.setText(text);
-                    activeInput.requestInputFocus();
-                    return true;
+                twc = ConversationTabRegistry.getInstance().getToolWindowContent(selectedContent);
+            }
+
+            // If selected content is a spec tab (twc is null), find and select the first chat tab
+            if (twc == null) {
+                Content firstChatTab = DevoxxGenieToolWindowFactory.findFirstChatTab(toolWindow.getContentManager());
+                if (firstChatTab != null) {
+                    toolWindow.getContentManager().setSelectedContent(firstChatTab);
+                    twc = ConversationTabRegistry.getInstance().getToolWindowContent(firstChatTab);
                 }
+            }
+
+            if (twc != null && twc.getSubmitPanel() != null) {
+                PromptInputArea activeInput = twc.getSubmitPanel().getPromptInputArea();
+                activeInput.setText(text);
+                activeInput.requestInputFocus();
+                return true;
             }
         }
 
