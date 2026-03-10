@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings.appearance;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextField;
@@ -43,7 +44,6 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox useRoundedCorners;
     private final JBIntSpinner cornerRadiusSpinner;
     private final JCheckBox useCustomColors;
-    private final JCheckBox forceSkikoSoftwareRendering;
     private final JButton resetButton;
 
     // Removed theme preview components
@@ -85,10 +85,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         // Initialize other controls
         useRoundedCorners = new JCheckBox("Use rounded corners", state.getUseRoundedCorners());
         useCustomColors = new JCheckBox("Use custom colors", state.getUseCustomColors());
-        forceSkikoSoftwareRendering = new JCheckBox(
-            "Force software rendering (fixes GPU issues on Windows)",
-            Boolean.TRUE.equals(state.getForceSkikoSoftwareRendering()));
-        
+
         // Preview panels removed
         
         // Enable/disable controls based on checkbox states
@@ -204,11 +201,10 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
             addSettingRow(panel, gbc, "Use rounded corners:", useRoundedCorners);
             addSettingRow(panel, gbc, "Corner radius (px):", cornerRadiusSpinner);
             
-            // Add rendering settings
-            addSection(panel, gbc, "Rendering Settings");
-            JPanel renderingPanel = new JPanel(new BorderLayout());
-            renderingPanel.add(forceSkikoSoftwareRendering, BorderLayout.CENTER);
-            addSettingRow(panel, gbc, "GPU rendering:", renderingPanel);
+            if (SystemInfo.isWindows) {
+                addSection(panel, gbc, "Rendering Settings");
+                addSettingRow(panel, gbc, "Windows rendering:", new JLabel("Software rendering is forced automatically."));
+            }
             
             // Add empty panel to push everything to the top
             gbc.weighty = 1.0;
@@ -370,8 +366,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
                state.getUseCustomCodeFontSize() != useCustomCodeFontSize.isSelected() ||
                state.getCustomCodeFontSize() != customCodeFontSizeSpinner.getNumber() ||
                state.getUseRoundedCorners() != useRoundedCorners.isSelected() ||
-               state.getUseCustomColors() != useCustomColors.isSelected() ||
-               !Boolean.TRUE.equals(state.getForceSkikoSoftwareRendering()) != !forceSkikoSoftwareRendering.isSelected();
+               state.getUseCustomColors() != useCustomColors.isSelected();
     }
     
     public void apply() {
@@ -401,8 +396,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         // Apply other settings
         state.setUseRoundedCorners(useRoundedCorners.isSelected());
         state.setUseCustomColors(useCustomColors.isSelected());
-        state.setForceSkikoSoftwareRendering(forceSkikoSoftwareRendering.isSelected());
-        
+
         // Notify open windows to refresh their styling
         ApplicationManager.getApplication().getMessageBus().syncPublisher(APPEARANCE_SETTINGS_TOPIC)
             .appearanceSettingsChanged();
@@ -435,8 +429,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         // Reset other controls
         useRoundedCorners.setSelected(state.getUseRoundedCorners());
         useCustomColors.setSelected(state.getUseCustomColors());
-        forceSkikoSoftwareRendering.setSelected(Boolean.TRUE.equals(state.getForceSkikoSoftwareRendering()));
-        
+
         // Update control states
         customFontSizeSpinner.setEnabled(useCustomFontSize.isSelected());
         customCodeFontSizeSpinner.setEnabled(useCustomCodeFontSize.isSelected());
@@ -496,8 +489,7 @@ public class AppearanceSettingsComponent extends AbstractSettingsComponent {
         // Reset other settings
         useRoundedCorners.setSelected(true);
         useCustomColors.setSelected(false);  // Important: default to using theme-based colors
-        forceSkikoSoftwareRendering.setSelected(false);  // Default to hardware rendering
-        
+
         // Update control states
         customFontSizeSpinner.setEnabled(useCustomFontSize.isSelected());
         customCodeFontSizeSpinner.setEnabled(useCustomCodeFontSize.isSelected());

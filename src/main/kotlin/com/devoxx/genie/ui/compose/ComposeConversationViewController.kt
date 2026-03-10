@@ -52,8 +52,8 @@ class ComposeConversationViewController(
             onInitFailure = { error ->
                 LOG.error("Compose/Skiko initialization failed. " +
                     "Hardware rendering and software rendering fallback both failed. " +
-                    "Try updating your GPU drivers or enabling 'Force software rendering' " +
-                    "in DevoxxGenie Settings > Appearance.", error)
+                    "Try updating your GPU drivers or adding -Dskiko.renderApi=SOFTWARE " +
+                    "to the IDE VM options.", error)
                 composeInitFailed = true
             },
             onSoftwareFallback = {

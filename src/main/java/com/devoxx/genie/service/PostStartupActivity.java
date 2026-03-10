@@ -7,7 +7,6 @@ import com.devoxx.genie.service.automation.listeners.ProcessExitListener;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.ThemeChangeListener;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
@@ -29,14 +28,6 @@ public class PostStartupActivity implements ProjectActivity {
     @Nullable
     @Override
     public Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
-        // Early initialization: Set Skiko software rendering before any Compose UI is created
-        // This fixes GPU driver incompatibility issues on Windows (issue #981)
-        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        if (state != null && Boolean.TRUE.equals(state.getForceSkikoSoftwareRendering())) {
-            System.setProperty("skiko.renderApi", "SOFTWARE");
-            log.debug("Skiko software rendering enabled via user settings");
-        }
-
         // Initialize chat memory for this project
         ChatMemoryManager chatMemoryManager = ChatMemoryManager.getInstance();
         if (chatMemoryManager != null) {

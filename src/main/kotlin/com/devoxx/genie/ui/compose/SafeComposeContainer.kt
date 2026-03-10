@@ -69,8 +69,7 @@ class SafeComposeContainer(
                     "1. Update your GPU drivers<br>" +
                     "2. Add <code>-Dskiko.renderApi=SOFTWARE</code> to your IDE VM options<br>" +
                     "&nbsp;&nbsp;&nbsp;(Help &gt; Edit Custom VM Options)<br>" +
-                    "3. Enable 'Force software rendering' in DevoxxGenie Settings > Appearance<br>" +
-                    "4. Restart IntelliJ IDEA after making changes" +
+                    "3. Restart IntelliJ IDEA after making changes" +
                     "</div></html>",
                 SwingConstants.CENTER
             ).apply {
