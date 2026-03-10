@@ -99,7 +99,7 @@ import Head from '@docusaurus/Head';
           "name": "The chat UI doesn't load on Windows - how do I fix it?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "On some Windows GPU/driver configurations, the chat UI may fail to load with a Direct3D/Skiko error. DevoxxGenie v0.8.0+ automatically handles this by retrying with software rendering. To permanently fix it, go to Settings > DevoxxGenie > Appearance and enable 'Force software rendering (fixes GPU issues on Windows)', then restart IntelliJ IDEA. Alternatively, add -Dskiko.renderApi=SOFTWARE to your IDE VM options (Help > Edit Custom VM Options)."
+            "text": "On some Windows GPU/driver configurations, the chat UI may fail to load with a Direct3D/Skiko error. DevoxxGenie now forces Skiko software rendering on Windows during startup to avoid those GPU issues. On older plugin versions, add -Dskiko.renderApi=SOFTWARE to your IDE VM options (Help > Edit Custom VM Options)."
           }
         }
       ]
@@ -203,15 +203,11 @@ Switch to a smaller quantized model. For chat, try `llama3.2:3b` or `llama4:scou
 
 On some Windows systems with certain GPU/driver configurations, the DevoxxGenie chat UI may fail to initialize with an error about Skiko/Direct3D.
 
-**Good news**: DevoxxGenie v0.8.0+ **automatically handles this** — if hardware rendering fails, it retries with software rendering and the UI should work normally.
+**Good news**: current DevoxxGenie versions force software rendering on Windows during startup, so the chat UI should avoid these GPU-specific failures entirely.
 
-To permanently fix this issue:
+If you still hit the issue, restart IntelliJ IDEA to ensure the Windows startup override is applied.
 
-1. Go to **Settings** > **DevoxxGenie** > **Appearance**
-2. Enable **"Force software rendering (fixes GPU issues on Windows)"**
-3. **Restart IntelliJ IDEA**
-
-Or add `-Dskiko.renderApi=SOFTWARE` to your IDE VM options (**Help** > **Edit Custom VM Options**).
+If you are on an older plugin version, add `-Dskiko.renderApi=SOFTWARE` to your IDE VM options (**Help** > **Edit Custom VM Options**).
 
 See the [Troubleshooting guide](troubleshooting.md#chat-ui-not-loading--gpu-rendering-error) for more details.
 

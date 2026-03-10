@@ -21,35 +21,22 @@ UnsatisfiedLinkError: Failed to load Direct3D native library
 
 This occurs because the graphics rendering engine (Skiko) cannot initialize hardware-accelerated rendering on some GPU/driver combinations.
 
-### Automatic Fix (v0.8.0+)
+### Automatic Fix
 
-Starting with version 0.8.0, DevoxxGenie **automatically handles this issue**:
-
-1. First, it attempts hardware rendering (Direct3D/OpenGL)
-2. If that fails, it automatically retries with software rendering
-3. The chat UI should load normally without any action required
-
-You'll see a log message indicating the fallback was used:
-```
-Successfully initialized Compose with software rendering fallback
-```
+Current DevoxxGenie versions force Skiko software rendering on Windows during startup, so the chat UI should load without touching GPU-accelerated rendering.
 
 ### Manual Workarounds
 
-If you still experience issues, or want to avoid the automatic retry delay, use one of these methods:
+If you still experience issues, use one of these methods:
 
-#### Option 1: Force Software Rendering in Settings (Recommended)
+#### Option 1: Restart the IDE
 
-1. Open **Settings** (or **Preferences** on macOS)
-2. Navigate to **Tools** > **DevoxxGenie** > **Appearance**
-3. Scroll to **Rendering Settings**
-4. Check **"Force software rendering (fixes GPU issues on Windows)"**
-5. Click **Apply** and **OK**
-6. **Restart IntelliJ IDEA**
+1. Close IntelliJ IDEA fully
+2. Start IntelliJ IDEA again
 
-This permanently enables software rendering and prevents the error from occurring.
+This ensures the Windows startup override is applied before any chat UI is created.
 
-#### Option 2: VM Options (Alternative)
+#### Option 2: VM Options (Alternative for older versions)
 
 Add the following system property to your IDE's VM options:
 
