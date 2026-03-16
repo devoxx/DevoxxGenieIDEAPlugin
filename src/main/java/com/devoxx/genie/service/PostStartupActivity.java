@@ -66,28 +66,30 @@ public class PostStartupActivity implements ProjectActivity {
      * Listeners are tied to the project lifecycle and disposed when the project closes.
      */
     private void registerEventAutomationListeners(@NotNull Project project) {
+        MessageBusConnection connection = project.getMessageBus().connect();
+
+        // File editor events (FILE_OPENED)
+        connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
+                new FileEventListener(project));
+
+        // File save events (FILE_SAVED) — application-level topic
+        connection.subscribe(FileDocumentManagerListener.TOPIC,
+                new FileSaveListener());
+
+        // Build/compilation events (BUILD_FAILED, BUILD_SUCCEEDED)
+        // CompilerTopics is only available in IDEs with compiler support (e.g. IntelliJ IDEA),
+        // not in PhpStorm, WebStorm, etc.
         try {
-            MessageBusConnection connection = project.getMessageBus().connect();
-
-            // File editor events (FILE_OPENED)
-            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER,
-                    new FileEventListener(project));
-
-            // File save events (FILE_SAVED) — application-level topic
-            connection.subscribe(FileDocumentManagerListener.TOPIC,
-                    new FileSaveListener());
-
-            // Build/compilation events (BUILD_FAILED, BUILD_SUCCEEDED)
             connection.subscribe(CompilerTopics.COMPILATION_STATUS,
                     new BuildCompilationListener(project));
-
-            // Process exit events (PROCESS_CRASHED)
-            connection.subscribe(ExecutionManager.EXECUTION_TOPIC,
-                    new ProcessExitListener());
-
-            log.debug("Registered event automation listeners for project: {}", project.getName());
-        } catch (Exception e) {
-            log.warn("Failed to register some event automation listeners (IDE may lack required APIs)", e);
+        } catch (NoClassDefFoundError e) {
+            log.debug("CompilerTopics not available in this IDE, skipping build compilation listener");
         }
+
+        // Process exit events (PROCESS_CRASHED)
+        connection.subscribe(ExecutionManager.EXECUTION_TOPIC,
+                new ProcessExitListener());
+
+        log.debug("Registered event automation listeners for project: {}", project.getName());
     }
 }
