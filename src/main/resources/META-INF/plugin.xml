@@ -45,6 +45,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.3.3</h2>
+        <UL>
+            <LI>Fix: Catch NoClassDefFoundError for CompilerTopics in non-Java IDEs (PhpStorm, WebStorm, etc.) (#990)</LI>
+        </UL>
         <h2>v1.3.2</h2>
         <UL>
             <LI>Feat: Integrate Spec-to-Code panels into main DevoxxGenie tool window (#987)</LI>

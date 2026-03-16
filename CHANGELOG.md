@@ -2,6 +2,11 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3]
+
+### Fixed
+- Catch NoClassDefFoundError for CompilerTopics in non-Java IDEs (PhpStorm, WebStorm, etc.) (#990)
+
 ## [1.3.2]
 
 ### Added
