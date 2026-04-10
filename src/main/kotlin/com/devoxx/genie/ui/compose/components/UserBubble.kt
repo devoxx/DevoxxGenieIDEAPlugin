@@ -45,9 +45,13 @@ fun UserBubble(
 
     val mdColors = DefaultMarkdownColors(
         text = textColor,
+        codeText = textColor,
+        inlineCodeText = DevoxxOrange,
+        linkText = DevoxxOrange,
         codeBackground = codeBg,
         inlineCodeBackground = codeBg,
         dividerColor = secondaryColor,
+        tableText = textColor,
         tableBackground = Color.Transparent,
     )
 
@@ -69,21 +73,20 @@ fun UserBubble(
         ordered = baseStyle,
         bullet = baseStyle,
         list = baseStyle,
-        textLink = TextLinkStyles(style = SpanStyle(color = DevoxxOrange)),
-        table = baseStyle,
+        link = baseStyle.copy(color = DevoxxOrange),
     )
 
     val highlightsBuilder = Highlights.Builder().theme(SyntaxThemes.default(darkMode = colors.isDark))
 
     val codeFence: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeFence(model.content, model.node, codeStyle, highlightsBuilder)
+            MarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder)
         }
     }
 
     val codeBlock: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeBlock(model.content, model.node, codeStyle, highlightsBuilder)
+            MarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder)
         }
     }
 

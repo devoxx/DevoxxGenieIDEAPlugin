@@ -31,14 +31,22 @@ class SafeComposeContainer(
     private var initialized = false
 
     override fun addNotify() {
+        // Call super first so this panel is connected to the AWT hierarchy
+        // before we add children (whose addNotify will be triggered by add()).
+        super.addNotify()
+
         if (!initialized) {
             initialized = true
             try {
+                // Both createCompose() and add() can throw UnsatisfiedLinkError:
+                // createCompose() may trigger Skiko init, and add() triggers
+                // addNotify() on the child ComposePanel which loads native Metal/D3D.
                 composeComponent = createCompose()
                 add(composeComponent, BorderLayout.CENTER)
             } catch (e: Throwable) {
                 // First attempt failed - try with software rendering
                 LOG.warn("Compose/Skiko initialization failed, retrying with software rendering: ${e.message}")
+                removeAll()
                 try {
                     System.setProperty("skiko.renderApi", "SOFTWARE")
                     composeComponent = createCompose()
@@ -48,12 +56,12 @@ class SafeComposeContainer(
                 } catch (e2: Throwable) {
                     // Software rendering also failed - show fallback panel
                     LOG.error("Compose/Skiko software rendering fallback also failed", e2)
+                    removeAll()
                     onInitFailure(e)
                     add(createFallbackPanel(), BorderLayout.CENTER)
                 }
             }
         }
-        super.addNotify()
     }
 
     private fun createFallbackPanel(): JComponent {
@@ -63,7 +71,7 @@ class SafeComposeContainer(
             add(JBLabel(
                 "<html><div style='text-align:center;'>" +
                     "<b>DevoxxGenie could not initialize the chat UI.</b><br><br>" +
-                    "The graphics rendering engine (Skiko/Direct3D) failed to start.<br>" +
+                    "The graphics rendering engine (Skiko) failed to start.<br>" +
                     "Automatic software rendering fallback was attempted but also failed.<br><br>" +
                     "<b>To fix this, try one of:</b><br>" +
                     "1. Update your GPU drivers<br>" +
