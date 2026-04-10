@@ -45,6 +45,7 @@ Quick links:
 - [CLI Runners](https://genie.devoxx.com/docs/features/cli-runners) - Execute prompts and spec tasks via external CLI tools
 - [Plugin Integration API](https://genie.devoxx.com/blog/devoxxgenie-plugin-integrations) - Integrate other IntelliJ plugins with DevoxxGenie at runtime
 - [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion) - AI-powered code suggestions as you type
+- [Local AI Cluster (Exo)](https://genie.devoxx.com/docs/llm-providers/exo) - Distributed LLM inference across Apple Silicon devices
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
 - [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
 - [Troubleshooting](https://genie.devoxx.com/docs/troubleshooting) - Common issues and solutions
@@ -126,6 +127,7 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 - **🖥️ [CLI Runners](https://genie.devoxx.com/docs/features/cli-runners)** *(v0.9.9+)*: Execute prompts and spec tasks via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface or the Spec Browser.
 - **✨ [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion)**: (v0.9.6+) AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models. Supports both Ollama and LM Studio with models like StarCoder2, Qwen2.5-Coder, and DeepSeek-Coder.
 - **🤖 [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode)** *(v0.9.4+)*: Autonomous code exploration and modification with built-in tools (read, write, edit, search files). Parallel sub-agents investigate multiple areas of your codebase concurrently, each with configurable provider/model. Enable in Agent Settings!
+- **🖥️ [Local AI Cluster](https://genie.devoxx.com/docs/llm-providers/exo)**: Pool multiple Apple Silicon devices into a single LLM inference cluster with [Exo](https://github.com/exo-explore/exo). Run models like Llama 3.1 405B across your machines with automatic device discovery, zero cloud costs, and full data privacy.
 - **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ [DEVOXXGENIE.md](https://genie.devoxx.com/docs/configuration/devoxxgenie-md)**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses.
 - **📸 [DnD images](https://genie.devoxx.com/docs/features/dnd-images)**: You can now DnD images with multimodal LLM's.
@@ -310,11 +312,17 @@ JLama offers a REST API compatible with the widely-used OpenAI API. Use the Cust
 
 You can also integrate it seamlessly with [Llama3.java](https://github.com/stephanj/Llama3JavaChatCompletionService) but using the Spring Boot OpenAI API wrapper coupled with the JLama DevoxxGenie option.
 
-## Local LLM Cluster with Exo
+## Local AI Cluster with Exo
 
-Use the custom OpenAI URL to connect to Exo, a local LLM cluster for Apple Silicon which allows you to run Llama 3.1 8b, 70b and 405b on your own Apple computers 🤩
+**[📖 Full Exo Documentation](https://genie.devoxx.com/docs/llm-providers/exo)**
 
-![image](https://github.com/user-attachments/assets/a79033ff-d9dd-442d-aa92-0fc70cc37747)
+Pool the compute power of multiple Apple Silicon devices into a single, unified LLM inference cluster using [Exo](https://github.com/exo-explore/exo). Run large models like Llama 3.1 405B that don't fit on a single machine — split across your MacBook, Mac Studio, and Mac Mini over Thunderbolt or network.
+
+<img width="800" alt="Exo distributed AI cluster dashboard" src="docusaurus/static/img/exo-dashboard-cluster-view.png" />
+
+- **Automatic Device Discovery**: Exo detects nearby devices automatically and distributes model layers using pipeline or tensor parallelism — no manual configuration needed.
+- **OpenAI-Compatible API**: DevoxxGenie connects to your Exo cluster just like any other local provider. Run powerful models entirely on your own hardware with zero cloud costs and full data privacy.
+- **Supported Models**: Llama 3.x (8B–405B), DeepSeek, Qwen, Mistral, and more — see the [full list](https://genie.devoxx.com/docs/llm-providers/exo#supported-models).
 
 ## Test Driven Generation (TDG) - Experimental
 
