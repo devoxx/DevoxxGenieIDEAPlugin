@@ -175,23 +175,23 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Local LLM Providers");
 
         addProviderSettingRow(panel, gbc, "Ollama URL", ollamaEnabledCheckBox,
-                createTextWithLinkButton(ollamaModelUrlField, "https://ollama.com"));
+                createTextWithDownloadButton(ollamaModelUrlField, "https://ollama.com"));
         addProviderSettingRow(panel, gbc, "Ollama Request Context Override", ollamaContextWindowOverrideCheckBox);
         addHintText(panel, gbc, "When enabled, DevoxxGenie sends Ollama num_ctx from discovered model metadata; when disabled, Ollama keeps its own runtime default.");
         addProviderSettingRow(panel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
-                createTextWithLinkButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
+                createTextWithDownloadButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         // Add hint text for LMStudio URL
         addHintText(panel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
         addProviderSettingRow(panel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
         addHintText(panel, gbc, "Used only when LMStudio model metadata does not expose context length");
         addProviderSettingRow(panel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
-                createTextWithLinkButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
+                createTextWithDownloadButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addProviderSettingRow(panel, gbc, "Jan URL", janEnabledCheckBox,
-                createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
+                createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
         addProviderSettingRow(panel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
-                createTextWithLinkButton(llamaCPPModelUrlField, "https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md"));
+                createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
         addProviderSettingRow(panel, gbc, "Exo URL", exoEnabledCheckBox,
-                createTextWithLinkButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
+                createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
         addHintText(panel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
         addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);

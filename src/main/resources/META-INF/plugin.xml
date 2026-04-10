@@ -45,6 +45,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.4.0</h2>
+        <UL>
+            <LI>Feat: Add Exo distributed AI cluster as new local LLM provider — run large AI models across multiple Apple Silicon devices via Thunderbolt (#1002)</LI>
+            <LI>Feat: Exo auto-discovery of downloaded models from /state API</LI>
+            <LI>Feat: Automatic Exo instance creation with placement preview across cluster</LI>
+            <LI>Feat: Background progress bar during Exo model loading with cancellation support</LI>
+            <LI>Feat: Auto-recovery when Exo instances disconnect or get recycled</LI>
+            <LI>Feat: Collapsible cluster status panel showing nodes, memory, GPU usage, temperature, and active instance status</LI>
+            <LI>Fix: MarkdownConversationRenderer missing createConversationJEditorPane method</LI>
+        </UL>
         <h2>v1.3.3</h2>
         <UL>
             <LI>Fix: Catch NoClassDefFoundError for CompilerTopics in non-Java IDEs (PhpStorm, WebStorm, etc.) (#990)</LI>

@@ -2,6 +2,20 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0]
+
+### Added
+- Exo distributed AI cluster as new local LLM provider — run large AI models across multiple Apple Silicon devices connected via Thunderbolt (#1002)
+- Exo auto-discovery of downloaded models from /state API
+- Automatic Exo instance creation with placement preview across cluster
+- Background progress bar during Exo model loading with cancellation support
+- Auto-recovery when Exo instances disconnect or get recycled
+- Collapsible cluster status panel above chat showing nodes, memory, GPU usage, temperature, and active instance status
+- Exo Docusaurus documentation page
+
+### Fixed
+- MarkdownConversationRenderer missing createConversationJEditorPane method
+
 ## [1.3.3]
 
 ### Fixed
