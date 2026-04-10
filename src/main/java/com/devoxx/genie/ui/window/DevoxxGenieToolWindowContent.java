@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
+import com.devoxx.genie.ui.panel.ExoClusterPanel;
 import com.devoxx.genie.ui.panel.LlmProviderPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.SubmitPanel;
@@ -72,6 +73,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private SubmitPanel submitPanel;
     @Getter
     private PromptOutputPanel promptOutputPanel;
+    private ExoClusterPanel exoClusterPanel;
     private boolean isInitializationComplete = false;
 
     /**
@@ -123,6 +125,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         llmProviderPanel = new LlmProviderPanel(project, tabId);
         promptOutputPanel = new PromptOutputPanel(project, resourceBundle, tabId);
         submitPanel = new SubmitPanel(this);
+        exoClusterPanel = new ExoClusterPanel();
 
         ExternalPromptService.getInstance(project).setPromptInputArea(submitPanel.getPromptInputArea());
     }
@@ -135,6 +138,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
     private void setupListeners() {
         llmProviderPanel.getModelNameComboBox().addActionListener(this::processModelNameSelection);
+        llmProviderPanel.getModelProviderComboBox().addActionListener(this::updateExoClusterVisibility);
+
+        // Show cluster panel if Exo is already selected on startup
+        updateExoClusterVisibility(null);
+    }
+
+    private void updateExoClusterVisibility(ActionEvent e) {
+        ModelProvider provider = (ModelProvider) llmProviderPanel.getModelProviderComboBox().getSelectedItem();
+        if (provider == ModelProvider.Exo) {
+            exoClusterPanel.startPolling();
+        } else {
+            exoClusterPanel.stopPolling();
+        }
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     @Override
@@ -155,6 +173,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private @NotNull JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(llmProviderPanel, BorderLayout.NORTH);
+        topPanel.add(exoClusterPanel, BorderLayout.CENTER);
         return topPanel;
     }
 

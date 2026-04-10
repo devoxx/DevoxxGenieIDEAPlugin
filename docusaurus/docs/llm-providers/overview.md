@@ -29,6 +29,7 @@ Supported local providers:
 - [GPT4All](local-models.md#gpt4all)
 - [Llama.cpp](local-models.md#llamacpp)
 - [Jan](local-models.md#jan)
+- [Exo](exo.md) (Distributed AI cluster)
 - [Custom OpenAI-compatible](local-models.md#custom-openai-compatible-providers)
 
 ### Cloud LLM Providers

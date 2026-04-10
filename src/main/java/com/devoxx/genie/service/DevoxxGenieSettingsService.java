@@ -203,6 +203,10 @@ public interface DevoxxGenieSettingsService {
 
     void setLlamaCPPUrl(String text);
 
+    String getExoModelUrl();
+
+    void setExoModelUrl(String url);
+
     Boolean getUseFileInEditor();
 
     void setUseFileInEditor(Boolean useFileInEditor);

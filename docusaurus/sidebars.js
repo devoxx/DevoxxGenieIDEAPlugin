@@ -55,6 +55,7 @@ const sidebars = {
       items: [
         'llm-providers/overview',
         'llm-providers/local-models',
+        'llm-providers/exo',
         'llm-providers/cloud-models',
         'llm-providers/custom-providers',
         'features/acp-runners',

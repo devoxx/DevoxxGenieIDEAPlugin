@@ -14,6 +14,7 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
+import java.awt.*;
 import java.util.List;
 
 import static com.devoxx.genie.ui.util.DevoxxGenieColorsUtil.PROMPT_BG_COLOR;
@@ -46,6 +47,39 @@ public class JEditorPaneUtils {
         editorPane.setEditable(false);
         editorPane.setForeground(JBColor.foreground());
         editorPane.setBackground(PROMPT_BG_COLOR);
+        editorPane.setText(colorizeSeparators(content.toString()));
+
+        UIUtil.doNotScrollToCaret(editorPane);
+        UIUtil.invokeLaterIfNeeded(() -> {
+            editorPane.revalidate();
+            editorPane.setCaretPosition(editorPane.getDocument().getLength());
+        });
+        return editorPane;
+    }
+
+    /**
+     * Creates a JEditorPane for conversation content with a custom background color.
+     */
+    public static @NotNull JEditorPane createConversationJEditorPane(@NotNull CharSequence content,
+                                                                     HyperlinkListener hyperlinkListener,
+                                                                     StyleSheet styleSheet,
+                                                                     Color backgroundColor) {
+        JEditorPane editorPane = new JEditorPane();
+        editorPane.addHyperlinkListener(hyperlinkListener != null ? hyperlinkListener : BrowserHyperlinkListener.INSTANCE);
+        editorPane.setContentType("text/html");
+
+        HTMLEditorKitBuilder htmlEditorKitBuilder =
+            new HTMLEditorKitBuilder()
+                .withWordWrapViewFactory()
+                .withFontResolver(EditorCssFontResolver.getGlobalInstance());
+
+        HTMLEditorKit editorKit = htmlEditorKitBuilder.build();
+        editorKit.getStyleSheet().addStyleSheet(styleSheet);
+        editorPane.setEditorKit(editorKit);
+
+        editorPane.setEditable(false);
+        editorPane.setForeground(JBColor.foreground());
+        editorPane.setBackground(backgroundColor != null ? backgroundColor : PROMPT_BG_COLOR);
         editorPane.setText(colorizeSeparators(content.toString()));
 
         UIUtil.doNotScrollToCaret(editorPane);
