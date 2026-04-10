@@ -358,6 +358,32 @@ milestone: v2.0
             </div>
           </div>
         </div>
+        <div className="container home-section home-section-alternate">
+          <div className="row">
+            <div className="col col--6">
+              <img src={useBaseUrl('/img/exo-dashboard-cluster-view.png')} alt="Exo distributed AI cluster dashboard showing connected devices" className="feature-image" />
+            </div>
+            <div className="col col--6">
+              <h2>Local AI Cluster</h2>
+              <p>
+                Pool the compute power of multiple Apple Silicon devices into a single, unified LLM inference cluster using <strong>Exo</strong>. Run large models like <code>Llama 3.1 405B</code> that don't fit on a single machine — split across your MacBook, Mac Studio, and Mac Mini over Thunderbolt or network.
+              </p>
+              <p>
+                <strong>Automatic Device Discovery:</strong> Exo detects nearby devices automatically and distributes model layers using pipeline or tensor parallelism — no manual configuration needed.
+              </p>
+              <p>
+                <strong>OpenAI-Compatible API:</strong> DevoxxGenie connects to your Exo cluster just like any other local provider. Run powerful models entirely on your own hardware with zero cloud costs and full data privacy.
+              </p>
+              <div className={styles.buttons} style={{justifyContent: 'flex-start', marginTop: '10px'}}>
+                <Link
+                  className="button button--primary button--md"
+                  to={useBaseUrl('/docs/llm-providers/exo')}>
+                  Learn More
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="container home-section">
           <div className="row">
             <div className="col col--12 text--center">
