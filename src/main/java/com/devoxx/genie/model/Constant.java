@@ -40,6 +40,7 @@ public class Constant {
     public static final String GPT4ALL_MODEL_URL = "http://localhost:4891/v1/";
     public static final String JAN_MODEL_URL = "http://localhost:1337/v1/";
     public static final String LLAMA_CPP_MODEL_URL = "http://localhost:8080";
+    public static final String EXO_MODEL_URL = "http://localhost:52415/v1/";
 
     // ActionCommands
     public static final String SUBMIT_ACTION = "submit";

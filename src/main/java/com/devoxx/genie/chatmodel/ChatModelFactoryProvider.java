@@ -14,6 +14,7 @@ import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
@@ -51,6 +52,7 @@ public final class ChatModelFactoryProvider {
             case "AzureOpenAI" -> new AzureOpenAIChatModelFactory();
             case "Bedrock" -> new BedrockModelFactory();
             case "CustomOpenAI" -> new CustomOpenAIChatModelFactory();
+            case "Exo" -> new ExoChatModelFactory();
             case "DeepInfra" -> new DeepInfraChatModelFactory();
             case "DeepSeek" -> new DeepSeekChatModelFactory();
             case "Google" -> new GoogleChatModelFactory();

@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -108,6 +109,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         restoreLastSelectedLanguageModel();
 
         modelProviderComboBox.addActionListener(this::handleModelProviderSelectionChange);
+        modelNameComboBox.addActionListener(this::handleModelNameSelectionChange);
 
         add(toolPanel, BorderLayout.CENTER);
         isInitializationComplete = true;
@@ -141,6 +143,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case GPT4All -> stateService.isGpt4AllEnabled();
                     case Jan -> stateService.isJanEnabled();
                     case LLaMA -> stateService.isLlamaCPPEnabled();
+                    case Exo -> stateService.isExoEnabled();
                     case CustomOpenAI -> stateService.isCustomOpenAIUrlEnabled();
                     case OpenAI -> stateService.isOpenAIEnabled();
                     case Mistral -> stateService.isMistralEnabled();
@@ -354,6 +357,21 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         updateModelNamesComboBox(
                 DevoxxGenieStateService.getInstance().getSelectedProvider(stateKey)
         );
+    }
+
+    /**
+     * When a model is selected for the Exo provider, start preparing the instance in the background.
+     */
+    private void handleModelNameSelectionChange(@NotNull ActionEvent e) {
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames) return;
+
+        ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        if (provider != ModelProvider.Exo) return;
+
+        LanguageModel selectedModel = (LanguageModel) modelNameComboBox.getSelectedItem();
+        if (selectedModel != null) {
+            ExoChatModelFactory.prepareInstanceAsync(selectedModel.getModelName(), project);
+        }
     }
 
     /**

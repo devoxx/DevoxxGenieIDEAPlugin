@@ -284,6 +284,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case GPT4All -> state.isGpt4AllEnabled();
                     case Jan -> state.isJanEnabled();
                     case LLaMA -> state.isLlamaCPPEnabled();
+                    case Exo -> state.isExoEnabled();
                     case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
                     case OpenAI -> state.isOpenAIEnabled();
                     case Mistral -> state.isMistralEnabled();
@@ -512,6 +513,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case GPT4All -> state.isGpt4AllEnabled();
                         case Jan -> state.isJanEnabled();
                         case LLaMA -> state.isLlamaCPPEnabled();
+                        case Exo -> state.isExoEnabled();
                         case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
                         case OpenAI -> state.isOpenAIEnabled();
                         case Mistral -> state.isMistralEnabled();

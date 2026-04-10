@@ -87,6 +87,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
+    private String exoModelUrl = EXO_MODEL_URL;
 
     // Local custom OpenAI-compliant LLM fields
     private String customOpenAIUrl = "";
@@ -99,6 +100,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGpt4AllEnabled = true;
     private boolean isJanEnabled = true;
     private boolean isLlamaCPPEnabled = true;
+    private boolean isExoEnabled = false;
 
     // Local custom OpenAI-compliant LLM fields
     private boolean isCustomOpenAIUrlEnabled = false;
@@ -537,6 +539,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             case "gpt4allModelUrl" -> getGpt4allModelUrl();
             case "lmStudioModelUrl" -> getLmstudioModelUrl();
             case "ollamaModelUrl" -> getOllamaModelUrl();
+            case "exoModelUrl" -> getExoModelUrl();
             default -> null;
         };
     }

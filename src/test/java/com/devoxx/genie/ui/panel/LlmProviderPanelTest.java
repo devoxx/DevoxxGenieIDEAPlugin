@@ -84,6 +84,7 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isGpt4AllEnabled()).thenReturn(false);
         lenient().when(stateService.isJanEnabled()).thenReturn(false);
         lenient().when(stateService.isLlamaCPPEnabled()).thenReturn(false);
+        lenient().when(stateService.isExoEnabled()).thenReturn(false);
         lenient().when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(false);
         lenient().when(stateService.isOpenAIEnabled()).thenReturn(true);
         lenient().when(stateService.isMistralEnabled()).thenReturn(false);

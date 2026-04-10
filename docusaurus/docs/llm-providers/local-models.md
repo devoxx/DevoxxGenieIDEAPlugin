@@ -19,7 +19,8 @@ DevoxxGenie integrates with these local LLM providers:
 3. [GPT4All](#gpt4all)
 4. [Llama.cpp](#llamacpp)
 5. [Jan](#jan)
-6. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
+6. [Exo](/docs/llm-providers/exo) (Distributed AI cluster)
+7. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
 
 ## Ollama
 
@@ -264,6 +265,7 @@ Choose the provider that best matches your needs:
 - **Performance**: Llama.cpp offers the most control over optimization
 - **Customization**: LM Studio and Llama.cpp provide the most options
 - **All-in-one**: Jan provides model management + chat in a single app
+- **Large models**: [Exo](/docs/llm-providers/exo) lets you run frontier models across multiple devices
 
 ## Troubleshooting
 

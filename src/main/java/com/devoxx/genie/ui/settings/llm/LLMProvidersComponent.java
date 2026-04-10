@@ -99,6 +99,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
     @Getter
+    private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
+    @Getter
+    private final JCheckBox exoEnabledCheckBox = new JCheckBox("", stateService.isExoEnabled());
+    @Getter
     private final JCheckBox customOpenAIUrlEnabledCheckBox = new JCheckBox("", stateService.isCustomOpenAIUrlEnabled());
     @Getter
     private final JCheckBox customOpenAIForceHttp11CheckBox = new JCheckBox("", stateService.isCustomOpenAIForceHttp11());
@@ -186,6 +190,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithLinkButton(janModelUrlField, "https://jan.ai/download"));
         addProviderSettingRow(panel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithLinkButton(llamaCPPModelUrlField, "https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md"));
+        addProviderSettingRow(panel, gbc, "Exo URL", exoEnabledCheckBox,
+                createTextWithLinkButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
+        addHintText(panel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
         addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
@@ -251,6 +258,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
+        exoEnabledCheckBox.addItemListener(e -> updateUrlFieldState(exoEnabledCheckBox, exoModelUrlField));
 
         customOpenAIUrlEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIUrlEnabledCheckBox, customOpenAIUrlField));
         customOpenAIModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField));
