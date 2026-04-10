@@ -45,6 +45,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.4.1</h2>
+        <UL>
+            <LI>Update: Upgrade 40 Gradle dependencies including Langchain4J to 1.12.2</LI>
+            <LI>Update: LLM models.json with latest provider model names (Anthropic 1M context, Grok 4.20, Groq gpt-oss, Bedrock Claude 4.6/4.5/4.1)</LI>
+            <LI>Fix: Rollback Kotlin/Compose/Skiko to fix Compose UI rendering crash</LI>
+            <LI>Fix: SafeComposeContainer addNotify ordering for proper native error handling</LI>
+        </UL>
         <h2>v1.4.0</h2>
         <UL>
             <LI>Feat: Add Exo distributed AI cluster as new local LLM provider — run large AI models across multiple Apple Silicon devices via Thunderbolt (#1002)</LI>

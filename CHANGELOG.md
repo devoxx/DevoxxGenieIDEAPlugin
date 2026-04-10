@@ -2,6 +2,19 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1]
+
+### Updated
+- Upgrade 40 Gradle dependencies including Langchain4J to 1.12.2
+- Update LLM models.json with latest provider model names (Anthropic 1M context for 4.6 models, new Grok 4.20 lineup, Groq gpt-oss models, Bedrock Claude 4.6/4.5/4.1 and Llama 4)
+- Add ModelConfigJsonTest to validate models.json schema and parsing
+
+### Fixed
+- Rollback Kotlin/Compose/Skiko versions to fix Compose UI rendering crash (UnsatisfiedLinkError in Metal renderer, NoSuchMethodError in Kotlin Duration stdlib)
+- Fix SafeComposeContainer to call super.addNotify() before adding children so native init errors are caught properly
+- Fix Kotlin compilation errors for multiplatform-markdown-renderer API changes
+- Fix AnthropicChatModelTest for removed model name constant in Langchain4J 1.12.2
+
 ## [1.4.0]
 
 ### Added
