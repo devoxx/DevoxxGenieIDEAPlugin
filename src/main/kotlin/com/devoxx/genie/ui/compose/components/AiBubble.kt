@@ -82,7 +82,7 @@ private fun createHighlightsBuilder(isDark: Boolean): Highlights.Builder =
 private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        MarkdownHighlightedCodeFence(model.content, model.node, createHighlightsBuilder(isDark))
+        MarkdownHighlightedCodeFence(model.content, model.node, TextStyle(fontFamily = FontFamily.Monospace), createHighlightsBuilder(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
@@ -97,7 +97,7 @@ private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
 private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        MarkdownHighlightedCodeBlock(model.content, model.node, createHighlightsBuilder(isDark))
+        MarkdownHighlightedCodeBlock(model.content, model.node, TextStyle(fontFamily = FontFamily.Monospace), createHighlightsBuilder(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
@@ -143,13 +143,9 @@ fun AiBubble(
 
             val mdColors = DefaultMarkdownColors(
                 text = textColor,
-                codeText = textColor,
-                inlineCodeText = DevoxxBlue,
-                linkText = DevoxxBlue,
                 codeBackground = codeBg,
                 inlineCodeBackground = codeBg,
                 dividerColor = secondaryColor,
-                tableText = textColor,
                 tableBackground = Color.Transparent,
             )
 
@@ -171,7 +167,8 @@ fun AiBubble(
                 ordered = baseStyle,
                 bullet = baseStyle,
                 list = baseStyle,
-                link = baseStyle.copy(color = DevoxxBlue),
+                textLink = TextLinkStyles(style = SpanStyle(color = DevoxxBlue)),
+                table = baseStyle,
             )
 
             SelectionContainer {

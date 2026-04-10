@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-03-08",
+  "lastUpdated": "2026-04-10",
   "_sources": {
-    "Anthropic": "https://docs.anthropic.com/en/docs/about-claude/models",
+    "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
     "Google": "https://ai.google.dev/gemini-api/docs/models",
     "Mistral": "https://docs.mistral.ai/getting-started/models/models_overview/",
@@ -11,8 +11,8 @@
     "DeepInfra": "https://deepinfra.com/models",
     "DeepSeek": "https://api-docs.deepseek.com/quick_start/pricing",
     "Bedrock": "https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html",
-    "GLM": "https://open.bigmodel.cn/dev/howuse/model",
-    "Kimi": "https://platform.moonshot.cn/docs/pricing"
+    "GLM": "https://docs.bigmodel.cn/",
+    "Kimi": "https://platform.kimi.com/docs/pricing"
   },
   "providers": {
     "Anthropic": [
@@ -48,7 +48,7 @@
         "displayName": "Claude 4.6 Opus",
         "inputCost": 5,
         "outputCost": 25,
-        "inputMaxTokens": 200000,
+        "inputMaxTokens": 1000000,
         "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
@@ -57,7 +57,7 @@
         "displayName": "Claude 4.6 Sonnet",
         "inputCost": 3,
         "outputCost": 15,
-        "inputMaxTokens": 200000,
+        "inputMaxTokens": 1000000,
         "outputMaxTokens": 64000,
         "apiKeyUsed": true
       }
@@ -341,22 +341,6 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "meta-llama/llama-4-scout-17b-16e-instruct",
-        "displayName": "Llama 4 Scout",
-        "inputCost": 0.11,
-        "outputCost": 0.34,
-        "inputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "meta-llama/llama-4-maverick-17b-128e-instruct",
-        "displayName": "Llama 4 Maverick",
-        "inputCost": 0.20,
-        "outputCost": 0.60,
-        "inputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
         "modelName": "llama-3.1-8b-instant",
         "displayName": "Llama 3.1 8B",
         "inputCost": 0.05,
@@ -365,10 +349,10 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "deepseek-r1-distill-llama-70b",
-        "displayName": "DeepSeek R1 Distill 70B",
-        "inputCost": 0.75,
-        "outputCost": 0.99,
+        "modelName": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "displayName": "Llama 4 Scout",
+        "inputCost": 0.11,
+        "outputCost": 0.34,
         "inputMaxTokens": 131072,
         "apiKeyUsed": true
       },
@@ -381,19 +365,19 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "mistral-saba-24b",
-        "displayName": "Mistral Saba 24B",
-        "inputCost": 0.79,
+        "modelName": "openai/gpt-oss-120b",
+        "displayName": "GPT-OSS 120B",
+        "inputCost": 0.59,
         "outputCost": 0.79,
-        "inputMaxTokens": 32768,
+        "inputMaxTokens": 131072,
         "apiKeyUsed": true
       },
       {
-        "modelName": "gemma2-9b-it",
-        "displayName": "Gemma 2 9B",
-        "inputCost": 0.20,
-        "outputCost": 0.20,
-        "inputMaxTokens": 8192,
+        "modelName": "openai/gpt-oss-20b",
+        "displayName": "GPT-OSS 20B",
+        "inputCost": 0.05,
+        "outputCost": 0.08,
+        "inputMaxTokens": 131072,
         "apiKeyUsed": true
       }
     ],
@@ -478,39 +462,46 @@
     ],
     "Bedrock": [
       {
-        "modelName": "ai21.jamba-instruct-v1:0",
-        "displayName": "AI21 Labs - Jamba Instruct",
-        "inputCost": 0.5,
-        "outputCost": 0.7,
-        "inputMaxTokens": 8192
+        "modelName": "anthropic.claude-opus-4-6-v1",
+        "displayName": "Claude Opus 4.6",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 1000000
       },
       {
-        "modelName": "ai21.ai21.j2-mid-v1",
-        "displayName": "AI21 Labs - Jurassic-2 Mid v1",
-        "inputCost": 12.5,
-        "outputCost": 12.5,
-        "inputMaxTokens": 8192
+        "modelName": "anthropic.claude-sonnet-4-6",
+        "displayName": "Claude Sonnet 4.6",
+        "inputCost": 3,
+        "outputCost": 15,
+        "inputMaxTokens": 1000000
       },
       {
-        "modelName": "ai21.ai21.j2-ultra-v1",
-        "displayName": "AI21 Labs - Jurassic-2 ultra v1",
-        "inputCost": 18.8,
-        "outputCost": 18.8,
-        "inputMaxTokens": 8192
+        "modelName": "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "displayName": "Claude Haiku 4.5",
+        "inputCost": 1,
+        "outputCost": 5,
+        "inputMaxTokens": 200000
       },
       {
-        "modelName": "ai21.jamba-1-5-large-v1:0",
-        "displayName": "AI21 Labs - Jamba 1.5 Large",
-        "inputCost": 2,
-        "outputCost": 8,
-        "inputMaxTokens": 256000
+        "modelName": "anthropic.claude-opus-4-5-20251101-v1:0",
+        "displayName": "Claude Opus 4.5",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 200000
       },
       {
-        "modelName": "ai21.jamba-1-5-mini-v1:0",
-        "displayName": "AI21 Labs - Jamba 1.5 Mini",
-        "inputCost": 0.2,
-        "outputCost": 0.4,
-        "inputMaxTokens": 256000
+        "modelName": "anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "displayName": "Claude Sonnet 4.5",
+        "inputCost": 3,
+        "outputCost": 15,
+        "inputMaxTokens": 200000
+      },
+      {
+        "modelName": "anthropic.claude-opus-4-1-20250805-v1:0",
+        "displayName": "Claude Opus 4.1",
+        "inputCost": 15,
+        "outputCost": 75,
+        "inputMaxTokens": 200000
       },
       {
         "modelName": "anthropic.claude-sonnet-4-20250514-v1:0",
@@ -520,24 +511,10 @@
         "inputMaxTokens": 200000
       },
       {
-        "modelName": "anthropic.claude-3-7-sonnet-20250219-v1:0",
-        "displayName": "Claude 3.7 Sonnet",
-        "inputCost": 3,
-        "outputCost": 15,
-        "inputMaxTokens": 200000
-      },
-      {
-        "modelName": "anthropic.claude-3-sonnet-20240229-v1:0",
-        "displayName": "Claude 3 Sonnet",
-        "inputCost": 3,
-        "outputCost": 15,
-        "inputMaxTokens": 200000
-      },
-      {
         "modelName": "anthropic.claude-3-haiku-20240307-v1:0",
-        "displayName": "Claude 3.5 Haiku",
-        "inputCost": 0.8,
-        "outputCost": 4,
+        "displayName": "Claude 3 Haiku",
+        "inputCost": 0.25,
+        "outputCost": 1.25,
         "inputMaxTokens": 200000
       },
       {
@@ -548,38 +525,24 @@
         "inputMaxTokens": 200000
       },
       {
-        "modelName": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        "displayName": "Claude 3.5 Sonnet v1",
-        "inputCost": 3,
-        "outputCost": 15,
-        "inputMaxTokens": 200000
+        "modelName": "meta.llama4-scout-17b-instruct-v1:0",
+        "displayName": "Meta - Llama 4 Scout 17B",
+        "inputCost": 0.11,
+        "outputCost": 0.34,
+        "inputMaxTokens": 131072
       },
       {
-        "modelName": "cohere.command-r-v1:0",
-        "displayName": "Cohere - Command R",
-        "inputCost": 0.5,
-        "outputCost": 1.5,
-        "inputMaxTokens": 128000
+        "modelName": "meta.llama4-maverick-17b-instruct-v1:0",
+        "displayName": "Meta - Llama 4 Maverick 17B",
+        "inputCost": 0.20,
+        "outputCost": 0.60,
+        "inputMaxTokens": 131072
       },
       {
-        "modelName": "cohere.command-text-v14",
-        "displayName": "Cohere - Command",
-        "inputCost": 1.5,
-        "outputCost": 2,
-        "inputMaxTokens": 4000
-      },
-      {
-        "modelName": "cohere.command-light-text-v14",
-        "displayName": "Cohere - Command Light",
-        "inputCost": 0.3,
-        "outputCost": 0.6,
-        "inputMaxTokens": 4000
-      },
-      {
-        "modelName": "cohere.command-r-plus-v1:0",
-        "displayName": "Cohere - Command R+",
-        "inputCost": 3,
-        "outputCost": 15,
+        "modelName": "meta.llama3-3-70b-instruct-v1:0",
+        "displayName": "Meta - Llama 3.3 70B Instruct",
+        "inputCost": 0.72,
+        "outputCost": 0.72,
         "inputMaxTokens": 128000
       },
       {
@@ -595,6 +558,13 @@
         "inputCost": 0.3,
         "outputCost": 0.6,
         "inputMaxTokens": 128000
+      },
+      {
+        "modelName": "mistral.mistral-large-3-675b-instruct",
+        "displayName": "Mistral AI - Mistral Large 3",
+        "inputCost": 2,
+        "outputCost": 6,
+        "inputMaxTokens": 131000
       },
       {
         "modelName": "mistral.mistral-large-2402-v1:0",
@@ -623,15 +593,65 @@
         "inputCost": 0.15,
         "outputCost": 0.2,
         "inputMaxTokens": 32000
+      },
+      {
+        "modelName": "mistral.devstral-2-123b",
+        "displayName": "Mistral AI - Devstral 2 123B",
+        "inputCost": 0.4,
+        "outputCost": 2,
+        "inputMaxTokens": 256000
+      },
+      {
+        "modelName": "mistral.magistral-small-2509",
+        "displayName": "Mistral AI - Magistral Small",
+        "inputCost": 0.5,
+        "outputCost": 1.5,
+        "inputMaxTokens": 128000
+      },
+      {
+        "modelName": "cohere.command-r-v1:0",
+        "displayName": "Cohere - Command R",
+        "inputCost": 0.5,
+        "outputCost": 1.5,
+        "inputMaxTokens": 128000
+      },
+      {
+        "modelName": "cohere.command-r-plus-v1:0",
+        "displayName": "Cohere - Command R+",
+        "inputCost": 3,
+        "outputCost": 15,
+        "inputMaxTokens": 128000
+      },
+      {
+        "modelName": "ai21.jamba-1-5-large-v1:0",
+        "displayName": "AI21 Labs - Jamba 1.5 Large",
+        "inputCost": 2,
+        "outputCost": 8,
+        "inputMaxTokens": 256000
+      },
+      {
+        "modelName": "ai21.jamba-1-5-mini-v1:0",
+        "displayName": "AI21 Labs - Jamba 1.5 Mini",
+        "inputCost": 0.2,
+        "outputCost": 0.4,
+        "inputMaxTokens": 256000
       }
     ],
     "Grok": [
       {
-        "modelName": "grok-4",
-        "displayName": "Grok 4",
-        "inputCost": 3.00,
-        "outputCost": 15.00,
-        "inputMaxTokens": 256000,
+        "modelName": "grok-4.20-0309-reasoning",
+        "displayName": "Grok 4.20 (Reasoning)",
+        "inputCost": 2.00,
+        "outputCost": 6.00,
+        "inputMaxTokens": 2000000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-4.20-0309-non-reasoning",
+        "displayName": "Grok 4.20 (Non-Reasoning)",
+        "inputCost": 2.00,
+        "outputCost": 6.00,
+        "inputMaxTokens": 2000000,
         "apiKeyUsed": true
       },
       {
@@ -643,35 +663,19 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "grok-4-fast-reasoning",
-        "displayName": "Grok 4 Fast (Reasoning)",
+        "modelName": "grok-4-1-fast-non-reasoning",
+        "displayName": "Grok 4.1 Fast (Non-Reasoning)",
         "inputCost": 0.20,
         "outputCost": 0.50,
         "inputMaxTokens": 2000000,
         "apiKeyUsed": true
       },
       {
-        "modelName": "grok-code-fast-1",
-        "displayName": "Grok Code Fast",
-        "inputCost": 0.20,
-        "outputCost": 1.50,
-        "inputMaxTokens": 256000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-3",
-        "displayName": "Grok 3",
-        "inputCost": 3.00,
-        "outputCost": 15.00,
-        "inputMaxTokens": 131072,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-3-mini",
-        "displayName": "Grok 3 Mini",
-        "inputCost": 0.30,
-        "outputCost": 0.50,
-        "inputMaxTokens": 131072,
+        "modelName": "grok-4.20-multi-agent-0309",
+        "displayName": "Grok 4.20 Multi-Agent",
+        "inputCost": 2.00,
+        "outputCost": 6.00,
+        "inputMaxTokens": 2000000,
         "apiKeyUsed": true
       }
     ],
