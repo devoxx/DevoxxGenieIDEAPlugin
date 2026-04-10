@@ -127,4 +127,36 @@ public class AbstractSettingsComponent implements SettingsComponent {
         jPanel.add(btnApiKey, BorderLayout.WEST);
         return jPanel;
     }
+
+    protected @NotNull JComponent createTextWithDownloadButton(JComponent jComponent,
+                                                              String url) {
+        return createTextWithIconButton(jComponent, AllIcons.Actions.Download, "Download from " + url, url);
+    }
+
+    protected @NotNull JComponent createTextWithInfoButton(JComponent jComponent,
+                                                           String url) {
+        return createTextWithIconButton(jComponent, AllIcons.General.Information, "Open documentation: " + url, url);
+    }
+
+    private @NotNull JComponent createTextWithIconButton(JComponent jComponent,
+                                                         Icon icon,
+                                                         String tooltip,
+                                                         String url) {
+        JPanel jPanel = new JPanel(new BorderLayout());
+        jPanel.add(jComponent, BorderLayout.CENTER);
+        JButton btn = createActionButton(
+                null,
+                icon, tooltip,
+                e -> {
+            try {
+                BrowserUtil.open(url);
+            } catch (Exception ex) {
+                Project project = ProjectManager.getInstance().getOpenProjects()[0];
+                NotificationUtil.sendNotification(project, "Error: Unable to open the link");
+            }
+        });
+
+        jPanel.add(btn, BorderLayout.WEST);
+        return jPanel;
+    }
 }
