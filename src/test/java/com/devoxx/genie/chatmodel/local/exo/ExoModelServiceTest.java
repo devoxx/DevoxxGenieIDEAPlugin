@@ -6,6 +6,7 @@ import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -151,6 +152,8 @@ class ExoModelServiceTest {
 
     @Test
     void getModelsShouldParseResponseCorrectly() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         Call mockCall = mockCall(MODELS_RESPONSE, 200);
         when(mockClient.newCall(any(Request.class))).thenReturn(mockCall);
 
@@ -179,6 +182,8 @@ class ExoModelServiceTest {
 
     @Test
     void ensureInstanceShouldSkipWhenInstanceAlreadyExists() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         // State check returns existing instance for this model
         Call stateCall = mockCall(STATE_WITH_INSTANCE, 200);
         when(mockClient.newCall(any(Request.class))).thenReturn(stateCall);

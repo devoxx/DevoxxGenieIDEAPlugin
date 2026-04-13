@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.prompt;
 
+import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.analytics.AnalyticsService;
 import com.devoxx.genie.service.prompt.cancellation.PromptCancellationService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -77,10 +79,15 @@ public class PromptExecutionService {
         // Process commands
         Optional<String> processedPrompt = commandProcessor.processCommands(context, panel);
         if (processedPrompt.isEmpty()) {
-            // Command processing indicated we should stop
+            // Command processing indicated we should stop — local-only command, no LLM dispatch.
             enableButtons.run();
             return;
         }
+
+        // At this point we have committed to dispatching the prompt to an LLM. Record the
+        // anonymous provider/model usage event (task-206). Slash commands handled locally
+        // never reach this line, so the count reflects real LLM intent.
+        trackPromptExecuted(context);
 
         // Start a background progress indicator
         ProgressManager.getInstance().run(
@@ -128,6 +135,24 @@ public class PromptExecutionService {
 
                     cleanupAfterExecution(project, enableButtons, tabId);
                 }));
+    }
+
+    /**
+     * Anonymous usage analytics — fires once per real LLM dispatch attempt (task-206).
+     * Provider and model only; never any prompt content.
+     */
+    private void trackPromptExecuted(@NotNull ChatMessageContext context) {
+        try {
+            LanguageModel model = context.getLanguageModel();
+            if (model == null || model.getProvider() == null) {
+                return;
+            }
+            AnalyticsService.getInstance().trackPromptExecuted(
+                    model.getProvider().getName(),
+                    model.getModelName());
+        } catch (Exception e) {
+            log.debug("Analytics tracking skipped: {}", e.getMessage());
+        }
     }
 
     /**

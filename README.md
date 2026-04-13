@@ -417,6 +417,25 @@ It is recommended to use the publishPlugin task for releasing the plugin
 Enjoy!
 
 
+## Privacy & Anonymous Usage Analytics
+
+To guide which LLM providers and models receive engineering investment, DevoxxGenie collects **anonymous** usage data when you run a prompt or change models.
+
+**What is sent:**
+- An anonymous install ID (UUID), generated once and stored locally
+- A per-launch session ID (random 10-digit number)
+- Plugin version and IDE version
+- LLM provider name (e.g. `anthropic`, `ollama`)
+- LLM model name (e.g. `claude-3-5-sonnet`)
+
+**What is never sent:**
+- Prompt text, response text, conversation history
+- File content, file paths, project name, git remote
+- API keys, credentials, user name, email
+- Token counts or cost data
+
+A first-launch notification asks for your consent before any data is sent. You can change this at any time in **Settings → DevoxxGenie → General**.
+
 ## Contribute
 
 **[📖 Contributing Guide](https://genie.devoxx.com/docs/contributing)**

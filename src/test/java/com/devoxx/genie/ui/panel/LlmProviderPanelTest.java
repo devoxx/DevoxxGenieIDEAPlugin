@@ -114,6 +114,49 @@ class LlmProviderPanelTest {
     }
 
     @Test
+    void isUpdatingModelNames_isTrueDuringUpdateAndFalseAfter() {
+        // Regression for task-206: model_selected analytics must be suppressible during
+        // programmatic combo repopulation. The flag must be true while updateModelNamesComboBox
+        // runs and must reset to false on completion.
+        List<ModelProvider> providers = List.of(ModelProvider.Ollama, ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        boolean[] flagSnapshotDuringPopulate = new boolean[]{false};
+        // Capture the flag value at the moment the factory is asked for models — that runs
+        // inside updateModelNamesComboBox after isUpdatingModelNames was set true.
+        LlmProviderPanel[] panelHolder = new LlmProviderPanel[1];
+        when(factory.getModels()).thenAnswer(invocation -> {
+            flagSnapshotDuringPopulate[0] = panelHolder[0].isUpdatingModelNames();
+            return List.of(
+                    LanguageModel.builder().provider(ModelProvider.OpenAI)
+                            .modelName("gpt-4").displayName("GPT-4").build()
+            );
+        });
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(factory));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.empty());
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        panelHolder[0] = panel;
+
+        assertThat(panel.isUpdatingModelNames())
+                .as("Flag is false before any programmatic update")
+                .isFalse();
+
+        panel.updateModelNamesComboBox("OpenAI");
+
+        assertThat(flagSnapshotDuringPopulate[0])
+                .as("Flag must be true while combo is being repopulated")
+                .isTrue();
+        assertThat(panel.isUpdatingModelNames())
+                .as("Flag must reset to false after updateModelNamesComboBox completes")
+                .isFalse();
+    }
+
+    @Test
     void testUpdateModelNamesComboBox_WithModels_PopulatesComboBox() {
         List<ModelProvider> providers = List.of(ModelProvider.Ollama, ModelProvider.OpenAI);
         when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);

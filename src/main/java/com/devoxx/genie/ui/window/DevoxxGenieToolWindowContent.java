@@ -4,6 +4,7 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ExternalPromptService;
+import com.devoxx.genie.service.analytics.AnalyticsService;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
@@ -75,6 +76,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
     private PromptOutputPanel promptOutputPanel;
     private ExoClusterPanel exoClusterPanel;
     private boolean isInitializationComplete = false;
+    private boolean suppressModelSelectionTracking = false;
 
     /**
      * The Devoxx Genie Tool Window Content constructor.
@@ -251,19 +253,24 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         ModelProvider currentProvider = (ModelProvider) llmProviderPanel.getModelProviderComboBox().getSelectedItem();
         LanguageModel currentModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
 
-        llmProviderPanel.getModelProviderComboBox().removeAllItems();
-        llmProviderPanel.getModelNameComboBox().removeAllItems();
-        llmProviderPanel.addModelProvidersToComboBox();
+        suppressModelSelectionTracking = true;
+        try {
+            llmProviderPanel.getModelProviderComboBox().removeAllItems();
+            llmProviderPanel.getModelNameComboBox().removeAllItems();
+            llmProviderPanel.addModelProvidersToComboBox();
 
-        if (currentProvider != null) {
-            llmProviderPanel.getModelProviderComboBox().setSelectedItem(currentProvider);
-            llmProviderPanel.updateModelNamesComboBox(currentProvider.getName());
+            if (currentProvider != null) {
+                llmProviderPanel.getModelProviderComboBox().setSelectedItem(currentProvider);
+                llmProviderPanel.updateModelNamesComboBox(currentProvider.getName());
 
-            if (currentModel != null) {
-                llmProviderPanel.getModelNameComboBox().setSelectedItem(currentModel);
+                if (currentModel != null) {
+                    llmProviderPanel.getModelNameComboBox().setSelectedItem(currentModel);
+                }
+            } else {
+                llmProviderPanel.setLastSelectedProvider();
             }
-        } else {
-            llmProviderPanel.setLastSelectedProvider();
+        } finally {
+            suppressModelSelectionTracking = false;
         }
     }
 
@@ -277,6 +284,21 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             if (selectedModel != null) {
                 DevoxxGenieStateService.getInstance().setSelectedLanguageModel(getMemoryKey(), selectedModel.getModelName());
                 submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getInputMaxTokens());
+
+                // Anonymous usage analytics — fires only on user-initiated changes (task-206).
+                // Three guards combine to filter out programmatic combo events:
+                //  - isInitializationComplete: blocks events during initial state load
+                //  - suppressModelSelectionTracking: blocks events during settingsChanged()
+                //    when this class itself is repopulating combos
+                //  - llmProviderPanel.isUpdatingModelNames(): blocks events fired indirectly
+                //    by provider switch / refresh / restore inside LlmProviderPanel
+                if (!suppressModelSelectionTracking
+                        && !llmProviderPanel.isUpdatingModelNames()
+                        && selectedModel.getProvider() != null) {
+                    AnalyticsService.getInstance().trackModelSelected(
+                            selectedModel.getProvider().getName(),
+                            selectedModel.getModelName());
+                }
             }
         }
     }
