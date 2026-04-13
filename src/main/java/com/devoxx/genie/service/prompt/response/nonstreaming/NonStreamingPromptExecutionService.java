@@ -5,6 +5,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
+import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -115,8 +116,14 @@ public class NonStreamingPromptExecutionService {
             .whenComplete((response, throwable) -> {
                 // Clear the per-tab future reference when done
                 queryFutures.remove(tabKey);
-                trackers.remove(tabKey);
+                AgentLoopTracker finishedTracker = trackers.remove(tabKey);
                 running = !queryFutures.isEmpty(); // Still running if other tabs have active queries
+
+                // Emit `agent` feature_used with the tracker's final call count — fires on
+                // success, error, and cancellation (task-209 AC #23).
+                if (finishedTracker != null) {
+                    FeatureUsageTracker.agentCompleted(chatMessageContext, finishedTracker.getCallCount());
+                }
 
                 // Add file references if any, similar to StreamingResponseHandler
                 String tabIdForFiles = chatMessageContext.getTabId();
@@ -183,14 +190,16 @@ public class NonStreamingPromptExecutionService {
 
             Assistant assistant = buildAssistant(chatModel, chatMemory, project);
 
-            // Try agent mode first, then fall back to MCP-only
-            ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+            // Try agent mode first, then fall back to MCP-only. Thread the per-prompt MCP
+            // counter so MCP-inside-agent invocations are counted (task-209 AC #24).
+            ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project, chatMessageContext.getMcpCallCount());
             if (toolProvider instanceof AgentLoopTracker tracker) {
                 String tKey = chatMessageContext.getTabId() != null ? chatMessageContext.getTabId() : "default";
                 trackers.put(tKey, tracker);
             }
             if (toolProvider == null && MCPService.isMCPEnabled()) {
-                toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
+                toolProvider = MCPExecutionService.getInstance()
+                        .createMCPToolProvider(project, chatMessageContext.getMcpCallCount());
             }
 
             if (toolProvider != null) {

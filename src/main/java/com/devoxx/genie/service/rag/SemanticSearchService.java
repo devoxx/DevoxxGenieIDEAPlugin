@@ -38,6 +38,8 @@ public final class SemanticSearchService {
      * @return Map of search results with file paths as keys
      */
     public @NotNull Map<String, SearchResult> search(Project project, String query) {
+        // Task-209: analytics emission happens at the caller (MessageCreationService) where
+        // the LanguageModel context is available, so provider_type reflects the actual model.
         embeddingService.init(project);
 
         Embedding queryEmbedding = embeddingService.getEmbeddingModel().embed(query).content();

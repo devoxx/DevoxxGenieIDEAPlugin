@@ -5,6 +5,7 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
+import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
@@ -100,6 +101,12 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                     h.stop();
                 }
             }
+            // Emit `agent` feature_used with the tracker's final call count — fires on
+            // success, error, and cancellation (task-209 AC #23).
+            AgentLoopTracker tracker = currentTracker.getAndSet(null);
+            if (tracker != null) {
+                FeatureUsageTracker.agentCompleted(context, tracker.getCallCount());
+            }
         });
     }
 
@@ -175,12 +182,15 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
      * Also sets file references on the context when a provider is available.
      */
     private ToolProvider resolveToolProvider(@NotNull ChatMessageContext context) {
-        ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+        // task-209: thread the per-prompt MCP counter through so MCP-inside-agent invocations
+        // are counted via InstrumentedMcpToolProvider.
+        ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project, context.getMcpCallCount());
         if (toolProvider instanceof AgentLoopTracker tracker) {
             currentTracker.set(tracker);
         }
         if (toolProvider == null) {
-            toolProvider = MCPExecutionService.getInstance().createMCPToolProvider(project);
+            toolProvider = MCPExecutionService.getInstance()
+                    .createMCPToolProvider(project, context.getMcpCallCount());
         }
         if (toolProvider != null) {
             log.debug("Tool provider created for streaming prompt");

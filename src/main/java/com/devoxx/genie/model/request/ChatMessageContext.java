@@ -11,6 +11,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.intellij.openapi.vfs.VirtualFile;
 
 /**
@@ -40,6 +41,18 @@ public class ChatMessageContext {
     private boolean ragActivated;
     private boolean webSearchActivated;
     private String tabId;
+
+    // Feature-usage signals for task-209 analytics. Set at message-assembly time, read at
+    // prompt completion to emit `feature_used` events. Never contain user content.
+    private boolean projectContextFullUsed;
+    private boolean projectContextSelectedUsed;
+    private boolean devoxxGenieMdUsed;
+
+    // Thread-safe counter for MCP tool invocations performed during this prompt. Incremented
+    // by {@code InstrumentedMcpToolProvider} inside the wrapped ToolExecutor.execute() path,
+    // so only actually-executed approved calls are counted.
+    @Builder.Default
+    private final AtomicInteger mcpCallCount = new AtomicInteger(0);
 
     @Builder.Default
     private boolean webSearchRequested = false;

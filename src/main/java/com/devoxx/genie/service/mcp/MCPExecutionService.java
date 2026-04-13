@@ -121,11 +121,27 @@ public class MCPExecutionService implements Disposable {
      * @return A ToolProvider that includes all enabled MCP tools, or null if MCP is disabled or no servers are configured
      */
     public ToolProvider createMCPToolProvider(Project project) {
-        ToolProvider rawProvider = createRawMCPToolProvider();
+        return createMCPToolProvider(project, null);
+    }
+
+    /**
+     * Creates tool providers for all configured MCP servers, wrapped with approval UI and
+     * (optionally) a per-prompt usage counter (task-209).
+     *
+     * <p>Stack order outer → inner:
+     * {@code ApprovalRequiredToolProvider → InstrumentedMcpToolProvider → FilteredMcpToolProvider → raw}.
+     *
+     * @param project the project for approval UI
+     * @param mcpCallCounter optional counter incremented on every approved + non-filtered
+     *                       MCP tool execution; pass {@code null} to disable counting
+     * @return the fully-wrapped provider, or {@code null} if MCP is disabled / no servers
+     */
+    public ToolProvider createMCPToolProvider(Project project, @Nullable java.util.concurrent.atomic.AtomicInteger mcpCallCounter) {
+        ToolProvider rawProvider = createRawMCPToolProvider(mcpCallCounter);
         if (rawProvider == null) {
             return null;
         }
-        // Wrap it with the custom approval-requiring provider
+        // Wrap it with the custom approval-requiring provider (outermost).
         return new ApprovalRequiredToolProvider(rawProvider, project);
     }
 
@@ -137,6 +153,18 @@ public class MCPExecutionService implements Disposable {
      */
     @Nullable
     public ToolProvider createRawMCPToolProvider() {
+        return createRawMCPToolProvider(null);
+    }
+
+    /**
+     * Same as {@link #createRawMCPToolProvider()} but inserts an
+     * {@link InstrumentedMcpToolProvider} above the filter layer when a counter is supplied
+     * (task-209 AC #24). The instrumenter increments the counter inside the wrapped
+     * {@code ToolExecutor.execute()} path — so only actually-executed approved calls are
+     * counted.
+     */
+    @Nullable
+    public ToolProvider createRawMCPToolProvider(@Nullable java.util.concurrent.atomic.AtomicInteger mcpCallCounter) {
         log.debug("Creating raw MCP Tool Provider");
 
         // Get all configured MCP servers
@@ -168,8 +196,14 @@ public class MCPExecutionService implements Disposable {
                 .mcpClients(mcpClients)
                 .build();
 
-        // Wrap with filtering to exclude individually disabled tools
-        return new FilteredMcpToolProvider(rawProvider);
+        // Wrap with filtering to exclude individually disabled tools.
+        ToolProvider filtered = new FilteredMcpToolProvider(rawProvider);
+
+        // Wrap with per-prompt usage counter (task-209) when the caller supplies one.
+        if (mcpCallCounter != null) {
+            return new InstrumentedMcpToolProvider(filtered, mcpCallCounter);
+        }
+        return filtered;
     }
 
     /**

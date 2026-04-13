@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Factory that assembles the agent tool provider chain:
@@ -33,6 +34,17 @@ public class AgentToolProviderFactory {
      */
     @Nullable
     public static ToolProvider createToolProvider(@NotNull Project project) {
+        return createToolProvider(project, null);
+    }
+
+    /**
+     * Same as {@link #createToolProvider(Project)} but threads an optional per-prompt MCP
+     * call counter through to {@link MCPExecutionService#createRawMCPToolProvider(AtomicInteger)}
+     * so MCP-inside-agent invocations are counted for task-209 analytics (AC #24).
+     */
+    @Nullable
+    public static ToolProvider createToolProvider(@NotNull Project project,
+                                                  @Nullable AtomicInteger mcpCallCounter) {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         if (!Boolean.TRUE.equals(settings.getAgentModeEnabled())) {
@@ -47,7 +59,7 @@ public class AgentToolProviderFactory {
 
         // Add MCP tools if MCP is also enabled
         if (MCPService.isMCPEnabled()) {
-            ToolProvider mcpProvider = getMcpToolProviderWithoutApproval(project);
+            ToolProvider mcpProvider = getMcpToolProviderWithoutApproval(project, mcpCallCounter);
             if (mcpProvider != null) {
                 providers.add(mcpProvider);
             }
@@ -86,9 +98,11 @@ public class AgentToolProviderFactory {
      * determines available tools at runtime.
      */
     @Nullable
-    private static ToolProvider getMcpToolProviderWithoutApproval(@NotNull Project project) {
+    private static ToolProvider getMcpToolProviderWithoutApproval(@NotNull Project project,
+                                                                  @Nullable AtomicInteger mcpCallCounter) {
         try {
-            ToolProvider provider = MCPExecutionService.getInstance().createRawMCPToolProvider();
+            ToolProvider provider = MCPExecutionService.getInstance()
+                    .createRawMCPToolProvider(mcpCallCounter);
             if (provider != null) {
                 log.info("MCP tool provider included in agent tool chain");
             } else {

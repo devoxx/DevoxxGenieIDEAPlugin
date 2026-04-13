@@ -16,6 +16,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -39,6 +41,9 @@ public final class AnalyticsService {
     public static final String APP_NAME = "devoxxgenie-intellij";
     public static final String EVENT_PROMPT_EXECUTED = "prompt_executed";
     public static final String EVENT_MODEL_SELECTED = "model_selected";
+    public static final String EVENT_FEATURE_ENABLED = "feature_enabled";
+    public static final String EVENT_FEATURE_USED = "feature_used";
+    public static final String EVENT_FEATURE_COUNTS = "feature_counts";
 
     private static final String PLUGIN_ID = "com.devoxx.genie";
 
@@ -71,23 +76,72 @@ public final class AnalyticsService {
     }
 
     public void trackPromptExecuted(@Nullable String providerId, @Nullable String modelName) {
-        sendSafely(EVENT_PROMPT_EXECUTED, providerId, modelName);
+        sendPromptOrModelEventSafely(EVENT_PROMPT_EXECUTED, providerId, modelName);
     }
 
     public void trackModelSelected(@Nullable String providerId, @Nullable String modelName) {
-        sendSafely(EVENT_MODEL_SELECTED, providerId, modelName);
+        sendPromptOrModelEventSafely(EVENT_MODEL_SELECTED, providerId, modelName);
     }
 
-    private void sendSafely(@NotNull String eventName, @Nullable String providerId, @Nullable String modelName) {
+    public void trackFeatureEnabled(@NotNull FeatureId featureId) {
+        if (featureId.isUsageOnly()) {
+            log.debug("Rejected trackFeatureEnabled for usage-only feature '{}'", featureId.wireValue());
+            return;
+        }
+        Map<String, String> params = AnalyticsEventBuilder.params();
+        params.put("feature_id", featureId.wireValue());
+        sendGenericSafely(EVENT_FEATURE_ENABLED, params);
+    }
+
+    public void trackFeatureUsed(@NotNull FeatureId featureId,
+                                 @NotNull ProviderType providerType,
+                                 @NotNull String toolCallCountBucket) {
+        Map<String, String> params = AnalyticsEventBuilder.params();
+        params.put("feature_id", featureId.wireValue());
+        params.put("provider_type", providerType.wireValue());
+        params.put("tool_call_count", toolCallCountBucket);
+        sendGenericSafely(EVENT_FEATURE_USED, params);
+    }
+
+    public void trackFeatureCounts(@NotNull String mcpServerCountBucket,
+                                   @NotNull String customPromptCountBucket,
+                                   @NotNull String chatMemoryBucket) {
+        Map<String, String> params = AnalyticsEventBuilder.params();
+        params.put("mcp_server_count", mcpServerCountBucket);
+        params.put("custom_prompt_count", customPromptCountBucket);
+        params.put("chat_memory_bucket", chatMemoryBucket);
+        sendGenericSafely(EVENT_FEATURE_COUNTS, params);
+    }
+
+    private void sendPromptOrModelEventSafely(@NotNull String eventName,
+                                              @Nullable String providerId,
+                                              @Nullable String modelName) {
+        // Provider/model are required for both events to be useful.
+        if (providerId == null || providerId.isEmpty() || modelName == null || modelName.isEmpty()) {
+            return;
+        }
+        Map<String, String> params = AnalyticsEventBuilder.params();
+        params.put("provider_id", providerId);
+        params.put("model_name", modelName);
+        sendGenericSafely(eventName, params);
+    }
+
+    private void sendGenericSafely(@NotNull String eventName, @NotNull Map<String, String> eventParams) {
         try {
-            send(eventName, providerId, modelName);
+            sendGeneric(eventName, eventParams);
         } catch (Exception e) {
             logAnalyticsFailure("Analytics tracking skipped", e);
         }
     }
 
-    private void send(@NotNull String eventName, @Nullable String providerId, @Nullable String modelName) {
-        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+    private void sendGeneric(@NotNull String eventName, @NotNull Map<String, String> eventParams) {
+        DevoxxGenieStateService state;
+        try {
+            state = DevoxxGenieStateService.getInstance();
+        } catch (Exception e) {
+            logAnalyticsFailure("Analytics tracking skipped", e);
+            return;
+        }
 
         // Hard precondition gates — never emit before consent or when disabled.
         if (!Boolean.TRUE.equals(state.getAnalyticsNoticeAcknowledged())) {
@@ -97,24 +151,35 @@ public final class AnalyticsService {
             return;
         }
 
-        // Provider/model are required for both events to be useful.
-        if (providerId == null || providerId.isEmpty() || modelName == null || modelName.isEmpty()) {
-            return;
-        }
-
         String endpoint = state.getAnalyticsEndpoint();
         if (endpoint == null || endpoint.isEmpty()) {
             return;
         }
 
         String clientId = state.getAnalyticsClientId();
-        String payload = buildPayload(clientId, eventName, providerId, modelName);
+        Map<String, String> commonParams = buildCommonParams();
+
+        String payload = AnalyticsEventBuilder.build(clientId, eventName, eventParams, commonParams);
+        if (payload == null) {
+            // Allowlist rejection — logged inside the builder.
+            return;
+        }
 
         if (synchronousForTest) {
             postBlockingSilently(endpoint, payload);
         } else {
             postAsyncSilently(endpoint, payload);
         }
+    }
+
+    @NotNull
+    private Map<String, String> buildCommonParams() {
+        Map<String, String> common = new LinkedHashMap<>();
+        common.put("app_name", APP_NAME);
+        common.put("app_version", pluginVersion());
+        common.put("ide_version", ideVersion());
+        common.put("session_id", sessionId);
+        return common;
     }
 
     private void postAsyncSilently(@NotNull String endpoint, @NotNull String payload) {
@@ -168,50 +233,6 @@ public final class AnalyticsService {
             return throwable.getCause();
         }
         return throwable;
-    }
-
-    String buildPayload(@NotNull String clientId,
-                        @NotNull String eventName,
-                        @NotNull String providerId,
-                        @NotNull String modelName) {
-        StringBuilder sb = new StringBuilder(384);
-        sb.append('{')
-          .append("\"client_id\":\"").append(escape(clientId)).append("\",")
-          .append("\"events\":[{")
-          .append("\"name\":\"").append(escape(eventName)).append("\",")
-          .append("\"params\":{")
-          .append("\"provider_id\":\"").append(escape(providerId)).append("\",")
-          .append("\"model_name\":\"").append(escape(modelName)).append("\",")
-          .append("\"app_name\":\"").append(APP_NAME).append("\",")
-          .append("\"app_version\":\"").append(escape(pluginVersion())).append("\",")
-          .append("\"ide_version\":\"").append(escape(ideVersion())).append("\",")
-          .append("\"session_id\":\"").append(sessionId).append("\",")
-          .append("\"engagement_time_msec\":1")
-          .append("}}]}")
-          ;
-        return sb.toString();
-    }
-
-    @NotNull
-    private static String escape(@NotNull String value) {
-        StringBuilder sb = new StringBuilder(value.length() + 8);
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            switch (c) {
-                case '\\': sb.append("\\\\"); break;
-                case '"':  sb.append("\\\""); break;
-                case '\n': sb.append("\\n");  break;
-                case '\r': sb.append("\\r");  break;
-                case '\t': sb.append("\\t");  break;
-                default:
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-            }
-        }
-        return sb.toString();
     }
 
     @NotNull

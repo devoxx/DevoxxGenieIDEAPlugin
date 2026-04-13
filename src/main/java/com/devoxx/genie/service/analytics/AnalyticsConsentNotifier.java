@@ -25,15 +25,18 @@ public final class AnalyticsConsentNotifier {
     private static final String TITLE = "DevoxxGenie usage analytics";
 
     private static final String CONTENT =
-            "<html>To guide which LLM providers and models we invest engineering effort in, " +
+            "<html>To guide which features and LLM providers we invest engineering effort in, " +
                     "DevoxxGenie collects <b>anonymous</b> usage data when you run a prompt or change models:" +
                     "<ul>" +
                     "<li>Anonymous install ID, per-launch session ID, plugin version, IDE version</li>" +
                     "<li>LLM provider name and model name</li>" +
+                    "<li>Which optional features are enabled (RAG, Agent, MCP, Web Search) and coarse counts</li>" +
+                    "<li>Which features are actually used during a prompt (feature identifiers only)</li>" +
                     "</ul>" +
                     "<b>We never send</b> prompt text, response text, file content, file paths, project names, " +
-                    "API keys, or anything that could identify you. " +
-                    "You can change this any time in <i>Settings → DevoxxGenie → General</i>." +
+                    "API keys, MCP server names/URLs/commands, user-defined prompt names, or anything " +
+                    "that could identify you. " +
+                    "You can change this any time in <i>Settings → DevoxxGenie → Analytics</i>." +
                     "</html>";
 
     private AnalyticsConsentNotifier() {
@@ -60,6 +63,8 @@ public final class AnalyticsConsentNotifier {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e) {
                     DevoxxGenieStateService.getInstance().setAnalyticsNoticeAcknowledged(true);
+                    // Analytics just became eligible — emit the feature-enablement snapshot (task-209).
+                    AnalyticsSessionSnapshotService.getInstance().snapshotIfNeeded();
                     notification.expire();
                 }
             });

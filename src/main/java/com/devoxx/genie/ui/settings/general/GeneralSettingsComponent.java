@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.settings.general;
 
+import com.devoxx.genie.service.PropertiesService;
+import com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
@@ -9,7 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Settings UI for general DevoxxGenie options. Currently exposes the anonymous usage
+ * Settings UI for Analytics DevoxxGenie options. Currently exposes the anonymous usage
  * analytics opt-out (task-206). Help text below the checkbox enumerates every field that
  * is sent and what is never sent.
  */
@@ -24,7 +26,7 @@ public class GeneralSettingsComponent {
         analyticsEnabledCheckBox = new JCheckBox("Send anonymous usage statistics");
         analyticsEnabledCheckBox.setSelected(Boolean.TRUE.equals(state.getAnalyticsEnabled()));
 
-        JBLabel sentHeader = new JBLabel("<html><b>What is sent</b> (per LLM prompt or model selection):</html>");
+        JBLabel sentHeader = new JBLabel("<html><b>What is sent</b> (per LLM prompt, model selection, or session):</html>");
         JBLabel sentList = new JBLabel(
                 "<html><ul style='margin-left:18px'>" +
                         "<li>An anonymous install ID (UUID), generated once and stored locally</li>" +
@@ -32,6 +34,10 @@ public class GeneralSettingsComponent {
                         "<li>Plugin version and IDE version</li>" +
                         "<li>LLM provider name (e.g. anthropic, ollama)</li>" +
                         "<li>LLM model name (e.g. claude-3-5-sonnet)</li>" +
+                        "<li>Which optional features are enabled (RAG, Agent, MCP, Web Search, streaming) " +
+                        "and coarse counts (e.g. bucketed number of configured MCP servers or custom prompts)</li>" +
+                        "<li>Which features are actually used during a prompt " +
+                        "(feature identifiers only, never prompt text or file content)</li>" +
                         "</ul></html>");
 
         JBLabel notSentHeader = new JBLabel("<html><b>What is never sent:</b></html>");
@@ -39,9 +45,12 @@ public class GeneralSettingsComponent {
                 "<html><ul style='margin-left:18px'>" +
                         "<li>Prompt text, response text, conversation history</li>" +
                         "<li>File content, file paths, project name, git remote</li>" +
+                        "<li>MCP server names, URLs, commands, tool names, or environment variables</li>" +
+                        "<li>User-defined custom prompt names or bodies</li>" +
                         "<li>API keys, credentials, user name, email</li>" +
                         "<li>Token counts or cost data</li>" +
-                        "</ul>This data is used solely to guide which LLM providers and models receive engineering investment.</html>");
+                        "</ul>This data is used only to guide which features and LLM providers receive " +
+                        "engineering investment.</html>");
 
         Color subtle = UIUtil.getContextHelpForeground();
         for (JBLabel l : new JBLabel[]{sentHeader, sentList, notSentHeader, notSentList}) {
@@ -58,8 +67,15 @@ public class GeneralSettingsComponent {
         notSentHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
         notSentList.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        String version = PropertiesService.getInstance().getVersion();
+        JBLabel versionLabel = new JBLabel("Plugin version: " + (version != null ? version : "unknown"));
+        versionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        versionLabel.setForeground(UIUtil.getContextHelpForeground());
+
         panel.add(analyticsEnabledCheckBox);
         panel.add(Box.createVerticalStrut(8));
+        panel.add(versionLabel);
+        panel.add(Box.createVerticalStrut(16));
         panel.add(sentHeader);
         panel.add(sentList);
         panel.add(Box.createVerticalStrut(8));
@@ -83,6 +99,9 @@ public class GeneralSettingsComponent {
         // Touching the setting in the UI counts as informed acknowledgement — so we never
         // re-show the first-launch notice for users who configured the toggle explicitly.
         state.setAnalyticsNoticeAcknowledged(true);
+
+        // Re-arm the feature-enablement snapshot (task-209).
+        DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
     public void reset() {

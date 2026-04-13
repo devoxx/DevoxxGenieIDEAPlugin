@@ -52,9 +52,11 @@
             <LI>Plugin version and IDE version</LI>
             <LI>LLM provider name (e.g. anthropic, ollama)</LI>
             <LI>LLM model name (e.g. claude-3-5-sonnet)</LI>
+            <LI>Which optional features are enabled (RAG, Agent mode, MCP, Web Search, streaming) and coarse counts such as the number of configured MCP servers or custom prompts — never server names, URLs, commands, or user-defined prompt names</LI>
+            <LI>Which features are actually used during a prompt (RAG, Agent, MCP, Web Search, project context, custom prompts) — feature identifiers only, never prompt text or file content</LI>
         </UL>
-        <p><strong>What is never sent:</strong> prompt text, response text, conversation history, file content, file paths, project names, git remotes, API keys, credentials, token counts, or cost data.</p>
-        <p>A first-launch notification asks for your consent before any data is sent. You can change this any time in <em>Settings → DevoxxGenie → General</em>.</p>
+        <p><strong>What is never sent:</strong> prompt text, response text, conversation history, file content, file paths, project names, git remotes, API keys, credentials, token counts, cost data, MCP server names/URLs/commands, or user-defined custom prompt names.</p>
+        <p>A first-launch notification asks for your consent before any data is sent. You can change this any time in <em>Settings → DevoxxGenie → Analytics</em>.</p>
     ]]></description>
 
     <change-notes><![CDATA[
@@ -470,7 +472,7 @@
         <projectConfigurable id="com.devoxx.genie.GeneralSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.general.GeneralSettingsConfigurable"
-                             displayName="General"/>
+                             displayName="Analytics"/>
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"

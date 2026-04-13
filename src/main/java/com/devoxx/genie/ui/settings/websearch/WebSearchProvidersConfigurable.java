@@ -85,6 +85,9 @@ public class WebSearchProvidersConfigurable implements Configurable {
         settings.setGoogleSearchKey(new String(webSearchProvidersComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(webSearchProvidersComponent.getGoogleCSIApiKeyField().getPassword()));
         settings.setMaxSearchResults(webSearchProvidersComponent.getMaxSearchResults().getNumber());
+
+        // Re-arm the feature-enablement analytics snapshot (task-209).
+        com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
     /**

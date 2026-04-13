@@ -4,7 +4,12 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.agent.tool.ReadOnlyToolProvider;
+import com.devoxx.genie.service.analytics.AnalyticsService;
+import com.devoxx.genie.service.analytics.Buckets;
+import com.devoxx.genie.service.analytics.FeatureId;
+import com.devoxx.genie.service.analytics.ProviderType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -111,6 +116,32 @@ public class SubAgentRunner {
         } catch (Exception e) {
             log.error("Sub-agent #{} failed", agentIndex + 1, e);
             return SUB_AGENT + (agentIndex + 1) + " error: " + e.getMessage();
+        } finally {
+            emitAgentFeatureUsed();
+        }
+    }
+
+    /**
+     * Emits a separate `agent` feature_used event for this sub-agent (task-209 AC #23).
+     * Fires on success, error, and cancellation — mirrors the parent orchestrator pattern.
+     * Sub-agent events are independent of the parent's event so the parent run isn't
+     * double-counted.
+     */
+    private void emitAgentFeatureUsed() {
+        if (tracker == null) return;
+        try {
+            ProviderType providerType = ProviderType.NONE;
+            if (resolvedProviderName != null && !resolvedProviderName.isEmpty()) {
+                try {
+                    providerType = ProviderType.fromModelProvider(ModelProvider.fromString(resolvedProviderName));
+                } catch (IllegalArgumentException ignored) {
+                    // Unknown provider name — fall through to NONE.
+                }
+            }
+            AnalyticsService.getInstance().trackFeatureUsed(
+                    FeatureId.AGENT, providerType, Buckets.standard(tracker.getCallCount()));
+        } catch (Exception e) {
+            log.debug("Sub-agent analytics tracking skipped: {}", e.getMessage());
         }
     }
 

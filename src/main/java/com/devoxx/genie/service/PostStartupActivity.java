@@ -1,6 +1,7 @@
 package com.devoxx.genie.service;
 
 import com.devoxx.genie.service.analytics.AnalyticsConsentNotifier;
+import com.devoxx.genie.service.analytics.AnalyticsSessionSnapshotService;
 import com.devoxx.genie.service.automation.listeners.BuildCompilationListener;
 import com.devoxx.genie.service.automation.listeners.FileEventListener;
 import com.devoxx.genie.service.automation.listeners.FileSaveListener;
@@ -61,6 +62,9 @@ public class PostStartupActivity implements ProjectActivity {
 
         // First-launch analytics consent notification (task-206). Self-disables after firing once.
         AnalyticsConsentNotifier.maybeShow(project);
+
+        // Feature enablement snapshot — app-level, emitted at most once per IDE session (task-209).
+        AnalyticsSessionSnapshotService.getInstance().snapshotIfNeeded();
 
         return Unit.INSTANCE;
     }

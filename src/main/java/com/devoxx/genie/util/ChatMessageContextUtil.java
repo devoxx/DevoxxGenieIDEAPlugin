@@ -35,13 +35,19 @@ public class ChatMessageContextUtil {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
+        boolean ragActivated = Boolean.TRUE.equals(stateService.getRagActivated());
+        boolean webSearchActivated = Boolean.TRUE.equals(stateService.getWebSearchActivated());
+
         ChatMessageContext chatMessageContext = ChatMessageContext.builder()
                 .project(chatContextParameters.project())
                 .id(String.valueOf(System.currentTimeMillis()))
                 .tabId(chatContextParameters.tabId())
                 .userPrompt(chatContextParameters.userPromptText())
                 .languageModel(chatContextParameters.languageModel())
-                .webSearchRequested(stateService.getWebSearchActivated() && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
+                // task-209: mirror the chat-panel toggles onto the context so analytics reads them at completion.
+                .ragActivated(ragActivated)
+                .webSearchActivated(webSearchActivated)
+                .webSearchRequested(webSearchActivated && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
                 .executionTimeMs(0)
                 .cost(0)
                 .build();
@@ -83,6 +89,8 @@ public class ChatMessageContextUtil {
         if (projectContext != null && isProjectContextAdded) {
             // If the full project is added as context, set it and ignore any attached files
             chatMessageContext.setFilesContext(projectContext);
+            // task-209 analytics signal — no content, only a boolean flag
+            chatMessageContext.setProjectContextFullUsed(true);
         } else {
             // We don't include separate added files to the context if the full project is already included
             processAttachedFiles(chatMessageContext);
@@ -118,6 +126,8 @@ public class ChatMessageContextUtil {
         if (!files.isEmpty()) {
             // Defer file content loading to background thread to avoid EDT freeze on large files
             chatMessageContext.setPendingAttachedFiles(new ArrayList<>(files));
+            // task-209 analytics signal — no content, only a boolean flag
+            chatMessageContext.setProjectContextSelectedUsed(true);
         }
     }
 
