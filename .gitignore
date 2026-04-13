@@ -1,5 +1,6 @@
 .env
 build/**
+.kotlin/
 .gradle
 .intellijPlatform
 .idea
