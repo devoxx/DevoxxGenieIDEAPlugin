@@ -138,7 +138,18 @@ public final class AnalyticsEventBuilder {
         if (value.startsWith("/") || value.startsWith("\\")) return false;
         if (value.contains("://")) return false;
         if (value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0) return false;
+        // Windows drive-letter absolute paths: C:\... or C:/...
+        if (value.length() >= 3
+                && isAsciiLetter(value.charAt(0))
+                && value.charAt(1) == ':'
+                && (value.charAt(2) == '\\' || value.charAt(2) == '/')) {
+            return false;
+        }
         return true;
+    }
+
+    private static boolean isAsciiLetter(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }
 
     @NotNull

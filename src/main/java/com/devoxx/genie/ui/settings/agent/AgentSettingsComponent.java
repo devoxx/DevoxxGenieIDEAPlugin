@@ -768,6 +768,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             }
         }
         stateService.setDisabledAgentTools(disabledTools);
+
+        // Re-arm the feature-enablement analytics snapshot (task-209).
+        com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
     public void reset() {

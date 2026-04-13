@@ -410,6 +410,9 @@ public class MCPSettingsComponent extends AbstractSettingsComponent {
 
             // Save MCP settings
             stateService.setMcpApprovalTimeout(approvalTimeoutField.getNumber());
+
+            // Re-arm the feature-enablement analytics snapshot (task-209).
+            com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
             
             // Refresh the tool window visibility if MCP enabled state changed
             if (oldMcpEnabled != enableMcpCheckbox.isSelected()) {

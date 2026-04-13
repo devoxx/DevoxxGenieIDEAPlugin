@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.analytics;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.util.messages.Topic;
 
 /**
@@ -20,4 +21,19 @@ public interface DevoxxGenieSettingsChangedTopic {
 
     /** Fired after any tracked setting has been written back to {@code DevoxxGenieStateService}. */
     void settingsChanged();
+
+    /**
+     * Fail-silent broadcast helper. Any exception — including null message bus in test
+     * environments — is swallowed so settings {@code apply()} paths never crash because of
+     * analytics plumbing.
+     */
+    static void notifySettingsChanged() {
+        try {
+            ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(TOPIC)
+                    .settingsChanged();
+        } catch (Exception | Error ignored) {
+            // Best-effort — settings changes must never fail because analytics is unreachable.
+        }
+    }
 }

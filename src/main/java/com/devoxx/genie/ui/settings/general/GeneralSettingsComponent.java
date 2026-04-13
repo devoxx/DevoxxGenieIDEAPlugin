@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.settings.general;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -102,9 +101,7 @@ public class GeneralSettingsComponent {
         state.setAnalyticsNoticeAcknowledged(true);
 
         // Re-arm the feature-enablement snapshot (task-209).
-        ApplicationManager.getApplication().getMessageBus()
-                .syncPublisher(DevoxxGenieSettingsChangedTopic.TOPIC)
-                .settingsChanged();
+        DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
     public void reset() {

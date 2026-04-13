@@ -73,6 +73,9 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setIndexerMinScore((Double) ragSettingsComponent.getMinScoreField().getValue());
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
 
+        // Re-arm the feature-enablement analytics snapshot (task-209).
+        com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
+
         if (oldValue != newValue) {
             project.getMessageBus()
                     .syncPublisher(AppTopics.RAG_STATE_TOPIC)

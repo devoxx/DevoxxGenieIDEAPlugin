@@ -182,7 +182,9 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
      * Also sets file references on the context when a provider is available.
      */
     private ToolProvider resolveToolProvider(@NotNull ChatMessageContext context) {
-        ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+        // task-209: thread the per-prompt MCP counter through so MCP-inside-agent invocations
+        // are counted via InstrumentedMcpToolProvider.
+        ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project, context.getMcpCallCount());
         if (toolProvider instanceof AgentLoopTracker tracker) {
             currentTracker.set(tracker);
         }

@@ -190,8 +190,9 @@ public class NonStreamingPromptExecutionService {
 
             Assistant assistant = buildAssistant(chatModel, chatMemory, project);
 
-            // Try agent mode first, then fall back to MCP-only
-            ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project);
+            // Try agent mode first, then fall back to MCP-only. Thread the per-prompt MCP
+            // counter so MCP-inside-agent invocations are counted (task-209 AC #24).
+            ToolProvider toolProvider = AgentToolProviderFactory.createToolProvider(project, chatMessageContext.getMcpCallCount());
             if (toolProvider instanceof AgentLoopTracker tracker) {
                 String tKey = chatMessageContext.getTabId() != null ? chatMessageContext.getTabId() : "default";
                 trackers.put(tKey, tracker);

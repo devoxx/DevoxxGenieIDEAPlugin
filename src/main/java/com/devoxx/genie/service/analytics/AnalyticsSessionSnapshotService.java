@@ -84,6 +84,14 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
      * (or has been re-armed by a settings change). Safe to call repeatedly; fire-and-forget.
      */
     public void snapshotIfNeeded() {
+        // Preflight consent gates BEFORE burning the one-shot flag. Otherwise the first
+        // call from PostStartupActivity (before the user has clicked "OK, Keep Enabled")
+        // would consume the guard, dropping every event, and the Keep-Enabled action's
+        // follow-up call would find sent=true and exit early — losing the snapshot for
+        // the entire first opted-in IDE session. Task-209 AC #1 / #28.
+        if (!isAnalyticsEligible()) {
+            return;
+        }
         if (!sent.compareAndSet(false, true)) {
             return;
         }
@@ -91,6 +99,16 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
             emitSnapshot();
         } catch (Exception e) {
             log.debug("Analytics session snapshot skipped: {}", e.getMessage());
+        }
+    }
+
+    private boolean isAnalyticsEligible() {
+        try {
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+            return Boolean.TRUE.equals(state.getAnalyticsNoticeAcknowledged())
+                    && Boolean.TRUE.equals(state.getAnalyticsEnabled());
+        } catch (Exception e) {
+            return false;
         }
     }
 

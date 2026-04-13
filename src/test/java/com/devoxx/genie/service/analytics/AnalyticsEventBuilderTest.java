@@ -127,6 +127,30 @@ class AnalyticsEventBuilderTest {
     }
 
     @Test
+    void windowsDriveLetterBackslashPathIsRejected() {
+        Map<String, String> ev = new LinkedHashMap<>();
+        ev.put("provider_id", "anthropic");
+        ev.put("model_name", "C:\\Users\\me\\project");
+        assertThat(AnalyticsEventBuilder.build(CLIENT_ID, AnalyticsService.EVENT_PROMPT_EXECUTED, ev, common())).isNull();
+    }
+
+    @Test
+    void windowsDriveLetterForwardSlashPathIsRejected() {
+        Map<String, String> ev = new LinkedHashMap<>();
+        ev.put("provider_id", "anthropic");
+        ev.put("model_name", "D:/Users/me/project");
+        assertThat(AnalyticsEventBuilder.build(CLIENT_ID, AnalyticsService.EVENT_PROMPT_EXECUTED, ev, common())).isNull();
+    }
+
+    @Test
+    void lowercaseWindowsDriveLetterIsRejected() {
+        Map<String, String> ev = new LinkedHashMap<>();
+        ev.put("provider_id", "anthropic");
+        ev.put("model_name", "z:\\leak");
+        assertThat(AnalyticsEventBuilder.build(CLIENT_ID, AnalyticsService.EVENT_PROMPT_EXECUTED, ev, common())).isNull();
+    }
+
+    @Test
     void urlShapedValueIsRejected() {
         Map<String, String> ev = new LinkedHashMap<>();
         ev.put("provider_id", "anthropic");

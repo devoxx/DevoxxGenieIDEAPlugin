@@ -206,6 +206,10 @@ public class MessageCreationService {
             Map<String, SearchResult> searchResults =
                     semanticSearchService.search(chatMessageContext.getProject(), chatMessageContext.getUserPrompt());
 
+            // Task-209: emit feature_used with the real provider_type from the active model.
+            com.devoxx.genie.service.analytics.FeatureUsageTracker.semanticSearchUsed(
+                    chatMessageContext.getLanguageModel());
+
             if (!searchResults.isEmpty()) {
                 List<SemanticFile> fileReferences = extractFileReferences(searchResults);
 
