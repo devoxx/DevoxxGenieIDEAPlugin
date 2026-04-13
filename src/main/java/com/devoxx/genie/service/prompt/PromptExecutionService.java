@@ -4,6 +4,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.analytics.AnalyticsService;
+import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.prompt.cancellation.PromptCancellationService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
@@ -129,6 +130,10 @@ public class PromptExecutionService {
                     } else if (result != null) {
                         log.debug("Prompt execution completed with result: {}", result);
                     }
+
+                    // Emit per-feature usage events based on what the prompt actually activated
+                    // (task-209). Never reads user content — only activation flags and counters.
+                    FeatureUsageTracker.emitForPrompt(context);
 
                     // Unregister from cancellation service upon completion
                     cancellationService.unregisterExecution(project, context.getId());

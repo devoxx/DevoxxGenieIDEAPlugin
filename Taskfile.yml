@@ -157,6 +157,14 @@ tasks:
       - rm -f /tmp/recent-prs.json /tmp/changelog-content.md /tmp/plugin-changes.html
       - echo "✅ Temporary files cleaned"
 
+  version:
+    desc: Show current plugin version
+    vars:
+      CURRENT_VERSION:
+        sh: grep -E '^version\s*=' build.gradle.kts | head -n1 | sed 's/.*"\(.*\)".*/\1/'
+    cmds:
+      - echo "DevoxxGenie plugin version {{.CURRENT_VERSION}}"
+
   build:
     desc: Build the plugin using Gradle
     cmds:
@@ -207,6 +215,111 @@ tasks:
       - build
       - test
 
+  release:patch:
+    desc: 📦 Release a patch version (e.g. 0.5.6 → 0.5.7)
+    summary: |
+      Bumps the patch version in build.gradle.kts, generates changelog, creates a git tag, and pushes to remote.
+    preconditions:
+      - sh: git diff-index --quiet HEAD --
+        msg: "You have uncommitted changes. Please commit or stash them before releasing."
+    vars:
+      CURRENT_VERSION:
+        sh: grep -E '^version\s*=' build.gradle.kts | head -n1 | sed 's/.*"\(.*\)".*/\1/'
+      NEW_VERSION:
+        sh: |
+          current="{{.CURRENT_VERSION}}"
+          major=$(echo "$current" | cut -d'.' -f1)
+          minor=$(echo "$current" | cut -d'.' -f2)
+          patch=$(echo "$current" | cut -d'.' -f3)
+          new_patch=$((patch + 1))
+          echo "$major.$minor.$new_patch"
+    prompt: "Release patch version {{.NEW_VERSION}}? (current: {{.CURRENT_VERSION}})"
+    deps:
+      - check-tools
+    cmds:
+      - task: test
+      - |
+        sed -i.bak -E 's/^(version[[:space:]]*=[[:space:]]*")[^"]+(".*)$/\1{{.NEW_VERSION}}\2/' build.gradle.kts
+        rm -f build.gradle.kts.bak
+        echo "✅ Updated build.gradle.kts to version {{.NEW_VERSION}}"
+      - task: generate-changelog
+        vars: {VERSION: "{{.NEW_VERSION}}"}
+      - git add build.gradle.kts CHANGELOG.md {{.PLUGIN_XML}}
+      - 'git commit -m "chore(release): prepare release v{{.NEW_VERSION}}"'
+      - 'git tag -a "v{{.NEW_VERSION}}" -m "Release v{{.NEW_VERSION}}"'
+      - git push origin HEAD
+      - 'git push origin "v{{.NEW_VERSION}}"'
+      - echo "✅ Released v{{.NEW_VERSION}}"
+
+  release:minor:
+    desc: 📦 Release a minor version (e.g. 0.5.6 → 0.6.0)
+    summary: |
+      Bumps the minor version in build.gradle.kts, generates changelog, creates a git tag, and pushes to remote.
+    preconditions:
+      - sh: git diff-index --quiet HEAD --
+        msg: "You have uncommitted changes. Please commit or stash them before releasing."
+    vars:
+      CURRENT_VERSION:
+        sh: grep -E '^version\s*=' build.gradle.kts | head -n1 | sed 's/.*"\(.*\)".*/\1/'
+      NEW_VERSION:
+        sh: |
+          current="{{.CURRENT_VERSION}}"
+          major=$(echo "$current" | cut -d'.' -f1)
+          minor=$(echo "$current" | cut -d'.' -f2)
+          new_minor=$((minor + 1))
+          echo "$major.$new_minor.0"
+    prompt: "Release minor version {{.NEW_VERSION}}? (current: {{.CURRENT_VERSION}})"
+    deps:
+      - check-tools
+    cmds:
+      - task: test
+      - |
+        sed -i.bak -E 's/^(version[[:space:]]*=[[:space:]]*")[^"]+(".*)$/\1{{.NEW_VERSION}}\2/' build.gradle.kts
+        rm -f build.gradle.kts.bak
+        echo "✅ Updated build.gradle.kts to version {{.NEW_VERSION}}"
+      - task: generate-changelog
+        vars: {VERSION: "{{.NEW_VERSION}}"}
+      - git add build.gradle.kts CHANGELOG.md {{.PLUGIN_XML}}
+      - 'git commit -m "chore(release): prepare release v{{.NEW_VERSION}}"'
+      - 'git tag -a "v{{.NEW_VERSION}}" -m "Release v{{.NEW_VERSION}}"'
+      - git push origin HEAD
+      - 'git push origin "v{{.NEW_VERSION}}"'
+      - echo "✅ Released v{{.NEW_VERSION}}"
+
+  release:major:
+    desc: 📦 Release a major version (e.g. 0.5.6 → 1.0.0)
+    summary: |
+      Bumps the major version in build.gradle.kts, generates changelog, creates a git tag, and pushes to remote.
+    preconditions:
+      - sh: git diff-index --quiet HEAD --
+        msg: "You have uncommitted changes. Please commit or stash them before releasing."
+    vars:
+      CURRENT_VERSION:
+        sh: grep -E '^version\s*=' build.gradle.kts | head -n1 | sed 's/.*"\(.*\)".*/\1/'
+      NEW_VERSION:
+        sh: |
+          current="{{.CURRENT_VERSION}}"
+          major=$(echo "$current" | cut -d'.' -f1)
+          new_major=$((major + 1))
+          echo "$new_major.0.0"
+    prompt: "Release major version {{.NEW_VERSION}}? (current: {{.CURRENT_VERSION}})"
+    deps:
+      - check-tools
+    cmds:
+      - task: test
+      - |
+        sed -i.bak -E 's/^(version[[:space:]]*=[[:space:]]*")[^"]+(".*)$/\1{{.NEW_VERSION}}\2/' build.gradle.kts
+        rm -f build.gradle.kts.bak
+        echo "✅ Updated build.gradle.kts to version {{.NEW_VERSION}}"
+      - task: generate-changelog
+        vars: {VERSION: "{{.NEW_VERSION}}"}
+      - git add build.gradle.kts CHANGELOG.md {{.PLUGIN_XML}}
+      - 'git commit -m "chore(release): prepare release v{{.NEW_VERSION}}"'
+      - 'git tag -a "v{{.NEW_VERSION}}" -m "Release v{{.NEW_VERSION}}"'
+      - git push origin HEAD
+      - 'git push origin "v{{.NEW_VERSION}}"'
+      - echo "✅ Released v{{.NEW_VERSION}}"
+
   preview-changes:
     desc: Preview what changes would be made without updating files
     summary: |
@@ -253,6 +366,11 @@ tasks:
           preview-changes    - Preview changes without updating files
           clean-temp         - Clean temporary files
 
+        📦 Release Tasks:
+          release:major      - Release a major version (e.g. 0.5.6 → 1.0.0)
+          release:minor      - Release a minor version (e.g. 0.5.6 → 0.6.0)
+          release:patch      - Release a patch version (e.g. 0.5.6 → 0.5.7)
+
         Examples:
           # Development
           task build
@@ -260,7 +378,7 @@ tasks:
           task run-ide
           
           # Release
-          task generate-changelog VERSION=0.8.0
+          task release:patch
           task verify
           PUBLISH_TOKEN=xxx task publish
 

@@ -60,6 +60,8 @@ public final class AnalyticsConsentNotifier {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e) {
                     DevoxxGenieStateService.getInstance().setAnalyticsNoticeAcknowledged(true);
+                    // Analytics just became eligible — emit the feature-enablement snapshot (task-209).
+                    AnalyticsSessionSnapshotService.getInstance().snapshotIfNeeded();
                     notification.expire();
                 }
             });

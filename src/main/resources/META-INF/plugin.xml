@@ -470,7 +470,7 @@
         <projectConfigurable id="com.devoxx.genie.GeneralSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.general.GeneralSettingsConfigurable"
-                             displayName="General"/>
+                             displayName="Analytics"/>
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"

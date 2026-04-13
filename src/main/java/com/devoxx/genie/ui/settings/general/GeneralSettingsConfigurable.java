@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 
 /**
- * Top-level "General" configurable for DevoxxGenie. Currently hosts the anonymous
+ * Top-level "Analytics" configurable for DevoxxGenie. Currently hosts the anonymous
  * usage analytics opt-out toggle (task-206); future general toggles can live here too.
  */
 public class GeneralSettingsConfigurable implements Configurable {
@@ -17,7 +17,7 @@ public class GeneralSettingsConfigurable implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "General";
+        return "Analytics";
     }
 
     @Override

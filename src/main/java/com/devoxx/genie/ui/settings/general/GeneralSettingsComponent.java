@@ -1,6 +1,9 @@
 package com.devoxx.genie.ui.settings.general;
 
+import com.devoxx.genie.service.PropertiesService;
+import com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -9,7 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Settings UI for general DevoxxGenie options. Currently exposes the anonymous usage
+ * Settings UI for Analytics DevoxxGenie options. Currently exposes the anonymous usage
  * analytics opt-out (task-206). Help text below the checkbox enumerates every field that
  * is sent and what is never sent.
  */
@@ -41,7 +44,8 @@ public class GeneralSettingsComponent {
                         "<li>File content, file paths, project name, git remote</li>" +
                         "<li>API keys, credentials, user name, email</li>" +
                         "<li>Token counts or cost data</li>" +
-                        "</ul>This data is used solely to guide which LLM providers and models receive engineering investment.</html>");
+                        "</ul>This data is used only to guide which LLM providers and models receive engineering " +
+                        "investment, and to improve features specific to often-used LLM providers.</html>");
 
         Color subtle = UIUtil.getContextHelpForeground();
         for (JBLabel l : new JBLabel[]{sentHeader, sentList, notSentHeader, notSentList}) {
@@ -58,8 +62,15 @@ public class GeneralSettingsComponent {
         notSentHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
         notSentList.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        String version = PropertiesService.getInstance().getVersion();
+        JBLabel versionLabel = new JBLabel("Plugin version: " + (version != null ? version : "unknown"));
+        versionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        versionLabel.setForeground(UIUtil.getContextHelpForeground());
+
         panel.add(analyticsEnabledCheckBox);
         panel.add(Box.createVerticalStrut(8));
+        panel.add(versionLabel);
+        panel.add(Box.createVerticalStrut(16));
         panel.add(sentHeader);
         panel.add(sentList);
         panel.add(Box.createVerticalStrut(8));
@@ -83,6 +94,11 @@ public class GeneralSettingsComponent {
         // Touching the setting in the UI counts as informed acknowledgement — so we never
         // re-show the first-launch notice for users who configured the toggle explicitly.
         state.setAnalyticsNoticeAcknowledged(true);
+
+        // Re-arm the feature-enablement snapshot (task-209).
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(DevoxxGenieSettingsChangedTopic.TOPIC)
+                .settingsChanged();
     }
 
     public void reset() {
