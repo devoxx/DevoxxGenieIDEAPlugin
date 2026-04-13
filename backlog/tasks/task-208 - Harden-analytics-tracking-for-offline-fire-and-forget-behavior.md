@@ -5,7 +5,7 @@ status: Done
 assignee:
   - codex
 created_date: '2026-04-13 12:25'
-updated_date: '2026-04-13 12:29'
+updated_date: '2026-04-13 12:44'
 labels:
   - analytics
   - stability
@@ -61,4 +61,6 @@ Summary:
 
 Tests:
 - `./gradlew -q test --tests com.devoxx.genie.service.analytics.AnalyticsServiceTest`
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1007
 <!-- SECTION:FINAL_SUMMARY:END -->
