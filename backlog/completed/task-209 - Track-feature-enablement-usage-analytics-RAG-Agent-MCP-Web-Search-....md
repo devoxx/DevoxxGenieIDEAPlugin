@@ -1,10 +1,10 @@
 ---
 id: TASK-209
 title: 'Track feature enablement & usage analytics (RAG, Agent, MCP, Web Search, ...)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-13 13:13'
-updated_date: '2026-04-13 14:15'
+updated_date: '2026-04-13 15:50'
 labels:
   - analytics
   - telemetry
@@ -133,7 +133,7 @@ File a sibling-repo task in `../GenieBuilder` to add a "Feature Usage" panel:
 - [x] #9 Git Diff context criterion is explicitly out of scope (no such feature exists in the repo); Event Automation and Spec-Driven Dev are deferred
 - [x] #10 Existing consent gates (`analyticsNoticeAcknowledged`, `analyticsEnabled`) suppress all new events when off — unit tested
 - [x] #11 All three disclosure surfaces are updated in lockstep: `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` marketplace description
-- [ ] #12 Unit tests cover: snapshot one-shot guard, per-event allowlist rejection, consent-off suppression, offline fire-and-forget (task-208 regression), bucketing boundaries
+- [x] #12 Unit tests cover: snapshot one-shot guard, per-event allowlist rejection, consent-off suppression, offline fire-and-forget (task-208 regression), bucketing boundaries
 - [x] #13 GA4 schema is documented in a shared location (e.g., `docs/analytics-schema.md`) that both DevoxxGenie and GenieBuilder reference
 - [x] #14 Follow-up task filed in `../GenieBuilder` for the Feature Usage admin panel
 - [x] #15 `AnalyticsService.buildPayload` is refactored into a generic `AnalyticsEventBuilder` that takes `(eventName, Map<String,String>)` and enforces a closed per-event param allowlist; existing `prompt_executed` / `model_selected` events route through it and `AnalyticsServiceTest` still passes
@@ -256,3 +256,33 @@ Unit test does **not** launch two IntelliJ projects. Instead it:
 3. Asserts exactly one HTTP request captured by the recording `HttpClient` (same pattern as existing `AnalyticsServiceTest`).
 4. Calls the MessageBus re-arm path and asserts a second emission fires.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped the task-209 analytics pipeline across three commits on `feature/task-209-feature-usage-analytics`.
+
+## What landed
+
+**Foundation** — new `AnalyticsEventBuilder` with closed per-event allowlists + shape/length rejection (path, URL, newline, Windows drive letter, >128 chars); `FeatureId` / `ProviderType` / `Buckets` utilities; `AnalyticsService` refactored to route all events through the builder while preserving existing behavior.
+
+**Session snapshot** — `AnalyticsSessionSnapshotService` (APP-level `@Service`), `AtomicBoolean`-guarded one-shot per IDE session. Preflights consent gates before burning the guard so the first opted-in session still emits. Re-arms via `DevoxxGenieSettingsChangedTopic` MessageBus, with fail-silent `notifySettingsChanged()` helper wired into all five settings panels (General, RAG, MCP, WebSearch, Agent).
+
+**Per-prompt instrumentation** — `InstrumentedMcpToolProvider` counts real `ToolExecutor.execute()` invocations in stack order `Approval → Instrumented → Filtered → raw`. `AgentToolProviderFactory` threads the per-prompt counter through so MCP-inside-agent is also counted. `FeatureUsageTracker` static facade emits `feature_used` events from `PromptExecutionService.task.whenComplete`, reading `ChatMessageContext` flags set at assembly time (RAG / web search mirrored from `DevoxxGenieStateService`, project-context booleans set in `ChatMessageContextUtil`, `devoxxGenieMdUsed` in `ChatMemoryManager.buildSystemPrompt`). Agent events emitted from `StreamingPromptStrategy`, `NonStreamingPromptExecutionService`, and `SubAgentRunner` (each with its own tracker, no double-counting). Semantic search emits from `MessageCreationService` where the `LanguageModel` is in scope so `provider_type` is correct.
+
+**Disclosure lockstep** — `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` marketplace description all updated in lockstep with the new bullets for feature enablement and per-prompt usage.
+
+**Docs** — `docs/analytics-schema.md` as the shared source of truth for GenieBuilder and any future consumer.
+
+**Follow-ups** — `task-210` in this repo and `task-197` in `../GenieBuilder` filed with concrete file:line edits for the three-file minimum path (TRACKED_EVENTS, EVENT_LABELS, EVENT_CATEGORIES) and the full Feature Usage panel build-out. The GenieBuilder task includes the six GA4 custom dimensions to register.
+
+## Tests
+
+~35 analytics-focused tests across `AnalyticsServiceTest` (existing, behavior-preserving), `AnalyticsEventBuilderTest`, `AnalyticsSessionSnapshotServiceTest`, `BucketsTest`, `ProviderTypeTest`, `InstrumentedMcpToolProviderTest`, `FeatureUsageTrackerTest`. Full project suite green. AC #12's task-208 offline fire-and-forget regression is covered by the existing `AnalyticsServiceTest.asyncNetworkFailureIsSilent` test, which now runs through the refactored `AnalyticsEventBuilder` path.
+
+All 28 acceptance criteria satisfied.
+
+---
+
+**PR:** https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1008
+<!-- SECTION:FINAL_SUMMARY:END -->
