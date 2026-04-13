@@ -147,7 +147,7 @@ public class PromptExecutionService {
             if (model == null || model.getProvider() == null) {
                 return;
             }
-            AnalyticsService.getInstance().trackPromptExecuted(
+            AnalyticsService.trackPromptExecutedSafely(
                     model.getProvider().getName(),
                     model.getModelName());
         } catch (Exception e) {

@@ -295,7 +295,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
                 if (!suppressModelSelectionTracking
                         && !llmProviderPanel.isUpdatingModelNames()
                         && selectedModel.getProvider() != null) {
-                    AnalyticsService.getInstance().trackModelSelected(
+                    AnalyticsService.trackModelSelectedSafely(
                             selectedModel.getProvider().getName(),
                             selectedModel.getModelName());
                 }

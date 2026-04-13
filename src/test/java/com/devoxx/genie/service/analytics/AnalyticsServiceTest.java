@@ -13,10 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -147,6 +149,54 @@ class AnalyticsServiceTest {
     }
 
     @Test
+    void stateLookupFailureIsSilent() {
+        try (MockedStatic<DevoxxGenieStateService> mocked = mockStatic(DevoxxGenieStateService.class)) {
+            mocked.when(DevoxxGenieStateService::getInstance).thenThrow(new IllegalStateException("settings unavailable"));
+
+            assertThatCode(() -> service.trackPromptExecuted("anthropic", "claude"))
+                    .doesNotThrowAnyException();
+        }
+
+        assertThat(httpClient.requestCount()).isZero();
+    }
+
+    @Test
+    void invalidEndpointIsSilent() {
+        state.setAnalyticsEndpoint("://not-a-uri");
+
+        runWithState(() ->
+                assertThatCode(() -> service.trackPromptExecuted("anthropic", "claude"))
+                        .doesNotThrowAnyException());
+
+        assertThat(httpClient.requestCount()).isZero();
+    }
+
+    @Test
+    void asyncNetworkFailureIsSilent() {
+        service.setHttpClientForTest(httpClient, false);
+        httpClient.throwOnSend = true;
+
+        runWithState(() ->
+                assertThatCode(() -> service.trackModelSelected("anthropic", "claude"))
+                        .doesNotThrowAnyException());
+
+        httpClient.awaitOne();
+        assertThat(httpClient.requestCount()).isOne();
+    }
+
+    @Test
+    void nonSuccessfulResponseIsSilent() {
+        httpClient.statusCode = 503;
+
+        runWithState(() ->
+                assertThatCode(() -> service.trackPromptExecuted("anthropic", "claude"))
+                        .doesNotThrowAnyException());
+
+        httpClient.awaitOne();
+        assertThat(httpClient.requestCount()).isOne();
+    }
+
+    @Test
     void payloadContainsNoPiiEvenWhenInputsLookLikePaths() {
         // A defensive test: even if we ever pass something path-like, the payload only carries
         // the two strings we passed and nothing else (no project name, no file content).
@@ -170,6 +220,7 @@ class AnalyticsServiceTest {
         private final List<HttpRequest> requests = new ArrayList<>();
         private final List<String> bodies = new ArrayList<>();
         boolean throwOnSend = false;
+        int statusCode = 204;
 
         synchronized int requestCount() {
             return requests.size();
@@ -229,7 +280,7 @@ class AnalyticsServiceTest {
             }
             @SuppressWarnings("unchecked")
             HttpResponse<T> stub = (HttpResponse<T>) mock(HttpResponse.class);
-            when(stub.statusCode()).thenReturn(204);
+            when(stub.statusCode()).thenReturn(statusCode);
             return stub;
         }
 
@@ -242,11 +293,15 @@ class AnalyticsServiceTest {
         @Override public java.util.Optional<java.net.Authenticator> authenticator() { return java.util.Optional.empty(); }
         @Override public Version version() { return Version.HTTP_1_1; }
         @Override public java.util.Optional<java.util.concurrent.Executor> executor() { return java.util.Optional.empty(); }
-        @Override public <T> java.util.concurrent.CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
-            return java.util.concurrent.CompletableFuture.failedFuture(new UnsupportedOperationException());
+        @Override public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            try {
+                return CompletableFuture.completedFuture(send(request, responseBodyHandler));
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
         }
-        @Override public <T> java.util.concurrent.CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler, HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
-            return java.util.concurrent.CompletableFuture.failedFuture(new UnsupportedOperationException());
+        @Override public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler, HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
+            return sendAsync(request, responseBodyHandler);
         }
     }
 }
