@@ -60,6 +60,15 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     private boolean isInitializationComplete = false;
     private boolean isUpdatingModelNames = false;
 
+    /**
+     * @return {@code true} while the model name combo is being repopulated programmatically
+     * (provider switch, settings refresh, restore). Listeners that distinguish user actions
+     * from programmatic updates can read this to suppress side-effects (e.g. analytics).
+     */
+    public boolean isUpdatingModelNames() {
+        return isUpdatingModelNames;
+    }
+
     public LlmProviderPanel(@NotNull Project project) {
         this(project, null);
     }
@@ -259,6 +268,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      */
     public void updateModelNamesComboBox(String modelProvider) {
         Optional.ofNullable(modelProvider).ifPresent(provider -> {
+            boolean wasUpdating = isUpdatingModelNames;
+            isUpdatingModelNames = true;
             try {
                 modelNameComboBox.removeAllItems();
                 modelNameComboBox.setVisible(true);
@@ -281,6 +292,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             } catch (Exception e) {
                 log.error("Error updating model names", e);
                 Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
+            } finally {
+                isUpdatingModelNames = wasUpdating;
             }
         });
     }
@@ -331,12 +344,18 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      */
     public void restoreLastSelectedLanguageModel() {
         if (lastSelectedLanguageModel != null) {
-            for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
-                LanguageModel model = modelNameComboBox.getItemAt(i);
-                if (model.getModelName().equals(lastSelectedLanguageModel)) {
-                    modelNameComboBox.setSelectedIndex(i);
-                    break;
+            boolean wasUpdating = isUpdatingModelNames;
+            isUpdatingModelNames = true;
+            try {
+                for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                    LanguageModel model = modelNameComboBox.getItemAt(i);
+                    if (model.getModelName().equals(lastSelectedLanguageModel)) {
+                        modelNameComboBox.setSelectedIndex(i);
+                        break;
+                    }
                 }
+            } finally {
+                isUpdatingModelNames = wasUpdating;
             }
         }
     }

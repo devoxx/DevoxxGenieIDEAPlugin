@@ -2,6 +2,11 @@ so # Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Anonymous LLM provider/model usage analytics (opt-out). Helps guide which providers and models receive engineering investment. The plugin sends a minimal payload — anonymous install ID (UUID), per-launch session ID, plugin version, IDE version, LLM provider name, LLM model name — when you run a prompt or change models. **Never sent**: prompt text, response text, file content, file paths, project names, conversation history, API keys, or anything that could identify you. A first-launch notification asks for consent; you can disable it any time in *Settings → DevoxxGenie → General*.
+
 ## [1.4.1]
 
 ### Updated

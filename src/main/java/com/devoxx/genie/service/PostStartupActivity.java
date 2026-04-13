@@ -1,5 +1,6 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.service.analytics.AnalyticsConsentNotifier;
 import com.devoxx.genie.service.automation.listeners.BuildCompilationListener;
 import com.devoxx.genie.service.automation.listeners.FileEventListener;
 import com.devoxx.genie.service.automation.listeners.FileSaveListener;
@@ -57,6 +58,9 @@ public class PostStartupActivity implements ProjectActivity {
 
         // Register event automation listeners (project-scoped)
         registerEventAutomationListeners(project);
+
+        // First-launch analytics consent notification (task-206). Self-disables after firing once.
+        AnalyticsConsentNotifier.maybeShow(project);
 
         return Unit.INSTANCE;
     }

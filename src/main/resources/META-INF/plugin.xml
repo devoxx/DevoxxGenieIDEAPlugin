@@ -42,9 +42,26 @@
         </UL>
 
         <p>Need help? Visit our <a href="https://genie.devoxx.com/docs/intro">Getting Started Guide</a> or check the <a href="https://genie.devoxx.com/docs/troubleshooting">Troubleshooting</a> page.</p>
+
+        <h3>Privacy &amp; Anonymous Usage Analytics</h3>
+        <p>To guide which LLM providers and models receive engineering investment, DevoxxGenie collects <strong>anonymous</strong> usage data when you run a prompt or change models.</p>
+        <p><strong>What is sent:</strong></p>
+        <UL>
+            <LI>An anonymous install ID (UUID), generated once and stored locally</LI>
+            <LI>A per-launch session ID (random 10-digit number)</LI>
+            <LI>Plugin version and IDE version</LI>
+            <LI>LLM provider name (e.g. anthropic, ollama)</LI>
+            <LI>LLM model name (e.g. claude-3-5-sonnet)</LI>
+        </UL>
+        <p><strong>What is never sent:</strong> prompt text, response text, conversation history, file content, file paths, project names, git remotes, API keys, credentials, token counts, or cost data.</p>
+        <p>A first-launch notification asks for your consent before any data is sent. You can change this any time in <em>Settings → DevoxxGenie → General</em>.</p>
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>Unreleased</h2>
+        <UL>
+            <LI>Feat: Anonymous LLM provider/model usage analytics (opt-out). Sends only: anonymous install ID (UUID), per-launch session ID, plugin version, IDE version, LLM provider name, LLM model name. Never sends prompt text, response text, file content, file paths, project names, conversation history, API keys, or anything that could identify you. First-launch notification asks for consent; toggle in <em>Settings → DevoxxGenie → General</em>.</LI>
+        </UL>
         <h2>v1.4.1</h2>
         <UL>
             <LI>Update: Upgrade 40 Gradle dependencies including Langchain4J to 1.12.2</LI>
@@ -449,6 +466,11 @@
                              id="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"
                              displayName="DevoxxGenie"/>
+
+        <projectConfigurable id="com.devoxx.genie.GeneralSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.general.GeneralSettingsConfigurable"
+                             displayName="General"/>
 
         <projectConfigurable id="com.devoxx.genie.LLMSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"

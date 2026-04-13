@@ -283,6 +283,25 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private EventAutomationSettings eventAutomationSettings = new EventAutomationSettings();
     private Boolean eventAutomationEnabled = false;
 
+    // Anonymous usage analytics (LLM provider + model only)
+    // See task-206. Endpoint is the GenieBuilder Cloudflare worker reused for DevoxxGenie via app_name segmentation.
+    private Boolean analyticsEnabled = true;
+    private Boolean analyticsNoticeShown = false;
+    private Boolean analyticsNoticeAcknowledged = false;
+    private String analyticsClientId = "";
+    private String analyticsEndpoint = "https://delicate-morning-ff55.devoxx.workers.dev";
+
+    /**
+     * Returns the persisted anonymous client id, generating a new UUID on first access
+     * and persisting it so it stays stable across IDE restarts and plugin updates.
+     */
+    public String getAnalyticsClientId() {
+        if (analyticsClientId == null || analyticsClientId.isEmpty()) {
+            analyticsClientId = UUID.randomUUID().toString();
+        }
+        return analyticsClientId;
+    }
+
     // Inline completion settings
     private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
     private String inlineCompletionModel = "";
