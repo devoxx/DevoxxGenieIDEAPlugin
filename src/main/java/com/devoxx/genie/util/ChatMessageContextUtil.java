@@ -83,6 +83,8 @@ public class ChatMessageContextUtil {
         if (projectContext != null && isProjectContextAdded) {
             // If the full project is added as context, set it and ignore any attached files
             chatMessageContext.setFilesContext(projectContext);
+            // task-209 analytics signal — no content, only a boolean flag
+            chatMessageContext.setProjectContextFullUsed(true);
         } else {
             // We don't include separate added files to the context if the full project is already included
             processAttachedFiles(chatMessageContext);
@@ -118,6 +120,8 @@ public class ChatMessageContextUtil {
         if (!files.isEmpty()) {
             // Defer file content loading to background thread to avoid EDT freeze on large files
             chatMessageContext.setPendingAttachedFiles(new ArrayList<>(files));
+            // task-209 analytics signal — no content, only a boolean flag
+            chatMessageContext.setProjectContextSelectedUsed(true);
         }
     }
 

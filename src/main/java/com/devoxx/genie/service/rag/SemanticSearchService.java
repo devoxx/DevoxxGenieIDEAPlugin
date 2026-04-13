@@ -38,6 +38,9 @@ public final class SemanticSearchService {
      * @return Map of search results with file paths as keys
      */
     public @NotNull Map<String, SearchResult> search(Project project, String query) {
+        // Feature usage analytics (task-209) — fires only on real search invocations; query text never leaves the IDE.
+        com.devoxx.genie.service.analytics.FeatureUsageTracker.semanticSearchUsed(null);
+
         embeddingService.init(project);
 
         Embedding queryEmbedding = embeddingService.getEmbeddingModel().embed(query).content();

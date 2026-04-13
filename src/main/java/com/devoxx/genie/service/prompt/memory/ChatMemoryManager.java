@@ -321,7 +321,15 @@ public class ChatMemoryManager {
      * @return The complete system prompt
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
-        return buildAugmentedSystemPrompt(context.getProject());
+        String prompt = buildAugmentedSystemPrompt(context.getProject());
+        // task-209 analytics signal — mirrors the gate used inside buildAugmentedSystemPrompt.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
+            String md = readDevoxxGenieMdFile(context.getProject());
+            if (md != null && !md.isEmpty()) {
+                context.setDevoxxGenieMdUsed(true);
+            }
+        }
+        return prompt;
     }
 
     public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project) {

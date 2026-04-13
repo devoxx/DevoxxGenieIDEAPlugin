@@ -4,7 +4,7 @@ title: 'Track feature enablement & usage analytics (RAG, Agent, MCP, Web Search,
 status: In Progress
 assignee: []
 created_date: '2026-04-13 13:13'
-updated_date: '2026-04-13 13:37'
+updated_date: '2026-04-13 14:15'
 labels:
   - analytics
   - telemetry
@@ -122,34 +122,34 @@ File a sibling-repo task in `../GenieBuilder` to add a "Feature Usage" panel:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `feature_enabled` is emitted at most once per IDE session (not per opened project), guarded by an app-level `AtomicBoolean` keyed on the existing `sessionId`; unit test opens two projects and asserts a single emission
-- [ ] #2 `feature_enabled` / `feature_used` / `feature_counts` schemas match the closed allowlist in the description; unknown params are dropped and the drop is unit-tested
-- [ ] #3 `feature_id` is a closed enum (`rag`, `semantic_search`, `web_search_google`, `web_search_tavily`, `agent`, `mcp`, `streaming`, `project_context_full`, `project_context_selected`, `devoxxgenie_md`, `custom_prompt`); no free-form strings accepted
-- [ ] #4 Enablement and usage are captured as separate events — snapshot reflects `ragEnabled`-style settings flags, `feature_used` reflects per-prompt activation (`ragActivated`, `webSearchActivated`, actual MCP tool invocation, etc.)
-- [ ] #5 MCP tool invocations are counted via an instrumenting tool-provider wrapper composed with `FilteredMcpToolProvider` and `ApprovalRequiredToolProvider`, working for both standalone MCP and MCP-inside-agent; `MCPExecutionService` is NOT used as the counting point
-- [ ] #6 `provider_type` = `local|cloud` is derived in-plugin from `ModelProvider` enum, not delegated to GenieBuilder
-- [ ] #7 All counts (`mcp_server_count`, `custom_prompt_count`, `tool_call_count`, `chat_memory_bucket`) are emitted as coarse buckets, never raw integers
-- [ ] #8 No new event ever carries MCP server names/URLs/commands/tool names, custom prompt names/bodies, file paths, project names, file contents, prompt text, API keys, host names, or user identity — enforced by allowlist + a unit test that passes path/URL-shaped values and asserts they are rejected
-- [ ] #9 Git Diff context criterion is explicitly out of scope (no such feature exists in the repo); Event Automation and Spec-Driven Dev are deferred
-- [ ] #10 Existing consent gates (`analyticsNoticeAcknowledged`, `analyticsEnabled`) suppress all new events when off — unit tested
-- [ ] #11 All three disclosure surfaces are updated in lockstep: `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` marketplace description
+- [x] #1 `feature_enabled` is emitted at most once per IDE session (not per opened project), guarded by an app-level `AtomicBoolean` keyed on the existing `sessionId`; unit test opens two projects and asserts a single emission
+- [x] #2 `feature_enabled` / `feature_used` / `feature_counts` schemas match the closed allowlist in the description; unknown params are dropped and the drop is unit-tested
+- [x] #3 `feature_id` is a closed enum (`rag`, `semantic_search`, `web_search_google`, `web_search_tavily`, `agent`, `mcp`, `streaming`, `project_context_full`, `project_context_selected`, `devoxxgenie_md`, `custom_prompt`); no free-form strings accepted
+- [x] #4 Enablement and usage are captured as separate events — snapshot reflects `ragEnabled`-style settings flags, `feature_used` reflects per-prompt activation (`ragActivated`, `webSearchActivated`, actual MCP tool invocation, etc.)
+- [x] #5 MCP tool invocations are counted via an instrumenting tool-provider wrapper composed with `FilteredMcpToolProvider` and `ApprovalRequiredToolProvider`, working for both standalone MCP and MCP-inside-agent; `MCPExecutionService` is NOT used as the counting point
+- [x] #6 `provider_type` = `local|cloud` is derived in-plugin from `ModelProvider` enum, not delegated to GenieBuilder
+- [x] #7 All counts (`mcp_server_count`, `custom_prompt_count`, `tool_call_count`, `chat_memory_bucket`) are emitted as coarse buckets, never raw integers
+- [x] #8 No new event ever carries MCP server names/URLs/commands/tool names, custom prompt names/bodies, file paths, project names, file contents, prompt text, API keys, host names, or user identity — enforced by allowlist + a unit test that passes path/URL-shaped values and asserts they are rejected
+- [x] #9 Git Diff context criterion is explicitly out of scope (no such feature exists in the repo); Event Automation and Spec-Driven Dev are deferred
+- [x] #10 Existing consent gates (`analyticsNoticeAcknowledged`, `analyticsEnabled`) suppress all new events when off — unit tested
+- [x] #11 All three disclosure surfaces are updated in lockstep: `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` marketplace description
 - [ ] #12 Unit tests cover: snapshot one-shot guard, per-event allowlist rejection, consent-off suppression, offline fire-and-forget (task-208 regression), bucketing boundaries
-- [ ] #13 GA4 schema is documented in a shared location (e.g., `docs/analytics-schema.md`) that both DevoxxGenie and GenieBuilder reference
-- [ ] #14 Follow-up task filed in `../GenieBuilder` for the Feature Usage admin panel
-- [ ] #15 `AnalyticsService.buildPayload` is refactored into a generic `AnalyticsEventBuilder` that takes `(eventName, Map<String,String>)` and enforces a closed per-event param allowlist; existing `prompt_executed` / `model_selected` events route through it and `AnalyticsServiceTest` still passes
-- [ ] #16 ModelProvider.Type mapping is implemented as LOCAL→local, CLOUD→cloud, OPTIONAL→cloud; `provider_type` allowed values are strictly `local|cloud|none`; unit test covers each enum value
-- [ ] #17 `Buckets` utility maps raw counts to the exact bucket strings in the task plan (`0`,`1`,`2-5`,`6-10`,`11+` for most; `0`,`1-5`,`6-10`,`11-20`,`21+` for chat_memory); boundary test covers each transition
-- [ ] #18 `tool_call_count` is emitted as `"0"` for all `feature_used` events except `agent` and `mcp`; unit-tested
-- [ ] #19 `streaming` emits `feature_enabled` when `streamMode=true` in the snapshot AND `feature_used` on every prompt when `streamMode=true`
-- [ ] #20 Semantic Search enablement is derived from `ragEnabled` only; no ChromaDB network call is made during startup; `semantic_search` is emitted only as `feature_used` from inside `SemanticSearchService.search()`
-- [ ] #21 `project_context_full`, `project_context_selected`, `semantic_search`, and `devoxxgenie_md` are usage-only feature_ids (rejected if passed to `trackFeatureEnabled`)
-- [ ] #22 Snapshot re-arming is implemented via a central MessageBus topic `DevoxxGenieSettingsChangedTopic` subscribed by `AnalyticsSessionSnapshotService`, not per-panel `apply()` hooks; `AnalyticsConsentNotifier`'s Keep-Enabled action also triggers `snapshotIfNeeded()`
-- [ ] #23 Agent `feature_used` is emitted from `StreamingPromptStrategy`, `NonStreamingPromptExecutionService`, AND `SubAgentRunner` after the chat finishes (success, error, or cancellation), each reading its own `AgentLoopTracker.getCallCount()`; sub-agent events are separate and do not double-count parent runs
-- [ ] #24 `InstrumentedMcpToolProvider` sits in the wrapper stack as `ApprovalRequiredToolProvider → InstrumentedMcpToolProvider → FilteredMcpToolProvider → raw`; counts are incremented inside wrapped `ToolExecutor.execute()`, not inside `provideTools()`; works for both standalone-MCP and MCP-inside-agent paths
-- [ ] #25 `ChatMessageContext` gains three new booleans (`projectContextFullUsed`, `projectContextSelectedUsed`, `devoxxGenieMdUsed`) set at the assembly sites named in the plan; `PromptExecutionService` reads them at prompt completion to emit the corresponding `feature_used` events
-- [ ] #26 One `feature_used` event is emitted per activated `feature_id` per prompt (a prompt activating RAG + Web Search + Agent emits three events)
-- [ ] #27 Disclosure copy in `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` is updated with the exact draft text in the task plan (feature enablement + feature usage bullets)
-- [ ] #28 One-shot session guard is unit-tested without IntelliJ platform fixtures: instantiate `AnalyticsSessionSnapshotService`, call `snapshotIfNeeded()` twice, assert single HTTP request via recording HttpClient; then trigger re-arm and assert a second emission
+- [x] #13 GA4 schema is documented in a shared location (e.g., `docs/analytics-schema.md`) that both DevoxxGenie and GenieBuilder reference
+- [x] #14 Follow-up task filed in `../GenieBuilder` for the Feature Usage admin panel
+- [x] #15 `AnalyticsService.buildPayload` is refactored into a generic `AnalyticsEventBuilder` that takes `(eventName, Map<String,String>)` and enforces a closed per-event param allowlist; existing `prompt_executed` / `model_selected` events route through it and `AnalyticsServiceTest` still passes
+- [x] #16 ModelProvider.Type mapping is implemented as LOCAL→local, CLOUD→cloud, OPTIONAL→cloud; `provider_type` allowed values are strictly `local|cloud|none`; unit test covers each enum value
+- [x] #17 `Buckets` utility maps raw counts to the exact bucket strings in the task plan (`0`,`1`,`2-5`,`6-10`,`11+` for most; `0`,`1-5`,`6-10`,`11-20`,`21+` for chat_memory); boundary test covers each transition
+- [x] #18 `tool_call_count` is emitted as `"0"` for all `feature_used` events except `agent` and `mcp`; unit-tested
+- [x] #19 `streaming` emits `feature_enabled` when `streamMode=true` in the snapshot AND `feature_used` on every prompt when `streamMode=true`
+- [x] #20 Semantic Search enablement is derived from `ragEnabled` only; no ChromaDB network call is made during startup; `semantic_search` is emitted only as `feature_used` from inside `SemanticSearchService.search()`
+- [x] #21 `project_context_full`, `project_context_selected`, `semantic_search`, and `devoxxgenie_md` are usage-only feature_ids (rejected if passed to `trackFeatureEnabled`)
+- [x] #22 Snapshot re-arming is implemented via a central MessageBus topic `DevoxxGenieSettingsChangedTopic` subscribed by `AnalyticsSessionSnapshotService`, not per-panel `apply()` hooks; `AnalyticsConsentNotifier`'s Keep-Enabled action also triggers `snapshotIfNeeded()`
+- [x] #23 Agent `feature_used` is emitted from `StreamingPromptStrategy`, `NonStreamingPromptExecutionService`, AND `SubAgentRunner` after the chat finishes (success, error, or cancellation), each reading its own `AgentLoopTracker.getCallCount()`; sub-agent events are separate and do not double-count parent runs
+- [x] #24 `InstrumentedMcpToolProvider` sits in the wrapper stack as `ApprovalRequiredToolProvider → InstrumentedMcpToolProvider → FilteredMcpToolProvider → raw`; counts are incremented inside wrapped `ToolExecutor.execute()`, not inside `provideTools()`; works for both standalone-MCP and MCP-inside-agent paths
+- [x] #25 `ChatMessageContext` gains three new booleans (`projectContextFullUsed`, `projectContextSelectedUsed`, `devoxxGenieMdUsed`) set at the assembly sites named in the plan; `PromptExecutionService` reads them at prompt completion to emit the corresponding `feature_used` events
+- [x] #26 One `feature_used` event is emitted per activated `feature_id` per prompt (a prompt activating RAG + Web Search + Agent emits three events)
+- [x] #27 Disclosure copy in `AnalyticsConsentNotifier`, `GeneralSettingsComponent`, and `plugin.xml` is updated with the exact draft text in the task plan (feature enablement + feature usage bullets)
+- [x] #28 One-shot session guard is unit-tested without IntelliJ platform fixtures: instantiate `AnalyticsSessionSnapshotService`, call `snapshotIfNeeded()` twice, assert single HTTP request via recording HttpClient; then trigger re-arm and assert a second emission
 <!-- AC:END -->
 
 ## Implementation Plan
