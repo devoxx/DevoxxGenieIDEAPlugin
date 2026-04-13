@@ -9,6 +9,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,6 +60,8 @@ class ExoChatModelFactoryTest {
 
     @Test
     void createChatModelShouldReturnNonNull() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         // ensureInstance should not throw
         doNothing().when(mockExoService).ensureInstance(anyString());
 
@@ -78,6 +81,8 @@ class ExoChatModelFactoryTest {
 
     @Test
     void createStreamingChatModelShouldReturnNonNull() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         doNothing().when(mockExoService).ensureInstance(anyString());
 
         ExoChatModelFactory factory = new ExoChatModelFactory();
@@ -94,6 +99,8 @@ class ExoChatModelFactoryTest {
 
     @Test
     void createChatModelShouldCallEnsureInstance() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         doNothing().when(mockExoService).ensureInstance(anyString());
 
         ExoChatModelFactory factory = new ExoChatModelFactory();
@@ -108,6 +115,8 @@ class ExoChatModelFactoryTest {
 
     @Test
     void createChatModelShouldNotThrowWhenEnsureInstanceFails() throws IOException {
+        Assumptions.assumeTrue(ExoTestAssumptions.isExoServerRunning(),
+                "Skipping: requires a running Exo server on localhost:52415");
         doThrow(new IOException("No valid placement found")).when(mockExoService).ensureInstance(anyString());
 
         ExoChatModelFactory factory = new ExoChatModelFactory();
