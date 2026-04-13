@@ -55,7 +55,7 @@ tasks:
         
         echo "" >> /tmp/changelog-content.md
         echo "### Dependencies" >> /tmp/changelog-content.md
-        jq -r '.[] | select(.title | test("^[Bb]ump|^[Uu]pdate")) | "- " + .title + " (#" + (.number | tostring) + ")"' /tmp/changelog-content.md >> /tmp/changelog-content.md
+        jq -r '.[] | select(.title | test("^[Bb]ump|^[Uu]pdate")) | "- " + .title + " (#" + (.number | tostring) + ")"' /tmp/recent-prs.json >> /tmp/changelog-content.md
         
         echo "" >> /tmp/changelog-content.md
         echo "### Contributors" >> /tmp/changelog-content.md
