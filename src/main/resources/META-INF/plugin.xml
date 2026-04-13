@@ -60,10 +60,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>Unreleased</h2>
+                <h2>v1.4.2</h2>
         <UL>
-            <LI>Feat: Anonymous LLM provider/model usage analytics (opt-out). Sends only: anonymous install ID (UUID), per-launch session ID, plugin version, IDE version, LLM provider name, LLM model name. Never sends prompt text, response text, file content, file paths, project names, conversation history, API keys, or anything that could identify you. First-launch notification asks for consent; toggle in <em>Settings → DevoxxGenie → General</em>.</LI>
-        </UL>
+                    <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
+                    <LI>feat(analytics): anonymous LLM provider/model usage analytics</LI>
+                    <LI>feat: add Exo distributed AI cluster as LLM provider</LI>
+                    <LI>fix(analytics): harden offline tracking delivery</LI>
+                </UL>
+
         <h2>v1.4.1</h2>
         <UL>
             <LI>Update: Upgrade 40 Gradle dependencies including Langchain4J to 1.12.2</LI>

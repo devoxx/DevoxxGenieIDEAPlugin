@@ -1,6 +1,21 @@
 so # Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.4.2] - $(date +%Y-%m-%d)
+
+### Added
+- feat(analytics): track feature enablement & usage (task-209) (#1008)
+- feat(analytics): anonymous LLM provider/model usage analytics (#1005)
+- feat: add Exo distributed AI cluster as LLM provider (#1002)
+
+### Fixed
+- fix(analytics): harden offline tracking delivery (#1007)
+
+### Dependencies
+
+### Contributors
+- @app/dependabot
+- @stephanj
 
 ## [Unreleased]
 
