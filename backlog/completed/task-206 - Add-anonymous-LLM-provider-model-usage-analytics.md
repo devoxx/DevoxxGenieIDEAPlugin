@@ -168,4 +168,8 @@ The exact payload is six fields: `client_id`, `session_id` (10-digit string per 
 
 ### Notes
 - TASK-207 (GenieBuilder backend + admin UI to surface `prompt_executed` and add an `app_name` filter) is a hard dependency for end-to-end visibility but does not block this PR.
+
+---
+
+**PR:** https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1005
 <!-- SECTION:FINAL_SUMMARY:END -->
