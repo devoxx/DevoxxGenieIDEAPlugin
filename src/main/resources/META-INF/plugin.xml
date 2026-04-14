@@ -60,7 +60,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                <h2>v1.4.2</h2>
+                        <h2>v1.4.3</h2>
+        <UL>
+                    <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
+                    <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
+                    <LI>feat(analytics): anonymous LLM provider/model usage analytics</LI>
+                    <LI>feat: add Exo distributed AI cluster as LLM provider</LI>
+                    <LI>fix(analytics): harden offline tracking delivery</LI>
+                </UL>
+<h2>v1.4.2</h2>
         <UL>
                     <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
                     <LI>feat(analytics): anonymous LLM provider/model usage analytics</LI>
