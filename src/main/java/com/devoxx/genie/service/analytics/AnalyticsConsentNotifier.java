@@ -22,21 +22,23 @@ public final class AnalyticsConsentNotifier {
 
     private static final String NOTIFICATION_GROUP_ID = "com.devoxx.genie.notifications";
 
-    private static final String TITLE = "DevoxxGenie usage analytics";
+    private static final String TITLE = "Help shape DevoxxGenie";
+
+    private static final String ANALYTICS_SOURCE_URL =
+            "https://github.com/devoxx/DevoxxGenieIDEAPlugin/blob/master/" +
+                    "src/main/java/com/devoxx/genie/service/analytics/AnalyticsEventBuilder.java";
 
     private static final String CONTENT =
-            "<html>To guide which features and LLM providers we invest engineering effort in, " +
-                    "DevoxxGenie collects <b>anonymous</b> usage data when you run a prompt or change models:" +
-                    "<ul>" +
-                    "<li>Anonymous install ID, per-launch session ID, plugin version, IDE version</li>" +
-                    "<li>LLM provider name and model name</li>" +
-                    "<li>Which optional features are enabled (RAG, Agent, MCP, Web Search) and coarse counts</li>" +
-                    "<li>Which features are actually used during a prompt (feature identifiers only)</li>" +
-                    "</ul>" +
-                    "<b>We never send</b> prompt text, response text, file content, file paths, project names, " +
-                    "API keys, MCP server names/URLs/commands, user-defined prompt names, or anything " +
-                    "that could identify you. " +
-                    "You can change this any time in <i>Settings → DevoxxGenie → Analytics</i>." +
+            "<html>" +
+                    "We're a small open-source team, and <b>anonymous</b> usage data is the only way " +
+                    "we know which features are actually worth our time. " +
+                    "<b>No prompts, no code, no file paths, no API keys</b> — ever. " +
+                    "Just things like which LLM provider you picked and whether RAG is enabled." +
+                    "<br><br>" +
+                    "See exactly what we send: " +
+                    "<a href=\"" + ANALYTICS_SOURCE_URL + "\">AnalyticsEventBuilder.java</a>" +
+                    "<br><br>" +
+                    "You can turn this off any time in <i>Settings → DevoxxGenie → Analytics</i>." +
                     "</html>";
 
     private AnalyticsConsentNotifier() {
@@ -59,7 +61,7 @@ public final class AnalyticsConsentNotifier {
                     .getNotificationGroup(NOTIFICATION_GROUP_ID)
                     .createNotification(TITLE, CONTENT, NotificationType.INFORMATION);
 
-            notification.addAction(new AnAction("OK, Keep Enabled") {
+            notification.addAction(new AnAction("Sure, help out") {
                 @Override
                 public void actionPerformed(@NotNull AnActionEvent e) {
                     DevoxxGenieStateService.getInstance().setAnalyticsNoticeAcknowledged(true);

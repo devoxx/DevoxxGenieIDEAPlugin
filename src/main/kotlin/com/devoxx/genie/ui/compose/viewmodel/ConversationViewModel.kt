@@ -8,6 +8,8 @@ import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.activity.ActivitySource
 import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.service.blog.BlogFeedService
+import com.devoxx.genie.service.blog.BlogPost
 import com.devoxx.genie.ui.compose.model.*
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService
 import com.intellij.openapi.vfs.VirtualFile
@@ -21,6 +23,7 @@ class ConversationViewModel {
         ConversationState.Welcome(
             resourceBundle = ResourceBundle.getBundle("messages"),
             customPrompts = loadCustomPrompts(),
+            blogPosts = loadBlogPosts(),
         )
     )
         private set
@@ -67,7 +70,9 @@ class ConversationViewModel {
         state = ConversationState.Welcome(
             resourceBundle = resourceBundle,
             customPrompts = loadCustomPrompts(),
+            blogPosts = loadBlogPosts(),
         )
+        refreshBlogPostsAsync()
     }
 
     fun updateCustomPrompts(resourceBundle: ResourceBundle) {
@@ -234,6 +239,7 @@ class ConversationViewModel {
         state = ConversationState.Welcome(
             resourceBundle = rb,
             customPrompts = loadCustomPrompts(),
+            blogPosts = loadBlogPosts(),
         )
     }
 
@@ -263,6 +269,38 @@ class ConversationViewModel {
         val provider = model.provider?.name ?: return name
         return "$provider : $name"
     }
+
+    private fun loadBlogPosts(): List<BlogPostUi> {
+        return try {
+            BlogFeedService.getInstance().initialPosts
+                .take(5)
+                .map { it.toUi() }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun refreshBlogPostsAsync() {
+        try {
+            BlogFeedService.getInstance().refreshRemoteAsync { fresh ->
+                val current = state
+                if (current is ConversationState.Welcome) {
+                    state = current.copy(
+                        blogPosts = fresh.take(5).map { it.toUi() },
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            // best-effort — ignore
+        }
+    }
+
+    private fun BlogPost.toUi(): BlogPostUi = BlogPostUi(
+        title = title(),
+        description = description(),
+        date = date(),
+        url = url(),
+    )
 
     private fun loadCustomPrompts(): List<CustomPromptUi> {
         return try {

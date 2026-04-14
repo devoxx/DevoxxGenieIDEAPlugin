@@ -121,6 +121,92 @@ tasks.named("buildPlugin") {
     dependsOn("updateProperties")
 }
 
+val generatedBlogResourcesDir = layout.buildDirectory.dir("generated-resources/blog")
+
+sourceSets.named("main") {
+    resources.srcDir(generatedBlogResourcesDir)
+}
+
+tasks.register("generateBlogIndex") {
+    group = "build"
+    description = "Generates blog-posts.json from docusaurus/blog/*.md frontmatter"
+
+    val blogDir = file("docusaurus/blog")
+    val outputFile = generatedBlogResourcesDir.get().file("devoxxgenie/blog-posts.json").asFile
+
+    inputs.dir(blogDir)
+    outputs.file(outputFile)
+
+    doLast {
+        if (!blogDir.exists()) {
+            logger.warn("Blog directory not found: $blogDir — writing empty index")
+            outputFile.parentFile.mkdirs()
+            outputFile.writeText("[]")
+            return@doLast
+        }
+
+        // Very small YAML frontmatter parser — sufficient for our blog posts
+        fun parseFrontmatter(file: File): Map<String, String>? {
+            val lines = file.readLines()
+            if (lines.isEmpty() || lines[0].trim() != "---") return null
+            val end = lines.drop(1).indexOfFirst { it.trim() == "---" }
+            if (end < 0) return null
+            val map = mutableMapOf<String, String>()
+            for (line in lines.subList(1, end + 1)) {
+                val idx = line.indexOf(':')
+                if (idx <= 0) continue
+                val key = line.substring(0, idx).trim()
+                var value = line.substring(idx + 1).trim()
+                // Strip surrounding quotes
+                if ((value.startsWith("\"") && value.endsWith("\"") && value.length >= 2) ||
+                    (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
+                ) {
+                    value = value.substring(1, value.length - 1)
+                }
+                map[key] = value
+            }
+            return map
+        }
+
+        fun jsonEscape(s: String): String = buildString {
+            for (c in s) when (c) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
+            }
+        }
+
+        data class Entry(val slug: String, val title: String, val date: String, val description: String)
+
+        val entries = blogDir.listFiles { f -> f.isFile && f.name.endsWith(".md") }
+            ?.mapNotNull { f ->
+                val fm = parseFrontmatter(f) ?: return@mapNotNull null
+                val slug = fm["slug"] ?: return@mapNotNull null
+                val title = fm["title"] ?: return@mapNotNull null
+                // Date: prefer explicit `date:` field, fall back to filename prefix yyyy-MM-dd
+                val date = fm["date"] ?: f.name.take(10)
+                val description = fm["description"] ?: ""
+                Entry(slug, title, date, description)
+            }
+            ?.sortedByDescending { it.date }
+            ?: emptyList()
+
+        outputFile.parentFile.mkdirs()
+        val json = entries.joinToString(prefix = "[\n", postfix = "\n]", separator = ",\n") { e ->
+            """  {"slug":"${jsonEscape(e.slug)}","title":"${jsonEscape(e.title)}","date":"${jsonEscape(e.date)}","description":"${jsonEscape(e.description)}"}"""
+        }
+        outputFile.writeText(json)
+        logger.lifecycle("Generated ${entries.size} blog entries → $outputFile")
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("generateBlogIndex")
+}
+
 dependencies {
     intellijPlatform {
         // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2025.1.7
