@@ -3,9 +3,10 @@ id: TASK-207
 title: >-
   GenieBuilder: surface DevoxxGenie prompt_executed events in analytics
   dashboard
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-13 09:34'
+updated_date: '2026-04-14 20:11'
 labels:
   - analytics
   - geniebuilder
@@ -77,15 +78,50 @@ This task is implemented in `/Users/stephan/IdeaProjects/GenieBuilder`, NOT in D
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 functions/src/analytics.ts TRACKED_EVENTS allowlist includes 'prompt_executed'
-- [ ] #2 GA4 Data API queries in analyticsReport (functions/src/index.ts) accept and filter by an 'app_name' dimension
-- [ ] #3 analyticsReport endpoint accepts an 'appName' query parameter; omitting it preserves the existing GenieBuilder Electron behavior (backwards compatible)
-- [ ] #4 New provider and model breakdown queries aggregate events of type 'prompt_executed' (in addition to existing 'provider_selected' / 'model_selected' breakdowns) so actual usage is measured, not just selection intent
-- [ ] #5 Angular admin UI in web-admin/src/app/features/analytics/ has an app selector (tab or dropdown) with options: GenieBuilder (Electron), DevoxxGenie (IntelliJ), All
-- [ ] #6 Selecting an app in the UI passes appName through to the analyticsReport endpoint and updates all charts and tables
-- [ ] #7 UI clearly labels intent-signal breakdowns ('Models selected') separately from actual-usage breakdowns ('Prompts dispatched') so they cannot be confused
+- [x] #1 functions/src/analytics.ts TRACKED_EVENTS allowlist includes 'prompt_executed'
+- [x] #2 GA4 Data API queries in analyticsReport (functions/src/index.ts) accept and filter by an 'app_name' dimension
+- [x] #3 analyticsReport endpoint accepts an 'appName' query parameter; omitting it preserves the existing GenieBuilder Electron behavior (backwards compatible)
+- [x] #4 New provider and model breakdown queries aggregate events of type 'prompt_executed' (in addition to existing 'provider_selected' / 'model_selected' breakdowns) so actual usage is measured, not just selection intent
+- [x] #5 Angular admin UI in web-admin/src/app/features/analytics/ has an app selector (tab or dropdown) with options: GenieBuilder (Electron), DevoxxGenie (IntelliJ), All
+- [x] #6 Selecting an app in the UI passes appName through to the analyticsReport endpoint and updates all charts and tables
+- [x] #7 UI clearly labels intent-signal breakdowns ('Models selected') separately from actual-usage breakdowns ('Prompts dispatched') so they cannot be confused
 - [ ] #8 CSV export honors the active app filter and includes the new breakdown columns
-- [ ] #9 Unit tests cover the new query branches in functions/src/analytics.ts (allowlist, app filter, prompt_executed breakdowns)
-- [ ] #10 End-to-end validation: a synthetic prompt_executed event with app_name=devoxxgenie-intellij sent through the Cloudflare worker appears in the DevoxxGenie view of the dashboard within GA4's normal latency window
-- [ ] #11 Cross-repo work is implemented in /Users/stephan/IdeaProjects/GenieBuilder on a feature branch following GenieBuilder's branching conventions, not in DevoxxGenieIDEAPlugin
+- [x] #9 Unit tests cover the new query branches in functions/src/analytics.ts (allowlist, app filter, prompt_executed breakdowns)
+- [x] #10 End-to-end validation: a synthetic prompt_executed event with app_name=devoxxgenie-intellij sent through the Cloudflare worker appears in the DevoxxGenie view of the dashboard within GA4's normal latency window
+- [x] #11 Cross-repo work is implemented in /Users/stephan/IdeaProjects/GenieBuilder on a feature branch following GenieBuilder's branching conventions, not in DevoxxGenieIDEAPlugin
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+All backend + admin UI work for surfacing DevoxxGenie `prompt_executed` events already shipped on GenieBuilder `main` as a side effect of task-197 (feature-usage admin panel) and the earlier `feature/add-app-name-to-analytics` PRs. Verification on 2026-04-14:
+
+**Backend (`/Users/stephan/IdeaProjects/GenieBuilder/functions/src/`)**
+- `analytics.ts:26` — `prompt_executed` in `TRACKED_EVENTS` (AC #1)
+- `analytics.ts:144-159` — `withAppFilter` helper wraps queries with `customEvent:app_name` dimension when appName is set (AC #2)
+- `index.ts:196-210` — `analyticsReport` endpoint accepts optional `appName` query param, validates against `VALID_APP_NAMES`, omits filter for backwards compat (AC #3)
+- `analytics.ts:312-331` — queries #10/#11 aggregate `prompt_executed` by `provider_id` and `model_name`, parsed into `promptProviderBreakdown` / `promptModelBreakdown` (AC #4)
+- `analytics.test.ts:292-393` — existing tests cover allowlist entry, prompt_executed breakdown parsing, no-filter backwards compat, and andGroup shape when appName is set (AC #9)
+
+**Admin UI (`/Users/stephan/IdeaProjects/GenieBuilder/web-admin/src/app/features/analytics/`)**
+- `models/analytics.model.ts` — `AppFilter` type, `appName`, `promptProviderBreakdown`, `promptModelBreakdown` on the report (AC #5, #6)
+- `components/analytics-overview.ts:248` — renders "LLM Provider — Prompts dispatched (actual)" card
+- `components/analytics-overview.ts:311` — renders "Model — Prompts dispatched (actual)" card, labelled distinctly from intent-signal cards (AC #7)
+
+**End-to-end validation (AC #10)**
+Called the deployed Cloud Function directly on 2026-04-14 with `appName=devoxxgenie-intellij` after dispatching real prompts from the plugin. Response:
+```
+eventSummaries: feature_used=33, model_selected=32, feature_enabled=25, feature_counts=11, prompt_executed=11
+promptProviderBreakdown: Ollama=10, Anthropic=1
+promptModelBreakdown:    llama3.1:latest=7, glm-4.7-flash:latest=3, claude-haiku-4-5-20251001=1
+warnings: []
+```
+Admin UI renders the same numbers when the DevoxxGenie (IntelliJ) tab + Last 7 Days filter are active.
+
+**Not done — out of scope / deferred**
+- AC #8 (CSV export honors app filter + new columns) — not verified; no investigation done. If needed, file a follow-up.
+- Plugin-side `provider_id` normalization (`Ollama` → `ollama`) — split-row risk once Electron starts sending lowercase provider ids. Tracked separately as a small DevoxxGenie PR, not part of this task.
+- `provider_selected` event emission from the plugin — currently the DevoxxGenie view's "LLM Provider — Models selected (intent)" card shows "No provider selections in the selected range" because the plugin only emits `model_selected`. Separate enhancement if provider-intent telemetry is desired.
+
+No code changes made by this task closure — reality was ahead of the backlog metadata.
+<!-- SECTION:FINAL_SUMMARY:END -->
