@@ -7,10 +7,18 @@ data class CustomPromptUi(
     val prompt: String,
 )
 
+data class BlogPostUi(
+    val title: String,
+    val description: String,
+    val date: String,
+    val url: String,
+)
+
 sealed class ConversationState {
     data class Welcome(
         val resourceBundle: ResourceBundle,
         val customPrompts: List<CustomPromptUi> = emptyList(),
+        val blogPosts: List<BlogPostUi> = emptyList(),
     ) : ConversationState()
 
     data class Chat(

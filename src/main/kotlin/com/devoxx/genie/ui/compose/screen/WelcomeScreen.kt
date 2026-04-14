@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.devoxx.genie.ui.compose.model.BlogPostUi
 import com.devoxx.genie.ui.compose.model.CustomPromptUi
 import com.devoxx.genie.ui.compose.model.FEATURES
 import com.devoxx.genie.ui.compose.model.FeatureDoc
@@ -40,6 +41,7 @@ import java.util.ResourceBundle
 fun WelcomeScreen(
     resourceBundle: ResourceBundle,
     customPrompts: List<CustomPromptUi>,
+    blogPosts: List<BlogPostUi> = emptyList(),
     onCustomPromptClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -109,6 +111,14 @@ fun WelcomeScreen(
         }
 
         Spacer(Modifier.height(20.dp))
+
+        // Latest from the blog
+        if (blogPosts.isNotEmpty()) {
+            SectionHeader("Latest from the Blog")
+            Spacer(Modifier.height(8.dp))
+            BlogPostList(blogPosts)
+            Spacer(Modifier.height(20.dp))
+        }
 
         // Footer
         FooterLinks()
@@ -272,6 +282,67 @@ private fun CommandsList(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BlogPostList(posts: List<BlogPostUi>) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val cardBg = colors.surface.blendWith(colors.onSurface, 0.04f)
+    val cardBorder = colors.surface.blendWith(colors.onSurface, 0.12f)
+    val shape = RoundedCornerShape(8.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(cardBg, shape)
+            .border(1.dp, cardBorder, shape)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        posts.forEach { post ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { BrowserUtil.browse(post.url) }
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .padding(vertical = 4.dp, horizontal = 4.dp),
+            ) {
+                BasicText(
+                    text = post.title,
+                    style = typography.body2.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = DevoxxBlue,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (post.description.isNotEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    BasicText(
+                        text = post.description,
+                        style = typography.caption.copy(
+                            fontSize = 11.sp,
+                            color = colors.textSecondary,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (post.date.isNotEmpty()) {
+                    Spacer(Modifier.height(2.dp))
+                    BasicText(
+                        text = post.date,
+                        style = typography.caption.copy(
+                            fontSize = 10.sp,
+                            color = colors.textSecondary.copy(alpha = 0.7f),
+                        ),
+                    )
+                }
             }
         }
     }

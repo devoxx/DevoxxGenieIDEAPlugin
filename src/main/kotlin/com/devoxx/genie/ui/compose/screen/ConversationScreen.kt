@@ -25,6 +25,7 @@ fun ConversationScreen(
                 WelcomeScreen(
                     resourceBundle = s.resourceBundle,
                     customPrompts = s.customPrompts,
+                    blogPosts = s.blogPosts,
                     onCustomPromptClick = onCustomPromptClick,
                     modifier = modifier,
                 )
