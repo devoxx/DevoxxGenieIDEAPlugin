@@ -28,7 +28,9 @@ jobs:
         run: sudo apt-get install -y xvfb
 
       - name: Start Xvfb
-        run: Xvfb :99 & export DISPLAY=:99
+        run: |
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Run Gradle tests
         env:
@@ -40,9 +42,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-        run: |
-          Xvfb :99 & export DISPLAY=:99
-          ./gradlew test
+        run: ./gradlew test
 
       - name: Upload Test Reports
         if: always()

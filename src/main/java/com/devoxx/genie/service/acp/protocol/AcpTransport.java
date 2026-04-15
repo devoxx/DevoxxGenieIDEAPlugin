@@ -262,9 +262,18 @@ public class AcpTransport implements AutoCloseable {
         pendingRequests.clear();
         if (process != null) {
             process.destroy();
+            // Close stdout explicitly: the child may have spawned grandchildren that
+            // inherit the pipe, leaving the reader thread blocked on readLine() even
+            // after destroy(). Closing the stream unblocks it with an IOException.
+            try {
+                process.getInputStream().close();
+            } catch (IOException ignored) {
+                // best-effort
+            }
             try {
                 if (!process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {
                     process.destroyForcibly();
+                    process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -272,6 +281,7 @@ public class AcpTransport implements AutoCloseable {
             }
         }
         if (readerThread != null) {
+            readerThread.interrupt();
             try {
                 readerThread.join(TimeUnit.SECONDS.toMillis(SHUTDOWN_WAIT_SECONDS));
             } catch (InterruptedException e) {
