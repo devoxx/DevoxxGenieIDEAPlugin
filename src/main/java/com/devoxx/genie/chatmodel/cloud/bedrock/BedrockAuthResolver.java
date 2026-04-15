@@ -19,16 +19,46 @@ import java.util.concurrent.CompletableFuture;
 
 public class BedrockAuthResolver {
 
+    /**
+     * System property read by the AWS SDK v2 Bedrock/Bedrock Runtime generated client builders
+     * (equivalent to the {@code AWS_BEARER_TOKEN_BEDROCK} environment variable). When this property
+     * is present, the SDK automatically promotes {@code httpBearerAuth} above {@code sigv4} in the
+     * auth scheme preference list and uses the bearer token for signing — which is exactly what we
+     * need for {@link AwsBedrockAuthMode#BEARER_TOKEN}. Merely calling
+     * {@code builder.tokenProvider(...)} installs a token identity provider but does not change the
+     * scheme preference, so the SDK still falls back to SigV4 and the default credentials chain.
+     */
+    static final String AWS_BEARER_TOKEN_BEDROCK_PROPERTY = "aws.bearerTokenBedrock";
+
     public @NotNull BedrockRuntimeClientBuilder configure(@NotNull BedrockRuntimeClientBuilder builder) {
+        syncBearerTokenSystemProperty();
         return configureAuth(builder.region(getRegion()));
     }
 
     public @NotNull BedrockRuntimeAsyncClientBuilder configure(@NotNull BedrockRuntimeAsyncClientBuilder builder) {
+        syncBearerTokenSystemProperty();
         return configureAuth(builder.region(getRegion()));
     }
 
     public @NotNull BedrockClientBuilder configure(@NotNull BedrockClientBuilder builder) {
+        syncBearerTokenSystemProperty();
         return configureAuth(builder.region(getRegion()));
+    }
+
+    /**
+     * Keep the {@value #AWS_BEARER_TOKEN_BEDROCK_PROPERTY} system property in sync with the current
+     * Bedrock auth mode. Set right before every client is built so that switching modes in settings
+     * never leaves a stale token behind.
+     */
+    void syncBearerTokenSystemProperty() {
+        if (getAuthMode() == AwsBedrockAuthMode.BEARER_TOKEN) {
+            String bearerToken = DevoxxGenieStateService.getInstance().getAwsBearerToken();
+            if (bearerToken != null && !bearerToken.isEmpty()) {
+                System.setProperty(AWS_BEARER_TOKEN_BEDROCK_PROPERTY, bearerToken);
+                return;
+            }
+        }
+        System.clearProperty(AWS_BEARER_TOKEN_BEDROCK_PROPERTY);
     }
 
     public @NotNull Region getRegion() {
