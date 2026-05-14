@@ -16,7 +16,7 @@ public class AnthropicChatModelTest {
 
         AnthropicChatModel model = AnthropicChatModel.builder()
                 .apiKey(apiKeyValue)
-                .modelName(AnthropicChatModelName.CLAUDE_3_HAIKU_20240307)
+                .modelName(AnthropicChatModelName.CLAUDE_HAIKU_4_5_20251001)
                 .maxRetries(1)
                 .build();
 
