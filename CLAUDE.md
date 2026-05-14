@@ -235,7 +235,7 @@ Key services under `service/`:
 
 - Java minimum: JDK 17
 - IntelliJ minimum: 2023.3.4
-- Langchain4J version: 1.10.0 (beta: 1.10.0-beta18 for MCP/Chroma/web search)
+- Langchain4J version: 1.14.0 (beta: 1.14.0-beta24 for MCP/Chroma/web search/reactor)
 - Uses Lombok for boilerplate reduction
 - Shadow plugin for fat JAR creation with dependency merging
 
