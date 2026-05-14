@@ -1,6 +1,25 @@
 so # Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.4.4] - $(date +%Y-%m-%d)
+
+### Added
+- Add task-211: persistent semantic conversation memory backed by ChromaDB (#1028)
+- feat(welcome): blog feed on welcome screen + friendlier analytics copy (#1010)
+
+### Fixed
+- fix: revert Compose/Kotlin ecosystem bump that broke the UI (#1030)
+- fix: restore last selected model state (#1021) (#1022)
+- fix: correct Devstral 2 model name (#1019)
+- Fix: apply IDE Editor font to prompt input field (#1013)
+
+### Dependencies
+
+### Contributors
+- @app/dependabot
+- @flobo3
+- @mihaibuba
+- @stephanj
 ## [1.4.3] - $(date +%Y-%m-%d)
 
 ### Added

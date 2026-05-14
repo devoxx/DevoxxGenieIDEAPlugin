@@ -60,7 +60,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                        <h2>v1.4.3</h2>
+                                <h2>v1.4.4</h2>
+        <UL>
+                    <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
+                    <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
+                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                    <LI>fix: restore last selected model state (#1021)</LI>
+                    <LI>fix: correct Devstral 2 model name</LI>
+                    <LI>Fix: apply IDE Editor font to prompt input field</LI>
+                </UL>
+<h2>v1.4.3</h2>
         <UL>
                     <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
                     <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
