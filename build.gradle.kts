@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "1.4.3"
+version = "1.4.4"
 
 repositories {
     mavenCentral()
@@ -217,24 +217,24 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.12.2"
-    val lg4j_beta_version = "1.12.2-beta22"
-    val awsSdkVersion = "2.42.27"
+    val lg4j_version = "1.14.0"
+    val lg4j_beta_version = "1.14.0-beta24"
+    val awsSdkVersion = "2.44.1"
     val retrofitVersion = "3.0.0"
-    val sqliteVersion = "3.51.3.0"
+    val sqliteVersion = "3.53.0.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
     val commonmarkVersion = "0.28.0"
-    val jsoupVersion = "1.22.1"
-    val nettyVersion = "4.2.12.Final"
+    val jsoupVersion = "1.22.2"
+    val nettyVersion = "4.2.13.Final"
     val composeCompileVersion = "1.7.3"
     val markdownRendererVersion = "0.28.0"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.32"
     val gitignoreReaderVersion = "1.14.1"
-    val junitJupiterVersion = "6.1.0-M1"
+    val junitJupiterVersion = "6.1.0-RC1"
     val junitPlatformVersion = "6.0.3"
-    val lombokVersion = "1.18.44"
+    val lombokVersion = "1.18.46"
     val mockitoVersion = "5.23.0"
     val mockitoInlineVersion = "5.2.0"
     val assertjVersion = "3.27.7"

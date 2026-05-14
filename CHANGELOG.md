@@ -1,6 +1,30 @@
-so # Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.4.4] - 2026-05-14
+
+### Added
+- Persistent semantic conversation memory backed by ChromaDB (task-211) (#1028)
+
+### Fixed
+- Revert Compose/Kotlin/Skiko ecosystem bump to known-good versions and align JVM target to 21 (#1030)
+- Restore last selected model state on restart (#1021) (#1022)
+- Correct Devstral 2 model name (#1019)
+- Apply IDE Editor font to prompt input field (#1013)
+- Prevent ACP reader thread leak on transport close
+
+### Dependencies
+- Bump the gradle-dependencies group with 38 updates (#1023)
+- Bump @babel/plugin-transform-modules-systemjs in /docusaurus (#1026)
+- Bump fast-uri from 3.0.6 to 3.1.2 in /docusaurus (#1025)
+- Bump follow-redirects from 1.15.11 to 1.16.0 in /docusaurus (#1011)
+
+### Contributors
+- @app/dependabot
+- @flobo3
+- @mihaibuba
+- @stephanj
+
 ## [1.4.3] - $(date +%Y-%m-%d)
 
 ### Added

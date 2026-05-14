@@ -10,6 +10,9 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.editor.colors.EditorColorsListener;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -24,7 +27,7 @@ import java.util.ResourceBundle;
 import static com.devoxx.genie.ui.util.WindowPluginUtil.TOOL_WINDOW_ID;
 
 @Getter
-public class PromptInputArea extends JPanel implements ShortcutChangeListener, NewlineShortcutChangeListener, ToolWindowManagerListener, RAGStateListener {
+public class PromptInputArea extends JPanel implements ShortcutChangeListener, NewlineShortcutChangeListener, ToolWindowManagerListener, RAGStateListener, EditorColorsListener {
     private final CommandAutoCompleteTextField inputField;
     private final SearchOptionsPanel searchOptionsPanel;
     private final ResourceBundle resourceBundle;
@@ -68,6 +71,9 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
 
         inputField.setRows(3);
 
+        // Apply IDE Editor font to input field
+        applyEditorFont();
+
         // Add components to main panel
         searchOptionsPanel = new SearchOptionsPanel(project);
         inputAreaPanel.add(searchOptionsPanel, BorderLayout.NORTH);
@@ -85,6 +91,9 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
 
         MessageBusUtil.subscribe(project.getMessageBus().connect(),
                 AppTopics.RAG_ACTIVATED_CHANGED_TOPIC, this);
+
+        // Listen for IDE Editor font changes
+        project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, this);
 
         // Request focus when tool window is activated or switched from another plugin window
         project.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, this);
@@ -234,5 +243,22 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
         this.newlineShortcut = formattedNewlineShortcut;
         
         updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
+    }
+
+    /**
+     * Apply the IDE Editor font (family + size) to the input field.
+     * Falls back to Swing default if EditorColorsManager is unavailable.
+     */
+    private void applyEditorFont() {
+        EditorColorsManager manager = EditorColorsManager.getInstance();
+        if (manager != null) {
+            EditorColorsScheme scheme = manager.getGlobalScheme();
+            inputField.setFont(scheme.getFont(null));
+        }
+    }
+
+    @Override
+    public void globalSchemeChange(EditorColorsScheme scheme) {
+        applyEditorFont();
     }
 }
