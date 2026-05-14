@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "2.3.21"
-    kotlin("plugin.lombok") version "2.3.21"
-    kotlin("plugin.compose") version "2.3.21"
-    id("org.jetbrains.intellij.platform") version "2.16.0"
+    kotlin("jvm") version "2.1.10"
+    kotlin("plugin.lombok") version "2.1.10"
+    kotlin("plugin.compose") version "2.1.10"
+    id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
 
@@ -227,9 +227,9 @@ dependencies {
     val commonmarkVersion = "0.28.0"
     val jsoupVersion = "1.22.2"
     val nettyVersion = "4.2.13.Final"
-    val composeCompileVersion = "1.10.3"
-    val markdownRendererVersion = "0.40.2"
-    val skikoVersion = "0.144.5"
+    val composeCompileVersion = "1.7.3"
+    val markdownRendererVersion = "0.28.0"
+    val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.32"
     val gitignoreReaderVersion = "1.14.1"
     val junitJupiterVersion = "6.1.0-RC1"
