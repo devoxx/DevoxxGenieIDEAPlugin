@@ -154,6 +154,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String tavilySearchKey = "";
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
+    // Global fallback fields
+    private static final String DEFAULT_PROVIDER = ModelProvider.Ollama.getName();
+    private static final String DEFAULT_LANGUAGE_MODEL = "";
+
+    private String lastGlobalProvider = DEFAULT_PROVIDER;
+    private String lastGlobalLanguageModel = DEFAULT_LANGUAGE_MODEL;
     // Last selected language model
     private Map<String, String> lastSelectedProvider;
     private Map<String, String> lastSelectedLanguageModel;
@@ -418,13 +424,16 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             lastSelectedLanguageModel = new HashMap<>();
         }
         lastSelectedLanguageModel.put(projectLocation, selectedLanguageModel);
+        lastGlobalLanguageModel = selectedLanguageModel;
     }
 
     public String getSelectedLanguageModel(@NotNull String projectLocation) {
-        if (lastSelectedLanguageModel != null) {
-            return lastSelectedLanguageModel.getOrDefault(projectLocation, "");
+        if (lastSelectedLanguageModel != null && lastSelectedLanguageModel.containsKey(projectLocation)) {
+            return lastSelectedLanguageModel.get(projectLocation);
+        } else if (lastGlobalLanguageModel != null && !lastGlobalLanguageModel.isEmpty()) {
+            return lastGlobalLanguageModel;
         } else {
-            return "";
+            return DEFAULT_LANGUAGE_MODEL;
         }
     }
 
@@ -433,13 +442,16 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             lastSelectedProvider = new HashMap<>();
         }
         lastSelectedProvider.put(projectLocation, selectedProvider);
+        lastGlobalProvider = selectedProvider;
     }
 
     public String getSelectedProvider(@NotNull String projectLocation) {
-        if (lastSelectedProvider != null) {
-            return lastSelectedProvider.getOrDefault(projectLocation, ModelProvider.Ollama.getName());
+        if (lastSelectedProvider != null && lastSelectedProvider.containsKey(projectLocation)) {
+            return lastSelectedProvider.get(projectLocation);
+        } else if  (lastGlobalProvider != null &&  !lastGlobalProvider.isEmpty()) {
+            return lastGlobalProvider;
         } else {
-            return ModelProvider.Ollama.getName();
+            return DEFAULT_PROVIDER;
         }
     }
 
