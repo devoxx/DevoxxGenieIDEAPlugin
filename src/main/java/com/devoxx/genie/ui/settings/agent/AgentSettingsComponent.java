@@ -45,10 +45,16 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             stateService.getTestExecutionCustomCommand() != null ? stateService.getTestExecutionCustomCommand() : "", 30);
 
     // Command execution environment settings (issue #1027)
-    private final JTextField agentShellEnvFileField = new JTextField(
-            stateService.getAgentShellEnvFile() != null ? stateService.getAgentShellEnvFile() : "", 30);
-    private final JTextField agentShellField = new JTextField(
-            stateService.getAgentShell() != null ? stateService.getAgentShell() : "", 15);
+    // Editable combo boxes: dropdown of common values, but free text is also accepted
+    // for non-standard shells or env file paths.
+    private static final String[] COMMON_SHELL_ENV_FILES = {
+            "", "~/.zshrc", "~/.bash_profile", "~/.bashrc", "~/.profile", "~/.config/fish/config.fish"
+    };
+    private static final String[] COMMON_SHELLS = {
+            "", "zsh", "bash", "sh", "fish"
+    };
+    private final ComboBox<String> agentShellEnvFileField = new ComboBox<>(COMMON_SHELL_ENV_FILES);
+    private final ComboBox<String> agentShellField = new ComboBox<>(COMMON_SHELLS);
 
     // PSI tools settings
     private final JBCheckBox enablePsiToolsCheckbox =
@@ -695,17 +701,27 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         Insets savedInsets = gbc.insets;
         gbc.insets = new Insets(2, 25, 2, 5);
 
+        agentShellEnvFileField.setEditable(true);
+        agentShellEnvFileField.setPreferredSize(new Dimension(260, agentShellEnvFileField.getPreferredSize().height));
+        agentShellEnvFileField.setSelectedItem(stateService.getAgentShellEnvFile() != null ? stateService.getAgentShellEnvFile() : "");
+        agentShellEnvFileField.setToolTipText(
+                "Path to shell env file to source before each command (e.g. ~/.bash_profile, ~/.zshrc). " +
+                "Pick a common option or type a custom path.");
+
         JPanel shellEnvFileRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         shellEnvFileRow.add(new JBLabel("Shell env file:"));
-        agentShellEnvFileField.setToolTipText(
-                "Path to shell env file to source before each command (e.g. ~/.bash_profile, ~/.zshrc)");
         shellEnvFileRow.add(agentShellEnvFileField);
         addFullWidthRow(panel, gbc, shellEnvFileRow);
 
+        agentShellField.setEditable(true);
+        agentShellField.setPreferredSize(new Dimension(160, agentShellField.getPreferredSize().height));
+        agentShellField.setSelectedItem(stateService.getAgentShell() != null ? stateService.getAgentShell() : "");
+        agentShellField.setToolTipText(
+                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). " +
+                "Pick a common option or type a custom path (e.g. /usr/local/bin/fish).");
+
         JPanel shellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         shellRow.add(new JBLabel("Shell (optional):"));
-        agentShellField.setToolTipText(
-                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). Use full path if needed (e.g. /usr/local/bin/fish).");
         shellRow.add(agentShellField);
         addFullWidthRow(panel, gbc, shellRow);
 
@@ -758,8 +774,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || enableTestExecutionCheckbox.isSelected() != Boolean.TRUE.equals(state.getTestExecutionEnabled())
                 || testTimeoutSpinner.getNumber() != (state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT)
                 || !Objects.equals(customTestCommandField.getText(), state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "")
-                || !Objects.equals(agentShellEnvFileField.getText(), state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "")
-                || !Objects.equals(agentShellField.getText(), state.getAgentShell() != null ? state.getAgentShell() : "")
+                || !Objects.equals(getComboText(agentShellEnvFileField), state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "")
+                || !Objects.equals(getComboText(agentShellField), state.getAgentShell() != null ? state.getAgentShell() : "")
                 || enablePsiToolsCheckbox.isSelected() != Boolean.TRUE.equals(state.getPsiToolsEnabled())
                 || enableParallelExploreCheckbox.isSelected() != Boolean.TRUE.equals(state.getParallelExploreEnabled())
                 || subAgentMaxToolCallsSpinner.getNumber() != (state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS)
@@ -793,8 +809,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setTestExecutionEnabled(enableTestExecutionCheckbox.isSelected());
         stateService.setTestExecutionTimeoutSeconds(testTimeoutSpinner.getNumber());
         stateService.setTestExecutionCustomCommand(customTestCommandField.getText());
-        stateService.setAgentShellEnvFile(agentShellEnvFileField.getText());
-        stateService.setAgentShell(agentShellField.getText());
+        stateService.setAgentShellEnvFile(getComboText(agentShellEnvFileField));
+        stateService.setAgentShell(getComboText(agentShellField));
         stateService.setPsiToolsEnabled(enablePsiToolsCheckbox.isSelected());
         stateService.setParallelExploreEnabled(enableParallelExploreCheckbox.isSelected());
         stateService.setSubAgentMaxToolCalls(subAgentMaxToolCallsSpinner.getNumber());
@@ -828,8 +844,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         enableTestExecutionCheckbox.setSelected(Boolean.TRUE.equals(state.getTestExecutionEnabled()));
         testTimeoutSpinner.setNumber(state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT);
         customTestCommandField.setText(state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "");
-        agentShellEnvFileField.setText(state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "");
-        agentShellField.setText(state.getAgentShell() != null ? state.getAgentShell() : "");
+        agentShellEnvFileField.setSelectedItem(state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "");
+        agentShellField.setSelectedItem(state.getAgentShell() != null ? state.getAgentShell() : "");
         enablePsiToolsCheckbox.setSelected(Boolean.TRUE.equals(state.getPsiToolsEnabled()));
         enableParallelExploreCheckbox.setSelected(Boolean.TRUE.equals(state.getParallelExploreEnabled()));
         subAgentMaxToolCallsSpinner.setNumber(state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
@@ -860,6 +876,15 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 panel.scrollRectToVisible(new Rectangle(0, 0, 1, 1));
             }
         });
+    }
+
+    /**
+     * Read the current text from an editable combo box. Uses the editor's item rather than
+     * the selected item so freshly typed text (not yet committed via Enter/focus-loss) is included.
+     */
+    private static String getComboText(ComboBox<String> combo) {
+        Object editorItem = combo.getEditor().getItem();
+        return editorItem != null ? editorItem.toString().trim() : "";
     }
 
     private String getSelectedProviderName() {
