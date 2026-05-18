@@ -119,6 +119,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             JBCheckBox cb = new JBCheckBox(toolName + " - " + toolDesc, !disabledSet.contains(toolName));
             toolCheckboxes.put(toolName, cb);
             addFullWidthRow(contentPanel, gbc, cb);
+
+            // Inline sub-section for run_command: shell environment configuration.
+            if ("run_command".equals(toolName)) {
+                addCommandExecutionEnvironmentSubSection(contentPanel, gbc);
+            }
         }
 
         addHelpText(contentPanel, gbc,
@@ -166,27 +171,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Optional: override auto-detected test command. Use {target} as placeholder for specific test targets. " +
                 "Example: './gradlew test --tests \"{target}\"' or 'npm run test -- {target}'");
-
-        // --- Command Execution Environment ---
-        addSection(contentPanel, gbc, "Command Execution Environment");
-
-        JPanel shellEnvFileRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        shellEnvFileRow.add(new JBLabel("Shell env file:"));
-        agentShellEnvFileField.setToolTipText(
-                "Path to shell env file to source before each command (e.g. ~/.bash_profile, ~/.zshrc)");
-        shellEnvFileRow.add(agentShellEnvFileField);
-        addFullWidthRow(contentPanel, gbc, shellEnvFileRow);
-
-        JPanel shellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        shellRow.add(new JBLabel("Shell (optional):"));
-        agentShellField.setToolTipText(
-                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). Use full path if needed (e.g. /usr/local/bin/fish).");
-        shellRow.add(agentShellField);
-        addFullWidthRow(contentPanel, gbc, shellRow);
-        addHelpText(contentPanel, gbc,
-                "Configure the shell used by the run_command tool. The env file is sourced before each command, " +
-                "which is required for tools like sdkman, nvm, or rbenv that rely on shell initialization. " +
-                "Both settings only apply on Unix-like systems.");
 
         // --- PSI Tools ---
         addSection(contentPanel, gbc, "PSI Tools (Code Intelligence)");
@@ -702,6 +686,35 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
             return this;
         }
+    }
+
+    private void addCommandExecutionEnvironmentSubSection(JPanel panel, GridBagConstraints gbc) {
+        addHelpText(panel, gbc, "Configure the shell environment used by run_command:");
+
+        // Use the same left-indent (25px) as help text so the rows visually nest under the run_command checkbox.
+        Insets savedInsets = gbc.insets;
+        gbc.insets = new Insets(2, 25, 2, 5);
+
+        JPanel shellEnvFileRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        shellEnvFileRow.add(new JBLabel("Shell env file:"));
+        agentShellEnvFileField.setToolTipText(
+                "Path to shell env file to source before each command (e.g. ~/.bash_profile, ~/.zshrc)");
+        shellEnvFileRow.add(agentShellEnvFileField);
+        addFullWidthRow(panel, gbc, shellEnvFileRow);
+
+        JPanel shellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        shellRow.add(new JBLabel("Shell (optional):"));
+        agentShellField.setToolTipText(
+                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). Use full path if needed (e.g. /usr/local/bin/fish).");
+        shellRow.add(agentShellField);
+        addFullWidthRow(panel, gbc, shellRow);
+
+        gbc.insets = savedInsets;
+
+        addHelpText(panel, gbc,
+                "The env file is sourced before each command, which is required for tools like sdkman, nvm, " +
+                "or rbenv that rely on shell initialization. Both settings only apply on Unix-like systems; " +
+                "leave blank to keep the current behaviour.");
     }
 
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
