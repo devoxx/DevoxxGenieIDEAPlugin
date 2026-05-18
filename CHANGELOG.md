@@ -1,7 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-## [1.4.5] - $(date +%Y-%m-%d)
+## [1.4.5] - 2026-05-18
 
 ### Added
 - feat: Add copy button to user prompt bubble (#1024) (#1037)
@@ -20,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - @app/dependabot
 - @knekrasov
 - @stephanj
+
 ## [1.4.4] - 2026-05-14
 
 ### Added
