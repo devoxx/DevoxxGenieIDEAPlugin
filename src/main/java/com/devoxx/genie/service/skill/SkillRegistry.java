@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,15 +29,20 @@ import java.util.Set;
 /**
  * Project-scoped registry of langchain4j {@link Skill}s loaded from disk.
  *
- * <p>Two source directories are scanned:</p>
- * <ul>
- *   <li><strong>User skills</strong>: {@code ~/.devoxxgenie/skills/} (shared across projects)</li>
- *   <li><strong>Project skills</strong>: {@code &lt;project.basePath&gt;/.devoxxgenie/skills/}</li>
- * </ul>
+ * <p>Six source directories are scanned (in increasing priority order):</p>
+ * <ol>
+ *   <li>{@code ~/.agents/skills/}</li>
+ *   <li>{@code ~/.claude/skills/}</li>
+ *   <li>{@code ~/.devoxxgenie/skills/}</li>
+ *   <li>{@code <project.basePath>/.agents/skills/}</li>
+ *   <li>{@code <project.basePath>/.claude/skills/}</li>
+ *   <li>{@code <project.basePath>/.devoxxgenie/skills/}</li>
+ * </ol>
  *
- * <p>If a skill name exists in both directories, the project-level skill wins (a warning is
- * logged). Skills whose name appears in {@link DevoxxGenieStateService#getDisabledSkillNames()}
- * are filtered out at the point where {@link Skills} is built.</p>
+ * <p>Sources are processed lowest-priority first; each higher-priority source overwrites
+ * lower-priority entries on name collision (a warning is logged). Skills whose name appears
+ * in {@link DevoxxGenieStateService#getDisabledSkillNames()} are filtered out at the point
+ * where {@link Skills} is built.</p>
  *
  * <p>The registry wraps the {@code @Experimental} langchain4j-skills API so the rest of the
  * codebase only depends on this class.</p>
@@ -44,31 +50,76 @@ import java.util.Set;
  * <h3>Threading</h3>
  * <p>Disk scans must not run on the Event Dispatch Thread (EDT). The registry exposes:</p>
  * <ul>
- *   <li>{@link #reloadAsync(Runnable)} \u2014 schedules a scan on a pooled thread; the optional
+ *   <li>{@link #reloadAsync(Runnable)} &mdash; schedules a scan on a pooled thread; the optional
  *       callback is dispatched on the EDT when the cache has been updated. Use this from
  *       Swing handlers (e.g. the Settings UI "Reload" button).</li>
- *   <li>{@link #reloadBlocking()} \u2014 synchronous scan suitable for background threads (agent
+ *   <li>{@link #reloadBlocking()} &mdash; synchronous scan suitable for background threads (agent
  *       execution path). Must <strong>not</strong> be called from the EDT.</li>
  * </ul>
- * <p>The constructor does not touch disk. The first lookup that needs a populated cache will
- * trigger a synchronous load via {@link #ensureLoaded()} \u2014 again, callers from the EDT must
- * have already triggered a {@link #reloadAsync(Runnable)}.</p>
+ * <p>The constructor does not touch disk.</p>
  */
 @Slf4j
 @Service(Service.Level.PROJECT)
 public final class SkillRegistry {
 
-    public static final String SKILLS_SUBDIR = ".devoxxgenie/skills";
+    public static final String DEVOXXGENIE_SKILLS_SUBDIR = ".devoxxgenie/skills";
+    public static final String CLAUDE_SKILLS_SUBDIR = ".claude/skills";
+    public static final String AGENTS_SKILLS_SUBDIR = ".agents/skills";
+
+    /**
+     * Backwards-compatible alias kept for callers that still reference the original constant.
+     * Prefer {@link #DEVOXXGENIE_SKILLS_SUBDIR} in new code.
+     */
+    @Deprecated
+    public static final String SKILLS_SUBDIR = DEVOXXGENIE_SKILLS_SUBDIR;
 
     /**
      * Tool name exposed by the langchain4j-skills {@code Skills.toolProvider()} that the LLM
-     * invokes to activate a discovered skill. Tied to the {@code @Experimental} API \u2014 if
+     * invokes to activate a discovered skill. Tied to the {@code @Experimental} API &mdash; if
      * upstream renames it this constant must be updated in lockstep.
      */
     public static final String ACTIVATE_SKILL_TOOL_NAME = "activate_skill";
 
-    /** Describes the origin of a loaded skill for the settings UI. */
-    public enum Source { USER, PROJECT }
+    /**
+     * Describes the directory a skill was loaded from. Ordered from <strong>lowest</strong> to
+     * <strong>highest</strong> priority so {@code Source.values()} can drive the merge loop
+     * directly &mdash; each iteration overwrites earlier entries on collision.
+     */
+    public enum Source {
+        USER_AGENTS("user (.agents)",            Scope.USER,    Tool.AGENTS),
+        USER_CLAUDE("user (.claude)",            Scope.USER,    Tool.CLAUDE),
+        USER_DEVOXXGENIE("user (.devoxxgenie)",  Scope.USER,    Tool.DEVOXXGENIE),
+        PROJECT_AGENTS("project (.agents)",      Scope.PROJECT, Tool.AGENTS),
+        PROJECT_CLAUDE("project (.claude)",      Scope.PROJECT, Tool.CLAUDE),
+        PROJECT_DEVOXXGENIE("project (.devoxxgenie)", Scope.PROJECT, Tool.DEVOXXGENIE);
+
+        public enum Scope { USER, PROJECT }
+        public enum Tool {
+            AGENTS(AGENTS_SKILLS_SUBDIR),
+            CLAUDE(CLAUDE_SKILLS_SUBDIR),
+            DEVOXXGENIE(DEVOXXGENIE_SKILLS_SUBDIR);
+
+            private final String subdir;
+            Tool(String subdir) { this.subdir = subdir; }
+            public String subdir() { return subdir; }
+        }
+
+        private final String label;
+        private final Scope scope;
+        private final Tool tool;
+
+        Source(String label, Scope scope, Tool tool) {
+            this.label = label;
+            this.scope = scope;
+            this.tool = tool;
+        }
+
+        /** Display string shown in the Skills settings table. */
+        public String label() { return label; }
+
+        public Scope scope() { return scope; }
+        public Tool tool() { return tool; }
+    }
 
     /** Skill plus metadata for the settings UI. */
     public record SkillEntry(@NotNull Skill skill, @NotNull Source source) {
@@ -91,7 +142,12 @@ public final class SkillRegistry {
     }
 
     private final Project project;
-    private final Path userSkillsDirOverride;
+    /**
+     * Test-only overrides for the {@code ~/.<tool>/skills/} directories. Keyed by
+     * {@link Source.Tool} so tests can redirect each user-level tool's home into a
+     * {@link org.junit.jupiter.api.io.TempDir}.
+     */
+    private final EnumMap<Source.Tool, Path> userDirOverrides;
 
     /** Guards {@link #entriesCache}, {@link #skillsCache}, {@link #fragmentCache} and {@link #loaded}. */
     private final Object cacheLock = new Object();
@@ -108,18 +164,19 @@ public final class SkillRegistry {
 
     @SuppressWarnings("unused") // used by IntelliJ service container
     public SkillRegistry(@NotNull Project project) {
-        this(project, defaultUserSkillsDir());
+        this(project, new EnumMap<>(Source.Tool.class));
     }
 
+    /**
+     * Test constructor. The map keys point each user-level tool to a custom directory; entries
+     * that are absent fall back to {@code ~/<tool.subdir()>}.
+     */
     @TestOnly
-    public SkillRegistry(@NotNull Project project, @Nullable Path userSkillsDirOverride) {
+    public SkillRegistry(@NotNull Project project, @NotNull Map<Source.Tool, Path> userDirOverrides) {
         this.project = project;
-        this.userSkillsDirOverride = userSkillsDirOverride;
+        this.userDirOverrides = new EnumMap<>(Source.Tool.class);
+        this.userDirOverrides.putAll(userDirOverrides);
         // No disk I/O in the constructor: it may be called on the EDT (settings UI opening).
-        // The first consumer that needs data either:
-        //   - calls reloadAsync(...) (settings UI) and waits for the callback, or
-        //   - calls ensureLoaded() which performs a synchronous scan; safe from background threads
-        //     such as the agent execution path.
     }
 
     public static SkillRegistry getInstance(@NotNull Project project) {
@@ -127,8 +184,8 @@ public final class SkillRegistry {
     }
 
     /**
-     * Synchronously scans the user and project skill directories. <strong>Must not be called
-     * from the EDT</strong> \u2014 use {@link #reloadAsync(Runnable)} instead for UI handlers.
+     * Synchronously scans every skill directory. <strong>Must not be called from the EDT</strong>
+     * &mdash; use {@link #reloadAsync(Runnable)} instead for UI handlers.
      */
     public void reloadBlocking() {
         if (ApplicationManager.getApplication() != null
@@ -162,7 +219,7 @@ public final class SkillRegistry {
 
     /**
      * Ensures the cache has been populated at least once. Performs a synchronous scan on the
-     * caller's thread \u2014 only call from background threads. UI callers should use
+     * caller's thread &mdash; only call from background threads. UI callers should use
      * {@link #reloadAsync(Runnable)}.
      */
     public void ensureLoaded() {
@@ -175,20 +232,20 @@ public final class SkillRegistry {
     }
 
     private void scanAndUpdateCache() {
+        // Iterate Source.values() from lowest to highest priority. Each higher-priority entry
+        // overwrites lower-priority ones on name collision, with a warning logged.
         Map<String, SkillEntry> byName = new LinkedHashMap<>();
-
-        Path userDir = userSkillsDir();
-        for (Skill s : loadFrom(userDir, Source.USER)) {
-            byName.put(s.name(), new SkillEntry(s, Source.USER));
-        }
-
-        Path projectDir = projectSkillsDir();
-        for (Skill s : loadFrom(projectDir, Source.PROJECT)) {
-            if (byName.containsKey(s.name())) {
-                log.warn("Skill '{}' from project directory {} overrides user-level skill of the same name",
-                        s.name(), projectDir);
+        for (Source src : Source.values()) {
+            Path dir = directoryFor(src);
+            for (Skill s : loadFrom(dir, src)) {
+                SkillEntry existing = byName.get(s.name());
+                if (existing != null) {
+                    log.warn("Skill '{}' from {} ({}) overrides earlier skill from {} ({})",
+                            s.name(), src.label(), dir,
+                            existing.source().label(), directoryFor(existing.source()));
+                }
+                byName.put(s.name(), new SkillEntry(s, src));
             }
-            byName.put(s.name(), new SkillEntry(s, Source.PROJECT));
         }
 
         List<SkillEntry> snapshot = List.copyOf(byName.values());
@@ -198,7 +255,8 @@ public final class SkillRegistry {
             this.fragmentCache = null;   // force rebuild on next getSystemPromptFragment()
             this.loaded = true;
         }
-        log.info("Skills loaded: {} user dir={} project dir={}", snapshot.size(), userDir, projectDir);
+        log.info("Skills loaded: {} from sources {}", snapshot.size(),
+                snapshot.stream().map(e -> e.source().label()).distinct().toList());
     }
 
     /**
@@ -226,24 +284,91 @@ public final class SkillRegistry {
     }
 
     /**
-     * @return user skills directory (regardless of whether it currently exists)
+     * @return the on-disk directory that corresponds to the given {@link Source}. May return
+     *         {@code null} for project-scoped sources when {@link Project#getBasePath()} is
+     *         unavailable (e.g. the default project in tests).
      */
+    @Nullable
+    public Path directoryFor(@NotNull Source source) {
+        return switch (source.scope()) {
+            case USER -> userDir(source.tool());
+            case PROJECT -> projectDir(source.tool().subdir());
+        };
+    }
+
     @NotNull
-    public Path userSkillsDir() {
-        return userSkillsDirOverride != null ? userSkillsDirOverride : defaultUserSkillsDir();
+    private Path userDir(@NotNull Source.Tool tool) {
+        Path override = userDirOverrides.get(tool);
+        return override != null ? override : defaultUserDir(tool.subdir());
+    }
+
+    /** @return {@code ~/.devoxxgenie/skills/}. */
+    @NotNull
+    public Path userDevoxxgenieDir() {
+        return userDir(Source.Tool.DEVOXXGENIE);
+    }
+
+    /** @return {@code ~/.claude/skills/}. */
+    @NotNull
+    public Path userClaudeDir() {
+        return userDir(Source.Tool.CLAUDE);
+    }
+
+    /** @return {@code ~/.agents/skills/}. */
+    @NotNull
+    public Path userAgentsDir() {
+        return userDir(Source.Tool.AGENTS);
     }
 
     /**
-     * @return project skills directory (regardless of whether it currently exists). Falls back to
-     *         {@code null} if the project has no basePath (e.g. default project).
+     * Back-compat alias for {@link #userDevoxxgenieDir()}.
+     */
+    @NotNull
+    @Deprecated
+    public Path userSkillsDir() {
+        return userDevoxxgenieDir();
+    }
+
+    /**
+     * @return {@code <project>/.devoxxgenie/skills/} (may be {@code null} when no basePath).
      */
     @Nullable
+    public Path projectDevoxxgenieDir() {
+        return projectDir(DEVOXXGENIE_SKILLS_SUBDIR);
+    }
+
+    /**
+     * @return {@code <project>/.claude/skills/} (may be {@code null} when no basePath).
+     */
+    @Nullable
+    public Path projectClaudeDir() {
+        return projectDir(CLAUDE_SKILLS_SUBDIR);
+    }
+
+    /**
+     * @return {@code <project>/.agents/skills/} (may be {@code null} when no basePath).
+     */
+    @Nullable
+    public Path projectAgentsDir() {
+        return projectDir(AGENTS_SKILLS_SUBDIR);
+    }
+
+    /**
+     * Back-compat alias for {@link #projectDevoxxgenieDir()}.
+     */
+    @Nullable
+    @Deprecated
     public Path projectSkillsDir() {
+        return projectDevoxxgenieDir();
+    }
+
+    @Nullable
+    private Path projectDir(@NotNull String subdir) {
         String basePath = project.getBasePath();
         if (basePath == null || basePath.isBlank()) {
             return null;
         }
-        return Paths.get(basePath, SKILLS_SUBDIR);
+        return Paths.get(basePath, subdir);
     }
 
     /**
@@ -352,28 +477,39 @@ public final class SkillRegistry {
     }
 
     @NotNull
-    private static Path defaultUserSkillsDir() {
+    private static Path defaultUserDir(@NotNull String subdir) {
         String home = System.getProperty("user.home");
-        return Paths.get(home, SKILLS_SUBDIR);
+        return Paths.get(home, subdir);
     }
 
     /**
-     * Creates the configured skills directories on disk if they don't yet exist.
+     * Ensures the directory backing the given source exists on disk, creating it if necessary.
      * Used by the settings UI's "Open folder" buttons so the user lands in an existing folder.
+     *
+     * @return the directory, or {@code null} when the source has no resolvable on-disk path
+     *         (project sources without a basePath).
+     */
+    @Nullable
+    public Path ensureDirectoryExists(@NotNull Source source) {
+        Path dir = directoryFor(source);
+        if (dir == null) {
+            return null;
+        }
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            log.warn("Could not create skills dir {}: {}", dir, e.getMessage());
+        }
+        return dir;
+    }
+
+    /**
+     * Creates every configured skills directory on disk if it does not yet exist. Retained for
+     * callers that want to seed all locations at once (e.g. on first launch).
      */
     public void ensureDirectoriesExist() {
-        try {
-            Files.createDirectories(userSkillsDir());
-        } catch (IOException e) {
-            log.warn("Could not create user skills dir {}: {}", userSkillsDir(), e.getMessage());
-        }
-        Path projectDir = projectSkillsDir();
-        if (projectDir != null) {
-            try {
-                Files.createDirectories(projectDir);
-            } catch (IOException e) {
-                log.warn("Could not create project skills dir {}: {}", projectDir, e.getMessage());
-            }
+        for (Source src : Source.values()) {
+            ensureDirectoryExists(src);
         }
     }
 }

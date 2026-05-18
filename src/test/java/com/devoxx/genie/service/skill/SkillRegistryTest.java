@@ -17,8 +17,10 @@ import org.mockito.quality.Strictness;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +35,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>Each test wires a fresh {@link DevoxxGenieStateService} into the static
  * {@code getInstance()} accessor so the registry sees a deterministic
- * {@code disabledSkillNames} set.</p>
+ * {@code disabledSkillNames} set, and redirects every user-level skill directory at
+ * temp dirs so collisions between simultaneously-loaded skills can be exercised.</p>
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -45,11 +48,22 @@ class SkillRegistryTest {
     @TempDir
     Path projectDir;
 
+    /** Stand-in for the user home; per-tool subdirectories live below it. */
     @TempDir
     Path userHome;
 
     private MockedStatic<DevoxxGenieStateService> stateStatic;
     private DevoxxGenieStateService state;
+
+    /** Path overrides for the three user-level tool directories. */
+    private Path userAgents;
+    private Path userClaude;
+    private Path userDevoxxgenie;
+
+    /** Path of the corresponding project-level directories (resolved against {@link #projectDir}). */
+    private Path projectAgents;
+    private Path projectClaude;
+    private Path projectDevoxxgenie;
 
     @BeforeEach
     void setUp() {
@@ -60,6 +74,14 @@ class SkillRegistryTest {
 
         when(project.getBasePath()).thenReturn(projectDir.toString());
         lenient().when(project.isDefault()).thenReturn(false);
+
+        userAgents = userHome.resolve(".agents/skills");
+        userClaude = userHome.resolve(".claude/skills");
+        userDevoxxgenie = userHome.resolve(".devoxxgenie/skills");
+
+        projectAgents = projectDir.resolve(".agents/skills");
+        projectClaude = projectDir.resolve(".claude/skills");
+        projectDevoxxgenie = projectDir.resolve(".devoxxgenie/skills");
     }
 
     @AfterEach
@@ -69,9 +91,20 @@ class SkillRegistryTest {
         }
     }
 
+    /** Builds a registry whose user-level skill directories are redirected at the temp home. */
+    private SkillRegistry newRegistry() {
+        Map<SkillRegistry.Source.Tool, Path> overrides = new EnumMap<>(SkillRegistry.Source.Tool.class);
+        overrides.put(SkillRegistry.Source.Tool.AGENTS, userAgents);
+        overrides.put(SkillRegistry.Source.Tool.CLAUDE, userClaude);
+        overrides.put(SkillRegistry.Source.Tool.DEVOXXGENIE, userDevoxxgenie);
+        return new SkillRegistry(project, overrides);
+    }
+
+    // --- empty / missing dirs ---------------------------------------------
+
     @Test
     void emptyDirectoriesProduceNoSkills() {
-        SkillRegistry registry = new SkillRegistry(project, userHome.resolve(".devoxxgenie/skills"));
+        SkillRegistry registry = newRegistry();
 
         assertThat(registry.getAllSkills()).isEmpty();
         assertThat(registry.buildSkills()).isNull();
@@ -80,64 +113,146 @@ class SkillRegistryTest {
 
     @Test
     void nonExistentDirectoriesAreHandledGracefully() {
-        // Override paths point to never-created directories. Should not throw.
-        Path neverCreated = userHome.resolve("never-here/skills");
-
-        SkillRegistry registry = new SkillRegistry(project, neverCreated);
+        // No directories are ever created. Should not throw.
+        SkillRegistry registry = newRegistry();
 
         assertThat(registry.getAllSkills()).isEmpty();
         assertThat(registry.buildSkills()).isNull();
         assertThat(registry.getSystemPromptFragment()).isEmpty();
     }
 
+    // --- per-source loading -----------------------------------------------
+
     @Test
-    void loadsSkillsFromUserAndProjectDirectories() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "user-only", "User-only skill");
+    void loadsSkillFromUserAgentsOnly() throws IOException {
+        writeSkill(userAgents, "agents-only", "loaded from ~/.agents/skills");
 
-        Path projectSkills = projectDir.resolve(".devoxxgenie/skills");
-        writeSkill(projectSkills, "project-only", "Project-only skill");
-
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         List<SkillRegistry.SkillEntry> all = registry.getAllSkills();
-        assertThat(all).hasSize(2);
-        assertThat(all).extracting(SkillRegistry.SkillEntry::name)
-                .containsExactlyInAnyOrder("user-only", "project-only");
-
-        SkillRegistry.SkillEntry user = findByName(all, "user-only");
-        SkillRegistry.SkillEntry proj = findByName(all, "project-only");
-        assertThat(user.source()).isEqualTo(SkillRegistry.Source.USER);
-        assertThat(proj.source()).isEqualTo(SkillRegistry.Source.PROJECT);
+        assertThat(all).hasSize(1);
+        assertThat(all.get(0).name()).isEqualTo("agents-only");
+        assertThat(all.get(0).source()).isEqualTo(SkillRegistry.Source.USER_AGENTS);
+        assertThat(all.get(0).source().label()).isEqualTo("user (.agents)");
     }
 
     @Test
-    void projectSkillOverridesUserSkillOnNameCollision() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "shared", "User version");
+    void loadsSkillFromUserClaudeOnly() throws IOException {
+        writeSkill(userClaude, "claude-only", "loaded from ~/.claude/skills");
 
-        Path projectSkills = projectDir.resolve(".devoxxgenie/skills");
-        writeSkill(projectSkills, "shared", "Project version");
+        SkillRegistry registry = newRegistry();
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        List<SkillRegistry.SkillEntry> all = registry.getAllSkills();
+        assertThat(all).hasSize(1);
+        assertThat(all.get(0).name()).isEqualTo("claude-only");
+        assertThat(all.get(0).source()).isEqualTo(SkillRegistry.Source.USER_CLAUDE);
+    }
+
+    @Test
+    void loadsSkillsFromEverySourceWithCorrectLabels() throws IOException {
+        writeSkill(userAgents, "from-user-agents", "user .agents");
+        writeSkill(userClaude, "from-user-claude", "user .claude");
+        writeSkill(userDevoxxgenie, "from-user-devoxxgenie", "user .devoxxgenie");
+        writeSkill(projectAgents, "from-project-agents", "project .agents");
+        writeSkill(projectClaude, "from-project-claude", "project .claude");
+        writeSkill(projectDevoxxgenie, "from-project-devoxxgenie", "project .devoxxgenie");
+
+        SkillRegistry registry = newRegistry();
+
+        assertThat(registry.getAllSkills())
+                .extracting(e -> e.source().label())
+                .containsExactlyInAnyOrder(
+                        "user (.agents)",
+                        "user (.claude)",
+                        "user (.devoxxgenie)",
+                        "project (.agents)",
+                        "project (.claude)",
+                        "project (.devoxxgenie)");
+    }
+
+    // --- collision / priority resolution ----------------------------------
+
+    @Test
+    void projectAgentsBeatsUserClaudeOnNameCollision() throws IOException {
+        writeSkill(userClaude, "shared", "user .claude version");
+        writeSkill(projectAgents, "shared", "project .agents version");
+
+        SkillRegistry registry = newRegistry();
+
+        assertThat(registry.getAllSkills()).hasSize(1);
+        SkillRegistry.SkillEntry kept = registry.getAllSkills().get(0);
+        assertThat(kept.name()).isEqualTo("shared");
+        assertThat(kept.source()).isEqualTo(SkillRegistry.Source.PROJECT_AGENTS);
+        assertThat(kept.description()).isEqualTo("project .agents version");
+    }
+
+    @Test
+    void projectDevoxxgenieWinsAcrossAllSixSourcesOnNameCollision() throws IOException {
+        // Same skill name in all six directories.
+        writeSkill(userAgents, "everywhere", "ua");
+        writeSkill(userClaude, "everywhere", "uc");
+        writeSkill(userDevoxxgenie, "everywhere", "ud");
+        writeSkill(projectAgents, "everywhere", "pa");
+        writeSkill(projectClaude, "everywhere", "pc");
+        writeSkill(projectDevoxxgenie, "everywhere", "pd");
+
+        SkillRegistry registry = newRegistry();
 
         List<SkillRegistry.SkillEntry> all = registry.getAllSkills();
         assertThat(all).hasSize(1);
         SkillRegistry.SkillEntry kept = all.get(0);
-        assertThat(kept.name()).isEqualTo("shared");
-        assertThat(kept.source()).isEqualTo(SkillRegistry.Source.PROJECT);
-        assertThat(kept.description()).isEqualTo("Project version");
+        assertThat(kept.name()).isEqualTo("everywhere");
+        assertThat(kept.source())
+                .as("project .devoxxgenie should win against every other source")
+                .isEqualTo(SkillRegistry.Source.PROJECT_DEVOXXGENIE);
+        assertThat(kept.description()).isEqualTo("pd");
     }
 
     @Test
+    void priorityOrderIsAgentsLowestToDevoxxgenieHighestWithinEachScope() throws IOException {
+        // Within the user scope: .agents < .claude < .devoxxgenie
+        writeSkill(userAgents, "user-only", "u-agents");
+        writeSkill(userClaude, "user-only", "u-claude");
+        writeSkill(userDevoxxgenie, "user-only", "u-devoxxgenie");
+
+        SkillRegistry registry = newRegistry();
+
+        assertThat(registry.getAllSkills())
+                .singleElement()
+                .satisfies(e -> {
+                    assertThat(e.source()).isEqualTo(SkillRegistry.Source.USER_DEVOXXGENIE);
+                    assertThat(e.description()).isEqualTo("u-devoxxgenie");
+                });
+    }
+
+    @Test
+    void projectScopeAlwaysBeatsUserScopeOnCollision() throws IOException {
+        // User-side has all three tools, project-side only .agents.
+        writeSkill(userAgents, "x", "u-agents");
+        writeSkill(userClaude, "x", "u-claude");
+        writeSkill(userDevoxxgenie, "x", "u-devoxxgenie");
+        writeSkill(projectAgents, "x", "p-agents");
+
+        SkillRegistry registry = newRegistry();
+
+        assertThat(registry.getAllSkills())
+                .singleElement()
+                .satisfies(e -> {
+                    assertThat(e.source()).isEqualTo(SkillRegistry.Source.PROJECT_AGENTS);
+                    assertThat(e.description()).isEqualTo("p-agents");
+                });
+    }
+
+    // --- disabled-set filtering -------------------------------------------
+
+    @Test
     void disabledSkillsAreFilteredFromBuildSkillsAndFragment() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "enabled-skill", "Should appear");
-        writeSkill(userSkills, "disabled-skill", "Should be filtered out");
+        writeSkill(userDevoxxgenie, "enabled-skill", "Should appear");
+        writeSkill(userClaude, "disabled-skill", "Should be filtered out");
 
         state.setDisabledSkillNames(new HashSet<>(Set.of("disabled-skill")));
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         // Both still discovered for the settings UI.
         assertThat(registry.getAllSkills()).hasSize(2);
@@ -156,27 +271,27 @@ class SkillRegistryTest {
 
     @Test
     void buildSkillsReturnsNullWhenAllSkillsDisabled() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "alpha", "first");
-        writeSkill(userSkills, "beta", "second");
+        writeSkill(userDevoxxgenie, "alpha", "first");
+        writeSkill(userAgents, "beta", "second");
 
         state.setDisabledSkillNames(new HashSet<>(Set.of("alpha", "beta")));
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         assertThat(registry.buildSkills()).isNull();
         assertThat(registry.getSystemPromptFragment()).isEmpty();
     }
 
+    // --- reload semantics -------------------------------------------------
+
     @Test
     void reloadPicksUpNewlyAddedSkill() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        Files.createDirectories(userSkills);
+        Files.createDirectories(userDevoxxgenie);
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
         assertThat(registry.getAllSkills()).isEmpty();
 
-        writeSkill(userSkills, "added-later", "Added after first scan");
+        writeSkill(userDevoxxgenie, "added-later", "Added after first scan");
 
         registry.reloadBlocking();
         assertThat(registry.getAllSkills()).hasSize(1);
@@ -185,34 +300,31 @@ class SkillRegistryTest {
 
     @Test
     void skillDirectoryWithoutSkillMdIsIgnored() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        Files.createDirectories(userSkills.resolve("not-a-skill"));
-        Files.writeString(userSkills.resolve("not-a-skill/README.md"), "no SKILL.md here");
+        Files.createDirectories(userDevoxxgenie.resolve("not-a-skill"));
+        Files.writeString(userDevoxxgenie.resolve("not-a-skill/README.md"), "no SKILL.md here");
 
         // Still a real skill alongside.
-        writeSkill(userSkills, "real-skill", "valid skill");
+        writeSkill(userDevoxxgenie, "real-skill", "valid skill");
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         assertThat(registry.getAllSkills()).hasSize(1);
         assertThat(registry.getAllSkills().get(0).name()).isEqualTo("real-skill");
     }
 
+    // --- caching ----------------------------------------------------------
+
     @Test
     void buildSkillsResultIsCachedAcrossCalls() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "cached-skill", "only-built-once");
+        writeSkill(userDevoxxgenie, "cached-skill", "only-built-once");
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
-        // Two consecutive lookups must return the exact same cached Skills wrapper.
         Skills first = registry.buildSkills();
         Skills second = registry.buildSkills();
         assertThat(first).isNotNull();
         assertThat(second).isSameAs(first);
 
-        // The system-prompt fragment is also cached: it should be the same string returned
-        // by Skills.formatAvailableSkills() of that cached instance.
         String fragment1 = registry.getSystemPromptFragment();
         String fragment2 = registry.getSystemPromptFragment();
         assertThat(fragment1).isNotEmpty();
@@ -221,10 +333,9 @@ class SkillRegistryTest {
 
     @Test
     void invalidateDerivedCachesForcesRebuildOfSkillsButKeepsDiskCache() throws IOException {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "reusable", "reusable skill");
+        writeSkill(userDevoxxgenie, "reusable", "reusable skill");
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         Skills before = registry.buildSkills();
         registry.invalidateDerivedCaches();
@@ -237,12 +348,13 @@ class SkillRegistryTest {
         assertThat(registry.peekAllSkills()).hasSize(1);
     }
 
+    // --- async / threading ------------------------------------------------
+
     @Test
     void reloadAsyncRunsOffEdtAndInvokesCallback() throws Exception {
-        Path userSkills = userHome.resolve(".devoxxgenie/skills");
-        writeSkill(userSkills, "async-skill", "loaded asynchronously");
+        writeSkill(userClaude, "async-skill", "loaded asynchronously");
 
-        SkillRegistry registry = new SkillRegistry(project, userSkills);
+        SkillRegistry registry = newRegistry();
 
         CountDownLatch done = new CountDownLatch(1);
         registry.reloadAsync(done::countDown);
@@ -256,9 +368,33 @@ class SkillRegistryTest {
 
     @Test
     void peekAllSkillsReturnsEmptyBeforeFirstLoad() {
-        SkillRegistry registry = new SkillRegistry(project, userHome.resolve(".devoxxgenie/skills"));
+        SkillRegistry registry = newRegistry();
         // No ensureLoaded() or reload yet; peek should return whatever is currently cached.
         assertThat(registry.peekAllSkills()).isEmpty();
+    }
+
+    // --- directory accessors ---------------------------------------------
+
+    @Test
+    void directoryAccessorsReturnTheExpectedPaths() {
+        SkillRegistry registry = newRegistry();
+
+        assertThat(registry.directoryFor(SkillRegistry.Source.USER_AGENTS)).isEqualTo(userAgents);
+        assertThat(registry.directoryFor(SkillRegistry.Source.USER_CLAUDE)).isEqualTo(userClaude);
+        assertThat(registry.directoryFor(SkillRegistry.Source.USER_DEVOXXGENIE)).isEqualTo(userDevoxxgenie);
+        assertThat(registry.directoryFor(SkillRegistry.Source.PROJECT_AGENTS)).isEqualTo(projectAgents);
+        assertThat(registry.directoryFor(SkillRegistry.Source.PROJECT_CLAUDE)).isEqualTo(projectClaude);
+        assertThat(registry.directoryFor(SkillRegistry.Source.PROJECT_DEVOXXGENIE)).isEqualTo(projectDevoxxgenie);
+    }
+
+    @Test
+    void ensureDirectoryExistsCreatesTheRequestedFolder() {
+        SkillRegistry registry = newRegistry();
+
+        Path created = registry.ensureDirectoryExists(SkillRegistry.Source.USER_AGENTS);
+
+        assertThat(created).isEqualTo(userAgents);
+        assertThat(Files.isDirectory(userAgents)).isTrue();
     }
 
     // --- helpers ---------------------------------------------------------

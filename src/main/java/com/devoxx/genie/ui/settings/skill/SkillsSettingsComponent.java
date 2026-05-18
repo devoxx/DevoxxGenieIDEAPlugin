@@ -22,10 +22,13 @@ import java.util.Set;
 
 /**
  * Settings panel for langchain4j {@link com.devoxx.genie.service.skill.SkillRegistry skills}
- * loaded from {@code ~/.devoxxgenie/skills/} and {@code &lt;project&gt;/.devoxxgenie/skills/}.
+ * loaded from six locations: {@code ~/.agents/skills/}, {@code ~/.claude/skills/},
+ * {@code ~/.devoxxgenie/skills/} and the matching {@code &lt;project&gt;/.<tool>/skills/}
+ * counterparts.
  *
- * <p>The panel shows a table of detected skills, lets the user enable/disable each one, and
- * exposes shortcuts to open the source folders and reload from disk.</p>
+ * <p>The panel shows a table of detected skills (with their source), lets the user
+ * enable/disable each one, and exposes shortcuts to open the source folders and reload
+ * from disk.</p>
  */
 @Slf4j
 public class SkillsSettingsComponent extends AbstractSettingsComponent {
@@ -80,32 +83,43 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
 
         JEditorPane description = new JEditorPane("text/html",
                 "<html><body>"
-                        + "Drop a <code>SKILL.md</code> file (plus optional resources) into "
-                        + "<code>~/.devoxxgenie/skills/&lt;name&gt;/</code> or "
-                        + "<code>&lt;project&gt;/.devoxxgenie/skills/&lt;name&gt;/</code>. "
-                        + "Project skills override user skills of the same name."
+                        + "Drop a <code>SKILL.md</code> file (plus optional resources) into one of "
+                        + "the supported skill directories:"
+                        + "<ul>"
+                        + "<li><code>~/.agents/skills/&lt;name&gt;/</code> &mdash; user, shared with .agents tools</li>"
+                        + "<li><code>~/.claude/skills/&lt;name&gt;/</code> &mdash; user, shared with Claude Code</li>"
+                        + "<li><code>~/.devoxxgenie/skills/&lt;name&gt;/</code> &mdash; user, DevoxxGenie</li>"
+                        + "<li><code>&lt;project&gt;/.agents/skills/&lt;name&gt;/</code> &mdash; project, .agents tools</li>"
+                        + "<li><code>&lt;project&gt;/.claude/skills/&lt;name&gt;/</code> &mdash; project, Claude Code</li>"
+                        + "<li><code>&lt;project&gt;/.devoxxgenie/skills/&lt;name&gt;/</code> &mdash; project, DevoxxGenie (highest priority)</li>"
+                        + "</ul>"
+                        + "On name collision the higher-priority source wins."
                         + "</body></html>");
         description.setEditable(false);
         description.setOpaque(false);
         gbc.gridy++;
         panel.add(description, gbc);
 
-        // Toolbar
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton openUserFolder = new JButton("Open user skills folder");
-        openUserFolder.addActionListener(e -> openFolder(registry.userSkillsDir()));
-        toolbar.add(openUserFolder);
+        // Toolbar 1: open-folder buttons (one per supported skill directory). The buttons
+        // wrap onto multiple rows when the panel is narrow.
+        JPanel folderToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        folderToolbar.add(makeOpenFolderButton("Open user .devoxxgenie skills folder",
+                SkillRegistry.Source.USER_DEVOXXGENIE));
+        folderToolbar.add(makeOpenFolderButton("Open user .claude skills folder",
+                SkillRegistry.Source.USER_CLAUDE));
+        folderToolbar.add(makeOpenFolderButton("Open user .agents skills folder",
+                SkillRegistry.Source.USER_AGENTS));
+        folderToolbar.add(makeOpenFolderButton("Open project .devoxxgenie skills folder",
+                SkillRegistry.Source.PROJECT_DEVOXXGENIE));
+        folderToolbar.add(makeOpenFolderButton("Open project .claude skills folder",
+                SkillRegistry.Source.PROJECT_CLAUDE));
+        folderToolbar.add(makeOpenFolderButton("Open project .agents skills folder",
+                SkillRegistry.Source.PROJECT_AGENTS));
+        gbc.gridy++;
+        panel.add(folderToolbar, gbc);
 
-        JButton openProjectFolder = new JButton("Open project skills folder");
-        openProjectFolder.addActionListener(e -> {
-            Path dir = registry.projectSkillsDir();
-            if (dir != null) {
-                openFolder(dir);
-            }
-        });
-        openProjectFolder.setEnabled(registry.projectSkillsDir() != null);
-        toolbar.add(openProjectFolder);
-
+        // Toolbar 2: reload button.
+        JPanel reloadToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton reload = new JButton("Reload");
         reload.addActionListener(e -> {
             reload.setEnabled(false);
@@ -116,18 +130,18 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
                 reload.setEnabled(true);
             });
         });
-        toolbar.add(reload);
+        reloadToolbar.add(reload);
 
         gbc.gridy++;
-        panel.add(toolbar, gbc);
+        panel.add(reloadToolbar, gbc);
 
         // Table of detected skills.
         JBTable table = new JBTable(tableModel);
         table.setStriped(true);
         table.getColumnModel().getColumn(SkillsTableModel.COL_ENABLED).setMaxWidth(80);
         table.getColumnModel().getColumn(SkillsTableModel.COL_ENABLED).setMinWidth(60);
-        table.getColumnModel().getColumn(SkillsTableModel.COL_SOURCE).setMaxWidth(80);
-        table.getColumnModel().getColumn(SkillsTableModel.COL_SOURCE).setMinWidth(60);
+        table.getColumnModel().getColumn(SkillsTableModel.COL_SOURCE).setMaxWidth(180);
+        table.getColumnModel().getColumn(SkillsTableModel.COL_SOURCE).setMinWidth(120);
         table.getColumnModel().getColumn(SkillsTableModel.COL_NAME).setPreferredWidth(160);
         table.getColumnModel().getColumn(SkillsTableModel.COL_DESCRIPTION).setPreferredWidth(420);
 
@@ -177,11 +191,29 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
 
     private void openFolder(Path dir) {
         try {
-            registry.ensureDirectoriesExist();
             BrowserUtil.browse(dir.toUri());
         } catch (RuntimeException e) {
             log.warn("Could not open skills folder {}", dir, e);
         }
+    }
+
+    /**
+     * Builds a button that opens the directory backing the given {@link SkillRegistry.Source}.
+     * The directory is created on demand if it doesn't yet exist. Buttons that map to
+     * project-scoped sources are disabled when the project has no on-disk basePath.
+     */
+    private JButton makeOpenFolderButton(@org.jetbrains.annotations.NotNull String label,
+                                         @org.jetbrains.annotations.NotNull SkillRegistry.Source source) {
+        JButton button = new JButton(label);
+        Path dir = registry.directoryFor(source);
+        button.setEnabled(dir != null);
+        button.addActionListener(e -> {
+            Path target = registry.ensureDirectoryExists(source);
+            if (target != null) {
+                openFolder(target);
+            }
+        });
+        return button;
     }
 
     /**
@@ -231,7 +263,7 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
             SkillRegistry.SkillEntry entry = entries.get(rowIndex);
             return switch (columnIndex) {
                 case COL_ENABLED -> !workingDisabledNames.contains(entry.name());
-                case COL_SOURCE -> entry.source().name().toLowerCase();
+                case COL_SOURCE -> entry.source().label();
                 case COL_NAME -> entry.name();
                 case COL_DESCRIPTION -> entry.description();
                 default -> "";
