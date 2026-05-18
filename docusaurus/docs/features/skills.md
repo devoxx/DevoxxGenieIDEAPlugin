@@ -8,7 +8,7 @@ image: /img/devoxxgenie-social-card.jpg
 
 # Skills
 
-![Skills settings — the table lists skills loaded from `~/.claude/skills`, `~/.agents/skills` and `~/.devoxxgenie/skills`](/img/Skills.png)
+![Skills settings — the table lists skills loaded from `~/.claude/skills`, `~/.agents/skills` and `~/.devoxxgenie/skills`](../../static/img/Skills.png)
 
 Skills are self-describing capabilities loaded from `SKILL.md` files on disk. Unlike [Commands](commands.md) (which are user-typed slash macros expanded *before* the LLM sees them), Skills are activated by the **LLM itself**, mid-conversation, via an `activate_skill` tool call when the model decides a skill is relevant to the user's request.
 

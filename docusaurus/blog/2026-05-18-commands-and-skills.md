@@ -17,7 +17,7 @@ The big difference: **Commands are typed by you, Skills are picked by the model*
 
 <!-- truncate -->
 
-![DevoxxGenie Skills settings panel](/img/Skills.png)
+![DevoxxGenie Skills settings panel](../static/img/Skills.png)
 
 ## Commands: the slash-command you already know
 
@@ -35,7 +35,7 @@ That makes Commands ideal for things you trigger consciously and repeatedly:
 
 You add your own in **Settings → Tools → DevoxxGenie → Commands**. Everything happens locally, with no tool call and no agent loop required.
 
-See the full reference in the [Commands docs](/docs/features/commands).
+See the full reference in the [Commands docs](../docs/features/commands.md).
 
 ## Skills: capabilities the LLM activates itself
 
@@ -154,6 +154,6 @@ Use **Commands** for the things you trigger consciously, every day: "explain thi
 2. In DevoxxGenie open **Settings → Tools → DevoxxGenie → Skills**, hit **Reload**, and confirm the skill shows up in the table.
 3. Enable **Agent Mode**, pick a tool-capable model, and ask a question that matches the skill's description. The model will activate it on its own.
 
-Full reference: **[Skills docs](/docs/features/skills)** · **[Commands docs](/docs/features/commands)** · **[Agent Mode](/docs/features/agent-mode)**.
+Full reference: **[Skills docs](../docs/features/skills.md)** · **[Commands docs](../docs/features/commands.md)** · **[Agent Mode](../docs/features/agent-mode.md)**.
 
 **Install:** [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/24169-devoxxgenie) · [GitHub](https://github.com/devoxx/DevoxxGenieIDEAPlugin)
