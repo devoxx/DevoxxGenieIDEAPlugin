@@ -44,6 +44,12 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JTextField customTestCommandField = new JTextField(
             stateService.getTestExecutionCustomCommand() != null ? stateService.getTestExecutionCustomCommand() : "", 30);
 
+    // Command execution environment settings (issue #1027)
+    private final JTextField agentShellEnvFileField = new JTextField(
+            stateService.getAgentShellEnvFile() != null ? stateService.getAgentShellEnvFile() : "", 30);
+    private final JTextField agentShellField = new JTextField(
+            stateService.getAgentShell() != null ? stateService.getAgentShell() : "", 15);
+
     // PSI tools settings
     private final JBCheckBox enablePsiToolsCheckbox =
             new JBCheckBox("Enable PSI Tools (find_symbols, document_symbols, find_references, find_definition, find_implementations)",
@@ -113,6 +119,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             JBCheckBox cb = new JBCheckBox(toolName + " - " + toolDesc, !disabledSet.contains(toolName));
             toolCheckboxes.put(toolName, cb);
             addFullWidthRow(contentPanel, gbc, cb);
+
+            // Inline sub-section for run_command: shell environment configuration.
+            if ("run_command".equals(toolName)) {
+                addCommandExecutionEnvironmentSubSection(contentPanel, gbc);
+            }
         }
 
         addHelpText(contentPanel, gbc,
@@ -677,6 +688,35 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         }
     }
 
+    private void addCommandExecutionEnvironmentSubSection(JPanel panel, GridBagConstraints gbc) {
+        addHelpText(panel, gbc, "Configure the shell environment used by run_command:");
+
+        // Use the same left-indent (25px) as help text so the rows visually nest under the run_command checkbox.
+        Insets savedInsets = gbc.insets;
+        gbc.insets = new Insets(2, 25, 2, 5);
+
+        JPanel shellEnvFileRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        shellEnvFileRow.add(new JBLabel("Shell env file:"));
+        agentShellEnvFileField.setToolTipText(
+                "Path to shell env file to source before each command (e.g. ~/.bash_profile, ~/.zshrc)");
+        shellEnvFileRow.add(agentShellEnvFileField);
+        addFullWidthRow(panel, gbc, shellEnvFileRow);
+
+        JPanel shellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        shellRow.add(new JBLabel("Shell (optional):"));
+        agentShellField.setToolTipText(
+                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). Use full path if needed (e.g. /usr/local/bin/fish).");
+        shellRow.add(agentShellField);
+        addFullWidthRow(panel, gbc, shellRow);
+
+        gbc.insets = savedInsets;
+
+        addHelpText(panel, gbc,
+                "The env file is sourced before each command, which is required for tools like sdkman, nvm, " +
+                "or rbenv that rely on shell initialization. Both settings only apply on Unix-like systems; " +
+                "leave blank to keep the current behaviour.");
+    }
+
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
         gbc.gridwidth = 2;
         gbc.gridx = 0;
@@ -718,6 +758,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || enableTestExecutionCheckbox.isSelected() != Boolean.TRUE.equals(state.getTestExecutionEnabled())
                 || testTimeoutSpinner.getNumber() != (state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT)
                 || !Objects.equals(customTestCommandField.getText(), state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "")
+                || !Objects.equals(agentShellEnvFileField.getText(), state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "")
+                || !Objects.equals(agentShellField.getText(), state.getAgentShell() != null ? state.getAgentShell() : "")
                 || enablePsiToolsCheckbox.isSelected() != Boolean.TRUE.equals(state.getPsiToolsEnabled())
                 || enableParallelExploreCheckbox.isSelected() != Boolean.TRUE.equals(state.getParallelExploreEnabled())
                 || subAgentMaxToolCallsSpinner.getNumber() != (state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS)
@@ -751,6 +793,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setTestExecutionEnabled(enableTestExecutionCheckbox.isSelected());
         stateService.setTestExecutionTimeoutSeconds(testTimeoutSpinner.getNumber());
         stateService.setTestExecutionCustomCommand(customTestCommandField.getText());
+        stateService.setAgentShellEnvFile(agentShellEnvFileField.getText());
+        stateService.setAgentShell(agentShellField.getText());
         stateService.setPsiToolsEnabled(enablePsiToolsCheckbox.isSelected());
         stateService.setParallelExploreEnabled(enableParallelExploreCheckbox.isSelected());
         stateService.setSubAgentMaxToolCalls(subAgentMaxToolCallsSpinner.getNumber());
@@ -784,6 +828,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         enableTestExecutionCheckbox.setSelected(Boolean.TRUE.equals(state.getTestExecutionEnabled()));
         testTimeoutSpinner.setNumber(state.getTestExecutionTimeoutSeconds() != null ? state.getTestExecutionTimeoutSeconds() : TEST_EXECUTION_DEFAULT_TIMEOUT);
         customTestCommandField.setText(state.getTestExecutionCustomCommand() != null ? state.getTestExecutionCustomCommand() : "");
+        agentShellEnvFileField.setText(state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "");
+        agentShellField.setText(state.getAgentShell() != null ? state.getAgentShell() : "");
         enablePsiToolsCheckbox.setSelected(Boolean.TRUE.equals(state.getPsiToolsEnabled()));
         enableParallelExploreCheckbox.setSelected(Boolean.TRUE.equals(state.getParallelExploreEnabled()));
         subAgentMaxToolCallsSpinner.setNumber(state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
