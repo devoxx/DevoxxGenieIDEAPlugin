@@ -50,6 +50,14 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
     private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
     private static final int BATCH_SIZE = 20;
+    /**
+     * Maximum characters shown in the single-line preview of a tool argument/result. The full
+     * content remains available via tooltip (hover) and the double-click editor view.
+     */
+    private static final int INLINE_PREVIEW_MAX_LEN = 500;
+
+    /** Maximum characters shown in the hover tooltip. Beyond this, content is truncated with an ellipsis. */
+    private static final int TOOLTIP_MAX_LEN = 8_000;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -376,24 +384,66 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("▶ ").append(message.getToolName());
         if (message.getArguments() != null) {
-            sb.append(" ← ").append(message.getArguments().replace("\n", " "));
+            sb.append(" ← ").append(flattenForRow(message.getArguments()));
         }
     }
 
     private void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("✔ ").append(message.getToolName());
         if (message.getResult() != null) {
-            sb.append(" → ").append(message.getResult().replace("\n", " "));
+            sb.append(" → ").append(flattenForRow(message.getResult()));
         }
     }
 
     private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("\uD83D\uDCAC ");
         if (message.getResult() != null) {
-            sb.append(message.getResult().replace("\n", " "));
+            sb.append(flattenForRow(message.getResult()));
         } else {
             sb.append("LLM intermediate response");
         }
+    }
+
+    /**
+     * Compresses a multi-line tool result/argument into a one-line preview suitable for the
+     * fixed-height list row, while still hinting at the structure of the full content.
+     * <ul>
+     *   <li>Newlines are replaced with a visible "⏎ " separator so the user can see line
+     *       boundaries instead of one long run-together string.</li>
+     *   <li>Long content is truncated with an ellipsis and a "(N lines)" suffix so the user
+     *       knows there's more to see (double-click opens the full content).</li>
+     * </ul>
+     */
+    static @NotNull String flattenForRow(@NotNull String text) {
+        return flattenForRow(text, INLINE_PREVIEW_MAX_LEN);
+    }
+
+    static @NotNull String flattenForRow(@NotNull String text, int maxLen) {
+        // Normalise line endings, then split.
+        String[] lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        // Drop trailing empty line that comes from a final \n in the result.
+        int effectiveLineCount = lines.length;
+        if (effectiveLineCount > 0 && lines[effectiveLineCount - 1].isEmpty()) {
+            effectiveLineCount--;
+        }
+
+        String joined;
+        if (effectiveLineCount <= 1) {
+            joined = effectiveLineCount == 0 ? "" : lines[0];
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < effectiveLineCount; i++) {
+                if (i > 0) sb.append(" ⏎ ");
+                sb.append(lines[i]);
+            }
+            joined = sb.toString();
+        }
+
+        String truncated = joined.length() > maxLen ? joined.substring(0, maxLen) + "…" : joined;
+        if (effectiveLineCount > 1) {
+            return truncated + " (" + effectiveLineCount + " lines)";
+        }
+        return truncated;
     }
 
     private @NotNull String buildAgentActivityFullContent(@NotNull ActivityMessage message) {
@@ -408,6 +458,25 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         if (message.getArguments() != null) sb.append("--- Arguments ---\n").append(message.getArguments()).append("\n\n");
         if (message.getResult() != null) sb.append("--- Result ---\n").append(message.getResult()).append("\n");
         return sb.toString();
+    }
+
+    /**
+     * Wraps text as an HTML Swing tooltip so newlines render as line breaks instead of being
+     * collapsed into a single line. Long content is truncated with an ellipsis to keep the
+     * tooltip usable; the full content remains available via double-click.
+     */
+    static @NotNull String toHtmlTooltip(@NotNull String text) {
+        return toHtmlTooltip(text, TOOLTIP_MAX_LEN);
+    }
+
+    static @NotNull String toHtmlTooltip(@NotNull String text, int maxLen) {
+        String trimmed = text.length() > maxLen ? text.substring(0, maxLen) + "\n… (double-click to view full content)" : text;
+        String escaped = trimmed
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\n", "<br>");
+        return "<html><pre style=\"font-family:monospace;margin:0\">" + escaped + "</pre></html>";
     }
 
     private void openLogInEditor(LogEntry logEntry) {
@@ -548,7 +617,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 String sourceTag = entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ";
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 label.setText(entry.timestamp() + " " + badge + entry.message());
-                label.setToolTipText(entry.message());
+                // Tooltip shows the full (multi-line) result so users can hover instead of double-clicking.
+                label.setToolTipText(toHtmlTooltip(entry.fullContent()));
                 Color fg = resolveEntryColor(entry);
                 if (fg != null) {
                     label.setForeground(fg);
