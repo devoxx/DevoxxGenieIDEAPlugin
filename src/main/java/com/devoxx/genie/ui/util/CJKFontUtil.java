@@ -1,12 +1,11 @@
 package com.devoxx.genie.ui.util;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility for ensuring Swing components can render CJK (Chinese / Japanese / Korean)
@@ -38,7 +37,7 @@ public final class CJKFontUtil {
      * platforms. We try them in order before falling back to the logical {@code Dialog}
      * font, which on most JDKs is a composite font that includes a CJK fallback chain.
      */
-    static final List<String> CJK_FONT_CANDIDATES = Arrays.asList(
+    static final List<String> CJK_FONT_CANDIDATES = List.of(
             // Cross-platform / shipped with many JDKs
             "Noto Sans CJK SC",
             "Noto Sans CJK",
@@ -65,6 +64,18 @@ public final class CJKFontUtil {
             "WenQuanYi Zen Hei",
             "AR PL UMing CN"
     );
+
+    /**
+     * Cached result of {@link #findCJKCapableFamily()}. Installed fonts don't change
+     * during an IDE session so scanning the full font list once is sufficient. The
+     * reference holds {@code null} when not yet resolved, a non-null family name when
+     * one was found, or the sentinel {@link #NONE_FOUND} when a scan completed without
+     * finding any CJK-capable family (so we don't rescan on every call).
+     */
+    private static final AtomicReference<String> CACHED_CJK_FAMILY = new AtomicReference<>();
+
+    /** Sentinel marking “scan completed, no CJK family found”. */
+    private static final String NONE_FOUND = "\u0000NONE";
 
     private CJKFontUtil() {
     }
@@ -119,11 +130,27 @@ public final class CJKFontUtil {
      * Find the first installed font family from {@link #CJK_FONT_CANDIDATES} that can
      * render the CJK probe. Returns {@code null} when none is available — callers
      * should fall back to {@link Font#DIALOG}.
+     *
+     * <p>The result is cached for the lifetime of the JVM (installed fonts don't
+     * change during an IDE session) so repeated scheme-change events don't iterate
+     * the full font list.
      */
     static @Nullable String findCJKCapableFamily() {
+        String cached = CACHED_CJK_FAMILY.get();
+        if (cached != null) {
+            return NONE_FOUND.equals(cached) ? null : cached;
+        }
+        String resolved = resolveCJKCapableFamily();
+        // Multiple threads may race here; the result is deterministic so the last
+        // writer wins harmlessly.
+        CACHED_CJK_FAMILY.set(resolved == null ? NONE_FOUND : resolved);
+        return resolved;
+    }
+
+    private static @Nullable String resolveCJKCapableFamily() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         // Headless environments still provide a list of logical fonts, so this is safe.
-        List<String> installed = Arrays.asList(ge.getAvailableFontFamilyNames());
+        List<String> installed = List.of(ge.getAvailableFontFamilyNames());
         for (String candidate : CJK_FONT_CANDIDATES) {
             if (installed.contains(candidate) && canDisplayCJK(new Font(candidate, Font.PLAIN, 12))) {
                 return candidate;
@@ -139,13 +166,8 @@ public final class CJKFontUtil {
         return null;
     }
 
-    /**
-     * Convenience that returns a font guaranteed (when possible) to render CJK at the
-     * given size and style. Never returns {@code null}.
-     */
-    public static @NotNull Font cjkCapableFont(int style, float size) {
-        Font base = new Font(Font.DIALOG, style, Math.max(1, Math.round(size))).deriveFont(size);
-        Font result = withCJKFallback(base);
-        return result != null ? result : base;
+    /** Test-only hook to reset the cached family lookup. */
+    static void resetCacheForTesting() {
+        CACHED_CJK_FAMILY.set(null);
     }
 }

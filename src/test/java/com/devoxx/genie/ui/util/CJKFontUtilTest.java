@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.util;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Font;
@@ -20,6 +21,13 @@ class CJKFontUtilTest {
     private static final char CHINESE_NI = '\u4F60';        // 你
     private static final char JAPANESE_A = '\u3042';        // あ
     private static final char KOREAN_GA = '\uAC00';         // 가
+
+    @BeforeEach
+    void resetCache() {
+        // Each test starts from a clean slate so we exercise the resolution path
+        // (and the caching test) deterministically.
+        CJKFontUtil.resetCacheForTesting();
+    }
 
     /**
      * A font that lacks CJK glyphs (e.g. Monospaced on most CI machines) must be
@@ -125,9 +133,38 @@ class CJKFontUtilTest {
      * must produce one that can actually render CJK.
      */
     @Test
-    void cjkCapableFont_neverNull() {
-        Font font = CJKFontUtil.cjkCapableFont(Font.PLAIN, 12f);
-        assertThat(font).isNotNull();
-        assertThat(font.getSize()).isEqualTo(12);
+    void withCJKFallback_handlesNullInput() {
+        // Contract: a null font is treated as not CJK-capable, so withCJKFallback
+        // will attempt to derive a replacement. The call must never throw. The
+        // returned value is either a CJK-capable Font (when a CJK family is
+        // available on the host) or null (when no replacement could be derived).
+        // Either return is safe for the call site `inputField.setFont(...)`:
+        // setFont(null) just clears the override.
+        Font result = CJKFontUtil.withCJKFallback(null);
+
+        if (result != null) {
+            assertThat(CJKFontUtil.canDisplayCJK(result))
+                    .as("Non-null fallback for null input must be CJK-capable")
+                    .isTrue();
+        }
+        // No assertion when result is null — that branch only occurs when the host
+        // has no CJK family at all, which is the documented degraded mode.
+    }
+
+    /**
+     * Repeated lookups must be cached so EditorColorsScheme change events don't
+     * re-scan the full installed-font list every time.
+     */
+    @Test
+    void findCJKCapableFamily_isCached() {
+        String first = CJKFontUtil.findCJKCapableFamily();
+        String second = CJKFontUtil.findCJKCapableFamily();
+
+        // Both calls must agree (deterministic), and a non-null first result must
+        // be returned by reference identity from the cache on the second call.
+        assertThat(second).isEqualTo(first);
+        if (first != null) {
+            assertThat(second).isSameAs(first);
+        }
     }
 }
