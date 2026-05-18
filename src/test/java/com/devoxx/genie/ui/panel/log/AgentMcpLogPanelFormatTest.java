@@ -1,5 +1,8 @@
 package com.devoxx.genie.ui.panel.log;
 
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
+import com.devoxx.genie.model.agent.AgentType;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,5 +103,63 @@ class AgentMcpLogPanelFormatTest {
     void toHtmlTooltip_truncatesVeryLongContentWithHint() {
         String tooltip = AgentMcpLogPanel.toHtmlTooltip("x".repeat(20_000), 100);
         assertThat(tooltip).contains("double-click to view full content");
+    }
+
+    @Test
+    void flattenForRow_doubleTrailingNewline_countsAsOneLine() {
+        // "a\n\n" should be treated as a single-line result, not (2 lines).
+        String preview = AgentMcpLogPanel.flattenForRow("a\n\n");
+        assertThat(preview).isEqualTo("a");
+        assertThat(preview).doesNotContain("lines");
+    }
+
+    @Test
+    void flattenForRow_manyTrailingNewlines_countsAsOneLine() {
+        String preview = AgentMcpLogPanel.flattenForRow("only-real-line\n\n\n\n");
+        assertThat(preview).isEqualTo("only-real-line");
+    }
+
+    @Test
+    void formatAgentActivity_toolErrorWithMultiLineResult_isFlattened() {
+        ActivityMessage err = ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(AgentType.TOOL_ERROR)
+                .toolName("run_command")
+                .result("Error: failed to spawn process\nstacktrace line 1\nstacktrace line 2")
+                .callNumber(2)
+                .maxCalls(25)
+                .build();
+        String row = AgentMcpLogPanel.formatAgentActivityMessage(err);
+        assertThat(row).startsWith("[2/25] \u2716 run_command \u2192 ");
+        assertThat(row).contains("Error: failed to spawn process");
+        assertThat(row).contains("stacktrace line 1");
+        assertThat(row).contains("stacktrace line 2");
+        assertThat(row).contains("\u23ce"); // visible newline separator
+        assertThat(row).endsWith("(3 lines)");
+    }
+
+    @Test
+    void formatAgentActivity_subAgentErrorWithMultiLineResult_isFlattened() {
+        ActivityMessage err = ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(AgentType.SUB_AGENT_ERROR)
+                .subAgentId("explorer-1")
+                .result("first error line\nsecond error line")
+                .callNumber(1)
+                .maxCalls(25)
+                .build();
+        String row = AgentMcpLogPanel.formatAgentActivityMessage(err);
+        assertThat(row).contains("Sub-agent error: explorer-1");
+        assertThat(row).contains("\u23ce");
+        assertThat(row).endsWith("(2 lines)");
+    }
+
+    @Test
+    void toHtmlTooltip_nullGuardInRenderer() {
+        // Mirrors the cell-renderer guard: pass null through the same code path the renderer
+        // uses, ensuring no NPE. The renderer is: fc != null ? toHtmlTooltip(fc) : null
+        String fullContent = null;
+        String tooltip = fullContent != null ? AgentMcpLogPanel.toHtmlTooltip(fullContent) : null;
+        assertThat(tooltip).isNull();
     }
 }

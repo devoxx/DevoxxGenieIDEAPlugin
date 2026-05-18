@@ -339,7 +339,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         }
     }
 
-    private @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message) {
+    static @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message) {
         StringBuilder sb = new StringBuilder();
         if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE) {
             sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
@@ -352,7 +352,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case TOOL_RESPONSE:   formatToolResponse(sb, message);   break;
             case TOOL_ERROR:
                 sb.append("✖ ").append(message.getToolName());
-                if (message.getResult() != null) sb.append(" → ").append(message.getResult());
+                if (message.getResult() != null) sb.append(" → ").append(flattenForRow(message.getResult()));
                 break;
             case LOOP_LIMIT:
                 sb.append("⚠ LOOP LIMIT REACHED (").append(message.getMaxCalls()).append(" calls)");
@@ -375,27 +375,27 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 break;
             case SUB_AGENT_ERROR:
                 sb.append("✖ Sub-agent error: ").append(message.getSubAgentId());
-                if (message.getResult() != null) sb.append(" → ").append(message.getResult());
+                if (message.getResult() != null) sb.append(" → ").append(flattenForRow(message.getResult()));
                 break;
         }
         return sb.toString();
     }
 
-    private void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("▶ ").append(message.getToolName());
         if (message.getArguments() != null) {
             sb.append(" ← ").append(flattenForRow(message.getArguments()));
         }
     }
 
-    private void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("✔ ").append(message.getToolName());
         if (message.getResult() != null) {
             sb.append(" → ").append(flattenForRow(message.getResult()));
         }
     }
 
-    private void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
         sb.append("\uD83D\uDCAC ");
         if (message.getResult() != null) {
             sb.append(flattenForRow(message.getResult()));
@@ -421,9 +421,10 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     static @NotNull String flattenForRow(@NotNull String text, int maxLen) {
         // Normalise line endings, then split.
         String[] lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
-        // Drop trailing empty line that comes from a final \n in the result.
+        // Drop trailing empty lines that come from final newline(s) in the result, so e.g.
+        // "line1\n\n" is reported as a single-line result rather than "(2 lines)".
         int effectiveLineCount = lines.length;
-        if (effectiveLineCount > 0 && lines[effectiveLineCount - 1].isEmpty()) {
+        while (effectiveLineCount > 0 && lines[effectiveLineCount - 1].isEmpty()) {
             effectiveLineCount--;
         }
 
@@ -618,7 +619,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 label.setText(entry.timestamp() + " " + badge + entry.message());
                 // Tooltip shows the full (multi-line) result so users can hover instead of double-clicking.
-                label.setToolTipText(toHtmlTooltip(entry.fullContent()));
+                String fc = entry.fullContent();
+                label.setToolTipText(fc != null ? toHtmlTooltip(fc) : null);
                 Color fg = resolveEntryColor(entry);
                 if (fg != null) {
                     label.setForeground(fg);
