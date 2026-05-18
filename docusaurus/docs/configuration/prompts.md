@@ -8,7 +8,7 @@ image: /img/devoxxgenie-social-card.jpg
 
 # Prompts Configuration
 
-DevoxxGenie allows you to configure the system prompt, keyboard shortcuts, and project description file. Slash commands (like `/test`, `/explain`) are now managed separately under **Skills** — see the [Skills](../features/skills.md) page.
+DevoxxGenie allows you to configure the system prompt, keyboard shortcuts, and project description file. Slash commands (like `/test`, `/explain`) are now managed separately under **Commands** — see the [Commands](../features/commands.md) page.
 
 ## Accessing Prompt Settings
 
@@ -70,10 +70,18 @@ You can also generate this file by typing `/init` in the DevoxxGenie input field
 
 For more information about DEVOXXGENIE.md, see the [DEVOXXGENIE.md Configuration](devoxxgenie-md.md) page.
 
-## Skills (Slash Commands)
+## Commands (Slash Commands)
 
-Slash commands like `/test`, `/explain`, `/review`, and custom commands are now configured in a dedicated **Skills** settings page.
+Slash commands like `/test`, `/explain`, `/review`, and custom commands are now configured in a dedicated **Commands** settings page.
+
+To manage commands, go to **Settings** > **Tools** > **DevoxxGenie** > **Commands**.
+
+See the [Commands](../features/commands.md) page for full documentation on creating and using commands.
+
+## Skills (LLM-Activated SKILL.md Files)
+
+Skills are a separate, newer feature: self-describing capabilities loaded from `SKILL.md` files on disk and activated by the LLM itself when Agent Mode is enabled.
 
 To manage skills, go to **Settings** > **Tools** > **DevoxxGenie** > **Skills**.
 
-See the [Skills](../features/skills.md) page for full documentation on creating and using skills.
+See the [Skills](../features/skills.md) page for full documentation.

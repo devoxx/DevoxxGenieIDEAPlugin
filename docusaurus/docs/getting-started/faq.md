@@ -179,9 +179,15 @@ The DevoxxGenie Specs tool window shows tasks in a Kanban board. Click **"Implem
 
 [RAG (Retrieval-Augmented Generation)](../features/rag.md) indexes your project's source code into a local vector database (ChromaDB via Docker) using Ollama embeddings. When you ask a question, the most semantically relevant code snippets are retrieved and included in the prompt automatically — giving the LLM accurate project context without manual file selection.
 
+### What are Commands?
+
+[Commands](../features/commands.md) are reusable slash commands you define in settings. Type `/explain`, `/test`, `/review`, or any custom command in the prompt input to trigger a predefined prompt template. Built-in commands include `/test`, `/explain`, `/review`, `/find` (RAG search), `/tdg`, and `/init`.
+
+*Note: this feature was previously called "Custom Prompts" and then briefly "Skills". It is now called Commands. The current [Skills](../features/skills.md) feature is something different — see below.*
+
 ### What are Skills?
 
-[Skills](../features/skills.md) are reusable slash commands you define in settings. Type `/explain`, `/test`, `/review`, or any custom command in the prompt input to trigger a predefined prompt template. Built-in skills include `/test`, `/explain`, `/review`, `/find` (RAG search), `/tdg`, and `/init`.
+[Skills](../features/skills.md) are self-describing capabilities loaded from `SKILL.md` files on disk. They are activated by the LLM itself (not the user) via an `activate_skill` tool call when the model decides a skill is relevant to your request. Skills require Agent Mode and a tool-capable LLM, and DevoxxGenie scans six directories — including `~/.claude/skills/` and `.agents/skills/` — so the same files work across Claude Code, `.agents`-aware tools, and DevoxxGenie.
 
 ### What is inline code completion?
 

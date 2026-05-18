@@ -23,7 +23,7 @@
     { "emoji": "\u2728", "name": "Inline Completion", "description": "AI-powered inline code completion using Fill-in-the-Middle (FIM) models. Configure your preferred provider and model in Inline Completion settings." }
   ],
   "announcements": [],
-  "tip": "You can modify the endpoints for different LLM providers and the default command skills in the plugin settings.",
+  "tip": "You can modify the endpoints for different LLM providers and the default commands in the plugin settings.",
   "enjoy": "Enjoy!",
   "socialLinks": [
     { "platform": "Bluesky", "url": "https://bsky.app/profile/devoxxgenie.bsky.social", "label": "@DevoxxGenie.bsky.social" }

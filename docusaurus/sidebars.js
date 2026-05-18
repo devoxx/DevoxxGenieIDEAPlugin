@@ -38,6 +38,7 @@ const sidebars = {
         'features/sdd-agent-loop',
         'features/chat-interface',
         'features/mcp_expanded',
+        'features/commands',
         'features/skills',
         'features/web-search',
         'features/rag',

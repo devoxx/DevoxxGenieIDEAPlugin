@@ -2,7 +2,7 @@
 sidebar_position: 1
 title: Features Overview - DevoxxGenie Documentation
 description: An overview of all features available in DevoxxGenie, including core features, LLM provider support, and advanced capabilities for IntelliJ IDEA.
-keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag, mcp, skills]
+keywords: [devoxxgenie, intellij plugin, ai features, llm, code assistance, rag, mcp, commands, skills]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -52,7 +52,8 @@ Connect to a wide range of LLM providers:
 ### Developer Tools
 
 - **Inline Completion**: AI-powered code completion using Fill-in-the-Middle (FIM) models via Ollama or LM Studio, providing context-aware suggestions as you type
-- **Skills**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
+- **Commands**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
+- **Skills**: LLM-activated `SKILL.md` capabilities loaded from disk (compatible with `.claude/skills` and `.agents/skills`); requires Agent Mode
 - **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
 - **Agent Mode** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider
 - **Web Search**: Augment LLM knowledge with web search results from Google or Tavily
@@ -74,11 +75,14 @@ Connect to a wide range of LLM providers:
 | RAG Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Project Context | ✅ | ✅ | ✅ | ✅ | ✅ |
 | MCP Support | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Skills | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Commands | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Skills | ✅* | ✅ | ✅ | ✅ | ✅ |
 | Web Search | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Multimodal | Varies** | GPT-4V+ | Claude 3+ | Gemini Pro+ | Varies |
 
 \* Ollama or LM Studio with FIM-capable models (e.g., starcoder2, qwen2.5-coder)
+
+\* Skills require a tool-capable LLM (most modern cloud models qualify; for local models pick one that supports tool/function calling such as Qwen2.5-Coder or Llama 3.1+)
 
 \*\*Depends on the model you're using locally (e.g., LLaVA supports images)
 
@@ -96,6 +100,7 @@ For detailed information about specific features, check out the dedicated pages:
 - [Chat Interface](chat-interface.md)
 - [MCP Support](mcp_expanded.md)
 - [Agent Mode](agent-mode.md)
+- [Commands](commands.md)
 - [Skills](skills.md)
 - [Web Search](web-search.md)
 - [RAG Support](rag.md)
