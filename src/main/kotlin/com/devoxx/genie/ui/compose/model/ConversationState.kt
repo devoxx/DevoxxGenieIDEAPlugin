@@ -7,6 +7,17 @@ data class CustomPromptUi(
     val prompt: String,
 )
 
+/**
+ * Welcome-screen view of a single langchain4j skill discovered by
+ * {@code SkillRegistry}. Already filtered against {@code disabledSkillNames}
+ * — i.e. the welcome screen only renders skills that are currently active.
+ */
+data class SkillUi(
+    val name: String,
+    val description: String,
+    val source: String,
+)
+
 data class BlogPostUi(
     val title: String,
     val description: String,
@@ -18,6 +29,7 @@ sealed class ConversationState {
     data class Welcome(
         val resourceBundle: ResourceBundle,
         val customPrompts: List<CustomPromptUi> = emptyList(),
+        val skills: List<SkillUi> = emptyList(),
         val blogPosts: List<BlogPostUi> = emptyList(),
     ) : ConversationState()
 

@@ -525,9 +525,14 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="System Prompt"/>
 
-        <projectConfigurable id="com.devoxx.genie.SkillSettings"
+        <projectConfigurable id="com.devoxx.genie.CommandsSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.skill.SkillSettingsConfigurable"
+                             instance="com.devoxx.genie.ui.settings.commands.CommandsSettingsConfigurable"
+                             displayName="Commands"/>
+
+        <projectConfigurable id="com.devoxx.genie.SkillsSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.skill.SkillsSettingsConfigurable"
                              displayName="Skills"/>
 
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
@@ -615,6 +620,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.skill.SkillRegistry"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>

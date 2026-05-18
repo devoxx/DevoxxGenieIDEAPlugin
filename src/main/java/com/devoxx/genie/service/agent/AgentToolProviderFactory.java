@@ -4,9 +4,11 @@ import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.skill.SkillRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.service.tool.ToolProvider;
+import dev.langchain4j.skills.Skills;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,6 +65,19 @@ public class AgentToolProviderFactory {
             if (mcpProvider != null) {
                 providers.add(mcpProvider);
             }
+        }
+
+        // Add langchain4j Skills tool provider (issue #1040). The provider exposes the
+        // activate_skill (and optional read_skill_resource) management tools and any
+        // skill-scoped tools once the LLM activates a skill.
+        try {
+            Skills skills = SkillRegistry.getInstance(project).buildSkills();
+            if (skills != null) {
+                providers.add(skills.toolProvider());
+                log.info("Skills tool provider included in agent tool chain");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to add Skills tool provider to agent tool chain", e);
         }
 
         // Merge all providers

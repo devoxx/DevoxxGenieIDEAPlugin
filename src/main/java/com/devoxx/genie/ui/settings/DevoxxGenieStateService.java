@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
@@ -51,16 +51,37 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             "package-lock.json", "yarn.lock", ".env", "build.gradle", "settings.gradle"
     ));
 
-    private List<CustomPrompt> customPrompts = new ArrayList<>();
+    private List<Command> commands = new ArrayList<>();
 
-    private final List<CustomPrompt> defaultPrompts = Arrays.asList(
-            new CustomPrompt(TEST_COMMAND, TEST_PROMPT),
-            new CustomPrompt(EXPLAIN_COMMAND, EXPLAIN_PROMPT),
-            new CustomPrompt(REVIEW_COMMAND, REVIEW_PROMPT),
-            new CustomPrompt(TDG_COMMAND, TDG_PROMPT),
-            new CustomPrompt(FIND_COMMAND, FIND_PROMPT),
-            new CustomPrompt(HELP_COMMAND, HELP_PROMPT),
-            new CustomPrompt(INIT_COMMAND, INIT_PROMPT)
+    /**
+     * Legacy field kept for XML state migration from pre-#1040 settings
+     * (when commands were called "custom prompts"). On {@link #loadState} the value
+     * is migrated into {@link #commands} and then cleared so it is not re-serialized.
+     *
+     * <p>Do not reference from new code — use {@link #getCommands()} / {@link #setCommands}.
+     * Lombok-generated accessors are intentional: IntelliJ's {@code XmlSerializer} requires
+     * a matching getter/setter pair to recognise the {@code customPrompts} option element
+     * in legacy XML. The field defaults to {@code null} and is set back to {@code null} once
+     * its contents have been migrated, so serialization (which skips null bean properties)
+     * will not re-emit the legacy element.</p>
+     */
+    @Deprecated
+    private List<Command> customPrompts;
+
+    /**
+     * Skill names that the user has explicitly disabled in the Skills settings panel.
+     * Skills not in this set are considered active.
+     */
+    private Set<String> disabledSkillNames = new HashSet<>();
+
+    private final List<Command> defaultPrompts = Arrays.asList(
+            new Command(TEST_COMMAND, TEST_PROMPT),
+            new Command(EXPLAIN_COMMAND, EXPLAIN_PROMPT),
+            new Command(REVIEW_COMMAND, REVIEW_PROMPT),
+            new Command(TDG_COMMAND, TDG_PROMPT),
+            new Command(FIND_COMMAND, FIND_PROMPT),
+            new Command(HELP_COMMAND, HELP_PROMPT),
+            new Command(INIT_COMMAND, INIT_PROMPT)
     );
 
     private List<LanguageModel> languageModels = new ArrayList<>();
@@ -364,8 +385,37 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private void initializeUserPrompt() {
         //If User prompt happens to be empty then we load the default list
-        if (customPrompts == null || customPrompts.isEmpty()) {
-            customPrompts = new ArrayList<>(defaultPrompts);
+        if (commands == null || commands.isEmpty()) {
+            commands = new ArrayList<>(defaultPrompts);
+        }
+    }
+
+    /**
+     * Migrates legacy {@code customPrompts} XML state (pre-#1040) into the renamed
+     * {@link #commands} field. Idempotent and safe to call when there is nothing to migrate.
+     *
+     * <p>Lombok-generated accessors on the legacy field let IntelliJ's {@code XmlSerializer}
+     * populate it during {@code loadState}; {@link XmlSerializerUtil#copyBean} then copies
+     * it onto {@code this}. We migrate from {@code this.customPrompts} and clear both the
+     * deserialized {@code state} copy and {@code this} so the legacy element is not
+     * re-emitted on the next save.</p>
+     */
+    @SuppressWarnings("deprecation")
+    private void migrateLegacyCustomPrompts(@NotNull DevoxxGenieStateService state) {
+        // After copyBean(state, this), this.customPrompts and this.commands have the same
+        // values as the deserialized state. The presence of legacy data in customPrompts is
+        // the unambiguous signal that we are upgrading from pre-#1040 — the new commands
+        // field could not have been set in that case, even though the constructor would have
+        // pre-populated it with defaults.
+        List<Command> legacy = this.customPrompts != null ? this.customPrompts : state.customPrompts;
+        if (legacy != null && !legacy.isEmpty()) {
+            // Replace whatever's in commands (it can only be the constructor-set defaults at
+            // this point because pre-#1040 XML never contained a <option name="commands">
+            // element) with the legacy values.
+            commands = new ArrayList<>(legacy);
+            // Clear so the legacy field does not get re-serialized.
+            this.customPrompts = null;
+            state.customPrompts = null;
         }
     }
 
@@ -384,6 +434,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         }
         shouldPowerFromAWSProfile = getAwsBedrockAuthMode() == AwsBedrockAuthMode.PROFILE;
         initializeDefaultCostsIfEmpty();
+        // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
+        migrateLegacyCustomPrompts(state);
         initializeUserPrompt();
 
         // Notify all listeners that the state has been loaded

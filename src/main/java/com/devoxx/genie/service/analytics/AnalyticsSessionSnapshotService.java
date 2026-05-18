@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.analytics;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -157,7 +157,7 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
     }
 
     private int customPromptCount(@NotNull DevoxxGenieStateService state) {
-        List<CustomPrompt> prompts = state.getCustomPrompts();
+        List<Command> prompts = state.getCommands();
         return prompts == null ? 0 : prompts.size();
     }
 

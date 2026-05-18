@@ -25,7 +25,7 @@ class ComposeConversationViewController(
     private val onCustomPromptClick: (String) -> Unit = {},
 ) : ConversationViewController {
 
-    private val viewModel = ConversationViewModel()
+    private val viewModel = ConversationViewModel(project)
     private var composeInitFailed = false
 
     private val composePanel: JComponent = createComposePanel()

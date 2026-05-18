@@ -5,6 +5,7 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
+import com.devoxx.genie.service.skill.SkillRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
@@ -375,6 +376,24 @@ public class ChatMemoryManager {
             String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(project);
             if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
                 systemPrompt += "\n<ProjectContext>\n" + claudeOrAgentsMdContent + "\n</ProjectContext>\n";
+            }
+        }
+
+        // Append langchain4j Skills system-prompt fragment (issue #1040). Only when agent
+        // mode is enabled — skills are wired into the agent tool chain, so listing them
+        // outside agent mode would be misleading.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()) && !project.isDefault()) {
+            try {
+                String skillsFragment = SkillRegistry.getInstance(project).getSystemPromptFragment();
+                if (skillsFragment != null && !skillsFragment.isEmpty()) {
+                    systemPrompt += "\nYou have access to the following skills:\n"
+                            + skillsFragment
+                            + "\nWhen the user's request relates to one of these skills, activate it first using the `"
+                            + SkillRegistry.ACTIVATE_SKILL_TOOL_NAME
+                            + "` tool before proceeding.\n";
+                }
+            } catch (Exception e) {
+                log.warn("Failed to append Skills system-prompt fragment", e);
             }
         }
 

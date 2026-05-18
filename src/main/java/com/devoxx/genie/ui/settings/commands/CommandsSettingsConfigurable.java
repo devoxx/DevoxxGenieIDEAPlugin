@@ -1,4 +1,4 @@
-package com.devoxx.genie.ui.settings.skill;
+package com.devoxx.genie.ui.settings.commands;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -9,38 +9,42 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-public class SkillSettingsConfigurable implements Configurable {
+/**
+ * Configurable for the renamed "Commands" tab (previously "Custom Prompts" / "Skills").
+ * See issue #1040.
+ */
+public class CommandsSettingsConfigurable implements Configurable {
 
     private final Project project;
-    private final SkillSettingsComponent skillSettingsComponent;
+    private final CommandsSettingsComponent commandsSettingsComponent;
 
-    public SkillSettingsConfigurable(Project project) {
+    public CommandsSettingsConfigurable(Project project) {
         this.project = project;
-        this.skillSettingsComponent = new SkillSettingsComponent(project);
+        this.commandsSettingsComponent = new CommandsSettingsComponent(project);
     }
 
     @Nls
     @Override
     public String getDisplayName() {
-        return "Skills";
+        return "Commands";
     }
 
     @Nullable
     @Override
     public JComponent createComponent() {
-        return skillSettingsComponent.createPanelWithHelp();
+        return commandsSettingsComponent.createPanelWithHelp();
     }
 
     @Override
     public boolean isModified() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        return !settings.getCustomPrompts().equals(skillSettingsComponent.getCustomPrompts());
+        return !settings.getCommands().equals(commandsSettingsComponent.getCommands());
     }
 
     @Override
     public void apply() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        settings.setCustomPrompts(skillSettingsComponent.getCustomPrompts());
+        settings.setCommands(commandsSettingsComponent.getCommands());
 
         project.getMessageBus()
                 .syncPublisher(AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC)
@@ -50,6 +54,6 @@ public class SkillSettingsConfigurable implements Configurable {
     @Override
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        skillSettingsComponent.setCustomPrompts(settings.getCustomPrompts());
+        commandsSettingsComponent.setCommands(settings.getCommands());
     }
 }

@@ -2,14 +2,14 @@ package com.devoxx.genie.service;
 
 import java.util.List;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 
 public interface DevoxxGenieSettingsService {
 
-    List<CustomPrompt> getCustomPrompts();
+    List<Command> getCommands();
 
     List<LanguageModel> getLanguageModels();
 
@@ -105,7 +105,7 @@ public interface DevoxxGenieSettingsService {
 
     List<String> getExcludedFiles();
 
-    void setCustomPrompts(List<CustomPrompt> customPrompts);
+    void setCommands(List<Command> commands);
 
     void setLanguageModels(List<LanguageModel> languageModels);
 

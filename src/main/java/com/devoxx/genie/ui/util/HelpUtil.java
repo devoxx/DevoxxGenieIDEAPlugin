@@ -48,13 +48,13 @@ public class HelpUtil {
                     </body>
                 </html>
                 """.formatted(scaleFactor == 1.0f ? "normal" : scaleFactor * 100 + "%",
-                getCustomPromptCommandsForWebView()
+                formatCommandsHelpForWebView()
         );
     }
 
-    public static @NotNull String getCustomPromptCommands() {
+    public static @NotNull String formatCommandsHelp() {
         return DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "/" + customPrompt.getName() + " : " + customPrompt.getPrompt())
             .collect(Collectors.joining());
@@ -67,7 +67,7 @@ public class HelpUtil {
      */
     public static @NotNull String getHelpMarkdown() {
         String commands = DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "- **/" + customPrompt.getName() + "** : " + customPrompt.getPrompt())
             .collect(Collectors.joining("\n"));
@@ -85,9 +85,9 @@ public class HelpUtil {
      *
      * @return HTML-formatted string of custom commands
      */
-    public static @NotNull String getCustomPromptCommandsForWebView() {
+    public static @NotNull String formatCommandsHelpForWebView() {
         return DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "<li><span class=\"feature-name\">/" +
                  customPrompt.getName() + "</span> : " + customPrompt.getPrompt() + "</li>")
