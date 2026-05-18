@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.component.input;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -60,8 +60,8 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         commands.add(COMMAND_PREFIX + INIT_COMMAND);
 
         DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
-        for (CustomPrompt customPrompt : stateService.getCustomPrompts()) {
-            commands.add(COMMAND_PREFIX + customPrompt.getName());
+        for (Command command : stateService.getCommands()) {
+            commands.add(COMMAND_PREFIX + command.getName());
         }
     }
 

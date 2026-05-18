@@ -54,7 +54,7 @@ public class HelpUtil {
 
     public static @NotNull String getCustomPromptCommands() {
         return DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "/" + customPrompt.getName() + " : " + customPrompt.getPrompt())
             .collect(Collectors.joining());
@@ -67,7 +67,7 @@ public class HelpUtil {
      */
     public static @NotNull String getHelpMarkdown() {
         String commands = DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "- **/" + customPrompt.getName() + "** : " + customPrompt.getPrompt())
             .collect(Collectors.joining("\n"));
@@ -87,7 +87,7 @@ public class HelpUtil {
      */
     public static @NotNull String getCustomPromptCommandsForWebView() {
         return DevoxxGenieStateService.getInstance()
-            .getCustomPrompts()
+            .getCommands()
             .stream()
             .map(customPrompt -> "<li><span class=\"feature-name\">/" +
                  customPrompt.getName() + "</span> : " + customPrompt.getPrompt() + "</li>")

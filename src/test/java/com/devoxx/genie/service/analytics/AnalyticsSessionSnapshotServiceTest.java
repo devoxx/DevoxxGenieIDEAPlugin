@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.analytics;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -44,7 +44,7 @@ class AnalyticsSessionSnapshotServiceTest {
         state.setStreamMode(false);
         state.setGoogleSearchEnabled(false);
         state.setTavilySearchEnabled(false);
-        state.setCustomPrompts(new ArrayList<>());
+        state.setCommands(new ArrayList<>());
         state.setMcpSettings(new MCPSettings());
         state.setChatMemorySize(0);
 
@@ -120,11 +120,11 @@ class AnalyticsSessionSnapshotServiceTest {
 
     @Test
     void customPromptCountEmittedAsBucketedValue() {
-        List<CustomPrompt> prompts = new ArrayList<>();
-        prompts.add(new CustomPrompt("one", "body"));
-        prompts.add(new CustomPrompt("two", "body"));
-        prompts.add(new CustomPrompt("three", "body"));
-        state.setCustomPrompts(prompts);
+        List<Command> prompts = new ArrayList<>();
+        prompts.add(new Command("one", "body"));
+        prompts.add(new Command("two", "body"));
+        prompts.add(new Command("three", "body"));
+        state.setCommands(prompts);
 
         withState(snapshot::snapshotIfNeeded);
 

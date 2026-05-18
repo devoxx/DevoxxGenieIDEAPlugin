@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.prompt.command;
 
 import com.devoxx.genie.model.Constant;
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class CustomPromptCommandTest {
+class UserCommandTest {
 
     @Mock
     private ChatMessageContext context;
@@ -33,15 +33,15 @@ class CustomPromptCommandTest {
     @Mock
     private DevoxxGenieStateService stateService;
     
-    private CustomPromptCommand command;
+    private UserCommand command;
     
-    private final CustomPrompt testPrompt1 = new CustomPrompt("test", "This is a test prompt template");
-    private final CustomPrompt testPrompt2 = new CustomPrompt("debug", "Debug the following code:");
-    private final CustomPrompt testPromptWithArgument = new CustomPrompt("ralph-runners", "You are a product manager. Task: $ARGUMENT");
+    private final Command testPrompt1 = new Command("test", "This is a test prompt template");
+    private final Command testPrompt2 = new Command("debug", "Debug the following code:");
+    private final Command testPromptWithArgument = new Command("ralph-runners", "You are a product manager. Task: $ARGUMENT");
 
     @BeforeEach
     public void setUp() {
-        command = new CustomPromptCommand();
+        command = new UserCommand();
     }
 
     @Test
@@ -49,7 +49,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2, testPromptWithArgument));
+            when(stateService.getCommands()).thenReturn(List.of(testPrompt1, testPrompt2, testPromptWithArgument));
             
             // Test with exact custom commands
             assertTrue(command.matches(Constant.COMMAND_PREFIX + "test"));
@@ -69,7 +69,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2));
+            when(stateService.getCommands()).thenReturn(List.of(testPrompt1, testPrompt2));
             
             // Test with non-custom command
             assertFalse(command.matches(Constant.COMMAND_PREFIX + "unknown"));
@@ -84,12 +84,12 @@ class CustomPromptCommandTest {
 
     @Test
     void testMatches_WithPrefixCollision() {
-        CustomPrompt shortName = new CustomPrompt("ralph", "short");
-        CustomPrompt longName = new CustomPrompt("ralph-runners", "long");
+        Command shortName = new Command("ralph", "short");
+        Command longName = new Command("ralph-runners", "long");
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(shortName, longName));
+            when(stateService.getCommands()).thenReturn(List.of(shortName, longName));
 
             assertTrue(command.matches(Constant.COMMAND_PREFIX + "ralph-runners create a PRD.json"));
             assertFalse(command.matches(Constant.COMMAND_PREFIX + "ral"));
@@ -101,7 +101,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up empty custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(Collections.emptyList());
+            when(stateService.getCommands()).thenReturn(Collections.emptyList());
             
             // Test with command that would match if it existed
             assertFalse(command.matches(Constant.COMMAND_PREFIX + "test"));
@@ -116,7 +116,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2));
+            when(stateService.getCommands()).thenReturn(List.of(testPrompt1, testPrompt2));
             
             // Process the command
             Optional<String> result = command.process(context, panel);
@@ -136,7 +136,7 @@ class CustomPromptCommandTest {
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPromptWithArgument));
+            when(stateService.getCommands()).thenReturn(List.of(testPromptWithArgument));
 
             Optional<String> result = command.process(context, panel);
 
@@ -155,7 +155,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2));
+            when(stateService.getCommands()).thenReturn(List.of(testPrompt1, testPrompt2));
             
             // Process the command
             Optional<String> result = command.process(context, panel);
@@ -174,7 +174,7 @@ class CustomPromptCommandTest {
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             // Set up custom commands
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPrompt1, testPrompt2));
+            when(stateService.getCommands()).thenReturn(List.of(testPrompt1, testPrompt2));
             
             // Process the command
             Optional<String> result = command.process(context, panel);
@@ -194,7 +194,7 @@ class CustomPromptCommandTest {
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getCustomPrompts()).thenReturn(List.of(testPromptWithArgument));
+            when(stateService.getCommands()).thenReturn(List.of(testPromptWithArgument));
 
             Optional<String> result = command.process(context, panel);
 

@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.prompt.command;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
@@ -15,47 +15,51 @@ import static com.devoxx.genie.model.Constant.COMMAND_PREFIX;
 import static com.devoxx.genie.model.Constant.HELP_COMMAND;
 
 /**
- * Command processor for custom prompt commands.
+ * Command processor that resolves user-defined commands (formerly known as "custom prompts").
+ *
+ * <p>Renamed from {@code CustomPromptCommand} to {@code UserCommand} as part of issue #1040.
+ * The {@link PromptCommand} interface and {@link PromptCommandProcessor} keep their existing
+ * names.</p>
  */
 @Slf4j
-public class CustomPromptCommand implements PromptCommand {
+public class UserCommand implements PromptCommand {
 
     private static final String ARGUMENT_PLACEHOLDER = "$ARGUMENT";
 
     @Override
     public boolean matches(@NotNull String prompt) {
         String trimmedPrompt = prompt.trim();
-        
+
         // Check if it's a command but not the help command (which has its own processor)
         if (!trimmedPrompt.startsWith(COMMAND_PREFIX)) {
             return false;
         }
-        
+
         if (trimmedPrompt.startsWith(COMMAND_PREFIX + HELP_COMMAND)) {
             return false;
         }
-        
-        // Get custom commands from settings
+
+        // Get user commands from settings
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
-        List<CustomPrompt> customPrompts = settings.getCustomPrompts();
-        
+        List<Command> commands = settings.getCommands();
+
         String commandName = extractCommandName(trimmedPrompt);
         if (commandName == null) {
             return false;
         }
 
-        // Check if any custom command matches exactly (avoid prefix collisions)
-        return customPrompts.stream()
-                .anyMatch(prompt1 -> commandName.equalsIgnoreCase(prompt1.getName()));
+        // Check if any user command matches exactly (avoid prefix collisions)
+        return commands.stream()
+                .anyMatch(cmd -> commandName.equalsIgnoreCase(cmd.getName()));
     }
 
     @Override
-    public Optional<String> process(@NotNull ChatMessageContext chatMessageContext, 
-                                  @NotNull PromptOutputPanel promptOutputPanel) {
+    public Optional<String> process(@NotNull ChatMessageContext chatMessageContext,
+                                    @NotNull PromptOutputPanel promptOutputPanel) {
 
-        // Get custom commands from settings
+        // Get user commands from settings
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
-        List<CustomPrompt> customPrompts = settings.getCustomPrompts();
+        List<Command> commands = settings.getCommands();
 
         String prompt = chatMessageContext.getUserPrompt().trim();
 
@@ -64,23 +68,23 @@ public class CustomPromptCommand implements PromptCommand {
             return Optional.of(prompt);
         }
 
-        // Find the matching custom prompt
-        Optional<CustomPrompt> matchingPrompt = customPrompts.stream()
-                .filter(customPrompt -> commandName.equalsIgnoreCase(customPrompt.getName()))
+        // Find the matching user command
+        Optional<Command> matchingCommand = commands.stream()
+                .filter(cmd -> commandName.equalsIgnoreCase(cmd.getName()))
                 .findFirst();
-                
-        if (matchingPrompt.isEmpty()) {
-            log.debug("No matching custom command found");
+
+        if (matchingCommand.isEmpty()) {
+            log.debug("No matching user command found");
             return Optional.of(prompt);
         }
-        
-        CustomPrompt customPrompt = matchingPrompt.get();
-        chatMessageContext.setCommandName(customPrompt.getName());
-        
-        // Extract user arguments and apply them to the custom prompt template
+
+        Command command = matchingCommand.get();
+        chatMessageContext.setCommandName(command.getName());
+
+        // Extract user arguments and apply them to the command template
         String userArgs = extractUserArguments(prompt, commandName);
-        String processedPrompt = applyArguments(customPrompt.getPrompt(), userArgs);
-        
+        String processedPrompt = applyArguments(command.getPrompt(), userArgs);
+
         return Optional.of(processedPrompt);
     }
 

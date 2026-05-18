@@ -32,7 +32,7 @@ public class PromptCommandProcessor {
         this.commands = List.of(
             new FindCommand(),
             new HelpCommand(),
-            new CustomPromptCommand()
+            new UserCommand()
         );
     }
 

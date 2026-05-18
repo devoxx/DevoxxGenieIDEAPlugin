@@ -305,7 +305,7 @@ class ConversationViewModel {
     private fun loadCustomPrompts(): List<CustomPromptUi> {
         return try {
             DevoxxGenieStateService.getInstance()
-                .customPrompts
+                .commands
                 .map { CustomPromptUi(name = it.name, prompt = it.prompt) }
         } catch (_: Exception) {
             emptyList()
