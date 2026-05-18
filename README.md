@@ -9,6 +9,8 @@
 
 Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
+**🆕 [Skills](https://genie.devoxx.com/blog/commands-and-skills)** — Drop portable `SKILL.md` files into `~/.devoxxgenie/skills/`, `<project>/.devoxxgenie/skills/`, `.claude/skills/` or `.agents/skills/` and the LLM activates them mid-conversation when relevant. The same files work in Claude Code, Codex and Gemini — and Custom Prompts have been renamed to **Commands** to make the distinction clear.
+
 **🆕 [Security Scanning](https://genie.devoxx.com/docs/features/security-scanning)** — Run **Gitleaks** (secret detection), **OpenGrep** (SAST) and **Trivy** (dependency CVEs) directly from the LLM agent. Findings are automatically created as prioritised tasks in the Spec Browser for tracking and remediation!
 
 **🆕 [Spec Driven Development (SDD)](https://genie.devoxx.com/docs/features/spec-driven-development)** — Define tasks in `Backlog.md`, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously! Use the **Agent Loop** to run multiple tasks in a single batch with dependency ordering and automatic advancement.
@@ -37,6 +39,7 @@ Quick links:
 - [Installation Guide](https://genie.devoxx.com/docs/category/installation) - Local and cloud LLM setup
 - [Configuration](https://genie.devoxx.com/docs/category/configuration) - API keys, settings, and customization
 - [Features](https://genie.devoxx.com/docs/category/features) - Explore all capabilities
+- [Skills & Commands](https://genie.devoxx.com/blog/commands-and-skills) - LLM-activated SKILL.md files (portable across Claude Code, Codex, Gemini) and renamed slash Commands
 - [Security Scanning](https://genie.devoxx.com/docs/features/security-scanning) - Gitleaks, OpenGrep and Trivy as LLM agent tools with auto-backlog task creation
 - [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode) - Autonomous code tools with parallel sub-agents
 - [Spec Driven Development](https://genie.devoxx.com/docs/features/spec-driven-development) - Task management with Backlog.md, Kanban Board, and Agent implementation
