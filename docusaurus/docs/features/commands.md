@@ -47,7 +47,6 @@ DevoxxGenie ships with several built-in commands:
 | `/test` | Generate unit tests for the selected code |
 | `/explain` | Explain the selected code |
 | `/review` | Review the selected code and suggest improvements |
-| `/tdg` | Test-Driven Generation — generate implementation from tests |
 | `/find` | Search for code in your project using RAG |
 | `/help` | Show available commands |
 | `/init` | Generate a DEVOXXGENIE.md project description file |

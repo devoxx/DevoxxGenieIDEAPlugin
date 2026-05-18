@@ -181,7 +181,7 @@ The DevoxxGenie Specs tool window shows tasks in a Kanban board. Click **"Implem
 
 ### What are Commands?
 
-[Commands](../features/commands.md) are reusable slash commands you define in settings. Type `/explain`, `/test`, `/review`, or any custom command in the prompt input to trigger a predefined prompt template. Built-in commands include `/test`, `/explain`, `/review`, `/find` (RAG search), `/tdg`, and `/init`.
+[Commands](../features/commands.md) are reusable slash commands you define in settings. Type `/explain`, `/test`, `/review`, or any custom command in the prompt input to trigger a predefined prompt template. Built-in commands include `/test`, `/explain`, `/review`, `/find` (RAG search), and `/init`.
 
 *Note: this feature was previously called "Custom Prompts" and then briefly "Skills". It is now called Commands. The current [Skills](../features/skills.md) feature is something different — see below.*
 
