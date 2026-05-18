@@ -30,6 +30,7 @@ import com.devoxx.genie.ui.compose.model.BlogPostUi
 import com.devoxx.genie.ui.compose.model.CustomPromptUi
 import com.devoxx.genie.ui.compose.model.FEATURES
 import com.devoxx.genie.ui.compose.model.FeatureDoc
+import com.devoxx.genie.ui.compose.model.SkillUi
 import com.devoxx.genie.ui.compose.theme.*
 import com.devoxx.genie.ui.compose.util.fireTrackingPixel
 import com.intellij.ide.BrowserUtil
@@ -41,6 +42,7 @@ import java.util.ResourceBundle
 fun WelcomeScreen(
     resourceBundle: ResourceBundle,
     customPrompts: List<CustomPromptUi>,
+    skills: List<SkillUi> = emptyList(),
     blogPosts: List<BlogPostUi> = emptyList(),
     onCustomPromptClick: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -102,6 +104,15 @@ fun WelcomeScreen(
         FeatureChipGrid()
 
         Spacer(Modifier.height(20.dp))
+
+        // Active Skills section (issue #1040). Only rendered when at least one skill is
+        // enabled — keeps the welcome page tidy for users who don't use skills.
+        if (skills.isNotEmpty()) {
+            SectionHeader("Active Skills")
+            Spacer(Modifier.height(8.dp))
+            SkillsList(skills)
+            Spacer(Modifier.height(20.dp))
+        }
 
         // Commands section
         if (customPrompts.isNotEmpty()) {
@@ -282,6 +293,61 @@ private fun CommandsList(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkillsList(skills: List<SkillUi>) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val cardBg = colors.surface.blendWith(colors.onSurface, 0.04f)
+    val cardBorder = colors.surface.blendWith(colors.onSurface, 0.12f)
+    val shape = RoundedCornerShape(8.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(cardBg, shape)
+            .border(1.dp, cardBorder, shape)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        skills.forEach { skill ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BasicText(
+                    text = skill.name,
+                    style = typography.body2.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = DevoxxOrange,
+                    ),
+                )
+                Spacer(Modifier.width(8.dp))
+                BasicText(
+                    text = skill.description,
+                    style = typography.body2.copy(color = colors.textSecondary),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (skill.source.isNotEmpty()) {
+                    Spacer(Modifier.width(8.dp))
+                    BasicText(
+                        text = skill.source,
+                        style = typography.caption.copy(
+                            fontSize = 10.sp,
+                            color = colors.textSecondary.copy(alpha = 0.7f),
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
