@@ -388,7 +388,9 @@ public class ChatMemoryManager {
                 if (skillsFragment != null && !skillsFragment.isEmpty()) {
                     systemPrompt += "\nYou have access to the following skills:\n"
                             + skillsFragment
-                            + "\nWhen the user's request relates to one of these skills, activate it first using the `activate_skill` tool before proceeding.\n";
+                            + "\nWhen the user's request relates to one of these skills, activate it first using the `"
+                            + SkillRegistry.ACTIVATE_SKILL_TOOL_NAME
+                            + "` tool before proceeding.\n";
                 }
             } catch (Exception e) {
                 log.warn("Failed to append Skills system-prompt fragment", e);

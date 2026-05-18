@@ -59,23 +59,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * is migrated into {@link #commands} and then cleared so it is not re-serialized.
      *
      * <p>Do not reference from new code — use {@link #getCommands()} / {@link #setCommands}.
-     * No Lombok-generated getter is intentional so that IntelliJ's {@code XmlSerializer}
-     * does not emit a {@code <option name="customPrompts"/>} element on save.</p>
+     * Lombok-generated accessors are intentional: IntelliJ's {@code XmlSerializer} requires
+     * a matching getter/setter pair to recognise the {@code customPrompts} option element
+     * in legacy XML. The field defaults to {@code null} and is set back to {@code null} once
+     * its contents have been migrated, so serialization (which skips null bean properties)
+     * will not re-emit the legacy element.</p>
      */
     @Deprecated
-    @lombok.Getter(lombok.AccessLevel.NONE)
-    @lombok.Setter(lombok.AccessLevel.NONE)
     private List<Command> customPrompts;
-
-    /**
-     * Legacy setter used by IntelliJ's XML deserializer to load pre-#1040 state.
-     * Stores values into the legacy field; {@link #migrateLegacyCustomPrompts()} then
-     * folds them into {@link #commands} on {@link #loadState}.
-     */
-    @Deprecated
-    public void setCustomPrompts(List<Command> customPrompts) {
-        this.customPrompts = customPrompts;
-    }
 
     /**
      * Skill names that the user has explicitly disabled in the Skills settings panel.
@@ -403,18 +394,27 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * Migrates legacy {@code customPrompts} XML state (pre-#1040) into the renamed
      * {@link #commands} field. Idempotent and safe to call when there is nothing to migrate.
      *
-     * <p>Reads from the deserialized {@code state} (whose legacy field was populated by
-     * {@link #setCustomPrompts}) because {@link XmlSerializerUtil#copyBean} would skip
-     * the legacy field — it has no public getter.</p>
+     * <p>Lombok-generated accessors on the legacy field let IntelliJ's {@code XmlSerializer}
+     * populate it during {@code loadState}; {@link XmlSerializerUtil#copyBean} then copies
+     * it onto {@code this}. We migrate from {@code this.customPrompts} and clear both the
+     * deserialized {@code state} copy and {@code this} so the legacy element is not
+     * re-emitted on the next save.</p>
      */
     @SuppressWarnings("deprecation")
     private void migrateLegacyCustomPrompts(@NotNull DevoxxGenieStateService state) {
-        if (state.customPrompts != null && !state.customPrompts.isEmpty()) {
-            if (commands == null || commands.isEmpty()) {
-                commands = new ArrayList<>(state.customPrompts);
-            }
+        // After copyBean(state, this), this.customPrompts and this.commands have the same
+        // values as the deserialized state. The presence of legacy data in customPrompts is
+        // the unambiguous signal that we are upgrading from pre-#1040 — the new commands
+        // field could not have been set in that case, even though the constructor would have
+        // pre-populated it with defaults.
+        List<Command> legacy = this.customPrompts != null ? this.customPrompts : state.customPrompts;
+        if (legacy != null && !legacy.isEmpty()) {
+            // Replace whatever's in commands (it can only be the constructor-set defaults at
+            // this point because pre-#1040 XML never contained a <option name="commands">
+            // element) with the legacy values.
+            commands = new ArrayList<>(legacy);
             // Clear so the legacy field does not get re-serialized.
-            customPrompts = null;
+            this.customPrompts = null;
             state.customPrompts = null;
         }
     }

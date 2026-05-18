@@ -45,7 +45,11 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
     public SkillsSettingsComponent(Project project) {
         this.project = project;
         this.registry = SkillRegistry.getInstance(project);
-        reset();
+        // Trigger reset() synchronously to seed the working set; the table is then refreshed
+        // asynchronously from the pooled-thread skills scan to avoid blocking the EDT when
+        // the settings panel is opened.
+        resetWorkingSet();
+        registry.reloadAsync(this::refreshTable);
     }
 
     @Override
@@ -104,8 +108,13 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
 
         JButton reload = new JButton("Reload");
         reload.addActionListener(e -> {
-            registry.reload();
-            tableModel.setEntries(registry.getAllSkills());
+            reload.setEnabled(false);
+            // Off-load disk I/O to a pooled thread; the EDT callback re-enables the button
+            // and refreshes the table from the freshly populated cache.
+            registry.reloadAsync(() -> {
+                refreshTable();
+                reload.setEnabled(true);
+            });
         });
         toolbar.add(reload);
 
@@ -142,15 +151,28 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
 
     public void apply() {
         DevoxxGenieStateService.getInstance().setDisabledSkillNames(new HashSet<>(workingDisabledNames));
+        // Invalidate the derived caches so the next agent prompt picks up the new filter
+        // without forcing a disk re-scan.
+        registry.invalidateDerivedCaches();
     }
 
     public void reset() {
+        resetWorkingSet();
+        // No disk re-scan on reset — the cache already reflects what's on disk; the table just
+        // needs to redraw against the working set.
+        refreshTable();
+    }
+
+    private void resetWorkingSet() {
         workingDisabledNames.clear();
         Set<String> persisted = DevoxxGenieStateService.getInstance().getDisabledSkillNames();
         if (persisted != null) {
             workingDisabledNames.addAll(persisted);
         }
-        tableModel.setEntries(registry.getAllSkills());
+    }
+
+    private void refreshTable() {
+        tableModel.setEntries(registry.peekAllSkills());
     }
 
     private void openFolder(Path dir) {

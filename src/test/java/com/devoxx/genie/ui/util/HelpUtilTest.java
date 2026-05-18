@@ -28,13 +28,13 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetCustomPromptCommands() {
+    void testFormatCommandsHelp() {
         DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
                     .thenReturn(mockState);
 
-            String result = HelpUtil.getCustomPromptCommands();
+            String result = HelpUtil.formatCommandsHelp();
 
             assertThat(result).contains("/test : Test prompt");
             assertThat(result).contains("/explain : Explain this code");
@@ -44,13 +44,13 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetCustomPromptCommandsForWebView() {
+    void testFormatCommandsHelpForWebView() {
         DevoxxGenieStateService mockState = createMockStateService(customPrompts);
         try (MockedStatic<DevoxxGenieStateService> mockedStateService = Mockito.mockStatic(DevoxxGenieStateService.class)) {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
                     .thenReturn(mockState);
 
-            String result = HelpUtil.getCustomPromptCommandsForWebView();
+            String result = HelpUtil.formatCommandsHelpForWebView();
 
             assertThat(result).contains("<li><span class=\"feature-name\">/test</span> : Test prompt</li>");
             assertThat(result).contains("<li><span class=\"feature-name\">/explain</span> : Explain this code</li>");
@@ -60,7 +60,7 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetCustomPromptCommandsForWebView_EmptyList() {
+    void testFormatCommandsHelpForWebView_EmptyList() {
         List<Command> emptyPrompts = new ArrayList<>();
         DevoxxGenieStateService mockState = createMockStateService(emptyPrompts);
 
@@ -68,7 +68,7 @@ class HelpUtilTest {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
                     .thenReturn(mockState);
 
-            String result = HelpUtil.getCustomPromptCommandsForWebView();
+            String result = HelpUtil.formatCommandsHelpForWebView();
 
             assertThat(result).isEmpty();
         }
@@ -151,7 +151,7 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetHelpMessage_WithMultipleCustomPrompts() {
+    void testGetHelpMessage_WithMultipleCommands() {
         List<Command> multiplePrompts = new ArrayList<>();
         multiplePrompts.add(new Command("custom1", "Custom prompt 1"));
         multiplePrompts.add(new Command("custom2", "Custom prompt 2"));
@@ -171,7 +171,7 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetCustomPromptCommands_WithSpecialCharacters() {
+    void testFormatCommandsHelp_WithSpecialCharacters() {
         List<Command> specialPrompts = new ArrayList<>();
         specialPrompts.add(new Command("test:with:colons", "Prompt with : colons"));
         specialPrompts.add(new Command("test-with-dashes", "Prompt with - dashes"));
@@ -181,7 +181,7 @@ class HelpUtilTest {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
                     .thenReturn(mockState);
 
-            String result = HelpUtil.getCustomPromptCommands();
+            String result = HelpUtil.formatCommandsHelp();
 
             assertThat(result).contains("/test:with:colons : Prompt with : colons");
             assertThat(result).contains("/test-with-dashes : Prompt with - dashes");
@@ -189,7 +189,7 @@ class HelpUtilTest {
     }
 
     @Test
-    void testGetCustomPromptCommandsForWebView_WithSpecialCharacters() {
+    void testFormatCommandsHelpForWebView_WithSpecialCharacters() {
         List<Command> specialPrompts = new ArrayList<>();
         specialPrompts.add(new Command("test:with:colons", "Prompt with : colons"));
         specialPrompts.add(new Command("test-with-dashes", "Prompt with - dashes"));
@@ -199,7 +199,7 @@ class HelpUtilTest {
             mockedStateService.when(DevoxxGenieStateService::getInstance)
                     .thenReturn(mockState);
 
-            String result = HelpUtil.getCustomPromptCommandsForWebView();
+            String result = HelpUtil.formatCommandsHelpForWebView();
 
             assertThat(result).contains("<span class=\"feature-name\">/test:with:colons</span>");
             assertThat(result).contains("<span class=\"feature-name\">/test-with-dashes</span>");

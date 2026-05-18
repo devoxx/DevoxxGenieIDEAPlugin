@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
@@ -176,7 +178,7 @@ class SkillRegistryTest {
 
         writeSkill(userSkills, "added-later", "Added after first scan");
 
-        registry.reload();
+        registry.reloadBlocking();
         assertThat(registry.getAllSkills()).hasSize(1);
         assertThat(registry.getAllSkills().get(0).name()).isEqualTo("added-later");
     }
@@ -194,6 +196,69 @@ class SkillRegistryTest {
 
         assertThat(registry.getAllSkills()).hasSize(1);
         assertThat(registry.getAllSkills().get(0).name()).isEqualTo("real-skill");
+    }
+
+    @Test
+    void buildSkillsResultIsCachedAcrossCalls() throws IOException {
+        Path userSkills = userHome.resolve(".devoxxgenie/skills");
+        writeSkill(userSkills, "cached-skill", "only-built-once");
+
+        SkillRegistry registry = new SkillRegistry(project, userSkills);
+
+        // Two consecutive lookups must return the exact same cached Skills wrapper.
+        Skills first = registry.buildSkills();
+        Skills second = registry.buildSkills();
+        assertThat(first).isNotNull();
+        assertThat(second).isSameAs(first);
+
+        // The system-prompt fragment is also cached: it should be the same string returned
+        // by Skills.formatAvailableSkills() of that cached instance.
+        String fragment1 = registry.getSystemPromptFragment();
+        String fragment2 = registry.getSystemPromptFragment();
+        assertThat(fragment1).isNotEmpty();
+        assertThat(fragment2).isEqualTo(fragment1);
+    }
+
+    @Test
+    void invalidateDerivedCachesForcesRebuildOfSkillsButKeepsDiskCache() throws IOException {
+        Path userSkills = userHome.resolve(".devoxxgenie/skills");
+        writeSkill(userSkills, "reusable", "reusable skill");
+
+        SkillRegistry registry = new SkillRegistry(project, userSkills);
+
+        Skills before = registry.buildSkills();
+        registry.invalidateDerivedCaches();
+        Skills after = registry.buildSkills();
+
+        assertThat(before).isNotNull();
+        assertThat(after).isNotNull();
+        assertThat(after).isNotSameAs(before);
+        // The detected skills list is unaffected (we did not re-scan disk).
+        assertThat(registry.peekAllSkills()).hasSize(1);
+    }
+
+    @Test
+    void reloadAsyncRunsOffEdtAndInvokesCallback() throws Exception {
+        Path userSkills = userHome.resolve(".devoxxgenie/skills");
+        writeSkill(userSkills, "async-skill", "loaded asynchronously");
+
+        SkillRegistry registry = new SkillRegistry(project, userSkills);
+
+        CountDownLatch done = new CountDownLatch(1);
+        registry.reloadAsync(done::countDown);
+        assertThat(done.await(5, TimeUnit.SECONDS))
+                .as("reloadAsync callback should have fired within 5s")
+                .isTrue();
+        assertThat(registry.peekAllSkills())
+                .extracting(SkillRegistry.SkillEntry::name)
+                .containsExactly("async-skill");
+    }
+
+    @Test
+    void peekAllSkillsReturnsEmptyBeforeFirstLoad() {
+        SkillRegistry registry = new SkillRegistry(project, userHome.resolve(".devoxxgenie/skills"));
+        // No ensureLoaded() or reload yet; peek should return whatever is currently cached.
+        assertThat(registry.peekAllSkills()).isEmpty();
     }
 
     // --- helpers ---------------------------------------------------------
