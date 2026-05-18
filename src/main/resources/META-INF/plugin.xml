@@ -60,7 +60,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                                                <h2>v0.0.0</h2>
+                                                        <h2>v1.5.0</h2>
+        <UL>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                    <LI>fix: destroy process tree in AcpTransport.close() to prevent thread leak</LI>
+                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                </UL>
+<h2>v0.0.0</h2>
         <UL>
                     <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
                     <LI>feat: add shell env file and shell selector for run_command tool</LI>
