@@ -40,6 +40,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Unified log panel that merges Agent and MCP log streams with source-based filtering.
@@ -51,10 +52,17 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
     private static final int BATCH_SIZE = 20;
     /**
-     * Maximum characters shown in the single-line preview of a tool argument/result. The full
-     * content remains available via tooltip (hover) and the double-click editor view.
+     * Maximum characters per individual line shown in the panel preview. Very long single lines
+     * are truncated with an ellipsis; the full content remains available via tooltip and the
+     * double-click editor view.
      */
-    private static final int INLINE_PREVIEW_MAX_LEN = 500;
+    private static final int INLINE_PREVIEW_MAX_LINE_LEN = 500;
+    /**
+     * Maximum number of lines rendered in a single panel row. Multi-line tool output beyond
+     * this cap is collapsed into a "(N more lines)" hint so a giant {@code ps -ef} doesn't eat
+     * the whole panel.
+     */
+    private static final int INLINE_PREVIEW_MAX_LINES = 10;
 
     /** Maximum characters shown in the hover tooltip. Beyond this, content is truncated with an ellipsis. */
     private static final int TOOLTIP_MAX_LEN = 8_000;
@@ -69,6 +77,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         LogSource source,
         AgentType agentType,  // null for MCP entries
         String message,
+        String clipboardMessage,
         String fullContent
     ) {
         @Override
@@ -99,7 +108,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         };
         logList.setCellRenderer(new CombinedLogEntryRenderer());
         logList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        logList.setFixedCellHeight(24);
+        // No fixed cell height — multi-line entries grow to fit their content.
         logList.setVisibleRowCount(20);
 
         logList.addMouseListener(new MouseAdapter() {
@@ -246,13 +255,15 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         }
 
         if (message.getSource() == ActivitySource.AGENT) {
-            String displayText = formatAgentActivityMessage(message);
+            String displayText = formatAgentActivityMessage(message, AgentMcpLogPanel::formatForRow);
+            String clipboardText = formatAgentActivityMessage(message, AgentMcpLogPanel::formatForClipboard);
             String fullContent = buildAgentActivityFullContent(message);
             LogEntry entry = new LogEntry(
                     LocalDateTime.now().format(TIME_FORMATTER),
                     LogSource.AGENT,
                     message.getAgentType(),
                     displayText,
+                    clipboardText,
                     fullContent
             );
             addToPending(entry);
@@ -262,6 +273,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     LocalDateTime.now().format(TIME_FORMATTER),
                     LogSource.MCP,
                     null,
+                    content,
                     content,
                     content
             );
@@ -288,6 +300,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 LocalDateTime.now().format(TIME_FORMATTER),
                 LogSource.MCP,
                 null,
+                content,
                 content,
                 content
         );
@@ -339,7 +352,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         }
     }
 
-    static @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message) {
+    static @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message,
+                                                      @NotNull Function<String, String> contentFormatter) {
         StringBuilder sb = new StringBuilder();
         if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE) {
             sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
@@ -348,11 +362,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             sb.append("[").append(message.getSubAgentId()).append("] ");
         }
         switch (message.getAgentType()) {
-            case TOOL_REQUEST:    formatToolRequest(sb, message);    break;
-            case TOOL_RESPONSE:   formatToolResponse(sb, message);   break;
+            case TOOL_REQUEST:    formatToolRequest(sb, message, contentFormatter);    break;
+            case TOOL_RESPONSE:   formatToolResponse(sb, message, contentFormatter);   break;
             case TOOL_ERROR:
                 sb.append("✖ ").append(message.getToolName());
-                if (message.getResult() != null) sb.append(" → ").append(flattenForRow(message.getResult()));
+                if (message.getResult() != null) sb.append(" → ").append(contentFormatter.apply(message.getResult()));
                 break;
             case LOOP_LIMIT:
                 sb.append("⚠ LOOP LIMIT REACHED (").append(message.getMaxCalls()).append(" calls)");
@@ -366,7 +380,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case APPROVAL_DENIED:
                 sb.append("✖ Approval denied for ").append(message.getToolName());
                 break;
-            case INTERMEDIATE_RESPONSE: formatIntermediateResponse(sb, message); break;
+            case INTERMEDIATE_RESPONSE: formatIntermediateResponse(sb, message, contentFormatter); break;
             case SUB_AGENT_STARTED:
                 sb.append("⬇ Sub-agent started: ").append(message.getSubAgentId());
                 break;
@@ -375,76 +389,99 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 break;
             case SUB_AGENT_ERROR:
                 sb.append("✖ Sub-agent error: ").append(message.getSubAgentId());
-                if (message.getResult() != null) sb.append(" → ").append(flattenForRow(message.getResult()));
+                if (message.getResult() != null) sb.append(" → ").append(contentFormatter.apply(message.getResult()));
                 break;
         }
         return sb.toString();
     }
 
-    private static void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message,
+                                          @NotNull Function<String, String> contentFormatter) {
         sb.append("▶ ").append(message.getToolName());
         if (message.getArguments() != null) {
-            sb.append(" ← ").append(flattenForRow(message.getArguments()));
+            sb.append(" ← ").append(contentFormatter.apply(message.getArguments()));
         }
     }
 
-    private static void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatToolResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message,
+                                           @NotNull Function<String, String> contentFormatter) {
         sb.append("✔ ").append(message.getToolName());
         if (message.getResult() != null) {
-            sb.append(" → ").append(flattenForRow(message.getResult()));
+            sb.append(" → ").append(contentFormatter.apply(message.getResult()));
         }
     }
 
-    private static void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message) {
+    private static void formatIntermediateResponse(@NotNull StringBuilder sb, @NotNull ActivityMessage message,
+                                                   @NotNull Function<String, String> contentFormatter) {
         sb.append("\uD83D\uDCAC ");
         if (message.getResult() != null) {
-            sb.append(flattenForRow(message.getResult()));
+            sb.append(contentFormatter.apply(message.getResult()));
         } else {
             sb.append("LLM intermediate response");
         }
     }
 
     /**
-     * Compresses a multi-line tool result/argument into a one-line preview suitable for the
-     * fixed-height list row, while still hinting at the structure of the full content.
-     * <ul>
-     *   <li>Newlines are replaced with a visible "⏎ " separator so the user can see line
-     *       boundaries instead of one long run-together string.</li>
-     *   <li>Long content is truncated with an ellipsis and a "(N lines)" suffix so the user
-     *       knows there's more to see (double-click opens the full content).</li>
-     * </ul>
+     * Formats a tool argument/result for the multi-line panel preview. Each input line maps to
+     * an output line (real {@code \n} separators) so the renderer can render rows that grow
+     * vertically. Each line is truncated to {@link #INLINE_PREVIEW_MAX_LINE_LEN} characters and
+     * the overall block is capped at {@link #INLINE_PREVIEW_MAX_LINES} lines with a "(N more
+     * lines)" hint; the full content remains available via tooltip and the double-click editor.
      */
-    static @NotNull String flattenForRow(@NotNull String text) {
-        return flattenForRow(text, INLINE_PREVIEW_MAX_LEN);
+    static @NotNull String formatForRow(@NotNull String text) {
+        return formatForRow(text, INLINE_PREVIEW_MAX_LINE_LEN, INLINE_PREVIEW_MAX_LINES);
     }
 
-    static @NotNull String flattenForRow(@NotNull String text, int maxLen) {
-        // Normalise line endings, then split.
-        String[] lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
-        // Drop trailing empty lines that come from final newline(s) in the result, so e.g.
-        // "line1\n\n" is reported as a single-line result rather than "(2 lines)".
-        int effectiveLineCount = lines.length;
-        while (effectiveLineCount > 0 && lines[effectiveLineCount - 1].isEmpty()) {
-            effectiveLineCount--;
-        }
+    static @NotNull String formatForRow(@NotNull String text, int maxLineLen, int maxLines) {
+        String[] lines = splitLines(text);
+        int total = effectiveLineCount(lines);
+        if (total == 0) return "";
 
-        String joined;
-        if (effectiveLineCount <= 1) {
-            joined = effectiveLineCount == 0 ? "" : lines[0];
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < effectiveLineCount; i++) {
-                if (i > 0) sb.append(" ⏎ ");
-                sb.append(lines[i]);
+        int shown = Math.min(total, maxLines);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < shown; i++) {
+            if (i > 0) sb.append('\n');
+            String line = lines[i];
+            if (line.length() > maxLineLen) {
+                sb.append(line, 0, maxLineLen).append('…');
+            } else {
+                sb.append(line);
             }
-            joined = sb.toString();
         }
+        if (total > shown) {
+            sb.append('\n').append("… (").append(total - shown).append(" more lines)");
+        }
+        return sb.toString();
+    }
 
-        String truncated = joined.length() > maxLen ? joined.substring(0, maxLen) + "…" : joined;
-        if (effectiveLineCount > 1) {
-            return truncated + " (" + effectiveLineCount + " lines)";
+    /**
+     * Formats a tool argument/result for the copy-to-clipboard action. Single-line content
+     * stays on the same line as its prefix (e.g. {@code → ok}). Multi-line content is moved
+     * onto subsequent indented lines so newlines are preserved verbatim without losing the
+     * visual link to the entry header.
+     */
+    static @NotNull String formatForClipboard(@NotNull String text) {
+        String[] lines = splitLines(text);
+        int total = effectiveLineCount(lines);
+        if (total == 0) return "";
+        if (total == 1) return lines[0];
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < total; i++) {
+            sb.append('\n').append("    ").append(lines[i]);
         }
-        return truncated;
+        return sb.toString();
+    }
+
+    private static String[] splitLines(@NotNull String text) {
+        return text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+    }
+
+    private static int effectiveLineCount(String[] lines) {
+        int n = lines.length;
+        // Drop all trailing empty lines from final newline(s), so e.g. "line1\n\n" is reported
+        // as a single-line result rather than "(2 lines)".
+        while (n > 0 && lines[n - 1].isEmpty()) n--;
+        return n;
     }
 
     private @NotNull String buildAgentActivityFullContent(@NotNull ActivityMessage message) {
@@ -523,7 +560,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         StringBuilder sb = new StringBuilder();
         for (LogEntry entry : logsToExport) {
             sb.append(entry.timestamp()).append(" [").append(entry.source()).append("] ")
-              .append(entry.message()).append("\n");
+              .append(entry.clipboardMessage()).append("\n");
         }
         if (sb.isEmpty()) {
             NotificationUtil.sendNotification(project, "No logs to copy.");
@@ -617,7 +654,9 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             if (value instanceof LogEntry entry && !isSelected) {
                 String sourceTag = entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ";
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
-                label.setText(entry.timestamp() + " " + badge + entry.message());
+                String plain = entry.timestamp() + " " + badge + entry.message();
+                label.setText(toHtmlRow(plain));
+                label.setVerticalAlignment(SwingConstants.TOP);
                 // Tooltip shows the full (multi-line) result so users can hover instead of double-clicking.
                 String fc = entry.fullContent();
                 label.setToolTipText(fc != null ? toHtmlTooltip(fc) : null);
@@ -627,6 +666,15 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 }
             }
             return label;
+        }
+
+        private @NotNull String toHtmlRow(@NotNull String text) {
+            String escaped = text
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\n", "<br>");
+            return "<html><pre style=\"font-family:monospace;margin:0;padding:0\">" + escaped + "</pre></html>";
         }
 
         private Color resolveEntryColor(LogEntry entry) {
