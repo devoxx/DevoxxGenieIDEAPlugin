@@ -1,6 +1,25 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [1.4.5] - $(date +%Y-%m-%d)
+
+### Added
+- feat: Add copy button to user prompt bubble (#1024) (#1037)
+- feat: add shell env file and shell selector for run_command tool (#1036)
+- Add task-211: persistent semantic conversation memory backed by ChromaDB (#1028)
+
+### Fixed
+- fix: surface multi-line run_command output in agent log preview (#1038)
+- fix: support CJK characters in chat input field (#1034) (#1035)
+- fix: destroy process tree in AcpTransport.close() to prevent thread leak (#1031)
+- fix: revert Compose/Kotlin ecosystem bump that broke the UI (#1030)
+
+### Dependencies
+
+### Contributors
+- @app/dependabot
+- @knekrasov
+- @stephanj
 ## [1.4.4] - 2026-05-14
 
 ### Added
