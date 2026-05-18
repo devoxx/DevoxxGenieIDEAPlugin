@@ -41,6 +41,8 @@ exclude = [
   "https://platform\\.openai\\.com/.*",
   # JetBrains support blocks automated crawlers with 403
   "https://intellij-support\\.jetbrains\\.com/.*",
+  # Intel support blocks automated crawlers with 403
+  "https://www\\.intel\\.com/.*",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)
