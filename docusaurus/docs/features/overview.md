@@ -76,13 +76,13 @@ Connect to a wide range of LLM providers:
 | Project Context | ✅ | ✅ | ✅ | ✅ | ✅ |
 | MCP Support | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Commands | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Skills | ✅* | ✅ | ✅ | ✅ | ✅ |
+| Skills | ✅† | ✅ | ✅ | ✅ | ✅ |
 | Web Search | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Multimodal | Varies** | GPT-4V+ | Claude 3+ | Gemini Pro+ | Varies |
 
 \* Ollama or LM Studio with FIM-capable models (e.g., starcoder2, qwen2.5-coder)
 
-\* Skills require a tool-capable LLM (most modern cloud models qualify; for local models pick one that supports tool/function calling such as Qwen2.5-Coder or Llama 3.1+)
+† Skills require a tool-calling-capable LLM and Agent mode enabled.
 
 \*\*Depends on the model you're using locally (e.g., LLaVA supports images)
 
