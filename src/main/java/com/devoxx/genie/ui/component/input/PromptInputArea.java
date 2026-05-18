@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.listener.ShortcutChangeListener;
 import com.devoxx.genie.ui.panel.SearchOptionsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.CJKFontUtil;
 import com.devoxx.genie.util.MessageBusUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -248,12 +249,20 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
     /**
      * Apply the IDE Editor font (family + size) to the input field.
      * Falls back to Swing default if EditorColorsManager is unavailable.
+     *
+     * <p>The IDE editor font is typically a monospace font (e.g. JetBrains Mono,
+     * Consolas) that does not contain CJK glyphs, so applying it as-is causes
+     * Chinese / Japanese / Korean input to render as the "tofu" {@code □}
+     * box (see issue #1034). {@link CJKFontUtil#withCJKFallback(Font)} keeps
+     * the editor font when it can render CJK and otherwise derives a fallback
+     * font that can — preserving size and style.
      */
     private void applyEditorFont() {
         EditorColorsManager manager = EditorColorsManager.getInstance();
         if (manager != null) {
             EditorColorsScheme scheme = manager.getGlobalScheme();
-            inputField.setFont(scheme.getFont(null));
+            Font editorFont = scheme.getFont(null);
+            inputField.setFont(CJKFontUtil.withCJKFallback(editorFont));
         }
     }
 
