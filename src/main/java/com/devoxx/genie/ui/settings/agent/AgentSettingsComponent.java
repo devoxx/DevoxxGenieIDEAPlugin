@@ -180,7 +180,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         JPanel shellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         shellRow.add(new JBLabel("Shell (optional):"));
         agentShellField.setToolTipText(
-                "Shell to use for run_command (e.g. bash, zsh, sh). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows).");
+                "Shell to use for run_command (e.g. bash, zsh, sh, fish). Leave blank for default (/bin/bash on Unix, cmd.exe on Windows). Use full path if needed (e.g. /usr/local/bin/fish).");
         shellRow.add(agentShellField);
         addFullWidthRow(contentPanel, gbc, shellRow);
         addHelpText(contentPanel, gbc,

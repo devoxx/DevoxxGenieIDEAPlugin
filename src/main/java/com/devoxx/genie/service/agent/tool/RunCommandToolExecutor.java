@@ -115,7 +115,9 @@ public class RunCommandToolExecutor implements ToolExecutor {
             return command;
         }
         String expanded = expandTilde(shellEnvFile.trim());
-        return "source " + expanded + " && " + command;
+        // Use POSIX '.' (dot) instead of 'source' for portability with /bin/sh (dash on Debian/Ubuntu).
+        // Quote the path and escape embedded double quotes so paths with spaces work.
+        return ". \"" + expanded.replace("\"", "\\\"") + "\" && " + command;
     }
 
     private String expandTilde(String path) {
@@ -146,15 +148,15 @@ public class RunCommandToolExecutor implements ToolExecutor {
         return new ProcessBuilder(shellPath, "-c", command);
     }
 
-    private String resolveShellPath() {
+    String resolveShellPath() {
         if (shell == null || shell.isBlank()) {
             return "/bin/bash";
         }
         String trimmed = shell.trim();
-        if (trimmed.contains("/") || trimmed.contains(File.separator)) {
-            return trimmed;
-        }
-        return "/bin/" + trimmed;
+        // If a path is provided, use it verbatim. Otherwise pass the bare name to
+        // ProcessBuilder and let the OS PATH resolve it (so /usr/bin/fish, /usr/bin/ksh,
+        // and homebrew shells work without manual prefixing).
+        return trimmed;
     }
 
     private File determineWorkingDirectory(String workingDir) {
