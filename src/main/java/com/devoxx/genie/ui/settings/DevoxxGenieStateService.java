@@ -259,6 +259,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer testExecutionTimeoutSeconds = TEST_EXECUTION_DEFAULT_TIMEOUT;
     private String testExecutionCustomCommand = "";
 
+    // Command execution environment settings (issue #1027)
+    private String agentShellEnvFile = "";
+    private String agentShell = "";
+
     // Spec Driven Development settings
     private Boolean specBrowserEnabled = false;
     private String specDirectory = "backlog";

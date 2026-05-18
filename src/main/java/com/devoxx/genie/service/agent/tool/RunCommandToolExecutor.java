@@ -1,11 +1,13 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,6 +26,8 @@ public class RunCommandToolExecutor implements ToolExecutor {
     private final int timeoutSeconds;
     private final int maxOutputLength;
     private final ProcessStarter processStarter;
+    private final String shellEnvFile;
+    private final String shell;
 
     public RunCommandToolExecutor(@NotNull Project project) {
         this(project, DEFAULT_TIMEOUT_SECONDS, DEFAULT_MAX_OUTPUT_LENGTH);
@@ -34,10 +38,39 @@ public class RunCommandToolExecutor implements ToolExecutor {
     }
 
     RunCommandToolExecutor(@NotNull Project project, int timeoutSeconds, int maxOutputLength, ProcessStarter processStarter) {
+        this(project, timeoutSeconds, maxOutputLength, processStarter, readShellEnvFileSetting(), readShellSetting());
+    }
+
+    RunCommandToolExecutor(@NotNull Project project,
+                           int timeoutSeconds,
+                           int maxOutputLength,
+                           @Nullable ProcessStarter processStarter,
+                           @Nullable String shellEnvFile,
+                           @Nullable String shell) {
         this.project = project;
         this.timeoutSeconds = timeoutSeconds;
         this.maxOutputLength = maxOutputLength;
         this.processStarter = processStarter != null ? processStarter : this::createProcess;
+        this.shellEnvFile = shellEnvFile != null ? shellEnvFile : "";
+        this.shell = shell != null ? shell : "";
+    }
+
+    private static String readShellEnvFileSetting() {
+        try {
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+            return state != null && state.getAgentShellEnvFile() != null ? state.getAgentShellEnvFile() : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private static String readShellSetting() {
+        try {
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+            return state != null && state.getAgentShell() != null ? state.getAgentShell() : "";
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Override
@@ -46,7 +79,9 @@ public class RunCommandToolExecutor implements ToolExecutor {
             String command = validateAndGetCommand(request);
             String workingDir = ToolArgumentParser.getString(request.arguments(), "working_dir");
 
-            Process process = processStarter.start(command, workingDir);
+            String effectiveCommand = applyShellEnvFile(command);
+
+            Process process = processStarter.start(effectiveCommand, workingDir);
 
             String output = readProcessOutput(process);
 
@@ -75,6 +110,24 @@ public class RunCommandToolExecutor implements ToolExecutor {
         return command;
     }
 
+    private String applyShellEnvFile(String command) {
+        if (shellEnvFile == null || shellEnvFile.isBlank() || SystemInfo.isWindows) {
+            return command;
+        }
+        String expanded = expandTilde(shellEnvFile.trim());
+        return "source " + expanded + " && " + command;
+    }
+
+    private String expandTilde(String path) {
+        if (path.startsWith("~/")) {
+            return System.getProperty("user.home") + path.substring(1);
+        }
+        if (path.equals("~")) {
+            return System.getProperty("user.home");
+        }
+        return path;
+    }
+
     private Process createProcess(String command, String workingDir) throws IOException {
         ProcessBuilder processBuilder = createProcessBuilder(command);
 
@@ -88,9 +141,20 @@ public class RunCommandToolExecutor implements ToolExecutor {
     private ProcessBuilder createProcessBuilder(String command) {
         if (SystemInfo.isWindows) {
             return new ProcessBuilder("cmd.exe", "/c", command);
-        } else {
-            return new ProcessBuilder("/bin/bash", "-c", command);
         }
+        String shellPath = resolveShellPath();
+        return new ProcessBuilder(shellPath, "-c", command);
+    }
+
+    private String resolveShellPath() {
+        if (shell == null || shell.isBlank()) {
+            return "/bin/bash";
+        }
+        String trimmed = shell.trim();
+        if (trimmed.contains("/") || trimmed.contains(File.separator)) {
+            return trimmed;
+        }
+        return "/bin/" + trimmed;
     }
 
     private File determineWorkingDirectory(String workingDir) {

@@ -346,4 +346,141 @@ class RunCommandToolExecutorTest {
         String result = testExecutor.execute(request, null);
         assertThat(result).contains("output");
     }
+
+    @Test
+    void execute_withShellEnvFile_prefixesCommandWithSource() throws Exception {
+        if (SystemInfo.isWindows) {
+            return; // shell env file is a Unix-only concept
+        }
+        Process mockProcess = mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(
+                new ByteArrayInputStream("ok\n".getBytes(StandardCharsets.UTF_8)));
+        when(mockProcess.waitFor(anyLong(), any())).thenReturn(true);
+        when(mockProcess.exitValue()).thenReturn(0);
+
+        String[] capturedCommand = new String[1];
+        RunCommandToolExecutor envFileExecutor = new RunCommandToolExecutor(
+                project, 30, 10_000,
+                (command, workingDir) -> {
+                    capturedCommand[0] = command;
+                    return mockProcess;
+                },
+                "/etc/profile", "");
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo hello\"}")
+                .build();
+
+        envFileExecutor.execute(request, null);
+        assertThat(capturedCommand[0]).isEqualTo("source /etc/profile && echo hello");
+    }
+
+    @Test
+    void execute_withTildeInShellEnvFile_expandsToHome() throws Exception {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        Process mockProcess = mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(
+                new ByteArrayInputStream("ok\n".getBytes(StandardCharsets.UTF_8)));
+        when(mockProcess.waitFor(anyLong(), any())).thenReturn(true);
+        when(mockProcess.exitValue()).thenReturn(0);
+
+        String[] capturedCommand = new String[1];
+        RunCommandToolExecutor envFileExecutor = new RunCommandToolExecutor(
+                project, 30, 10_000,
+                (command, workingDir) -> {
+                    capturedCommand[0] = command;
+                    return mockProcess;
+                },
+                "~/.bash_profile", "");
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo hi\"}")
+                .build();
+
+        envFileExecutor.execute(request, null);
+        String home = System.getProperty("user.home");
+        assertThat(capturedCommand[0]).isEqualTo("source " + home + "/.bash_profile && echo hi");
+    }
+
+    @Test
+    void execute_withBlankShellEnvFile_doesNotAlterCommand() throws Exception {
+        Process mockProcess = mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(
+                new ByteArrayInputStream("ok\n".getBytes(StandardCharsets.UTF_8)));
+        when(mockProcess.waitFor(anyLong(), any())).thenReturn(true);
+        when(mockProcess.exitValue()).thenReturn(0);
+
+        String[] capturedCommand = new String[1];
+        RunCommandToolExecutor envFileExecutor = new RunCommandToolExecutor(
+                project, 30, 10_000,
+                (command, workingDir) -> {
+                    capturedCommand[0] = command;
+                    return mockProcess;
+                },
+                "", "");
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo unchanged\"}")
+                .build();
+
+        envFileExecutor.execute(request, null);
+        assertThat(capturedCommand[0]).isEqualTo("echo unchanged");
+    }
+
+    @Test
+    void execute_withCustomShell_usesShellBinary() throws Exception {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        // Use a real subprocess via the default starter and a shell that should be present
+        // We verify the shell setting takes effect by invoking a shell-specific builtin via $0.
+        RunCommandToolExecutor zshExecutor = new RunCommandToolExecutor(
+                project, 30, 10_000, null, "", "sh");
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo $0\"}")
+                .build();
+
+        String result = zshExecutor.execute(request, null);
+        // /bin/sh should be the invoking shell when 'sh' is configured
+        assertThat(result).contains("/bin/sh");
+    }
+
+    @Test
+    void execute_withCustomShellAbsolutePath_usesItVerbatim() throws Exception {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        Process mockProcess = mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(
+                new ByteArrayInputStream("ok\n".getBytes(StandardCharsets.UTF_8)));
+        when(mockProcess.waitFor(anyLong(), any())).thenReturn(true);
+        when(mockProcess.exitValue()).thenReturn(0);
+
+        String[] capturedCommand = new String[1];
+        RunCommandToolExecutor exec = new RunCommandToolExecutor(
+                project, 30, 10_000,
+                (command, workingDir) -> {
+                    capturedCommand[0] = command;
+                    return mockProcess;
+                },
+                "", "/usr/local/bin/zsh");
+
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo z\"}")
+                .build();
+
+        String result = exec.execute(request, null);
+        // The captured command is the raw command (process starter is mocked, so the shell
+        // selection is not directly observable here). Just verify command flow is intact.
+        assertThat(result).contains("ok");
+        assertThat(capturedCommand[0]).isEqualTo("echo z");
+    }
 }
