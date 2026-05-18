@@ -60,24 +60,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                                                        <h2>v1.5.0</h2>
+        <h2>v1.5.0</h2>
         <UL>
-                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
-                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
-                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
-                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
-                    <LI>fix: destroy process tree in AcpTransport.close() to prevent thread leak</LI>
-                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
-                </UL>
-<h2>v0.0.0</h2>
-        <UL>
-                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
-                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
-                    <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
-                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
-                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
-                    <LI>fix: destroy process tree in AcpTransport.close() to prevent thread leak</LI>
-                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                    <LI>feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)</LI>
+                    <LI>feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)</LI>
+                    <LI>feat(settings): replace six per-source 'Open folder' buttons with a single button + source dropdown (#1041)</LI>
+                    <LI>feat(skills): scan .claude/skills and .agents/skills alongside .devoxxgenie/skills (#1041)</LI>
+                    <LI>fix: fire onCustomPromptsChanged from SkillsSettingsConfigurable on apply so the welcome page refreshes immediately (#1040)</LI>
+                    <LI>docs: Commands vs Skills blog post, Skills documentation, footnote fixes (#1040)</LI>
+                    <LI>ci: skip claude-review on fork PRs; exclude intel.com from lychee link check</LI>
                 </UL>
 <h2>v1.4.5</h2>
         <UL>

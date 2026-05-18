@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.5.0] - 2026-05-18
+
+### Added
+- feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)
+  - New `Skills` settings tab listing skills detected under `~/.devoxxgenie/skills/`, `<project>/.devoxxgenie/skills/`, `.claude/skills/` and `.agents/skills/`, with enable/disable, source, open-folder and reload actions
+  - `SkillRegistry` project service loads `SKILL.md` definitions; project skills override user skills (with warning)
+  - Skills are wired into the agent tool chain via `AgentToolProviderFactory` and the system prompt fragment is appended by `ChatMemoryManager` when agent mode is on
+  - Legacy `customPrompts` XML state is migrated to `commands` on load (settings tab renamed from `Custom Prompts` to `Commands`)
+- feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)
+- feat(settings): replace six per-source `Open folder` buttons with a single button + source dropdown (#1041)
+- feat(skills): scan `.claude/skills` and `.agents/skills` alongside `.devoxxgenie/skills` (#1041)
+
+### Fixed
+- fix: fire `onCustomPromptsChanged` from `SkillsSettingsConfigurable` on apply so the welcome page refreshes immediately (#1040)
+
+### Docs
+- Add `Commands vs Skills` blog post and screenshot (#1040)
+- Update Commands rename and add Skills documentation (#1040)
+- Fix duplicate footnote markers in `overview.md` (#1040)
+
+### CI
+- ci(claude-review): skip job on fork PRs (OIDC unavailable from forks)
+- ci(lychee): exclude `intel.com` from link check (403 on automated crawlers)
+
+### Contributors
+- @stephanj
+
 ## [1.4.5] - 2026-05-18
 
 ### Added
