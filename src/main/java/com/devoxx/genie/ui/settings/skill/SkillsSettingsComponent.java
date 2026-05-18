@@ -100,27 +100,35 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy++;
         panel.add(description, gbc);
 
-        // Toolbar 1: open-folder buttons (one per supported skill directory). The buttons
-        // wrap onto multiple rows when the panel is narrow.
-        JPanel folderToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        folderToolbar.add(makeOpenFolderButton("Open user .devoxxgenie skills folder",
-                SkillRegistry.Source.USER_DEVOXXGENIE));
-        folderToolbar.add(makeOpenFolderButton("Open user .claude skills folder",
-                SkillRegistry.Source.USER_CLAUDE));
-        folderToolbar.add(makeOpenFolderButton("Open user .agents skills folder",
-                SkillRegistry.Source.USER_AGENTS));
-        folderToolbar.add(makeOpenFolderButton("Open project .devoxxgenie skills folder",
-                SkillRegistry.Source.PROJECT_DEVOXXGENIE));
-        folderToolbar.add(makeOpenFolderButton("Open project .claude skills folder",
-                SkillRegistry.Source.PROJECT_CLAUDE));
-        folderToolbar.add(makeOpenFolderButton("Open project .agents skills folder",
-                SkillRegistry.Source.PROJECT_AGENTS));
-        gbc.gridy++;
-        panel.add(folderToolbar, gbc);
+        // Toolbar: a single "Open Skills Folder" button + dropdown that selects which of the
+        // six skill directories to open, followed by the Reload button on the same row. The
+        // previous layout (six side-by-side buttons in a FlowLayout) overflowed and clipped
+        // off-screen at typical settings-pane widths.
+        JComboBox<SkillRegistry.Source> sourceCombo = buildSourceCombo();
 
-        // Toolbar 2: reload button.
-        JPanel reloadToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton openFolderButton = new JButton("Open Skills Folder");
+        openFolderButton.setToolTipText("Open the selected skill directory (creating it if missing)");
+
+        Runnable updateOpenButtonEnabled = () -> {
+            SkillRegistry.Source selected = (SkillRegistry.Source) sourceCombo.getSelectedItem();
+            openFolderButton.setEnabled(selected != null && registry.directoryFor(selected) != null);
+        };
+        sourceCombo.addActionListener(e -> updateOpenButtonEnabled.run());
+        updateOpenButtonEnabled.run();
+
+        openFolderButton.addActionListener(e -> {
+            SkillRegistry.Source selected = (SkillRegistry.Source) sourceCombo.getSelectedItem();
+            if (selected == null) {
+                return;
+            }
+            Path target = registry.ensureDirectoryExists(selected);
+            if (target != null) {
+                openFolder(target);
+            }
+        });
+
         JButton reload = new JButton("Reload");
+        reload.setToolTipText("Re-scan every skill directory and refresh the table");
         reload.addActionListener(e -> {
             reload.setEnabled(false);
             // Off-load disk I/O to a pooled thread; the EDT callback re-enables the button
@@ -130,10 +138,19 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
                 reload.setEnabled(true);
             });
         });
-        reloadToolbar.add(reload);
+
+        JPanel toolbar = new JPanel();
+        toolbar.setLayout(new BoxLayout(toolbar, BoxLayout.LINE_AXIS));
+        toolbar.add(openFolderButton);
+        toolbar.add(Box.createRigidArea(new Dimension(6, 0)));
+        sourceCombo.setMaximumSize(new Dimension(260, sourceCombo.getPreferredSize().height));
+        sourceCombo.setPreferredSize(new Dimension(240, sourceCombo.getPreferredSize().height));
+        toolbar.add(sourceCombo);
+        toolbar.add(Box.createHorizontalGlue());
+        toolbar.add(reload);
 
         gbc.gridy++;
-        panel.add(reloadToolbar, gbc);
+        panel.add(toolbar, gbc);
 
         // Table of detected skills.
         JBTable table = new JBTable(tableModel);
@@ -201,7 +218,11 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
      * Builds a button that opens the directory backing the given {@link SkillRegistry.Source}.
      * The directory is created on demand if it doesn't yet exist. Buttons that map to
      * project-scoped sources are disabled when the project has no on-disk basePath.
+     *
+     * <p><b>No longer used by the panel</b> &mdash; kept for callers that wire individual
+     * source buttons (e.g. tests). The panel itself now uses a single button + combo.</p>
      */
+    @SuppressWarnings("unused")
     private JButton makeOpenFolderButton(@org.jetbrains.annotations.NotNull String label,
                                          @org.jetbrains.annotations.NotNull SkillRegistry.Source source) {
         JButton button = new JButton(label);
@@ -214,6 +235,50 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
             }
         });
         return button;
+    }
+
+    /**
+     * Builds the source-picker combo. The list is in the same lowest-priority-first order as
+     * the description panel and the {@link SkillRegistry.Source} enum itself. Project-scoped
+     * entries are visually greyed out and rejected on selection when {@code project.basePath}
+     * is unavailable.
+     */
+    private JComboBox<SkillRegistry.Source> buildSourceCombo() {
+        JComboBox<SkillRegistry.Source> combo = new JComboBox<>(SkillRegistry.Source.values());
+        combo.setSelectedItem(SkillRegistry.Source.USER_DEVOXXGENIE);
+
+        // Custom renderer: shows the source label, greys out project entries when the project
+        // has no basePath, and falls back to the default JBR styling otherwise.
+        DefaultListCellRenderer renderer = new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index,
+                        isSelected, cellHasFocus);
+                if (value instanceof SkillRegistry.Source source) {
+                    label.setText(source.label());
+                    boolean unavailable = registry.directoryFor(source) == null;
+                    if (unavailable) {
+                        label.setEnabled(false);
+                        label.setForeground(JBColor.GRAY);
+                    }
+                }
+                return label;
+            }
+        };
+        combo.setRenderer(renderer);
+
+        // Revert any attempt to select an unavailable (greyed-out) source: snap back to the
+        // last available item so the open button stays meaningful.
+        combo.addActionListener(e -> {
+            Object selected = combo.getSelectedItem();
+            if (selected instanceof SkillRegistry.Source source
+                    && registry.directoryFor(source) == null) {
+                combo.setSelectedItem(SkillRegistry.Source.USER_DEVOXXGENIE);
+            }
+        });
+
+        return combo;
     }
 
     /**
