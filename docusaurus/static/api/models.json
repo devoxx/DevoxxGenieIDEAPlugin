@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-05-14",
+  "lastUpdated": "2026-05-19",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -468,6 +468,22 @@
     ],
     "Mistral": [
       {
+        "modelName": "mistral-medium-3.5",
+        "displayName": "Mistral Medium 3.5",
+        "inputCost": 1.5,
+        "outputCost": 7.5,
+        "inputMaxTokens": 262144,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "mistral-small-2603",
+        "displayName": "Mistral Small 4",
+        "inputCost": 0.15,
+        "outputCost": 0.6,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
         "modelName": "mistral-small-latest",
         "displayName": "Mistral Small 3.2",
         "inputCost": 0.2,
@@ -751,22 +767,6 @@
         "displayName": "Grok 4.20 (Non-Reasoning)",
         "inputCost": 1.25,
         "outputCost": 2.50,
-        "inputMaxTokens": 2000000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-4-1-fast-reasoning",
-        "displayName": "Grok 4.1 Fast (Reasoning)",
-        "inputCost": 0.20,
-        "outputCost": 0.50,
-        "inputMaxTokens": 2000000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "grok-4-1-fast-non-reasoning",
-        "displayName": "Grok 4.1 Fast (Non-Reasoning)",
-        "inputCost": 0.20,
-        "outputCost": 0.50,
         "inputMaxTokens": 2000000,
         "apiKeyUsed": true
       },
