@@ -19,6 +19,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Transient;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -99,7 +100,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Local custom OpenAI-compliant LLM fields
     private String customOpenAIUrl = "";
     private String customOpenAIModelName = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("customOpenAIApiKey")
     private String customOpenAIApiKey = "";
 
     // Local LLM Providers
@@ -129,46 +130,76 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
 
-    // LLM API Keys — stored in IntelliJ PasswordSafe via {@link CredentialService}.
-    // The fields below remain only as one-shot landing pads for legacy plaintext XML so
-    // that the credential-migration routine in {@link #loadState} can read the value and
-    // move it to PasswordSafe. After migration each field is wiped and stays empty.
-    // Lombok's generated accessors are disabled; the hand-written ones below delegate to
-    // {@link CredentialService}. Field-level @Transient is intentionally NOT used so that
-    // XmlSerializer still populates the field on first deserialization of legacy XML;
-    // the @Transient annotations are placed on the accessor methods so that subsequent
-    // saves never re-emit the secret.
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    // ============================================================================
+    // LEGACY-XML CREDENTIAL LANDING PADS
+    // ----------------------------------------------------------------------------
+    // The 19 fields below remain ONLY to receive plaintext credentials from
+    // pre-PasswordSafe versions of DevoxxGenieSettingsPlugin.xml during the first
+    // {@link #loadState} call after an upgrade. The migration routine in
+    // {@link #migrateCredentialsToPasswordSafe} reads each field via reflection,
+    // hands the value to {@link CredentialService} (which writes it to IntelliJ's
+    // PasswordSafe), and then wipes the field. After migration the fields stay
+    // empty for the lifetime of the install.
+    //
+    // Why @OptionTag + @Transient (on the hand-written accessors) instead of the
+    // "obvious" approach of leaving fields plain or relying on Lombok-generated
+    // accessors:
+    //
+    // IntelliJ's BeanBinding / XmlSerializer always prefers an accessor pair over
+    // a same-named field when both exist (it deduplicates via accessor name). The
+    // hand-written getters/setters intentionally read from / write to
+    // PasswordSafe, so if BeanBinding picked up that pair as the property binding,
+    // {@code getState()} would call {@code getOpenAIKey()} on save, read the live
+    // secret from PasswordSafe, and serialise it right back into the XML — the
+    // very leak the migration is meant to close.
+    //
+    // The fix has two parts, applied to every credential field:
+    //   1. The hand-written accessors carry @com.intellij.util.xmlb.annotations.Transient
+    //      so BeanBinding rejects them in PropertyCollector#isAcceptableProperty
+    //      and removes them from the property map entirely.
+    //   2. The fields carry @OptionTag(...) (a "store annotation") which forces
+    //      PropertyCollector#doCollectOwnFields to register the *field* even though
+    //      it is private. With the accessor pair gone from the map, the field
+    //      escapes the dedup loop and becomes the sole binding for that property
+    //      name. XmlSerializer then reads & writes the field directly — never
+    //      touching PasswordSafe. Once the field has been wiped post-migration its
+    //      empty value matches the default-bean's empty value and the
+    //      SkipDefaultsSerializationFilter omits it from the XML.
+    //
+    // Lombok @Getter(NONE)/@Setter(NONE) keeps Lombok from auto-generating
+    // accessors that would shadow ours.
+    // ============================================================================
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("openAIKey")
     private String openAIKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("mistralKey")
     private String mistralKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("anthropicKey")
     private String anthropicKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("groqKey")
     private String groqKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("deepInfraKey")
     private String deepInfraKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("geminiKey")
     private String geminiKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("deepSeekKey")
     private String deepSeekKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("openRouterKey")
     private String openRouterKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("grokKey")
     private String grokKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("kimiKey")
     private String kimiKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("glmKey")
     private String glmKey = "";
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("azureOpenAIKey")
     private String azureOpenAIKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("awsAccessKeyId")
     private String awsAccessKeyId = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("awsSecretKey")
     private String awsSecretKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("awsBearerToken")
     private String awsBearerToken = "";
     private String awsProfileName = "";
     private String awsRegion = "";
@@ -180,11 +211,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean tavilySearchEnabled = false;
     private boolean googleSearchEnabled = false;
 
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("googleSearchKey")
     private String googleSearchKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("googleCSIKey")
     private String googleCSIKey = "";
-    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("tavilySearchKey")
     private String tavilySearchKey = "";
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
@@ -627,9 +658,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // ------------------------------------------------------------------
     // Credential accessors — delegate to PasswordSafe via CredentialService.
     // All 19 accessors below replace the Lombok-generated ones that have been
-    // disabled on the corresponding fields. They are marked @Transient so that
-    // XmlSerializer skips them on save (so the secret never ends up in
-    // DevoxxGenieSettingsPlugin.xml again).
+    // disabled on the corresponding fields. They carry
+    // @com.intellij.util.xmlb.annotations.Transient so that BeanBinding rejects
+    // them entirely. XmlSerializer therefore reads/writes only the underlying
+    // private fields (which are forced into the property map via @OptionTag).
+    // See the "LEGACY-XML CREDENTIAL LANDING PADS" comment block above for the
+    // full rationale.
     // ------------------------------------------------------------------
 
     /**
@@ -746,14 +780,17 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * Walks every {@link CredentialKey}, reads the matching legacy field via reflection,
      * and — if non-blank — hands it to {@link CredentialService} (which writes it to
      * PasswordSafe) before wiping the legacy field. Sets {@link #credentialsMigratedV1}
-     * on success and asks IntelliJ to flush state so the now-blank XML hits disk
-     * immediately.
+     * <em>only when every key migrated cleanly</em>; on partial failure the flag stays
+     * {@code false} and the remaining plaintext fields are left in place so the next
+     * IDE startup can retry the migration.
      * <p>
-     * Non-fatal: any per-field failure is logged and skipped; the migration flag is only
-     * raised when the entire pass completes. Safe to call multiple times — calls are
-     * no-ops once the flag is set or when PasswordSafe is unavailable.
+     * The method is {@code synchronized} to be safe against concurrent project-open
+     * calls (the {@link com.devoxx.genie.startup.CredentialMigrationStartupActivity}
+     * fires once per project) and against the in-flight {@link #loadState} that
+     * triggered the first migration attempt. Safe to call multiple times — every call
+     * is a no-op once the flag is set or when PasswordSafe is unavailable.
      */
-    public void migrateCredentialsToPasswordSafe() {
+    public synchronized void migrateCredentialsToPasswordSafe() {
         if (credentialsMigratedV1) {
             return;
         }
@@ -792,13 +829,22 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                 LOG.warn("Failed to migrate credential field '" + key.getSubKey() + "' to PasswordSafe", t);
             }
         }
-        credentialsMigratedV1 = true;
-        try {
-            ApplicationManager.getApplication().saveSettings();
-        } catch (Throwable t) {
-            LOG.warn("Failed to flush settings after credential migration", t);
+        if (failed == 0) {
+            // All keys handled; mark migrated and ask IntelliJ to flush the now-sanitised XML.
+            credentialsMigratedV1 = true;
+            try {
+                ApplicationManager.getApplication().saveSettings();
+            } catch (Throwable t) {
+                LOG.warn("Failed to flush settings after credential migration", t);
+            }
+            LOG.info("Credential migration complete: migrated=" + migrated);
+        } else {
+            // Leave the flag false so the next startup retries. Do NOT call saveSettings():
+            // the un-wiped plaintext fields still hold the values we need on retry, and
+            // saving now would persist the partial state — fine for security but wasteful.
+            LOG.warn("Credential migration partially failed: migrated=" + migrated
+                    + " failed=" + failed + "; will retry on next startup");
         }
-        LOG.info("Credential migration complete: migrated=" + migrated + " failed=" + failed);
     }
 
     private static final Logger LOG = Logger.getInstance(DevoxxGenieStateService.class);
