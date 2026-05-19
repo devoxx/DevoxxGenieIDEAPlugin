@@ -35,7 +35,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
     }
 
     @Override
-    public @NotNull String getCredential(@NotNull CredentialKey key) {
+    public synchronized @NotNull String getCredential(@NotNull CredentialKey key) {
         if (!passwordSafeAvailable) {
             return memoryFallback.getOrDefault(key, "");
         }
@@ -62,7 +62,10 @@ public final class PasswordSafeCredentialService implements CredentialService {
             return;
         }
         try {
-            PasswordSafe.getInstance().set(key.attributes(), new Credentials(CredentialKey.SERVICE_NAME, value));
+            // Use null userName so the lookup key matches CredentialKey.attributes() exactly
+            // (which builds CredentialAttributes with userName=null). Mixing a real user-name
+            // here and null on retrieval breaks the round-trip on some keychain backends.
+            PasswordSafe.getInstance().set(key.attributes(), new Credentials(null, value));
             // Write-through cache so reads after a failed PasswordSafe.get can still return the value
             // within the same JVM lifetime.
             memoryFallback.put(key, value);
