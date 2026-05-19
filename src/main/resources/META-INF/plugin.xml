@@ -585,6 +585,8 @@
                     factoryClass="com.devoxx.genie.ui.window.AgentMcpLogToolWindowFactory"/>
 
         <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
+        <applicationService serviceInterface="com.devoxx.genie.service.credentials.CredentialService"
+                            serviceImplementation="com.devoxx.genie.service.credentials.PasswordSafeCredentialService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryService"/>
@@ -655,6 +657,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
         <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
+        <postStartupActivity implementation="com.devoxx.genie.startup.CredentialMigrationStartupActivity"/>
     </extensions>
 
     <applicationListeners>

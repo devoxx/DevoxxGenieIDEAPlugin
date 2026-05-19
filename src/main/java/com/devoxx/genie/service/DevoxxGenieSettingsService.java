@@ -57,6 +57,14 @@ public interface DevoxxGenieSettingsService {
 
     String getOpenRouterKey();
 
+    String getGrokKey();
+
+    String getKimiKey();
+
+    String getGlmKey();
+
+    String getCustomOpenAIApiKey();
+
     Boolean getIsWebSearchEnabled();
 
     String getGoogleSearchKey();
@@ -152,6 +160,14 @@ public interface DevoxxGenieSettingsService {
     void setDeepSeekKey(String key);
 
     void setOpenRouterKey(String key);
+
+    void setGrokKey(String key);
+
+    void setKimiKey(String key);
+
+    void setGlmKey(String key);
+
+    void setCustomOpenAIApiKey(String key);
 
     void setIsWebSearchEnabled(Boolean flag);
 
