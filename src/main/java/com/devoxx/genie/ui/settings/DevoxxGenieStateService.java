@@ -290,6 +290,19 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean autoInjectSpecContext = true;
     private Integer specTaskRunnerTimeoutMinutes = 10;
 
+    // Docker Agentic Platform (ap) CLI integration
+    /** When false, the Agentic Platform tab is hidden from the DevoxxGenie tool window. */
+    private Boolean apIntegrationEnabled = false;
+    private String apCliPath = "";
+    /**
+     * Stored as {@link com.devoxx.genie.model.ap.ApAuthMode} name.
+     * Default {@code CACHED_LOGIN} sets no env vars and lets the binary use whichever
+     * credentials it finds on its own (TUI-cached tokens, Docker Desktop, …).
+     */
+    private String apAuthMode = "CACHED_LOGIN";
+    private String apAccessToken = "";
+    private String apRefreshToken = "";
+
     // CLI tool runner settings for spec tasks
     private List<CliToolConfig> cliTools = new ArrayList<>();
     private String specRunnerMode = "llm";          // "llm" or "cli"

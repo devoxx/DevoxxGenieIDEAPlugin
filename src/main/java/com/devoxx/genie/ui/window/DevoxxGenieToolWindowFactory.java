@@ -3,10 +3,12 @@ package com.devoxx.genie.ui.window;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.spec.SpecService;
+import com.devoxx.genie.ui.panel.ap.ApBrowserPanel;
 import com.devoxx.genie.ui.panel.spec.SpecBrowserPanel;
 import com.devoxx.genie.ui.panel.spec.SpecKanbanPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.util.DevoxxGenieIconsUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAware;
@@ -37,6 +39,13 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
      */
     static final Key<Boolean> IS_SPEC_CONTENT = Key.create("DevoxxGenie.isSpecContent");
 
+    /**
+     * Marker key for the Docker Agentic Platform tab. Treated like a spec tab by the
+     * chat-cleanup logic (i.e. ignored), but tracked separately so it isn't gated by
+     * the spec/SDD feature flag.
+     */
+    static final Key<Boolean> IS_AP_CONTENT = Key.create("DevoxxGenie.isApContent");
+
     @Override
     public void createToolWindowContent(@NotNull Project project,
                                         @NotNull ToolWindow toolWindow) {
@@ -57,6 +66,9 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
         // Add spec tabs if the feature is enabled
         addSpecTabsIfEnabled(project, toolWindow);
 
+        // Add the Docker Agentic Platform tab if the feature is enabled in settings.
+        addAgenticPlatformTabIfEnabled(project, toolWindow);
+
         // Add "New Chat" and "Settings" actions to the tool window title bar
         toolWindow.setTitleActions(List.of(
                 new NewChatTabAction(project, toolWindow),
@@ -69,8 +81,9 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
             public void contentRemoved(@NotNull ContentManagerEvent event) {
                 Content content = event.getContent();
 
-                // Skip cleanup for spec tabs — they are managed separately
-                if (Boolean.TRUE.equals(content.getUserData(IS_SPEC_CONTENT))) {
+                // Skip cleanup for spec / Agentic Platform tabs — they are managed separately
+                if (Boolean.TRUE.equals(content.getUserData(IS_SPEC_CONTENT))
+                        || Boolean.TRUE.equals(content.getUserData(IS_AP_CONTENT))) {
                     return;
                 }
 
@@ -86,11 +99,14 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
             }
         });
 
-        // Listen for settings changes to dynamically add/remove spec tabs
+        // Listen for settings changes to dynamically add/remove spec + Agentic Platform tabs
         MessageBusConnection settingsConnection = project.getMessageBus().connect(toolWindow.getDisposable());
         settingsConnection.subscribe(AppTopics.SETTINGS_CHANGED_TOPIC,
                 (com.devoxx.genie.ui.listener.SettingsChangeListener) hasKey -> {
-                    SwingUtilities.invokeLater(() -> updateSpecTabs(project, toolWindow));
+                    SwingUtilities.invokeLater(() -> {
+                        updateSpecTabs(project, toolWindow);
+                        updateAgenticPlatformTab(project, toolWindow);
+                    });
                 });
     }
 
@@ -149,7 +165,8 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
     static int getChatTabCount(@NotNull ContentManager cm) {
         int count = 0;
         for (Content c : cm.getContents()) {
-            if (!Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))) {
+            if (!Boolean.TRUE.equals(c.getUserData(IS_SPEC_CONTENT))
+                    && !Boolean.TRUE.equals(c.getUserData(IS_AP_CONTENT))) {
                 count++;
             }
         }
@@ -186,6 +203,56 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
 
         // Register kanban panel for disposal on IDE shutdown
         Disposer.register(toolWindow.getDisposable(), kanbanPanel);
+    }
+
+    /** Adds the Agentic Platform tab if the feature is enabled in settings. */
+    private void addAgenticPlatformTabIfEnabled(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        if (!isAgenticPlatformEnabled()) {
+            return;
+        }
+        ApBrowserPanel apPanel = new ApBrowserPanel(project);
+        Content apContent = ContentFactory.getInstance().createContent(
+                apPanel, "Agentic Platform", false);
+        apContent.setIcon(DevoxxGenieIconsUtil.DockerIcon);
+        // Tool-window content tabs hide their icon unless this opt-in key is set.
+        apContent.putUserData(ToolWindow.SHOW_CONTENT_ICON, Boolean.TRUE);
+        apContent.putUserData(IS_AP_CONTENT, true);
+        apContent.setCloseable(false);
+        apContent.setPinned(true);
+        toolWindow.getContentManager().addContent(apContent);
+    }
+
+    /**
+     * Dynamically adds or removes the Agentic Platform tab when the toggle in settings flips.
+     * Mirrors {@link #updateSpecTabs(Project, ToolWindow)} for the spec tabs.
+     */
+    private void updateAgenticPlatformTab(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        ContentManager contentManager = toolWindow.getContentManager();
+        Content existing = findApContent(contentManager);
+        boolean shouldExist = isAgenticPlatformEnabled();
+
+        if (shouldExist && existing == null) {
+            addAgenticPlatformTabIfEnabled(project, toolWindow);
+        } else if (!shouldExist && existing != null) {
+            // If the user is currently looking at the AP tab, jump them to a chat tab first.
+            Content selected = contentManager.getSelectedContent();
+            if (selected == existing) {
+                Content firstChatTab = findFirstChatTab(contentManager);
+                if (firstChatTab != null) contentManager.setSelectedContent(firstChatTab);
+            }
+            contentManager.removeContent(existing, true);
+        }
+    }
+
+    private static boolean isAgenticPlatformEnabled() {
+        return Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getApIntegrationEnabled());
+    }
+
+    private static @org.jetbrains.annotations.Nullable Content findApContent(@NotNull ContentManager cm) {
+        for (Content c : cm.getContents()) {
+            if (Boolean.TRUE.equals(c.getUserData(IS_AP_CONTENT))) return c;
+        }
+        return null;
     }
 
     /**

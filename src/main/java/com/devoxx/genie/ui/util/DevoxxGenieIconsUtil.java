@@ -31,6 +31,7 @@ public final class DevoxxGenieIconsUtil {
     public static final Icon HammerIcon = load("/icons/hammer.svg");
     public static final Icon AgentIcon = load("/icons/agent.svg");
     public static final Icon RunParallelIcon = load("/icons/runParallel.svg");
+    public static final Icon DockerIcon = load("/icons/docker.svg");
 
     private DevoxxGenieIconsUtil() {
     }

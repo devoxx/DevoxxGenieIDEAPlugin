@@ -11,8 +11,11 @@ import com.devoxx.genie.ui.mcp.MCPToolsManager;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
+import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.ui.component.button.AddFilesToContextButton;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.devoxx.genie.ui.component.TokenUsageBar;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.GlowingListener;
@@ -24,7 +27,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -32,8 +34,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import static com.devoxx.genie.model.Constant.*;
@@ -48,7 +48,7 @@ public class ActionButtonsPanel extends JPanel
     @Getter
     private final transient EditorFileButtonManager editorFileButtonManager;
 
-    private JButton addFileBtn;
+    private AddFilesToContextButton addFileBtn;
     private JButton submitBtn;
     private JButton addProjectBtn;
     private JButton calcTokenCostBtn;
@@ -122,9 +122,32 @@ public class ActionButtonsPanel extends JPanel
 
     private void createButtons() {
         submitBtn = createActionButton(SubmitIcon, SUBMIT_PROMPT_TOOLTIP, this::onSubmitPrompt);
-        addFileBtn = createActionButton(AddFileIcon, ADD_FILES_TO_CONTEXT_TOOLTIP, this::selectFilesForPromptContext);
+        addFileBtn = new AddFilesToContextButton(project, this::addFileToConversationContext, this::showFilePickerPopup);
         addProjectBtn = createActionButton(AddProjectIcon, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT, this::handleProjectContext);
         calcTokenCostBtn = createActionButton(CalculateIcon, CALCULATE_TOKEN_COST_TOOLTIP, e -> controller.calculateTokensAndCost());
+    }
+
+    /** Adds a picked file to the chat panel's persistent context for the active tab. */
+    private void addFileToConversationContext(@NotNull VirtualFile file) {
+        FileListManager fileListManager = FileListManager.getInstance();
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
+        if (!fileListManager.contains(project, tabId, file)) {
+            fileListManager.addFile(project, tabId, file);
+        }
+    }
+
+    /**
+     * Custom popup positioning that the chat panel has always used: the picker hovers
+     * just above the prompt input, spanning the tool window's width, anchored at the
+     * submit button. Passed to the reusable {@link AddFilesToContextButton} so the AP
+     * panel can use the default (showUnderneathOf) instead.
+     */
+    private void showFilePickerPopup(@NotNull JBPopup popup,
+                                     @NotNull AddFilesToContextButton button) {
+        new ContextPopupMenu().show(submitBtn,
+                popup,
+                devoxxGenieToolWindowContent.getContentPanel().getSize().width,
+                promptInputArea.getLocationOnScreen().y);
     }
 
     private @NotNull JPanel createButtonPanel() {
@@ -177,44 +200,11 @@ public class ActionButtonsPanel extends JPanel
     }
 
     /**
-     * Add files to the prompt context.
+     * Add files to the prompt context. Public so external callbacks (drag-and-drop on the
+     * prompt input area) can trigger the same picker the button click does.
      */
     public void selectFilesForPromptContext() {
-        selectFilesForPromptContext(null);
-    }
-    
-    /**
-     * Add files to the prompt context.
-     */
-    private void selectFilesForPromptContext(ActionEvent e) {
-        java.util.List<VirtualFile> openFiles = editorFileButtonManager.getOpenFiles();
-        List<VirtualFile> sortedFiles = new ArrayList<>(openFiles);
-        sortedFiles.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
-
-        JPanel fileSelectionPanel = FileSelectionPanelFactory.createPanel(project, sortedFiles);
-        JBPopup popup = JBPopupFactory.getInstance()
-                .createComponentPopupBuilder(fileSelectionPanel, null)
-                .setTitle(FILTER_AND_DOUBLE_CLICK_TO_ADD_TO_PROMPT_CONTEXT)
-                .setRequestFocus(true)
-                .setResizable(true)
-                .setMovable(false)
-                .setMinSize(new Dimension(300, 350))
-                .createPopup();
-
-        if (addFileBtn.isShowing()) {
-            new ContextPopupMenu().show(submitBtn,
-                    popup,
-                    devoxxGenieToolWindowContent.getContentPanel().getSize().width,
-                    promptInputArea.getLocationOnScreen().y);
-                    
-            // Focus the filter field after the popup is shown
-            SwingUtilities.invokeLater(() -> {
-                Component focusableComponent = findFocusableComponent(fileSelectionPanel);
-                if (focusableComponent != null) {
-                    focusableComponent.requestFocusInWindow();
-                }
-            });
-        }
+        addFileBtn.openPicker();
     }
 
     /**
@@ -407,27 +397,6 @@ public class ActionButtonsPanel extends JPanel
     @Override
     public void onTokenCalculationComplete(String message) {
         NotificationUtil.sendNotification(project, message);
-    }
-    
-    /**
-     * Find the first focusable component (text field) in the panel
-     *
-     * @param panel the panel to search in
-     * @return the first focusable text field found, or null if none found
-     */
-    private Component findFocusableComponent(Container panel) {
-        for (Component component : panel.getComponents()) {
-            if (component instanceof JTextField && component.isFocusable()) {
-                return component;
-            }
-            if (component instanceof Container container) {
-                Component found = findFocusableComponent(container);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        return null;
     }
     
     /**

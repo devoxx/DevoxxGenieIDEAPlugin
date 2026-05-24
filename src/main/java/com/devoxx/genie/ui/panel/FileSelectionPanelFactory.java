@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class FileSelectionPanelFactory implements DumbAware {
 
@@ -39,8 +40,18 @@ public class FileSelectionPanelFactory implements DumbAware {
     }
 
     public static @NotNull JPanel createPanel(Project project, List<VirtualFile> openFiles) {
+        return createPanel(project, openFiles, file -> addToFileListManager(project, file));
+    }
+
+    /**
+     * Variant for callers that need to handle the selected file themselves (e.g. inserting its
+     * path into a prompt text area) instead of registering it with {@link FileListManager}.
+     */
+    public static @NotNull JPanel createPanel(Project project,
+                                              List<VirtualFile> openFiles,
+                                              @NotNull Consumer<VirtualFile> onSelected) {
         DefaultListModel<VirtualFile> listModel = new DefaultListModel<>();
-        JBList<VirtualFile> resultList = createResultList(project, listModel);
+        JBList<VirtualFile> resultList = createResultList(project, listModel, onSelected);
         JBTextField filterField = createFilterField(project, listModel, resultList, openFiles);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -62,7 +73,7 @@ public class FileSelectionPanelFactory implements DumbAware {
         }
 
         // Setup keyboard navigation between filter field and result list
-        setupKeyboardNavigation(filterField, resultList, project);
+        setupKeyboardNavigation(filterField, resultList, onSelected);
 
         return mainPanel;
     }
@@ -74,12 +85,14 @@ public class FileSelectionPanelFactory implements DumbAware {
      * @param listModel the list model
      * @return the list
      */
-    private static @NotNull JBList<VirtualFile> createResultList(Project project, DefaultListModel<VirtualFile> listModel) {
+    private static @NotNull JBList<VirtualFile> createResultList(Project project,
+                                                                  DefaultListModel<VirtualFile> listModel,
+                                                                  @NotNull Consumer<VirtualFile> onSelected) {
         JBList<VirtualFile> resultList = new JBList<>(listModel);
         resultList.setCellRenderer(new FileListCellRenderer(project));
         resultList.setVisibleRowCount(10); // Show 10 rows by default
 
-        addMouseListenerToResultList(project, resultList);
+        addMouseListenerToResultList(resultList, onSelected);
         return resultList;
     }
 
@@ -237,65 +250,69 @@ public class FileSelectionPanelFactory implements DumbAware {
         }
     }
 
-    /**
-     * Add a mouse listener to the result list
-     *
-     * @param project the project
-     * @param resultList the result list
-     */
-    private static void addMouseListenerToResultList(Project project, @NotNull JBList<VirtualFile> resultList) {
+    private static void addMouseListenerToResultList(@NotNull JBList<VirtualFile> resultList,
+                                                     @NotNull Consumer<VirtualFile> onSelected) {
         resultList.addMouseListener(new MouseInputAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-            if (e.getClickCount() == DOUBLE_CLICK) {
-                addSelectedFile(project, resultList);
-            }
+                if (e.getClickCount() == DOUBLE_CLICK) {
+                    deliverSelection(resultList, onSelected);
+                }
             }
         });
     }
 
-    /**
-     * Add the selected file to the file list
-     *
-     * @param project the project
-     * @param resultList the result list
-     */
-    private static void addSelectedFile(Project project, @NotNull JBList<VirtualFile> resultList) {
+    private static void deliverSelection(@NotNull JBList<VirtualFile> resultList,
+                                         @NotNull Consumer<VirtualFile> onSelected) {
         VirtualFile selectedFile = resultList.getSelectedValue();
         if (selectedFile != null) {
-            FileListManager fileListManager = FileListManager.getInstance();
-            String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
-
-            if (!fileListManager.contains(project, tabId, selectedFile)) {
-                fileListManager.addFile(project, tabId, selectedFile);
-            }
+            onSelected.accept(selectedFile);
         }
     }
 
     /**
-     * Setup keyboard navigation between filter field and result list
-     *
-     * @param filterField the filter field
-     * @param resultList  the result list
-     * @param project     the project
+     * Default handler used by the original two-argument {@link #createPanel} entry point:
+     * registers the selected file with the chat's persistent file list for the active tab.
      */
-    private static void setupKeyboardNavigation(JBTextField filterField, JBList<VirtualFile> resultList, Project project) {
+    private static void addToFileListManager(@NotNull Project project, @NotNull VirtualFile file) {
+        FileListManager fileListManager = FileListManager.getInstance();
+        String tabId = ConversationTabRegistry.getInstance().getActiveTabId(project);
+        if (!fileListManager.contains(project, tabId, file)) {
+            fileListManager.addFile(project, tabId, file);
+        }
+    }
+
+    private static void setupKeyboardNavigation(JBTextField filterField,
+                                                JBList<VirtualFile> resultList,
+                                                @NotNull Consumer<VirtualFile> onSelected) {
         filterField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                handleFilterFieldKeyPressed(e, resultList, project);
+                handleFilterFieldKeyPressed(e, resultList, onSelected);
             }
         });
 
         resultList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                handleResultListKeyPressed(e, filterField, resultList, project);
+                handleResultListKeyPressed(e, filterField, resultList, onSelected);
             }
         });
     }
 
-    static void handleFilterFieldKeyPressed(KeyEvent e, JBList<VirtualFile> resultList, Project project) {
+    /** Test-only overload that uses the default {@link FileListManager}-backed selection handler. */
+    static void handleFilterFieldKeyPressed(KeyEvent e, JBList<VirtualFile> resultList, @NotNull Project project) {
+        handleFilterFieldKeyPressed(e, resultList, file -> addToFileListManager(project, file));
+    }
+
+    /** Test-only overload that uses the default {@link FileListManager}-backed selection handler. */
+    static void handleResultListKeyPressed(KeyEvent e, JBTextField filterField,
+                                           JBList<VirtualFile> resultList, @NotNull Project project) {
+        handleResultListKeyPressed(e, filterField, resultList, file -> addToFileListManager(project, file));
+    }
+
+    static void handleFilterFieldKeyPressed(KeyEvent e, JBList<VirtualFile> resultList,
+                                            @NotNull Consumer<VirtualFile> onSelected) {
         if (e.getKeyCode() == KeyEvent.VK_DOWN && resultList.getModel().getSize() > 0) {
             resultList.requestFocusInWindow();
             if (resultList.getSelectedIndex() == -1) {
@@ -306,19 +323,19 @@ public class FileSelectionPanelFactory implements DumbAware {
             if (resultList.getSelectedIndex() == -1) {
                 resultList.setSelectedIndex(0);
             }
-            if (resultList.getSelectedValue() != null) {
-                addSelectedFile(project, resultList);
-            }
+            deliverSelection(resultList, onSelected);
             e.consume();
         }
     }
 
-    static void handleResultListKeyPressed(KeyEvent e, JBTextField filterField, JBList<VirtualFile> resultList, Project project) {
+    static void handleResultListKeyPressed(KeyEvent e, JBTextField filterField,
+                                           JBList<VirtualFile> resultList,
+                                           @NotNull Consumer<VirtualFile> onSelected) {
         if (e.getKeyCode() == KeyEvent.VK_UP && resultList.getSelectedIndex() == 0) {
             filterField.requestFocusInWindow();
             e.consume();
         } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-            addSelectedFile(project, resultList);
+            deliverSelection(resultList, onSelected);
             e.consume();
         }
     }

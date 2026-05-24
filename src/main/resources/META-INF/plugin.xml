@@ -587,6 +587,11 @@
                              instance="com.devoxx.genie.ui.settings.runner.RunnerSettingsConfigurable"
                              displayName="CLI/ACP Runners"/>
 
+        <projectConfigurable id="com.devoxx.genie.dockerAgenticPlatform"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.ap.ApSettingsConfigurable"
+                             displayName="Docker Agentic Platform (PREVIEW)"/>
+
         <projectConfigurable id="com.devoxx.genie.InlineCompletion"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
