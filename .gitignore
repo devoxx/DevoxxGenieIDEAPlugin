@@ -16,6 +16,7 @@ gradle/**
 **/.DS_Store
 .aider*
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 .playwright-mcp/
 docusaurus/static/img/git-diff-settings.png
 docusaurus/static/img/git-diff-viewer.png
@@ -24,4 +25,3 @@ docusaurus/static/img/git-diff-viewer.png
 .project
 .settings/
 *.class
-.claude/scheduled_tasks.lock
