@@ -67,7 +67,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v1.5.0</h2>
+                <h2>v1.6.0</h2>
+        <UL>
+                    <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
+                    <LI>Add Gemini 3.5 Flash model to models.json</LI>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>fix(jan): support Jan v0.8.0 — model list crash and chat hang (#1051)</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                </UL>
+<h2>v1.5.0</h2>
         <UL>
                     <LI>feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)</LI>
                     <LI>feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)</LI>
