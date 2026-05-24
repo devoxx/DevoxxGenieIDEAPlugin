@@ -33,7 +33,20 @@ public class LanguageModel implements Comparable<LanguageModel> {
 
     @Override
     public int compareTo(@NotNull LanguageModel other) {
-        return new ModelVersionComparator().compare(this.displayName, other.displayName);
+        return new ModelVersionComparator().compare(sortLabel(), other.sortLabel());
+    }
+
+    /**
+     * Label used for ordering. Falls back to the model name (and finally an empty
+     * string) when {@code displayName} is absent, so providers whose model listing
+     * omits a human-readable name (e.g. Jan's OpenAI-compatible {@code /models}
+     * endpoint) don't crash the version comparator.
+     */
+    @NotNull
+    private String sortLabel() {
+        if (displayName != null) return displayName;
+        if (modelName != null) return modelName;
+        return "";
     }
 
     private static class ModelVersionComparator implements Comparator<String> {

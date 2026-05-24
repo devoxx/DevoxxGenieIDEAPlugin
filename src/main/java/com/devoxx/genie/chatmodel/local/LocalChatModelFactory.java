@@ -50,10 +50,19 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
 
     protected abstract String getModelUrl();
 
+    /**
+     * The langchain4j HTTP client builder used for the OpenAI-compatible chat models.
+     * Exposed as a hook so providers with server-specific quirks can decorate it
+     * (e.g. Jan compacts JSON request bodies, see issue #1051).
+     */
+    protected dev.langchain4j.http.client.HttpClientBuilder resolveHttpClientBuilder() {
+        return jdkHttpClientBuilder;
+    }
+
     protected ChatModel createOpenAiChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiChatModel.builder()
                 .baseUrl(getModelUrl())
-                .httpClientBuilder(jdkHttpClientBuilder)
+                .httpClientBuilder(resolveHttpClientBuilder())
                 .apiKey("na")
                 .modelName(customChatModel.getModelName())
                 .maxRetries(customChatModel.getMaxRetries())
@@ -68,7 +77,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
     protected StreamingChatModel createOpenAiStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(getModelUrl())
-                .httpClientBuilder(jdkHttpClientBuilder)
+                .httpClientBuilder(resolveHttpClientBuilder())
                 .apiKey("na")
                 .modelName(customChatModel.getModelName())
                 .temperature(customChatModel.getTemperature())
