@@ -38,6 +38,7 @@
             <LI><strong>Chat History:</strong> Locally stored conversations (SQLite) with parallel conversation tabs</LI>
             <LI><strong>Token Cost Calculator:</strong> Real-time cost and context-window estimation for cloud providers</LI>
             <LI><strong>Multi-modal Support:</strong> Drag &amp; drop images for vision models, plus Git diff and project-context attachments</LI>
+            <LI><strong>Docker Agentic Platform:</strong> CLI integration (preview)</LI>
         </UL>
         <h3>Quick Start</h3>
         <UL>
