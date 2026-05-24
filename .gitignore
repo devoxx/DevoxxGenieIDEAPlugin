@@ -24,3 +24,4 @@ docusaurus/static/img/git-diff-viewer.png
 .project
 .settings/
 *.class
+.claude/scheduled_tasks.lock
