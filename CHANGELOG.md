@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.6.0 - 2026-05-24
+
+### Added
+- feat(ap): add Docker Agentic Platform CLI integration (preview)
+- Add Gemini 3.5 Flash model to models.json
+- feat: Add copy button to user prompt bubble (#1024)
+- feat: add shell env file and shell selector for run_command tool
+
+### Fixed
+- fix(jan): support Jan v0.8.0 — model list crash and chat hang (#1051)
+- fix: surface multi-line run_command output in agent log preview
+- fix: support CJK characters in chat input field (#1034)
+
+### Contributors
+- @stephanj
+
 ## [1.5.0] - 2026-05-18
 
 ### Added

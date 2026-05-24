@@ -67,7 +67,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-<h2>v1.6.0</h2>
+                <h2>v1.6.0</h2>
         <UL>
                     <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
                     <LI>Add Gemini 3.5 Flash model to models.json</LI>
