@@ -223,15 +223,17 @@ class MessageCreationServiceTest {
         when(mockEditorInfo.getSelectedText()).thenReturn(null);
         when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
 
-        Map<String, SearchResult> searchResults = new HashMap<>();
-        searchResults.put("testFile.java", new SearchResult(0.95, "test content"));
+        // Two chunks from the same file — must both appear in the prompt; the old Map-keyed-by-path
+        // representation silently collapsed them, hiding retrieval recall problems.
+        List<SearchResult> searchResults = List.of(
+                new SearchResult("/abs/testFile.java", 0.95, "alpha chunk text"),
+                new SearchResult("/abs/testFile.java", 0.91, "beta chunk text")
+        );
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
              MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
              MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
              MockedStatic<SemanticSearchService> semanticSearchServiceMockedStatic = Mockito.mockStatic(SemanticSearchService.class);
-             MockedStatic<Files> filesMockedStatic = Mockito.mockStatic(Files.class);
-             MockedStatic<Paths> pathsMockedStatic = Mockito.mockStatic(Paths.class);
              MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
 
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
@@ -243,15 +245,23 @@ class MessageCreationServiceTest {
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
             when(mockSemanticSearchService.search(any(), any())).thenReturn(searchResults);
 
-            Path mockPath = mock(Path.class);
-            pathsMockedStatic.when(() -> Paths.get(anyString())).thenReturn(mockPath);
-            filesMockedStatic.when(() -> Files.readString(any(Path.class))).thenReturn("File content");
+            // Capture the assembled UserMessage so we can assert what landed in the prompt.
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
             verify(mockChatMessageContext).setSemanticReferences(anyList());
             verify(mockChatMessageContext).setUserMessage(any(UserMessage.class));
             notificationUtilMockedStatic.verify(() -> NotificationUtil.sendNotification(any(), anyString()));
+
+            String prompt = messageCaptor.getValue().singleText();
+            assertTrue(prompt.contains("alpha chunk text"),
+                    "prompt must embed the actual chunk text returned by the vector store");
+            assertTrue(prompt.contains("beta chunk text"),
+                    "second chunk from the same file must not be silently dropped");
+            assertTrue(prompt.contains("```java"),
+                    "code fence language should be inferred from the file extension (.java)");
         }
     }
 
@@ -630,9 +640,10 @@ class MessageCreationServiceTest {
 
     @Test
     void testExtractFileReferences() {
-        Map<String, SearchResult> searchResults = new HashMap<>();
-        searchResults.put("file1.java", new SearchResult(0.95, "content1"));
-        searchResults.put("file2.java", new SearchResult(0.85, "content2"));
+        List<SearchResult> searchResults = List.of(
+                new SearchResult("file1.java", 0.95, "content1"),
+                new SearchResult("file2.java", 0.85, "content2")
+        );
 
         List<SemanticFile> result = MessageCreationService.extractFileReferences(searchResults);
 

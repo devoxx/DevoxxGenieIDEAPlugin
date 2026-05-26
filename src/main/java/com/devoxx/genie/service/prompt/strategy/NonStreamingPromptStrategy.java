@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -186,7 +185,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
                 SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-                Map<String, SearchResult> searchResults = semanticSearchService.search(
+                List<SearchResult> searchResults = semanticSearchService.search(
                         context.getProject(),
                         context.getUserPrompt()
                 );

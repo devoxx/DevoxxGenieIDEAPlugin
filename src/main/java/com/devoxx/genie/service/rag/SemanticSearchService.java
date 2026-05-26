@@ -9,8 +9,8 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.devoxx.genie.service.rag.IndexerConstants.FILE_PATH;
 
@@ -26,25 +26,20 @@ public final class SemanticSearchService {
     }
 
     public SemanticSearchService() {
-        this.embeddingService = ApplicationManager.getApplication()
-                .getService(ChromaEmbeddingService.class);
-        this.stateService = ApplicationManager.getApplication()
-                .getService(DevoxxGenieStateService.class);
+        this.embeddingService = ChromaEmbeddingService.getInstance();
+        this.stateService = DevoxxGenieStateService.getInstance();
     }
 
     /**
-     * Search code snippets based on a query string.
-     * @param query Search query
-     * @return Map of search results with file paths as keys
+     * Search the project's vector index for chunks semantically similar to the query.
+     *
+     * <p>Returns one {@link SearchResult} per matching chunk (so multiple chunks from the same
+     * file are preserved). Results are ordered by descending score.
      */
-    public @NotNull Map<String, SearchResult> search(Project project, String query) {
-        // Task-209: analytics emission happens at the caller (MessageCreationService) where
-        // the LanguageModel context is available, so provider_type reflects the actual model.
+    public @NotNull List<SearchResult> search(Project project, String query) {
         embeddingService.init(project);
 
         Embedding queryEmbedding = embeddingService.getEmbeddingModel().embed(query).content();
-
-        Map<String, SearchResult> results = new HashMap<>();
 
         EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
                 .queryEmbedding(queryEmbedding)
@@ -52,12 +47,13 @@ public final class SemanticSearchService {
                 .maxResults(stateService.getIndexerMaxResults())
                 .build();
 
+        List<SearchResult> results = new ArrayList<>();
         embeddingService.getEmbeddingStore().search(request)
                 .matches()
-                .forEach(match ->
-                        results.put(match.embedded().metadata().getString(FILE_PATH),
-                                new SearchResult(match.score(), match.embedded().text())));
-
+                .forEach(match -> {
+                    String filePath = match.embedded().metadata().getString(FILE_PATH);
+                    results.add(new SearchResult(filePath, match.score(), match.embedded().text()));
+                });
         return results;
     }
 }

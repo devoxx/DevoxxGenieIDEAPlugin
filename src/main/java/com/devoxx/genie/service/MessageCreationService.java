@@ -24,13 +24,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -45,7 +41,7 @@ public class MessageCreationService {
     public static final String SEMANTIC_RESULT = """
             File: %s%n
             Score: %.2f%n
-            ```java%n
+            ```%s%n
             %s%n
             ```%n
             """;
@@ -202,8 +198,7 @@ public class MessageCreationService {
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
 
-            // Get semantic search results from ChromaDB
-            Map<String, SearchResult> searchResults =
+            List<SearchResult> searchResults =
                     semanticSearchService.search(chatMessageContext.getProject(), chatMessageContext.getUserPrompt());
 
             // Task-209: emit feature_used with the real provider_type from the active model.
@@ -212,26 +207,22 @@ public class MessageCreationService {
 
             if (!searchResults.isEmpty()) {
                 List<SemanticFile> fileReferences = extractFileReferences(searchResults);
-
-                // Store references in chat message context for UI use
                 chatMessageContext.setSemanticReferences(fileReferences);
 
                 contextBuilder.append("Referenced files:\n");
                 fileReferences.forEach(file -> contextBuilder.append("- ").append(file).append("\n"));
                 contextBuilder.append("\n");
 
-                Set<Map.Entry<String, SearchResult>> entries = searchResults.entrySet();
-                // Format search results
-                String formattedResults = entries.stream()
-                        .map(MessageCreationService::getFileContent)
+                String formattedResults = searchResults.stream()
+                        .map(MessageCreationService::formatSemanticResult)
                         .collect(Collectors.joining("\n"));
 
                 contextBuilder.append(formattedResults);
 
-                // Log the number of relevant snippets found
+                long uniqueFiles = fileReferences.stream().map(SemanticFile::filePath).distinct().count();
                 NotificationUtil.sendNotification(
                         chatMessageContext.getProject(),
-                        String.format("Found %d relevant project file%s using RAG", searchResults.size(), searchResults.size() > 1 ? "s" : "")
+                        String.format("Found %d relevant project file%s using RAG", uniqueFiles, uniqueFiles > 1 ? "s" : "")
                 );
             }
         } catch (Exception e) {
@@ -241,19 +232,48 @@ public class MessageCreationService {
         return contextBuilder.toString();
     }
 
-    private static @NotNull String getFileContent(Map.@NotNull Entry<String, SearchResult> entry) {
-        String fileContent;
-        try {
-            fileContent = Files.readString(Paths.get(entry.getKey()));
-        } catch (IOException e) {
-            return "";
-        }
-        return SEMANTIC_RESULT.formatted(entry.getKey(), entry.getValue().score(), fileContent);
+    /**
+     * Format a single search hit for inclusion in the prompt. Uses the chunk text returned
+     * by the vector store — does NOT re-read the full file from disk.
+     */
+    private static @NotNull String formatSemanticResult(@NotNull SearchResult result) {
+        String filePath = result.filePath() != null ? result.filePath() : "(unknown)";
+        return SEMANTIC_RESULT.formatted(filePath, result.score(), inferFenceLanguage(filePath), result.content());
     }
 
-    public static List<SemanticFile> extractFileReferences(@NotNull Map<String, SearchResult> searchResults) {
-        return searchResults.keySet().stream()
-                .map(value -> new SemanticFile(value, searchResults.get(value).score()))
+    private static @NotNull String inferFenceLanguage(@NotNull String filePath) {
+        int dot = filePath.lastIndexOf('.');
+        if (dot < 0 || dot == filePath.length() - 1) return "";
+        String ext = filePath.substring(dot + 1).toLowerCase();
+        return switch (ext) {
+            case "java" -> "java";
+            case "kt", "kts" -> "kotlin";
+            case "py" -> "python";
+            case "js", "mjs", "cjs" -> "javascript";
+            case "ts", "tsx" -> "typescript";
+            case "jsx" -> "jsx";
+            case "go" -> "go";
+            case "rs" -> "rust";
+            case "cpp", "cc", "cxx", "hpp", "h" -> "cpp";
+            case "c" -> "c";
+            case "php" -> "php";
+            case "rb" -> "ruby";
+            case "scala" -> "scala";
+            case "sh", "bash" -> "bash";
+            case "sql" -> "sql";
+            case "yml", "yaml" -> "yaml";
+            case "json" -> "json";
+            case "xml" -> "xml";
+            case "html", "htm" -> "html";
+            case "css" -> "css";
+            case "md" -> "markdown";
+            default -> ext;
+        };
+    }
+
+    public static List<SemanticFile> extractFileReferences(@NotNull List<SearchResult> searchResults) {
+        return searchResults.stream()
+                .map(r -> new SemanticFile(r.filePath(), r.score()))
                 .toList();
     }
 
