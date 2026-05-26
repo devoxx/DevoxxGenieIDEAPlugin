@@ -184,6 +184,29 @@ class SemanticSearchServiceTest {
     }
 
     @Test
+    void splitterIsChosenByFileExtension(@TempDir Path tmp) {
+        ProjectIndexerService indexer = new ProjectIndexerService();
+
+        // Source code gets a line-based splitter — statement boundaries beat the recursive
+        // default's preference for sentence punctuation.
+        assertThat(indexer.splitterFor(tmp.resolve("Auth.java")))
+                .as("source code should route to DocumentByLineSplitter")
+                .isInstanceOf(dev.langchain4j.data.document.splitter.DocumentByLineSplitter.class);
+
+        // Unknown extensions return the cached default splitter — same instance every call.
+        var unknown1 = indexer.splitterFor(tmp.resolve("config.toml"));
+        var unknown2 = indexer.splitterFor(tmp.resolve("data.csv"));
+        assertThat(unknown1)
+                .as("unknown extensions must reuse the cached default splitter")
+                .isSameAs(unknown2);
+
+        // Code splitter is NOT the cached default (different instance, different class config).
+        assertThat(indexer.splitterFor(tmp.resolve("Foo.py")))
+                .as("code splitter must be a distinct instance from the default")
+                .isNotSameAs(unknown1);
+    }
+
+    @Test
     void indexingUsesBatchedEmbedAllNotOneCallPerSegment(@TempDir Path tmp) throws IOException {
         Path file = tmp.resolve("Big.java");
         // Build content large enough that the recursive splitter produces several chunks.

@@ -14,6 +14,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.document.splitter.DocumentByLineSplitter;
+import dev.langchain4j.data.document.splitter.DocumentByParagraphSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -91,11 +93,47 @@ public final class ProjectIndexerService {
         cancelIndexing.set(false);
     }
 
-    private synchronized DocumentSplitter splitter() {
+    /** Cached default (recursive) splitter — used for source code and unknown file types. */
+    private synchronized DocumentSplitter defaultSplitter() {
         if (documentSplitter == null) {
             documentSplitter = DocumentSplitters.recursive(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS);
         }
         return documentSplitter;
+    }
+
+    /**
+     * Pick a splitter appropriate to the file's content type. Real wins come from honoring
+     * obvious natural boundaries:
+     * <ul>
+     *   <li>Markdown: split on paragraphs first so headers, code blocks, and bullet lists stay
+     *       together when they fit. Falls back to line/word for any single paragraph over the
+     *       chunk-size budget.</li>
+     *   <li>Source code: line splitting respects statement boundaries better than the generic
+     *       recursive separator order does for code (which prefers paragraph breaks, then
+     *       newlines, then sentence punctuation — the last of which is wrong for code).</li>
+     *   <li>Everything else: the default recursive splitter.</li>
+     * </ul>
+     * Per-language AST chunking is Phase 3; this is a cheap, library-only first pass.
+     */
+    DocumentSplitter splitterFor(@NotNull Path path) {
+        String ext = extensionOf(path);
+        return switch (ext) {
+            case "md", "mdx", "markdown" ->
+                    new DocumentByParagraphSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
+                            defaultSplitter());
+            case "java", "kt", "kts", "py", "js", "mjs", "cjs", "ts", "tsx", "jsx",
+                 "go", "rs", "cpp", "cc", "cxx", "hpp", "h", "c", "php", "rb", "scala" ->
+                    new DocumentByLineSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
+                            defaultSplitter());
+            default -> defaultSplitter();
+        };
+    }
+
+    private static String extensionOf(@NotNull Path path) {
+        String name = path.getFileName().toString();
+        int dot = name.lastIndexOf('.');
+        if (dot < 0 || dot == name.length() - 1) return "";
+        return name.substring(dot + 1).toLowerCase();
     }
 
     @TestOnly
@@ -324,7 +362,7 @@ public final class ProjectIndexerService {
             }
 
             Document document = Document.from(content);
-            List<TextSegment> rawSegments = splitter().split(document);
+            List<TextSegment> rawSegments = splitterFor(path).split(document);
             long lastModified = Files.getLastModifiedTime(path).toMillis();
             long indexedAt = System.currentTimeMillis();
             String absolutePath = path.toAbsolutePath().toString();
