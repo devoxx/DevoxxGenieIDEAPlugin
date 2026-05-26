@@ -223,7 +223,13 @@ public class MessageCreationService {
 
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-            searchResults = semanticSearchService.search(chatMessageContext.getProject(), userPrompt);
+            // Pass the chat model so SemanticSearchService can run query expansion when enabled.
+            // chatModel may be null in streaming-only flows; SemanticSearchService falls back to
+            // single-query search in that case.
+            searchResults = semanticSearchService.search(
+                    chatMessageContext.getProject(),
+                    userPrompt,
+                    chatMessageContext.getChatModel());
 
             // Task-209: emit feature_used with the real provider_type from the active model.
             com.devoxx.genie.service.analytics.FeatureUsageTracker.semanticSearchUsed(

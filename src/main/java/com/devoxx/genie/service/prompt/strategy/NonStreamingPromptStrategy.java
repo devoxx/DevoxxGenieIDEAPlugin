@@ -189,7 +189,8 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
                 searchResults = semanticSearchService.search(
                         context.getProject(),
-                        context.getUserPrompt()
+                        context.getUserPrompt(),
+                        context.getChatModel()
                 );
 
                 if (!searchResults.isEmpty()) {

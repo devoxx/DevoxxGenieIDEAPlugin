@@ -245,7 +245,7 @@ class MessageCreationServiceTest {
 
             when(mockStateService.getRagActivated()).thenReturn(true);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
-            when(mockSemanticSearchService.search(any(), any())).thenReturn(searchResults);
+            when(mockSemanticSearchService.search(any(), any(), any())).thenReturn(searchResults);
 
             // Capture the assembled UserMessage so we can assert what landed in the prompt.
             ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
@@ -666,7 +666,7 @@ class MessageCreationServiceTest {
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
-            verify(mockSemanticSearchService, never()).search(any(), any());
+            verify(mockSemanticSearchService, never()).search(any(), any(), any());
             // Long enough queries must still trigger RAG — sanity-check the threshold isn't reversed.
             assertTrue(MessageCreationService.shouldRunRagFor("This is a meaningful question about the codebase"));
             assertFalse(MessageCreationService.shouldRunRagFor("more?"));
@@ -700,7 +700,7 @@ class MessageCreationServiceTest {
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
             when(mockStateService.getRagActivated()).thenReturn(true);
-            when(mockSemanticSearchService.search(any(), any())).thenReturn(hits);
+            when(mockSemanticSearchService.search(any(), any(), any())).thenReturn(hits);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             ArgumentCaptor<UserMessage> captor = ArgumentCaptor.forClass(UserMessage.class);
