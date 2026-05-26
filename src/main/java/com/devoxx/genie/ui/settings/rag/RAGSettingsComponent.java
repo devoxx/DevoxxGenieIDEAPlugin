@@ -191,17 +191,28 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
-        addSettingRow(panel, gbc, "Chroma DB port", portIndexer);
-        addSettingRow(panel, gbc, "Minimum score", minScoreField);
+        addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
+        addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
         addSettingRow(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
-        addSettingRow(panel, gbc, "Maximum results", maxResultsSpinner);
+        addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
         addSettingRow(panel, gbc, "How many results do you want to include in prompt window context?");
 
-        addSettingRow(panel, gbc, "Query expansion", queryExpansionCheckBox);
+        addSettingRow(panel, gbc, "Query expansion", leftAligned(queryExpansionCheckBox));
         addSettingRow(panel, gbc, "Paraphrase the query into multiple variants and fuse the per-variant results " +
                 "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
                 "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
-        addSettingRow(panel, gbc, "Number of variants", queryExpansionVariantsSpinner);
+        addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
+    }
+
+    /**
+     * Wrap a spinner/checkbox in a left-aligned FlowLayout panel so it keeps its natural
+     * width when the enclosing column uses {@code GridBagConstraints.HORIZONTAL} fill. Without
+     * this, JSpinner stretches to fill the whole column and the digits become hard to spot.
+     */
+    private static @NotNull JComponent leftAligned(@NotNull JComponent component) {
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        wrapper.add(component);
+        return wrapper;
     }
 
     private void addIndexedProjectsSection(JPanel panel, GridBagConstraints gbc) {
