@@ -48,6 +48,11 @@ public final class ProjectIndexerService {
      *  to avoid timeouts while still avoiding the N+1 cost of one-call-per-segment. */
     static final int EMBEDDING_BATCH_SIZE = 64;
 
+    /** Number of files processed in parallel during bulk indexing. Conservative default —
+     *  Ollama serializes embed requests by default and the embedding model also competes
+     *  for CPU, so going above 4 typically regresses throughput. */
+    static final int INDEXING_PARALLELISM = 2;
+
     private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
 
@@ -86,7 +91,7 @@ public final class ProjectIndexerService {
         cancelIndexing.set(false);
     }
 
-    private DocumentSplitter splitter() {
+    private synchronized DocumentSplitter splitter() {
         if (documentSplitter == null) {
             documentSplitter = DocumentSplitters.recursive(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS);
         }
@@ -137,34 +142,56 @@ public final class ProjectIndexerService {
         List<Path> filesToProcess = new ArrayList<>(scanResult.getFiles());
         int totalFiles = filesToProcess.size();
 
-        try {
-            for (int fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
-                if (isIndexingCancelled()) {
-                    log.info("Indexing cancelled after processing {} of {} files", fileIndex, totalFiles);
-                    final int processedFiles = fileIndex;
-                    SwingUtilities.invokeLater(() -> {
-                        progressBar.setValue(100);
-                        progressLabel.setText(String.format("Indexing cancelled after processing %d of %d files",
-                                processedFiles, totalFiles));
-                    });
-                    return;
-                }
-
-                Path path = filesToProcess.get(fileIndex);
-                String fileName = path.getFileName().toString();
-                int progress = (int) (((double) (fileIndex + 1) / totalFiles) * 100);
-                final int currentFileIndex = fileIndex;
-
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setVisible(true);
-                    progressLabel.setVisible(true);
-                    progressBar.setValue(progress);
-                    progressLabel.setText(String.format("Processing %d of %d: %s", currentFileIndex + 1, totalFiles, fileName));
+        // Bounded parallel pool: a handful of file-processing threads share access to the
+        // batched embedAll / Chroma writes. We still cap progress + cancellation checks at the
+        // file boundary, since per-file work is the meaningful unit.
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(
+                INDEXING_PARALLELISM,
+                r -> {
+                    Thread t = new Thread(r, "DevoxxGenie-Indexer");
+                    t.setDaemon(true);
+                    return t;
                 });
-
-                indexFile(path, forceReindex);
+        java.util.concurrent.atomic.AtomicInteger processedCount = new java.util.concurrent.atomic.AtomicInteger();
+        try {
+            java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(totalFiles);
+            for (Path path : filesToProcess) {
+                futures.add(pool.submit(() -> {
+                    if (isIndexingCancelled()) return;
+                    indexFile(path, forceReindex);
+                    int done = processedCount.incrementAndGet();
+                    int progress = (int) (((double) done / totalFiles) * 100);
+                    String fileName = path.getFileName().toString();
+                    SwingUtilities.invokeLater(() -> {
+                        progressBar.setVisible(true);
+                        progressLabel.setVisible(true);
+                        progressBar.setValue(progress);
+                        progressLabel.setText(String.format("Processing %d of %d: %s", done, totalFiles, fileName));
+                    });
+                }));
+            }
+            for (java.util.concurrent.Future<?> f : futures) {
+                if (isIndexingCancelled()) break;
+                try {
+                    f.get();
+                } catch (java.util.concurrent.ExecutionException ee) {
+                    log.warn("Indexer task failed: {}", ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if (isIndexingCancelled()) {
+                int processed = processedCount.get();
+                log.info("Indexing cancelled after processing {} of {} files", processed, totalFiles);
+                SwingUtilities.invokeLater(() -> {
+                    progressBar.setValue(100);
+                    progressLabel.setText(String.format("Indexing cancelled after processing %d of %d files",
+                            processed, totalFiles));
+                });
             }
         } finally {
+            pool.shutdownNow();
             manifest.flush();
             resetCancellationFlag();
         }
