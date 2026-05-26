@@ -1,9 +1,11 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.rag.RAGLogMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.rag.RAGEventPublisher;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -194,12 +196,13 @@ public class MessageCreationService {
         log.debug("Adding semantic search results to user message");
 
         StringBuilder contextBuilder = new StringBuilder();
+        String userPrompt = chatMessageContext.getUserPrompt();
+        long startNanos = System.nanoTime();
+        List<SearchResult> searchResults = new ArrayList<>();
 
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-
-            List<SearchResult> searchResults =
-                    semanticSearchService.search(chatMessageContext.getProject(), chatMessageContext.getUserPrompt());
+            searchResults = semanticSearchService.search(chatMessageContext.getProject(), userPrompt);
 
             // Task-209: emit feature_used with the real provider_type from the active model.
             com.devoxx.genie.service.analytics.FeatureUsageTracker.semanticSearchUsed(
@@ -222,11 +225,15 @@ public class MessageCreationService {
                 long uniqueFiles = fileReferences.stream().map(SemanticFile::filePath).distinct().count();
                 NotificationUtil.sendNotification(
                         chatMessageContext.getProject(),
-                        String.format("Found %d relevant project file%s using RAG", uniqueFiles, uniqueFiles > 1 ? "s" : "")
+                        String.format("Found %d relevant project file%s using RAG — see DevoxxGenie Logs (Show RAG Only) for details",
+                                uniqueFiles, uniqueFiles > 1 ? "s" : "")
                 );
             }
         } catch (Exception e) {
             log.warn("Failed to get semantic search results: " + e.getMessage());
+        } finally {
+            long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+            RAGEventPublisher.publish(chatMessageContext.getProject(), userPrompt, searchResults, durationMs);
         }
 
         return contextBuilder.toString();

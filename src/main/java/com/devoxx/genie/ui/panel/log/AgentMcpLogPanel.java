@@ -4,8 +4,10 @@ import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.rag.RAGLogMessage;
 import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
+import com.devoxx.genie.service.rag.RAGLoggingMessage;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.MessageBusUtil;
@@ -47,7 +49,7 @@ import java.util.function.Function;
  * Double-click a log entry to open full content in a new editor tab.
  */
 @Slf4j
-public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, Disposable {
+public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, RAGLoggingMessage, Disposable {
 
     private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
     private static final int BATCH_SIZE = 20;
@@ -69,8 +71,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    enum LogSource { MCP, AGENT }
-    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY }
+    enum LogSource { MCP, AGENT, RAG }
+    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY, RAG_ONLY }
 
     record LogEntry(
         String timestamp,
@@ -133,6 +135,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 MessageBusUtil.connect(project, connection -> {
                     MessageBusUtil.subscribe(connection, AppTopics.ACTIVITY_LOG_MSG, this);
                     MessageBusUtil.subscribe(connection, AppTopics.MCP_TRAFFIC_MSG, this);
+                    MessageBusUtil.subscribe(connection, AppTopics.RAG_LOG_MSG, this);
                     Disposer.register(this, connection);
                 }));
     }
@@ -197,6 +200,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 case ALL        -> "Show All";
                 case MCP_ONLY   -> "Show MCP Only";
                 case AGENT_ONLY -> "Show Agents Only";
+                case RAG_ONLY   -> "Show RAG Only";
             });
         }
 
@@ -206,6 +210,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             group.add(filterAction("Show All",          LogFilter.ALL));
             group.add(filterAction("Show MCP Only",     LogFilter.MCP_ONLY));
             group.add(filterAction("Show Agents Only",  LogFilter.AGENT_ONLY));
+            group.add(filterAction("Show RAG Only",     LogFilter.RAG_ONLY));
             return group;
         }
 
@@ -235,6 +240,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case ALL -> true;
             case MCP_ONLY -> e.source() == LogSource.MCP;
             case AGENT_ONLY -> e.source() == LogSource.AGENT;
+            case RAG_ONLY -> e.source() == LogSource.RAG;
         };
     }
 
@@ -305,6 +311,111 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 content
         );
         addToPending(entry);
+    }
+
+    /**
+     * Receives RAG retrieval events. Each event describes one semantic search: the query,
+     * configured thresholds, and the list of matched chunks with their scores and a preview.
+     */
+    @Override
+    public void onRAGLoggingMessage(RAGLogMessage message) {
+        if (message == null || isPaused) {
+            return;
+        }
+        String hash = message.getProjectLocationHash();
+        if (hash != null && !hash.equals(project.getLocationHash())) {
+            return;
+        }
+        LogEntry entry = new LogEntry(
+                LocalDateTime.now().format(TIME_FORMATTER),
+                LogSource.RAG,
+                null,
+                formatRagRow(message),
+                formatRagForClipboard(message),
+                formatRagFullContent(message)
+        );
+        addToPending(entry);
+    }
+
+    private static @NotNull String formatRagRow(@NotNull RAGLogMessage m) {
+        StringBuilder sb = new StringBuilder();
+        int hitCount = m.getHits() == null ? 0 : m.getHits().size();
+        sb.append("🔎 RAG: \"").append(summarize(m.getQuery(), 80))
+          .append("\" → ").append(hitCount).append(" hit").append(hitCount == 1 ? "" : "s")
+          .append(" (").append(m.getDurationMs()).append("ms");
+        if (m.getMinScore() != null && m.getMaxResults() != null) {
+            sb.append(", minScore=").append(String.format("%.2f", m.getMinScore()))
+              .append(", topK=").append(m.getMaxResults());
+        }
+        sb.append(")");
+        if (hitCount > 0) {
+            int shown = Math.min(hitCount, INLINE_PREVIEW_MAX_LINES - 1);
+            for (int i = 0; i < shown; i++) {
+                RAGLogMessage.Hit h = m.getHits().get(i);
+                sb.append('\n').append("  • ").append(formatScore(h.getScore()))
+                  .append("  ").append(filenameOf(h.getFilePath()))
+                  .append("  — ").append(summarize(h.getPreview(), INLINE_PREVIEW_MAX_LINE_LEN - 40));
+            }
+            if (hitCount > shown) {
+                sb.append('\n').append("  … (").append(hitCount - shown).append(" more hits)");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String formatRagForClipboard(@NotNull RAGLogMessage m) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("RAG retrieval — query: ").append(m.getQuery() == null ? "" : m.getQuery().replace('\n', ' '))
+          .append(" (").append(m.getDurationMs()).append("ms");
+        if (m.getMinScore() != null) sb.append(", minScore=").append(m.getMinScore());
+        if (m.getMaxResults() != null) sb.append(", topK=").append(m.getMaxResults());
+        sb.append(")");
+        if (m.getHits() != null) {
+            for (RAGLogMessage.Hit h : m.getHits()) {
+                sb.append('\n').append("    [").append(formatScore(h.getScore())).append("] ")
+                  .append(h.getFilePath());
+            }
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String formatRagFullContent(@NotNull RAGLogMessage m) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== RAG Retrieval ===\n");
+        sb.append("Query: ").append(m.getQuery()).append("\n");
+        if (m.getEmbeddingModel() != null) sb.append("Embedding model: ").append(m.getEmbeddingModel()).append("\n");
+        if (m.getMinScore() != null) sb.append("Min score: ").append(m.getMinScore()).append("\n");
+        if (m.getMaxResults() != null) sb.append("Top-K (max results): ").append(m.getMaxResults()).append("\n");
+        sb.append("Duration: ").append(m.getDurationMs()).append(" ms\n");
+        int hitCount = m.getHits() == null ? 0 : m.getHits().size();
+        sb.append("Hits: ").append(hitCount).append("\n\n");
+        if (hitCount > 0) {
+            for (int i = 0; i < m.getHits().size(); i++) {
+                RAGLogMessage.Hit h = m.getHits().get(i);
+                sb.append("--- Hit ").append(i + 1).append(" / ").append(hitCount).append(" ---\n");
+                sb.append("File:   ").append(h.getFilePath()).append("\n");
+                sb.append("Score:  ").append(formatScore(h.getScore())).append("\n");
+                sb.append("Chunk length: ").append(h.getChunkLength()).append(" chars\n");
+                sb.append("Preview:\n").append(h.getPreview() == null ? "" : h.getPreview()).append("\n\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String filenameOf(String path) {
+        if (path == null) return "(unknown)";
+        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        return slash >= 0 ? path.substring(slash + 1) : path;
+    }
+
+    private static @NotNull String summarize(String text, int max) {
+        if (text == null) return "";
+        String oneLine = text.replace('\n', ' ').replace('\r', ' ').trim();
+        return oneLine.length() > max ? oneLine.substring(0, max - 1) + "…" : oneLine;
+    }
+
+    private static @NotNull String formatScore(Double score) {
+        return score == null ? "n/a" : String.format("%.3f", score);
     }
 
     private void addToPending(LogEntry entry) {

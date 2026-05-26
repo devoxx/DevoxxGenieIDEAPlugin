@@ -18,7 +18,7 @@ import org.jetbrains.annotations.TestOnly;
 @Service
 public final class ChromaEmbeddingService {
 
-    static final String EMBEDDING_MODEL_NAME = "nomic-embed-text";
+    public static final String EMBEDDING_MODEL_NAME = "nomic-embed-text";
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
