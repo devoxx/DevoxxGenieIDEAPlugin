@@ -5,14 +5,18 @@ import com.devoxx.genie.service.chromadb.exception.DockerException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,14 +30,16 @@ import java.util.stream.Stream;
 @Service
 public final class ChromaDockerService {
     
-    private static final String CHROMA_IMAGE = "chromadb/chroma:0.6.2";
+    /** Single source of truth for the ChromaDB Docker image version. Referenced by the validator
+     *  (status message) and its test, so bumping the version only requires editing this line. */
+    public static final String CHROMA_VERSION = "0.6.2";
+    public static final String CHROMADB_DOCKER_NAME = "chromadb/chroma";
+    private static final String CHROMA_IMAGE = CHROMADB_DOCKER_NAME + ":" + CHROMA_VERSION;
     private static final String CONTAINER_NAME = "devoxx-genie-chromadb";
 
     public static final String FAILED_TO_PULL_CHROMA_DB_IMAGE = "Failed to pull ChromaDB image: ";
     public static final String FAILED_TO_START_CHROMA_DB = "Failed to start ChromaDB: ";
     public static final String FAILED_TO_CREATE_VOLUME_DIRECTORY = "Failed to create volume directory: ";
-
-    public static final String CHROMADB_DOCKER_NAME = "chromadb/chroma";
 
     // Docker states
     public static final String RUNNING = "running";
@@ -41,6 +47,10 @@ public final class ChromaDockerService {
     public static final String CREATED = "created";
 
     public void startChromaDB(Project project, ChromaDBStatusCallback callback) {
+        startChromaDB(project, callback, null);
+    }
+
+    public void startChromaDB(Project project, ChromaDBStatusCallback callback, @Nullable ProgressIndicator indicator) {
         try {
             // We assume Docker is already installed and running
             if (isChromaDBRunning()) {
@@ -49,7 +59,9 @@ public final class ChromaDockerService {
                 return;
             }
 
-            pullChromaDockerImage(callback);
+            if (indicator != null) indicator.setText("Pulling ChromaDB image " + CHROMA_VERSION + " (may take several minutes on first install)...");
+            pullChromaDockerImage(callback, indicator);
+            if (indicator != null) indicator.setText("Starting ChromaDB container...");
             String volumePath = setupVolumeDirectory(project);
             startChromaContainer(volumePath, callback);
 
@@ -86,15 +98,48 @@ public final class ChromaDockerService {
         return volumePath.toString();
     }
 
-    /**
-     * Pull the ChromaDB Docker image
-     *
-     * @param callback the callback to notify the status
-     * @throws DockerException if an error occurs while pulling the image
-     */
     public void pullChromaDockerImage(ChromaDBStatusCallback callback) throws DockerException {
+        pullChromaDockerImage(callback, null, null);
+    }
+
+    public void pullChromaDockerImage(ChromaDBStatusCallback callback, @Nullable ProgressIndicator indicator) throws DockerException {
+        pullChromaDockerImage(callback, indicator, null);
+    }
+
+    /**
+     * Pull the ChromaDB Docker image. Layer-level download progress is forwarded to:
+     * <ul>
+     *   <li>{@code indicator.setText2(...)} when {@code indicator != null} — surfaces in
+     *       the IDE's background-task status bar.</li>
+     *   <li>{@code progressListener.accept(...)} when non-null — lets callers surface the
+     *       same text inline in their own UI (e.g. the RAG settings panel) so the user sees
+     *       activity without having to look at the status bar spinner.</li>
+     * </ul>
+     * The listener is invoked on a Docker-API callback thread; UI-touching callers must
+     * hop to the EDT themselves.
+     */
+    public void pullChromaDockerImage(ChromaDBStatusCallback callback,
+                                      @Nullable ProgressIndicator indicator,
+                                      @Nullable java.util.function.Consumer<String> progressListener) throws DockerException {
         try (DockerClient dockerClient = DockerUtil.getDockerClient()) {
-            dockerClient.pullImageCmd(CHROMA_IMAGE).start().awaitCompletion();
+            ResultCallback.Adapter<PullResponseItem> progressCallback = new PullImageResultCallback() {
+                @Override
+                public void onNext(PullResponseItem item) {
+                    String status = item.getStatus();
+                    if (status != null) {
+                        String id = item.getId();
+                        String text = id != null ? id + ": " + status : status;
+                        if (indicator != null && !indicator.isCanceled()) {
+                            indicator.setText2(text);
+                        }
+                        if (progressListener != null) {
+                            progressListener.accept(text);
+                        }
+                    }
+                    super.onNext(item);
+                }
+            };
+            dockerClient.pullImageCmd(CHROMA_IMAGE).exec(progressCallback).awaitCompletion();
         } catch (IOException e) {
             callback.onError(FAILED_TO_PULL_CHROMA_DB_IMAGE + e.getMessage());
             throw new DockerException("Failed to pull ChromaDB image", e);
@@ -155,16 +200,29 @@ public final class ChromaDockerService {
 
                 // Start the container
                 dockerClient.startContainerCmd(containerId).exec();
+                callback.onSuccess();
             } else {
-                // Reuse existing container
+                // Reuse existing container, but only if it was built from the current image.
+                // Otherwise a previous plugin version's container (e.g. chromadb/chroma:0.6.2)
+                // would be silently restarted, defeating the version bump and confusing users
+                // who think they're now on the new version.
                 Container existingContainer = existingContainers.getFirst();
+                String existingImage = existingContainer.getImage();
+                if (existingImage != null && !existingImage.equals(CHROMA_IMAGE)) {
+                    callback.onError(String.format(
+                            "Existing ChromaDB container is on image '%s' but this plugin version expects '%s'. " +
+                                    "Remove the old container first:  docker rm -f %s  " +
+                                    "(ChromaDB 0.x → 1.x changed the on-disk format — if you upgraded across that boundary, " +
+                                    "also clear the data volume and re-index your project.)",
+                            existingImage, CHROMA_IMAGE, CONTAINER_NAME));
+                    return;
+                }
 
-                // Check the actual container state
                 String containerState = existingContainer.getState();
-
-                // Only start if the container is stopped or created
                 if (EXITED.equalsIgnoreCase(containerState) || CREATED.equalsIgnoreCase(containerState)) {
                     startExistingContainer(dockerClient, existingContainer.getId(), callback);
+                } else if (RUNNING.equalsIgnoreCase(containerState)) {
+                    callback.onSuccess();
                 }
             }
         } catch (IOException e) {

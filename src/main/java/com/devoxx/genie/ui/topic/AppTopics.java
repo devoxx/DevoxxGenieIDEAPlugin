@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.topic;
 
 import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
+import com.devoxx.genie.service.rag.RAGLoggingMessage;
 import com.devoxx.genie.ui.listener.*;
 import com.devoxx.genie.ui.settings.appearance.AppearanceSettingsEvents;
 import com.intellij.util.messages.Topic;
@@ -56,5 +57,8 @@ public class AppTopics {
 
     public static final Topic<ActivityLoggingMessage> ACTIVITY_LOG_MSG =
             Topic.create("activityLoggingMessage", ActivityLoggingMessage.class);
+
+    public static final Topic<RAGLoggingMessage> RAG_LOG_MSG =
+            Topic.create("ragLoggingMessage", RAGLoggingMessage.class);
 
 }

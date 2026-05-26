@@ -50,6 +50,17 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     @Getter
     private final JSpinner minScoreField = new JSpinner(new SpinnerNumberModel(stateService.getIndexerMinScore().doubleValue(), 0.0d, 1.0d, 0.01d));
 
+    @Getter
+    private final JBCheckBox queryExpansionCheckBox = new JBCheckBox(
+            "Enable LLM query expansion (one extra LLM call per RAG search)",
+            Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled()));
+
+    @Getter
+    private final JBIntSpinner queryExpansionVariantsSpinner = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN(),
+                    1, 10));
+
     private final Project project;
     private JButton startIndexButton;
     private final JButton actionButton = new JButton();
@@ -95,6 +106,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 startIndexButton.setVisible(false);
             }
         });
+        // Variants spinner is only meaningful when query expansion is on.
+        queryExpansionCheckBox.addActionListener(e -> updateComponentsEnabled());
     }
 
     private void addProgressSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
@@ -164,25 +177,68 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     }
 
     private void addInfoLabel(@NotNull JPanel panel, GridBagConstraints gbc) {
-        JBLabel infoLabel = new JBLabel("<html><body style='width: 100%;'>" +
-                "Retrieval-augmented Generation (RAG) leverages semantic search to find relevant code<BR>" +
-                "based on your queries.<BR>" +
-                "The indexer uses the \"Scan & Copy Project\" settings to exclude specific directories,<BR>" +
-                "files, and extensions, and stores the indexed files in a local ChromaDB vector database." +
-                "</body></html>");
-        infoLabel.setForeground(UIUtil.getContextHelpForeground());
-        infoLabel.setBorder(JBUI.Borders.emptyBottom(10));
-        panel.add(infoLabel, gbc);
-        gbc.gridy++;
+        // Use the wrapping help-text component for the same width-constrained behaviour as the
+        // per-setting help rows; explicit line breaks not needed since JTextArea word-wraps.
+        addHelpText(panel, gbc,
+                "Retrieval-augmented Generation (RAG) leverages semantic search to find relevant code " +
+                "based on your queries. The indexer uses the \"Scan & Copy Project\" settings to " +
+                "exclude specific directories, files, and extensions, and stores the indexed files in " +
+                "a local ChromaDB vector database.");
     }
 
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
-        addSettingRow(panel, gbc, "Chroma DB port", portIndexer);
-        addSettingRow(panel, gbc, "Minimum score", minScoreField);
-        addSettingRow(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
-        addSettingRow(panel, gbc, "Maximum results", maxResultsSpinner);
-        addSettingRow(panel, gbc, "How many results do you want to include in prompt window context?");
+        addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
+        addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
+        addHelpText(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
+        addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
+        addHelpText(panel, gbc, "How many results do you want to include in prompt window context?");
+
+        addSettingRow(panel, gbc, "Query expansion", leftAligned(queryExpansionCheckBox));
+        addHelpText(panel, gbc, "Paraphrase the query into multiple variants and fuse the per-variant results " +
+                "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
+                "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
+        addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
+    }
+
+    /**
+     * Add a wrapping help-text row under a setting. JLabel doesn't word-wrap reliably even
+     * with the HTML-and-100%-width trick (BasicHTML computes preferred width from the full
+     * text, so the dialog grows to fit). A non-editable JTextArea styled like a label DOES
+     * wrap natively when the layout gives it a constrained width, so use that.
+     */
+    private void addHelpText(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, @NotNull String text) {
+        JTextArea helpArea = new JTextArea(text);
+        helpArea.setLineWrap(true);
+        helpArea.setWrapStyleWord(true);
+        helpArea.setEditable(false);
+        helpArea.setFocusable(false);
+        helpArea.setOpaque(false);
+        helpArea.setBorder(null);
+        helpArea.setFont(UIManager.getFont("Label.font"));
+        helpArea.setForeground(UIUtil.getContextHelpForeground());
+        // (0, ...) preferred width — let the GridBag column dictate width; height grows as needed
+        helpArea.setPreferredSize(null);
+        helpArea.setMinimumSize(new Dimension(0, 0));
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        panel.add(helpArea, gbc);
+        gbc.gridy++;
+        gbc.weightx = 0;
+    }
+
+    /**
+     * Wrap a spinner/checkbox in a left-aligned FlowLayout panel so it keeps its natural
+     * width when the enclosing column uses {@code GridBagConstraints.HORIZONTAL} fill. Without
+     * this, JSpinner stretches to fill the whole column and the digits become hard to spot.
+     */
+    private static @NotNull JComponent leftAligned(@NotNull JComponent component) {
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        wrapper.add(component);
+        return wrapper;
     }
 
     private void addIndexedProjectsSection(JPanel panel, GridBagConstraints gbc) {
@@ -386,6 +442,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         minScoreField.setEnabled(enabled);
         actionButton.setEnabled(enabled);
         collectionsTable.setEnabled(enabled);
+        queryExpansionCheckBox.setEnabled(enabled);
+        // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
+        queryExpansionVariantsSpinner.setEnabled(enabled && queryExpansionCheckBox.isSelected());
     }
 
     private void setupTable() {

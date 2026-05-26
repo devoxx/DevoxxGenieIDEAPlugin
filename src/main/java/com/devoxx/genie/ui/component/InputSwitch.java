@@ -77,8 +77,8 @@ public class InputSwitch extends JBPanel<InputSwitch> {
         public SwitchButton() {
             setPreferredSize(new Dimension(35, 20));
             setBackground(new JBColor(
-                    new Color(255, 165, 0),  // light theme
-                    new Color(255, 140, 0).brighter()  // dark theme
+                    new Color(76, 175, 80),   // light theme — Material green 500
+                    new Color(102, 187, 106)  // dark theme   — Material green 400
             ));
             setForeground(Color.WHITE);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -146,8 +146,8 @@ public class InputSwitch extends JBPanel<InputSwitch> {
 
             int textY = (height - fm.getHeight()) / 2 + fm.getAscent();
 
-            // Draw text with contrasting color
-            g2.setColor(selected ? Color.WHITE : Color.GRAY);
+            // Draw text with contrasting color (black on the green "on" track for readability)
+            g2.setColor(selected ? Color.BLACK : Color.GRAY);
             g2.drawString(text, textX, textY);
         }
 
@@ -186,7 +186,7 @@ public class InputSwitch extends JBPanel<InputSwitch> {
     private class MyActionListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent ae) {
-            if (isSelected()) {
+            if (selected) {
                 int endLocation = switchButton.getWidth() - switchButton.getHeight() + 2;
                 if (location < endLocation) {
                     location += SPEED;

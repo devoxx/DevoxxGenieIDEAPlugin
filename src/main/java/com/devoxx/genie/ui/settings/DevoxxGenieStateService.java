@@ -254,6 +254,19 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Agent mode settings
     private Boolean agentModeEnabled = false;
     private Integer agentMaxToolCalls = AGENT_MAX_TOOL_CALLS;
+    /** Wall-clock cap for an entire agent/MCP conversation; safety net against silent hangs. */
+    private Integer agentMaxExecutionTimeSeconds = AGENT_MAX_EXECUTION_SECONDS;
+
+    // RAG retrieval-quality settings
+    /**
+     * When true, the user's prompt is paraphrased into multiple variants by the current chat
+     * model before semantic search; per-variant results are fused via Reciprocal Rank Fusion.
+     * Trades one extra LLM call (latency + cost) for substantially better retrieval on
+     * meta-style queries ("where do we discuss X?", "list me all content about Y").
+     */
+    private Boolean ragQueryExpansionEnabled = false;
+    /** Number of paraphrased variants to generate per query when expansion is enabled. */
+    private Integer ragQueryExpansionN = 3;
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;

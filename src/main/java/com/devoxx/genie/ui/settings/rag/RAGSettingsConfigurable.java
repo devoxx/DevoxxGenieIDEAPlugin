@@ -54,6 +54,10 @@ public class RAGSettingsConfigurable implements Configurable {
         isModified |= ragSettingsComponent.getPortIndexer().getNumber() != stateService.getIndexerPort();
         isModified |= ragSettingsComponent.getMaxResultsSpinner().getNumber() != stateService.getIndexerMaxResults();
         isModified |= ragSettingsComponent.getMinScoreField().getValue() != stateService.getIndexerMinScore();
+        isModified |= ragSettingsComponent.getQueryExpansionCheckBox().isSelected()
+                != Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled());
+        int storedN = stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN();
+        isModified |= ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber() != storedN;
 
         return isModified;
     }
@@ -72,6 +76,8 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setIndexerPort(ragSettingsComponent.getPortIndexer().getNumber());
         stateService.setIndexerMinScore((Double) ragSettingsComponent.getMinScoreField().getValue());
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
+        stateService.setRagQueryExpansionEnabled(ragSettingsComponent.getQueryExpansionCheckBox().isSelected());
+        stateService.setRagQueryExpansionN(ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber());
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
@@ -93,5 +99,9 @@ public class RAGSettingsConfigurable implements Configurable {
         ragSettingsComponent.getPortIndexer().setNumber(stateService.getIndexerPort());
         ragSettingsComponent.getMinScoreField().setValue(stateService.getIndexerMinScore());
         ragSettingsComponent.getMaxResultsSpinner().setNumber(stateService.getIndexerMaxResults());
+        ragSettingsComponent.getQueryExpansionCheckBox().setSelected(
+                Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled()));
+        ragSettingsComponent.getQueryExpansionVariantsSpinner().setNumber(
+                stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN());
     }
 }

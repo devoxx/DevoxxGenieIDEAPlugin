@@ -9,6 +9,9 @@ import com.devoxx.genie.service.automation.listeners.ProcessExitListener;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolShutdownManager;
+import com.devoxx.genie.service.rag.watcher.RAGFileWatcher;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.ThemeChangeListener;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
@@ -60,6 +63,11 @@ public class PostStartupActivity implements ProjectActivity {
         // Register event automation listeners (project-scoped)
         registerEventAutomationListeners(project);
 
+        // Spin up the RAG file watcher if RAG is enabled at startup; otherwise wire a one-shot
+        // listener so it starts the moment the user toggles RAG on. The watcher is project-scoped
+        // and disposed with the project.
+        maybeStartRagWatcher(project);
+
         // First-launch analytics consent notification (task-206). Self-disables after firing once.
         AnalyticsConsentNotifier.maybeShow(project);
 
@@ -67,6 +75,19 @@ public class PostStartupActivity implements ProjectActivity {
         AnalyticsSessionSnapshotService.getInstance().snapshotIfNeeded();
 
         return Unit.INSTANCE;
+    }
+
+    private void maybeStartRagWatcher(@NotNull Project project) {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            RAGFileWatcher.getInstance(project); // forces lazy init
+        }
+        // App-level topic — when the user enables RAG mid-session, start the per-project watcher.
+        project.getMessageBus().connect().subscribe(AppTopics.RAG_STATE_TOPIC,
+                (com.devoxx.genie.ui.listener.RAGStateListener) enabled -> {
+                    if (enabled) {
+                        RAGFileWatcher.getInstance(project);
+                    }
+                });
     }
 
     /**

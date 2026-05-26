@@ -3,6 +3,9 @@ package com.devoxx.genie.service.rag;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
+import com.devoxx.genie.service.rag.manifest.IndexManifest;
+import com.devoxx.genie.service.rag.manifest.IndexManifestService;
+import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
@@ -11,21 +14,24 @@ import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.document.splitter.DocumentByLineSplitter;
+import dev.langchain4j.data.document.splitter.DocumentByParagraphSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
-import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.filter.Filter;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,12 +40,33 @@ import static com.devoxx.genie.service.rag.IndexerConstants.*;
 @Slf4j
 @Service
 public final class ProjectIndexerService {
-    
+
+    /** Chunk size in tokens for the recursive splitter. */
+    static final int CHUNK_SIZE_TOKENS = 500;
+    /** Chunk overlap in tokens; non-zero so a symbol straddling a boundary isn't lost. */
+    static final int CHUNK_OVERLAP_TOKENS = 50;
+
+    /** Max segments per Ollama {@code embedAll} call. Keeps individual requests small enough
+     *  to avoid timeouts while still avoiding the N+1 cost of one-call-per-segment. */
+    static final int EMBEDDING_BATCH_SIZE = 64;
+
+    /** Number of files processed in parallel during bulk indexing. Conservative default —
+     *  Ollama serializes embed requests by default and the embedding model also competes
+     *  for CPU, so going above 4 typically regresses throughput. */
+    static final int INDEXING_PARALLELISM = 2;
+
     private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
 
     private DocumentSplitter documentSplitter;
-    
+
+    /**
+     * Source of truth for which files are indexed under the current schema. Defaults to a
+     * process-local in-memory manifest so tests work without filesystem setup; production
+     * flows swap in the per-project JSON-backed manifest via {@link #indexFiles}.
+     */
+    private IndexManifest manifest = new InMemoryIndexManifest();
+
     // Flag to indicate if indexing should be cancelled
     private final AtomicBoolean cancelIndexing = new AtomicBoolean(false);
 
@@ -52,108 +79,80 @@ public final class ProjectIndexerService {
         this.chromaEmbeddingService = ChromaEmbeddingService.getInstance();
         this.projectScannerService = ProjectScannerService.getInstance();
     }
-    
-    /**
-     * Cancels the current indexing process if one is running.
-     * The indexing process will stop at the next file boundary.
-     */
+
     public void cancelIndexing() {
         cancelIndexing.set(true);
         log.info("Indexing cancellation requested");
     }
-    
-    /**
-     * Checks if indexing is currently being cancelled.
-     * @return true if indexing is being cancelled, false otherwise
-     */
+
     public boolean isIndexingCancelled() {
         return cancelIndexing.get();
     }
-    
-    /**
-     * Resets the cancellation flag to allow future indexing operations.
-     */
+
     public void resetCancellationFlag() {
         cancelIndexing.set(false);
     }
 
-    /**
-     * Check if a project is already indexed by searching for a unique hash in metadata.
-     *
-     * @param projectPath Path to the project directory
-     * @return true if project is indexed, false otherwise
-     */
-    private boolean isProjectIndexed(String projectPath) {
-        try {
-            // Create a unique project identifier (hash) based on path and last modified time
-            String projectHash = createProjectHash(projectPath);
-
-            OllamaEmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel();
-
-            if (embeddingModel == null) {
-                log.warn("Ollama embedding model is not available");
-                return false;
-            }
-
-            // Search for the project hash in metadata
-            Embedding hashEmbedding = embeddingModel.embed(projectHash).content();
-            var results = chromaEmbeddingService.getEmbeddingStore().search(EmbeddingSearchRequest.builder()
-                    .queryEmbedding(hashEmbedding)
-                    .maxResults(1)
-                    .minScore(0.99) // High threshold for exact match
-                    .build());
-
-            return !results.matches().isEmpty();
-        } catch (Exception e) {
-            log.warn("Error checking project index status: {}", e.getMessage());
-            return false;
+    /** Cached default (recursive) splitter — used for source code and unknown file types. */
+    private synchronized DocumentSplitter defaultSplitter() {
+        if (documentSplitter == null) {
+            documentSplitter = DocumentSplitters.recursive(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS);
         }
+        return documentSplitter;
     }
 
     /**
-     * Check if a file is already indexed by comparing its embedding with stored embeddings.
-     *
-     * @param filePath Path to the file
-     * @return true if file is indexed, false otherwise
+     * Pick a splitter appropriate to the file's content type. Real wins come from honoring
+     * obvious natural boundaries:
+     * <ul>
+     *   <li>Markdown: split on paragraphs first so headers, code blocks, and bullet lists stay
+     *       together when they fit. Falls back to line/word for any single paragraph over the
+     *       chunk-size budget.</li>
+     *   <li>Source code: line splitting respects statement boundaries better than the generic
+     *       recursive separator order does for code (which prefers paragraph breaks, then
+     *       newlines, then sentence punctuation — the last of which is wrong for code).</li>
+     *   <li>Everything else: the default recursive splitter.</li>
+     * </ul>
+     * Per-language AST chunking is Phase 3; this is a cheap, library-only first pass.
      */
-    private boolean isFileIndexed(Path filePath) {
-        try {
-            String fileIdentifier = filePath.toAbsolutePath().toString();
-            Embedding fileEmbedding = chromaEmbeddingService.getEmbeddingModel().embed(fileIdentifier).content();
-            var results = chromaEmbeddingService.getEmbeddingStore().search(EmbeddingSearchRequest
-                    .builder()
-                    .queryEmbedding(fileEmbedding)
-                    .maxResults(1)
-                    .minScore(0.99)
-                    .build());
-            if (results.matches().isEmpty()) {
-                return false;
-            }
-            List<EmbeddingMatch<TextSegment>> matches = results.matches();
-            TextSegment storedSegment = matches.get(0).embedded();
-            return !hasFileChanged(filePath, storedSegment.metadata());
-        } catch (Exception e) {
-            log.warn("Error checking file index status: {}", e.getMessage());
-            return false;
-        }
+    DocumentSplitter splitterFor(@NotNull Path path) {
+        String ext = extensionOf(path);
+        return switch (ext) {
+            case "md", "mdx", "markdown" ->
+                    new DocumentByParagraphSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
+                            defaultSplitter());
+            case "java", "kt", "kts", "py", "js", "mjs", "cjs", "ts", "tsx", "jsx",
+                 "go", "rs", "cpp", "cc", "cxx", "hpp", "h", "c", "php", "rb", "scala" ->
+                    new DocumentByLineSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
+                            defaultSplitter());
+            default -> defaultSplitter();
+        };
+    }
+
+    private static String extensionOf(@NotNull Path path) {
+        String name = path.getFileName().toString();
+        int dot = name.lastIndexOf('.');
+        if (dot < 0 || dot == name.length() - 1) return "";
+        return name.substring(dot + 1).toLowerCase();
+    }
+
+    @TestOnly
+    public void setManifest(@NotNull IndexManifest manifest) {
+        this.manifest = manifest;
     }
 
     public void indexFiles(Project project,
                            boolean forceReindex,
                            JProgressBar progressBar,
                            JLabel progressLabel) {
-        // Reset cancellation flag at the start of indexing
         resetCancellationFlag();
-        
-        // Initialize progress UI
+
         if (SwingUtilities.isEventDispatchThread()) {
-            // If we're already on the EDT, update directly
             progressBar.setValue(0);
             progressBar.setVisible(true);
             progressLabel.setText("Initializing indexing process...");
             progressLabel.setVisible(true);
         } else {
-            // Otherwise, use invokeLater
             SwingUtilities.invokeLater(() -> {
                 progressBar.setValue(0);
                 progressBar.setVisible(true);
@@ -161,18 +160,13 @@ public final class ProjectIndexerService {
                 progressLabel.setVisible(true);
             });
         }
-        
+
         chromaEmbeddingService.init(project);
-        documentSplitter = DocumentSplitters.recursive(500, 0);
+        this.manifest = IndexManifestService.getInstance().forProject(project);
 
         String basePath = project.getBasePath();
         if (basePath == null) {
             log.warn("Project base path is null");
-            return;
-        }
-
-        if (!forceReindex && isProjectIndexed(basePath)) {
-            log.warn("Project is already indexed, skipping indexing process");
             return;
         }
 
@@ -182,133 +176,220 @@ public final class ProjectIndexerService {
             return;
         }
 
-        // Use synchronous project scanning
         ScanContentResult scanResult = projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false);
         List<Path> filesToProcess = new ArrayList<>(scanResult.getFiles());
         int totalFiles = filesToProcess.size();
 
-        // Process each file sequentially
-        for (int fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
-            // Check if indexing has been cancelled
-            if (isIndexingCancelled()) {
-                log.info("Indexing cancelled after processing {} of {} files", fileIndex, totalFiles);
-                
-                // Update UI to show cancellation
-                final int processedFiles = fileIndex;
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setValue(100); // Set to 100% to indicate completion
-                    progressLabel.setText(String.format("Indexing cancelled after processing %d of %d files", 
-                                                       processedFiles, totalFiles));
+        // Bounded parallel pool: a handful of file-processing threads share access to the
+        // batched embedAll / Chroma writes. We still cap progress + cancellation checks at the
+        // file boundary, since per-file work is the meaningful unit.
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(
+                INDEXING_PARALLELISM,
+                r -> {
+                    Thread t = new Thread(r, "DevoxxGenie-Indexer");
+                    t.setDaemon(true);
+                    return t;
                 });
-                
-                return;
+        java.util.concurrent.atomic.AtomicInteger processedCount = new java.util.concurrent.atomic.AtomicInteger();
+        try {
+            java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(totalFiles);
+            for (Path path : filesToProcess) {
+                futures.add(pool.submit(() -> {
+                    if (isIndexingCancelled()) return;
+                    indexFile(path, forceReindex);
+                    int done = processedCount.incrementAndGet();
+                    int progress = (int) (((double) done / totalFiles) * 100);
+                    String fileName = path.getFileName().toString();
+                    SwingUtilities.invokeLater(() -> {
+                        progressBar.setVisible(true);
+                        progressLabel.setVisible(true);
+                        progressBar.setValue(progress);
+                        progressLabel.setText(String.format("Processing %d of %d: %s", done, totalFiles, fileName));
+                    });
+                }));
             }
-            
-            Path path = filesToProcess.get(fileIndex);
-            String fileName = path.getFileName().toString();
-            int progress = (int) (((double) (fileIndex + 1) / totalFiles) * 100);
-            final int currentFileIndex = fileIndex;
-            
-            // Update progress UI and ensure it's visible
-            SwingUtilities.invokeLater(() -> {
-                progressBar.setVisible(true);
-                progressLabel.setVisible(true);
-                progressBar.setValue(progress);
-                progressLabel.setText(String.format("Processing %d of %d: %s", currentFileIndex + 1, totalFiles, fileName));
-            });
-            
-            // Process the file without waiting for UI update to complete
-            indexSingleFile(path);
+            for (java.util.concurrent.Future<?> f : futures) {
+                if (isIndexingCancelled()) break;
+                try {
+                    f.get();
+                } catch (java.util.concurrent.ExecutionException ee) {
+                    log.warn("Indexer task failed: {}", ee.getCause() == null ? ee.getMessage() : ee.getCause().getMessage());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if (isIndexingCancelled()) {
+                int processed = processedCount.get();
+                log.info("Indexing cancelled after processing {} of {} files", processed, totalFiles);
+                SwingUtilities.invokeLater(() -> {
+                    progressBar.setValue(100);
+                    progressLabel.setText(String.format("Indexing cancelled after processing %d of %d files",
+                            processed, totalFiles));
+                });
+            }
+        } finally {
+            pool.shutdownNow();
+            manifest.flush();
+            resetCancellationFlag();
         }
-        
-        // Reset cancellation flag after successful completion
-        resetCancellationFlag();
     }
 
     /**
-     * Index a single file by checking if it is already indexed and processing the content.
-     * @param filePath Path to the file to index
+     * Index a single file: skip if the content hash already matches what's recorded in the
+     * manifest, otherwise split, embed, and store each chunk. Exposed for tests and for
+     * future incremental flows (e.g. a {@code BulkFileListener}).
      */
-    private void indexSingleFile(Path filePath) {
+    public void indexFile(Path filePath) {
+        indexFile(filePath, false);
+        manifest.flush();
+    }
+
+    /**
+     * Re-index a set of files belonging to {@code project}. Wraps the manifest swap +
+     * per-file processing + flush in one call so callers (notably the file watcher) don't
+     * have to know about manifest plumbing. Skips files the manifest has never seen — new
+     * files require a manual full re-index so a casual edit can't bootstrap an unindexed
+     * tree of generated/binary/excluded content.
+     */
+    public void reindexFiles(@NotNull Project project, @NotNull Collection<Path> files) {
+        if (files.isEmpty()) return;
+        chromaEmbeddingService.init(project);
+        this.manifest = IndexManifestService.getInstance().forProject(project);
+        try {
+            for (Path file : files) {
+                if (!manifest.isTracked(file)) continue;
+                // Drop any existing chunks for this file before re-embedding, otherwise edits
+                // accumulate stale chunks alongside fresh ones.
+                removeChunksFromStore(file);
+                indexFile(file, true);
+            }
+        } finally {
+            manifest.flush();
+        }
+    }
+
+    /**
+     * Remove the given files from the vector store and the manifest. Called by the file
+     * watcher on delete events so the index doesn't keep returning chunks for files that
+     * no longer exist on disk.
+     */
+    public void removeFiles(@NotNull Project project, @NotNull Collection<Path> files) {
+        if (files.isEmpty()) return;
+        chromaEmbeddingService.init(project);
+        this.manifest = IndexManifestService.getInstance().forProject(project);
+        try {
+            for (Path file : files) {
+                if (!manifest.isTracked(file)) continue;
+                removeChunksFromStore(file);
+                manifest.markRemoved(file);
+            }
+        } finally {
+            manifest.flush();
+        }
+    }
+
+    private void removeChunksFromStore(@NotNull Path file) {
+        try {
+            Filter filter = MetadataFilterBuilder.metadataKey(FILE_PATH)
+                    .isEqualTo(file.toAbsolutePath().toString());
+            chromaEmbeddingService.getEmbeddingStore().removeAll(filter);
+        } catch (Exception e) {
+            // EmbeddingStore.removeAll(Filter) is a default method and a few legacy stores
+            // throw UnsupportedOperationException. Log and continue — at worst we leave stale
+            // chunks until the next full reindex.
+            log.warn("Could not remove existing chunks for {}: {}", file, e.getMessage());
+        }
+    }
+
+    private void indexFile(Path filePath, boolean forceReindex) {
         log.debug("Indexing file: {}", filePath);
         try {
-            if (isFileIndexed(filePath)) {
-                log.debug("File already indexed: {}", filePath);
+            if (!forceReindex && manifest.isCurrent(filePath)) {
+                log.debug("File already indexed (content hash matches): {}", filePath);
                 return;
             }
-
-            processPath(filePath);
-            log.debug("File successfully indexed: {}", filePath);
-        } catch (Exception e) {
-            log.warn("Error indexing file: {} - {}",  filePath, e.getMessage());
-        }
-    }
-
-    @NotNull
-    private String createProjectHash(String projectPath) throws IOException {
-        Path path = Paths.get(projectPath);
-        long lastModified = Files.getLastModifiedTime(path).toMillis();
-        return projectPath + "_" + lastModified;
-    }
-
-    private boolean hasFileChanged(Path filePath, @NotNull Metadata storedMetadata) {
-        try {
-            long currentLastModified = Files.getLastModifiedTime(filePath).toMillis();
-            if (!storedMetadata.containsKey("lastModified")) {
-                return true;
+            int segmentCount = processPath(filePath);
+            if (segmentCount > 0) {
+                manifest.markIndexed(filePath, segmentCount);
+                log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
             }
-            Long storedLastModified = storedMetadata.getLong("lastModified");
-            if (storedLastModified == null) return false;
-            return currentLastModified > storedLastModified;
-        } catch (IOException e) {
-            return true; // If we can't check, assume it changed
+        } catch (Exception e) {
+            log.warn("Error indexing file: {} - {}", filePath, e.getMessage());
         }
-    }
-
-    @NotNull
-    private String createFileIdentifier(@NotNull Path filePath) {
-        return filePath.toAbsolutePath().toString();
     }
 
     /**
-     * Mark a file as indexed by storing its metadata and embedding in the database.
-     *
-     * @param filePath Path to the file
-     * @param segment  Text segment containing metadata
+     * Embed and store a batch of segments in one shot. The previous implementation made
+     * one HTTP call to Ollama per segment, turning a 200-chunk file into 200 sequential
+     * roundtrips. Embedding in batches and using {@code addAll} on the store collapses
+     * that to {@code ceil(N / EMBEDDING_BATCH_SIZE)} calls and one store write per batch.
      */
-    private void markFileAsIndexed(Path filePath, TextSegment segment) {
-        try {
-            String fileIdentifier = createFileIdentifier(filePath);
-            Embedding embedding = chromaEmbeddingService.getEmbeddingModel().embed(fileIdentifier).content();
-            chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
-        } catch (Exception e) {
-            log.warn("Error marking file as indexed: {}", e.getMessage());
+    private void storeSegments(@NotNull List<TextSegment> segments) {
+        if (segments.isEmpty()) return;
+        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel();
+        for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
+            int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
+            List<TextSegment> batch = segments.subList(from, to);
+            try {
+                List<Embedding> embeddings = embeddingModel.embedAll(batch).content();
+                chromaEmbeddingService.getEmbeddingStore().addAll(embeddings, batch);
+            } catch (Exception batchEx) {
+                // Some embedding backends choke on a single bad segment and reject the whole
+                // batch. Fall back to per-segment so one malformed chunk doesn't poison the
+                // rest of the file.
+                log.warn("Batch embed failed ({}); falling back to per-segment for this batch", batchEx.getMessage());
+                for (TextSegment segment : batch) {
+                    try {
+                        Embedding embedding = embeddingModel.embed(segment.text()).content();
+                        chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
+                    } catch (Exception singleEx) {
+                        log.warn("Skipping segment that failed to embed: {}", singleEx.getMessage());
+                    }
+                }
+            }
         }
     }
 
-    private void processPath(Path path) {
+    /** Returns the number of segments stored for this file (0 if blank / unreadable). */
+    private int processPath(Path path) {
         try {
             log.debug("Processing file: {}", path);
 
             String content = Files.readString(path);
             if (content.isBlank()) {
-                return;
+                return 0;
             }
 
             Document document = Document.from(content);
-            List<TextSegment> segments = documentSplitter.split(document);
+            List<TextSegment> rawSegments = splitterFor(path).split(document);
+            long lastModified = Files.getLastModifiedTime(path).toMillis();
+            long indexedAt = System.currentTimeMillis();
+            String absolutePath = path.toAbsolutePath().toString();
 
-            for (TextSegment segment : segments) {
-                log.debug("Segment: {}", segment.text());
+            List<TextSegment> segments = new ArrayList<>(rawSegments.size());
+            int dropped = 0;
+            for (TextSegment segment : rawSegments) {
+                if (ChunkQualityFilter.isLowContent(segment.text())) {
+                    dropped++;
+                    continue;
+                }
                 Metadata metadata = new Metadata();
-                metadata.put(FILE_PATH, path.toString());
-                metadata.put(LAST_MODIFIED, Files.getLastModifiedTime(path).toMillis());
-                metadata.put(INDEXED_AT, System.currentTimeMillis());
-                markFileAsIndexed(path, new TextSegment(segment.text(), metadata));
+                metadata.put(FILE_PATH, absolutePath);
+                metadata.put(LAST_MODIFIED, lastModified);
+                metadata.put(INDEXED_AT, indexedAt);
+                metadata.put(EMBEDDING_SCHEMA_VERSION_KEY, CURRENT_EMBEDDING_SCHEMA_VERSION);
+                segments.add(new TextSegment(segment.text(), metadata));
+            }
+            if (dropped > 0) {
+                log.debug("Dropped {} low-content chunk(s) from {}", dropped, path);
             }
 
+            storeSegments(segments);
+            return segments.size();
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);
+            return 0;
         }
     }
 }

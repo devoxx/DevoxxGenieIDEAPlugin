@@ -193,6 +193,81 @@ class NonStreamingPromptExecutionServiceTest {
         }
     }
 
+    // ---------- Hang/timeout reproduction (issue: MCP-enabled prompts had no wall-clock cap) ----------
+
+    /** Simple prompt: caller's per-request timeout wins. */
+    @Test
+    void resolveTimeoutSeconds_simplePrompt_returnsRequestedTimeout() {
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(45, false, 999))
+                .isEqualTo(45L);
+    }
+
+    /** Simple prompt with null/non-positive request falls back to the simple-prompt default (60s). */
+    @Test
+    void resolveTimeoutSeconds_simplePrompt_nullRequested_returnsDefault60() {
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(null, false, 999))
+                .isEqualTo(60L);
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(0, false, 999))
+                .isEqualTo(60L);
+    }
+
+    /** Agent/MCP: agent cap is used regardless of the (short) per-request timeout. */
+    @Test
+    void resolveTimeoutSeconds_agentOrMcp_returnsAgentCap() {
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(45, true, 240))
+                .isEqualTo(240L);
+    }
+
+    /** Agent/MCP with null/non-positive cap falls back to AGENT_MAX_EXECUTION_SECONDS (300). */
+    @Test
+    void resolveTimeoutSeconds_agentOrMcp_nullCap_returnsDefault300() {
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(45, true, null))
+                .isEqualTo(300L);
+        assertThat(NonStreamingPromptExecutionService.resolveTimeoutSeconds(45, true, 0))
+                .isEqualTo(300L);
+    }
+
+    /**
+     * Demonstrates the fix at the JDK-API level: applying the resolved timeout via {@code orTimeout}
+     * makes a hanging future terminate. The bug was that MCP/agent flows skipped {@code orTimeout}
+     * entirely; the production fix unconditionally calls {@code orTimeout(resolveTimeoutSeconds(...), SECONDS)}.
+     */
+    @Test
+    void orTimeout_appliedToMcpAgentFlow_terminatesHangingFuture() throws Exception {
+        long capSeconds = NonStreamingPromptExecutionService.resolveTimeoutSeconds(
+                /* requested */ 60, /* isAgentOrMcp */ true, /* cap */ 1);
+        assertThat(capSeconds).isEqualTo(1L);
+
+        // Dedicated executor so we can shutdownNow() and interrupt the sleeping worker;
+        // CompletableFuture#cancel doesn't propagate interrupts to its supplier.
+        java.util.concurrent.ExecutorService exec = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "test-hang-worker");
+            t.setDaemon(true);
+            return t;
+        });
+        try {
+            CompletableFuture<String> hanging = CompletableFuture.supplyAsync(() -> {
+                try { Thread.sleep(30_000); }
+                catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+                return "should never see this";
+            }, exec);
+
+            long start = System.nanoTime();
+            CompletableFuture<String> guarded = hanging.orTimeout(capSeconds, java.util.concurrent.TimeUnit.SECONDS);
+            Throwable err = null;
+            try { guarded.get(5, java.util.concurrent.TimeUnit.SECONDS); }
+            catch (java.util.concurrent.ExecutionException e) { err = e.getCause(); }
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+
+            assertThat(err).isInstanceOf(java.util.concurrent.TimeoutException.class);
+            // Should fire close to the cap, well before the 30s hang would complete.
+            assertThat(elapsedMs).isLessThan(3_000L);
+        } finally {
+            exec.shutdownNow();
+            exec.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        }
+    }
+
     @Test
     void cancelExecutingQuery_withCompletedFuture_doesNotCancel() {
         CompletableFuture<ChatResponse> completedFuture = CompletableFuture.completedFuture(null);

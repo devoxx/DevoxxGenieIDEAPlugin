@@ -4,8 +4,10 @@ import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.mcp.MCPMessage;
+import com.devoxx.genie.model.rag.RAGLogMessage;
 import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.service.mcp.MCPLoggingMessage;
+import com.devoxx.genie.service.rag.RAGLoggingMessage;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.util.MessageBusUtil;
@@ -47,7 +49,7 @@ import java.util.function.Function;
  * Double-click a log entry to open full content in a new editor tab.
  */
 @Slf4j
-public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, Disposable {
+public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, RAGLoggingMessage, Disposable {
 
     private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
     private static final int BATCH_SIZE = 20;
@@ -69,8 +71,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    enum LogSource { MCP, AGENT }
-    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY }
+    enum LogSource { MCP, AGENT, RAG }
+    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY, RAG_ONLY }
 
     record LogEntry(
         String timestamp,
@@ -100,10 +102,14 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         super(true);
         this.project = project;
 
+        // Track viewport width so cells never paint beyond the tool window's clip rect.
+        // Without this, a single long RAG hit preview (or run_command line) forces the JList
+        // wider than its viewport, and every JCEF-driven repaint during LLM streaming
+        // re-paints that oversized area — visible as IDE-wide flicker.
         logList = new JBList<>(logListModel) {
             @Override
             public boolean getScrollableTracksViewportWidth() {
-                return false;
+                return true;
             }
         };
         logList.setCellRenderer(new CombinedLogEntryRenderer());
@@ -125,6 +131,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         JBScrollPane scrollPane = new JBScrollPane(logList);
         scrollPane.setBorder(JBUI.Borders.empty());
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         setContent(scrollPane);
 
         setupToolbar();
@@ -133,6 +140,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 MessageBusUtil.connect(project, connection -> {
                     MessageBusUtil.subscribe(connection, AppTopics.ACTIVITY_LOG_MSG, this);
                     MessageBusUtil.subscribe(connection, AppTopics.MCP_TRAFFIC_MSG, this);
+                    MessageBusUtil.subscribe(connection, AppTopics.RAG_LOG_MSG, this);
                     Disposer.register(this, connection);
                 }));
     }
@@ -148,6 +156,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         actionGroup.add(new AnAction("Clear Logs", "Clear all log entries",
                 IconLoader.getIcon("/actions/gc.svg", AgentMcpLogPanel.class)) {
             @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
+            @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 clearLogs();
             }
@@ -155,6 +168,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         actionGroup.add(new ToggleAction("Pause", "Pause log collection",
                 IconLoader.getIcon("/actions/pause.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public boolean isSelected(@NotNull AnActionEvent e) {
                 return isPaused;
@@ -165,11 +183,19 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 isPaused = state;
                 e.getPresentation().setText(isPaused ? "Resume" : "Pause");
                 e.getPresentation().setDescription(isPaused ? "Resume log collection" : "Pause log collection");
+                e.getPresentation().setIcon(IconLoader.getIcon(
+                        isPaused ? "/actions/resume.svg" : "/actions/pause.svg",
+                        AgentMcpLogPanel.class));
             }
         });
 
         actionGroup.add(new AnAction("Copy All Logs", "Copy all log entries to clipboard",
                 IconLoader.getIcon("/actions/copy.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 copyLogsToClipboard();
@@ -178,6 +204,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         actionGroup.add(new AnAction("Settings", "Configure log retention",
                 IconLoader.getIcon("/general/settings.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 showSettingsDialog();
@@ -192,11 +223,17 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private class FilterComboBoxAction extends ComboBoxAction {
 
         @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
+
+        @Override
         public void update(@NotNull AnActionEvent e) {
             e.getPresentation().setText(switch (currentFilter) {
                 case ALL        -> "Show All";
                 case MCP_ONLY   -> "Show MCP Only";
                 case AGENT_ONLY -> "Show Agents Only";
+                case RAG_ONLY   -> "Show RAG Only";
             });
         }
 
@@ -206,6 +243,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             group.add(filterAction("Show All",          LogFilter.ALL));
             group.add(filterAction("Show MCP Only",     LogFilter.MCP_ONLY));
             group.add(filterAction("Show Agents Only",  LogFilter.AGENT_ONLY));
+            group.add(filterAction("Show RAG Only",     LogFilter.RAG_ONLY));
             return group;
         }
 
@@ -235,6 +273,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case ALL -> true;
             case MCP_ONLY -> e.source() == LogSource.MCP;
             case AGENT_ONLY -> e.source() == LogSource.AGENT;
+            case RAG_ONLY -> e.source() == LogSource.RAG;
         };
     }
 
@@ -305,6 +344,117 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 content
         );
         addToPending(entry);
+    }
+
+    /**
+     * Receives RAG retrieval events. Each event describes one semantic search: the query,
+     * configured thresholds, and the list of matched chunks with their scores and a preview.
+     */
+    @Override
+    public void onRAGLoggingMessage(RAGLogMessage message) {
+        if (message == null || isPaused) {
+            return;
+        }
+        String hash = message.getProjectLocationHash();
+        if (hash != null && !hash.equals(project.getLocationHash())) {
+            return;
+        }
+        LogEntry entry = new LogEntry(
+                LocalDateTime.now().format(TIME_FORMATTER),
+                LogSource.RAG,
+                null,
+                formatRagRow(message),
+                formatRagForClipboard(message),
+                formatRagFullContent(message)
+        );
+        addToPending(entry);
+    }
+
+    private static @NotNull String formatRagRow(@NotNull RAGLogMessage m) {
+        // Single-line summary. The multi-line bullet list of hits used to be inlined here,
+        // but the resulting tall variable-height JList cells caused continuous repaint of the
+        // tool window (visible as IDE-wide flicker) while MCP/Agent rows — always single-line —
+        // were fine. Full per-hit detail is still available via the hover tooltip and the
+        // double-click "open in editor" view.
+        StringBuilder sb = new StringBuilder();
+        int hitCount = m.getHits() == null ? 0 : m.getHits().size();
+        sb.append("RAG: \"").append(summarize(m.getQuery(), 80))
+          .append("\" -> ").append(hitCount).append(" hit").append(hitCount == 1 ? "" : "s")
+          .append(" (").append(m.getDurationMs()).append("ms");
+        if (m.getMinScore() != null && m.getMaxResults() != null) {
+            sb.append(", minScore=").append(String.format("%.2f", m.getMinScore()))
+              .append(", topK=").append(m.getMaxResults());
+        }
+        sb.append(")");
+        if (hitCount > 0) {
+            sb.append("  [");
+            int shown = Math.min(hitCount, 4);
+            for (int i = 0; i < shown; i++) {
+                if (i > 0) sb.append(", ");
+                RAGLogMessage.Hit h = m.getHits().get(i);
+                sb.append(filenameOf(h.getFilePath())).append(' ').append(formatScore(h.getScore()));
+            }
+            if (hitCount > shown) {
+                sb.append(", +").append(hitCount - shown).append(" more");
+            }
+            sb.append(']');
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String formatRagForClipboard(@NotNull RAGLogMessage m) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("RAG retrieval — query: ").append(m.getQuery() == null ? "" : m.getQuery().replace('\n', ' '))
+          .append(" (").append(m.getDurationMs()).append("ms");
+        if (m.getMinScore() != null) sb.append(", minScore=").append(m.getMinScore());
+        if (m.getMaxResults() != null) sb.append(", topK=").append(m.getMaxResults());
+        sb.append(")");
+        if (m.getHits() != null) {
+            for (RAGLogMessage.Hit h : m.getHits()) {
+                sb.append('\n').append("    [").append(formatScore(h.getScore())).append("] ")
+                  .append(h.getFilePath());
+            }
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String formatRagFullContent(@NotNull RAGLogMessage m) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== RAG Retrieval ===\n");
+        sb.append("Query: ").append(m.getQuery()).append("\n");
+        if (m.getEmbeddingModel() != null) sb.append("Embedding model: ").append(m.getEmbeddingModel()).append("\n");
+        if (m.getMinScore() != null) sb.append("Min score: ").append(m.getMinScore()).append("\n");
+        if (m.getMaxResults() != null) sb.append("Top-K (max results): ").append(m.getMaxResults()).append("\n");
+        sb.append("Duration: ").append(m.getDurationMs()).append(" ms\n");
+        int hitCount = m.getHits() == null ? 0 : m.getHits().size();
+        sb.append("Hits: ").append(hitCount).append("\n\n");
+        if (hitCount > 0) {
+            for (int i = 0; i < m.getHits().size(); i++) {
+                RAGLogMessage.Hit h = m.getHits().get(i);
+                sb.append("--- Hit ").append(i + 1).append(" / ").append(hitCount).append(" ---\n");
+                sb.append("File:   ").append(h.getFilePath()).append("\n");
+                sb.append("Score:  ").append(formatScore(h.getScore())).append("\n");
+                sb.append("Chunk length: ").append(h.getChunkLength()).append(" chars\n");
+                sb.append("Preview:\n").append(h.getPreview() == null ? "" : h.getPreview()).append("\n\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static @NotNull String filenameOf(String path) {
+        if (path == null) return "(unknown)";
+        int slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        return slash >= 0 ? path.substring(slash + 1) : path;
+    }
+
+    private static @NotNull String summarize(String text, int max) {
+        if (text == null) return "";
+        String oneLine = text.replace('\n', ' ').replace('\r', ' ').trim();
+        return oneLine.length() > max ? oneLine.substring(0, max - 1) + "…" : oneLine;
+    }
+
+    private static @NotNull String formatScore(Double score) {
+        return score == null ? "n/a" : String.format("%.3f", score);
     }
 
     private void addToPending(LogEntry entry) {
@@ -652,7 +802,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             if (value instanceof LogEntry entry && !isSelected) {
-                String sourceTag = entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ";
+                String sourceTag = switch (entry.source()) {
+                    case MCP   -> "[MCP] ";
+                    case AGENT -> "[AGT] ";
+                    case RAG   -> "[RAG] ";
+                };
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 String plain = entry.timestamp() + " " + badge + entry.message();
                 label.setText(toHtmlRow(plain));

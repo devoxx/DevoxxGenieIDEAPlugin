@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -95,7 +96,7 @@ public final class ChromaDBManager {
     private void startContainer(Project project,
                                 @NotNull ProgressIndicator indicator,
                                 ChromaDBStatusCallback callback) {
-        indicator.setText("Starting ChromaDB container...");
+        indicator.setText("Preparing ChromaDB...");
         try {
             ChromaDockerService dockerService = ApplicationManager.getApplication()
                     .getService(ChromaDockerService.class);
@@ -104,6 +105,7 @@ public final class ChromaDBManager {
                 public void onSuccess() {
                     // Wait for ChromaDB to be fully operational
                     indicator.setText("Waiting for ChromaDB to be ready...");
+                    indicator.setText2("");
                     if (waitForChromaDB(indicator)) {
                         callback.onSuccess();
                     } else {
@@ -115,7 +117,7 @@ public final class ChromaDBManager {
                 public void onError(String message) {
                     callback.onError(message);
                 }
-            });
+            }, indicator);
         } catch (Exception e) {
             log.error("Failed to start ChromaDB", e);
             callback.onError("Failed to start ChromaDB: " + e.getMessage());
@@ -123,6 +125,17 @@ public final class ChromaDBManager {
     }
 
     public void pullChromaDockerImage(Project project, ChromaDBStatusCallback callback) {
+        pullChromaDockerImage(project, callback, null);
+    }
+
+    /**
+     * @param progressListener invoked on a Docker-API thread for each layer status update
+     *                         (e.g. "abc123: Downloading"). Callers that update Swing widgets
+     *                         must hop to the EDT inside the listener.
+     */
+    public void pullChromaDockerImage(Project project,
+                                      ChromaDBStatusCallback callback,
+                                      @Nullable java.util.function.Consumer<String> progressListener) {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Pulling chromaDB image") {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -132,7 +145,7 @@ public final class ChromaDBManager {
                 try {
                     ChromaDockerService dockerService =
                             ApplicationManager.getApplication().getService(ChromaDockerService.class);
-                    dockerService.pullChromaDockerImage(callback);
+                    dockerService.pullChromaDockerImage(callback, indicator, progressListener);
                     callback.onSuccess();
                 } catch (Exception e) {
                     log.error("Error pulling ChromaDB image", e);
