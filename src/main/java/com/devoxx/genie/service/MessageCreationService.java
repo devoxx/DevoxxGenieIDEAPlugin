@@ -141,6 +141,12 @@ public class MessageCreationService {
         chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
     }
 
+    /** Queries shorter than this are treated as follow-up clarifications ("explain", "more?",
+     *  "and?") that should reuse the previous turn's context rather than triggering a new RAG
+     *  retrieval. This keeps the prompt-cache hot for chatty back-and-forth and saves an
+     *  Ollama embedding call per follow-up. */
+    static final int RAG_MIN_QUERY_LENGTH = 15;
+
     private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
         log.debug("Constructing user message with combined context");
 
@@ -156,16 +162,6 @@ public class MessageCreationService {
         // (set once per conversation in ChatMemoryManager.buildSystemPrompt()) rather than repeated
         // in every user message.
 
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
-            // Semantic search is enabled, add search results
-            String semanticContext = addSemanticSearchResults(chatMessageContext);
-            if (!semanticContext.isEmpty()) {
-                stringBuilder.append("<SemanticContext>\n");
-                stringBuilder.append(semanticContext);
-                stringBuilder.append("\n</SemanticContext>");
-            }
-        }
-
         if (MCPService.isMCPEnabled()) {
             // We'll add more info about the project path so tools can use this info.
             stringBuilder
@@ -180,10 +176,35 @@ public class MessageCreationService {
             stringBuilder.append(editorContent);
         }
 
+        // Retrieval context immediately precedes the user prompt. Two reasons:
+        //   1. Providers that hit prompt caches (Anthropic, OpenAI) only cache the stable
+        //      prefix; varying retrieval content at the top defeats that cache for everyone.
+        //   2. Many local models pay more attention to whatever is closest to the user
+        //      question — keeping RAG hits adjacent to the prompt improves grounding.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())
+                && shouldRunRagFor(chatMessageContext.getUserPrompt())) {
+            String semanticContext = addSemanticSearchResults(chatMessageContext);
+            if (!semanticContext.isEmpty()) {
+                stringBuilder.append("<SemanticContext>\n");
+                stringBuilder.append(semanticContext);
+                stringBuilder.append("\n</SemanticContext>");
+            }
+        }
+
         // Add the user's prompt, this MUST BE at the bottom of the prompt for some local models to understand!
         stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");
 
         chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
+    }
+
+    /**
+     * Decide whether to run a RAG retrieval for {@code userPrompt}. Skips very short
+     * follow-up-style messages ({@code "more?"}, {@code "explain"}, {@code "why?"}) where
+     * the LLM should rely on the prior turn's context instead. Visible for tests.
+     */
+    static boolean shouldRunRagFor(String userPrompt) {
+        if (userPrompt == null) return false;
+        return userPrompt.trim().length() >= RAG_MIN_QUERY_LENGTH;
     }
 
     /**

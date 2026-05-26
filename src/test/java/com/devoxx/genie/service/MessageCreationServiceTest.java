@@ -83,9 +83,11 @@ class MessageCreationServiceTest {
     void setUp() {
         messageCreationService = new MessageCreationService();
 
-        // Set up common stubs that many tests will need
+        // Set up common stubs that many tests will need. Keep the default user prompt long
+        // enough to clear MessageCreationService.RAG_MIN_QUERY_LENGTH so existing tests that
+        // exercise the RAG path don't suddenly skip retrieval.
         lenient().when(mockChatMessageContext.getProject()).thenReturn(mockProject);
-        lenient().when(mockChatMessageContext.getUserPrompt()).thenReturn("Test prompt");
+        lenient().when(mockChatMessageContext.getUserPrompt()).thenReturn("How does the test prompt feature work?");
         lenient().when(mockChatMessageContext.getLanguageModel()).thenReturn(mockLanguageModel);
     }
 
@@ -635,6 +637,90 @@ class MessageCreationServiceTest {
             assertEquals(2, contents.size());
             assertInstanceOf(TextContent.class, contents.get(0));
             assertInstanceOf(ImageContent.class, contents.get(1));
+        }
+    }
+
+    @Test
+    void shortFollowUpQueriesSkipRag() {
+        // "more?" is the kind of follow-up that should reuse the prior turn's context
+        // instead of triggering a fresh RAG retrieval — both for prompt-cache reasons and
+        // to avoid pointless Ollama embed calls.
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn(null);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("more?");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
+             MockedStatic<SemanticSearchService> semanticSearchServiceMockedStatic = Mockito.mockStatic(SemanticSearchService.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
+
+            when(mockStateService.getRagActivated()).thenReturn(true);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            verify(mockSemanticSearchService, never()).search(any(), any());
+            // Long enough queries must still trigger RAG — sanity-check the threshold isn't reversed.
+            assertTrue(MessageCreationService.shouldRunRagFor("This is a meaningful question about the codebase"));
+            assertFalse(MessageCreationService.shouldRunRagFor("more?"));
+            assertFalse(MessageCreationService.shouldRunRagFor("why?"));
+            assertFalse(MessageCreationService.shouldRunRagFor("explain"));
+            assertFalse(MessageCreationService.shouldRunRagFor(""));
+            assertFalse(MessageCreationService.shouldRunRagFor(null));
+        }
+    }
+
+    @Test
+    void ragContextIsPlacedImmediatelyBeforeUserPromptForCacheFriendliness() {
+        // Prompt-cache providers cache the stable prefix; the previous code injected
+        // varying RAG output near the top, defeating that cache.
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn(null);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("Where is the AuthService defined and how is it wired?");
+
+        List<SearchResult> hits = List.of(new SearchResult("/abs/AuthService.java", 0.93, "needle-RAG-content"));
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
+             MockedStatic<SemanticSearchService> semanticSearchServiceMockedStatic = Mockito.mockStatic(SemanticSearchService.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
+
+            when(mockStateService.getRagActivated()).thenReturn(true);
+            when(mockSemanticSearchService.search(any(), any())).thenReturn(hits);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> captor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(captor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            String prompt = captor.getValue().singleText();
+            int ragIdx = prompt.indexOf("<SemanticContext>");
+            int userIdx = prompt.indexOf("<UserPrompt>");
+            assertTrue(ragIdx >= 0, "RAG context must be present");
+            assertTrue(userIdx >= 0, "UserPrompt must be present");
+            assertTrue(ragIdx < userIdx,
+                    "SemanticContext must appear BEFORE the UserPrompt block (so it's adjacent above the question)");
+            // Nothing between SemanticContext closing tag and UserPrompt opening tag — that
+            // adjacency is what improves local-model grounding.
+            int ragCloseEnd = prompt.indexOf("</SemanticContext>") + "</SemanticContext>".length();
+            String between = prompt.substring(ragCloseEnd, userIdx).trim();
+            assertEquals("", between,
+                    "no content should be injected between </SemanticContext> and <UserPrompt>");
         }
     }
 
