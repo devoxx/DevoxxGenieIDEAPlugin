@@ -24,6 +24,11 @@ public class InMemoryIndexManifest implements IndexManifest {
     protected final ConcurrentMap<String, IndexManifestEntry> entries = new ConcurrentHashMap<>();
 
     @Override
+    public boolean isTracked(@NotNull Path file) {
+        return entries.containsKey(file.toAbsolutePath().toString());
+    }
+
+    @Override
     public boolean isCurrent(@NotNull Path file) {
         String key = file.toAbsolutePath().toString();
         IndexManifestEntry entry = entries.get(key);

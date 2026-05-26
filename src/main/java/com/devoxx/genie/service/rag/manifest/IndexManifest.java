@@ -18,6 +18,11 @@ public interface IndexManifest {
     /** True iff {@code file} is recorded and its content hash matches what's on disk. */
     boolean isCurrent(@NotNull Path file);
 
+    /** True iff {@code file} is recorded at all, regardless of whether its hash is still current.
+     *  Used by the file watcher to scope auto-reindex to files the user has explicitly indexed
+     *  before — new files require a manual full index so the watcher can't accidentally bootstrap. */
+    boolean isTracked(@NotNull Path file);
+
     /** Record that {@code file} has been indexed; computes and stores its current content hash. */
     void markIndexed(@NotNull Path file, int segmentCount);
 

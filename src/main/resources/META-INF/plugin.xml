@@ -647,6 +647,7 @@
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.rag.watcher.RAGFileWatcher"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.security.SecurityScannerService"/>

@@ -18,6 +18,8 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.filter.Filter;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -175,6 +178,63 @@ public final class ProjectIndexerService {
     public void indexFile(Path filePath) {
         indexFile(filePath, false);
         manifest.flush();
+    }
+
+    /**
+     * Re-index a set of files belonging to {@code project}. Wraps the manifest swap +
+     * per-file processing + flush in one call so callers (notably the file watcher) don't
+     * have to know about manifest plumbing. Skips files the manifest has never seen — new
+     * files require a manual full re-index so a casual edit can't bootstrap an unindexed
+     * tree of generated/binary/excluded content.
+     */
+    public void reindexFiles(@NotNull Project project, @NotNull Collection<Path> files) {
+        if (files.isEmpty()) return;
+        chromaEmbeddingService.init(project);
+        this.manifest = IndexManifestService.getInstance().forProject(project);
+        try {
+            for (Path file : files) {
+                if (!manifest.isTracked(file)) continue;
+                // Drop any existing chunks for this file before re-embedding, otherwise edits
+                // accumulate stale chunks alongside fresh ones.
+                removeChunksFromStore(file);
+                indexFile(file, true);
+            }
+        } finally {
+            manifest.flush();
+        }
+    }
+
+    /**
+     * Remove the given files from the vector store and the manifest. Called by the file
+     * watcher on delete events so the index doesn't keep returning chunks for files that
+     * no longer exist on disk.
+     */
+    public void removeFiles(@NotNull Project project, @NotNull Collection<Path> files) {
+        if (files.isEmpty()) return;
+        chromaEmbeddingService.init(project);
+        this.manifest = IndexManifestService.getInstance().forProject(project);
+        try {
+            for (Path file : files) {
+                if (!manifest.isTracked(file)) continue;
+                removeChunksFromStore(file);
+                manifest.markRemoved(file);
+            }
+        } finally {
+            manifest.flush();
+        }
+    }
+
+    private void removeChunksFromStore(@NotNull Path file) {
+        try {
+            Filter filter = MetadataFilterBuilder.metadataKey(FILE_PATH)
+                    .isEqualTo(file.toAbsolutePath().toString());
+            chromaEmbeddingService.getEmbeddingStore().removeAll(filter);
+        } catch (Exception e) {
+            // EmbeddingStore.removeAll(Filter) is a default method and a few legacy stores
+            // throw UnsupportedOperationException. Log and continue — at worst we leave stale
+            // chunks until the next full reindex.
+            log.warn("Could not remove existing chunks for {}: {}", file, e.getMessage());
+        }
     }
 
     private void indexFile(Path filePath, boolean forceReindex) {
