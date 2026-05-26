@@ -81,8 +81,6 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             return;
         }
 
-        prepareMemory(context);
-
         StreamingResponseHandler handler = createStreamingResponseHandler(context, panel, resultTask);
         currentHandler.set(handler);
 
@@ -91,8 +89,25 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             return;
         }
 
-        threadPoolManager.getPromptExecutionPool().execute(
-            () -> executeStreamingInBackground(context, streamingModel, handler));
+        // prepareMemory() triggers RAG retrieval, which (when query expansion is enabled) issues
+        // N LLM calls. Running it on the EDT freezes the prompt-panel glow + Compose loading
+        // indicator until expansion finishes (task-217). Hoist the whole thing onto the
+        // execution pool; the indicator is already enabled by addUserPromptMessage(), so the
+        // free EDT can now repaint it immediately.
+        threadPoolManager.getPromptExecutionPool().execute(() -> {
+            try {
+                prepareMemory(context);
+            } catch (Exception e) {
+                log.error("Error preparing memory for streaming prompt", e);
+                handler.onError(e);
+                return;
+            }
+            if (resultTask.isCancelled()) {
+                handler.stop();
+                return;
+            }
+            executeStreamingInBackground(context, streamingModel, handler);
+        });
 
         resultTask.whenComplete((result, error) -> {
             if (resultTask.isCancelled()) {

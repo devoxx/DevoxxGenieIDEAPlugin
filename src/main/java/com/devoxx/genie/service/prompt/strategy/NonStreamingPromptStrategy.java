@@ -82,15 +82,17 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             return;
         }
 
-        // Prepare memory and add user message
-        prepareMemory(context);
-
-        // Execute the prompt using the centralized thread pool
+        // prepareMemory() runs the RAG retrieval (and, when query expansion is enabled, N LLM
+        // calls). On the EDT it freezes the prompt-panel glow + Compose loading indicator
+        // until those finish (task-217). Move it inside the pool task so the indicator —
+        // already enabled by addUserPromptMessage() — can repaint immediately.
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
+                prepareMemory(context);
+
                 // Record start time
                 long startTime = System.currentTimeMillis();
-                
+
                 // Execute the query
                 var response = promptExecutionService.executeQuery(context).get();
                 
