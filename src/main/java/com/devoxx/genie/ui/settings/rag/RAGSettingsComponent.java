@@ -177,16 +177,13 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     }
 
     private void addInfoLabel(@NotNull JPanel panel, GridBagConstraints gbc) {
-        JBLabel infoLabel = new JBLabel("<html><body style='width: 100%;'>" +
-                "Retrieval-augmented Generation (RAG) leverages semantic search to find relevant code<BR>" +
-                "based on your queries.<BR>" +
-                "The indexer uses the \"Scan & Copy Project\" settings to exclude specific directories,<BR>" +
-                "files, and extensions, and stores the indexed files in a local ChromaDB vector database." +
-                "</body></html>");
-        infoLabel.setForeground(UIUtil.getContextHelpForeground());
-        infoLabel.setBorder(JBUI.Borders.emptyBottom(10));
-        panel.add(infoLabel, gbc);
-        gbc.gridy++;
+        // Use the wrapping help-text component for the same width-constrained behaviour as the
+        // per-setting help rows; explicit line breaks not needed since JTextArea word-wraps.
+        addHelpText(panel, gbc,
+                "Retrieval-augmented Generation (RAG) leverages semantic search to find relevant code " +
+                "based on your queries. The indexer uses the \"Scan & Copy Project\" settings to " +
+                "exclude specific directories, files, and extensions, and stores the indexed files in " +
+                "a local ChromaDB vector database.");
     }
 
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
@@ -205,17 +202,32 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     }
 
     /**
-     * Add a wrapping help-text row under a setting. Uses the same HTML-with-100%-width trick
-     * as {@link #addInfoLabel} so the text wraps to fit the dialog width instead of overflowing.
-     * Styled with the IDE's context-help foreground so it visually reads as secondary text.
+     * Add a wrapping help-text row under a setting. JLabel doesn't word-wrap reliably even
+     * with the HTML-and-100%-width trick (BasicHTML computes preferred width from the full
+     * text, so the dialog grows to fit). A non-editable JTextArea styled like a label DOES
+     * wrap natively when the layout gives it a constrained width, so use that.
      */
     private void addHelpText(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, @NotNull String text) {
-        JBLabel helpLabel = new JBLabel("<html><body style='width: 100%;'>" + text + "</body></html>");
-        helpLabel.setForeground(UIUtil.getContextHelpForeground());
+        JTextArea helpArea = new JTextArea(text);
+        helpArea.setLineWrap(true);
+        helpArea.setWrapStyleWord(true);
+        helpArea.setEditable(false);
+        helpArea.setFocusable(false);
+        helpArea.setOpaque(false);
+        helpArea.setBorder(null);
+        helpArea.setFont(UIManager.getFont("Label.font"));
+        helpArea.setForeground(UIUtil.getContextHelpForeground());
+        // (0, ...) preferred width — let the GridBag column dictate width; height grows as needed
+        helpArea.setPreferredSize(null);
+        helpArea.setMinimumSize(new Dimension(0, 0));
+
         gbc.gridwidth = 2;
         gbc.gridx = 0;
-        panel.add(helpLabel, gbc);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        panel.add(helpArea, gbc);
         gbc.gridy++;
+        gbc.weightx = 0;
     }
 
     /**
