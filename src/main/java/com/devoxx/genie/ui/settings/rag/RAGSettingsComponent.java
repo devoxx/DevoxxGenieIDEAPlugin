@@ -193,15 +193,29 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
         addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
         addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
-        addSettingRow(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
+        addHelpText(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
         addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
-        addSettingRow(panel, gbc, "How many results do you want to include in prompt window context?");
+        addHelpText(panel, gbc, "How many results do you want to include in prompt window context?");
 
         addSettingRow(panel, gbc, "Query expansion", leftAligned(queryExpansionCheckBox));
-        addSettingRow(panel, gbc, "Paraphrase the query into multiple variants and fuse the per-variant results " +
+        addHelpText(panel, gbc, "Paraphrase the query into multiple variants and fuse the per-variant results " +
                 "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
                 "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
         addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
+    }
+
+    /**
+     * Add a wrapping help-text row under a setting. Uses the same HTML-with-100%-width trick
+     * as {@link #addInfoLabel} so the text wraps to fit the dialog width instead of overflowing.
+     * Styled with the IDE's context-help foreground so it visually reads as secondary text.
+     */
+    private void addHelpText(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, @NotNull String text) {
+        JBLabel helpLabel = new JBLabel("<html><body style='width: 100%;'>" + text + "</body></html>");
+        helpLabel.setForeground(UIUtil.getContextHelpForeground());
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        panel.add(helpLabel, gbc);
+        gbc.gridy++;
     }
 
     /**
