@@ -121,6 +121,18 @@ tasks.named("buildPlugin") {
     dependsOn("updateProperties")
 }
 
+// Diagnostic CLI for the RAG store. Talks to the same ChromaDB + Ollama the plugin uses.
+// Examples:
+//   ./gradlew ragQuery --args="list agenticengineeringworkshop mcp"
+//   ./gradlew ragQuery --args="query agenticengineeringworkshop 'where do we discuss MCP?' 20"
+tasks.register<JavaExec>("ragQuery") {
+    group = "verification"
+    description = "Query the RAG store from the command line (see RagCli for usage)."
+    mainClass.set("com.devoxx.genie.service.rag.cli.RagCli")
+    classpath = sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+}
+
 val generatedBlogResourcesDir = layout.buildDirectory.dir("generated-resources/blog")
 
 sourceSets.named("main") {
