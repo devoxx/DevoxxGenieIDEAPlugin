@@ -368,13 +368,21 @@ public final class ProjectIndexerService {
             String absolutePath = path.toAbsolutePath().toString();
 
             List<TextSegment> segments = new ArrayList<>(rawSegments.size());
+            int dropped = 0;
             for (TextSegment segment : rawSegments) {
+                if (ChunkQualityFilter.isLowContent(segment.text())) {
+                    dropped++;
+                    continue;
+                }
                 Metadata metadata = new Metadata();
                 metadata.put(FILE_PATH, absolutePath);
                 metadata.put(LAST_MODIFIED, lastModified);
                 metadata.put(INDEXED_AT, indexedAt);
                 metadata.put(EMBEDDING_SCHEMA_VERSION_KEY, CURRENT_EMBEDDING_SCHEMA_VERSION);
                 segments.add(new TextSegment(segment.text(), metadata));
+            }
+            if (dropped > 0) {
+                log.debug("Dropped {} low-content chunk(s) from {}", dropped, path);
             }
 
             storeSegments(segments);
