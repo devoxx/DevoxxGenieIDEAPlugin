@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.rag.validator;
 
+import com.devoxx.genie.service.chromadb.ChromaDockerService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
@@ -63,7 +64,7 @@ public class ChromeDBValidator implements Validator {
                 return false;
             }
 
-            this.message = "ChromaDB v0.6.2 is running";
+            this.message = "ChromaDB v" + ChromaDockerService.CHROMA_VERSION + " is running";
             return true;
 
         } catch (Exception e) {

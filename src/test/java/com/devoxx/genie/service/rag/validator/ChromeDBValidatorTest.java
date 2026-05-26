@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.rag.validator;
 
+import com.devoxx.genie.service.chromadb.ChromaDockerService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.DockerUtil;
 import com.github.dockerjava.api.DockerClient;
@@ -158,7 +159,7 @@ class ChromeDBValidatorTest {
         boolean result = validator.isValid();
 
         assertThat(result).isTrue();
-        assertThat(validator.getMessage()).isEqualTo("ChromaDB v0.6.2 is running");
+        assertThat(validator.getMessage()).isEqualTo("ChromaDB v" + ChromaDockerService.CHROMA_VERSION + " is running");
     }
 
     @Test

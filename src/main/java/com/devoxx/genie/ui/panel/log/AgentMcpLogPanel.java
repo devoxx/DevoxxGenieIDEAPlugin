@@ -102,10 +102,14 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         super(true);
         this.project = project;
 
+        // Track viewport width so cells never paint beyond the tool window's clip rect.
+        // Without this, a single long RAG hit preview (or run_command line) forces the JList
+        // wider than its viewport, and every JCEF-driven repaint during LLM streaming
+        // re-paints that oversized area — visible as IDE-wide flicker.
         logList = new JBList<>(logListModel) {
             @Override
             public boolean getScrollableTracksViewportWidth() {
-                return false;
+                return true;
             }
         };
         logList.setCellRenderer(new CombinedLogEntryRenderer());
@@ -127,6 +131,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         JBScrollPane scrollPane = new JBScrollPane(logList);
         scrollPane.setBorder(JBUI.Borders.empty());
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         setContent(scrollPane);
 
         setupToolbar();
@@ -151,6 +156,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         actionGroup.add(new AnAction("Clear Logs", "Clear all log entries",
                 IconLoader.getIcon("/actions/gc.svg", AgentMcpLogPanel.class)) {
             @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
+            @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 clearLogs();
             }
@@ -158,6 +168,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         actionGroup.add(new ToggleAction("Pause", "Pause log collection",
                 IconLoader.getIcon("/actions/pause.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public boolean isSelected(@NotNull AnActionEvent e) {
                 return isPaused;
@@ -168,11 +183,19 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 isPaused = state;
                 e.getPresentation().setText(isPaused ? "Resume" : "Pause");
                 e.getPresentation().setDescription(isPaused ? "Resume log collection" : "Pause log collection");
+                e.getPresentation().setIcon(IconLoader.getIcon(
+                        isPaused ? "/actions/resume.svg" : "/actions/pause.svg",
+                        AgentMcpLogPanel.class));
             }
         });
 
         actionGroup.add(new AnAction("Copy All Logs", "Copy all log entries to clipboard",
                 IconLoader.getIcon("/actions/copy.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 copyLogsToClipboard();
@@ -181,6 +204,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         actionGroup.add(new AnAction("Settings", "Configure log retention",
                 IconLoader.getIcon("/general/settings.svg", AgentMcpLogPanel.class)) {
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.EDT;
+            }
+
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 showSettingsDialog();
@@ -193,6 +221,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     }
 
     private class FilterComboBoxAction extends ComboBoxAction {
+
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.EDT;
+        }
 
         @Override
         public void update(@NotNull AnActionEvent e) {
@@ -338,10 +371,15 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     }
 
     private static @NotNull String formatRagRow(@NotNull RAGLogMessage m) {
+        // Single-line summary. The multi-line bullet list of hits used to be inlined here,
+        // but the resulting tall variable-height JList cells caused continuous repaint of the
+        // tool window (visible as IDE-wide flicker) while MCP/Agent rows — always single-line —
+        // were fine. Full per-hit detail is still available via the hover tooltip and the
+        // double-click "open in editor" view.
         StringBuilder sb = new StringBuilder();
         int hitCount = m.getHits() == null ? 0 : m.getHits().size();
-        sb.append("🔎 RAG: \"").append(summarize(m.getQuery(), 80))
-          .append("\" → ").append(hitCount).append(" hit").append(hitCount == 1 ? "" : "s")
+        sb.append("RAG: \"").append(summarize(m.getQuery(), 80))
+          .append("\" -> ").append(hitCount).append(" hit").append(hitCount == 1 ? "" : "s")
           .append(" (").append(m.getDurationMs()).append("ms");
         if (m.getMinScore() != null && m.getMaxResults() != null) {
             sb.append(", minScore=").append(String.format("%.2f", m.getMinScore()))
@@ -349,16 +387,17 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         }
         sb.append(")");
         if (hitCount > 0) {
-            int shown = Math.min(hitCount, INLINE_PREVIEW_MAX_LINES - 1);
+            sb.append("  [");
+            int shown = Math.min(hitCount, 4);
             for (int i = 0; i < shown; i++) {
+                if (i > 0) sb.append(", ");
                 RAGLogMessage.Hit h = m.getHits().get(i);
-                sb.append('\n').append("  • ").append(formatScore(h.getScore()))
-                  .append("  ").append(filenameOf(h.getFilePath()))
-                  .append("  — ").append(summarize(h.getPreview(), INLINE_PREVIEW_MAX_LINE_LEN - 40));
+                sb.append(filenameOf(h.getFilePath())).append(' ').append(formatScore(h.getScore()));
             }
             if (hitCount > shown) {
-                sb.append('\n').append("  … (").append(hitCount - shown).append(" more hits)");
+                sb.append(", +").append(hitCount - shown).append(" more");
             }
+            sb.append(']');
         }
         return sb.toString();
     }
@@ -763,7 +802,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             if (value instanceof LogEntry entry && !isSelected) {
-                String sourceTag = entry.source() == LogSource.MCP ? "[MCP] " : "[AGT] ";
+                String sourceTag = switch (entry.source()) {
+                    case MCP   -> "[MCP] ";
+                    case AGENT -> "[AGT] ";
+                    case RAG   -> "[RAG] ";
+                };
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 String plain = entry.timestamp() + " " + badge + entry.message();
                 label.setText(toHtmlRow(plain));
