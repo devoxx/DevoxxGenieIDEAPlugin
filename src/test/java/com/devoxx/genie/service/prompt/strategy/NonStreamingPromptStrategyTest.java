@@ -253,4 +253,37 @@ class NonStreamingPromptStrategyTest {
         strategy.cancel();
         verify(mockPromptExecutionService).cancelExecutingQueryForTab(anyString());
     }
+
+    /**
+     * Regression test for task-217: prepareMemory() runs the RAG search (and, when query
+     * expansion is enabled, N LLM calls). It must execute inside the background pool task,
+     * not on the calling thread (the EDT), otherwise the loading indicator can't repaint
+     * while expansion is in flight.
+     */
+    @Test
+    void executeStrategySpecific_runsPrepareMemoryInsideExecutorTask() {
+        // Capture the runnable but do NOT run it inline.
+        org.mockito.ArgumentCaptor<Runnable> taskCaptor =
+                org.mockito.ArgumentCaptor.forClass(Runnable.class);
+        doNothing().when(mockExecutor).execute(taskCaptor.capture());
+
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("test question");
+        when(mockChatMessageContext.getUserMessage()).thenReturn(
+                dev.langchain4j.data.message.UserMessage.from("test question"));
+
+        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
+
+        // Before the pool task runs, prepareMemory must NOT have been invoked on the EDT.
+        verify(mockChatMemoryManager, never()).prepareMemory(any());
+        verify(mockMessageCreationService, never()).addUserMessageToContext(any());
+
+        // Run the captured task — simulating the background pool — and verify prepareMemory
+        // executes there.
+        when(mockPromptExecutionService.executeQuery(any()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(mockPanel.getConversationPanel()).thenReturn(null);
+        taskCaptor.getValue().run();
+
+        verify(mockChatMemoryManager).prepareMemory(mockChatMessageContext);
+    }
 }
