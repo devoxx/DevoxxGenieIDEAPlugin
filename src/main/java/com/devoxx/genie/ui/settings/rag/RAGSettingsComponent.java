@@ -50,6 +50,17 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     @Getter
     private final JSpinner minScoreField = new JSpinner(new SpinnerNumberModel(stateService.getIndexerMinScore().doubleValue(), 0.0d, 1.0d, 0.01d));
 
+    @Getter
+    private final JBCheckBox queryExpansionCheckBox = new JBCheckBox(
+            "Enable LLM query expansion (one extra LLM call per RAG search)",
+            Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled()));
+
+    @Getter
+    private final JBIntSpinner queryExpansionVariantsSpinner = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN(),
+                    1, 10));
+
     private final Project project;
     private JButton startIndexButton;
     private final JButton actionButton = new JButton();
@@ -95,6 +106,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 startIndexButton.setVisible(false);
             }
         });
+        // Variants spinner is only meaningful when query expansion is on.
+        queryExpansionCheckBox.addActionListener(e -> updateComponentsEnabled());
     }
 
     private void addProgressSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
@@ -183,6 +196,12 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSettingRow(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
         addSettingRow(panel, gbc, "Maximum results", maxResultsSpinner);
         addSettingRow(panel, gbc, "How many results do you want to include in prompt window context?");
+
+        addSettingRow(panel, gbc, "Query expansion", queryExpansionCheckBox);
+        addSettingRow(panel, gbc, "Paraphrase the query into multiple variants and fuse the per-variant results " +
+                "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
+                "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
+        addSettingRow(panel, gbc, "Number of variants", queryExpansionVariantsSpinner);
     }
 
     private void addIndexedProjectsSection(JPanel panel, GridBagConstraints gbc) {
@@ -386,6 +405,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         minScoreField.setEnabled(enabled);
         actionButton.setEnabled(enabled);
         collectionsTable.setEnabled(enabled);
+        queryExpansionCheckBox.setEnabled(enabled);
+        // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
+        queryExpansionVariantsSpinner.setEnabled(enabled && queryExpansionCheckBox.isSelected());
     }
 
     private void setupTable() {
