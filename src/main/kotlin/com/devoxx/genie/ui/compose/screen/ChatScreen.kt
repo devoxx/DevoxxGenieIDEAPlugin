@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.compose.screen
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.devoxx.genie.ui.compose.components.ConversationToolbar
 import com.devoxx.genie.ui.compose.components.MessagePair
 import com.devoxx.genie.ui.compose.model.MessageUiModel
 
@@ -43,18 +45,21 @@ fun ChatScreen(
         }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxSize().padding(vertical = 4.dp),
-    ) {
-        itemsIndexed(
-            items = messages,
-            key = { _, message -> message.id },
-        ) { _, message ->
-            MessagePair(
-                message = message,
-                onFileClick = onFileClick,
-            )
+    Column(modifier = modifier.fillMaxSize()) {
+        ConversationToolbar(messages = messages)
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize().padding(vertical = 4.dp),
+        ) {
+            itemsIndexed(
+                items = messages,
+                key = { _, message -> message.id },
+            ) { _, message ->
+                MessagePair(
+                    message = message,
+                    onFileClick = onFileClick,
+                )
+            }
         }
     }
 }

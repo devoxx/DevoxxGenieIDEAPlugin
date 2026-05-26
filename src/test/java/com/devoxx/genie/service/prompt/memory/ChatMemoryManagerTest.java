@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.skill.SkillRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.*;
@@ -164,6 +165,103 @@ class ChatMemoryManagerTest {
 
             assertTrue(prompt.contains("Base system prompt"));
             assertTrue(prompt.contains("Search existing backlog tasks before creating new ones."));
+        }
+    }
+
+    // --- Skills fragment (issue #1040) --------------------------------
+
+    @Test
+    void buildAugmentedSystemPrompt_appendsSkillsFragmentWhenAgentModeOnAndSkillsPresent() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class);
+             MockedStatic<SkillRegistry> skillRegistryMock = Mockito.mockStatic(SkillRegistry.class)) {
+
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(false);
+            when(mockProject.getBasePath()).thenReturn("/tmp/no-such-project");
+            when(mockProject.isDefault()).thenReturn(false);
+
+            SkillRegistry registry = mock(SkillRegistry.class);
+            when(registry.getSystemPromptFragment()).thenReturn("<skill name=\"alpha\">desc</skill>");
+            skillRegistryMock.when(() -> SkillRegistry.getInstance(eq(mockProject))).thenReturn(registry);
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject);
+
+            assertTrue(prompt.contains("You have access to the following skills:"),
+                    "expected skills header in prompt: " + prompt);
+            assertTrue(prompt.contains("<skill name=\"alpha\">desc</skill>"),
+                    "expected fragment in prompt: " + prompt);
+            assertTrue(prompt.contains("activate_skill"),
+                    "expected activation hint in prompt: " + prompt);
+        }
+    }
+
+    @Test
+    void buildAugmentedSystemPrompt_noSkillsFragmentWhenAgentModeOnButRegistryEmpty() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class);
+             MockedStatic<SkillRegistry> skillRegistryMock = Mockito.mockStatic(SkillRegistry.class)) {
+
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(false);
+            when(mockProject.getBasePath()).thenReturn("/tmp/no-such-project");
+            when(mockProject.isDefault()).thenReturn(false);
+
+            SkillRegistry registry = mock(SkillRegistry.class);
+            when(registry.getSystemPromptFragment()).thenReturn("");
+            skillRegistryMock.when(() -> SkillRegistry.getInstance(eq(mockProject))).thenReturn(registry);
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject);
+
+            assertFalse(prompt.contains("You have access to the following skills:"),
+                    "did not expect skills header in prompt: " + prompt);
+        }
+    }
+
+    @Test
+    void buildAugmentedSystemPrompt_noSkillsFragmentWhenAgentModeOff() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class);
+             MockedStatic<SkillRegistry> skillRegistryMock = Mockito.mockStatic(SkillRegistry.class)) {
+
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            when(stateService.getAgentModeEnabled()).thenReturn(false);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(false);
+            when(mockProject.getBasePath()).thenReturn("/tmp/no-such-project");
+            when(mockProject.isDefault()).thenReturn(false);
+
+            SkillRegistry registry = mock(SkillRegistry.class);
+            // Even if the registry would supply a fragment, agent-mode-off must short-circuit
+            // before consulting it.
+            when(registry.getSystemPromptFragment()).thenReturn("<skill name=\"alpha\">desc</skill>");
+            skillRegistryMock.when(() -> SkillRegistry.getInstance(eq(mockProject))).thenReturn(registry);
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject);
+
+            assertFalse(prompt.contains("You have access to the following skills:"),
+                    "did not expect skills header when agent mode off: " + prompt);
+            assertFalse(prompt.contains("alpha"),
+                    "did not expect skill fragment when agent mode off: " + prompt);
         }
     }
 }

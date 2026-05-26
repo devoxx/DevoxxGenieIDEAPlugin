@@ -16,6 +16,8 @@ import kotlinx.coroutines.delay
 fun CopyButton(
     textToCopy: String,
     modifier: Modifier = Modifier,
+    label: String = "\u2398 Copy",
+    copiedLabel: String = "\u2713 Copied",
 ) {
     val clipboardManager = LocalClipboardManager.current
     var copied by remember { mutableStateOf(false) }
@@ -24,7 +26,7 @@ fun CopyButton(
     val typography = DevoxxGenieThemeAccessor.typography
 
     BasicText(
-        text = if (copied) "\u2713 Copied" else "\u2398 Copy",
+        text = if (copied) copiedLabel else label,
         style = typography.caption.copy(
             fontSize = 11.sp,
             color = if (copied) colors.primary else colors.onSurface.copy(alpha = 0.5f),

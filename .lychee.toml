@@ -29,6 +29,10 @@ exclude = [
   "https://genie\\.devoxx\\.com/.*\\.md",
   # Static images served by Docusaurus — not present on the live site at these paths.
   "https://genie\\.devoxx\\.com/static/img/.*",
+  # New doc pages added in this PR — will exist on the live site after next deploy.
+  # TODO(post-deploy): remove these two lines once the renamed/new pages are live.
+  "https://genie\\.devoxx\\.com/docs/features/commands$",
+  "https://genie\\.devoxx\\.com/docs/features/skills$",
   # Placeholder/example URLs used in documentation snippets.
   "https://github\\.com/myproject/.*",
   "https://wiki\\.example\\.com/.*",
@@ -37,6 +41,8 @@ exclude = [
   "https://platform\\.openai\\.com/.*",
   # JetBrains support blocks automated crawlers with 403
   "https://intellij-support\\.jetbrains\\.com/.*",
+  # Intel support blocks automated crawlers with 403
+  "https://www\\.intel\\.com/.*",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)

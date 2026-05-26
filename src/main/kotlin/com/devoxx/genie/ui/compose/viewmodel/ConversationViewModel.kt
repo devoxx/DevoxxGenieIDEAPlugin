@@ -10,19 +10,30 @@ import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
 import com.devoxx.genie.service.blog.BlogFeedService
 import com.devoxx.genie.service.blog.BlogPost
+import com.devoxx.genie.service.skill.SkillRegistry
 import com.devoxx.genie.ui.compose.model.*
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.ResourceBundle
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-class ConversationViewModel {
+class ConversationViewModel(
+    /**
+     * Project the welcome screen belongs to. Used to look up the project-scoped
+     * {@link SkillRegistry} so the welcome page can list any currently-enabled skills.
+     * May be {@code null} in tests / non-project contexts — the skills list then
+     * stays empty and the section is hidden.
+     */
+    private val project: Project? = null,
+) {
 
     var state: ConversationState by mutableStateOf(
         ConversationState.Welcome(
             resourceBundle = ResourceBundle.getBundle("messages"),
             customPrompts = loadCustomPrompts(),
+            skills = loadSkills(),
             blogPosts = loadBlogPosts(),
         )
     )
@@ -70,15 +81,20 @@ class ConversationViewModel {
         state = ConversationState.Welcome(
             resourceBundle = resourceBundle,
             customPrompts = loadCustomPrompts(),
+            skills = loadSkills(),
             blogPosts = loadBlogPosts(),
         )
         refreshBlogPostsAsync()
+        refreshSkillsAsync()
     }
 
     fun updateCustomPrompts(resourceBundle: ResourceBundle) {
         val current = state
         if (current is ConversationState.Welcome) {
-            state = current.copy(customPrompts = loadCustomPrompts())
+            state = current.copy(
+                customPrompts = loadCustomPrompts(),
+                skills = loadSkills(),
+            )
         }
     }
 
@@ -239,6 +255,7 @@ class ConversationViewModel {
         state = ConversationState.Welcome(
             resourceBundle = rb,
             customPrompts = loadCustomPrompts(),
+            skills = loadSkills(),
             blogPosts = loadBlogPosts(),
         )
     }
@@ -305,10 +322,56 @@ class ConversationViewModel {
     private fun loadCustomPrompts(): List<CustomPromptUi> {
         return try {
             DevoxxGenieStateService.getInstance()
-                .customPrompts
+                .commands
                 .map { CustomPromptUi(name = it.name, prompt = it.prompt) }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    /**
+     * Reads the currently-enabled skills from the project-scoped {@link SkillRegistry}.
+     * Returns an empty list when no project is associated (tests, default project),
+     * when the registry has not yet been loaded, or when every detected skill is disabled.
+     */
+    private fun loadSkills(): List<SkillUi> {
+        val proj = project ?: return emptyList()
+        return try {
+            val registry = SkillRegistry.getInstance(proj) ?: return emptyList()
+            val disabled = DevoxxGenieStateService.getInstance().disabledSkillNames ?: emptySet()
+            registry.peekAllSkills()
+                .asSequence()
+                .filter { entry -> !disabled.contains(entry.name()) }
+                .map { entry ->
+                    SkillUi(
+                        name = entry.name(),
+                        description = entry.description() ?: "",
+                        source = entry.source().label(),
+                    )
+                }
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Triggers a pooled-thread re-scan of the skill directories and, on completion,
+     * updates the welcome state with whatever the registry produced. Cheap to call:
+     * the registry no-ops when the cache is already populated.
+     */
+    private fun refreshSkillsAsync() {
+        val proj = project ?: return
+        try {
+            val registry = SkillRegistry.getInstance(proj) ?: return
+            registry.reloadAsync {
+                val current = state
+                if (current is ConversationState.Welcome) {
+                    state = current.copy(skills = loadSkills())
+                }
+            }
+        } catch (_: Exception) {
+            // best-effort — keep the welcome screen working if anything fails
         }
     }
 }

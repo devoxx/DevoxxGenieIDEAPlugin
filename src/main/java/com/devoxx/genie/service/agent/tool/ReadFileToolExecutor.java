@@ -2,7 +2,7 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -65,8 +65,7 @@ public class ReadFileToolExecutor implements ToolExecutor {
     }
 
     VirtualFile getProjectBaseDir() {
-        VirtualFile[] contentRoots = ProjectRootManager.getInstance(project).getContentRoots();
-        return contentRoots.length > 0 ? contentRoots[0] : null;
+        return ProjectUtil.guessProjectDir(project);
     }
 
     VirtualFile findFile(VirtualFile projectBase, String path) {

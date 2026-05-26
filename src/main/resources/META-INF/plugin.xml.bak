@@ -1,0 +1,769 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.devoxx.genie</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>DevoxxGenie</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
+
+    <idea-version since-build="243" until-build="261.*"/>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+        <p>Devoxx Genie - Your AI-powered coding assistant for IntelliJ IDEA</p>
+
+        <p><strong><a href="https://genie.devoxx.com">📖 Full Documentation at genie.devoxx.com</a></strong></p>
+
+        <h3>Key Features</h3>
+        <UL>
+            <LI><strong>Local &amp; Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, Llama.cpp, Exo + OpenAI, Anthropic, Gemini, Mistral, Groq, DeepInfra, DeepSeek, Kimi, GLM, OpenRouter, Azure OpenAI, Amazon Bedrock</LI>
+            <LI><strong>Agent Mode:</strong> Autonomous code tools with parallel sub-agents, multi-turn tool use, and built-in file/search/run_command tools</LI>
+            <LI><strong>Skills (new in v1.5.0):</strong> Portable <code>SKILL.md</code> files the LLM activates mid-conversation — the same files also work in Claude Code, Codex and Gemini</LI>
+            <LI><strong>Commands:</strong> User-defined slash commands (previously "Custom Prompts") for reusable prompt templates</LI>
+            <LI><strong>MCP Support:</strong> Model Context Protocol with integrated marketplace for installing servers (stdio and HTTP/SSE transports)</LI>
+            <LI><strong>Spec Driven Development:</strong> Backlog.md task management with Spec Browser, Kanban Board, and Agent Loop batch execution with dependency ordering</LI>
+            <LI><strong>Security Scanning:</strong> Run Gitleaks (secrets), OpenGrep (SAST) and Trivy (CVEs) as agent tools — findings auto-create prioritised backlog tasks</LI>
+            <LI><strong>Inline Code Completion:</strong> AI-powered suggestions as you type using Fill-in-the-Middle models via Ollama or LM Studio</LI>
+            <LI><strong>ACP &amp; CLI Runners:</strong> Integrate external agents (Claude Code, Codex, Gemini CLI, Kimi, Copilot) via the Agent Communication Protocol or CLI invocation</LI>
+            <LI><strong>RAG:</strong> Retrieval-Augmented Generation for semantic code search (ChromaDB + Ollama embeddings)</LI>
+            <LI><strong>Web Search:</strong> Integrate Google and Tavily search into your prompts</LI>
+            <LI><strong>Plugin Integration API:</strong> Other IntelliJ plugins can send findings to DevoxxGenie at runtime via a reflection-based <code>ExternalPromptService</code></LI>
+            <LI><strong>Chat History:</strong> Locally stored conversations (SQLite) with parallel conversation tabs</LI>
+            <LI><strong>Token Cost Calculator:</strong> Real-time cost and context-window estimation for cloud providers</LI>
+            <LI><strong>Multi-modal Support:</strong> Drag &amp; drop images for vision models, plus Git diff and project-context attachments</LI>
+        </UL>
+        <h3>Quick Start</h3>
+        <UL>
+            <LI>Install the plugin</LI>
+            <LI>For local LLMs: install Ollama, LMStudio, GPT4All, Llama.cpp or Exo</LI>
+            <LI>For cloud LLMs: add your API keys in <em>Settings → DevoxxGenie → LLM Providers</em></LI>
+            <LI>Optional: enable Agent Mode, configure MCP servers from the marketplace, or drop a <code>SKILL.md</code> into <code>.devoxxgenie/skills/</code>, <code>.claude/skills/</code> or <code>.agents/skills/</code></LI>
+            <LI>Start prompting!</LI>
+        </UL>
+
+        <p>Need help? Visit our <a href="https://genie.devoxx.com/docs/intro">Getting Started Guide</a> or check the <a href="https://genie.devoxx.com/docs/troubleshooting">Troubleshooting</a> page.</p>
+
+        <h3>Privacy &amp; Anonymous Usage Analytics</h3>
+        <p>To guide which LLM providers and models receive engineering investment, DevoxxGenie collects <strong>anonymous</strong> usage data when you run a prompt or change models.</p>
+        <p><strong>What is sent:</strong></p>
+        <UL>
+            <LI>An anonymous install ID (UUID), generated once and stored locally</LI>
+            <LI>A per-launch session ID (random 10-digit number)</LI>
+            <LI>Plugin version and IDE version</LI>
+            <LI>LLM provider name (e.g. anthropic, ollama)</LI>
+            <LI>LLM model name (e.g. claude-3-5-sonnet)</LI>
+            <LI>Which optional features are enabled (RAG, Agent mode, MCP, Web Search, streaming) and coarse counts such as the number of configured MCP servers or custom prompts — never server names, URLs, commands, or user-defined prompt names</LI>
+            <LI>Which features are actually used during a prompt (RAG, Agent, MCP, Web Search, project context, custom prompts) — feature identifiers only, never prompt text or file content</LI>
+        </UL>
+        <p><strong>What is never sent:</strong> prompt text, response text, conversation history, file content, file paths, project names, git remotes, API keys, credentials, token counts, cost data, MCP server names/URLs/commands, or user-defined custom prompt names.</p>
+        <p>A first-launch notification asks for your consent before any data is sent. You can change this any time in <em>Settings → DevoxxGenie → Analytics</em>.</p>
+    ]]></description>
+
+    <change-notes><![CDATA[
+                <h2>v1.6.0</h2>
+        <UL>
+                    <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
+                    <LI>Add Gemini 3.5 Flash model to models.json</LI>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>fix(jan): support Jan v0.8.0 — model list crash and chat hang (#1051)</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                </UL>
+<h2>v1.5.0</h2>
+        <UL>
+                    <LI>feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)</LI>
+                    <LI>feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)</LI>
+                    <LI>feat(settings): replace six per-source 'Open folder' buttons with a single button + source dropdown (#1041)</LI>
+                    <LI>feat(skills): scan .claude/skills and .agents/skills alongside .devoxxgenie/skills (#1041)</LI>
+                    <LI>fix: fire onCustomPromptsChanged from SkillsSettingsConfigurable on apply so the welcome page refreshes immediately (#1040)</LI>
+                    <LI>docs: Commands vs Skills blog post, Skills documentation, footnote fixes (#1040)</LI>
+                    <LI>ci: skip claude-review on fork PRs; exclude intel.com from lychee link check</LI>
+                </UL>
+<h2>v1.4.5</h2>
+        <UL>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                    <LI>fix: destroy process tree in AcpTransport.close() to prevent thread leak</LI>
+                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                </UL>
+<h2>v1.4.4</h2>
+        <UL>
+                    <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
+                    <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
+                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                    <LI>fix: restore last selected model state (#1021)</LI>
+                    <LI>fix: correct Devstral 2 model name</LI>
+                    <LI>Fix: apply IDE Editor font to prompt input field</LI>
+                </UL>
+<h2>v1.4.3</h2>
+        <UL>
+                    <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
+                    <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
+                    <LI>feat(analytics): anonymous LLM provider/model usage analytics</LI>
+                    <LI>feat: add Exo distributed AI cluster as LLM provider</LI>
+                    <LI>fix(analytics): harden offline tracking delivery</LI>
+                </UL>
+<h2>v1.4.2</h2>
+        <UL>
+                    <LI>feat(analytics): track feature enablement & usage (task-209)</LI>
+                    <LI>feat(analytics): anonymous LLM provider/model usage analytics</LI>
+                    <LI>feat: add Exo distributed AI cluster as LLM provider</LI>
+                    <LI>fix(analytics): harden offline tracking delivery</LI>
+                </UL>
+
+        <h2>v1.4.1</h2>
+        <UL>
+            <LI>Update: Upgrade 40 Gradle dependencies including Langchain4J to 1.12.2</LI>
+            <LI>Update: LLM models.json with latest provider model names (Anthropic 1M context, Grok 4.20, Groq gpt-oss, Bedrock Claude 4.6/4.5/4.1)</LI>
+            <LI>Fix: Rollback Kotlin/Compose/Skiko to fix Compose UI rendering crash</LI>
+            <LI>Fix: SafeComposeContainer addNotify ordering for proper native error handling</LI>
+        </UL>
+        <h2>v1.4.0</h2>
+        <UL>
+            <LI>Feat: Add Exo distributed AI cluster as new local LLM provider — run large AI models across multiple Apple Silicon devices via Thunderbolt (#1002)</LI>
+            <LI>Feat: Exo auto-discovery of downloaded models from /state API</LI>
+            <LI>Feat: Automatic Exo instance creation with placement preview across cluster</LI>
+            <LI>Feat: Background progress bar during Exo model loading with cancellation support</LI>
+            <LI>Feat: Auto-recovery when Exo instances disconnect or get recycled</LI>
+            <LI>Feat: Collapsible cluster status panel showing nodes, memory, GPU usage, temperature, and active instance status</LI>
+            <LI>Fix: MarkdownConversationRenderer missing createConversationJEditorPane method</LI>
+        </UL>
+        <h2>v1.3.3</h2>
+        <UL>
+            <LI>Fix: Catch NoClassDefFoundError for CompilerTopics in non-Java IDEs (PhpStorm, WebStorm, etc.) (#990)</LI>
+        </UL>
+        <h2>v1.3.2</h2>
+        <UL>
+            <LI>Feat: Integrate Spec-to-Code panels into main DevoxxGenie tool window (#987)</LI>
+            <LI>Feat: Force Skiko software rendering on Windows via AppLifecycleListener (#986)</LI>
+            <LI>Feat: Include archived tasks in backlog duplicate detection (#985)</LI>
+            <LI>Fix: File attachment double-click not adding file to window context (#988)</LI>
+            <LI>Fix: Remove flaky OpenRouterChatModelFactory tests</LI>
+            <LI>Fix: Defensive copy in ProcessedCompletion record constructor</LI>
+            <LI>Fix: Refactor Kotlin Compose compiler arg filter to use compilerOptions API</LI>
+            <LI>Refactor: Centralize system prompt construction in ChatMemoryManager</LI>
+            <LI>Docs: Update FAQ and troubleshooting for automatic Windows software rendering</LI>
+        </UL>
+        <h2>v1.3.1</h2>
+        <UL>
+            <LI>Feat: Add Bedrock bearer token authentication support</LI>
+            <LI>Feat: Add 'Force software rendering' setting for Skiko/GPU issues (#981)</LI>
+            <LI>Fix: Separate Ollama context window override from discovered metadata (#979) — num_ctx is now only sent when explicitly enabled via new setting</LI>
+            <LI>Fix: Catch Skiko/Direct3D init errors to prevent chat UI crash (#981)</LI>
+            <LI>Docs: Add troubleshooting guide and FAQ entry for GPU rendering issues (#981)</LI>
+        </UL>
+        <h2>v1.3.0</h2>
+        <UL>
+            <LI>Feat: Event Automations (BETA) — AI agents triggered by IDE events (file open/save, build failure, test failure, commit, process crash)</LI>
+            <LI>Feat: Built-in agents for code review, build fix, debug, test generation, and code explanation</LI>
+            <LI>Feat: Template engine for agent prompts with {{context}}, {{content}}, {{files}}, {{event}}, {{timestamp}}, {{meta.KEY}} variables</LI>
+            <LI>Feat: Before-commit automation includes full staged diff (before/after content) for line-level review</LI>
+            <LI>Feat: "More Info" help link in Event Automations settings panel</LI>
+            <LI>Fix: Event automations ensure tool window is initialized before dispatching prompts</LI>
+            <LI>Fix: TestExecutionListener uses project-aware overload for correct project in multi-project sessions</LI>
+            <LI>Fix: CLI runner error message readability on test connection failure (#971)</LI>
+        </UL>
+        <h2>v1.2.0</h2>
+        <UL>
+            <LI>Feat: Add conversation tabs for parallel model usage across independent chat sessions</LI>
+            <LI>Feat: Add DevoxxGenie Workshop link to welcome page banner</LI>
+            <LI>Fix: Update tab name when restoring conversation from history (was staying "New Chat")</LI>
+            <LI>Fix: Use theme-aware syntax highlighting to prevent invisible mark characters in code blocks</LI>
+            <LI>Fix: Improve theme change detection using StartupUiUtil.isUnderDarcula() with EDT-safe propagation</LI>
+            <LI>Fix: Initialize chat memory before restoring conversation from history</LI>
+            <LI>Fix: Move conversation DB to durable config directory with legacy migration</LI>
+            <LI>Fix: Persist CLI runner conversations to conversation history</LI>
+            <LI>Fix: Prevent duplicate response text in Claude CLI runner</LI>
+            <LI>Fix: Strip ANSI escape codes from CLI test connection errors</LI>
+            <LI>Fix: Omit top_p parameter for GPT-5 models in OpenAI provider</LI>
+        </UL>
+        <h2>v1.1.0</h2>
+        <UL>
+            <LI>Build: Raise minimum IDE version to 2025.1, add support up to 2026.1.* (#972, #963)</LI>
+            <LI>Build: Update Compose Desktop to 1.10.1 and markdown-renderer to 0.39.2</LI>
+            <LI>Build: Bundle Compose runtime for 251+ IDEs and configurable IDE version property</LI>
+            <LI>Fix: Adapt markdown renderer API to v0.28.0 breaking changes</LI>
+            <LI>Fix: Correct markdown renderer exclude group coordinates</LI>
+            <LI>Fix: Compose runtime packaging for 251+ IDEs</LI>
+            <LI>Refactor: Remove unused logo rendering from WelcomeScreen</LI>
+            <LI>Test: Mock LLMModelRegistryService for deterministic cloud factory tests</LI>
+        </UL>
+        <h2>v1.0.0</h2>
+        <UL>
+            <LI>Feat: Replace JCEF WebView with native Compose Desktop conversation UI (#961)</LI>
+            <LI>Feat: New Compose UI components — chat bubbles, activity section, thinking indicator, copy button, file references</LI>
+            <LI>Feat: Enhance Compose UI with dynamic fonts, markdown rendering in user bubbles, and UX polish</LI>
+            <LI>Fix: Hide loading indicator on successful prompt completion</LI>
+            <LI>Fix: Restore correct shouldIncludeSystemMessage logic for o1 models</LI>
+            <LI>Fix: Filter raw JSON from CLI Runner output, show only human-readable text</LI>
+            <LI>Refactor: Remove JCEF WebView implementation, handlers, templates, and all WebView CSS/JS/HTML resources</LI>
+            <LI>Refactor: Remove dead code (WelcomeContentService, CodeGeneratorService, NodeProcessorFactory, FillerPanel, HelpPanel)</LI>
+            <LI>Refactor: Improve thread safety, error handling, and code clarity across prompt strategies and conversation panels</LI>
+        </UL>
+        <h2>v0.10.2</h2>
+        <UL>
+            <LI>Fix: Agent intermediate reasoning text now reliably appears below "Thinking..." indicator in chat (#958)</LI>
+            <LI>Test: Comprehensive test suite for unified WebViewActivityHandler (18 tests)</LI>
+        </UL>
+        <h2>v0.10.1</h2>
+        <UL>
+            <LI>Refactor: Unify MCP and Agent activity logging into single ActivityMessage system (#957)</LI>
+            <LI>Fix: Show full log text in DevoxxGenie Logs panel with horizontal scrolling (#957)</LI>
+        </UL>
+        <h2>v0.10.0</h2>
+        <UL>
+            <LI>Feat: Show agent intermediate reasoning messages in chat output panel with markdown rendering</LI>
+            <LI>Feat: New "Show tool activity in chat output" setting in Agent Mode settings</LI>
+            <LI>Feat: Preserve agent reasoning text when final AI response is rendered</LI>
+        </UL>
+        <h2>v0.9.17</h2>
+        <UL>
+            <LI>Feat: Security Scanning feature — Gitleaks (secret detection), OpenGrep (SAST) and Trivy (SCA/CVE) as LLM agent tools (#954)</LI>
+            <LI>Feat: Dedicated Security Scanning settings panel with per-scanner path browser and Test button (#954)</LI>
+            <LI>Feat: Security scan findings auto-created as prioritised Backlog.md tasks (#954)</LI>
+            <LI>Feat: Security Scan toolbar action in Spec Browser (#954)</LI>
+            <LI>Fix: SonarLint — use explicit assertions instead of implicit no-throw checks (#953)</LI>
+            <LI>Fix: Backlog task naming prefix normalisation (#952)</LI>
+            <LI>Fix: WebView aggressive repaint after long idle in CEF pipeline (#808)</LI>
+            <LI>Chore: add Lychee link checker CI workflow (#950, #951)</LI>
+        </UL>
+        <h2>v0.9.16</h2>
+        <UL>
+            <LI>Fix: conversation history popup now closes after selecting an old chat (#946)</LI>
+            <LI>Fix: remove EDT-blocking sleep calls during conversation restoration (#946)</LI>
+            <LI>Feat: prefer value of num_ctx for context length of Ollama models (#936)</LI>
+        </UL>
+        <h2>v0.9.15</h2>
+        <UL>
+            <LI>Externalize cloud model config (names, costs, context windows) to remote models.json with 24h TTL caching</LI>
+            <LI>Refresh button now works for cloud providers (Anthropic, OpenAI, Google, etc.) with model diff notification</LI>
+            <LI>Token Cost settings table is now read-only and refreshes from remote models.json on open</LI>
+            <LI>Add Gemini 3.1 Pro Preview model</LI>
+        </UL>
+        <h2>v0.9.14</h2>
+        <UL>
+            <LI>Compact icon-only toolbar footer: all buttons uniform 28x28 with tooltips, FlowLayout eliminates gaps when buttons are hidden (#941)</LI>
+            <LI>Distinct folder-with-plus icon for Add Project button to differentiate from Add File</LI>
+            <LI>Toggleable Add File button in footer via Settings > Token Cost & Context Window</LI>
+            <LI>Vertically centered Agent/MCP labels in footer right panel</LI>
+            <LI>Merge Agent and MCP log panels into unified Activity Logs panel (#938)</LI>
+            <LI>Add "More Info" help links to all settings panels (#940)</LI>
+            <LI>Refactor: replace unicode escapes with literal characters in AgentMcpLogPanel</LI>
+        </UL>
+        <h2>v0.9.13</h2>
+        <UL>
+            <LI>Add claude-sonnet-4-6 to Anthropic model selection (#932)</LI>
+            <LI>Parallel execution for independent tasks in SDD Spec Browser dependency graph (#927)</LI>
+            <LI>Green parallel Run buttons added to Spec Browser toolbar (#927)</LI>
+            <LI>Individual and bulk archive/unarchive for done tasks in SDD Spec Browser (#933)</LI>
+            <LI>Project statistics/overview panel in SDD Spec Browser (#933)</LI>
+            <LI>Project-wide Definition of Done defaults for SDD backlog (#933)</LI>
+            <LI>Fuzzy search replaces simple text matching in SDD backlog (#933)</LI>
+            <LI>Fix: ACP client Set iteration using for-each loop for JsonNode.properties() (#929)</LI>
+            <LI>Fix: replace deprecated JsonNode.fields() with properties() (#927)</LI>
+            <LI>Fix: implicit narrowing conversion in compound assignment (security alert)</LI>
+            <LI>Refactor: ChatModelFactoryProvider made final utility class (#934)</LI>
+        </UL>
+        <h2>v0.9.12</h2>
+        <UL>
+            <LI>ACP Client rewrite: builder pattern, lifecycle management, configurable timeouts, and typed exception hierarchy</LI>
+            <LI>Attached files context now included in prompt history for ACP/CLI runners</LI>
+            <LI>ExternalPromptService: new project service for programmatic prompt submission</LI>
+            <LI>MCP services refactored for testability with dependency injection</LI>
+            <LI>JaCoCo code coverage plugin added with proper IntelliJ plugin classloading support</LI>
+            <LI>Comprehensive test coverage: 2100+ unit tests across services, UI, chatmodel factories, and utilities</LI>
+            <LI>Fix: resolve jar duplicate entry for kotlin_module</LI>
+            <LI>Fix: replace deprecated Query.forEach with findAll iteration</LI>
+        </UL>
+        <h2>v0.9.11</h2>
+        <UL>
+            <LI>PSI Tools: 5 new IDE-powered code intelligence tools for agent mode — find_symbols, document_symbols, find_references, find_definition, find_implementations (#921)</LI>
+            <LI>Semantic code navigation: agent can jump to definitions, find usages, and discover implementations using IntelliJ's Program Structure Interface</LI>
+            <LI>PSI tools work across all IDE-supported languages (Java, Kotlin, Python, JS/TS, Go, Rust, etc.)</LI>
+            <LI>New PSI Tools toggle in Agent Settings (enabled by default)</LI>
+        </UL>
+        <h2>v0.9.10</h2>
+        <UL>
+            <LI>ACP Runners: communicate with external agents (Kimi, Gemini CLI, Kilocode, Claude Code, Copilot) via the Agent Communication Protocol with JSON-RPC 2.0 over stdin/stdout (#920)</LI>
+            <LI>Conversation history for CLI and ACP runners: prior exchanges are included so the LLM can recall earlier messages</LI>
+            <LI>Move CLAUDE.md/AGENTS.md and DEVOXXGENIE.md content to system prompt (set once per conversation instead of repeated in every user message)</LI>
+            <LI>Per-tool enable/disable for MCP servers and agent mode built-in tools (#919)</LI>
+            <LI>New fetch_page built-in agent tool for web page fetching</LI>
+            <LI>Dedicated CLI/ACP Runners settings page (moved from Spec Driven Development settings)</LI>
+            <LI>Add Claude and Copilot as ACP tool types with configurable ACP flags</LI>
+        </UL>
+        <h2>v0.9.9</h2>
+        <UL>
+            <LI>CLI Runners as a chat-mode provider: execute prompts via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) (#916)</LI>
+            <LI>CLI tool execution for spec tasks: run To Do tasks through CLI runners (#874, #875)</LI>
+            <LI>Kimi CLI runner with --prompt flag support and --quiet mode for clean output (#875, #916)</LI>
+            <LI>Refactor CLI runners to dedicated package with Command pattern (GoF) (#874, #875)</LI>
+            <LI>Fix: defer scrollTo in JCEF WebView to fix auto-scroll after DOM updates (#916)</LI>
+            <LI>Bump the gradle-dependencies group with 3 updates (#873)</LI>
+        </UL>
+        <h2>v0.9.8</h2>
+        <UL>
+            <LI>Automated test execution: new run_tests agent tool that auto-detects build systems (Gradle/Maven/npm/Cargo/Go/Make), runs tests, and returns structured results (#863)</LI>
+            <LI>Agent iterates on test failures: system prompt instructs the LLM to run tests after code changes and fix until they pass</LI>
+            <LI>Configurable test execution settings: timeout, custom test command with {target} placeholder</LI>
+            <LI>Agent Loop: batch task execution with dependency-aware ordering, progress tracking, and automatic task advancement (#872)</LI>
+            <LI>Fix: prevent agent and MCP logs from leaking across projects (#867)</LI>
+            <LI>Fix: defer task advancement until prompt execution completes (#872)</LI>
+            <LI>Fix: downgrade Kotlin to 2.0.21 to match IDE runtime</LI>
+            <LI>Fix: Prompts settings dialog text overflows viewport</LI>
+        </UL>
+        <h2>v0.9.7</h2>
+        <UL>
+            <LI>Spec Driven Development (SDD) feature with Backlog.md integration, Kanban board, and enhanced Spec Browser (#862)</LI>
+            <LI>17 granular backlog tools replacing manage_spec for full CRUD operations on tasks, documents, and milestones</LI>
+            <LI>Init Backlog button for quick project setup</LI>
+            <LI>Remove deprecated o1-mini model from OpenAI registry</LI>
+            <LI>Bump the gradle-dependencies group with 18 updates (#861)</LI>
+        </UL>
+        <h2>v0.9.6</h2>
+        <UL>
+            <LI>Inline code completion using Fill-in-the-Middle (FIM) models with configurable provider/model settings (#857)</LI>
+            <LI>Migrate Gradle IntelliJ Plugin from 1.x to 2.x (#858)</LI>
+        </UL>
+        <h2>v0.9.5</h2>
+        <UL>
+            <LI>Add CLAUDE.md and AGENTS.md support: automatically include project instructions in prompts with priority logic (#856, #854)</LI>
+            <LI>Improve agent logging and MCP tool provider integration (#855)</LI>
+            <LI>Replace parallelism spinner with dynamic add/remove sub-agent rows (#855)</LI>
+            <LI>Fix: add null-safety to welcome template rendering with fallback to local content</LI>
+            <LI>Fix: use correct announcement fields (type/message) in welcome.json</LI>
+        </UL>
+        <h2>v0.9.4</h2>
+        <UL>
+            <LI>Agent mode with built-in tool execution (read, write, edit, search, list files, run commands) (#849)</LI>
+            <LI>Parallel sub-agents for concurrent codebase exploration with per-agent LLM configuration (#850)</LI>
+            <LI>MCP configuration JSON import/export for easy sharing of MCP server setups (#852, #786)</LI>
+            <LI>Fix: clear selection metadata when removing files from context (#847, #783)</LI>
+            <LI>Rename Sub-Agents documentation to Agent Mode</LI>
+        </UL>
+        <h2>v0.9.3</h2>
+        <UL>
+            <LI>Externalize welcome text with remote fetching from genie.devoxx.com</LI>
+            <LI>Support announcements, dynamic feature lists, and social links without plugin release</LI>
+            <LI>Add analytics tracking pixel for welcome view metrics via Cloudflare Worker + GA4</LI>
+            <LI>Schema versioning for remote welcome content with graceful local fallback</LI>
+            <LI>Replace deprecated URL(String) constructor with java.net.URI in WebViewExternalLinkHandler</LI>
+        </UL>
+        <h2>v0.9.2</h2>
+        <UL>
+            <LI>Add dedicated Skills settings dialog for custom user-defined skills</LI>
+            <LI>Add $ARGUMENT placeholder support in custom skill templates</LI>
+            <LI>Keep Prompts settings focused on system instruction, DEVOXXGENIE.md options, and keyboard shortcuts</LI>
+            <LI>Show resolved custom skill prompt in user message instead of raw /command</LI>
+            <LI>Migrate legacy HTTP/SSE MCP transport usage to StreamableHttpMcpTransport</LI>
+            <LI>Update welcome wording to Skills terminology and highlight MCP Marketplace first</LI>
+            <LI>Issue #809: Fix LM Studio context length detection to use model metadata instead of defaulting to 8K</LI>
+            <LI>Issue #809: Add optional LM Studio fallback context setting in the GUI</LI>
+            <LI>Replace deprecated Project.getBaseDir() with ProjectUtil.guessProjectDir()</LI>
+            <LI>Replace deprecated NioEventLoopGroup with MultiThreadIoEventLoopGroup for Netty 4.2.x</LI>
+            <LI>Resolve plugin verifier warnings for experimental and deprecated API usage</LI>
+            <LI>Add Kotlin K2 plugin mode declaration (supportsKotlinPluginMode)</LI>
+        </UL>
+        <h2>v0.9.1</h2>
+        <UL>
+            <LI>Issue #791: Fix exception when attaching source code containing triple braces ({{{ }}})</LI>
+            <LI>Add MCP server marketplace for browsing and installing MCP servers</LI>
+            <LI>Add location and type filters to the MCP marketplace dialog</LI>
+            <LI>Add support for custom headers in HTTP MCP transports for authentication</LI>
+            <LI>Refactor MCP integration to use the official langchain4j-mcp artifact (remove core sub-module)</LI>
+            <LI>Remove legacy GitHub MCP and FileSystem MCP quick-action buttons from settings</LI>
+        </UL>
+        <h2>v0.9.0</h2>
+        <UL>
+            <LI>Issue #698: Fix black screen after idle — WebView sleep/wake recovery with proper resource disposal</LI>
+            <LI>MCP "Test Connection & Fetch Tools" no longer blocks the IDE; runs with cancellable progress dialog and fixes MCP client resource leak on error</LI>
+        </UL>
+        <h2>v0.8.0</h2>
+        <UL>
+            <LI>Update models for Anthropic, OpenAI and Gemini</LI>
+            <LI>Add support for MCP streamable HTTP</LI>
+            <LI>Issue #689: Upgrade to langchain4j 1.10.0(-beta18)</LI>
+            <LI>Issue #796: Web search doesn't work (null error)</LI>
+            <LI>Bump the gradle-dependencies</LI>
+        </UL>
+        <h2>v0.7.1</h2>
+        <UL>
+            <LI>Issue #767: MCP approval timeout should be configurable</LI>
+            <LI>Issue #771: Enable streaming responses for Bedrock Anthropic models</LI>
+            <LI>Added Claude Sonnet 4 to the available Amazon Bedrock models</LI>
+            <LI>Issue #806: Plugin 'DevoxxGenie' (version '0.7.0') is not compatible with the current version of the IDE</LI>
+            <LI>Bump the gradle-dependencies</LI>
+        </UL>
+        <h2>v0.7.0</h2>
+        <UL>
+            <LI>Added Claude Sonnet 3.5 v2 to Amazon Bedrock models</LI>
+            <LI>Added configuration setting to enable/disable regional inference for Amazon Bedrock models (i.e. prefixing model names with 'us', 'eu', or 'apac')</LI>
+            <LI>Fixed issue where the entire file was added in the context when adding code snippet</LI>
+            <LI>Fixed fallback for empty submit and newline shortcuts on macOS 15.5 with IntelliJ IDEA 2025.1.3</LI>
+            <LI>Fixed duplicated user message issue</LI>
+            <LI>Configure Dependabot for Gradle dependencies</LI>
+            <LI>Bump the gradle-dependencies group with 22 updates (AWS SDK, Retrofit, SQLite, Docker Java, JTokkit, CommonMark, Netty, Logback, and more)</LI>
+            <LI>Bump brace-expansion from 1.1.11 to 1.1.12 in /docusaurus</LI>
+        </UL>
+        <h2>v0.6.9</h2>
+        <UL>
+            <LI>Issue #725: Langchain4J MCP ToolSpecificationHelper fix</LI>
+            <LI>Feat: Added support for SSO login (AWS Profile)</LI>
+            <LI>Feat #741: Add human-in-the-loop for MCP</LI>
+            <LI>Fix #745: Support IntelliJ Platform version 2025.2</LI>
+        </UL>
+        <h2>v0.6.7</h2>
+        <UL>
+            <LI>Issue #698: Black panel after "restart" next day</LI>
+            <LI>Feat #699: Add (or not) current open file in window context (New LLM option settings)</LI>
+            <LI>Feat #787: Add file" icon should move cursor/focus to "Type to search..." field by default</LI>
+            <LI>Fix #717: User prompts should rendered as markdown</LI>
+            <LI>Feat #700: Conversation history returns full conversation</LI>
+            <LI>Fix #685: Open browser when links are clicked in conversation webview</LI>
+            <LI>Fix #705: Removed obsolete GitDiff/Merge replaced by MCP</LI>
+            <LI>Feat #723: Show msg when default file is included in context</LI>
+        </UL>
+        <h2>v0.6.6</h2>
+        <UL>
+            <LI>Feat #701 : Support for Claude 4</LI>
+        </UL>
+        <h2>v0.6.5</h2>
+        <UL>
+            <LI>Feat #695 : Support for Grok as frontier cloud model</LI>
+        </UL>
+        <h2>v0.6.4</h2>
+        <UL>
+            <LI>Fix #690 : Show message when JCEF is not available</LI>
+        </UL>
+        <h2>v0.6.3</h2>
+        <UL>
+            <LI>Fix #677: Fixed new conversation is immediately added to history</LI>
+            <LI>Feat #679 : Add “Custom OpenAI HTTP 1.1” toggle for custom OpenAI provider by @denis-kudelin</LI>
+            <LI>Fix #683 : With Dark theme, light background was used by @mydeveloperplanet</LI>
+            <LI>Fix #681 : Escape html tags in the response by @mydeveloperplanet</LI>
+            <LI>Feat #688 : Replaced Google Gemini 2.5 Pro with 05-06 version by @stephanj</LI>
+            <LI>Fix #677 : Fix for new conversation being immediately added to history by @stephanj</LI>
+        </UL>
+        <h2>v0.6.2</h2>
+        <UL>
+            <LI>Feat: Improved MCP output in web view</LI>
+        </UL>
+        <h2>v0.6.1</h2>
+        <UL>
+            <LI>Feat: Appearance settings added so we can customize UI output panel</LI>
+            <LI>Fix #671 : Copy user prompt, and response and use markdown</LI>
+        </UL>
+        <h2>v0.6.0</h2>
+        <UL>
+            <LI>Feat: WebView-based response panel with PrismJS for syntax highlighting</LI>
+            <LI>Feat: Improved code block rendering and copy functionality</LI>
+            <LI>Feat: Better code syntax highlighting across all languages</LI>
+            <LI>Feat: Enhanced streaming responses with WebView</LI>
+            <LI>Feat: Enable MCP servers from input field</LI>
+            <LI>Feat: Include code snippet or files in context when MCP is enabled</LI>
+            <LI>Feat: Support MCP in streaming mode</LI>
+        </UL>
+        <h2>v0.5.12</h2>
+        <UL>
+            <LI>Feat #562 : Fix for horizontal large text responses</LI>
+         </UL>
+        <h2>v0.5.11</h2>
+        <UL>
+            <LI>Feat #651 : Added gemini-2.5-flash-preview-04-17</LI>
+            <LI>Fix #655 : DevoxxGenie settings panel blocks UI</LI>
+            <LI>Feat #657 : Init RAG async</LI>
+            <LI>Fix #657 : Make RAG process more robust</LI>
+            <LI>Feat #658: Improve the MCP logging UI/UX</LI>
+        </UL>
+        <h2>v0.5.10</h2>
+        <UL>
+            <LI>Fix #649 : LMStudio does not return a response</LI>
+        </UL>
+        <h2>v0.5.9</h2>
+        <UL>
+            <LI>Feat #646 : Support for GPT 4.1, mini and nano</LI>
+        </UL>
+        <h2>v0.5.8</h2>
+        <UL>
+            <LI>Fix #644 : MCP Functionality Issue on Windows Platform</LI>
+        </UL>
+        <h2>v0.5.7</h2>
+        <UL>
+            <LI>Fix #545 : Use Bedrock model name with 'us' prefix to make it work 'us.anthropic.claude-3-7-sonnet-20250219-v1:0'</LI>
+            <LI>Feat #630 : Update Bedrock model Id with eu,us,apac prefix when using Anthropic, LLama</LI>
+            <LI>Feat #632 : Stopping a chat which is running doesn't stop the MCP process</LI>
+            <LI>Feat #635 : Add MCP Envs is same window</LI>
+            <LI>Feat #638 : Migrated to Langchain4J v1.0.0 beta3</LI>
+            <LI>Fix #624 : Font size problem in streaming response fixed</LI>
+        </UL>
+        <h2>v0.5.6</h2>
+        <UL>
+            <LI>Fix #620 : Renamed Google Gemini model to gemini-2.5-pro-preview-03-25</LI>
+            <LI>Fix #622 : Fix MCP config screen still shows incorrectly the SSE settings</LI>
+        </UL>
+    ]]></change-notes>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+        <projectConfigurable parentId="tools"
+                             id="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"
+                             displayName="DevoxxGenie"/>
+
+        <projectConfigurable id="com.devoxx.genie.GeneralSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.general.GeneralSettingsConfigurable"
+                             displayName="Analytics"/>
+
+        <projectConfigurable id="com.devoxx.genie.LLMSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.llmconfig.LLMConfigSettingsConfigurable"
+                             displayName="LLM Settings"/>
+
+        <projectConfigurable id="com.devoxx.genie.PromptSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
+                             displayName="System Prompt"/>
+
+        <projectConfigurable id="com.devoxx.genie.CommandsSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.commands.CommandsSettingsConfigurable"
+                             displayName="Commands"/>
+
+        <projectConfigurable id="com.devoxx.genie.SkillsSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.skill.SkillsSettingsConfigurable"
+                             displayName="Skills"/>
+
+        <projectConfigurable id="com.devoxx.genie.mcpsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.mcp.MCPSettingsConfigurable"
+                             displayName="MCP Settings"/>
+
+        <projectConfigurable id="com.devoxx.genie.agentsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.agent.AgentSettingsConfigurable"
+                             displayName="Agent Mode (BETA)"/>
+
+        <projectConfigurable id="com.devoxx.genie.WebSearch"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"
+                             displayName="Web search"/>
+
+        <projectConfigurable id="com.devoxx.genie.CopyProjectSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.copyproject.CopyProjectSettingsConfigurable"
+                             displayName="Scan &amp; Copy Project"/>
+
+        <projectConfigurable id="com.devoxx.genie.RAG"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.rag.RAGSettingsConfigurable"
+                             displayName="RAG"/>
+
+        <projectConfigurable id="com.devoxx.genie.appearance"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.appearance.AppearanceSettingsConfigurable"
+                             displayName="Appearance"/>
+
+        <projectConfigurable id="com.devoxx.genie.specSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
+                             displayName="Spec Driven Development (BETA)"/>
+
+        <projectConfigurable id="com.devoxx.genie.securityScan"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.security.SecurityScanSettingsConfigurable"
+                             displayName="Security Scanning"/>
+
+        <projectConfigurable id="com.devoxx.genie.runners"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.runner.RunnerSettingsConfigurable"
+                             displayName="CLI/ACP Runners"/>
+
+        <projectConfigurable id="com.devoxx.genie.dockerAgenticPlatform"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.ap.ApSettingsConfigurable"
+                             displayName="Docker Agentic Platform (PREVIEW)"/>
+
+        <projectConfigurable id="com.devoxx.genie.InlineCompletion"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
+                             displayName="Inline Completion"/>
+
+        <projectConfigurable id="com.devoxx.genie.eventAutomation"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.automation.EventAutomationSettingsConfigurable"
+                             displayName="Event Automations (BETA)"/>
+
+        <projectConfigurable id="com.devoxx.genie.llmfeatures"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.costsettings.LanguageModelCostSettingsConfigurable"
+                             displayName="Token Cost &amp; Context Window"/>
+
+        <toolWindow id="DevoxxGenie"
+                    anchor="right"
+                    icon="/icons/pluginIcon.svg"
+                    canCloseContents="true"
+                    factoryClass="com.devoxx.genie.ui.window.DevoxxGenieToolWindowFactory"/>
+
+        <toolWindow id="DevoxxGenieActivityLogs"
+                    anchor="bottom"
+                    icon="/icons/spy.svg"
+                    secondary="true"
+                    doNotActivateOnStart="true"
+                    canCloseContents="true"
+                    factoryClass="com.devoxx.genie.ui.window.AgentMcpLogToolWindowFactory"/>
+
+        <applicationService serviceImplementation="com.devoxx.genie.ui.settings.DevoxxGenieStateService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.conversations.ConversationStorageService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.ThreadPoolManager"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.threading.PromptTaskTracker"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.memory.ChatMemoryManager"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.command.PromptCommandProcessor"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.skill.SkillRegistry"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.security.SecurityScannerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.MessageCreationService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.ui.panel.PromptPanelRegistry"/>
+        <applicationService serviceImplementation="com.devoxx.genie.ui.window.ConversationTabRegistry"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.exo.ExoModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.projectscanner.ProjectScannerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPExecutionService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPRegistryService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.service.rag.ProjectIndexerService"/>
+        <!-- New service for WebView implementation -->
+        <applicationService serviceImplementation="com.devoxx.genie.ui.webview.WebServer"/>
+        <!-- Appearance settings handler -->
+        <applicationService serviceImplementation="com.devoxx.genie.ui.settings.appearance.AppearanceRefreshHandler"/>
+        <!-- Inline completion service -->
+        <applicationService serviceImplementation="com.devoxx.genie.completion.InlineCompletionService"/>
+        <!-- Inline completion provider -->
+        <inline.completion.provider
+            implementation="com.devoxx.genie.completion.DevoxxGenieInlineCompletionProvider"/>
+        <!-- Event Automation service -->
+        <applicationService serviceImplementation="com.devoxx.genie.service.automation.EventAutomationService"/>
+        <!-- Event Automation listeners -->
+        <checkinHandlerFactory implementation="com.devoxx.genie.service.automation.listeners.VcsCheckinHandlerFactory"/>
+        <testStatusListener implementation="com.devoxx.genie.service.automation.listeners.TestExecutionListener"/>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint name="projectScannerExtension"
+                        interface="com.devoxx.genie.service.analyzer.ProjectAnalyzerExtension"/>
+    </extensionPoints>
+
+    <!-- Optional dependencies for enhanced functionality in specific IDEs -->
+    <depends optional="true" config-file="java-features.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="php-features.xml">com.jetbrains.php</depends>
+    <depends optional="true" config-file="python-features.xml">com.intellij.modules.python</depends>
+    <depends optional="true" config-file="clion-features.xml">com.intellij.modules.clion</depends>
+    <depends optional="true" config-file="rust-features.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="webstorm-features.xml">JavaScript</depends>
+    <depends optional="true" config-file="kotlin-features.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="goland-features.xml">org.jetbrains.plugins.go</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="com.devoxx.genie.notifications" displayType="BALLOON" />
+        <postStartupActivity implementation="com.devoxx.genie.service.PostStartupActivity"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="com.devoxx.genie.service.WindowsSkikoRenderApiInitializer"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
+
+    <!-- Declare K2 Kotlin plugin mode compatibility (required since IntelliJ IDEA 2024.2.1) -->
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
+
+    <actions>
+
+        <action id="DevoxxGenie.AddSnippetAction"
+                class="com.devoxx.genie.action.AddSnippetAction"
+                text="Add To Conversation"
+                icon="/icons/pluginIcon.svg"
+                description="Add code snippet to context window">
+            <add-to-group group-id="EditorPopupMenu" anchor="last" />
+        </action>
+
+        <action id="DevoxxGenie.AddFilesAction"
+                class="com.devoxx.genie.action.AddFileAction"
+                text="Add File(s) To Conversation"
+                icon="/icons/pluginIcon.svg"
+                description="Add file(s) to the conversation">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <action id="AddDirectoryToContextWindow"
+                class="com.devoxx.genie.action.AddDirectoryAction"
+                text="Add Directory to Conversation"
+                icon="/icons/pluginIcon.svg"
+                description="Add the selected directory to the context window">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <action id="ExcludeDirectory"
+                class="com.devoxx.genie.action.ExcludeDirectoryAction"
+                text="Exclude Directory from Add Project"
+                icon="/icons/pluginIcon.svg"
+                description="Exclude selected directory from Add Project">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <action id="CopyDirectoryToClipboard"
+                class="com.devoxx.genie.action.AddDirectoryAction"
+                text="Copy Directory to Clipboard"
+                icon="/icons/pluginIcon.svg"
+                description="Copy the selected directory content to clipboard">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddDirectoryToContextWindow"/>
+        </action>
+
+        <action id="CalcTokenDirectory"
+                class="com.devoxx.genie.action.CalcTokensForDirectoryAction"
+                text="Calc Tokens for Directory"
+                icon="/icons/pluginIcon.svg"
+                description="Calculate the tokens for selected directory">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="CopyDirectoryToClipboard"/>
+        </action>
+
+    </actions>
+</idea-plugin>

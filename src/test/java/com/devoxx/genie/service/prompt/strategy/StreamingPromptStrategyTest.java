@@ -174,4 +174,36 @@ class StreamingPromptStrategyTest {
         // With early cancellation, the executor should not have started real work
         // The handler should have been stopped
     }
+
+    /**
+     * Regression test for task-217: prepareMemory() runs the RAG search (and, when query
+     * expansion is enabled, N LLM calls). It must execute inside the background pool task,
+     * not on the calling thread (the EDT), otherwise the loading indicator can't repaint
+     * while expansion is in flight.
+     */
+    @Test
+    void executeStrategySpecific_runsPrepareMemoryInsideExecutorTask() {
+        when(mockContext.getStreamingChatModel()).thenReturn(mockStreamingModel);
+        when(mockContext.getUserPrompt()).thenReturn("test question");
+        when(mockContext.getUserMessage()).thenReturn(
+                dev.langchain4j.data.message.UserMessage.from("test question"));
+
+        // Capture the runnable but do NOT run it.
+        org.mockito.ArgumentCaptor<Runnable> taskCaptor =
+                org.mockito.ArgumentCaptor.forClass(Runnable.class);
+        doNothing().when(mockExecutor).execute(taskCaptor.capture());
+
+        strategy.executeStrategySpecific(mockContext, mockPanel, mockResultTask);
+
+        // Before the background task runs, prepareMemory must NOT have been invoked.
+        verify(mockChatMemoryManager, never()).prepareMemory(any());
+        verify(mockMessageCreationService, never()).addUserMessageToContext(any());
+
+        // The streaming pipeline calls the streaming model — return early via cancellation
+        // so the captured task doesn't try to run real network code.
+        when(mockResultTask.isCancelled()).thenReturn(true);
+        taskCaptor.getValue().run();
+
+        verify(mockChatMemoryManager).prepareMemory(mockContext);
+    }
 }

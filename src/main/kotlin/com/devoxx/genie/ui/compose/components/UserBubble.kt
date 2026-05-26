@@ -90,7 +90,7 @@ fun UserBubble(
         }
     }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
@@ -108,6 +108,12 @@ fun UserBubble(
                     codeFence = codeFence,
                 ),
             )
+        }
+
+        // Copy button — mirrors the AI bubble's footer copy button.
+        Spacer(Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            CopyButton(textToCopy = promptText)
         }
     }
 }

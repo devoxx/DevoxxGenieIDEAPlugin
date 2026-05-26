@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -83,15 +82,17 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             return;
         }
 
-        // Prepare memory and add user message
-        prepareMemory(context);
-
-        // Execute the prompt using the centralized thread pool
+        // prepareMemory() runs the RAG retrieval (and, when query expansion is enabled, N LLM
+        // calls). On the EDT it freezes the prompt-panel glow + Compose loading indicator
+        // until those finish (task-217). Move it inside the pool task so the indicator —
+        // already enabled by addUserPromptMessage() — can repaint immediately.
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
+                prepareMemory(context);
+
                 // Record start time
                 long startTime = System.currentTimeMillis();
-                
+
                 // Execute the query
                 var response = promptExecutionService.executeQuery(context).get();
                 
@@ -184,11 +185,14 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             @NotNull PromptTask<PromptResult> resultTask) {
         
         threadPoolManager.getPromptExecutionPool().execute(() -> {
+            long startNanos = System.nanoTime();
+            List<SearchResult> searchResults = java.util.Collections.emptyList();
             try {
                 SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-                Map<String, SearchResult> searchResults = semanticSearchService.search(
+                searchResults = semanticSearchService.search(
                         context.getProject(),
-                        context.getUserPrompt()
+                        context.getUserPrompt(),
+                        context.getChatModel()
                 );
 
                 if (!searchResults.isEmpty()) {
@@ -199,16 +203,20 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 } else {
                     NotificationUtil.sendNotification(context.getProject(),
                             "No relevant files found for your search query.");
-                    resultTask.complete(PromptResult.failure(context, 
+                    resultTask.complete(PromptResult.failure(context,
                         new ExecutionException("No relevant files found")));
                 }
             } catch (Exception e) {
                 // Create a specific execution exception for semantic search errors
                 ExecutionException searchError = new ExecutionException(
-                    "Error performing semantic search", e, 
+                    "Error performing semantic search", e,
                     PromptException.ErrorSeverity.WARNING, true);
                 PromptErrorHandler.handleException(context.getProject(), searchError, context);
                 resultTask.complete(PromptResult.failure(context, searchError));
+            } finally {
+                long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+                com.devoxx.genie.service.rag.RAGEventPublisher.publish(
+                        context.getProject(), context.getUserPrompt(), searchResults, durationMs);
             }
         });
     }

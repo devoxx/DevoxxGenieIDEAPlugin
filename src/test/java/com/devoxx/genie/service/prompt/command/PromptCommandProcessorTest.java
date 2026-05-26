@@ -78,7 +78,7 @@ class PromptCommandProcessorTest {
     private HelpCommand helpCommand;
     
     @Mock
-    private CustomPromptCommand customPromptCommand;
+    private UserCommand customPromptCommand;
     
     private PromptCommandProcessor processor;
     private boolean mcpEnabled = false;

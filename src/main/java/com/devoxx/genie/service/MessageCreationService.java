@@ -1,9 +1,11 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.model.rag.RAGLogMessage;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.rag.RAGEventPublisher;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -24,13 +26,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
@@ -45,7 +43,7 @@ public class MessageCreationService {
     public static final String SEMANTIC_RESULT = """
             File: %s%n
             Score: %.2f%n
-            ```java%n
+            ```%s%n
             %s%n
             ```%n
             """;
@@ -143,6 +141,12 @@ public class MessageCreationService {
         chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
     }
 
+    /** Queries shorter than this are treated as follow-up clarifications ("explain", "more?",
+     *  "and?") that should reuse the previous turn's context rather than triggering a new RAG
+     *  retrieval. This keeps the prompt-cache hot for chatty back-and-forth and saves an
+     *  Ollama embedding call per follow-up. */
+    static final int RAG_MIN_QUERY_LENGTH = 15;
+
     private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
         log.debug("Constructing user message with combined context");
 
@@ -158,16 +162,6 @@ public class MessageCreationService {
         // (set once per conversation in ChatMemoryManager.buildSystemPrompt()) rather than repeated
         // in every user message.
 
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
-            // Semantic search is enabled, add search results
-            String semanticContext = addSemanticSearchResults(chatMessageContext);
-            if (!semanticContext.isEmpty()) {
-                stringBuilder.append("<SemanticContext>\n");
-                stringBuilder.append(semanticContext);
-                stringBuilder.append("\n</SemanticContext>");
-            }
-        }
-
         if (MCPService.isMCPEnabled()) {
             // We'll add more info about the project path so tools can use this info.
             stringBuilder
@@ -182,10 +176,35 @@ public class MessageCreationService {
             stringBuilder.append(editorContent);
         }
 
+        // Retrieval context immediately precedes the user prompt. Two reasons:
+        //   1. Providers that hit prompt caches (Anthropic, OpenAI) only cache the stable
+        //      prefix; varying retrieval content at the top defeats that cache for everyone.
+        //   2. Many local models pay more attention to whatever is closest to the user
+        //      question — keeping RAG hits adjacent to the prompt improves grounding.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())
+                && shouldRunRagFor(chatMessageContext.getUserPrompt())) {
+            String semanticContext = addSemanticSearchResults(chatMessageContext);
+            if (!semanticContext.isEmpty()) {
+                stringBuilder.append("<SemanticContext>\n");
+                stringBuilder.append(semanticContext);
+                stringBuilder.append("\n</SemanticContext>");
+            }
+        }
+
         // Add the user's prompt, this MUST BE at the bottom of the prompt for some local models to understand!
         stringBuilder.append("<UserPrompt>\n").append(chatMessageContext.getUserPrompt()).append("\n</UserPrompt>\n\n");
 
         chatMessageContext.setUserMessage(UserMessage.from(stringBuilder.toString()));
+    }
+
+    /**
+     * Decide whether to run a RAG retrieval for {@code userPrompt}. Skips very short
+     * follow-up-style messages ({@code "more?"}, {@code "explain"}, {@code "why?"}) where
+     * the LLM should rely on the prior turn's context instead. Visible for tests.
+     */
+    static boolean shouldRunRagFor(String userPrompt) {
+        if (userPrompt == null) return false;
+        return userPrompt.trim().length() >= RAG_MIN_QUERY_LENGTH;
     }
 
     /**
@@ -198,13 +217,19 @@ public class MessageCreationService {
         log.debug("Adding semantic search results to user message");
 
         StringBuilder contextBuilder = new StringBuilder();
+        String userPrompt = chatMessageContext.getUserPrompt();
+        long startNanos = System.nanoTime();
+        List<SearchResult> searchResults = new ArrayList<>();
 
         try {
             SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-
-            // Get semantic search results from ChromaDB
-            Map<String, SearchResult> searchResults =
-                    semanticSearchService.search(chatMessageContext.getProject(), chatMessageContext.getUserPrompt());
+            // Pass the chat model so SemanticSearchService can run query expansion when enabled.
+            // chatModel may be null in streaming-only flows; SemanticSearchService falls back to
+            // single-query search in that case.
+            searchResults = semanticSearchService.search(
+                    chatMessageContext.getProject(),
+                    userPrompt,
+                    chatMessageContext.getChatModel());
 
             // Task-209: emit feature_used with the real provider_type from the active model.
             com.devoxx.genie.service.analytics.FeatureUsageTracker.semanticSearchUsed(
@@ -212,48 +237,77 @@ public class MessageCreationService {
 
             if (!searchResults.isEmpty()) {
                 List<SemanticFile> fileReferences = extractFileReferences(searchResults);
-
-                // Store references in chat message context for UI use
                 chatMessageContext.setSemanticReferences(fileReferences);
 
                 contextBuilder.append("Referenced files:\n");
                 fileReferences.forEach(file -> contextBuilder.append("- ").append(file).append("\n"));
                 contextBuilder.append("\n");
 
-                Set<Map.Entry<String, SearchResult>> entries = searchResults.entrySet();
-                // Format search results
-                String formattedResults = entries.stream()
-                        .map(MessageCreationService::getFileContent)
+                String formattedResults = searchResults.stream()
+                        .map(MessageCreationService::formatSemanticResult)
                         .collect(Collectors.joining("\n"));
 
                 contextBuilder.append(formattedResults);
 
-                // Log the number of relevant snippets found
+                long uniqueFiles = fileReferences.stream().map(SemanticFile::filePath).distinct().count();
                 NotificationUtil.sendNotification(
                         chatMessageContext.getProject(),
-                        String.format("Found %d relevant project file%s using RAG", searchResults.size(), searchResults.size() > 1 ? "s" : "")
+                        String.format("Found %d relevant project file%s using RAG — see DevoxxGenie Logs (Show RAG Only) for details",
+                                uniqueFiles, uniqueFiles > 1 ? "s" : "")
                 );
             }
         } catch (Exception e) {
             log.warn("Failed to get semantic search results: " + e.getMessage());
+        } finally {
+            long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+            RAGEventPublisher.publish(chatMessageContext.getProject(), userPrompt, searchResults, durationMs);
         }
 
         return contextBuilder.toString();
     }
 
-    private static @NotNull String getFileContent(Map.@NotNull Entry<String, SearchResult> entry) {
-        String fileContent;
-        try {
-            fileContent = Files.readString(Paths.get(entry.getKey()));
-        } catch (IOException e) {
-            return "";
-        }
-        return SEMANTIC_RESULT.formatted(entry.getKey(), entry.getValue().score(), fileContent);
+    /**
+     * Format a single search hit for inclusion in the prompt. Uses the chunk text returned
+     * by the vector store — does NOT re-read the full file from disk.
+     */
+    private static @NotNull String formatSemanticResult(@NotNull SearchResult result) {
+        String filePath = result.filePath() != null ? result.filePath() : "(unknown)";
+        return SEMANTIC_RESULT.formatted(filePath, result.score(), inferFenceLanguage(filePath), result.content());
     }
 
-    public static List<SemanticFile> extractFileReferences(@NotNull Map<String, SearchResult> searchResults) {
-        return searchResults.keySet().stream()
-                .map(value -> new SemanticFile(value, searchResults.get(value).score()))
+    private static @NotNull String inferFenceLanguage(@NotNull String filePath) {
+        int dot = filePath.lastIndexOf('.');
+        if (dot < 0 || dot == filePath.length() - 1) return "";
+        String ext = filePath.substring(dot + 1).toLowerCase();
+        return switch (ext) {
+            case "java" -> "java";
+            case "kt", "kts" -> "kotlin";
+            case "py" -> "python";
+            case "js", "mjs", "cjs" -> "javascript";
+            case "ts", "tsx" -> "typescript";
+            case "jsx" -> "jsx";
+            case "go" -> "go";
+            case "rs" -> "rust";
+            case "cpp", "cc", "cxx", "hpp", "h" -> "cpp";
+            case "c" -> "c";
+            case "php" -> "php";
+            case "rb" -> "ruby";
+            case "scala" -> "scala";
+            case "sh", "bash" -> "bash";
+            case "sql" -> "sql";
+            case "yml", "yaml" -> "yaml";
+            case "json" -> "json";
+            case "xml" -> "xml";
+            case "html", "htm" -> "html";
+            case "css" -> "css";
+            case "md" -> "markdown";
+            default -> ext;
+        };
+    }
+
+    public static List<SemanticFile> extractFileReferences(@NotNull List<SearchResult> searchResults) {
+        return searchResults.stream()
+                .map(r -> new SemanticFile(r.filePath(), r.score()))
                 .toList();
     }
 

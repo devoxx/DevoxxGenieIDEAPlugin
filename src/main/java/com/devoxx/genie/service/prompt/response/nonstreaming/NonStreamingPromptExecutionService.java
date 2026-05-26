@@ -84,17 +84,18 @@ public class NonStreamingPromptExecutionService {
                 threadPoolManager.getPromptExecutionPool()
             );
 
-        // Only apply a blanket timeout for simple (non-agent, non-MCP) prompts.
-        // Agent/MCP conversations involve many HTTP round trips; each individual
-        // request already has a timeout via the Langchain4j SDK.
-        boolean isAgentOrMcp = Boolean.TRUE.equals(
-                DevoxxGenieStateService.getInstance().getAgentModeEnabled())
+        // Apply a wall-clock cap to every prompt — simple prompts use the per-request timeout,
+        // agent/MCP conversations use the (much longer) agent cap. The agent cap is a safety
+        // net against silent hangs (e.g. an MCP tool that never returns); individual HTTP
+        // round trips still have their own per-request timeouts via the Langchain4j SDK.
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        boolean isAgentOrMcp = Boolean.TRUE.equals(settings.getAgentModeEnabled())
                 || MCPService.isMCPEnabled();
-        if (!isAgentOrMcp) {
-            queryFuture = queryFuture.orTimeout(
-                    chatMessageContext.getTimeout() == null ? 60 : chatMessageContext.getTimeout(),
-                    TimeUnit.SECONDS);
-        }
+        long timeoutSeconds = resolveTimeoutSeconds(
+                chatMessageContext.getTimeout(),
+                isAgentOrMcp,
+                settings.getAgentMaxExecutionTimeSeconds());
+        queryFuture = queryFuture.orTimeout(timeoutSeconds, TimeUnit.SECONDS);
 
         queryFuture = queryFuture
             .thenApply(result -> {
@@ -137,6 +138,25 @@ public class NonStreamingPromptExecutionService {
         queryFutures.put(tabKey, queryFuture);
 
         return queryFuture;
+    }
+
+    /**
+     * Resolve the wall-clock cap (seconds) for a prompt's overall future.
+     *
+     * <p>Agent/MCP conversations use {@code agentCapSeconds} (default
+     * {@link com.devoxx.genie.model.Constant#AGENT_MAX_EXECUTION_SECONDS}) because they make
+     * multiple tool round-trips and the per-request HTTP timeout is not a sufficient safety
+     * net. Simple prompts use the caller's per-request {@code requestedSeconds} (default 60s).
+     *
+     * <p>Package-private for unit testing.
+     */
+    static long resolveTimeoutSeconds(Integer requestedSeconds, boolean isAgentOrMcp, Integer agentCapSeconds) {
+        if (isAgentOrMcp) {
+            return agentCapSeconds == null || agentCapSeconds <= 0
+                    ? com.devoxx.genie.model.Constant.AGENT_MAX_EXECUTION_SECONDS
+                    : agentCapSeconds;
+        }
+        return requestedSeconds == null || requestedSeconds <= 0 ? 60L : requestedSeconds;
     }
 
     /**

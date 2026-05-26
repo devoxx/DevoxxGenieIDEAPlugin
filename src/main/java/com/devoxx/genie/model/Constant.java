@@ -62,6 +62,13 @@ public class Constant {
 
     // Agent mode settings
     public static final int AGENT_MAX_TOOL_CALLS = 25;
+    /**
+     * Wall-clock cap (seconds) for a single MCP/agent prompt conversation.
+     * Simple (non-agent, non-MCP) prompts use the per-request timeout instead. The agent cap is
+     * a *safety net* against silent hangs (e.g., an MCP tool that never returns); each individual
+     * HTTP call still has its own per-request timeout via the Langchain4j SDK.
+     */
+    public static final int AGENT_MAX_EXECUTION_SECONDS = 300;
     public static final int SUB_AGENT_MAX_TOOL_CALLS = 200;
     public static final int SUB_AGENT_DEFAULT_PARALLELISM = 3;
     public static final int SUB_AGENT_MAX_PARALLELISM = 10;

@@ -1,6 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
-import com.devoxx.genie.model.CustomPrompt;
+import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
@@ -206,7 +206,7 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldInitializeCustomPromptsWithDefaults() {
-            List<CustomPrompt> prompts = stateService.getCustomPrompts();
+            List<Command> prompts = stateService.getCommands();
             assertThat(prompts).isNotNull();
             assertThat(prompts).isNotEmpty();
             assertThat(prompts).hasSameSizeAs(stateService.getDefaultPrompts());
@@ -214,8 +214,8 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldContainAllDefaultPromptNames() {
-            List<String> promptNames = stateService.getCustomPrompts().stream()
-                    .map(CustomPrompt::getName)
+            List<String> promptNames = stateService.getCommands().stream()
+                    .map(Command::getName)
                     .toList();
             assertThat(promptNames).contains(
                     TEST_COMMAND, EXPLAIN_COMMAND, REVIEW_COMMAND,
@@ -225,16 +225,16 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldReinitializeIfCustomPromptsIsNull() {
-            stateService.setCustomPrompts(null);
+            stateService.setCommands(null);
             // Simulate what happens in constructor / loadState
             // The constructor calls initializeUserPrompt which checks for null/empty
             DevoxxGenieStateService freshService = new DevoxxGenieStateService();
-            freshService.setCustomPrompts(null);
+            freshService.setCommands(null);
             // After setting null, we need to call the same logic
             // The real initialization happens only in constructor and loadState
             // Let's verify a fresh instance always has prompts
             DevoxxGenieStateService newService = new DevoxxGenieStateService();
-            assertThat(newService.getCustomPrompts()).isNotEmpty();
+            assertThat(newService.getCommands()).isNotEmpty();
         }
     }
 

@@ -1,6 +1,68 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## v1.6.0 - 2026-05-24
+
+### Added
+- feat(ap): add Docker Agentic Platform CLI integration (preview)
+- Add Gemini 3.5 Flash model to models.json
+- feat: Add copy button to user prompt bubble (#1024)
+- feat: add shell env file and shell selector for run_command tool
+
+### Fixed
+- fix(jan): support Jan v0.8.0 — model list crash and chat hang (#1051)
+- fix: surface multi-line run_command output in agent log preview
+- fix: support CJK characters in chat input field (#1034)
+
+### Contributors
+- @stephanj
+
+## [1.5.0] - 2026-05-18
+
+### Added
+- feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)
+  - New `Skills` settings tab listing skills detected under `~/.devoxxgenie/skills/`, `<project>/.devoxxgenie/skills/`, `.claude/skills/` and `.agents/skills/`, with enable/disable, source, open-folder and reload actions
+  - `SkillRegistry` project service loads `SKILL.md` definitions; project skills override user skills (with warning)
+  - Skills are wired into the agent tool chain via `AgentToolProviderFactory` and the system prompt fragment is appended by `ChatMemoryManager` when agent mode is on
+  - Legacy `customPrompts` XML state is migrated to `commands` on load (settings tab renamed from `Custom Prompts` to `Commands`)
+- feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)
+- feat(settings): replace six per-source `Open folder` buttons with a single button + source dropdown (#1041)
+- feat(skills): scan `.claude/skills` and `.agents/skills` alongside `.devoxxgenie/skills` (#1041)
+
+### Fixed
+- fix: fire `onCustomPromptsChanged` from `SkillsSettingsConfigurable` on apply so the welcome page refreshes immediately (#1040)
+
+### Docs
+- Add `Commands vs Skills` blog post and screenshot (#1040)
+- Update Commands rename and add Skills documentation (#1040)
+- Fix duplicate footnote markers in `overview.md` (#1040)
+
+### CI
+- ci(claude-review): skip job on fork PRs (OIDC unavailable from forks)
+- ci(lychee): exclude `intel.com` from link check (403 on automated crawlers)
+
+### Contributors
+- @stephanj
+
+## [1.4.5] - 2026-05-18
+
+### Added
+- feat: Add copy button to user prompt bubble (#1024) (#1037)
+- feat: add shell env file and shell selector for run_command tool (#1036)
+- Add task-211: persistent semantic conversation memory backed by ChromaDB (#1028)
+
+### Fixed
+- fix: surface multi-line run_command output in agent log preview (#1038)
+- fix: support CJK characters in chat input field (#1034) (#1035)
+- fix: destroy process tree in AcpTransport.close() to prevent thread leak (#1031)
+- fix: revert Compose/Kotlin ecosystem bump that broke the UI (#1030)
+
+### Dependencies
+
+### Contributors
+- @app/dependabot
+- @knekrasov
+- @stephanj
+
 ## [1.4.4] - 2026-05-14
 
 ### Added

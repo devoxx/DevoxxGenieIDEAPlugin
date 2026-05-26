@@ -23,21 +23,29 @@
 
         <h3>Key Features</h3>
         <UL>
-            <LI><strong>Local & Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, OpenAI, Anthropic, Gemini, Groq, and more</LI>
-            <LI><strong>MCP Support:</strong> Model Context Protocol with integrated marketplace for installing servers</LI>
-            <LI><strong>RAG:</strong> Retrieval-Augmented Generation for semantic code search</LI>
+            <LI><strong>Local &amp; Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, Llama.cpp, Exo + OpenAI, Anthropic, Gemini, Mistral, Groq, DeepInfra, DeepSeek, Kimi, GLM, OpenRouter, Azure OpenAI, Amazon Bedrock</LI>
+            <LI><strong>Agent Mode:</strong> Autonomous code tools with parallel sub-agents, multi-turn tool use, and built-in file/search/run_command tools</LI>
+            <LI><strong>Skills (new in v1.5.0):</strong> Portable <code>SKILL.md</code> files the LLM activates mid-conversation — the same files also work in Claude Code, Codex and Gemini</LI>
+            <LI><strong>Commands:</strong> User-defined slash commands (previously "Custom Prompts") for reusable prompt templates</LI>
+            <LI><strong>MCP Support:</strong> Model Context Protocol with integrated marketplace for installing servers (stdio and HTTP/SSE transports)</LI>
+            <LI><strong>Spec Driven Development:</strong> Backlog.md task management with Spec Browser, Kanban Board, and Agent Loop batch execution with dependency ordering</LI>
+            <LI><strong>Security Scanning:</strong> Run Gitleaks (secrets), OpenGrep (SAST) and Trivy (CVEs) as agent tools — findings auto-create prioritised backlog tasks</LI>
+            <LI><strong>Inline Code Completion:</strong> AI-powered suggestions as you type using Fill-in-the-Middle models via Ollama or LM Studio</LI>
+            <LI><strong>ACP &amp; CLI Runners:</strong> Integrate external agents (Claude Code, Codex, Gemini CLI, Kimi, Copilot) via the Agent Communication Protocol or CLI invocation</LI>
+            <LI><strong>RAG:</strong> Retrieval-Augmented Generation for semantic code search (ChromaDB + Ollama embeddings)</LI>
             <LI><strong>Web Search:</strong> Integrate Google and Tavily search into your prompts</LI>
-            <LI><strong>Custom Skills:</strong> User-defined prompts and commands</LI>
-            <LI><strong>Chat History:</strong> Locally stored conversations</LI>
-            <LI><strong>Token Cost Calculator:</strong> Real-time cost estimation for cloud providers</LI>
-            <LI><strong>Multi-modal Support:</strong> Drag & drop images for vision models</LI>
+            <LI><strong>Plugin Integration API:</strong> Other IntelliJ plugins can send findings to DevoxxGenie at runtime via a reflection-based <code>ExternalPromptService</code></LI>
+            <LI><strong>Chat History:</strong> Locally stored conversations (SQLite) with parallel conversation tabs</LI>
+            <LI><strong>Token Cost Calculator:</strong> Real-time cost and context-window estimation for cloud providers</LI>
+            <LI><strong>Multi-modal Support:</strong> Drag &amp; drop images for vision models, plus Git diff and project-context attachments</LI>
+            <LI><strong>Docker Agentic Platform:</strong> CLI integration (preview)</LI>
         </UL>
         <h3>Quick Start</h3>
         <UL>
             <LI>Install the plugin</LI>
-            <LI>For local LLMs: Install Ollama, LMStudio, or GPT4All</LI>
-            <LI>For cloud LLMs: Add your API keys in Settings</LI>
-            <LI>Optional: Configure MCP servers from the marketplace</LI>
+            <LI>For local LLMs: install Ollama, LMStudio, GPT4All, Llama.cpp or Exo</LI>
+            <LI>For cloud LLMs: add your API keys in <em>Settings → DevoxxGenie → LLM Providers</em></LI>
+            <LI>Optional: enable Agent Mode, configure MCP servers from the marketplace, or drop a <code>SKILL.md</code> into <code>.devoxxgenie/skills/</code>, <code>.claude/skills/</code> or <code>.agents/skills/</code></LI>
             <LI>Start prompting!</LI>
         </UL>
 
@@ -60,7 +68,37 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                                <h2>v1.4.4</h2>
+<h2>v1.6.0</h2>
+        <UL>
+                    <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
+                    <LI>Add Gemini 3.5 Flash model to models.json</LI>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>fix(jan): support Jan v0.8.0 — model list crash and chat hang (#1051)</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                </UL>
+<h2>v1.5.0</h2>
+        <UL>
+                    <LI>feat: Introduce langchain4j Skills and rename Custom Prompts → Commands (#1040)</LI>
+                    <LI>feat(welcome): show active Skills on the welcome page above Quick Commands (#1041)</LI>
+                    <LI>feat(settings): replace six per-source 'Open folder' buttons with a single button + source dropdown (#1041)</LI>
+                    <LI>feat(skills): scan .claude/skills and .agents/skills alongside .devoxxgenie/skills (#1041)</LI>
+                    <LI>fix: fire onCustomPromptsChanged from SkillsSettingsConfigurable on apply so the welcome page refreshes immediately (#1040)</LI>
+                    <LI>docs: Commands vs Skills blog post, Skills documentation, footnote fixes (#1040)</LI>
+                    <LI>ci: skip claude-review on fork PRs; exclude intel.com from lychee link check</LI>
+                </UL>
+<h2>v1.4.5</h2>
+        <UL>
+                    <LI>feat: Add copy button to user prompt bubble (#1024)</LI>
+                    <LI>feat: add shell env file and shell selector for run_command tool</LI>
+                    <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
+                    <LI>fix: surface multi-line run_command output in agent log preview</LI>
+                    <LI>fix: support CJK characters in chat input field (#1034)</LI>
+                    <LI>fix: destroy process tree in AcpTransport.close() to prevent thread leak</LI>
+                    <LI>fix: revert Compose/Kotlin ecosystem bump that broke the UI</LI>
+                </UL>
+<h2>v1.4.4</h2>
         <UL>
                     <LI>Add task-211: persistent semantic conversation memory backed by ChromaDB</LI>
                     <LI>feat(welcome): blog feed on welcome screen + friendlier analytics copy</LI>
@@ -505,9 +543,14 @@
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
                              displayName="System Prompt"/>
 
-        <projectConfigurable id="com.devoxx.genie.SkillSettings"
+        <projectConfigurable id="com.devoxx.genie.CommandsSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
-                             instance="com.devoxx.genie.ui.settings.skill.SkillSettingsConfigurable"
+                             instance="com.devoxx.genie.ui.settings.commands.CommandsSettingsConfigurable"
+                             displayName="Commands"/>
+
+        <projectConfigurable id="com.devoxx.genie.SkillsSettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.skill.SkillsSettingsConfigurable"
                              displayName="Skills"/>
 
         <projectConfigurable id="com.devoxx.genie.mcpsettings"
@@ -555,6 +598,11 @@
                              instance="com.devoxx.genie.ui.settings.runner.RunnerSettingsConfigurable"
                              displayName="CLI/ACP Runners"/>
 
+        <projectConfigurable id="com.devoxx.genie.dockerAgenticPlatform"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.ap.ApSettingsConfigurable"
+                             displayName="Docker Agentic Platform (PREVIEW)"/>
+
         <projectConfigurable id="com.devoxx.genie.InlineCompletion"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.completion.CompletionSettingsConfigurable"
@@ -595,9 +643,11 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.strategy.PromptExecutionStrategyFactory"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.cancellation.PromptCancellationService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.prompt.PromptExecutionService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.skill.SkillRegistry"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.rag.watcher.RAGFileWatcher"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.security.SecurityScannerService"/>

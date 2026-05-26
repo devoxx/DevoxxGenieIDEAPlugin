@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.table.JBTable;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -16,6 +17,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 public class ButtonEditor extends DefaultCellEditor {
 
     private static final String DELETE_LABEL = "Delete";
@@ -153,9 +155,12 @@ public class ButtonEditor extends DefaultCellEditor {
                     collectionsTable.repaint();
                 }
             } catch (IOException e) {
-                // Don't show error during startup
-                NotificationUtil.sendNotification(project,
-                        "Failed to load collections: " + e.getMessage());
+                // ChromaDB unreachable is the common case here (container not running, wrong
+                // port, etc.) — the validator panel ("ChromaDB is not running" + Start button)
+                // already tells the user this. Surfacing it again as a balloon would just be
+                // noise, and {@code safeLoadCollections} is called on settings-panel open AND
+                // after each indexing run, so the duplicate was firing every time.
+                log.debug("Failed to load Chroma collections (panel will show validator error): {}", e.getMessage());
             }
         });
     }

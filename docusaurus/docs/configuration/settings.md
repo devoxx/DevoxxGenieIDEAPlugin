@@ -50,15 +50,26 @@ Configure the system prompt and keyboard shortcuts:
 
 See [Prompts Configuration](prompts.md) for details.
 
-### Skills
+### Commands
 
 Configure slash commands that trigger predefined prompts:
 
-- View and manage built-in skills (`/test`, `/explain`, `/review`, `/find`, etc.)
-- Create custom skills with `$ARGUMENT` placeholder support
-- Restore default skills
+- View and manage built-in commands (`/test`, `/explain`, `/review`, `/find`, etc.)
+- Create custom commands with `$ARGUMENT` placeholder support
+- Restore default commands
 
-See [Skills](../features/skills.md) for details.
+See [Commands](../features/commands.md) for details.
+
+### Skills
+
+Manage LLM-activated `SKILL.md` capabilities loaded from disk:
+
+- View all skills detected across the six supported directories (user/project × `.agents`/`.claude`/`.devoxxgenie`)
+- Enable or disable individual skills
+- Open (and auto-create) any of the six skill directories from the dropdown
+- Reload skills from disk without restarting the IDE
+
+Requires **Agent Mode** to be enabled. See [Skills](../features/skills.md) for details.
 
 ### MCP Settings
 

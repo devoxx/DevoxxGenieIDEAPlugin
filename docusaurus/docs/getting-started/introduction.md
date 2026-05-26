@@ -28,7 +28,8 @@ DevoxxGenie provides a rich set of features to enhance your development workflow
 - **[CLI Runners](../features/cli-runners.md)** *(v0.9.9+)*: Execute prompts and spec tasks via external CLI tools (Claude Code, GitHub Copilot, Codex, Gemini CLI, Kimi) directly from the chat interface or the Spec Browser.
 - **[ACP Runners](../features/acp-runners.md)** *(v0.9.10+)*: Communicate with external agents via the Agent Communication Protocol (JSON-RPC 2.0) with structured streaming, conversation history, and capability negotiation.
 - **[Inline Code Completion](../features/inline-completion.md)** *(v0.9.6+)*: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio.
-- **[Skills](../features/skills.md)**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks.
+- **[Commands](../features/commands.md)**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks. *(Previously called "Custom Prompts" / "Skills".)*
+- **[Skills](../features/skills.md)**: LLM-activated `SKILL.md` capabilities loaded from disk, compatible with `.claude/skills` and `.agents/skills` directories. Requires Agent Mode.
 - **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
 - **[Chat History](../features/chat-interface.md)**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **[Project Scanner](../features/project-scanner.md)**: Add source code (full project or by package) to prompt context when using compatible LLM providers.

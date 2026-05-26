@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "1.4.4"
+version = "1.6.0"
 
 repositories {
     mavenCentral()
@@ -121,6 +121,18 @@ tasks.named("buildPlugin") {
     dependsOn("updateProperties")
 }
 
+// Diagnostic CLI for the RAG store. Talks to the same ChromaDB + Ollama the plugin uses.
+// Examples:
+//   ./gradlew ragQuery --args="list agenticengineeringworkshop mcp"
+//   ./gradlew ragQuery --args="query agenticengineeringworkshop 'where do we discuss MCP?' 20"
+tasks.register<JavaExec>("ragQuery") {
+    group = "verification"
+    description = "Query the RAG store from the command line (see RagCli for usage)."
+    mainClass.set("com.devoxx.genie.service.rag.cli.RagCli")
+    classpath = sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+}
+
 val generatedBlogResourcesDir = layout.buildDirectory.dir("generated-resources/blog")
 
 sourceSets.named("main") {
@@ -217,8 +229,8 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.14.0"
-    val lg4j_beta_version = "1.14.0-beta24"
+    val lg4j_version = "1.15.0"
+    val lg4j_beta_version = "1.15.0-beta25"
     val awsSdkVersion = "2.44.1"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.0.0"
@@ -258,6 +270,7 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-chroma:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-mcp:$lg4j_beta_version")
     implementation("dev.langchain4j:langchain4j-reactor:$lg4j_beta_version")
+    implementation("dev.langchain4j:langchain4j-skills:$lg4j_beta_version")
     implementation(platform("software.amazon.awssdk:bom:$awsSdkVersion"))
     implementation("software.amazon.awssdk:bedrock")
     implementation("software.amazon.awssdk:sts")

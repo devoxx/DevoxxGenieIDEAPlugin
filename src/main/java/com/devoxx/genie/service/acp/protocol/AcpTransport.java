@@ -261,6 +261,18 @@ public class AcpTransport implements AutoCloseable {
         pendingRequests.forEach((id, future) -> future.cancel(true));
         pendingRequests.clear();
         if (process != null) {
+            // Destroy descendants first so they can't keep stdout/stderr open
+            try {
+                process.descendants().forEach(ph -> {
+                    try {
+                        ph.destroy();
+                    } catch (Exception ignored) {
+                        // best-effort
+                    }
+                });
+            } catch (Exception ignored) {
+                // best-effort
+            }
             process.destroy();
             // Close stdout explicitly: the child may have spawned grandchildren that
             // inherit the pipe, leaving the reader thread blocked on readLine() even
@@ -272,11 +284,33 @@ public class AcpTransport implements AutoCloseable {
             }
             try {
                 if (!process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {
+                    try {
+                        process.descendants().forEach(ph -> {
+                            try {
+                                ph.destroyForcibly();
+                            } catch (Exception ignored) {
+                                // best-effort
+                            }
+                        });
+                    } catch (Exception ignored) {
+                        // best-effort
+                    }
                     process.destroyForcibly();
                     process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                try {
+                    process.descendants().forEach(ph -> {
+                        try {
+                            ph.destroyForcibly();
+                        } catch (Exception ignored) {
+                            // best-effort
+                        }
+                    });
+                } catch (Exception ignored) {
+                    // best-effort
+                }
                 process.destroyForcibly();
             }
         }
