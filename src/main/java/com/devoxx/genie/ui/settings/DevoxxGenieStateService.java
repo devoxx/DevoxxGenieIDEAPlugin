@@ -254,6 +254,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Agent mode settings
     private Boolean agentModeEnabled = false;
     private Integer agentMaxToolCalls = AGENT_MAX_TOOL_CALLS;
+    /** Wall-clock cap for an entire agent/MCP conversation; safety net against silent hangs. */
+    private Integer agentMaxExecutionTimeSeconds = AGENT_MAX_EXECUTION_SECONDS;
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
