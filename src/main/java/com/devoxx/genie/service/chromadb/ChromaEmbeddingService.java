@@ -18,6 +18,8 @@ import org.jetbrains.annotations.TestOnly;
 @Service
 public final class ChromaEmbeddingService {
 
+    static final String EMBEDDING_MODEL_NAME = "nomic-embed-text";
+
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
     private EmbeddingStore<TextSegment> embeddingStore;
@@ -28,6 +30,11 @@ public final class ChromaEmbeddingService {
      */
     @Setter
     private EmbeddingModel embeddingModelOverride;
+
+    // Cached embedding model; rebuilt when the Ollama URL or model name changes.
+    private EmbeddingModel cachedEmbeddingModel;
+    private String cachedEmbeddingUrl;
+    private String cachedEmbeddingModelName;
 
     @NotNull
     public static ChromaEmbeddingService getInstance() {
@@ -64,13 +71,27 @@ public final class ChromaEmbeddingService {
                       .replaceAll("[^a-z0-9-]", "-");
     }
 
-    public EmbeddingModel getEmbeddingModel() {
+    /**
+     * Returns a cached {@link OllamaEmbeddingModel}, rebuilding it only when the configured
+     * Ollama URL or model name changes. The previous implementation built a fresh model
+     * (and underlying HTTP client) on every call, costing a setup + handshake per chunk
+     * during indexing.
+     */
+    public synchronized EmbeddingModel getEmbeddingModel() {
         if (embeddingModelOverride != null) {
             return embeddingModelOverride;
         }
-        return OllamaEmbeddingModel.builder()
-                .baseUrl(stateService.getOllamaModelUrl())
-                .modelName("nomic-embed-text")
-                .build();
+        String url = stateService.getOllamaModelUrl();
+        if (cachedEmbeddingModel == null
+                || !EMBEDDING_MODEL_NAME.equals(cachedEmbeddingModelName)
+                || url == null || !url.equals(cachedEmbeddingUrl)) {
+            cachedEmbeddingModel = OllamaEmbeddingModel.builder()
+                    .baseUrl(url)
+                    .modelName(EMBEDDING_MODEL_NAME)
+                    .build();
+            cachedEmbeddingUrl = url;
+            cachedEmbeddingModelName = EMBEDDING_MODEL_NAME;
+        }
+        return cachedEmbeddingModel;
     }
 }

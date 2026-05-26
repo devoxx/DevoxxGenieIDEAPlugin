@@ -40,10 +40,17 @@ public final class ProjectIndexerService {
     /** Chunk overlap in tokens; non-zero so a symbol straddling a boundary isn't lost. */
     static final int CHUNK_OVERLAP_TOKENS = 50;
 
+    /** Constant string used as the query for metadata-filter-only lookups. We embed it once
+     *  per (model instance) and reuse, since EmbeddingSearchRequest requires a query embedding
+     *  even when only the filter does the work. */
+    private static final String LOOKUP_PROBE_TEXT = "__devoxxgenie_lookup__";
+
     private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
 
     private DocumentSplitter documentSplitter;
+    private Embedding cachedLookupProbe;
+    private EmbeddingModel cachedLookupProbeOwner;
 
     // Flag to indicate if indexing should be cancelled
     private final AtomicBoolean cancelIndexing = new AtomicBoolean(false);
@@ -90,11 +97,8 @@ public final class ProjectIndexerService {
             Filter filter = MetadataFilterBuilder.metadataKey(FILE_PATH).isEqualTo(absolutePath)
                     .and(MetadataFilterBuilder.metadataKey(EMBEDDING_SCHEMA_VERSION_KEY)
                             .isEqualTo(CURRENT_EMBEDDING_SCHEMA_VERSION));
-            // EmbeddingSearchRequest requires a query embedding even when filtering; pick the
-            // cheapest possible probe and rely on the filter to do the work.
-            Embedding probe = chromaEmbeddingService.getEmbeddingModel().embed("__lookup__").content();
             var results = chromaEmbeddingService.getEmbeddingStore().search(EmbeddingSearchRequest.builder()
-                    .queryEmbedding(probe)
+                    .queryEmbedding(lookupProbe())
                     .filter(filter)
                     .maxResults(1)
                     .minScore(0.0)
@@ -107,6 +111,20 @@ public final class ProjectIndexerService {
             log.warn("Error checking file index status: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * EmbeddingSearchRequest requires a non-null query embedding even when results are
+     * narrowed exclusively by metadata filter. We cache the probe embedding per embedding-model
+     * instance so the lookup cost is O(1) rather than one Ollama roundtrip per file.
+     */
+    private Embedding lookupProbe() {
+        EmbeddingModel current = chromaEmbeddingService.getEmbeddingModel();
+        if (cachedLookupProbe == null || cachedLookupProbeOwner != current) {
+            cachedLookupProbe = current.embed(LOOKUP_PROBE_TEXT).content();
+            cachedLookupProbeOwner = current;
+        }
+        return cachedLookupProbe;
     }
 
     public void indexFiles(Project project,
@@ -214,15 +232,40 @@ public final class ProjectIndexerService {
         }
     }
 
+    /** Max segments per Ollama {@code embedAll} call. Keeps individual requests small enough
+     *  to avoid timeouts while still avoiding the N+1 cost of one-call-per-segment. */
+    static final int EMBEDDING_BATCH_SIZE = 64;
+
     /**
-     * Embed and store a single segment. Embeds the SEGMENT CONTENT — earlier versions
-     * embedded the file path string here, which made the entire vector index useless
-     * for content-based retrieval.
+     * Embed and store a batch of segments in one shot. The previous implementation made
+     * one HTTP call to Ollama per segment, turning a 200-chunk file into 200 sequential
+     * roundtrips. Embedding in batches and using {@code addAll} on the store collapses
+     * that to {@code ceil(N / EMBEDDING_BATCH_SIZE)} calls and one store write per batch.
      */
-    private void storeSegment(@NotNull TextSegment segment) {
+    private void storeSegments(@NotNull List<TextSegment> segments) {
+        if (segments.isEmpty()) return;
         EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel();
-        Embedding embedding = embeddingModel.embed(segment.text()).content();
-        chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
+        for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
+            int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
+            List<TextSegment> batch = segments.subList(from, to);
+            try {
+                List<Embedding> embeddings = embeddingModel.embedAll(batch).content();
+                chromaEmbeddingService.getEmbeddingStore().addAll(embeddings, batch);
+            } catch (Exception batchEx) {
+                // Some embedding backends choke on a single bad segment and reject the whole
+                // batch. Fall back to per-segment so one malformed chunk doesn't poison the
+                // rest of the file.
+                log.warn("Batch embed failed ({}); falling back to per-segment for this batch", batchEx.getMessage());
+                for (TextSegment segment : batch) {
+                    try {
+                        Embedding embedding = embeddingModel.embed(segment.text()).content();
+                        chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
+                    } catch (Exception singleEx) {
+                        log.warn("Skipping segment that failed to embed: {}", singleEx.getMessage());
+                    }
+                }
+            }
+        }
     }
 
     private void processPath(Path path) {
@@ -235,19 +278,22 @@ public final class ProjectIndexerService {
             }
 
             Document document = Document.from(content);
-            List<TextSegment> segments = splitter().split(document);
+            List<TextSegment> rawSegments = splitter().split(document);
             long lastModified = Files.getLastModifiedTime(path).toMillis();
             long indexedAt = System.currentTimeMillis();
             String absolutePath = path.toAbsolutePath().toString();
 
-            for (TextSegment segment : segments) {
+            List<TextSegment> segments = new ArrayList<>(rawSegments.size());
+            for (TextSegment segment : rawSegments) {
                 Metadata metadata = new Metadata();
                 metadata.put(FILE_PATH, absolutePath);
                 metadata.put(LAST_MODIFIED, lastModified);
                 metadata.put(INDEXED_AT, indexedAt);
                 metadata.put(EMBEDDING_SCHEMA_VERSION_KEY, CURRENT_EMBEDDING_SCHEMA_VERSION);
-                storeSegment(new TextSegment(segment.text(), metadata));
+                segments.add(new TextSegment(segment.text(), metadata));
             }
+
+            storeSegments(segments);
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);
         }

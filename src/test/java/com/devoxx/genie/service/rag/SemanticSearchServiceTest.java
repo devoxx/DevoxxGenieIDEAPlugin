@@ -183,6 +183,73 @@ class SemanticSearchServiceTest {
                 .isGreaterThan(afterFirst);
     }
 
+    @Test
+    void indexingUsesBatchedEmbedAllNotOneCallPerSegment(@TempDir Path tmp) throws IOException {
+        Path file = tmp.resolve("Big.java");
+        // Build content large enough that the recursive splitter produces several chunks.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 600; i++) {
+            sb.append("public class Foo").append(i).append(" { /* line ").append(i)
+                    .append(" of many */ void m").append(i).append("() {} }\n");
+        }
+        Files.writeString(file, sb.toString());
+
+        CountingEmbeddingModel counter = new CountingEmbeddingModel();
+        when(mockChromaService.getEmbeddingModel()).thenReturn(counter);
+
+        new ProjectIndexerService().indexFile(file);
+
+        // One single embed() call is allowed for the cached isFileIndexed metadata-filter probe;
+        // every segment must go through embedAll.
+        assertThat(counter.singleEmbedCalls)
+                .as("at most one single-embed call (the cached lookup probe); segments must NOT use per-segment embeds")
+                .isLessThanOrEqualTo(1);
+        assertThat(counter.embedAllCalls)
+                .as("at least one batched embedAll call expected")
+                .isGreaterThan(0);
+        assertThat(counter.totalSegmentsEmbedded)
+                .as("every segment should be embedded, but in batches")
+                .isGreaterThan(1);
+        assertThat(counter.embedAllCalls)
+                .as("with batch size %d and many segments, embedAll calls should be far fewer than total segments",
+                        ProjectIndexerService.EMBEDDING_BATCH_SIZE)
+                .isLessThan(counter.totalSegmentsEmbedded);
+    }
+
+    /** Counts how the embedding model is called. */
+    private static final class CountingEmbeddingModel implements EmbeddingModel {
+        int singleEmbedCalls = 0;
+        int embedAllCalls = 0;
+        int totalSegmentsEmbedded = 0;
+        private final DeterministicHashEmbeddingModel delegate = new DeterministicHashEmbeddingModel();
+
+        @Override
+        public Response<Embedding> embed(String text) {
+            singleEmbedCalls++;
+            totalSegmentsEmbedded++;
+            return delegate.embed(text);
+        }
+
+        @Override
+        public Response<Embedding> embed(TextSegment segment) {
+            singleEmbedCalls++;
+            totalSegmentsEmbedded++;
+            return delegate.embed(segment);
+        }
+
+        @Override
+        public Response<List<Embedding>> embedAll(List<TextSegment> textSegments) {
+            embedAllCalls++;
+            totalSegmentsEmbedded += textSegments.size();
+            return delegate.embedAll(textSegments);
+        }
+
+        @Override
+        public int dimension() {
+            return delegate.dimension();
+        }
+    }
+
     /** Probe the in-memory store via a no-op search; embedAll on the InMemoryEmbeddingStore exposes no count. */
     private int storedEntryCount() {
         Embedding probe = embeddingModel.embed("__probe__").content();
