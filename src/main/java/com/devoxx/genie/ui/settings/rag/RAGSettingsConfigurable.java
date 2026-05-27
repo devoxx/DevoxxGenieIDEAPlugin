@@ -58,6 +58,8 @@ public class RAGSettingsConfigurable implements Configurable {
                 != Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled());
         int storedN = stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN();
         isModified |= ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber() != storedN;
+        isModified |= !ragSettingsComponent.getRagExcludedDirsPanel().getData()
+                .equals(stateService.getRagExcludedDirectories());
 
         return isModified;
     }
@@ -78,6 +80,8 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
         stateService.setRagQueryExpansionEnabled(ragSettingsComponent.getQueryExpansionCheckBox().isSelected());
         stateService.setRagQueryExpansionN(ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber());
+        stateService.setRagExcludedDirectories(
+                new java.util.ArrayList<>(ragSettingsComponent.getRagExcludedDirsPanel().getData()));
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
@@ -103,5 +107,7 @@ public class RAGSettingsConfigurable implements Configurable {
                 Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled()));
         ragSettingsComponent.getQueryExpansionVariantsSpinner().setNumber(
                 stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN());
+        ragSettingsComponent.getRagExcludedDirsPanel().setData(
+                new java.util.ArrayList<>(stateService.getRagExcludedDirectories()));
     }
 }

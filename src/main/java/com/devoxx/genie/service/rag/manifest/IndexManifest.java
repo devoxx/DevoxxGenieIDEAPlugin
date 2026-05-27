@@ -3,6 +3,8 @@ package com.devoxx.genie.service.rag.manifest;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Source of truth for "which files in this project are currently indexed under the active
@@ -31,4 +33,14 @@ public interface IndexManifest {
 
     /** Persist any in-memory state. No-op for in-memory implementations. */
     default void flush() {}
+
+    /**
+     * Snapshot of every absolute file path currently tracked by the manifest. Used by the
+     * RAG indexer (task-220) to retroactively drop chunks for files that fall under a newly-
+     * added exclusion. Default impl returns an empty collection so test stubs that don't care
+     * still satisfy the interface.
+     */
+    default @NotNull Collection<Path> trackedPaths() {
+        return Collections.emptyList();
+    }
 }

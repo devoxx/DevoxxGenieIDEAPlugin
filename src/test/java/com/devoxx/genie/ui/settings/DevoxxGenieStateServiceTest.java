@@ -133,6 +133,21 @@ class DevoxxGenieStateServiceTest {
         }
 
         @Test
+        void shouldHaveEmptyDefaultRagExcludedDirectories() {
+            // task-220: defaults to empty so existing behavior is preserved out of the box.
+            assertThat(stateService.getRagExcludedDirectories()).isEmpty();
+        }
+
+        @Test
+        void shouldRoundTripRagExcludedDirectories() {
+            // task-220: settings round-trip via the standard List setter.
+            List<String> excluded = new ArrayList<>(List.of("generated", "vendor", "dist"));
+            stateService.setRagExcludedDirectories(excluded);
+            assertThat(stateService.getRagExcludedDirectories())
+                    .containsExactly("generated", "vendor", "dist");
+        }
+
+        @Test
         void shouldHaveCorrectDefaultIncludedFileExtensions() {
             assertThat(stateService.getIncludedFileExtensions())
                     .contains("java", "kt", "groovy", "xml", "json", "yaml", "yml", "js", "ts", "html");
