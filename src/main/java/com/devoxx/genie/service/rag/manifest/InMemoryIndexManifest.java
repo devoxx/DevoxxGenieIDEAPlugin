@@ -29,6 +29,15 @@ public class InMemoryIndexManifest implements IndexManifest {
     }
 
     @Override
+    public @NotNull java.util.Collection<Path> trackedPaths() {
+        // Snapshot via toList so callers can iterate without holding the lock and so concurrent
+        // mutations during a sweep don't surprise them.
+        return entries.keySet().stream()
+                .map(Path::of)
+                .toList();
+    }
+
+    @Override
     public boolean isCurrent(@NotNull Path file) {
         String key = file.toAbsolutePath().toString();
         IndexManifestEntry entry = entries.get(key);

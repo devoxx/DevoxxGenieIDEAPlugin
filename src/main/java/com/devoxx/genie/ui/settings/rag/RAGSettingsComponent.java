@@ -11,14 +11,22 @@ import com.devoxx.genie.ui.settings.rag.table.ButtonRenderer;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.AddEditRemovePanel;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +34,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.util.List;
 import java.util.Objects;
 
 import static com.intellij.openapi.application.ApplicationManager.getApplication;
@@ -61,6 +70,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                     stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN(),
                     1, 10));
 
+    @Getter
+    private final RagExcludedDirectoriesPanel ragExcludedDirsPanel;
+
     private final Project project;
     private JButton startIndexButton;
     private final JButton actionButton = new JButton();
@@ -74,6 +86,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         this.project = project;
         this.validationPanel = new JPanel();
         this.validationHandler = new RAGSettingsHandler(project, validationPanel, this);
+        this.ragExcludedDirsPanel = new RagExcludedDirectoriesPanel(
+                project, stateService.getRagExcludedDirectories());
 
         initializeComponents();
         addListeners();
@@ -181,9 +195,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         // per-setting help rows; explicit line breaks not needed since JTextArea word-wraps.
         addHelpText(panel, gbc,
                 "Retrieval-augmented Generation (RAG) leverages semantic search to find relevant code " +
-                "based on your queries. The indexer uses the \"Scan & Copy Project\" settings to " +
-                "exclude specific directories, files, and extensions, and stores the indexed files in " +
-                "a local ChromaDB vector database.");
+                "based on your queries. The indexer respects the \"Scan & Copy Project\" exclusion " +
+                "settings AND the RAG-specific \"Excluded directories\" list below (project-relative " +
+                "path prefixes), and stores the indexed files in a local ChromaDB vector database.");
     }
 
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
@@ -199,6 +213,27 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
                 "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
         addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
+
+        // RAG-specific directory exclusion (task-220) — layered on top of the global
+        // "Scan & Copy Project" list so users can keep project context broad while keeping
+        // RAG narrow.
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        panel.add(ragExcludedDirsPanel, gbc);
+        gbc.gridy++;
+        gbc.weightx = 0;
+        addHelpText(panel, gbc,
+                "Directories the RAG indexer should skip, in addition to the \"Scan & Copy " +
+                "Project\" exclusions. Use Browse... in Add/Edit to pick a directory — its " +
+                "absolute path is inserted so the entry uniquely identifies the directory and " +
+                "the project it belongs to. You can also manually type a project-relative path " +
+                "(e.g. \"docs/book\") if you prefer the entry to survive moving the project. " +
+                "A file is excluded when its absolute or project-relative path equals an entry " +
+                "or starts with one followed by \"/\" (case-sensitive). Changes take effect on " +
+                "the next \"Start Indexing\" or file-watcher reindex — no automatic reindex " +
+                "is triggered when you edit this list.");
     }
 
     /**
@@ -453,5 +488,104 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         buttonEditor = new ButtonEditor(project, collectionsTable, tableModel);
         actionColumn.setCellEditor(buttonEditor);
         collectionsTable.setVisible(false);
+    }
+
+    /**
+     * Add/edit/remove panel for the RAG-specific directory exclusion list (task-220). Mirrors
+     * the pattern used by the project-scanner's {@code ExcludedDirectoriesPanel} in
+     * {@code CopyProjectSettingsComponent} so the two lists look and feel identical.
+     *
+     * <p>The edit dialog offers an optional "Browse..." button that opens IntelliJ's directory
+     * chooser scoped to the project root. The chosen directory's name (last path segment) is
+     * inserted into the editable text field; matching is segment-based so only the name is
+     * stored. Manual typing remains supported — Browse is purely a convenience.
+     */
+    public static class RagExcludedDirectoriesPanel extends AddEditRemovePanel<String> {
+        private final Project project;
+
+        public RagExcludedDirectoriesPanel(Project project, List<String> initialData) {
+            super(new RagExcludedDirectoriesModel(), initialData, "Excluded directories");
+            this.project = project;
+            setPreferredSize(new Dimension(400, 160));
+        }
+
+        @Override
+        protected String addItem() {
+            return showEditDialog("");
+        }
+
+        @Override
+        protected boolean removeItem(String item) {
+            return true;
+        }
+
+        @Override
+        protected String editItem(String item) {
+            return showEditDialog(item);
+        }
+
+        private @Nullable String showEditDialog(String initialValue) {
+            JBTextField field = new JBTextField(initialValue);
+            JButton browseButton = new JButton("Browse...");
+            browseButton.setToolTipText(
+                    "Pick a directory from the project; its name will be inserted into the field above. " +
+                    "Optional — you can still type a directory name directly.");
+            browseButton.addActionListener(e -> {
+                FileChooserDescriptor descriptor =
+                        FileChooserDescriptorFactory.createSingleFolderDescriptor();
+                descriptor.setTitle("Select Directory to Exclude from RAG Indexing");
+                String basePath = project.getBasePath();
+                VirtualFile toSelect = basePath != null
+                        ? LocalFileSystem.getInstance().findFileByPath(basePath)
+                        : null;
+                VirtualFile chosen = FileChooser.chooseFile(descriptor, project, toSelect);
+                if (chosen != null) {
+                    // Insert the absolute path so the entry shows exactly which directory in
+                    // which project the user picked — no ambiguity with same-named dirs
+                    // elsewhere. Users who prefer portability can still manually type a
+                    // project-relative path like "docs/book"; the matcher accepts both.
+                    field.setText(chosen.getPath());
+                    field.requestFocusInWindow();
+                }
+            });
+
+            JPanel inputRow = new JPanel(new BorderLayout(5, 0));
+            inputRow.add(field, BorderLayout.CENTER);
+            inputRow.add(browseButton, BorderLayout.EAST);
+
+            JPanel dialogPanel = new JPanel(new BorderLayout(0, 5));
+            dialogPanel.add(new JLabel("Directory:"), BorderLayout.NORTH);
+            dialogPanel.add(inputRow, BorderLayout.CENTER);
+            dialogPanel.setBorder(JBUI.Borders.empty(10));
+            // Give the row a sensible width so the text field doesn't collapse to a few pixels
+            // when the dialog opens with an empty value.
+            dialogPanel.setPreferredSize(new Dimension(420, 80));
+
+            int result = JOptionPane.showConfirmDialog(this, dialogPanel, "Enter Directory",
+                    JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                String trimmed = field.getText().trim();
+                return trimmed.isEmpty() ? null : trimmed;
+            }
+            return null;
+        }
+    }
+
+    private static class RagExcludedDirectoriesModel extends AddEditRemovePanel.TableModel<String> {
+        @Override
+        public int getColumnCount() {
+            return 1;
+        }
+
+        @Contract(pure = true)
+        @Override
+        public @NotNull String getColumnName(int columnIndex) {
+            return "Directory";
+        }
+
+        @Override
+        public Object getField(String o, int columnIndex) {
+            return o;
+        }
     }
 }

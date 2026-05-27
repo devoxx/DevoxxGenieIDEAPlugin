@@ -6,6 +6,7 @@ import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
@@ -24,6 +25,7 @@ import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import javax.swing.*;
@@ -178,6 +180,48 @@ public final class ProjectIndexerService {
 
         ScanContentResult scanResult = projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false);
         List<Path> filesToProcess = new ArrayList<>(scanResult.getFiles());
+
+        // RAG-specific directory exclusion (task-220). Layered on top of the project-scanner
+        // exclusion — users can keep project-context broad while keeping RAG narrow.
+        List<String> ragExcluded = DevoxxGenieStateService.getInstance().getRagExcludedDirectories();
+        log.info("RAG indexing start: basePath='{}', files scanned={}, RAG exclusion entries={}",
+                basePath, filesToProcess.size(), ragExcluded);
+        if (ragExcluded != null && !ragExcluded.isEmpty()) {
+            Path projectBasePath = Path.of(basePath);
+            int before = filesToProcess.size();
+            final List<String> exclusions = ragExcluded;
+            filesToProcess.removeIf(p -> isRagExcluded(p, exclusions, projectBasePath));
+            int skipped = before - filesToProcess.size();
+            log.info("RAG indexing: applied {} exclusion entries, skipped {} of {} files",
+                    exclusions.size(), skipped, before);
+            if (skipped == 0 && !filesToProcess.isEmpty()) {
+                // Defensive diagnostic when the user reports "exclusions ignored". Shows the
+                // first few scanned paths next to the configured entries so the mismatch
+                // (case, separator, scope, etc.) is visible in idea.log.
+                log.warn("RAG indexing: exclusion entries matched no files. Entries: {}. " +
+                        "First 3 scanned files: {}", exclusions,
+                        filesToProcess.stream().limit(3).map(Path::toString).toList());
+            }
+
+            // Sweep previously-indexed files that now match the exclusion list and drop their
+            // chunks from the vector store (task-220). Without this, "Indexed Segments" stays
+            // unchanged after a user adds an exclusion — the old chunks linger because the
+            // indexer only ever adds chunks for files it re-walks, never removes for files it
+            // chose to skip.
+            int swept = 0;
+            for (Path tracked : manifest.trackedPaths()) {
+                if (isRagExcluded(tracked, exclusions, projectBasePath)) {
+                    removeChunksFromStore(tracked);
+                    manifest.markRemoved(tracked);
+                    swept++;
+                }
+            }
+            if (swept > 0) {
+                log.info("RAG indexing: removed chunks for {} previously-indexed file(s) now " +
+                        "covered by exclusions", swept);
+            }
+        }
+
         int totalFiles = filesToProcess.size();
 
         // Bounded parallel pool: a handful of file-processing threads share access to the
@@ -256,9 +300,21 @@ public final class ProjectIndexerService {
         if (files.isEmpty()) return;
         chromaEmbeddingService.init(project);
         this.manifest = IndexManifestService.getInstance().forProject(project);
+        List<String> ragExcluded = DevoxxGenieStateService.getInstance().getRagExcludedDirectories();
+        String basePath = project.getBasePath();
+        Path projectBasePath = basePath != null ? Path.of(basePath) : null;
         try {
             for (Path file : files) {
                 if (!manifest.isTracked(file)) continue;
+                // RAG-specific exclusion (task-220): users may have added the file's parent dir
+                // since it was first indexed. Skip and drop any prior chunks so the index
+                // doesn't keep returning stale matches for a now-excluded path.
+                if (ragExcluded != null && !ragExcluded.isEmpty()
+                        && isRagExcluded(file, ragExcluded, projectBasePath)) {
+                    removeChunksFromStore(file);
+                    manifest.markRemoved(file);
+                    continue;
+                }
                 // Drop any existing chunks for this file before re-embedding, otherwise edits
                 // accumulate stale chunks alongside fresh ones.
                 removeChunksFromStore(file);
@@ -267,6 +323,68 @@ public final class ProjectIndexerService {
         } finally {
             manifest.flush();
         }
+    }
+
+    /**
+     * Returns true if {@code path} is covered by any entry in {@code excluded}. Each entry is
+     * treated as a path prefix and matched against <em>either</em> the file's absolute path
+     * <em>or</em> its project-relative path (whichever the entry looks like).
+     *
+     * <p>This dual matching lets the Browse... button insert an absolute path — the form the
+     * user sees in the RAG settings list — while still accepting manually-typed project-
+     * relative paths like {@code docs/book} for users who want the entry to survive moving
+     * the project.
+     *
+     * <p>A file is excluded when, for some normalized entry {@code E}:
+     * <ul>
+     *   <li>the file's absolute path equals {@code E} or starts with {@code E + "/"}, or</li>
+     *   <li>the file's project-relative path equals {@code E} or starts with {@code E + "/"}.</li>
+     * </ul>
+     * Both comparisons are case-sensitive and use forward-slash normalization.
+     *
+     * <p>Normalization: separators are converted to {@code /}; whitespace is trimmed; trailing
+     * slashes are stripped. Leading slashes are <em>kept</em> so absolute Unix paths still
+     * match. Blank entries are silently skipped.
+     */
+    static boolean isRagExcluded(@NotNull Path path,
+                                  @NotNull List<String> excluded,
+                                  @Nullable Path projectBase) {
+        if (excluded.isEmpty()) return false;
+
+        Path abs = path.toAbsolutePath().normalize();
+        String absoluteStr = abs.toString().replace('\\', '/');
+        String relativeStr = null;
+        if (projectBase != null) {
+            Path base = projectBase.toAbsolutePath().normalize();
+            if (abs.startsWith(base)) {
+                relativeStr = base.relativize(abs).toString().replace('\\', '/');
+            }
+        }
+
+        for (String entry : excluded) {
+            if (entry == null) continue;
+            String norm = entry.replace('\\', '/').trim();
+            while (norm.endsWith("/")) norm = norm.substring(0, norm.length() - 1);
+            if (norm.isEmpty()) continue;
+            if (matchesPrefix(absoluteStr, norm)) return true;
+            if (relativeStr != null && matchesPrefix(relativeStr, norm)) return true;
+            // Single-segment entries (e.g. typed "node_modules" or "obsidian") match the dir
+            // anywhere in the path, matching the project-scanner's existing behavior. Browse-
+            // inserted entries always contain a "/" so they stay strictly prefix-matched.
+            if (!norm.contains("/") && containsSegment(path, norm)) return true;
+        }
+        return false;
+    }
+
+    private static boolean matchesPrefix(@NotNull String target, @NotNull String prefix) {
+        return target.equals(prefix) || target.startsWith(prefix + "/");
+    }
+
+    private static boolean containsSegment(@NotNull Path path, @NotNull String segment) {
+        for (Path p : path) {
+            if (p.toString().equals(segment)) return true;
+        }
+        return false;
     }
 
     /**

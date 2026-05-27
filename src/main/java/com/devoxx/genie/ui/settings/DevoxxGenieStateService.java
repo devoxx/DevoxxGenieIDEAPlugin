@@ -267,6 +267,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean ragQueryExpansionEnabled = false;
     /** Number of paraphrased variants to generate per query when expansion is enabled. */
     private Integer ragQueryExpansionN = 3;
+
+    /**
+     * Directories the RAG indexer should skip, in addition to the global "Scan & Copy Project"
+     * exclusion list ({@link #excludedDirectories}). Matched by directory name anywhere in a
+     * file's path. Default is empty so existing behavior is unchanged — users opt in to extra
+     * exclusions via Settings → RAG (task-220).
+     */
+    private List<String> ragExcludedDirectories = new ArrayList<>();
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
