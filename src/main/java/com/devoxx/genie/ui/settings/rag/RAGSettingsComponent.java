@@ -198,6 +198,14 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 "based on your queries. The indexer respects the \"Scan & Copy Project\" exclusion " +
                 "settings AND the RAG-specific \"Excluded directories\" list below (project-relative " +
                 "path prefixes), and stores the indexed files in a local ChromaDB vector database.");
+        addHelpText(panel, gbc,
+                "How RAG is used at chat time:\n" +
+                " • Agent mode OFF — top-K relevant chunks are injected automatically into every " +
+                "prompt context (passive retrieval).\n" +
+                " • Agent mode ON — RAG is exposed to the LLM as a `semantic_search` agent tool " +
+                "(the passive injection is suppressed to avoid duplicate context). The agent decides " +
+                "when to call it. The tool can be individually enabled/disabled under " +
+                "Settings → DevoxxGenie → Agent Mode → Built-in Tools.");
     }
 
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {

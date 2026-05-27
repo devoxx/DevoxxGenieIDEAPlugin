@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
@@ -22,62 +21,31 @@ public class SearchOptionsPanel extends JPanel {
         super(new FlowLayout(FlowLayout.LEFT, JBUI.scale(10), 0));
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        // Create switches
-        InputSwitch ragSwitch = new InputSwitch(
-                "RAG",
-                "Enable RAG-enabled code search"
-        );
+        // RAG no longer has a per-session toggle here — it follows the master "Enable feature"
+        // checkbox in RAG settings, and (in agent mode) the semantic_search tool can be turned
+        // off individually under Agent Mode → Built-in Tools. Two toggles for the same thing
+        // was a UX trap: people would enable RAG in settings, see nothing, and not realize
+        // a second switch needed flipping. See task-222.
 
         InputSwitch webSearchSwitch = new InputSwitch(
                 "Web",
                 "Search the web for additional information"
         );
 
-        // Add switches to our list for tracking
-        switches.add(ragSwitch);
         switches.add(webSearchSwitch);
 
-        // Initialize visibility based on state service
         updateInitialVisibility(stateService);
 
-        // Load saved states for enabled switches
-        ragSwitch.setSelected(stateService.getRagActivated());
         webSearchSwitch.setSelected(stateService.getWebSearchActivated());
 
-        // Ensure only one switch is initially active
-        enforceInitialSingleSelection();
-
-        // Add state change listeners with mutual exclusion
-        ragSwitch.addEventSelected(selected -> {
-            if (selected) {
-                deactivateOtherSwitches(ragSwitch);
-            }
-
-            // Change input field placeholder based on RAG state
-            project.getMessageBus()
-                    .syncPublisher(AppTopics.RAG_ACTIVATED_CHANGED_TOPIC)
-                    .onRAGStateChanged(selected);
-
-            stateService.setRagActivated(selected);
-            updatePanelVisibility();
-        });
-
         webSearchSwitch.addEventSelected(selected -> {
-            if (selected) {
-                deactivateOtherSwitches(webSearchSwitch);
-            }
             stateService.setWebSearchActivated(selected);
             updatePanelVisibility();
         });
 
-        // Add components
-        add(ragSwitch);
         add(webSearchSwitch);
 
-        // Add some padding
         setBorder(JBUI.Borders.empty(5, 10));
-
-        // Update panel visibility based on initial state
         updatePanelVisibility();
     }
 
@@ -106,25 +74,7 @@ public class SearchOptionsPanel extends JPanel {
     }
 
     private void updateInitialVisibility(@NotNull DevoxxGenieStateService stateService) {
-        // Set initial visibility based on state service
-        switches.get(0).setVisible(stateService.getRagEnabled());
-        switches.get(1).setVisible(stateService.getIsWebSearchEnabled());
-
-        // Update panel visibility
+        switches.get(0).setVisible(stateService.getIsWebSearchEnabled());
         updatePanelVisibility();
-    }
-
-    private void deactivateOtherSwitches(InputSwitch activeSwitch) {
-        switches.stream()
-                .filter(sw -> sw != activeSwitch && sw.isVisible())
-                .forEach(sw -> sw.setSelected(false));
-    }
-
-    private void enforceInitialSingleSelection() {
-        // Find the first active and visible switch
-        switches.stream()
-                .filter(sw -> sw.isSelected() && sw.isVisible())
-                .findFirst()
-                .ifPresent(this::deactivateOtherSwitches);
     }
 }

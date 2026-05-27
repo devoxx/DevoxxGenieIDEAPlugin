@@ -157,3 +157,7 @@ Smaller models (e.g. GLM-4.7-flash) don't reliably honor "PREFER THIS" hints in 
 
 Full `./gradlew test` green (JDK 21).
 <!-- SECTION:FINAL_SUMMARY:END -->
+
+## PR
+
+Shipped in https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1062 (bundled with task-222).

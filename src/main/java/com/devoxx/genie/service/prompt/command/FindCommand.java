@@ -24,17 +24,12 @@ public class FindCommand implements PromptCommand {
     @Override
     public Optional<String> process(@NotNull ChatMessageContext chatMessageContext, 
                                   @NotNull PromptOutputPanel promptOutputPanel) {
-        // Check if RAG is enabled in settings
+        // RAG must be enabled in settings. The previous separate "activated" check went away
+        // with task-222 (the per-session chat toggle was removed; ragEnabled is now the single
+        // source of truth).
         if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
             NotificationUtil.sendNotification(chatMessageContext.getProject(),
                     "The /find command requires RAG to be enabled in settings");
-            return Optional.empty();
-        }
-
-        // Check if RAG is activated
-        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagActivated())) {
-            NotificationUtil.sendNotification(chatMessageContext.getProject(),
-                    "The /find command requires RAG to be turned on");
             return Optional.empty();
         }
 

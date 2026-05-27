@@ -1,30 +1,20 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
-import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
-import com.devoxx.genie.service.prompt.error.PromptException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
-import com.devoxx.genie.service.rag.SearchResult;
-import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.devoxx.genie.model.Constant.FIND_COMMAND;
-import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
 
 /**
  * Strategy for executing non-streaming prompts.
@@ -75,12 +65,9 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         currentMessageId.set(context.getId());
         currentTabKey.set(context.getTabId() != null ? context.getTabId() : "default");
 
-        // Handle FIND command separately
-        if (FIND_COMMAND.equalsIgnoreCase(context.getCommandName())) {
-            log.debug("Executing find command");
-            executeSemanticSearch(context, panel, resultTask);
-            return;
-        }
+        // /find no longer needs a special branch here — the abstract parent short-circuits
+        // before this method runs (so all strategies, including streaming, skip the LLM
+        // call for find queries).
 
         // prepareMemory() runs the RAG retrieval (and, when query expansion is enabled, N LLM
         // calls). On the EDT it freezes the prompt-panel glow + Compose loading indicator
@@ -176,48 +163,4 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         }
     }
 
-    /**
-     * Perform semantic search for the FIND command.
-     */
-    private void executeSemanticSearch(
-            @NotNull ChatMessageContext context,
-            @NotNull PromptOutputPanel panel,
-            @NotNull PromptTask<PromptResult> resultTask) {
-        
-        threadPoolManager.getPromptExecutionPool().execute(() -> {
-            long startNanos = System.nanoTime();
-            List<SearchResult> searchResults = java.util.Collections.emptyList();
-            try {
-                SemanticSearchService semanticSearchService = SemanticSearchService.getInstance();
-                searchResults = semanticSearchService.search(
-                        context.getProject(),
-                        context.getUserPrompt(),
-                        context.getChatModel()
-                );
-
-                if (!searchResults.isEmpty()) {
-                    List<SemanticFile> fileReferences = extractFileReferences(searchResults);
-                    context.setSemanticReferences(fileReferences);
-                    panel.addChatResponse(context);
-                    resultTask.complete(PromptResult.success(context));
-                } else {
-                    NotificationUtil.sendNotification(context.getProject(),
-                            "No relevant files found for your search query.");
-                    resultTask.complete(PromptResult.failure(context,
-                        new ExecutionException("No relevant files found")));
-                }
-            } catch (Exception e) {
-                // Create a specific execution exception for semantic search errors
-                ExecutionException searchError = new ExecutionException(
-                    "Error performing semantic search", e,
-                    PromptException.ErrorSeverity.WARNING, true);
-                PromptErrorHandler.handleException(context.getProject(), searchError, context);
-                resultTask.complete(PromptResult.failure(context, searchError));
-            } finally {
-                long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
-                com.devoxx.genie.service.rag.RAGEventPublisher.publish(
-                        context.getProject(), context.getUserPrompt(), searchResults, durationMs);
-            }
-        });
-    }
 }

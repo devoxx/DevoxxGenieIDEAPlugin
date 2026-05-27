@@ -112,11 +112,15 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
      * @param chatMessageContext The context of the chat message.
      */
     public void addChatResponse(@NotNull ChatMessageContext chatMessageContext) {
-        // Special handling for find command
+        // Special handling for find command: open the results dialog AND fill the pending
+        // AI bubble. Filling the bubble matters because addUserPromptMessage() already
+        // created a placeholder for the AI response; if we leave it untouched the chat
+        // shows an empty borderless bubble after execution completes.
         if (FIND_COMMAND.equals(chatMessageContext.getCommandName()) &&
             chatMessageContext.getSemanticReferences() != null &&
             !chatMessageContext.getSemanticReferences().isEmpty()) {
-            // For now, create a separate panel for find results
+            conversationPanel.updateUserPromptWithResponse(chatMessageContext);
+
             JPanel findResultsContainer = new JPanel(new BorderLayout());
             findResultsContainer.add(new FindResultsPanel(project, chatMessageContext.getSemanticReferences()), BorderLayout.CENTER);
             JDialog dialog = new JDialog();
