@@ -111,6 +111,8 @@ Added a RAG-specific directory exclusion list to Settings → RAG, layered on to
 - `RAGSettingsComponent`: new `RagExcludedDirectoriesPanel extends AddEditRemovePanel<String>` with an optional Browse… button scoped to the project root. Help text updated to describe both exclusion lists.
 - `RAGSettingsConfigurable`: round-trips the new setting with defensive ArrayList copies.
 
-**Tests:** New `ProjectIndexerServiceTest` covers the matcher (match/no-match/case-sensitive/empty/multi-entry/segment behavior); `DevoxxGenieStateServiceTest` gains empty-default + round-trip tests. Full Gradle suite green.</finalSummary>
+**Tests:** New `ProjectIndexerServiceTest` covers the matcher (match/no-match/case-sensitive/empty/multi-entry/segment behavior); `DevoxxGenieStateServiceTest` gains empty-default + round-trip tests. Full Gradle suite green.
+
+**PR:** https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1060</finalSummary>
 </invoke>
 <!-- SECTION:FINAL_SUMMARY:END -->
