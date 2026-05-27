@@ -35,7 +35,10 @@ public class ChatMessageContextUtil {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        boolean ragActivated = Boolean.TRUE.equals(stateService.getRagActivated());
+        // ragActivated is now derived from the master ragEnabled flag (task-222). The
+        // chat-area per-session toggle was removed; RAG is either configured (enabled in
+        // settings) or it isn't.
+        boolean ragActivated = Boolean.TRUE.equals(stateService.getRagEnabled());
         boolean webSearchActivated = Boolean.TRUE.equals(stateService.getWebSearchActivated());
 
         ChatMessageContext chatMessageContext = ChatMessageContext.builder()

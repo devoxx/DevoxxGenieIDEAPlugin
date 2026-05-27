@@ -181,8 +181,12 @@ public class MessageCreationService {
         //      prefix; varying retrieval content at the top defeats that cache for everyone.
         //   2. Many local models pay more attention to whatever is closest to the user
         //      question — keeping RAG hits adjacent to the prompt improves grounding.
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated())
-                && shouldRunRagFor(chatMessageContext.getUserPrompt())) {
+        //
+        // When agent mode is on, retrieval is exposed instead as the `semantic_search` tool
+        // (see BuiltInToolProvider). Injecting <SemanticContext> here too would give the LLM
+        // two competing sources of the same content; models reliably prefer the tool and
+        // ignore the passive block — wasting both prompt tokens and the embedding call.
+        if (shouldInjectPassiveRagContext(chatMessageContext.getUserPrompt())) {
             String semanticContext = addSemanticSearchResults(chatMessageContext);
             if (!semanticContext.isEmpty()) {
                 stringBuilder.append("<SemanticContext>\n");
@@ -205,6 +209,19 @@ public class MessageCreationService {
     static boolean shouldRunRagFor(String userPrompt) {
         if (userPrompt == null) return false;
         return userPrompt.trim().length() >= RAG_MIN_QUERY_LENGTH;
+    }
+
+    /**
+     * Decide whether to inject the passive {@code <SemanticContext>} block. We do so only
+     * when RAG is enabled in settings, the prompt is long enough to embed usefully, AND
+     * agent mode is OFF — when agent mode is on the LLM gets the {@code semantic_search}
+     * tool instead, and duplicating the same content here just costs tokens. Visible for tests.
+     */
+    static boolean shouldInjectPassiveRagContext(String userPrompt) {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        if (!Boolean.TRUE.equals(state.getRagEnabled())) return false;
+        if (Boolean.TRUE.equals(state.getAgentModeEnabled())) return false;
+        return shouldRunRagFor(userPrompt);
     }
 
     /**

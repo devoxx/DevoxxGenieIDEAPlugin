@@ -204,6 +204,33 @@ public class BuiltInToolProvider implements ToolProvider {
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getPsiToolsEnabled())) {
             registerPsiTools(project);
         }
+
+        // semantic_search — only when RAG is enabled in settings. (task-222 collapsed the
+        // separate per-session "ragActivated" toggle; ragEnabled is now the single source
+        // of truth.) Lets the LLM choose vector retrieval for conceptual queries instead of
+        // falling back to lexical search_files. When this tool is registered,
+        // MessageCreationService also stops injecting <SemanticContext> passively.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("semantic_search")
+                            .description("Search the project's semantic (vector) index for content conceptually similar to a query. " +
+                                    "USE THIS TOOL FIRST for any question about what the project content discusses, mentions, " +
+                                    "covers, or explains — for example: 'which slides discuss MCP', 'where do we explain RAG', " +
+                                    "'find anything about authentication', 'what files describe the build process'. " +
+                                    "Returns ranked file paths, similarity scores, and matching content snippets. " +
+                                    "Only fall back to `search_files` (regex grep) when you need to locate a known exact string, " +
+                                    "or when this tool returns no useful hits.")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addStringProperty("query",
+                                            "Natural-language query describing the concept or topic to retrieve. " +
+                                                    "Do NOT pass a regex — this is semantic similarity, not text matching.")
+                                    .required("query")
+                                    .build())
+                            .build(),
+                    new SemanticSearchToolExecutor(project)
+            );
+        }
     }
 
     private void registerPsiTools(@NotNull Project project) {

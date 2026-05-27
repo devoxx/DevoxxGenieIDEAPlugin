@@ -75,21 +75,34 @@ Before RAG can search your code, you need to index your project:
 
 ### Searching with RAG
 
-Once indexed, you can use RAG in two ways:
+Once indexed, there are three ways RAG content reaches the LLM. Which one applies depends on whether Agent mode is on:
 
-1. **Automatic**: When RAG is enabled, relevant code context is automatically added to your prompts
-2. **Explicit**: Use the `/find` command to search for specific code:
+1. **Passive injection (Agent mode OFF)** — when RAG is enabled in settings, the top-K most relevant chunks for your prompt are automatically prepended to the message context as a `<SemanticContext>` block. You don't need to do anything; every prompt long enough to be worth retrieving for triggers a search.
+2. **`semantic_search` agent tool (Agent mode ON)** — instead of injecting context up front, RAG is exposed as an agent tool the LLM can call on demand. The agent decides when to retrieve semantically vs. when to use lexical tools like `search_files` for known exact strings. Passive injection is suppressed in this mode so the LLM doesn't see the same content twice.
+3. **`/find` command** — works in either mode. Use it to ask for retrieval explicitly:
    ```
    /find authentication flow
    ```
 
+#### Why two modes?
+
+Models bias strongly toward calling tools when both a tool and a passive context block are available — they would invoke `search_files` (regex grep) and ignore the higher-quality semantic context. Switching to a tool-based interface in agent mode lets the agent orchestrate: semantic search for conceptual queries, grep/glob for exact strings.
+
+When Agent mode + RAG are both on, DevoxxGenie also injects a `<RAG_INSTRUCTION>` system-prompt fragment telling the LLM to prefer `semantic_search` for conceptual queries (e.g. "which slides discuss X", "where do we explain Y"). This is necessary because smaller models don't reliably honor "prefer this tool" hints buried inside tool descriptions.
+
+#### Enabling / disabling the `semantic_search` tool
+
+The tool is registered automatically whenever RAG is enabled and Agent mode is on. To override that — e.g. to force the agent to use lexical search only — uncheck `semantic_search` under **Settings → DevoxxGenie → Agent Mode → Built-in Tools**. The setting is independent of the master RAG switch, so you can keep passive injection active for non-agent prompts while excluding `semantic_search` from the agent's toolbox.
+
 ### Example Queries
 
-These types of queries benefit most from RAG:
+These types of queries benefit most from RAG (in either mode):
 
 - "How does the authentication flow work in this project?"
 - "Explain the data model for users"
 - "Generate a new service method that follows our existing patterns"
+- "Which slides discuss the Model Context Protocol?" (agent mode → triggers `semantic_search`)
+- "Where do we describe the indexing pipeline?" (agent mode → triggers `semantic_search`)
 
 ## Troubleshooting
 

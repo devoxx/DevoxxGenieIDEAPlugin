@@ -68,90 +68,49 @@ class FindCommandTest {
     }
     
     @Test
-    void testProcess_WithRAGEnabledAndActivated() {
-        // Set up context with needed stubbings for this test
+    void testProcess_WithRAGEnabled() {
+        // After task-222, RAG has only one switch (ragEnabled in settings). The per-session
+        // ragActivated toggle was removed, so /find succeeds whenever RAG is enabled.
         when(context.getUserPrompt()).thenReturn(Constant.COMMAND_PREFIX + Constant.FIND_COMMAND + " search query");
-        
+
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
-            // Set up RAG as enabled and activated
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
             when(stateService.getRagEnabled()).thenReturn(true);
-            when(stateService.getRagActivated()).thenReturn(true);
-            
-            // Process the find command
+
             Optional<String> result = command.process(context, panel);
-            
-            // Verify result contains the search query
+
             assertTrue(result.isPresent());
             assertEquals("search query", result.get());
-            
-            // Verify context was updated with command name
+
             verify(context).setCommandName(Constant.FIND_COMMAND);
-            
-            // Verify no notifications were sent
+
             try (MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
-                notificationUtilMockedStatic.verify(() -> 
-                    NotificationUtil.sendNotification(any(), anyString()), 
+                notificationUtilMockedStatic.verify(() ->
+                    NotificationUtil.sendNotification(any(), anyString()),
                     never());
             }
         }
     }
-    
+
     @Test
     void testProcess_WithRAGDisabled() {
-        // Set up project stubbing only where it's needed
         when(context.getProject()).thenReturn(project);
-        
+
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
              MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
-            
-            // Set up RAG as disabled
+
             stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
             when(stateService.getRagEnabled()).thenReturn(false);
-            
-            // Process the find command
+
             Optional<String> result = command.process(context, panel);
-            
-            // Verify result is empty
+
             assertFalse(result.isPresent());
-            
-            // Verify notification was sent
-            notificationUtilMockedStatic.verify(() -> 
+
+            notificationUtilMockedStatic.verify(() ->
                 NotificationUtil.sendNotification(
-                    eq(project), 
+                    eq(project),
                     eq("The /find command requires RAG to be enabled in settings")));
-            
-            // Verify context was not updated with command name
-            verify(context, never()).setCommandName(anyString());
-        }
-    }
-    
-    @Test
-    void testProcess_WithRAGEnabledButNotActivated() {
-        // Set up project stubbing only where it's needed
-        when(context.getProject()).thenReturn(project);
-        
-        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
-             MockedStatic<NotificationUtil> notificationUtilMockedStatic = Mockito.mockStatic(NotificationUtil.class)) {
-            
-            // Set up RAG as enabled but not activated
-            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
-            when(stateService.getRagEnabled()).thenReturn(true);
-            when(stateService.getRagActivated()).thenReturn(false);
-            
-            // Process the find command
-            Optional<String> result = command.process(context, panel);
-            
-            // Verify result is empty
-            assertFalse(result.isPresent());
-            
-            // Verify notification was sent
-            notificationUtilMockedStatic.verify(() -> 
-                NotificationUtil.sendNotification(
-                    eq(project), 
-                    eq("The /find command requires RAG to be turned on")));
-            
-            // Verify context was not updated with command name
+
             verify(context, never()).setCommandName(anyString());
         }
     }

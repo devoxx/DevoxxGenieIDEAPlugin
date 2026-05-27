@@ -363,6 +363,26 @@ public class ChatMemoryManager {
             MCPService.logDebug("Added MCP instructions to system prompt");
         }
 
+        // Add RAG/semantic_search instruction when both agent mode and RAG are active.
+        // Small models reliably pick `search_files` (regex grep) for conceptual queries
+        // unless they're told the project has a semantic index; tool descriptions alone
+        // aren't enough signal. This mirrors the <TESTING_INSTRUCTION> / <MCP_INSTRUCTION>
+        // pattern used for other tools that need an explicit nudge.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())
+                && Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            systemPrompt += """
+                    <RAG_INSTRUCTION>
+                    This project has a semantic vector index of its content. For any user
+                    question about what the project content discusses, mentions, covers, or
+                    explains — for example "which slides discuss X", "where do we explain Y",
+                    "find anything about Z" — call the `semantic_search` tool FIRST with a
+                    natural-language query. Only fall back to `search_files` (regex grep)
+                    when you need to locate a known exact string, or when `semantic_search`
+                    returns no useful hits.
+                    </RAG_INSTRUCTION>
+                    """;
+        }
+
         // Add DEVOXXGENIE.md content to system prompt (once per conversation)
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
             String devoxxGenieMdContent = readDevoxxGenieMdFile(project);

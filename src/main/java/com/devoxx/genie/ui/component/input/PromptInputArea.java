@@ -197,7 +197,7 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
         // Store the formatted newline shortcut for use in updatePlaceHolder
         this.newlineShortcut = formattedNewlineShortcut;
 
-        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
+        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled()));
     }
 
     @Override
@@ -243,7 +243,7 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
         // Store the formatted newline shortcut for use in updatePlaceHolder
         this.newlineShortcut = formattedNewlineShortcut;
         
-        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagActivated()));
+        updatePlaceHolder(Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled()));
     }
 
     /**

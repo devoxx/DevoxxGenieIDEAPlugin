@@ -29,7 +29,7 @@ public class AgentMcpLogToolWindowFactory implements ToolWindowFactory {
     public boolean shouldBeAvailable(@NotNull Project project) {
         DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
         boolean hasCliTools = s.getCliTools() != null && !s.getCliTools().isEmpty();
-        boolean ragOn = Boolean.TRUE.equals(s.getRagEnabled()) || Boolean.TRUE.equals(s.getRagActivated());
+        boolean ragOn = Boolean.TRUE.equals(s.getRagEnabled());
         return Boolean.TRUE.equals(s.getAgentModeEnabled()) || MCPService.isMCPEnabled() || hasCliTools || ragOn;
     }
 

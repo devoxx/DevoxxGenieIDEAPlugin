@@ -1,15 +1,21 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
+import com.devoxx.genie.service.prompt.error.PromptException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.service.rag.RAGEventPublisher;
+import com.devoxx.genie.service.rag.SearchResult;
+import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -18,8 +24,12 @@ import dev.langchain4j.data.message.UserMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
+
+import static com.devoxx.genie.model.Constant.FIND_COMMAND;
+import static com.devoxx.genie.service.MessageCreationService.extractFileReferences;
 
 /**
  * Abstract base implementation for prompt execution strategies.
@@ -92,17 +102,81 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         // Re-index now that context is attached (fixes timing gap from self-registration)
         PromptTaskTracker.getInstance().indexByContextId(resultTask);
 
+        // /find short-circuits ALL strategies — it's a pure semantic-search request, no LLM
+        // call needed. Without this gate, streaming mode would run prepareMemory() + an
+        // empty LLM call after the user already got their files popup, wasting the call
+        // (and confusing users who see "the chat is already finished" but a model still ticks).
+        if (FIND_COMMAND.equalsIgnoreCase(context.getCommandName())) {
+            log.debug("Short-circuiting strategy for /find command on context {}", context.getId());
+            executeSemanticSearch(context, panel, resultTask);
+            handleTaskCompletion(resultTask, context, panel);
+            return resultTask;
+        }
+
         // Execute strategy-specific logic
         try {
             executeStrategySpecific(context, panel, resultTask);
         } catch (Exception e) {
             handleExecutionError(e, context, resultTask, panel);
         }
-        
+
         // Common post-execution handling
         handleTaskCompletion(resultTask, context, panel);
-        
+
         return resultTask;
+    }
+
+    /**
+     * Perform semantic search for the /find command and write the results back onto the
+     * chat panel. Bypasses the strategy-specific LLM path entirely — see the gate in
+     * {@link #execute(ChatMessageContext, PromptOutputPanel)}.
+     */
+    protected void executeSemanticSearch(@NotNull ChatMessageContext context,
+                                         @NotNull PromptOutputPanel panel,
+                                         @NotNull PromptTask<PromptResult> resultTask) {
+        threadPoolManager.getPromptExecutionPool().execute(() -> {
+            long startNanos = System.nanoTime();
+            List<SearchResult> searchResults = Collections.emptyList();
+            try {
+                searchResults = SemanticSearchService.getInstance().search(
+                        context.getProject(),
+                        context.getUserPrompt(),
+                        context.getChatModel());
+
+                if (!searchResults.isEmpty()) {
+                    List<SemanticFile> fileReferences = extractFileReferences(searchResults);
+                    context.setSemanticReferences(fileReferences);
+                    // Fill the pending AI bubble with a one-line summary so the chat history
+                    // stays coherent — without this, /find leaves an empty unbordered bubble
+                    // sitting under the user's prompt because no AI response was generated.
+                    // The full hit list still pops up in the Find Results dialog.
+                    long uniqueFiles = fileReferences.stream()
+                            .map(SemanticFile::filePath).distinct().count();
+                    context.setAiMessage(AiMessage.from(String.format(
+                            "Found %d relevant file%s for `%s` — see the Find Results dialog.",
+                            uniqueFiles,
+                            uniqueFiles == 1 ? "" : "s",
+                            context.getUserPrompt())));
+                    panel.addChatResponse(context);
+                    resultTask.complete(PromptResult.success(context));
+                } else {
+                    NotificationUtil.sendNotification(context.getProject(),
+                            "No relevant files found for your search query.");
+                    resultTask.complete(PromptResult.failure(context,
+                            new ExecutionException("No relevant files found")));
+                }
+            } catch (Exception e) {
+                ExecutionException searchError = new ExecutionException(
+                        "Error performing semantic search", e,
+                        PromptException.ErrorSeverity.WARNING, true);
+                PromptErrorHandler.handleException(context.getProject(), searchError, context);
+                resultTask.complete(PromptResult.failure(context, searchError));
+            } finally {
+                long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
+                RAGEventPublisher.publish(
+                        context.getProject(), context.getUserPrompt(), searchResults, durationMs);
+            }
+        });
     }
     
     /**
