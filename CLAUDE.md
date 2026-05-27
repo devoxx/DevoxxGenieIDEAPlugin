@@ -315,6 +315,17 @@ Key services under `service/`:
 4. Use `RAGValidatorService` to check prerequisites
 5. Index project via `ProjectIndexerService.indexFiles()`
 
+**RAG + Agent mode interaction:**
+
+- When agent mode is **off** and RAG is activated, `MessageCreationService` injects top-K
+  semantic hits passively into the user message as a `<SemanticContext>` block.
+- When agent mode is **on** and RAG is activated, the passive `<SemanticContext>` injection
+  is suppressed and a `semantic_search` agent tool is registered instead (see
+  `BuiltInToolProvider` and `SemanticSearchToolExecutor`). The LLM decides when to retrieve
+  semantically vs. when to use lexical tools like `search_files`. This avoids the failure
+  mode where two competing context sources cause models to ignore the higher-quality
+  semantic results in favor of invoking grep-style tools.
+
 ## Release Process
 
 1. Update version in `build.gradle.kts`

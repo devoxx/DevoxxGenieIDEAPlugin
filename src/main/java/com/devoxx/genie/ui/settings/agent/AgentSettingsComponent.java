@@ -83,7 +83,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             {"list_files", "List files and directories in the project"},
             {"search_files", "Search for regex patterns in project files"},
             {"run_command", "Execute terminal commands in the project directory"},
-            {"fetch_page", "Fetch a web page and return its text content"}
+            {"fetch_page", "Fetch a web page and return its text content"},
+            {"semantic_search", "Query the RAG vector index for conceptually similar chunks (only registered when RAG is enabled and activated)"}
     };
     private final Map<String, JBCheckBox> toolCheckboxes = new LinkedHashMap<>();
 

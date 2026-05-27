@@ -141,7 +141,7 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
@@ -173,7 +173,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             // Setup state service behaviors
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             
             // Initially return no images, then return our test image when called later
             when(mockFileListManager.getImageFiles(any(Project.class), any()))
@@ -243,7 +243,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
-            when(mockStateService.getRagActivated()).thenReturn(true);
+            when(mockStateService.getRagEnabled()).thenReturn(true);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
             when(mockSemanticSearchService.search(any(), any(), any())).thenReturn(searchResults);
 
@@ -282,7 +282,7 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
@@ -309,7 +309,7 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             // mock file content
@@ -546,7 +546,7 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(imageFiles);
 
             imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(mockImage1)).thenReturn("image/png");
@@ -612,7 +612,7 @@ class MessageCreationServiceTest {
             chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
-            when(mockStateService.getRagActivated()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(imageFiles);
             imageUtilMockedStatic.when(() -> ImageUtil.getImageMimeType(any())).thenReturn("image/png");
 
@@ -661,7 +661,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
-            when(mockStateService.getRagActivated()).thenReturn(true);
+            when(mockStateService.getRagEnabled()).thenReturn(true);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
@@ -699,7 +699,7 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
             semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
 
-            when(mockStateService.getRagActivated()).thenReturn(true);
+            when(mockStateService.getRagEnabled()).thenReturn(true);
             when(mockSemanticSearchService.search(any(), any(), any())).thenReturn(hits);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
@@ -736,5 +736,79 @@ class MessageCreationServiceTest {
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(file -> file.filePath().equals("file1.java") && Math.abs(file.score() - 0.95) < 0.001));
         assertTrue(result.stream().anyMatch(file -> file.filePath().equals("file2.java") && Math.abs(file.score() - 0.85) < 0.001));
+    }
+
+    @Test
+    void agentModeOnSuppressesPassiveSemanticInjection() {
+        // When agent mode is active, RAG is exposed via the semantic_search tool. Injecting
+        // <SemanticContext> here too would give the LLM two competing sources of the same
+        // content — models reliably prefer the tool and ignore the passive block, wasting
+        // both prompt tokens and the embedding call. So: no passive injection in agent mode.
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn(null);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("Where is the AuthService defined?");
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class);
+             MockedStatic<SemanticSearchService> semanticSearchServiceMockedStatic = Mockito.mockStatic(SemanticSearchService.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            semanticSearchServiceMockedStatic.when(SemanticSearchService::getInstance).thenReturn(mockSemanticSearchService);
+
+            when(mockStateService.getRagEnabled()).thenReturn(true);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(true);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> captor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(captor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            verify(mockSemanticSearchService, never()).search(any(), any(), any());
+            verify(mockSemanticSearchService, never()).search(any(), any());
+
+            String prompt = captor.getValue().singleText();
+            assertFalse(prompt.contains("<SemanticContext>"),
+                    "agent mode must not produce a <SemanticContext> block — the LLM uses semantic_search instead");
+        }
+    }
+
+    @Test
+    void shouldInjectPassiveRagContext_respectsAgentModeAndRagFlags() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+
+            String longEnoughPrompt = "Where is the AuthService defined?";
+
+            // RAG off → never inject
+            when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(false);
+            assertFalse(MessageCreationService.shouldInjectPassiveRagContext(longEnoughPrompt));
+
+            // RAG on, agent off → inject (existing behaviour preserved)
+            when(mockStateService.getRagEnabled()).thenReturn(true);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(false);
+            assertTrue(MessageCreationService.shouldInjectPassiveRagContext(longEnoughPrompt));
+
+            // RAG on, agent on → suppress (tool takes over)
+            when(mockStateService.getRagEnabled()).thenReturn(true);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(true);
+            assertFalse(MessageCreationService.shouldInjectPassiveRagContext(longEnoughPrompt));
+
+            // RAG off, agent on → still no injection
+            when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(true);
+            assertFalse(MessageCreationService.shouldInjectPassiveRagContext(longEnoughPrompt));
+
+            // Short query still skipped even with RAG on and agent off
+            when(mockStateService.getRagEnabled()).thenReturn(true);
+            when(mockStateService.getAgentModeEnabled()).thenReturn(false);
+            assertFalse(MessageCreationService.shouldInjectPassiveRagContext("more?"));
+        }
     }
 }
