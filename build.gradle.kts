@@ -4,9 +4,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.lombok") version "2.1.10"
-    kotlin("plugin.compose") version "2.1.10"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.lombok") version "2.3.21"
+    kotlin("plugin.compose") version "2.3.21"
     id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
@@ -18,6 +18,7 @@ repositories {
     mavenCentral()
     intellijPlatform {
         defaultRepositories()
+        jetbrainsRuntime()
     }
     google()
 }
@@ -40,6 +41,7 @@ val pluginVerifierCommunityIdeVersions = listOf(
 )
 val pluginVerifierUnifiedIdeVersions = listOf(
     "2025.3.3",          // 253 line
+    "2026.1",             // 261 line
     "2026.2-EAP-SNAPSHOT" // 262 line
 )
 
@@ -222,8 +224,8 @@ tasks.named("processResources") {
 
 dependencies {
     intellijPlatform {
-        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2025.1.7
-        create("IC", providers.gradleProperty("ideVersion").orElse("2025.1.7")) {}
+        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2026.1.1
+        intellijIdea(providers.gradleProperty("ideVersion").orElse("2026.1"))
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
         composeUI()
@@ -427,6 +429,7 @@ tasks {
     //        ./gradlew runIde -PideVersion=2025.1.1
     //        ./gradlew runIde -PideVersion=2025.2.2
     //        ./gradlew runIde -PideVersion=2025.3.3
+    //        ./gradlew runIde -PideVersion=2026.1
     //        ./gradlew runIde -PideVersion=2026.2-EAP-SNAPSHOT
 
     withType<Jar> {
