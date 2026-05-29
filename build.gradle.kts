@@ -115,8 +115,16 @@ tasks.register("updateProperties") {
     }
 }
 
-tasks.named("buildPlugin") {
+tasks.named<Zip>("buildPlugin") {
     dependsOn("updateProperties")
+
+    // Defense-in-depth for issue #1054: never ship runtime jars the IntelliJ Platform already
+    // provides. stripBinaryIncompatibleRuntimeJars only cleans the runIde/test sandboxes; the
+    // published distribution is produced by this Zip task, so filter the same jars out here
+    // regardless of which transitive dependency reintroduces them.
+    binaryIncompatibleRuntimeJarPatterns.forEach { pattern ->
+        exclude("**/lib/$pattern")
+    }
 }
 
 // Diagnostic CLI for the RAG store. Talks to the same ChromaDB + Ollama the plugin uses.
@@ -219,8 +227,11 @@ tasks.named("processResources") {
 
 dependencies {
     intellijPlatform {
+        // Starting with 2025.3 (build 253) IntelliJ IDEA is a single unified product: the
+        // separate Community (IC) Maven artifact is no longer published, so create("IC", ...)
+        // can no longer resolve. Use the unified intellijIdea(...) accessor instead.
         // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2026.1
-        create("IC", providers.gradleProperty("ideVersion").orElse("2025.3.3")) {}
+        intellijIdea(providers.gradleProperty("ideVersion").orElse("2025.3.3"))
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
         composeUI()
@@ -287,6 +298,11 @@ dependencies {
     implementation("io.netty:netty-all:$nettyVersion")
     // Compose Markdown Renderer aligned with the 251 Compose/Kotlin toolchain
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion") {
+        // The IntelliJ Platform provides coroutines at runtime. Bundling our own copy makes the
+        // plugin classloader load kotlinx.coroutines.flow.FlowCollector while the platform loads
+        // SafeCollector, causing a cross-classloader ClassCastException (issue #1054).
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
         exclude(group = "org.jetbrains", module = "markdown")
     }
     implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion") {
