@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "2.3.21"
-    kotlin("plugin.lombok") version "2.3.21"
-    kotlin("plugin.compose") version "2.3.21"
-    id("org.jetbrains.intellij.platform") version "2.15.0"
+    kotlin("jvm") version "2.1.10"
+    kotlin("plugin.lombok") version "2.1.10"
+    kotlin("plugin.compose") version "2.1.10"
+    id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
 
@@ -219,8 +219,8 @@ tasks.named("processResources") {
 
 dependencies {
     intellijPlatform {
-        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2026.1.1
-        intellijIdea(providers.gradleProperty("ideVersion").orElse("2026.1"))
+        // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2026.1
+        create("IC", providers.gradleProperty("ideVersion").orElse("2025.3.3")) {}
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
         composeUI()
@@ -373,8 +373,8 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "261"
-            untilBuild = "261.*"
+            sinceBuild = "251"
+            untilBuild = "262.*"
         }
     }
 
@@ -472,8 +472,9 @@ tasks {
     }
 }
 
-kotlin {
-    jvmToolchain(25)
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 kotlinLombok {
@@ -482,6 +483,6 @@ kotlinLombok {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
