@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-05-19",
+  "lastUpdated": "2026-05-26",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -371,8 +371,8 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "gemini-3.1-flash-lite-preview",
-        "displayName": "Gemini 3.1 Flash Lite Preview",
+        "modelName": "gemini-3.1-flash-lite",
+        "displayName": "Gemini 3.1 Flash Lite",
         "inputCost": 0.25,
         "outputCost": 1.50,
         "inputMaxTokens": 1048576,
