@@ -24,7 +24,7 @@ repositories {
 }
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.14"
 }
 
 val binaryIncompatibleRuntimeJarPatterns = listOf(
