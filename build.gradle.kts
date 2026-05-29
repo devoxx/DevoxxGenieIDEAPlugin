@@ -36,8 +36,9 @@ val binaryIncompatibleRuntimeJarPatterns = listOf(
 )
 val packagedPluginDirName = "DevoxxGenie"
 val pluginVerifierUnifiedIdeVersions = listOf(
-    "2026.1",             // 261 line
-    "2026.2-EAP-SNAPSHOT" // 262 line
+    "2025.1",             // 251 line — minimum supported (sinceBuild)
+    "2026.1"              // 261 line
+    // "2026.2-EAP-SNAPSHOT" // 262 line — not yet available
 )
 
 fun Project.stripBinaryIncompatibleRuntimeJars(sandboxPluginPath: String) {
