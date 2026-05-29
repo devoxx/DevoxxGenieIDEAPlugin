@@ -1,6 +1,6 @@
 <idea-plugin>
     <!-- Specific features for Rust projects in RustRover or other Rust-capable IDEs -->
-    <depends>org.rust.lang</depends>
+    <depends>com.jetbrains.rust</depends>
     
     <extensions defaultExtensionNs="com.intellij">
         <projectScannerExtension implementation="com.devoxx.genie.service.analyzer.languages.rust.RustProjectScannerExtension"/>

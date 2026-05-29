@@ -708,7 +708,7 @@
     <depends optional="true" config-file="php-features.xml">com.jetbrains.php</depends>
     <depends optional="true" config-file="python-features.xml">com.intellij.modules.python</depends>
     <depends optional="true" config-file="clion-features.xml">com.intellij.modules.clion</depends>
-    <depends optional="true" config-file="rust-features.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="rust-features.xml">com.jetbrains.rust</depends>
     <depends optional="true" config-file="webstorm-features.xml">JavaScript</depends>
     <depends optional="true" config-file="kotlin-features.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="goland-features.xml">org.jetbrains.plugins.go</depends>
