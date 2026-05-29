@@ -1,11 +1,10 @@
 package com.devoxx.genie.service.analytics;
 
+import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
-import com.intellij.openapi.extensions.PluginId;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,8 +43,6 @@ public final class AnalyticsService {
     public static final String EVENT_FEATURE_ENABLED = "feature_enabled";
     public static final String EVENT_FEATURE_USED = "feature_used";
     public static final String EVENT_FEATURE_COUNTS = "feature_counts";
-
-    private static final String PLUGIN_ID = "com.devoxx.genie";
 
     private final String sessionId;
     private HttpClient httpClient;
@@ -238,9 +235,9 @@ public final class AnalyticsService {
     @NotNull
     private static String pluginVersion() {
         try {
-            var descriptor = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID));
-            if (descriptor != null && descriptor.getVersion() != null) {
-                return descriptor.getVersion();
+            String version = PropertiesService.getInstance().getVersion();
+            if (version != null && !version.isBlank()) {
+                return version;
             }
         } catch (Exception ignored) {
             // fall through
