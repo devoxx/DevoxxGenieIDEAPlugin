@@ -39,7 +39,8 @@ val pluginVerifierCommunityIdeVersions = listOf(
     "2025.2.6.1"  // 252 line
 )
 val pluginVerifierUnifiedIdeVersions = listOf(
-    "2025.3.3"    // 253 line
+    "2025.3.3",          // 253 line
+    "2026.2-EAP-SNAPSHOT" // 262 line
 )
 
 fun Project.stripBinaryIncompatibleRuntimeJars(sandboxPluginPath: String) {
@@ -376,7 +377,7 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
-            untilBuild = "261.*"
+            untilBuild = "262.*"
         }
     }
 
@@ -426,6 +427,7 @@ tasks {
     //        ./gradlew runIde -PideVersion=2025.1.1
     //        ./gradlew runIde -PideVersion=2025.2.2
     //        ./gradlew runIde -PideVersion=2025.3.3
+    //        ./gradlew runIde -PideVersion=2026.2-EAP-SNAPSHOT
 
     withType<Jar> {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
