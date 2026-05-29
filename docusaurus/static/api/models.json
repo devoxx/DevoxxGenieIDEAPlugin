@@ -17,6 +17,15 @@
   "providers": {
     "Anthropic": [
       {
+        "modelName": "claude-opus-4-8",
+        "displayName": "Claude 4.8 Opus",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
         "modelName": "claude-opus-4-7",
         "displayName": "Claude 4.7 Opus",
         "inputCost": 5,
@@ -562,6 +571,13 @@
       }
     ],
     "Bedrock": [
+      {
+        "modelName": "anthropic.claude-opus-4-8",
+        "displayName": "Claude Opus 4.8",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 1000000
+      },
       {
         "modelName": "anthropic.claude-opus-4-7",
         "displayName": "Claude Opus 4.7",
