@@ -71,6 +71,27 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                     1, 10));
 
     @Getter
+    private final JBCheckBox rerankCheckBox = new JBCheckBox(
+            "Rerank results (extra Ollama call per retrieval)",
+            Boolean.TRUE.equals(stateService.getRerankResults()));
+
+    @Getter
+    private final JBTextField rerankerModelField = new JBTextField(
+            stateService.getRerankerModelName(), 20);
+
+    @Getter
+    private final JBIntSpinner rerankerShortlistSpinner = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getRerankerShortlistSize() == null ? 30 : stateService.getRerankerShortlistSize(),
+                    1, 200));
+
+    @Getter
+    private final JBIntSpinner rerankerTimeoutSpinner = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getRerankerTimeoutMs() == null ? 2000 : stateService.getRerankerTimeoutMs(),
+                    100, 60_000));
+
+    @Getter
     private final RagExcludedDirectoriesPanel ragExcludedDirsPanel;
 
     private final Project project;
@@ -122,6 +143,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         });
         // Variants spinner is only meaningful when query expansion is on.
         queryExpansionCheckBox.addActionListener(e -> updateComponentsEnabled());
+        // Reranker model/shortlist/timeout fields are only meaningful when the master toggle is on.
+        rerankCheckBox.addActionListener(e -> updateComponentsEnabled());
     }
 
     private void addProgressSection(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
@@ -221,6 +244,24 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 "(Reciprocal Rank Fusion). Improves retrieval on meta-style questions such as " +
                 "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
         addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
+
+        // Reranker (task-214): optional cross-encoder stage that reorders the retrieval
+        // shortlist before it reaches the prompt. Local-first via an Ollama-hosted model.
+        addSettingRow(panel, gbc, "Rerank results", leftAligned(rerankCheckBox));
+        addHelpText(panel, gbc, "Reorder retrieval hits using a local Ollama-hosted reranker model. " +
+                "Retrieval returns a wider shortlist; the reranker picks the top \"Maximum results\" " +
+                "for the prompt. On timeout the original retrieval order is used.");
+        addSettingRow(panel, gbc, "Reranker model", leftAligned(rerankerModelField));
+        addHelpText(panel, gbc, "Ollama generative chat model used for relevance scoring " +
+                "(default 'llama3.2:1b'; 'qwen2.5:0.5b' is also a good fit). Cross-encoder " +
+                "models like 'bge-reranker' DO NOT work — they are served via /api/embeddings, " +
+                "and this reranker uses /api/generate. The validator below checks the model is " +
+                "pulled and offers a one-click pull.");
+        addSettingRow(panel, gbc, "Reranker shortlist size", leftAligned(rerankerShortlistSpinner));
+        addHelpText(panel, gbc, "How many candidates retrieval returns to the reranker. " +
+                "The reranker truncates to \"Maximum results\" before the prompt sees them.");
+        addSettingRow(panel, gbc, "Reranker timeout (ms)", leftAligned(rerankerTimeoutSpinner));
+        addHelpText(panel, gbc, "Wall-clock budget for the reranker. On timeout, original retrieval order is used.");
 
         // RAG-specific directory exclusion (task-220) — layered on top of the global
         // "Scan & Copy Project" list so users can keep project context broad while keeping
@@ -488,6 +529,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         queryExpansionCheckBox.setEnabled(enabled);
         // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
         queryExpansionVariantsSpinner.setEnabled(enabled && queryExpansionCheckBox.isSelected());
+        rerankCheckBox.setEnabled(enabled);
+        boolean rerankActive = enabled && rerankCheckBox.isSelected();
+        rerankerModelField.setEnabled(rerankActive);
+        rerankerShortlistSpinner.setEnabled(rerankActive);
+        rerankerTimeoutSpinner.setEnabled(rerankActive);
     }
 
     private void setupTable() {
