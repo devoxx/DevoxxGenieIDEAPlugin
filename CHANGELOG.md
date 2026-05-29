@@ -1,5 +1,45 @@
 # Changelog
 
+## v1.7.0 - 2026-05-29
+
+### Added
+- feat(rag): expose `semantic_search` as an agent tool, so the LLM retrieves semantically when agent mode is on (task-221)
+- feat(rag): query expansion + reciprocal-rank fusion for meta queries (task-222)
+- feat(rag): settings UI for query expansion (enable checkbox + variants spinner)
+- feat(rag): user-configurable directory exclusion list (task-220)
+- feat(rag): auto-reindex tracked files on save (debounced `BulkFileListener`)
+- feat(rag): structured retrieval log + "Show RAG Only" filter in the Logs panel
+- feat(rag): per-extension splitter selection
+- feat(rag): drop low-content chunks at index time
+- feat(rag): replace mtime/metadata-filter index check with a content-hash manifest
+- feat(rag): add `RagCli` + `ragQuery` Gradle task for offline diagnosis
+- feat: add support for IntelliJ 2026.2 EAP (build 262.*)
+- Add Claude Opus 4.8 to models.json
+
+### Changed
+- refactor(rag): collapse RAG toggles into a single `ragEnabled` switch and polish `/find`
+- perf(rag): cache the embedding model and batch embeddings via `embedAll`
+- perf(rag): index files in a small bounded thread pool during bulk indexing
+- perf(rag): place `SemanticContext` adjacent to the user prompt and skip RAG on short follow-ups
+- Drop support for IntelliJ IDEA versions < 2026 and update dependencies (#1065)
+
+### Fixed
+- fix: restore IntelliJ 2025.x compatibility
+- fix: enable debugging in IntelliJ 2026.1 (#1065)
+- fix: stop bundling the platform coroutines jar; restore the plugin build (#1054)
+- fix: update to `gemini-3.1-flash-lite` from the deprecated `gemini-3.1-flash-lite-preview` model (#1057)
+- fix(prompt): cap agent/MCP wall-clock execution to prevent silent hangs
+- fix(rag): embed chunk content (not file paths) and preserve per-chunk results
+- fix(rag): unblock the loading indicator during query expansion
+- fix(rag): unfreeze ChromaDB Settings actions and clean up the Logs panel
+- fix(rag): wrap help text reliably in RAG settings
+- fix(ui): switch the on-state color from orange to green for clarity
+- fix: update jacoco version (#1065)
+
+### Contributors
+- @stephanj
+- @mihaibuba
+
 ## v1.6.0 - 2026-05-24
 
 ### Added

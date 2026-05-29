@@ -11,7 +11,7 @@
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="info@devoxx.com" url="https://devoxx.com">Devoxx</vendor>
 
-    <idea-version since-build="243" until-build="261.*"/>
+    <idea-version since-build="243" until-build="262.*"/>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -38,6 +38,7 @@
             <LI><strong>Chat History:</strong> Locally stored conversations (SQLite) with parallel conversation tabs</LI>
             <LI><strong>Token Cost Calculator:</strong> Real-time cost and context-window estimation for cloud providers</LI>
             <LI><strong>Multi-modal Support:</strong> Drag &amp; drop images for vision models, plus Git diff and project-context attachments</LI>
+            <LI><strong>Docker Agentic Platform:</strong> CLI integration (preview)</LI>
         </UL>
         <h3>Quick Start</h3>
         <UL>
@@ -67,7 +68,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                <h2>v1.6.0</h2>
+<h2>v1.6.0</h2>
         <UL>
                     <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
                     <LI>Add Gemini 3.5 Flash model to models.json</LI>
@@ -646,6 +647,7 @@
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalPromptService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.ExternalTaskService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecService"/>
+        <projectService serviceImplementation="com.devoxx.genie.service.rag.watcher.RAGFileWatcher"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.BacklogConfigService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.spec.SpecTaskRunnerService"/>
         <projectService serviceImplementation="com.devoxx.genie.service.security.SecurityScannerService"/>

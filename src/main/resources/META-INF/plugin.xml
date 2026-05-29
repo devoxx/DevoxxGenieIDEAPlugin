@@ -68,6 +68,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.7.0</h2>
+        <UL>
+                    <LI>feat: add support for IntelliJ 2026.2 EAP</LI>
+                    <LI>feat(rag): semantic_search agent tool + single ragEnabled switch (task-221, task-222)</LI>
+                    <LI>feat(rag): user-configurable directory exclusion list (task-220)</LI>
+                    <LI>fix: stop bundling platform coroutines jar; restore plugin build (#1054)</LI>
+                    <LI>fix: restore IntelliJ 2025.x compatibility</LI>
+                    <LI>Fix/issue 1065 intelij 2026 debugging fails</LI>
+                    <LI>fix: update to gemini-3.1-flash-lite from deprecated gemini-3.1-flash…</LI>
+                    <LI>fix(rag): unblock loading indicator during query expansion</LI>
+                </UL>
 <h2>v1.6.0</h2>
         <UL>
                     <LI>feat(ap): add Docker Agentic Platform CLI integration (preview)</LI>
