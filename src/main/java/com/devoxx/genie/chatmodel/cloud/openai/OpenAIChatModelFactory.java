@@ -48,13 +48,20 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
 
     private ChatRequestParameters createChatContextParameters(@NotNull CustomChatModel customChatModel) {
         String modelName = customChatModel.getModelName().toLowerCase();
-        boolean isReasoningModel = modelName.startsWith("o1") || modelName.startsWith("o3");
-        boolean isGpt5 = modelName.startsWith("gpt-5");
 
-        if (isReasoningModel) {
+        if (modelName.startsWith("o1") || modelName.startsWith("o3")) {
             // o1 and o3 models do not support temperature and topP
             return ChatRequestParameters.builder().build();
-        } else if (isGpt5) {
+        } else if (modelName.startsWith("gpt-5.5")) {
+            double temperature = customChatModel.getTemperature();
+            // GPT-5.5 requires temperature to be 1
+            if (temperature==0) {
+                temperature = 1d;
+            }
+            return ChatRequestParameters.builder()
+                    .temperature(temperature)
+                    .build();
+        } else if (modelName.startsWith("gpt-5")) {
             // GPT-5 supports temperature but not topP
             return ChatRequestParameters.builder()
                     .temperature(customChatModel.getTemperature())

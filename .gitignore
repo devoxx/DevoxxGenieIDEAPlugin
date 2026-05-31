@@ -25,3 +25,4 @@ docusaurus/static/img/git-diff-viewer.png
 .project
 .settings/
 *.class
+out/*
