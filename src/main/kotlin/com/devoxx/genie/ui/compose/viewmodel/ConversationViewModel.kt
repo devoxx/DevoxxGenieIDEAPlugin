@@ -321,8 +321,13 @@ class ConversationViewModel(
 
     private fun loadCustomPrompts(): List<CustomPromptUi> {
         return try {
-            DevoxxGenieStateService.getInstance()
-                .commands
+            val settings = DevoxxGenieStateService.getInstance()
+            val webSearchEnabled = settings.isWebSearchEnabled == true
+            settings.commands
+                .filter { cmd ->
+                    // /search only appears when Web Search is enabled in settings
+                    cmd.name != com.devoxx.genie.model.Constant.SEARCH_COMMAND || webSearchEnabled
+                }
                 .map { CustomPromptUi(name = it.name, prompt = it.prompt) }
         } catch (_: Exception) {
             emptyList()

@@ -55,7 +55,7 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         commands.add(COMMAND_PREFIX + TEST_COMMAND);
         commands.add(COMMAND_PREFIX + EXPLAIN_COMMAND);
         commands.add(COMMAND_PREFIX + REVIEW_COMMAND);
-        commands.add(COMMAND_PREFIX + TDG_COMMAND);
+        commands.add(COMMAND_PREFIX + SEARCH_COMMAND);
         commands.add(COMMAND_PREFIX + HELP_COMMAND);
         commands.add(COMMAND_PREFIX + INIT_COMMAND);
 
