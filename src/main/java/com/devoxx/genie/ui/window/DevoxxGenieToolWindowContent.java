@@ -6,7 +6,6 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ExternalPromptService;
 import com.devoxx.genie.service.analytics.AnalyticsService;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
-import com.devoxx.genie.ui.component.InputSwitch;
 import com.devoxx.genie.ui.component.border.AnimatedGlowingBorder;
 import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
@@ -226,17 +225,6 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             
             // Subscribe to file references events and forward them to the conversation panel
             MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, promptOutputPanel.getConversationPanel());
-
-            // Search options panel: RAG no longer has a per-session toggle (removed in task-222),
-            // so only the web search switch remains at index 0.
-            MessageBusUtil.subscribe(connection, AppTopics.WEB_SEARCH_STATE_TOPIC, enabled -> {
-                InputSwitch webSearchSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(0);
-                webSearchSwitch.setVisible(enabled);
-                if (!enabled) {
-                    webSearchSwitch.setSelected(false);
-                }
-                submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
-            });
 
             Disposer.register(tabDisposable, connection);
         });
