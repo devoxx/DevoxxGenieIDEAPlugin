@@ -231,6 +231,27 @@ public class BuiltInToolProvider implements ToolProvider {
                     new SemanticSearchToolExecutor(project)
             );
         }
+
+        // web_search — only when web search agent tool is enabled in settings
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getWebSearchAgentToolEnabled())) {
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("web_search")
+                            .description("Search the web for current information, documentation, news, or any topic. " +
+                                    "Returns ranked results with titles, URLs, and content snippets. " +
+                                    "Use when the answer requires information beyond the project codebase — " +
+                                    "e.g. library docs, API references, recent releases, or general knowledge. " +
+                                    "Requires a Tavily or Google Custom Search API key configured in " +
+                                    "Settings → DevoxxGenie → Web search.")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addStringProperty("query",
+                                            "Search query as a natural-language question or keyword phrase.")
+                                    .required("query")
+                                    .build())
+                            .build(),
+                    new WebSearchToolExecutor()
+            );
+        }
     }
 
     private void registerPsiTools(@NotNull Project project) {

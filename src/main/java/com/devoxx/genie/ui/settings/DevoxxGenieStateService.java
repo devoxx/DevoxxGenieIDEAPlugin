@@ -74,12 +74,17 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      */
     private Set<String> disabledSkillNames = new HashSet<>();
 
+    // Commands that were once defaults but have been intentionally removed.
+    // Entries here are pruned from any saved commands list on loadState so that
+    // existing users don't continue to see them on the welcome page.
+    private static final Set<String> REMOVED_DEFAULT_COMMANDS = Set.of("tdg");
+
     private final List<Command> defaultPrompts = Arrays.asList(
             new Command(TEST_COMMAND, TEST_PROMPT),
             new Command(EXPLAIN_COMMAND, EXPLAIN_PROMPT),
             new Command(REVIEW_COMMAND, REVIEW_PROMPT),
-            new Command(TDG_COMMAND, TDG_PROMPT),
             new Command(FIND_COMMAND, FIND_PROMPT),
+            new Command(SEARCH_COMMAND, SEARCH_PROMPT),
             new Command(HELP_COMMAND, HELP_PROMPT),
             new Command(INIT_COMMAND, INIT_PROMPT)
     );
@@ -341,6 +346,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean opengrepScanToolEnabled = true;
     private Boolean trivyScanToolEnabled = true;
 
+    // Web search agent tool
+    private Boolean webSearchAgentToolEnabled = false;
+
     // ACP tool runner settings (used by ACP Runners LLM provider in chat panel)
     private List<com.devoxx.genie.model.spec.AcpToolConfig> acpTools = new ArrayList<>();
 
@@ -418,9 +426,22 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     private void initializeUserPrompt() {
-        //If User prompt happens to be empty then we load the default list
         if (commands == null || commands.isEmpty()) {
             commands = new ArrayList<>(defaultPrompts);
+        } else {
+            // Prune commands that have been intentionally removed from the defaults.
+            commands.removeIf(cmd -> REMOVED_DEFAULT_COMMANDS.contains(cmd.getName()));
+
+            // Merge any default commands that are missing from the saved list so that
+            // newly-added built-in commands (e.g. /search) appear for existing users.
+            Set<String> existingNames = commands.stream()
+                    .map(Command::getName)
+                    .collect(java.util.stream.Collectors.toSet());
+            for (Command defaultCmd : defaultPrompts) {
+                if (!existingNames.contains(defaultCmd.getName())) {
+                    commands.add(defaultCmd);
+                }
+            }
         }
     }
 

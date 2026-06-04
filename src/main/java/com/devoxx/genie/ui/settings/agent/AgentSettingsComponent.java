@@ -5,11 +5,18 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.chromadb.ChromaDBManager;
+import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
+import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.ui.HyperlinkLabel;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -68,6 +75,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             new JBIntSpinner(stateService.getSubAgentMaxToolCalls() != null ? stateService.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS, 1, 200);
     private final JBIntSpinner subAgentTimeoutSpinner =
             new JBIntSpinner(stateService.getSubAgentTimeoutSeconds() != null ? stateService.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS, 10, 600);
+
+    // Web search tool settings
+    private final JBCheckBox enableWebSearchToolCheckbox =
+            new JBCheckBox("web_search - Uses the web search engines defined in the Web Search settings page",
+                    Boolean.TRUE.equals(stateService.getWebSearchAgentToolEnabled()));
 
     private static final String AUTO_DETECT_LABEL = "None (Auto-detect)";
     private static final String USE_DEFAULT_LABEL = "Use default";
@@ -130,6 +142,22 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             // Inline sub-section for run_command: shell environment configuration.
             if ("run_command".equals(toolName)) {
                 addCommandExecutionEnvironmentSubSection(contentPanel, gbc);
+            }
+
+            // Inline web_search toggle under fetch_page (requires a web search API key).
+            if ("fetch_page".equals(toolName)) {
+                addFullWidthRow(contentPanel, gbc, enableWebSearchToolCheckbox);
+                addHelpText(contentPanel, gbc,
+                        "Registers a 'web_search' tool so the agent can query the web directly. " +
+                        "Requires a Tavily or Google Custom Search API key in Settings → Web search.");
+                if (!isAnyWebSearchKeyConfigured()) {
+                    addFullWidthRow(contentPanel, gbc, buildWebSearchWarningPanel());
+                }
+            }
+
+            // Warning for semantic_search when RAG is not enabled or the project is not indexed.
+            if ("semantic_search".equals(toolName) && !isRagReadyForAgent()) {
+                addFullWidthRow(contentPanel, gbc, buildSemanticSearchWarningPanel());
             }
         }
 
@@ -734,6 +762,70 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "leave blank to keep the current behaviour.");
     }
 
+    private static boolean isAnyWebSearchKeyConfigured() {
+        DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
+        boolean tavily = s.isTavilySearchEnabled()
+                && s.getTavilySearchKey() != null && !s.getTavilySearchKey().isBlank();
+        boolean google = s.isGoogleSearchEnabled()
+                && s.getGoogleSearchKey() != null && !s.getGoogleSearchKey().isBlank()
+                && s.getGoogleCSIKey()    != null && !s.getGoogleCSIKey().isBlank();
+        return tavily || google;
+    }
+
+    private static JPanel buildWebSearchWarningPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        JBLabel warning = new JBLabel("No web search API key configured.");
+        warning.setForeground(JBColor.RED);
+        panel.add(warning);
+        HyperlinkLabel link = new HyperlinkLabel("Open Web search settings");
+        link.addHyperlinkListener(e -> {
+            Project[] projects = ProjectManager.getInstance().getOpenProjects();
+            Project p = projects.length > 0 ? projects[0] : null;
+            ShowSettingsUtil.getInstance().showSettingsDialog(p, "Web search");
+        });
+        panel.add(link);
+        return panel;
+    }
+
+    /** Mirrors the exact condition used by {@link com.devoxx.genie.service.agent.tool.BuiltInToolProvider}
+     *  to register the semantic_search tool: ragEnabled is the single source of truth (ragActivated
+     *  was collapsed in task-222). Also checks that ChromaDB actually has a collection for this
+     *  project, using the same name-sanitisation logic as ChromaEmbeddingService. */
+    private static boolean isRagReadyForAgent() {
+        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            return false;
+        }
+        Project[] projects = ProjectManager.getInstance().getOpenProjects();
+        if (projects.length == 0) return false;
+        Project project = projects[0];
+        String expectedCollection = project.getName().toLowerCase().replaceAll("[^a-z0-9-]", "-");
+        try {
+            List<ChromaCollection> collections = ChromaDBManager.getInstance(project).listCollections();
+            return collections.stream().anyMatch(c -> expectedCollection.equals(c.name()));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static JPanel buildSemanticSearchWarningPanel() {
+        boolean ragEnabled = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled());
+        String message = ragEnabled
+                ? "Project has not been indexed yet in RAG."
+                : "RAG is not enabled in settings.";
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        JBLabel warning = new JBLabel(message);
+        warning.setForeground(JBColor.RED);
+        panel.add(warning);
+        HyperlinkLabel link = new HyperlinkLabel("Open RAG settings");
+        link.addHyperlinkListener(e -> {
+            Project[] projects = ProjectManager.getInstance().getOpenProjects();
+            Project p = projects.length > 0 ? projects[0] : null;
+            ShowSettingsUtil.getInstance().showSettingsDialog(p, "RAG");
+        });
+        panel.add(link);
+        return panel;
+    }
+
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
         gbc.gridwidth = 2;
         gbc.gridx = 0;
@@ -784,7 +876,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || !Objects.equals(getSelectedProviderName(), state.getSubAgentModelProvider() != null ? state.getSubAgentModelProvider() : "")
                 || !Objects.equals(getSelectedModelName(), state.getSubAgentModelName() != null ? state.getSubAgentModelName() : "")
                 || isPerAgentConfigsModified()
-                || isToolCheckboxesModified();
+                || isToolCheckboxesModified()
+                || enableWebSearchToolCheckbox.isSelected() != Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled());
     }
 
     private boolean isToolCheckboxesModified() {
@@ -830,6 +923,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         }
         stateService.setDisabledAgentTools(disabledTools);
 
+        stateService.setWebSearchAgentToolEnabled(enableWebSearchToolCheckbox.isSelected());
+
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
@@ -858,6 +953,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         // Rebuild per-agent config rows from saved state
         initAgentConfigRows();
+
+        enableWebSearchToolCheckbox.setSelected(Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled()));
 
         // Reset tool checkboxes
         List<String> disabledTools = state.getDisabledAgentTools();

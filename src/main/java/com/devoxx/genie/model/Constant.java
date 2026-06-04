@@ -20,17 +20,17 @@ public class Constant {
     public static final String TEST_PROMPT = "Write a unit test for this code using JUnit.";
     public static final String REVIEW_PROMPT = "Review the selected code, can it be improved or are there any bugs?";
     public static final String EXPLAIN_PROMPT = "Break down the code in simple terms to help a junior developer grasp its functionality.";
-    public static final String TDG_PROMPT = "You are a professional Java developer. Give me a SINGLE FILE COMPLETE java implementation that will pass this test. Do not respond with a test. Give me only complete code and no snippets. Include imports and use the right package.";
     public static final String FIND_PROMPT = "Perform semantic search on the project files using RAG and show matching files. (NOTE: The /find command requires RAG to be enabled in settings)";
+    public static final String SEARCH_PROMPT = "Search the web for the given query using the configured web search engine. (NOTE: The /search command requires Web Search to be enabled in settings)";
     public static final String HELP_PROMPT = "Display help and available commands for the Genie Devoxx Plugin";
     public static final String INIT_PROMPT = "Initialize or recreate the DEVOXXGENIE.md file in the project root.";
 
     public static final String COMMAND_PREFIX = "/";
     public static final String TEST_COMMAND = "test";
     public static final String FIND_COMMAND = "find";
+    public static final String SEARCH_COMMAND = "search";
     public static final String REVIEW_COMMAND = "review";
     public static final String EXPLAIN_COMMAND = "explain";
-    public static final String TDG_COMMAND = "tdg";
     public static final String HELP_COMMAND = "help";
     public static final String INIT_COMMAND = "init";
 

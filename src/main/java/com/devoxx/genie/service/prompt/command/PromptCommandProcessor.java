@@ -31,6 +31,7 @@ public class PromptCommandProcessor {
         // Initialize all command processors
         this.commands = List.of(
             new FindCommand(),
+            new SearchCommand(),
             new HelpCommand(),
             new UserCommand()
         );
