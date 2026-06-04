@@ -2,7 +2,7 @@
 sidebar_position: 5
 title: Web Search Integration - DevoxxGenie for IntelliJ IDEA
 description: Augment LLM responses with real-time web search results using Google Custom Search or Tavily integration in DevoxxGenie.
-keywords: [devoxxgenie, web search, google custom search, tavily, search augmented, real-time search, llm web access]
+keywords: [devoxxgenie, web search, google custom search, tavily, search augmented, real-time search, llm web access, agent mode, web_search tool]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -146,16 +146,60 @@ Get information about specific software versions:
 What are the new features in Java 21 compared to Java 17?
 ```
 
+## Agent Mode: `web_search` Tool
+
+In addition to the chat-mode toggle, DevoxxGenie exposes web search as a first-class **agent tool** when Agent Mode is active. This lets the LLM decide autonomously when a live web search is needed — no manual toggle required.
+
+### Enabling the tool
+
+1. Open **Settings → DevoxxGenie → Agent Mode**
+2. Under **Built-in Tools**, check **web_search**
+3. Make sure at least one web search provider is configured (Tavily or Google Custom Search) in **Settings → DevoxxGenie → Web Search** — the agent tool reuses those keys
+
+If neither key is configured, the tool returns a descriptive error string and the agent falls back to other tools. No modal dialogs or broken agent loops.
+
+### How it works
+
+When the agent determines a query needs external information, it calls `web_search` directly:
+
+```
+Found 3 results for "langchain4j ChromaDB 0.6 migration":
+
+1. LangChain4j 0.37 release notes
+   URL: https://github.com/langchain4j/langchain4j/releases/tag/0.37.0
+   LangChain4j 0.37 updates the ChromaDB store to API v2 (0.6.x)...
+
+2. ...
+```
+
+The tool returns raw structured results — title, URL, and snippet — so the agent can reason over sources without an extra summarisation step. Provider selection is automatic: Tavily is preferred when its key is present; Google Custom Search is the fallback.
+
+When a search result looks promising, the agent can follow up with the `fetch_page` tool, which fetches the full content of a webpage given a URL — making `web_search` → `fetch_page` a natural two-step pattern for retrieving and reading external documentation.
+
+Like `semantic_search`, the `web_search` tool is classified as **read-only** and is therefore auto-approved when the "Auto-approve read-only tools" setting is on.
+
+### The three-tier retrieval stack
+
+With Agent Mode, web search becomes one layer of a complete retrieval hierarchy:
+
+| Tool | Best for |
+|------|----------|
+| `semantic_search` | Conceptual queries over your indexed codebase |
+| `search_files` | Exact-string or regex lookups in project files |
+| `web_search` | Documentation, release notes, external references |
+
+The LLM selects the right tier automatically based on the query. You can enable or disable each tool independently under **Settings → Agent Mode → Built-in Tools**.
+
 ## Web Search and RAG
 
 Web search complements the RAG feature:
 
-- **RAG**: Retrieves information from your project codebase
-- **Web Search**: Retrieves information from the internet
+- **RAG** (`semantic_search` tool): Retrieves information from your indexed project codebase
+- **Web Search**: Retrieves up-to-date information from the internet
 
 You can use both together for the most comprehensive context:
 
-1. Enable both RAG and web search
+1. Enable both RAG and web search (and Agent Mode for the full tool stack)
 2. Ask questions that relate to both your code and external information
 3. DevoxxGenie will combine insights from both sources
 

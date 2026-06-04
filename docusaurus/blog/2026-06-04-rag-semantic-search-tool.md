@@ -2,10 +2,10 @@
 slug: rag-semantic-search-tool
 title: "Why We Turned RAG Into a Tool"
 authors: [stephanj]
-tags: [rag, semantic search, agent mode, chromadb, ollama, intellij idea, open source]
+tags: [rag, semantic search, web search, agent mode, chromadb, ollama, tavily, intellij idea, open source]
 date: 2026-06-04
-description: When agent-mode LLMs started ignoring our carefully injected semantic context, we stopped wallpapering prompts and exposed RAG as a proper tool. Here's how we built semantic_search and why agentic retrieval needs to be orchestrated, not injected.
-keywords: [devoxxgenie, rag, semantic search, agent mode, chromadb, ollama, nomic-embed-text, retrieval augmented generation, intellij plugin]
+description: When agent-mode LLMs started ignoring our carefully injected semantic context, we stopped wallpapering prompts and exposed RAG as a proper tool. Here's how we built semantic_search, web_search, and why agentic retrieval needs to be orchestrated, not injected.
+keywords: [devoxxgenie, rag, semantic search, web search, agent mode, chromadb, ollama, nomic-embed-text, tavily, google custom search, retrieval augmented generation, intellij plugin]
 image: /img/rag-feature.png
 ---
 
@@ -79,9 +79,45 @@ The implementation is thin by design — it reuses the existing RAG stack rather
 
 Registration happens in `BuiltInToolProvider`: the tool is added only when `ragEnabled` is true. Suppression of passive injection lives in `MessageCreationService.shouldInjectPassiveRagContext()`. The `<RAG_INSTRUCTION>` fragment is injected by `ChatMemoryManager`. Each concern is separated, so the feature can be disabled or extended without touching the core RAG pipeline.
 
+## A third retrieval tier: web_search
+
+`semantic_search` covers your local codebase. `search_files` covers exact strings. But sometimes the right answer isn't in the project at all — it's in a library changelog, a Stack Overflow thread, or a vendor API reference. That's the gap the new **`web_search` tool** fills (task-223).
+
+When `web_search` is enabled in **Settings → Agent Mode → Built-in Tools**, the agent gains access to live web search backed by whichever provider you've already configured in **Settings → Web Search**: [Tavily](https://tavily.com) or [Google Custom Search](https://programmablesearchengine.google.com). No new API key management — it reuses the keys you've already set up for the `/search` slash command.
+
+The tool returns raw structured results — title, URL, and snippet — so the agent can reason over the sources directly:
+
+```
+Found 3 results for "langchain4j ChromaDB 0.6 migration":
+
+1. LangChain4j 0.37 release notes
+   URL: https://github.com/langchain4j/langchain4j/releases/tag/0.37.0
+   ChromaDB store updated to API v2 (0.6.x). Collection creation now uses ...
+
+2. ...
+```
+
+The tool picks the provider automatically: Tavily is tried first if its key is present; Google Custom Search is used as the fallback. If neither is configured, the tool returns a descriptive error string — the agent degrades gracefully, just like `semantic_search` does when ChromaDB is unreachable.
+
+When a result looks worth reading in full, the agent can follow up with `fetch_page`, which fetches the complete content of a webpage given a URL — making `web_search` → `fetch_page` a natural two-step pattern for retrieving and reading external documentation.
+
+Like its sibling tools, `web_search` is classified as **read-only** and is therefore auto-approved — no per-call confirmation dialog when auto-approve read-only is on.
+
+### The three-tier retrieval stack
+
+With all three tools enabled, the agent now has a complete retrieval stack:
+
+| Tool | Best for |
+|------|----------|
+| `semantic_search` | Conceptual queries over your indexed codebase |
+| `search_files` | Exact-string or regex lookups in project files |
+| `web_search` | Documentation, release notes, external references |
+
+The LLM decides which tier to invoke based on the query. Conceptual questions about your own code go to `semantic_search`. Grep-style lookups go to `search_files`. Anything that requires up-to-date external knowledge goes to `web_search`.
+
 ## What changed, what didn't
 
-The RAG pipeline itself is unchanged. It still indexes via Ollama's `nomic-embed-text`, still stores vectors in ChromaDB v0.6.2, still filters low-content chunks at index time, still debounces re-indexing on save. What changed is the **interface surface**: from prompt injection to tool contract.
+The RAG pipeline itself is unchanged. It still indexes via Ollama's `nomic-embed-text`, still stores vectors in ChromaDB v0.6.2, still filters low-content chunks at index time, still debounces re-indexing on save. What changed is the **interface surface**: from prompt injection to tool contract — and now, a third tool tier that reaches beyond the local project entirely.
 
 If you're already using RAG in chat mode, nothing breaks. If you turn on Agent mode, the same index becomes queryable on demand. And if you want the gory setup details — Docker, Ollama, indexing, configuration — the [RAG docs](/docs/features/rag) have you covered.
 
