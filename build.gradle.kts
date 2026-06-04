@@ -140,6 +140,19 @@ tasks.register<JavaExec>("ragQuery") {
     standardInput = System.`in`
 }
 
+// Diagnostic CLI for the web search integration. Exercises Tavily/Google + LLM pipeline
+// without the IntelliJ service layer.
+// Examples:
+//   TAVILY_API_KEY=xxx OPENAI_API_KEY=yyy ./gradlew webSearch --args="tavily 'latest news on Iran'"
+//   GOOGLE_API_KEY=xxx GOOGLE_CSI_KEY=yyy OPENAI_API_KEY=zzz ./gradlew webSearch --args="google 'IntelliJ 2025'"
+tasks.register<JavaExec>("webSearch") {
+    group = "verification"
+    description = "Test the web search pipeline from the command line (see WebSearchCli for usage)."
+    mainClass.set("com.devoxx.genie.service.prompt.websearch.cli.WebSearchCli")
+    classpath = sourceSets["main"].runtimeClasspath
+    standardInput = System.`in`
+}
+
 val generatedBlogResourcesDir = layout.buildDirectory.dir("generated-resources/blog")
 
 sourceSets.named("main") {
