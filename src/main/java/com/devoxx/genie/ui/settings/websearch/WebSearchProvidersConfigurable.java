@@ -78,7 +78,9 @@ public class WebSearchProvidersConfigurable implements Configurable {
     public void apply() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
-        settings.setIsWebSearchEnabled(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
+        boolean isWebSearchEnabled = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected();
+
+        settings.setIsWebSearchEnabled(isWebSearchEnabled);
         settings.setTavilySearchEnabled(webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected());
         settings.setTavilySearchKey(new String(webSearchProvidersComponent.getTavilySearchApiKeyField().getPassword()));
         settings.setGoogleSearchEnabled(webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected());
@@ -88,6 +90,13 @@ public class WebSearchProvidersConfigurable implements Configurable {
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
+
+        // Always publish so the Web switch in SearchOptionsPanel reflects the current state.
+        // The ItemListener in WebSearchProvidersComponent already mutates stateService directly,
+        // so comparing oldValue/newValue here would always see them as equal.
+        project.getMessageBus()
+                .syncPublisher(AppTopics.WEB_SEARCH_STATE_TOPIC)
+                .onWebSearchStateChange(isWebSearchEnabled);
     }
 
     /**
