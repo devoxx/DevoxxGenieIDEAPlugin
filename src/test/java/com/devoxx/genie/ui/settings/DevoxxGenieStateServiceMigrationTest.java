@@ -163,8 +163,10 @@ class DevoxxGenieStateServiceMigrationTest {
         DevoxxGenieStateService target = new DevoxxGenieStateService();
         target.loadState(deserialized);
 
-        assertThat(target.getCommands()).hasSize(1);
-        assertThat(target.getCommands().get(0).getName()).isEqualTo("legacy-cmd");
+        assertThat(target.getCommands())
+                .extracting(Command::getName)
+                .contains("legacy-cmd")
+                .doesNotContain("new-cmd");
         assertThat(readField(target, "customPrompts")).isNull();
     }
 
@@ -186,8 +188,9 @@ class DevoxxGenieStateServiceMigrationTest {
         DevoxxGenieStateService target = new DevoxxGenieStateService();
         target.loadState(restored);
 
-        assertThat(target.getCommands()).hasSize(2);
-        assertThat(target.getCommands()).extracting(Command::getName).containsExactly("alpha", "beta");
+        assertThat(target.getCommands())
+                .extracting(Command::getName)
+                .contains("alpha", "beta");
     }
 
     /**

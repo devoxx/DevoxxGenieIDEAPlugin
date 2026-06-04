@@ -1,9 +1,12 @@
 package com.devoxx.genie.ui.settings.websearch;
 
+import com.devoxx.genie.ui.listener.WebSearchStateListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +21,7 @@ import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -45,6 +49,11 @@ class WebSearchProvidersConfigurableTest {
 
         stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
         stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+
+        MessageBus messageBus = mock(MessageBus.class);
+        WebSearchStateListener noopListener = enabled -> {};
+        lenient().when(project.getMessageBus()).thenReturn(messageBus);
+        lenient().when(messageBus.syncPublisher(AppTopics.WEB_SEARCH_STATE_TOPIC)).thenReturn(noopListener);
 
         configurable = new WebSearchProvidersConfigurable(project);
     }
@@ -199,13 +208,14 @@ class WebSearchProvidersConfigurableTest {
 
         @Test
         void shouldDetectWebSearchEnabledChange() {
-            // Note: The WebSearchProvidersComponent listeners update the stateService
-            // directly on checkbox change (setIsWebSearchEnabled), so the checkbox change
-            // propagates to the stateService. To test isModified, we need to change the
-            // state service value after the component was constructed.
+            // isModified() for the enable checkbox compares the checkbox state against the
+            // snapshot (initialIsWebSearchEnabled) taken when the configurable was created.
+            // Changing the checkbox fires the ItemListener which also updates stateService,
+            // but isModified() still sees a difference because the snapshot stays at the
+            // original value.
             WebSearchProvidersComponent component = getComponent();
-            // Change the state after construction, so component still shows old value
-            stateService.setIsWebSearchEnabled(!component.getEnableWebSearchCheckbox().isSelected());
+            boolean original = component.getEnableWebSearchCheckbox().isSelected();
+            component.getEnableWebSearchCheckbox().setSelected(!original);
             assertThat(configurable.isModified()).isTrue();
         }
 

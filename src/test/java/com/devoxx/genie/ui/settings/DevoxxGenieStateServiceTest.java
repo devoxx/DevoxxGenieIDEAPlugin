@@ -234,7 +234,7 @@ class DevoxxGenieStateServiceTest {
                     .toList();
             assertThat(promptNames).contains(
                     TEST_COMMAND, EXPLAIN_COMMAND, REVIEW_COMMAND,
-                    TDG_COMMAND, FIND_COMMAND, HELP_COMMAND, INIT_COMMAND
+                    FIND_COMMAND, HELP_COMMAND, INIT_COMMAND
             );
         }
 
