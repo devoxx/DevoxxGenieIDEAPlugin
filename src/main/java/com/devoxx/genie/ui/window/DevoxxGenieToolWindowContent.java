@@ -227,17 +227,14 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
             // Subscribe to file references events and forward them to the conversation panel
             MessageBusUtil.subscribe(connection, AppTopics.FILE_REFERENCES_TOPIC, promptOutputPanel.getConversationPanel());
 
-            // Search options panel : Set up message bus listeners for visibility changes
-            MessageBusUtil.subscribe(connection, AppTopics.RAG_STATE_TOPIC, enabled -> {
-                InputSwitch ragSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(0);
-                ragSwitch.setVisible(enabled);
-                ragSwitch.setSelected(enabled);
-                submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
-            });
+            // Search options panel: RAG no longer has a per-session toggle (removed in task-222),
+            // so only the web search switch remains at index 0.
             MessageBusUtil.subscribe(connection, AppTopics.WEB_SEARCH_STATE_TOPIC, enabled -> {
-                InputSwitch webSearchSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(1);
+                InputSwitch webSearchSwitch = submitPanel.getPromptInputArea().getSearchOptionsPanel().getSwitches().get(0);
                 webSearchSwitch.setVisible(enabled);
-                webSearchSwitch.setSelected(enabled);
+                if (!enabled) {
+                    webSearchSwitch.setSelected(false);
+                }
                 submitPanel.getPromptInputArea().getSearchOptionsPanel().updatePanelVisibility();
             });
 

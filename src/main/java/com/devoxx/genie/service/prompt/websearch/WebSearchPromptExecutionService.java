@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.prompt.websearch;
 
+import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -19,6 +20,9 @@ import java.util.Optional;
 
 @Slf4j
 public class WebSearchPromptExecutionService {
+
+    // Package-private to allow injection in tests
+    ChatModelProvider chatModelProvider = new ChatModelProvider();
 
     public static WebSearchPromptExecutionService getInstance() {
         return ApplicationManager.getApplication().getService(WebSearchPromptExecutionService.class);
@@ -63,8 +67,16 @@ public class WebSearchPromptExecutionService {
             .maxResults(DevoxxGenieStateService.getInstance().getMaxSearchResults())
             .build();
 
+        // AiServices with a synchronous String-returning method requires chatModel, not streamingChatModel.
+        // In streaming mode only streamingChatModel is set on the context, so we create a non-streaming
+        // model from the same provider/settings on demand.
+        dev.langchain4j.model.chat.ChatModel chatModel = chatMessageContext.getChatModel();
+        if (chatModel == null) {
+            chatModel = chatModelProvider.getChatLanguageModel(chatMessageContext);
+        }
+
         SearchWebsite website = AiServices.builder(SearchWebsite.class)
-            .chatModel(chatMessageContext.getChatModel())
+            .chatModel(chatModel)
             .contentRetriever(contentRetriever)
             .build();
 
