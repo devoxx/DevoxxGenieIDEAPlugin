@@ -16,9 +16,17 @@ public class WebSearchProvidersConfigurable implements Configurable {
     private final Project project;
     private final WebSearchProvidersComponent webSearchProvidersComponent;
 
+    // Snapshot of isWebSearchEnabled taken when the settings dialog opens (reset()).
+    // The ItemListener in WebSearchProvidersComponent mutates stateService immediately on every
+    // checkbox change, so stateService can no longer be used as the "before" value in isModified().
+    // Comparing against this snapshot ensures isModified() returns true when the user actually
+    // toggled the checkbox, so IntelliJ calls apply() and the WEB_SEARCH_STATE_TOPIC is published.
+    private boolean initialIsWebSearchEnabled;
+
     public WebSearchProvidersConfigurable(Project project) {
         this.project = project;
         webSearchProvidersComponent = new WebSearchProvidersComponent();
+        initialIsWebSearchEnabled = DevoxxGenieStateService.getInstance().getIsWebSearchEnabled();
     }
 
     /**
@@ -49,16 +57,11 @@ public class WebSearchProvidersConfigurable implements Configurable {
     public boolean isModified() {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        boolean isModified = false;
+        // Use initialIsWebSearchEnabled (not stateService) for the enable checkbox: the ItemListener
+        // in WebSearchProvidersComponent mutates stateService live, so stateService always equals
+        // the checkbox and would make this check always return false.
+        boolean isModified = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != initialIsWebSearchEnabled;
 
-        isModified |= !stateService.getIsWebSearchEnabled().equals(webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected());
-
-        webSearchProvidersComponent.getEnableWebSearchCheckbox().addItemListener(event -> {
-            String text = webSearchProvidersComponent.getEnableWebSearchCheckbox().getText();
-            stateService.setIsWebSearchEnabled(text.equalsIgnoreCase("true"));
-        });
-
-        isModified |= webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != stateService.getIsWebSearchEnabled();
         isModified |= stateService.isTavilySearchEnabled() != webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected();
         isModified |= isFieldModified(webSearchProvidersComponent.getTavilySearchApiKeyField(), stateService.getTavilySearchKey());
 
@@ -105,6 +108,10 @@ public class WebSearchProvidersConfigurable implements Configurable {
     @Override
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+
+        // Refresh snapshot before resetting the checkbox (the checkbox's ItemListener will fire
+        // and update stateService, but the snapshot stays anchored to the persisted value).
+        initialIsWebSearchEnabled = settings.getIsWebSearchEnabled();
 
         webSearchProvidersComponent.getEnableWebSearchCheckbox().setSelected(settings.getIsWebSearchEnabled());
 
