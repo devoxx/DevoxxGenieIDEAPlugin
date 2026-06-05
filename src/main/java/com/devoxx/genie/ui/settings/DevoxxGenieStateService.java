@@ -912,13 +912,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             LOG.warn("CredentialService unavailable; deferring plaintext-credential migration", t);
             return;
         }
-        if (!service.isAvailable()) {
-            // PasswordSafe not reachable in this process — leave plaintext in place so the
-            // next normal IDE startup can complete the migration.
+        if (service == null || !service.isAvailable()) {
+            // CredentialService not registered (getService may return null on some IntelliJ
+            // versions / test environments) or PasswordSafe not reachable in this process —
+            // leave plaintext in place so the next normal IDE startup can complete the migration.
             return;
         }
 
         int migrated = 0;
+        int skipped = 0;
         int failed = 0;
         for (CredentialKey key : CredentialKey.values()) {
             try {
@@ -931,6 +933,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                     if (existing == null || existing.isEmpty()) {
                         service.setCredential(key, legacy);
                         migrated++;
+                    } else {
+                        // Already present in PasswordSafe (e.g. a retry after partial failure).
+                        skipped++;
                     }
                     // Wipe plaintext copy whether or not we overwrote PasswordSafe.
                     field.set(this, "");
@@ -948,13 +953,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             } catch (Throwable t) {
                 LOG.warn("Failed to flush settings after credential migration", t);
             }
-            LOG.info("Credential migration complete: migrated=" + migrated);
+            LOG.info("Credential migration complete: migrated=" + migrated
+                    + " skipped=" + skipped);
         } else {
             // Leave the flag false so the next startup retries. Do NOT call saveSettings():
             // the un-wiped plaintext fields still hold the values we need on retry, and
             // saving now would persist the partial state — fine for security but wasteful.
             LOG.warn("Credential migration partially failed: migrated=" + migrated
-                    + " failed=" + failed + "; will retry on next startup");
+                    + " skipped=" + skipped + " failed=" + failed + "; will retry on next startup");
         }
     }
 

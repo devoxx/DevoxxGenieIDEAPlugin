@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Enumeration of every secret credential stored by DevoxxGenie.
  * <p>
- * The {@link #subKey()} value is, by design, equal to the exact Java field name
+ * The {@link #getSubKey()} value is, by design, equal to the exact Java field name
  * on {@link com.devoxx.genie.ui.settings.DevoxxGenieStateService} that used to
  * hold the plaintext value. This 1:1 mapping is used by the credential
  * migration routine to locate the legacy field via reflection.
@@ -57,9 +57,6 @@ public enum CredentialKey {
      */
     public @NotNull CredentialAttributes attributes() {
         return new CredentialAttributes(
-                CredentialAttributesKt.generateServiceName(SERVICE_NAME, subKey),
-                null,
-                null,
-                false);
+                CredentialAttributesKt.generateServiceName(SERVICE_NAME, subKey));
     }
 }

@@ -18,7 +18,11 @@ public final class PasswordSafeCredentialService implements CredentialService {
 
     private static final Logger LOG = Logger.getInstance(PasswordSafeCredentialService.class);
 
-    /** Used only when PasswordSafe is unavailable; otherwise serves as a write-through cache. */
+    /**
+     * Fallback store used when PasswordSafe is unavailable. It also holds a write-side cache
+     * of credentials set during this JVM lifetime (populated by {@link #setCredential}, not by
+     * reads), so a value remains readable even if a later PasswordSafe {@code get()} fails.
+     */
     private final Map<CredentialKey, String> memoryFallback = new EnumMap<>(CredentialKey.class);
 
     private final boolean passwordSafeAvailable;
