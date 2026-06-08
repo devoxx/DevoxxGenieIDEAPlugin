@@ -70,10 +70,14 @@
     <change-notes><![CDATA[
         <h2>v1.7.1</h2>
         <UL>
+                    <LI>feat(agent): add web_search built-in tool to agent mode (task-223, #1079)</LI>
+                    <LI>feat(commands): add /search slash command and remove the obsolete /tdg command (#1079)</LI>
                     <LI>security: migrate API keys from plaintext settings XML to IntelliJ PasswordSafe (OS keychain) (#1046)</LI>
                     <LI>security: mark API key getters/setters @Transient so secrets are never re-serialized to XML</LI>
                     <LI>fix: correct @Transient migration bug, add partial-failure guard and thread safety</LI>
                     <LI>fix: idempotent migration retry via startup activity with all-or-nothing migration flag</LI>
+                    <LI>fix(websearch): correct Web switch visibility and isModified() for the Web Search toggle (#1078)</LI>
+                    <LI>fix(openai): correct GPT-5.5 temperature validation (#1074, #1075)</LI>
                 </UL>
 <h2>v1.7.0</h2>
         <UL>

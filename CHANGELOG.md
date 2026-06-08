@@ -2,6 +2,13 @@
 
 ## v1.7.1 - 2026-06-08
 
+### Added
+- feat(agent): add `web_search` built-in tool to agent mode — the LLM can search the web via the configured search engine when agent mode is on; treated as read-only for approval (task-223, #1079)
+- feat(commands): add `/search` slash command for ad-hoc web searches (requires Web Search enabled in settings) (#1079)
+
+### Changed
+- feat(commands): remove the obsolete `/tdg` command; removed defaults are pruned and new defaults merged on `loadState` so existing users see the change automatically (#1079)
+
 ### Security
 - fix: migrate API keys from plaintext `DevoxxGenieSettingsPlugin.xml` to IntelliJ PasswordSafe (OS keychain) — keys are no longer stored in plaintext on disk (#1046)
 - API key getters/setters are now `@Transient` so secrets are never re-serialized back into the settings XML
@@ -9,9 +16,12 @@
 ### Fixed
 - fix: correct `@Transient` migration bug, add partial-failure guard and thread safety to the credential migration
 - fix: address PR #1046 review findings — idempotent retry via startup activity and an all-or-nothing `credentialsMigratedV1` flag
+- fix(websearch): correct the Web switch visibility in `SearchOptionsPanel` and fix `isModified()` always returning false for the Web Search enable toggle (#1078)
+- fix(openai): correct GPT-5.5 temperature validation (#1074, #1075)
 
 ### Contributors
 - @stephanj
+- @mihaibuba
 
 ## v1.7.0 - 2026-05-29
 
