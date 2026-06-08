@@ -21,8 +21,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,6 +99,61 @@ fun WelcomeScreen(
             text = "Your AI Code Assistant",
             style = typography.body1.copy(color = colors.textSecondary),
         )
+
+        // Devoxx Belgium CFP banner — auto-hides after the CFP closes
+        // (2026-07-17 23:59 CEST, i.e. Europe/Brussels summer time).
+        val cfpOpen = remember {
+            val deadline = java.time.ZonedDateTime.of(
+                2026, 7, 17, 23, 59, 0, 0, java.time.ZoneId.of("Europe/Brussels"),
+            ).toInstant()
+            java.time.Instant.now().isBefore(deadline)
+        }
+        if (cfpOpen) {
+            Spacer(Modifier.height(12.dp))
+            val bannerShape = RoundedCornerShape(8.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(bannerShape)
+                    .background(DevoxxOrange.copy(alpha = 0.12f), bannerShape)
+                    .border(1.dp, DevoxxOrange.copy(alpha = 0.45f), bannerShape)
+                    .clickable { BrowserUtil.browse("https://devoxx.be") }
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BasicText(
+                    text = "📣",
+                    style = typography.body1.copy(fontSize = 18.sp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    BasicText(
+                        text = "Devoxx Belgium CFP now open",
+                        style = typography.body2.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = DevoxxOrange,
+                        ),
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    BasicText(
+                        text = buildAnnotatedString {
+                            append("Share your agentic experience with the Devoxx community! More info at ")
+                            withStyle(
+                                SpanStyle(
+                                    color = DevoxxOrange,
+                                    fontWeight = FontWeight.Bold,
+                                    textDecoration = TextDecoration.Underline,
+                                ),
+                            ) {
+                                append("devoxx.be")
+                            }
+                        },
+                        style = typography.caption.copy(color = colors.textSecondary),
+                    )
+                }
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
 
