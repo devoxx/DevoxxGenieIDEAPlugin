@@ -68,7 +68,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v1.7.0</h2>
+        <h2>v1.7.1</h2>
+        <UL>
+                    <LI>security: migrate API keys from plaintext settings XML to IntelliJ PasswordSafe (OS keychain) (#1046)</LI>
+                    <LI>security: mark API key getters/setters @Transient so secrets are never re-serialized to XML</LI>
+                    <LI>fix: correct @Transient migration bug, add partial-failure guard and thread safety</LI>
+                    <LI>fix: idempotent migration retry via startup activity with all-or-nothing migration flag</LI>
+                </UL>
+<h2>v1.7.0</h2>
         <UL>
                     <LI>feat: add support for IntelliJ 2026.2 EAP</LI>
                     <LI>feat(rag): semantic_search agent tool + single ragEnabled switch (task-221, task-222)</LI>

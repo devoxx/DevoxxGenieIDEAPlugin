@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.1 - 2026-06-08
+
+### Security
+- fix: migrate API keys from plaintext `DevoxxGenieSettingsPlugin.xml` to IntelliJ PasswordSafe (OS keychain) — keys are no longer stored in plaintext on disk (#1046)
+- API key getters/setters are now `@Transient` so secrets are never re-serialized back into the settings XML
+
+### Fixed
+- fix: correct `@Transient` migration bug, add partial-failure guard and thread safety to the credential migration
+- fix: address PR #1046 review findings — idempotent retry via startup activity and an all-or-nothing `credentialsMigratedV1` flag
+
+### Contributors
+- @stephanj
+
 ## v1.7.0 - 2026-05-29
 
 ### Added
