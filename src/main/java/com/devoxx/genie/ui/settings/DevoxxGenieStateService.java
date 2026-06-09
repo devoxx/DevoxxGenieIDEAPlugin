@@ -346,6 +346,33 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     /** Number of paraphrased variants to generate per query when expansion is enabled. */
     private Integer ragQueryExpansionN = 3;
 
+    // RAG reranker settings (task-214)
+    /**
+     * When true, retrieval results are reordered by a reranker model after the
+     * vector store lookup (and any RRF fusion) and before reaching the prompt. The
+     * reranker sees a shortlist of {@link #rerankerShortlistSize} candidates and
+     * returns the top {@link #indexerMaxResults} for the prompt.
+     */
+    private Boolean rerankResults = false;
+    /**
+     * Ollama model name used by the reranker. Defaults to {@code llama3.2:1b} — a small,
+     * fast generative chat model. The reranker uses chat-completion scoring against
+     * {@code /api/generate}; cross-encoder rerank models such as {@code bge-reranker}
+     * <strong>will not work</strong> because they are served via {@code /api/embeddings}.
+     */
+    private String rerankerModelName = "llama3.2:1b";
+    /**
+     * How many candidates retrieval returns to the reranker. The reranker then
+     * truncates to {@link #indexerMaxResults} for the prompt.
+     */
+    private Integer rerankerShortlistSize = 30;
+    /**
+     * Wall-clock budget for the entire reranker call (covers the whole shortlist).
+     * On timeout, the original retrieval order is used and a WARN-level RAG log
+     * entry records the fallback.
+     */
+    private Integer rerankerTimeoutMs = 2000;
+
     /**
      * Directories the RAG indexer should skip, in addition to the global "Scan & Copy Project"
      * exclusion list ({@link #excludedDirectories}). Matched by directory name anywhere in a
