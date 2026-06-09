@@ -72,8 +72,11 @@
         <UL>
                     <LI>feat(agent): add PSI call-graph navigation agent tools — call_hierarchy, type_hierarchy and related code-navigation tools (task-229, #1093)</LI>
                     <LI>feat(agent): fine-grained enable/disable per PSI tool in Settings (task-229, #1093)</LI>
+                    <LI>fix(agent): keep intermediate reasoning and tool steps visible in streaming chat (#1095)</LI>
+                    <LI>fix(agent): gate tool-activity entries in chat output behind the "show tool activity" setting (#1095)</LI>
                     <LI>build: migrate to platform-bundled Compose and raise minimum IDE to 2025.3.3 (#1089)</LI>
                     <LI>build: remove duplicate Netty version declaration (#1091)</LI>
+                    <LI>refactor(chatmodel): replace provider switch with EnumMap registry (#1094)</LI>
                 </UL>
         <h2>v1.7.2</h2>
         <UL>

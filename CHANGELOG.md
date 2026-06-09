@@ -6,9 +6,15 @@
 - feat(agent): add PSI call-graph navigation agent tools — lets the LLM traverse caller/callee and type hierarchies for more accurate code navigation (task-229, #1093)
 - feat(agent): fine-grained enable/disable per PSI tool in Settings, so each PSI navigation tool can be toggled individually (task-229, #1093)
 
+### Fixed
+- fix(agent): keep intermediate reasoning visible in streaming chat — agent thinking/tool steps were silently dropped from the chat view (#1095)
+- fix(agent): gate tool-activity entries in chat output behind the "show tool activity" setting (#1095)
+
 ### Changed
 - build: migrate to platform-bundled Compose and raise minimum supported IDE to 2025.3.3 (#1089)
 - build: remove duplicate Netty version declaration (#1091)
+- refactor(chatmodel): replace provider switch-statement with EnumMap registry for cleaner factory lookup (#1094)
+- refactor(agent): extract system-prompt section builders and implementation formatting helper for readability
 
 ### Documentation
 - docs(task-229): add design spec for fine-grained PSI tool control

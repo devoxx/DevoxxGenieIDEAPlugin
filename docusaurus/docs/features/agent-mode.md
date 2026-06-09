@@ -203,7 +203,10 @@ With PSI tools, the agent can navigate your codebase the same way you do in the 
 
 ### Enabling PSI Tools
 
-PSI tools are **enabled by default**. You can toggle them in **Settings > Tools > DevoxxGenie > Agent > PSI Tools (Code Intelligence)**.
+PSI tools are **enabled by default**. In **Settings > Tools > DevoxxGenie > Agent > PSI Tools (Code Intelligence)** you can:
+
+- Turn the **master "Enable PSI Tools" toggle** off to disable the entire group at once.
+- Leave the master toggle on and **uncheck individual tools** to hide only specific tools from the agent, while keeping the rest active.
 
 :::tip
 PSI tools are read-only and don't require user approval. They are also available to parallel sub-agents for deeper exploration.
@@ -248,7 +251,18 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| **Enable PSI Tools** | Enabled | Enables IDE-powered code intelligence tools (find_symbols, document_symbols, find_references, find_definition, find_implementations) |
+| **Enable PSI Tools** | Enabled | Master toggle — enables the entire group of IDE-powered code intelligence tools. Turning this off disables all PSI tools regardless of the per-tool settings below. |
+| ↳ `find_symbols` | Enabled | Search for symbol definitions by name |
+| ↳ `document_symbols` | Enabled | List the symbol structure of a file |
+| ↳ `find_references` | Enabled | Find all usages of a symbol |
+| ↳ `find_definition` | Enabled | Navigate from a usage to its definition |
+| ↳ `find_implementations` | Enabled | Find implementations of an interface or abstract class |
+| ↳ `find_callees` | Enabled | List the methods a given method calls (Java) |
+| ↳ `trace_call_chains` | Enabled | Trace caller/callee call chains between methods (Java) |
+| ↳ `calculate_complexity` | Enabled | Compute cyclomatic complexity of Java methods |
+| ↳ `find_dead_code` | Enabled | Report unreferenced symbols as heuristic dead-code candidates (Java) |
+
+Individual per-tool checkboxes are greyed out when the master toggle is off, so your per-tool preferences are preserved when you re-enable the group.
 
 ### Test Execution Settings
 
