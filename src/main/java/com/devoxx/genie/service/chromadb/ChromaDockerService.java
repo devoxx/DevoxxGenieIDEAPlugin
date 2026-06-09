@@ -185,10 +185,12 @@ public final class ChromaDockerService {
 
             if (existingContainers.isEmpty()) {
                 Integer port = DevoxxGenieStateService.getInstance().getIndexerPort();
+                String daemonOs = dockerClient.infoCmd().exec().getOsType();
+                String dockerVolumePath = toDockerVolumePath(daemonOs, volumePath);
 
                 HostConfig hostConfig = new HostConfig()
                         .withPortBindings(new PortBinding(Ports.Binding.bindPort(8000), ExposedPort.tcp(port)))
-                        .withBinds(new Bind(volumePath, new Volume("/chroma/chroma")));
+                        .withBinds(new Bind(dockerVolumePath, new Volume("/chroma/chroma")));
 
                 // Create new container if none exists
                 String containerId;
@@ -251,6 +253,34 @@ public final class ChromaDockerService {
 
         ApplicationManager.getApplication().invokeLater(() ->
                 deleteCollectionData(collectionPath, collectionName));
+    }
+
+    /**
+     * Converts a JVM volume path to a Docker-daemon-compatible path.
+     *
+     * <p>When IntelliJ runs on Windows and Docker is backed by a WSL Linux daemon,
+     * {@code PathManager.getSystemPath()} returns a Windows-style path like
+     * {@code C:\Users\...\DevoxxGenie\chromadb\data-XYZ}. The Linux daemon rejects
+     * this as an invalid volume specification. WSL mounts Windows drives under
+     * {@code /mnt/<drive>/}, so the path is converted to {@code /mnt/c/Users/...}.
+     *
+     * <p>On a native Windows daemon or a native Linux JVM + daemon the path is
+     * returned unchanged.
+     *
+     * @param daemonOs  the OS type reported by {@code docker info} (e.g. "linux", "windows")
+     * @param jvmPath   the absolute path produced by the JVM (may be Windows- or Unix-style)
+     * @return a path the Docker daemon can mount as a bind volume
+     */
+    static String toDockerVolumePath(String daemonOs, String jvmPath) {
+        if ("linux".equalsIgnoreCase(daemonOs)
+                && jvmPath.length() >= 2
+                && Character.isLetter(jvmPath.charAt(0))
+                && jvmPath.charAt(1) == ':') {
+            char drive = Character.toLowerCase(jvmPath.charAt(0));
+            String rest = jvmPath.substring(2).replace('\\', '/');
+            return "/mnt/" + drive + rest;
+        }
+        return jvmPath;
     }
 
     private void deleteCollectionData(@NotNull Path collectionPath, @NotNull String collectionName) {

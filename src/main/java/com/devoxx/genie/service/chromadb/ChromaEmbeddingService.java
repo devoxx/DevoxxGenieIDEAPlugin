@@ -8,6 +8,7 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.chroma.ChromaApiVersion;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,9 @@ public final class ChromaEmbeddingService {
         String url = "http://localhost:" + stateService.getIndexerPort();
         try {
             this.embeddingStore = ChromaEmbeddingStore.builder()
+                    .apiVersion(ChromaApiVersion.V2)
+                    .tenantName("default_tenant")
+                    .databaseName("default_database")
                     .baseUrl(url)
                     .logRequests(true)
                     .logResponses(true)
