@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -169,6 +170,55 @@ class StreamingResponseHandlerTest {
         verify(mockContext).setAiMessage(aiMessage);
         assertThat(onCompleteCalled.get()).isTrue();
         assertThat(completedResponse.get()).isEqualTo(response);
+    }
+
+    @Test
+    void onCompleteResponse_afterIntermediateAgentText_preservesFullStreamedText() {
+        StreamingResponseHandler handler = createHandler();
+
+        // Agent mode: the LLM streams intermediate reasoning before a tool call (turn 1)...
+        handler.onPartialResponse("Great question! Let me take a look at the code first.");
+        // ...the tool executes, then the final answer is streamed (turn 2).
+        handler.onPartialResponse("\n\nHere is the improved factory.");
+
+        // langchain4j delivers onCompleteResponse with ONLY the final turn's AiMessage.
+        AiMessage finalTurnOnly = AiMessage.from("Here is the improved factory.");
+        ChatResponse response = ChatResponse.builder()
+            .aiMessage(finalTurnOnly)
+            .build();
+
+        handler.onCompleteResponse(response);
+
+        // The chat panel reads context.aiMessage; it must keep the intermediate reasoning,
+        // not just the final turn (otherwise "Great question!..." disappears from the chat).
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text())
+            .contains("Great question! Let me take a look at the code first.")
+            .contains("Here is the improved factory.");
+    }
+
+    @Test
+    void onIntermediateResponse_insertsSeparatorBetweenAgentTurns() {
+        StreamingResponseHandler handler = createHandler();
+
+        // Turn 1: intermediate reasoning streamed before a tool call.
+        handler.onPartialResponse("Great question! Let me take a look.");
+        // Turn boundary: langchain4j signals the intermediate (tool-calling) response.
+        handler.onIntermediateResponse(ChatResponse.builder()
+            .aiMessage(AiMessage.from("Great question! Let me take a look."))
+            .build());
+        // Turn 2: the final answer streamed (no separator in the raw tokens).
+        handler.onPartialResponse("Here is the improved factory.");
+
+        AiMessage finalTurnOnly = AiMessage.from("Here is the improved factory.");
+        handler.onCompleteResponse(ChatResponse.builder().aiMessage(finalTurnOnly).build());
+
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        // Turns must be visually separated by a blank line, not run together.
+        assertThat(captor.getValue().text())
+            .isEqualTo("Great question! Let me take a look.\n\nHere is the improved factory.");
     }
 
     @Test

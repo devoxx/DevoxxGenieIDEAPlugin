@@ -334,17 +334,18 @@ public class ChatMemoryManager {
     }
 
     public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project) {
-        String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt() + MARKDOWN;
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String systemPrompt = state.getSystemPrompt() + MARKDOWN;
         String projectPath = project.getBasePath();
 
         // Always tell the LLM the project root when tools are active
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())) {
+        if (Boolean.TRUE.equals(state.getAgentModeEnabled())) {
             systemPrompt += "\n<PROJECT_ROOT>" + projectPath + "</PROJECT_ROOT>" +
                     "\nAll file paths in tool calls are relative to this project root directory.\n";
         }
 
         // Add test execution instruction if enabled
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
+        if (Boolean.TRUE.equals(state.getTestExecutionEnabled())) {
             systemPrompt += """
                     <TESTING_INSTRUCTION>
                     After modifying code using write_file or edit_file, run relevant tests
@@ -368,8 +369,8 @@ public class ChatMemoryManager {
         // unless they're told the project has a semantic index; tool descriptions alone
         // aren't enough signal. This mirrors the <TESTING_INSTRUCTION> / <MCP_INSTRUCTION>
         // pattern used for other tools that need an explicit nudge.
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())
-                && Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+        if (Boolean.TRUE.equals(state.getAgentModeEnabled())
+                && Boolean.TRUE.equals(state.getRagEnabled())) {
             systemPrompt += """
                     <RAG_INSTRUCTION>
                     This project has a semantic vector index of its content. For any user
@@ -383,41 +384,49 @@ public class ChatMemoryManager {
                     """;
         }
 
-        // Add DEVOXXGENIE.md content to system prompt (once per conversation)
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
-            String devoxxGenieMdContent = readDevoxxGenieMdFile(project);
-            if (devoxxGenieMdContent != null && !devoxxGenieMdContent.isEmpty()) {
-                systemPrompt += "\n<ProjectContext>\n" + devoxxGenieMdContent + "\n</ProjectContext>\n";
-            }
-        }
-
-        // Add CLAUDE.md or AGENTS.md content to system prompt (once per conversation)
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseClaudeOrAgentsMdInPrompt())) {
-            String claudeOrAgentsMdContent = readClaudeOrAgentsMdFile(project);
-            if (claudeOrAgentsMdContent != null && !claudeOrAgentsMdContent.isEmpty()) {
-                systemPrompt += "\n<ProjectContext>\n" + claudeOrAgentsMdContent + "\n</ProjectContext>\n";
-            }
-        }
-
-        // Append langchain4j Skills system-prompt fragment (issue #1040). Only when agent
-        // mode is enabled — skills are wired into the agent tool chain, so listing them
-        // outside agent mode would be misleading.
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled()) && !project.isDefault()) {
-            try {
-                String skillsFragment = SkillRegistry.getInstance(project).getSystemPromptFragment();
-                if (skillsFragment != null && !skillsFragment.isEmpty()) {
-                    systemPrompt += "\nYou have access to the following skills:\n"
-                            + skillsFragment
-                            + "\nWhen the user's request relates to one of these skills, activate it first using the `"
-                            + SkillRegistry.ACTIVATE_SKILL_TOOL_NAME
-                            + "` tool before proceeding.\n";
-                }
-            } catch (Exception e) {
-                log.warn("Failed to append Skills system-prompt fragment", e);
-            }
-        }
+        systemPrompt += getDevoxxGenieMdSection(project, state);
+        systemPrompt += getClaudeOrAgentsMdSection(project, state);
+        systemPrompt += getSkillsSection(project, state);
 
         return TemplateVariableEscaper.escape(systemPrompt);
+    }
+
+    private static String getDevoxxGenieMdSection(@NotNull Project project, @NotNull DevoxxGenieStateService state) {
+        if (!Boolean.TRUE.equals(state.getUseDevoxxGenieMdInPrompt())) {
+            return "";
+        }
+        String content = readDevoxxGenieMdFile(project);
+        return (content != null && !content.isEmpty()) ? "\n<ProjectContext>\n" + content + "\n</ProjectContext>\n" : "";
+    }
+
+    private static String getClaudeOrAgentsMdSection(@NotNull Project project, @NotNull DevoxxGenieStateService state) {
+        if (!Boolean.TRUE.equals(state.getUseClaudeOrAgentsMdInPrompt())) {
+            return "";
+        }
+        String content = readClaudeOrAgentsMdFile(project);
+        return (content != null && !content.isEmpty()) ? "\n<ProjectContext>\n" + content + "\n</ProjectContext>\n" : "";
+    }
+
+    // Append langchain4j Skills system-prompt fragment (issue #1040). Only when agent
+    // mode is enabled — skills are wired into the agent tool chain, so listing them
+    // outside agent mode would be misleading.
+    private static String getSkillsSection(@NotNull Project project, @NotNull DevoxxGenieStateService state) {
+        if (!Boolean.TRUE.equals(state.getAgentModeEnabled()) || project.isDefault()) {
+            return "";
+        }
+        try {
+            String fragment = SkillRegistry.getInstance(project).getSystemPromptFragment();
+            if (!fragment.isEmpty()) {
+                return "\nYou have access to the following skills:\n"
+                        + fragment
+                        + "\nWhen the user's request relates to one of these skills, activate it first using the `"
+                        + SkillRegistry.ACTIVATE_SKILL_TOOL_NAME
+                        + "` tool before proceeding.\n";
+            }
+        } catch (Exception e) {
+            log.warn("Failed to append Skills system-prompt fragment", e);
+        }
+        return "";
     }
 
     /**

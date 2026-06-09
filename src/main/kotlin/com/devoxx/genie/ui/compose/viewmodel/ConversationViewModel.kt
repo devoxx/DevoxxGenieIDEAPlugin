@@ -27,6 +27,18 @@ class ConversationViewModel(
      * stays empty and the section is hidden.
      */
     private val project: Project? = null,
+    /**
+     * Whether tool-call activity (tool requests/responses, MCP messages) should be shown
+     * in the chat output. Pure agent reasoning text is always shown regardless. Defaults to
+     * the "Show tool activity in chat output" setting; injectable for tests.
+     */
+    private val showToolActivityInChat: () -> Boolean = {
+        try {
+            DevoxxGenieStateService.getInstance().showToolActivityInChat == true
+        } catch (_: Exception) {
+            false
+        }
+    },
 ) {
 
     var state: ConversationState by mutableStateOf(
@@ -212,6 +224,11 @@ class ConversationViewModel(
             }
             return
         }
+
+        // Everything else (tool requests/responses, MCP messages, approvals) is "tool
+        // activity" — only surfaced in the chat output when the user opted in. Pure agent
+        // reasoning above is always shown.
+        if (!showToolActivityInChat()) return
 
         val entry = ActivityEntryUiModel(
             source = message.source?.name ?: "UNKNOWN",
