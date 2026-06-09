@@ -271,7 +271,6 @@ dependencies {
     val jtokkitVersion = "1.1.0"
     val commonmarkVersion = "0.28.0"
     val jsoupVersion = "1.22.2"
-    val nettyVersion = "4.2.13.Final"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
