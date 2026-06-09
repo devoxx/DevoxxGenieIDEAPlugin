@@ -541,6 +541,14 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
 
+    <!-- Use the Compose + Skiko runtime bundled in the IDE (Jewel infrastructure).
+         The plugin no longer packages its own Compose/Skiko jars; these modules must match
+         the bundledModule(...) entries in build.gradle.kts. Requires 2025.3.3+ (CMP 1.10.0). -->
+    <dependencies>
+        <module name="intellij.libraries.compose.foundation.desktop"/>
+        <module name="intellij.libraries.skiko"/>
+    </dependencies>
+
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">

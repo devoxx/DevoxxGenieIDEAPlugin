@@ -4,9 +4,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.lombok") version "2.1.10"
-    kotlin("plugin.compose") version "2.1.10"
+    // Kotlin 2.2.20 matches the stdlib bundled in IntelliJ 2025.3, the minimum supported IDE.
+    // Do NOT bump beyond the bundled stdlib of the lowest supported IDE line: the plugin runs
+    // on the IDE-provided stdlib (see binaryIncompatibleRuntimeJarPatterns below).
+    kotlin("jvm") version "2.2.20"
+    kotlin("plugin.lombok") version "2.2.20"
+    kotlin("plugin.compose") version "2.2.20"
     id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
@@ -36,7 +39,7 @@ val binaryIncompatibleRuntimeJarPatterns = listOf(
 )
 val packagedPluginDirName = "DevoxxGenie"
 val pluginVerifierUnifiedIdeVersions = listOf(
-    "2025.1",             // 251 line — minimum supported (sinceBuild)
+    "2025.3.3",           // 253 line — minimum supported (sinceBuild); first build with CMP 1.10.0 stable (Jewel 0.34)
     "2026.1"              // 261 line
     // "2026.2-EAP-SNAPSHOT" // 262 line — not yet available
 )
@@ -248,7 +251,14 @@ dependencies {
         intellijIdea(providers.gradleProperty("ideVersion").orElse("2025.3.3"))
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
+        // Use the Compose + Skiko runtime BUNDLED in the IDE (Jewel infrastructure, IJP 251+).
+        // The platform guarantees a consistent Compose/Skiko/Kotlin/coroutines set per IDE line:
+        // 2025.3.3+ and 2026.1 both ship Compose Multiplatform 1.10.0. We therefore no longer
+        // package our own Compose or Skiko jars (see the removed runtimeOnly block below).
+        // NOTE: these modules must also be declared in plugin.xml (<dependencies><module .../>).
         composeUI()
+        bundledModule("intellij.libraries.compose.foundation.desktop")
+        bundledModule("intellij.libraries.skiko")
         testFramework(TestFrameworkType.Platform)
     }
     
@@ -262,9 +272,11 @@ dependencies {
     val commonmarkVersion = "0.28.0"
     val jsoupVersion = "1.22.2"
     val nettyVersion = "4.2.13.Final"
-    val composeCompileVersion = "1.7.3"
-    val markdownRendererVersion = "0.28.0"
-    val skikoVersion = "0.8.18"
+    // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
+    // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
+    // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
+    // backwards binary compatibility guarantee.
+    val markdownRendererVersion = "0.38.1"
     val logbackVersion = "1.5.32"
     val gitignoreReaderVersion = "1.14.1"
     val junitJupiterVersion = "6.1.0-RC1"
@@ -310,19 +322,29 @@ dependencies {
     implementation("org.commonmark:commonmark:$commonmarkVersion")
     implementation("org.jsoup:jsoup:$jsoupVersion")
     implementation("io.netty:netty-all:$nettyVersion")
-    // Compose Markdown Renderer aligned with the 251 Compose/Kotlin toolchain
+    // Compose Markdown Renderer aligned with the 253 Compose/Kotlin toolchain
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:$markdownRendererVersion") {
-        // The IntelliJ Platform provides coroutines at runtime. Bundling our own copy makes the
-        // plugin classloader load kotlinx.coroutines.flow.FlowCollector while the platform loads
-        // SafeCollector, causing a cross-classloader ClassCastException (issue #1054).
+        // The IntelliJ Platform provides coroutines, stdlib, Compose and Skiko at runtime.
+        // Bundling our own copies causes cross-classloader conflicts (issue #1054) and the
+        // Compose/Skiko ABI crashes that motivated the 253 migration.
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
         exclude(group = "org.jetbrains", module = "markdown")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.compose.runtime")
+        exclude(group = "org.jetbrains.compose.foundation")
+        exclude(group = "org.jetbrains.compose.ui")
+        exclude(group = "org.jetbrains.skiko")
     }
     implementation("com.mikepenz:multiplatform-markdown-renderer-code-jvm:$markdownRendererVersion") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
         exclude(group = "org.jetbrains", module = "markdown")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.compose.runtime")
+        exclude(group = "org.jetbrains.compose.foundation")
+        exclude(group = "org.jetbrains.compose.ui")
+        exclude(group = "org.jetbrains.skiko")
     }
     // Logging
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
@@ -333,54 +355,13 @@ dependencies {
     implementation("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
     implementation("org.junit.platform:junit-platform-launcher:$junitPlatformVersion")
 
-    // Compile against and package the 251-era Compose desktop API jars.
-    compileOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeCompileVersion")
-    compileOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeCompileVersion")
-    compileOnly("org.jetbrains.compose.ui:ui-desktop:$composeCompileVersion")
-    compileOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeCompileVersion")
-    runtimeOnly("org.jetbrains.compose.runtime:runtime-desktop:$composeCompileVersion") {
-        exclude(group = "org.jetbrains.skiko")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
-    }
-    runtimeOnly("org.jetbrains.compose.foundation:foundation-desktop:$composeCompileVersion") {
-        exclude(group = "org.jetbrains.skiko")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
-    }
-    runtimeOnly("org.jetbrains.compose.ui:ui-desktop:$composeCompileVersion") {
-        exclude(group = "org.jetbrains.skiko")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
-    }
-    runtimeOnly("org.jetbrains.compose.components:components-animatedimage-desktop:$composeCompileVersion") {
-        exclude(group = "org.jetbrains.skiko")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
-    }
-    runtimeOnly("org.jetbrains.skiko:skiko-awt:$skikoVersion") {
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
-        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
-        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
-    }
-    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:$skikoVersion")
-    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:$skikoVersion")
-    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-macos-x64:$skikoVersion")
-    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:$skikoVersion")
+    // Compose & Skiko are NO LONGER bundled with the plugin. Since IJP 251 the platform ships
+    // Compose/Skiko as bundled modules (Jewel infrastructure); 2025.3.3+ and 2026.1 both
+    // provide Compose Multiplatform 1.10.0. Compile classpath comes from composeUI() +
+    // bundledModule(...) in the intellijPlatform block above, and the runtime comes from the
+    // IDE itself — declared in plugin.xml as <module> dependencies. This removes the entire
+    // class of Compose/Skiko ABI mismatches and skiko native double-loading crashes, and
+    // shrinks the plugin distribution.
 
     compileOnly("org.projectlombok:lombok:$lombokVersion")
 
@@ -403,7 +384,11 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "251"
+            // 253.31033 = IntelliJ 2025.3.3, the first 253 build shipping Compose Multiplatform
+            // 1.10.0 stable (Jewel 0.34). Earlier 253 builds carry CMP 1.10.0-beta/rc.
+            // 251/252 cannot be supported anymore: they bundle CMP 1.7.x-era runtimes that are
+            // ABI-incompatible with the 1.10 APIs this plugin now compiles against.
+            sinceBuild = "253.31033"
             untilBuild = "262.*"
         }
     }
@@ -427,7 +412,8 @@ intellijPlatform {
     }
 }
 
-// Filter unsupported Compose compiler plugin option (Kotlin 2.1.10 / IntelliJ platform incompatibility)
+// Filter unsupported Compose compiler plugin option (kept from the Kotlin 2.1.x toolchain;
+// harmless with 2.2.x — remove once verified unnecessary on the 253 toolchain)
 afterEvaluate {
     tasks.withType<KotlinCompile>().configureEach {
         val currentArgs = compilerOptions.freeCompilerArgs.get().toList()
@@ -481,9 +467,9 @@ tasks {
             html.required.set(true)
         }
 
-        // IntelliJ 2024.3 ships an older coroutines runtime than Compose 1.10 pulls in.
-        // Keeping the plugin's transitive coroutines jars on the test worker classpath
-        // causes IDE startup to fail inside LightPlatformTestCase before tests execute.
+        // The IDE provides its own coroutines runtime. Keeping the plugin's transitive
+        // coroutines jars on the test worker classpath causes IDE startup to fail inside
+        // LightPlatformTestCase before tests execute.
         classpath = classpath.filter { file ->
             !file.name.startsWith("kotlinx-coroutines-core")
         }
