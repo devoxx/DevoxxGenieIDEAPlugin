@@ -90,6 +90,24 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         }
     }
 
+    /**
+     * Invoked at each agent-loop turn boundary — i.e. when the LLM returns an intermediate
+     * response that requests tool execution. langchain4j keeps streaming the next turn's
+     * text through {@link #onPartialResponse(String)} into the same accumulator, so without
+     * a marker here the reasoning of one turn would run straight into the next. We append a
+     * blank-line separator so each turn renders as its own paragraph in the chat panel.
+     */
+    public void onIntermediateResponse(ChatResponse response) {
+        if (isStopped) {
+            return;
+        }
+        // Only separate turns that actually produced reasoning text; a tool-only turn
+        // (empty text) shouldn't leave a dangling blank line.
+        if (!accumulatedResponse.isEmpty() && !accumulatedResponse.toString().endsWith("\n\n")) {
+            accumulatedResponse.append("\n\n");
+        }
+    }
+
     @Override
     public void onCompleteResponse(ChatResponse response) {
         if (isStopped) {
@@ -99,7 +117,19 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         try {
             long endTime = System.currentTimeMillis();
             context.setExecutionTimeMs(endTime - startTime);
-            context.setAiMessage(response.aiMessage());
+
+            // In agent mode the LLM streams intermediate reasoning (e.g. "Let me take a
+            // look...") before each tool call. langchain4j delivers those tokens through
+            // onPartialResponse (so they accumulate here), but the final ChatResponse only
+            // carries the LAST turn's AiMessage. Using response.aiMessage() directly would
+            // therefore erase all intermediate reasoning from the chat panel. Prefer the
+            // accumulated text whenever we streamed partials, so the full visible turn is
+            // what we render and persist.
+            if (hasAddedInitialMessage && !accumulatedResponse.isEmpty()) {
+                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(accumulatedResponse.toString()));
+            } else {
+                context.setAiMessage(response.aiMessage());
+            }
 
             // Update the view with the final response (if viewController is available)
             if (conversationViewController != null) {
