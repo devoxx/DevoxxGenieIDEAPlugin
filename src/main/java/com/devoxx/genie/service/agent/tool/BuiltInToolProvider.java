@@ -336,6 +336,86 @@ public class BuiltInToolProvider implements ToolProvider {
                         .build(),
                 new FindImplementationsToolExecutor(project)
         );
+
+        // find_callees — outgoing calls from a method (inverse of find_references)
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_callees")
+                        .description("List the methods that a given method calls (outgoing edges). " +
+                                "This is the inverse of find_references: find_references answers 'who calls X', " +
+                                "find_callees answers 'what does X call'. Each call target is resolved through the " +
+                                "IDE's semantic index, so overloads, inheritance, and imports are understood — more " +
+                                "accurate than grepping the method body with search_files. " +
+                                "Currently supports Java; other languages return a clear 'not supported' message.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root where the method is defined")
+                                .addIntegerProperty("line", "1-based line number where the method is declared")
+                                .addStringProperty("symbol", "Optional: method name to disambiguate if multiple definitions are on the same line")
+                                .required("file", "line")
+                                .build())
+                        .build(),
+                new FindCalleesToolExecutor(project)
+        );
+
+        // trace_call_chains — bounded traversal of caller/callee edges
+        tools.put(
+                ToolSpecification.builder()
+                        .name("trace_call_chains")
+                        .description("Trace call chains from a start method, walking caller→callee or callee→caller " +
+                                "edges up to a bounded depth, and return the path(s). Use this to answer 'how does " +
+                                "execution reach X' or 'what chain of calls does X trigger' — questions that need the " +
+                                "path between two methods, which a single find_references/find_callees call cannot give. " +
+                                "Provide an optional 'target' to stop as soon as a named method is reached. " +
+                                "Bounded in depth (default 5, hard max 10) and number of paths. Java only in v1.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root where the start method is defined")
+                                .addIntegerProperty("line", "1-based line number where the start method is declared")
+                                .addStringProperty("symbol", "Optional: method name to disambiguate if multiple definitions are on the same line")
+                                .addStringProperty("direction", "'callers' (who reaches this method, default) or 'callees' (what this method reaches)")
+                                .addStringProperty("target", "Optional: stop and return the chain when a method with this name is reached")
+                                .addIntegerProperty("depth", "Maximum chain depth (default 5, hard max 10)")
+                                .required("file", "line")
+                                .build())
+                        .build(),
+                new TraceCallChainsToolExecutor(project)
+        );
+
+        // calculate_complexity — cyclomatic complexity per method
+        tools.put(
+                ToolSpecification.builder()
+                        .name("calculate_complexity")
+                        .description("Compute cyclomatic (McCabe) complexity for Java methods by counting decision " +
+                                "points (if/for/while/case/catch/&&/||/ternary). With 'line' it scores a single " +
+                                "method; without it, scores every method in the file and flags those over a " +
+                                "threshold. Use this to find the riskiest methods to refactor or test — something " +
+                                "search_files cannot measure. Java only in v1.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root")
+                                .addIntegerProperty("line", "Optional: 1-based line of a single method to score; omit to score the whole file")
+                                .addIntegerProperty("threshold", "Optional: flag methods whose complexity exceeds this (default 10)")
+                                .required("file")
+                                .build())
+                        .build(),
+                new CalculateComplexityToolExecutor(project)
+        );
+
+        // find_dead_code — zero-reference symbols (heuristic candidates)
+        tools.put(
+                ToolSpecification.builder()
+                        .name("find_dead_code")
+                        .description("Report symbols in a file with zero project-scope references — HEURISTIC " +
+                                "dead-code CANDIDATES, not certainties. Results require human confirmation before " +
+                                "deletion: reflection, serialization, dependency injection, and out-of-project " +
+                                "callers can reference a symbol invisibly. Conservatively excludes public members, " +
+                                "constructors/main, @Override and any annotated member, and serialization members " +
+                                "to keep false positives low. Java only in v1.")
+                        .parameters(JsonObjectSchema.builder()
+                                .addStringProperty("file", "File path relative to project root to scan for unreferenced symbols")
+                                .required("file")
+                                .build())
+                        .build(),
+                new FindDeadCodeToolExecutor(project)
+        );
     }
 
     private void registerBacklogTools(@NotNull Project project) {

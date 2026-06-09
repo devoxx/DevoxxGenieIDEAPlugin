@@ -158,4 +158,35 @@ public final class PsiToolUtils {
     public static VirtualFile getProjectBase(@NotNull Project project) {
         return ProjectUtil.guessProjectDir(project);
     }
+
+    /**
+     * Returns true when the IntelliJ Java plugin (PSI) is present on the runtime classpath.
+     * Mirrors the reflection guard in {@code JavaProjectScannerExtension.isJavaAvailable()} so
+     * the plugin still loads in non-Java IDEs where {@code com.intellij.modules.java} is absent.
+     * Call this before touching any {@code com.intellij.psi.PsiMethod}/{@code PsiClass} API.
+     */
+    public static boolean isJavaAvailable() {
+        try {
+            Class.forName("com.intellij.psi.JavaPsiFacade");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true when the given file is a Java source file. Uses the language ID only, so it
+     * does not link any Java-plugin class and is safe to call when Java support is absent.
+     */
+    public static boolean isJavaFile(@NotNull PsiFile psiFile) {
+        return "JAVA".equals(psiFile.getLanguage().getID());
+    }
+
+    /**
+     * Human-readable language name for "not supported" messages (e.g. "Kotlin", "Python").
+     */
+    @NotNull
+    public static String languageName(@NotNull PsiFile psiFile) {
+        return psiFile.getLanguage().getDisplayName();
+    }
 }

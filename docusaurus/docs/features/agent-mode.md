@@ -34,6 +34,10 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `find_references` | Find all usages of a symbol using semantic reference search |
 | `find_definition` | Navigate from a symbol usage to its definition |
 | `find_implementations` | Find all implementations of an interface, abstract class, or method |
+| `find_callees` | List the methods a given method calls (outgoing edges — the inverse of `find_references`) |
+| `trace_call_chains` | Trace caller→callee (or callee→caller) chains between methods, depth-bounded |
+| `calculate_complexity` | Compute cyclomatic complexity per method and flag methods over a threshold |
+| `find_dead_code` | Report unreferenced symbols as heuristic dead-code *candidates* (require human confirmation) |
 
 ### Write Tools
 
@@ -164,6 +168,30 @@ Find all implementations of an interface, abstract class, or abstract method. Us
 
 **Example prompt**: *"Find all implementations of ChatModelFactory"*
 
+#### `find_callees`
+
+List the methods a given method calls — the **outgoing** edges of the call graph, and the inverse of `find_references`. Each call target is resolved through the semantic index, so overloads and inheritance are understood (more accurate than grepping the method body). Java in v1; other languages return a clear "not supported" message.
+
+**Example prompt**: *"What methods does executeQuery call?"*
+
+#### `trace_call_chains`
+
+Trace call chains from a start method, walking caller→callee or callee→caller edges up to a bounded depth, and return the path(s). Answers "how does execution reach X" or "what chain of calls does X trigger" — questions a single `find_references`/`find_callees` call can't. Bounded in depth (default 5, max 10) and number of paths. Java in v1.
+
+**Example prompt**: *"Trace how a user prompt reaches the streaming executor"*
+
+#### `calculate_complexity`
+
+Compute cyclomatic (McCabe) complexity per Java method by counting decision points (`if`/`for`/`while`/`case`/`catch`/`&&`/`||`/ternary), flagging methods over a configurable threshold (default 10). Useful for finding the riskiest methods to refactor or test.
+
+**Example prompt**: *"Which methods in PromptExecutionService are the most complex?"*
+
+#### `find_dead_code`
+
+Report symbols in a file with zero project-scope references as **heuristic dead-code candidates** — never certainties. Reflection, serialization, dependency injection, and out-of-project callers are invisible to reference search, so every result requires human confirmation. Conservatively excludes public members, constructors/`main`, `@Override` and any annotated member, and serialization members to keep false positives low. Java in v1.
+
+**Example prompt**: *"Are there any unused private methods in this file?"*
+
 ### Why PSI Tools Matter
 
 With PSI tools, the agent can navigate your codebase the same way you do in the IDE — jumping to definitions, finding usages, and exploring type hierarchies. This is significantly more accurate than text-based grep for tasks like:
@@ -179,6 +207,10 @@ PSI tools are **enabled by default**. You can toggle them in **Settings > Tools 
 
 :::tip
 PSI tools are read-only and don't require user approval. They are also available to parallel sub-agents for deeper exploration.
+:::
+
+:::note Polyglot or non-indexed repositories
+PSI tools (including the call-graph tools) operate on IntelliJ's live semantic index, so they are most accurate for languages your IDE indexes — and `find_callees`, `trace_call_chains`, `calculate_complexity`, and `find_dead_code` are Java-only in v1. If you need a cross-language code graph for **polyglot** or **non-indexed** repositories (or a web graph visualization), you can run [CodeGraphContext](https://github.com/CodeGraphContext/CodeGraphContext) as an external MCP server and point DevoxxGenie's [MCP client](mcp_expanded.md) at it — no migration required. For the indexed project itself, the built-in PSI tools are preferred: they ride a live, language-aware index rather than a separately-maintained graph DB.
 :::
 
 ---

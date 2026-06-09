@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -211,11 +212,12 @@ class BuiltInToolProviderTest {
         ToolProviderResult result = provider.provideTools(request);
 
         Set<String> toolNames = getToolNames(result);
-        // 7 base + 5 PSI tools
-        assertThat(result.tools()).hasSize(12);
+        // 7 base + 9 PSI tools
+        assertThat(result.tools()).hasSize(16);
         assertThat(toolNames).contains(
                 "find_symbols", "document_symbols", "find_references",
-                "find_definition", "find_implementations"
+                "find_definition", "find_implementations",
+                "find_callees", "trace_call_chains", "calculate_complexity", "find_dead_code"
         );
     }
 
@@ -227,11 +229,45 @@ class BuiltInToolProviderTest {
         ToolProviderResult result = provider.provideTools(request);
 
         Set<String> toolNames = getToolNames(result);
-        assertThat(toolNames).noneMatch(name ->
-                name.equals("find_symbols") || name.equals("document_symbols") ||
-                name.equals("find_references") || name.equals("find_definition") ||
-                name.equals("find_implementations")
-        );
+        assertThat(toolNames).doesNotContainAnyElementsOf(PsiToolCatalog.toolNames());
+    }
+
+    /**
+     * Regression guard for fine-grained PSI tool control: the settings UI builds one
+     * checkbox per entry in {@link PsiToolCatalog}, so every PSI tool actually registered
+     * by the provider MUST appear in the catalog — otherwise a newly added PSI tool would
+     * have no settings toggle. This fails the moment a PSI tool is registered without being
+     * listed in the catalog (or vice-versa).
+     */
+    @Test
+    void psiToolCatalog_listsExactlyTheRegisteredPsiTools() {
+        when(stateService.getPsiToolsEnabled()).thenReturn(true);
+        BuiltInToolProvider provider = createProvider();
+
+        Set<String> registeredPsiTools = new java.util.HashSet<>(getToolNames(provider.provideTools(request)));
+        registeredPsiTools.removeAll(BASE_TOOLS); // only PSI tools remain (no other features enabled)
+
+        assertThat(PsiToolCatalog.toolNames())
+                .containsExactlyInAnyOrderElementsOf(registeredPsiTools);
+    }
+
+    /**
+     * Each PSI tool must be individually disableable via the shared disabledAgentTools list
+     * (the mechanism the per-tool settings checkboxes write to). Disabling one PSI tool must
+     * exclude only that tool and leave the rest registered.
+     */
+    @Test
+    void provideTools_disablingSinglePsiTool_excludesOnlyThatTool() {
+        when(stateService.getPsiToolsEnabled()).thenReturn(true);
+        when(stateService.getDisabledAgentTools()).thenReturn(List.of("find_dead_code"));
+        BuiltInToolProvider provider = createProvider();
+
+        Set<String> toolNames = getToolNames(provider.provideTools(request));
+
+        assertThat(toolNames).doesNotContain("find_dead_code");
+        assertThat(toolNames).contains(
+                "find_symbols", "document_symbols", "find_references", "find_definition",
+                "find_implementations", "find_callees", "trace_call_chains", "calculate_complexity");
     }
 
     // --- All features enabled ---
@@ -246,8 +282,8 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        // 7 base + 1 run_tests + 1 parallel_explore + 20 backlog + 5 PSI = 34
-        assertThat(result.tools()).hasSize(34);
+        // 7 base + 1 run_tests + 1 parallel_explore + 20 backlog + 9 PSI = 38
+        assertThat(result.tools()).hasSize(38);
     }
 
     // --- Disabled tools filtering in provideTools() ---

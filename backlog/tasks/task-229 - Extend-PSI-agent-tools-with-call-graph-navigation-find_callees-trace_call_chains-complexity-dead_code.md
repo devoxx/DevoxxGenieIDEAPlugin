@@ -1,10 +1,12 @@
 ---
 id: TASK-229
-title: Extend PSI agent tools with call-graph navigation (find_callees, trace_call_chains, complexity, dead_code)
-status: To Do
+title: >-
+  Extend PSI agent tools with call-graph navigation (find_callees,
+  trace_call_chains, complexity, dead_code)
+status: In Progress
 assignee: []
 created_date: '2026-06-06 12:00'
-updated_date: '2026-06-06 12:00'
+updated_date: '2026-06-08 14:32'
 labels:
   - enhancement
   - agent-tools
@@ -13,13 +15,38 @@ labels:
 dependencies: []
 references:
   - src/main/java/com/devoxx/genie/service/agent/tool/BuiltInToolProvider.java
-  - src/main/java/com/devoxx/genie/service/agent/tool/psi/FindReferencesToolExecutor.java
-  - src/main/java/com/devoxx/genie/service/agent/tool/psi/FindImplementationsToolExecutor.java
-  - src/main/java/com/devoxx/genie/service/agent/tool/psi/FindDefinitionToolExecutor.java
-  - src/main/java/com/devoxx/genie/service/agent/tool/psi/FindSymbolsToolExecutor.java
-  - src/main/java/com/devoxx/genie/service/agent/tool/psi/DocumentSymbolsToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindReferencesToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindImplementationsToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindDefinitionToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindSymbolsToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/DocumentSymbolsToolExecutor.java
   - src/main/java/com/devoxx/genie/service/agent/tool/psi/PsiToolUtils.java
   - 'https://github.com/CodeGraphContext/CodeGraphContext'
+modified_files:
+  - src/main/java/com/devoxx/genie/service/agent/tool/psi/PsiToolUtils.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindCalleesToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/TraceCallChainsToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/CalculateComplexityToolExecutor.java
+  - >-
+    src/main/java/com/devoxx/genie/service/agent/tool/psi/FindDeadCodeToolExecutor.java
+  - src/main/java/com/devoxx/genie/service/agent/tool/BuiltInToolProvider.java
+  - >-
+    src/test/java/com/devoxx/genie/service/agent/tool/psi/FindCalleesToolExecutorTest.java
+  - >-
+    src/test/java/com/devoxx/genie/service/agent/tool/psi/TraceCallChainsToolExecutorTest.java
+  - >-
+    src/test/java/com/devoxx/genie/service/agent/tool/psi/CalculateComplexityToolExecutorTest.java
+  - >-
+    src/test/java/com/devoxx/genie/service/agent/tool/psi/FindDeadCodeToolExecutorTest.java
+  - docusaurus/docs/features/agent-mode.md
 priority: medium
 ---
 
@@ -59,34 +86,31 @@ What CGC has that we **don't** yet, and that is cheap to add on top of PSI / the
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `find_callees` tool registered in `BuiltInToolProvider.registerPsiTools`: given `file` + `line` of a method definition (with optional `symbol` disambiguator), returns the resolved outgoing method calls with their definition locations, bounded to a `MAX_RESULTS` cap
-- [ ] #2 `trace_call_chains` tool registered: given a start symbol (file + line), an optional target symbol, a `direction` (`callers` | `callees`, default `callers`), and a bounded `depth` (default 5, hard max 10), returns the call path(s) found, capped in both depth and number of paths
-- [ ] #3 `calculate_complexity` tool registered: given a `file` (and optional `line` to target a single method), returns per-method cyclomatic complexity scores and flags methods exceeding a configurable threshold
-- [ ] #4 `find_dead_code` tool registered: returns symbols with zero project-scope references, clearly labelled as heuristic "candidates", with documented exclusions (entry points, `@Override`, public API, framework-annotated, reflection/serialization, tests)
-- [ ] #5 All four tools run inside a `ReadAction`, reuse `PsiToolUtils` helpers (`resolvePsiFile`, `findNamedElementOnLine`, `formatLocation`, `getProjectBase`), and return the same friendly `Error: ...` strings on bad input as the existing PSI tools — never throw to the LLM
-- [ ] #6 All four tools are gated behind `psiToolsEnabled` and honour the `disabledAgentTools` list, matching the existing PSI tool registration
-- [ ] #7 Languages without call-body/complexity support return a clear "not supported for <language>" message rather than failing; Java is supported in v1 (Kotlin via UAST if feasible within scope)
-- [ ] #8 Unit/platform tests (extending `AbstractLightPlatformTestCase`, mirroring existing PSI tool tests) cover, per supported language fixture: callees of a method are resolved; a known caller chain is traced within the depth bound; complexity of a method with known decision points matches the expected count; an unreferenced private method is reported as dead-code candidate while an `@Override`/entry-point method is not
-- [ ] #9 Tool descriptions explain when to prefer each tool over `search_files`/`find_references`, and the `find_dead_code` description states results are candidates requiring human confirmation
+- [x] #1 `find_callees` tool registered in `BuiltInToolProvider.registerPsiTools`: given `file` + `line` of a method definition (with optional `symbol` disambiguator), returns the resolved outgoing method calls with their definition locations, bounded to a `MAX_RESULTS` cap
+- [x] #2 `trace_call_chains` tool registered: given a start symbol (file + line), an optional target symbol, a `direction` (`callers` | `callees`, default `callers`), and a bounded `depth` (default 5, hard max 10), returns the call path(s) found, capped in both depth and number of paths
+- [x] #3 `calculate_complexity` tool registered: given a `file` (and optional `line` to target a single method), returns per-method cyclomatic complexity scores and flags methods exceeding a configurable threshold
+- [x] #4 `find_dead_code` tool registered: returns symbols with zero project-scope references, clearly labelled as heuristic "candidates", with documented exclusions (entry points, `@Override`, public API, framework-annotated, reflection/serialization, tests)
+- [x] #5 All four tools run inside a `ReadAction`, reuse `PsiToolUtils` helpers (`resolvePsiFile`, `findNamedElementOnLine`, `formatLocation`, `getProjectBase`), and return the same friendly `Error: ...` strings on bad input as the existing PSI tools — never throw to the LLM
+- [x] #6 All four tools are gated behind `psiToolsEnabled` and honour the `disabledAgentTools` list, matching the existing PSI tool registration
+- [x] #7 Languages without call-body/complexity support return a clear "not supported for <language>" message rather than failing; Java is supported in v1 (Kotlin via UAST if feasible within scope)
+- [x] #8 Unit/platform tests (extending `AbstractLightPlatformTestCase`, mirroring existing PSI tool tests) cover, per supported language fixture: callees of a method are resolved; a known caller chain is traced within the depth bound; complexity of a method with known decision points matches the expected count; an unreferenced private method is reported as dead-code candidate while an `@Override`/entry-point method is not
+- [x] #9 Tool descriptions explain when to prefer each tool over `search_files`/`find_references`, and the `find_dead_code` description states results are candidates requiring human confirmation
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Origin: feasibility investigation of CodeGraphContext (CGC). Verdict was "extend PSI, don't port CGC" — PSI already is a live code graph inside the IDE, and it is more accurate than CGC's tree-sitter heuristics for the indexed project. This task captures the genuinely-missing call-graph *direction* and *analysis* primitives.
+Implemented four new PSI ToolExecutors under service/agent/tool/psi/, registered in BuiltInToolProvider.registerPsiTools (gated by psiToolsEnabled; disabledAgentTools honoured automatically by provideTools).
 
-Follow the existing pattern exactly:
-- One `ToolExecutor` per tool under `service/agent/tool/psi/`, registered in `BuiltInToolProvider.registerPsiTools`.
-- Reuse `PsiToolUtils` for file/element resolution and location formatting; copy the `MAX_RESULTS` bounding and `ReadAction.compute(...)` wrapping from `FindReferencesToolExecutor`.
-- Guard optional language support with a reflection check like `JavaProjectScannerExtension.isJavaAvailable()` so the plugin still loads when a language plugin is absent.
+Key decisions:
+- Java only in v1 (per AC #7). Each tool guards with PsiToolUtils.isJavaAvailable() (reflection on JavaPsiFacade) + isJavaFile() (language ID == "JAVA"), returning a clear "not supported for <language>" message otherwise. Java is an OPTIONAL plugin dependency (<depends optional="true">com.intellij.modules.java</depends>), so Java-PSI calls are isolated in helper methods invoked only after the guard — lazy classloading keeps the executors loadable in non-Java IDEs. Kotlin-via-UAST deferred to a follow-up.
+- trace_call_chains: implemented as a depth/path/node-bounded DFS over PSI primitives (ReferencesSearch for caller direction, method-body call resolution for callee direction) rather than the UI-bound com.intellij.ide.hierarchy.call API, which is fragile headlessly inside a ReadAction. Bounds: depth default 5 / hard max 10, MAX_PATHS=20, NODE_BUDGET=500. Optional target stops early.
+- find_dead_code: scoped per-file (bounded, matches existing per-file PSI tools) rather than whole-project. Conservative exclusions (public, constructors/main, @Override + any annotation, serialization members) to minimise false positives; output explicitly labelled heuristic CANDIDATES.
+- calculate_complexity: McCabe count via PsiTreeUtil collection of decision points (if/for/foreach/while/do/case/catch/ternary/&&/||); complexityOf(PsiMethod) is package-visible static for direct unit testing.
 
-Suggested building blocks:
-- `find_callees`: walk the target `PsiMethod` body for `PsiMethodCallExpression`/`PsiCallExpression`, call `.resolveMethod()`, dedupe, format target locations. For Kotlin, prefer UAST (`UMethod`/`UCallExpression`) so the same executor can serve both.
-- `trace_call_chains`: use `com.intellij.ide.hierarchy.call.{CallerMethodsTreeStructure,CalleeMethodsTreeStructure}` (or `CallHierarchyProvider`) and BFS/DFS with the depth + path caps. Stop early if the optional target symbol is reached and return that path.
-- `calculate_complexity`: a `PsiRecursiveElementVisitor` counting decision points; start complexity at 1 and increment per branch/loop/case/catch/boolean-operator/ternary. Keep the rule set documented in code.
-- `find_dead_code`: enumerate declared symbols in scope, run `ReferencesSearch.search(..., GlobalSearchScope.projectScope(project))`, report zero-reference symbols minus the exclusion set. Be conservative — false positives erode trust, so label as candidates.
+Testing: 27 fixture+validation tests (BasePlatformTestCase + Jupiter @Test, with @AfterEach tearDown() to avoid platform injector-leak failures). All pass; full suite green.
 
-Validation strategy mirrors CGC's own tools but stays IDE-native. Consider whether `trace_call_chains` and `find_dead_code` should be opt-in (heavier) versus `find_callees`/`calculate_complexity` (cheap), but default to gating all four behind the single existing `psiToolsEnabled` flag for simplicity; revisit per-tool toggles only if performance demands it.
+Added docs to docusaurus/docs/features/agent-mode.md (tool table + per-tool sections). NOTE: the requested docs note that power users wanting CGC's graph for polyglot/non-indexed repos can run codegraphcontext as an external MCP server was NOT yet added — capture in a follow-up docs PR.
 
-Separately (not code in this task): add a short docs note that power users wanting CGC's graph for **polyglot or non-indexed** repos, or its web graph visualization, can run `codegraphcontext` as an external MCP server and point DevoxxGenie's MCP client at it — no migration required.
+Docs note for CGC-as-external-MCP (polyglot/non-indexed repos) WAS added — admonition in docusaurus/docs/features/agent-mode.md linking to mcp_expanded.md. (Supersedes the earlier 'NOT yet added' line above.)
 <!-- SECTION:NOTES:END -->
