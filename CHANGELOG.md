@@ -5,6 +5,17 @@
 ### Fixed
 - fix(rag): migrate ChromaDB REST client from v1 to v2 API — fixes collection/embedding endpoints for ChromaDB 0.6.x (#1085, #1086)
 - fix(rag): convert Windows volume path for WSL Linux Docker daemon
+- fix(credentials): skip PasswordSafe in headless mode during `buildSearchableOptions` to eliminate repeated OS keychain prompts; add empty-read cache so non-headless sessions don't re-query the keychain for unset keys
+
+### Dependencies
+- chore: upgrade langchain4j 1.15.0 → 1.16.1 (stable) and 1.15.0-beta25 → 1.16.1-beta26 (mcp, chroma, reactor, skills, web-search modules)
+- chore: upgrade software.amazon.awssdk:bom 2.44.1 → 2.46.6
+- chore: upgrade sqlite-jdbc 3.53.0.0 → 3.53.2.0
+- chore: upgrade netty-all 4.2.13.Final → 4.2.15.Final
+- chore: upgrade logback-classic 1.5.32 → 1.5.34
+- chore: upgrade junit-jupiter 6.1.0-RC1 → 6.1.0 (release)
+- chore: upgrade junit-platform 6.0.3 → 6.1.0
+- chore: upgrade mockwebserver 5.3.2 → 5.4.0
 
 ### Tests
 - test(rag): add e2e tests for ChromaDB v2 API and Docker volume path
