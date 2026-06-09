@@ -70,12 +70,12 @@ public final class ChromaDBManager {
         }
     }
 
-    public void deleteCollection(String collectionId) throws IOException {
-        service.deleteCollection(collectionId).execute();
+    public void deleteCollection(String collectionName) throws IOException {
+        service.deleteCollection(collectionName).execute();
     }
 
-    public int countDocuments(String collectionName) throws IOException {
-        retrofit2.Response<Integer> execute = service.getCount(collectionName).execute();
+    public int countDocuments(String collectionId) throws IOException {
+        retrofit2.Response<Integer> execute = service.getCount(collectionId).execute();
         if (execute.isSuccessful() && execute.body() != null) {
             return execute.body();
         } else {
