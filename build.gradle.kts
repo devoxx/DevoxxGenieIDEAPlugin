@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.lombok") version "2.1.10"
-    kotlin("plugin.compose") version "2.1.10"
-    id("org.jetbrains.intellij.platform") version "2.13.1"
+    kotlin("jvm") version "2.4.0"
+    kotlin("plugin.lombok") version "2.4.0"
+    kotlin("plugin.compose") version "2.4.0"
+    id("org.jetbrains.intellij.platform") version "2.16.0"
     jacoco
 }
 
@@ -252,28 +252,28 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.15.0"
-    val lg4j_beta_version = "1.15.0-beta25"
-    val awsSdkVersion = "2.44.1"
+    val lg4j_version = "1.16.1"
+    val lg4j_beta_version = "1.16.1-beta26"
+    val awsSdkVersion = "2.46.6"
     val retrofitVersion = "3.0.0"
-    val sqliteVersion = "3.53.0.0"
+    val sqliteVersion = "3.53.2.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
     val commonmarkVersion = "0.28.0"
     val jsoupVersion = "1.22.2"
-    val nettyVersion = "4.2.13.Final"
-    val composeCompileVersion = "1.7.3"
-    val markdownRendererVersion = "0.28.0"
-    val skikoVersion = "0.8.18"
-    val logbackVersion = "1.5.32"
-    val gitignoreReaderVersion = "1.14.1"
-    val junitJupiterVersion = "6.1.0-RC1"
-    val junitPlatformVersion = "6.0.3"
+    val nettyVersion = "4.2.15.Final"
+    val composeCompileVersion = "1.11.1"
+    val markdownRendererVersion = "0.41.0"
+    val skikoVersion = "0.148.1"
+    val logbackVersion = "1.5.34"
+    val gitignoreReaderVersion = "2.0.0"
+    val junitJupiterVersion = "6.1.0"
+    val junitPlatformVersion = "6.1.0"
     val lombokVersion = "1.18.46"
     val mockitoVersion = "5.23.0"
     val mockitoInlineVersion = "5.2.0"
     val assertjVersion = "3.27.7"
-    val mockwebserverVersion = "5.3.2"
+    val mockwebserverVersion = "5.4.0"
     val dotenvVersion = "5.2.2"
     val opentest4jVersion = "1.3.0"
 
