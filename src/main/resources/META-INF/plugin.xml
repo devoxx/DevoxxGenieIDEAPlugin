@@ -68,6 +68,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.7.3</h2>
+        <UL>
+                    <LI>feat(agent): add PSI call-graph navigation agent tools — call_hierarchy, type_hierarchy and related code-navigation tools (task-229, #1093)</LI>
+                    <LI>feat(agent): fine-grained enable/disable per PSI tool in Settings (task-229, #1093)</LI>
+                    <LI>build: migrate to platform-bundled Compose and raise minimum IDE to 2025.3.3 (#1089)</LI>
+                    <LI>build: remove duplicate Netty version declaration (#1091)</LI>
+                </UL>
         <h2>v1.7.2</h2>
         <UL>
                     <LI>fix(rag): migrate ChromaDB REST client from v1 to v2 API — fixes collection/embedding endpoints for ChromaDB 0.6.x (#1085, #1086)</LI>

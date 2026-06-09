@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.7.3 - 2026-06-09
+
+### Added
+- feat(agent): add PSI call-graph navigation agent tools — lets the LLM traverse caller/callee and type hierarchies for more accurate code navigation (task-229, #1093)
+- feat(agent): fine-grained enable/disable per PSI tool in Settings, so each PSI navigation tool can be toggled individually (task-229, #1093)
+
+### Changed
+- build: migrate to platform-bundled Compose and raise minimum supported IDE to 2025.3.3 (#1089)
+- build: remove duplicate Netty version declaration (#1091)
+
+### Documentation
+- docs(task-229): add design spec for fine-grained PSI tool control
+
+### Contributors
+- @stephanj
+
 ## v1.7.2 - 2026-06-09
 
 ### Fixed
