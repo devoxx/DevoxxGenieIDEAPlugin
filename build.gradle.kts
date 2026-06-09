@@ -7,10 +7,10 @@ plugins {
     // Kotlin 2.2.20 matches the stdlib bundled in IntelliJ 2025.3, the minimum supported IDE.
     // Do NOT bump beyond the bundled stdlib of the lowest supported IDE line: the plugin runs
     // on the IDE-provided stdlib (see binaryIncompatibleRuntimeJarPatterns below).
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.lombok") version "2.2.20"
-    kotlin("plugin.compose") version "2.2.20"
-    id("org.jetbrains.intellij.platform") version "2.13.1"
+    kotlin("jvm") version "2.4.0"
+    kotlin("plugin.lombok") version "2.4.0"
+    kotlin("plugin.compose") version "2.4.0"
+    id("org.jetbrains.intellij.platform") version "2.16.0"
     jacoco
 }
 
@@ -275,12 +275,12 @@ dependencies {
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
     // backwards binary compatibility guarantee.
-    val markdownRendererVersion = "0.38.1"
+    val markdownRendererVersion = "0.41.0"
     val nettyVersion = "4.2.15.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.34"
-    val gitignoreReaderVersion = "1.14.1"
+    val gitignoreReaderVersion = "2.0.0"
     val junitJupiterVersion = "6.1.0"
     val junitPlatformVersion = "6.1.0"
     val lombokVersion = "1.18.46"
