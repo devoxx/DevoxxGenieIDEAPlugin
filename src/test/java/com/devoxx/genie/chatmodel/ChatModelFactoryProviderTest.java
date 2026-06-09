@@ -21,10 +21,12 @@ import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -129,5 +131,32 @@ class ChatModelFactoryProviderTest {
                     .as("Factory for local provider '%s' should be present", provider)
                     .isPresent();
         }
+    }
+
+    /**
+     * Completeness guarantee: every {@link ModelProvider} constant must resolve to a factory
+     * via its enum constant name (the {@code provider.name()} key used by ChatModelProvider and
+     * LlmProviderPanel). This is the regression net that catches a provider being added to the
+     * enum but forgotten in the factory registry.
+     */
+    @ParameterizedTest(name = "ModelProvider.{0}.name() resolves to a factory")
+    @EnumSource(ModelProvider.class)
+    void everyModelProviderResolvesByConstantName(ModelProvider provider) {
+        assertThat(ChatModelFactoryProvider.getFactoryByProvider(provider.name()))
+                .as("Factory for provider constant name '%s'", provider.name())
+                .isPresent();
+    }
+
+    /**
+     * The other half of the dual-key contract: every provider must also resolve via its display
+     * name ({@code provider.getName()}, the key used by AgentSettingsComponent). This is what
+     * differs for LLaMA ("LLaMA.c++"), CLI Runners and ACP Runners.
+     */
+    @ParameterizedTest(name = "ModelProvider.{0}.getName() resolves to a factory")
+    @EnumSource(ModelProvider.class)
+    void everyModelProviderResolvesByDisplayName(ModelProvider provider) {
+        assertThat(ChatModelFactoryProvider.getFactoryByProvider(provider.getName()))
+                .as("Factory for provider display name '%s'", provider.getName())
+                .isPresent();
     }
 }
