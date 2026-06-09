@@ -74,15 +74,8 @@ public class FindImplementationsToolExecutor implements ToolExecutor {
         List<String> results = new ArrayList<>();
         for (PsiElement impl : DefinitionsScopedSearch.search(target).findAll()) {
             if (results.size() >= MAX_RESULTS) break;
-
-            String location = PsiToolUtils.formatLocation(impl, projectBase);
-            if (location == null) continue;
-
-            String name = (impl instanceof PsiNameIdentifierOwner owner) ? owner.getName() : impl.getText();
-            String kind = (impl instanceof PsiNameIdentifierOwner owner)
-                    ? PsiToolUtils.getElementKind(owner) : "symbol";
-
-            results.add(String.format("  [%s] %s  %s", kind, name, location));
+            String entry = formatImplementation(impl, projectBase);
+            if (entry != null) results.add(entry);
         }
 
         if (results.isEmpty()) {
@@ -91,12 +84,26 @@ public class FindImplementationsToolExecutor implements ToolExecutor {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Found ").append(results.size()).append(" implementation(s) of '").append(target.getName()).append("':\n\n");
-        for (String r : results) {
-            sb.append(r).append("\n");
-        }
+        sb.append(String.join("\n", results)).append("\n");
         if (results.size() >= MAX_RESULTS) {
             sb.append("\n... (truncated at ").append(MAX_RESULTS).append(" results)");
         }
         return sb.toString();
+    }
+
+    private @org.jetbrains.annotations.Nullable String formatImplementation(@NotNull PsiElement impl,
+                                                                             @NotNull VirtualFile projectBase) {
+        String location = PsiToolUtils.formatLocation(impl, projectBase);
+        if (location == null) return null;
+        String name;
+        String kind;
+        if (impl instanceof PsiNameIdentifierOwner owner) {
+            name = owner.getName();
+            kind = PsiToolUtils.getElementKind(owner);
+        } else {
+            name = impl.getText();
+            kind = "symbol";
+        }
+        return String.format("  [%s] %s  %s", kind, name, location);
     }
 }
