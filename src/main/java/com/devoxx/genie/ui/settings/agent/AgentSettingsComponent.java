@@ -5,6 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
@@ -65,8 +66,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     // PSI tools settings
     private final JBCheckBox enablePsiToolsCheckbox =
-            new JBCheckBox("Enable PSI Tools (find_symbols, document_symbols, find_references, find_definition, find_implementations)",
+            new JBCheckBox("Enable PSI Tools",
                     Boolean.TRUE.equals(stateService.getPsiToolsEnabled()));
+    // Per-PSI-tool checkboxes, greyed out when the master toggle above is off.
+    private final List<JBCheckBox> psiToolCheckboxes = new ArrayList<>();
 
     // Parallel exploration settings
     private final JBCheckBox enableParallelExploreCheckbox =
@@ -215,9 +218,22 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "When enabled, the agent gets IDE-powered code intelligence tools that use the " +
                 "Program Structure Interface (PSI) for semantic code analysis. These tools understand " +
                 "language semantics (imports, types, inheritance) and work across all IDE-supported languages. " +
-                "Tools: find_symbols (search definitions), document_symbols (list file structure), " +
-                "find_references (find usages), find_definition (go to definition), " +
-                "find_implementations (find interface/class implementations).");
+                "Uncheck individual tools below to keep PSI on while hiding specific tools from the agent.");
+
+        // Fine-grained per-tool toggles. These share the disabledAgentTools list (and the
+        // toolCheckboxes map) with the Built-in Tools section, so apply()/isModified()/reset()
+        // handle them without special-casing. They are greyed out when the master toggle is off.
+        // 'disabledSet' was computed in the Built-in Tools section above and is reused here.
+        for (PsiToolCatalog.PsiTool psiTool : PsiToolCatalog.TOOLS) {
+            JBCheckBox cb = new JBCheckBox(psiTool.name() + " - " + psiTool.description(),
+                    !disabledSet.contains(psiTool.name()));
+            cb.setEnabled(enablePsiToolsCheckbox.isSelected());
+            toolCheckboxes.put(psiTool.name(), cb);
+            psiToolCheckboxes.add(cb);
+            addIndentedRow(contentPanel, gbc, cb);
+        }
+        enablePsiToolsCheckbox.addItemListener(e ->
+                psiToolCheckboxes.forEach(cb -> cb.setEnabled(enablePsiToolsCheckbox.isSelected())));
 
         // --- Parallel Exploration ---
         addSection(contentPanel, gbc, "Parallel Exploration");
@@ -833,6 +849,16 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         gbc.gridy++;
     }
 
+    /** Like {@link #addFullWidthRow} but with extra left padding, to nest a control under a parent toggle. */
+    private void addIndentedRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(2, 25, 2, 5);
+        panel.add(component, gbc);
+        gbc.insets = new Insets(4, 5, 4, 5);
+        gbc.gridy++;
+    }
+
     private void addHelpText(JPanel panel, GridBagConstraints gbc, String text) {
         gbc.gridwidth = 2;
         gbc.gridx = 0;
@@ -962,6 +988,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         for (Map.Entry<String, JBCheckBox> entry : toolCheckboxes.entrySet()) {
             entry.getValue().setSelected(!disabledSet.contains(entry.getKey()));
         }
+        // Re-sync PSI sub-tool grey-out with the (just-reset) master toggle.
+        psiToolCheckboxes.forEach(cb -> cb.setEnabled(enablePsiToolsCheckbox.isSelected()));
 
         // customTestCommandField.setText() above triggers caret-based scrollRectToVisible,
         // which scrolls IntelliJ's viewport to mid-panel. Scroll back to top
