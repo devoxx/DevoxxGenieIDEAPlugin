@@ -82,13 +82,13 @@ public class ButtonEditor extends DefaultCellEditor {
                     return DELETE_LABEL;
                 }
 
-                String collectionId = (String) tableModel.getValueAt(row, 0);
-                if (collectionId != null && confirmDeletion(collectionId)) {
+                String collectionName = (String) tableModel.getValueAt(row, 0);
+                if (collectionName != null && confirmDeletion(collectionName)) {
                     // Delete collection first
-                    ChromaDBManager.getInstance(project).deleteCollection(collectionId);
+                    ChromaDBManager.getInstance(project).deleteCollection(collectionName);
 
                     // Delete the associated volume data
-                    dockerService.deleteCollectionData(project, collectionId);
+                    dockerService.deleteCollectionData(project, collectionName);
 
                     // Then reload table data
                     safeLoadCollections();

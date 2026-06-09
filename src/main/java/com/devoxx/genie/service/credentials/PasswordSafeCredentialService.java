@@ -2,12 +2,15 @@ package com.devoxx.genie.service.credentials;
 
 import com.intellij.credentialStore.Credentials;
 import com.intellij.ide.passwordSafe.PasswordSafe;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * Default {@link CredentialService} implementation, backed by IntelliJ's
@@ -25,12 +28,17 @@ public final class PasswordSafeCredentialService implements CredentialService {
      */
     private final Map<CredentialKey, String> memoryFallback = new EnumMap<>(CredentialKey.class);
 
+    /** Keys whose PasswordSafe read returned null/empty or threw — skip the keychain on repeat reads. */
+    private final Set<CredentialKey> emptyKeys = EnumSet.noneOf(CredentialKey.class);
+
     private final boolean passwordSafeAvailable;
 
     public PasswordSafeCredentialService() {
         boolean available;
         try {
-            available = PasswordSafe.getInstance() != null;
+            // Skip PasswordSafe in headless mode (e.g. buildSearchableOptions, tests) to
+            // avoid triggering repeated OS keychain dialogs that can never be confirmed.
+            available = !isHeadless() && PasswordSafe.getInstance() != null;
         } catch (Throwable t) {
             LOG.warn("PasswordSafe is not available; falling back to in-memory credential storage", t);
             available = false;
@@ -38,19 +46,33 @@ public final class PasswordSafeCredentialService implements CredentialService {
         this.passwordSafeAvailable = available;
     }
 
+    private static boolean isHeadless() {
+        try {
+            return ApplicationManager.getApplication().isHeadlessEnvironment();
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
     @Override
     public synchronized @NotNull String getCredential(@NotNull CredentialKey key) {
         if (!passwordSafeAvailable) {
             return memoryFallback.getOrDefault(key, "");
         }
+        // Skip keychain if a prior read returned nothing — avoids repeated OS dialogs per session.
+        if (emptyKeys.contains(key)) {
+            return memoryFallback.getOrDefault(key, "");
+        }
         try {
             Credentials creds = PasswordSafe.getInstance().get(key.attributes());
             String password = (creds == null) ? null : creds.getPasswordAsString();
-            if (password != null) {
+            if (password != null && !password.isEmpty()) {
                 return password;
             }
+            emptyKeys.add(key);
         } catch (Throwable t) {
             LOG.warn("PasswordSafe.get(" + key + ") failed; using in-memory fallback", t);
+            emptyKeys.add(key);
         }
         return memoryFallback.getOrDefault(key, "");
     }
@@ -61,6 +83,8 @@ public final class PasswordSafeCredentialService implements CredentialService {
             removeCredential(key);
             return;
         }
+        // A new value was written — allow the next read to go to the keychain.
+        emptyKeys.remove(key);
         if (!passwordSafeAvailable) {
             memoryFallback.put(key, value);
             return;
@@ -82,6 +106,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
     @Override
     public synchronized void removeCredential(@NotNull CredentialKey key) {
         memoryFallback.remove(key);
+        emptyKeys.remove(key);
         if (!passwordSafeAvailable) {
             return;
         }

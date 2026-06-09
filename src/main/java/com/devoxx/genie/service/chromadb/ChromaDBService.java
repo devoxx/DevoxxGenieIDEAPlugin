@@ -7,12 +7,12 @@ import retrofit2.http.GET;
 import retrofit2.http.Path;
 
 public interface ChromaDBService {
-    @GET("/api/v1/collections")
+    @GET("/api/v2/tenants/default_tenant/databases/default_database/collections")
     Call<ChromaCollection[]> getCollections();
 
-    @GET("/api/v1/collections/{collectionName}/count")
-    Call<Integer> getCount(@Path("collectionName") String collectionName);
+    @GET("/api/v2/tenants/default_tenant/databases/default_database/collections/{collectionId}/count")
+    Call<Integer> getCount(@Path("collectionId") String collectionId);
 
-    @DELETE("/api/v1/collections/{collectionName}")
+    @DELETE("/api/v2/tenants/default_tenant/databases/default_database/collections/{collectionName}")
     Call<Void> deleteCollection(@Path("collectionName") String collectionName);
 }
