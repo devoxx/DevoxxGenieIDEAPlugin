@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.7.2</h2>
+        <UL>
+                    <LI>fix(rag): migrate ChromaDB REST client from v1 to v2 API — fixes collection/embedding endpoints for ChromaDB 0.6.x (#1085, #1086)</LI>
+                    <LI>fix(rag): convert Windows volume path for WSL Linux Docker daemon</LI>
+                    <LI>test(rag): add e2e tests for ChromaDB v2 API and Docker volume path</LI>
+                </UL>
         <h2>v1.7.1</h2>
         <UL>
                     <LI>feat(agent): add web_search built-in tool to agent mode (task-223, #1079)</LI>

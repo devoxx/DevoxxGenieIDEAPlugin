@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.7.2 - 2026-06-09
+
+### Fixed
+- fix(rag): migrate ChromaDB REST client from v1 to v2 API — fixes collection/embedding endpoints for ChromaDB 0.6.x (#1085, #1086)
+- fix(rag): convert Windows volume path for WSL Linux Docker daemon
+
+### Tests
+- test(rag): add e2e tests for ChromaDB v2 API and Docker volume path
+
+### Contributors
+- @stephanj
+
 ## v1.7.1 - 2026-06-08
 
 ### Added
