@@ -50,7 +50,7 @@ public class LLMProviderService {
 
     public List<ModelProvider> getAvailableModelProviders() {
         List<ModelProvider> providers = new ArrayList<>();
-        providers.addAll(getModelProvidersWithApiKeyConfigured());
+        providers.addAll(getEnabledCloudModelProviders());
         providers.addAll(getLocalModelProviders());
         providers.addAll(getOptionalProviders());
         providers.addAll(getCliRunnersProvider());
@@ -64,20 +64,38 @@ public class LLMProviderService {
     }
 
     /**
-     * Get LLM providers for which an API Key is defined in the settings
+     * Get the cloud LLM providers the user has enabled in the settings.
+     *
+     * <p>Deliberately checks only the non-secret enabled flags, never the credential
+     * store: reading API keys here would hit the OS keychain (PasswordSafe) on every
+     * IDE startup just to populate the provider combo box, triggering macOS keychain
+     * dialogs. Keys are read lazily via {@link #getApiKey} when a prompt is executed.</p>
      *
      * @return List of LLM providers
      */
-    private List<ModelProvider> getModelProvidersWithApiKeyConfigured() {
+    private List<ModelProvider> getEnabledCloudModelProviders() {
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         return LLMModelRegistryService.getInstance().getModels()
             .stream()
             .filter(LanguageModel::isApiKeyUsed)
             .map(LanguageModel::getProvider)
             .distinct()
-            .filter(provider -> Optional.ofNullable(providerKeyMap.get(provider))
-                .map(Supplier::get)
-                .filter(key -> !key.isBlank())
-                .isPresent())
+            .filter(provider -> switch (provider) {
+                case OpenAI -> stateService.isOpenAIEnabled();
+                case Anthropic -> stateService.isAnthropicEnabled();
+                case Mistral -> stateService.isMistralEnabled();
+                case Groq -> stateService.isGroqEnabled();
+                case DeepInfra -> stateService.isDeepInfraEnabled();
+                case Google -> stateService.isGoogleEnabled();
+                case DeepSeek -> stateService.isDeepSeekEnabled();
+                case OpenRouter -> stateService.isOpenRouterEnabled();
+                case Grok -> stateService.isGrokEnabled();
+                case Kimi -> stateService.isKimiEnabled();
+                case GLM -> stateService.isGlmEnabled();
+                case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
+                case Bedrock -> stateService.isAwsEnabled();
+                default -> false;
+            })
             .toList();
     }
 
