@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
+import com.devoxx.genie.service.agent.tool.psi.PsiToolUtils;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolSpecification;
@@ -268,6 +269,32 @@ class BuiltInToolProviderTest {
         assertThat(toolNames).contains(
                 "find_symbols", "document_symbols", "find_references", "find_definition",
                 "find_implementations", "find_callees", "trace_call_chains", "calculate_complexity");
+    }
+
+    /**
+     * Regression test for issue #1100: on non-Java IDEs (PyCharm, WebStorm, GoLand…) the
+     * classes of the four Java-only PSI executors cannot even be linked — their method
+     * signatures reference Java-plugin PSI types such as {@code PsiModifierListOwner},
+     * so constructing them throws {@link NoClassDefFoundError} and kills agent mode
+     * entirely. When Java PSI is unavailable, only the five platform-level PSI tools
+     * may be registered; the Java-only executors must never be instantiated.
+     */
+    @Test
+    void provideTools_psiToolsEnabledButJavaPsiUnavailable_registersOnlyPlatformPsiTools() {
+        when(stateService.getPsiToolsEnabled()).thenReturn(true);
+
+        try (MockedStatic<PsiToolUtils> psiToolUtilsMock = mockStatic(PsiToolUtils.class)) {
+            psiToolUtilsMock.when(PsiToolUtils::isJavaAvailable).thenReturn(false);
+            BuiltInToolProvider provider = createProvider();
+
+            Set<String> toolNames = getToolNames(provider.provideTools(request));
+
+            assertThat(toolNames).contains(
+                    "find_symbols", "document_symbols", "find_references",
+                    "find_definition", "find_implementations");
+            assertThat(toolNames).doesNotContain(
+                    "find_callees", "trace_call_chains", "calculate_complexity", "find_dead_code");
+        }
     }
 
     // --- All features enabled ---

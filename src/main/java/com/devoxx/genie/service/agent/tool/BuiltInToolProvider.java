@@ -337,6 +337,15 @@ public class BuiltInToolProvider implements ToolProvider {
                 new FindImplementationsToolExecutor(project)
         );
 
+        // The remaining tools are Java-only: their executor classes reference Java-plugin PSI
+        // types (PsiMethod, PsiModifierListOwner, …) in method signatures, so merely linking
+        // them throws NoClassDefFoundError in IDEs without the Java plugin (PyCharm, WebStorm,
+        // GoLand, …) — see issue #1100. The isJavaAvailable() checks inside their execute()
+        // methods cannot help because the class never loads. Skip registration entirely.
+        if (!PsiToolUtils.isJavaAvailable()) {
+            return;
+        }
+
         // find_callees — outgoing calls from a method (inverse of find_references)
         tools.put(
                 ToolSpecification.builder()
