@@ -15,6 +15,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -23,6 +24,20 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class StreamingResponseHandler implements StreamingChatResponseHandler {
+
+    /**
+     * Schedules a one-shot flush of buffered tokens to the UI. Injectable so tests can
+     * run flush tasks deterministically on the test thread (Mockito static mocks are
+     * thread-local and would not be visible on a background scheduler thread).
+     */
+    @FunctionalInterface
+    public interface FlushScheduler {
+        void schedule(@NotNull Runnable task, long delayMillis);
+    }
+
+    /** Cadence at which buffered partial tokens are flushed to the UI. */
+    static final long FLUSH_INTERVAL_MS = 75;
+
     private final ChatMessageContext context;
     private final long startTime;
     private final Project project;
@@ -30,9 +45,16 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final Consumer<Throwable> onErrorCallback;
     private volatile boolean isStopped = false;
     private final ConversationViewController conversationViewController;
+    private final FlushScheduler flushScheduler;
+    private final long flushIntervalMs;
 
-    // Track if we've added the initial message and accumulate the streamed tokens
-    private boolean hasAddedInitialMessage = false;
+    // Track if we've added the initial message and accumulate the streamed tokens.
+    // The accumulator is appended on the langchain4j thread and read on the flush
+    // scheduler thread (and on stop), so all access is synchronized on the instance.
+    private volatile boolean hasAddedInitialMessage = false;
+    private volatile boolean isCompleted = false;
+    private final java.util.concurrent.atomic.AtomicBoolean flushScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
     private final StringBuilder accumulatedResponse = new StringBuilder();
 
     /**
@@ -48,6 +70,20 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             ConversationViewController conversationViewController,
             @NotNull Consumer<ChatResponse> onCompleteCallback,
             @NotNull Consumer<Throwable> onErrorCallback) {
+        this(context, conversationViewController, onCompleteCallback, onErrorCallback,
+                StreamingResponseHandler::scheduleOnSharedExecutor, FLUSH_INTERVAL_MS);
+    }
+
+    /**
+     * Test-visible constructor allowing the flush scheduler and cadence to be injected.
+     */
+    StreamingResponseHandler(
+            @NotNull ChatMessageContext context,
+            ConversationViewController conversationViewController,
+            @NotNull Consumer<ChatResponse> onCompleteCallback,
+            @NotNull Consumer<Throwable> onErrorCallback,
+            @NotNull FlushScheduler flushScheduler,
+            long flushIntervalMs) {
         log.debug("Created streaming handler for context {}", context.getId());
         this.context = context;
         this.project = context.getProject();
@@ -55,6 +91,17 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         this.onErrorCallback = onErrorCallback;
         this.startTime = System.currentTimeMillis();
         this.conversationViewController = conversationViewController;
+        this.flushScheduler = flushScheduler;
+        this.flushIntervalMs = flushIntervalMs;
+    }
+
+    /**
+     * Default scheduler: one-shot task on the application-wide scheduled executor,
+     * so no dedicated timer thread lives while streaming is idle.
+     */
+    private static void scheduleOnSharedExecutor(@NotNull Runnable task, long delayMillis) {
+        com.intellij.util.concurrency.AppExecutorUtil.getAppScheduledExecutorService()
+                .schedule(task, delayMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -63,30 +110,58 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             return;
         }
 
-        log.debug("Received partial response: '{}...'", 
+        log.debug("Received partial response: '{}...'",
                 partialResponse.substring(0, Math.min(20, partialResponse.length())));
-        
-        // Accumulate the response tokens 
-        accumulatedResponse.append(partialResponse);
-        String fullText = accumulatedResponse.toString();
-        
-        // Only update the UI if we have a valid controller (might be null in tests)
-        if (conversationViewController != null) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                // Set the AI message with accumulated tokens so far
-                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
-                
-                // Always update the existing message - we already created a placeholder
-                // when the user submitted the prompt
-                conversationViewController.updateAiMessageContent(context);
-                
-                // Mark that we've started streaming
-                hasAddedInitialMessage = true;
-            });
-        } else {
+
+        // Accumulate the response tokens
+        synchronized (accumulatedResponse) {
+            accumulatedResponse.append(partialResponse);
+        }
+
+        if (conversationViewController == null) {
             // Still update the message in context even without UI
-            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
+            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(getAccumulatedText()));
             hasAddedInitialMessage = true;
+            return;
+        }
+
+        if (!hasAddedInitialMessage) {
+            // Paint the very first token immediately so the user sees the response start,
+            // then fall into the batched cadence for everything that follows.
+            hasAddedInitialMessage = true;
+            flushToUi();
+        } else if (flushScheduled.compareAndSet(false, true)) {
+            // Fast providers can deliver hundreds of tokens per second; posting one EDT
+            // update per token floods the EDT and re-parses the full markdown each time.
+            // Arm a single one-shot flush instead; tokens arriving meanwhile just land
+            // in the accumulator and ride along with the armed flush.
+            flushScheduler.schedule(this::runScheduledFlush, flushIntervalMs);
+        }
+    }
+
+    private void runScheduledFlush() {
+        flushScheduled.set(false);
+        if (isStopped || isCompleted) {
+            return;
+        }
+        flushToUi();
+    }
+
+    /**
+     * Posts the current accumulated text to the UI. The snapshot is taken on the calling
+     * thread; only the EDT runnable touches the view, matching the pre-batching contract.
+     */
+    private void flushToUi() {
+        String fullText = getAccumulatedText();
+        ApplicationManager.getApplication().invokeLater(() -> {
+            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
+            conversationViewController.updateAiMessageContent(context);
+        });
+    }
+
+    private String getAccumulatedText() {
+        synchronized (accumulatedResponse) {
+            return accumulatedResponse.toString();
         }
     }
 
@@ -103,8 +178,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         }
         // Only separate turns that actually produced reasoning text; a tool-only turn
         // (empty text) shouldn't leave a dangling blank line.
-        if (!accumulatedResponse.isEmpty() && !accumulatedResponse.toString().endsWith("\n\n")) {
-            accumulatedResponse.append("\n\n");
+        synchronized (accumulatedResponse) {
+            if (!accumulatedResponse.isEmpty() && !accumulatedResponse.toString().endsWith("\n\n")) {
+                accumulatedResponse.append("\n\n");
+            }
         }
     }
 
@@ -113,6 +190,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         if (isStopped) {
             return;
         }
+
+        // Suppress any in-flight batched flush; the unconditional final update below
+        // renders the complete accumulated text.
+        isCompleted = true;
 
         try {
             long endTime = System.currentTimeMillis();
@@ -125,8 +206,9 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // therefore erase all intermediate reasoning from the chat panel. Prefer the
             // accumulated text whenever we streamed partials, so the full visible turn is
             // what we render and persist.
-            if (hasAddedInitialMessage && !accumulatedResponse.isEmpty()) {
-                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(accumulatedResponse.toString()));
+            String accumulatedText = getAccumulatedText();
+            if (hasAddedInitialMessage && !accumulatedText.isEmpty()) {
+                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(accumulatedText));
             } else {
                 context.setAiMessage(response.aiMessage());
             }
@@ -210,6 +292,12 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         if (!isStopped) {
             isStopped = true;
             log.info("Stopping streaming handler for context {}, deactivating activity handlers", context.getId());
+
+            // Render any tokens still sitting in the batch buffer — without this, up to
+            // one flush interval of trailing text would silently vanish on stop.
+            if (conversationViewController != null && hasAddedInitialMessage) {
+                flushToUi();
+            }
 
             // Clean up partial response from memory using the tab-aware memory key
             if (context.getAiMessage() != null) {

@@ -1,9 +1,8 @@
 ---
 id: TASK-229
-title: >-
-  Extend PSI agent tools with call-graph navigation (find_callees,
+title: Extend PSI agent tools with call-graph navigation (find_callees,
   trace_call_chains, complexity, dead_code)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-06 12:00'
 updated_date: '2026-06-08 14:32'

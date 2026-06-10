@@ -52,7 +52,13 @@ class ConversationViewModel(
         private set
 
     var isDarkTheme: Boolean by mutableStateOf(
-        com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme()
+        // ThemeDetector's static init needs the IntelliJ Application; guard it like the
+        // other platform accesses in this class so plain unit tests can construct the model.
+        try {
+            com.devoxx.genie.ui.util.ThemeDetector.isDarkTheme()
+        } catch (_: Throwable) {
+            false
+        }
     )
         private set
 
@@ -230,6 +236,14 @@ class ConversationViewModel(
         // reasoning above is always shown.
         if (!showToolActivityInChat()) return
 
+        // A tool call is already listed via its TOOL_REQUEST entry (which carries the
+        // arguments); the matching TOOL_RESPONSE would render as a duplicate bare line.
+        if (message.source == ActivitySource.AGENT &&
+            message.agentType == AgentType.TOOL_RESPONSE
+        ) {
+            return
+        }
+
         val entry = ActivityEntryUiModel(
             source = message.source?.name ?: "UNKNOWN",
             content = message.content ?: "",
@@ -252,8 +266,10 @@ class ConversationViewModel(
     }
 
     fun hideLoadingIndicator(messageId: String) {
+        // Complete, error and stop all end up here — clearing the streaming flag in the
+        // same place keeps one lifecycle for both the loading dots and the streaming caret.
         updateMessage(messageId) { msg ->
-            msg.copy(isLoadingIndicatorVisible = false)
+            msg.copy(isLoadingIndicatorVisible = false, isStreaming = false)
         }
     }
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-231
 title: Fix ChromaDB v2 API migration and add e2e tests for ChromaDB interactions
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-09 11:27'
 labels:

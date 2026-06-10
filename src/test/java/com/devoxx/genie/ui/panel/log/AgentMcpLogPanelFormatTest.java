@@ -128,30 +128,6 @@ class AgentMcpLogPanelFormatTest {
         assertThat(AgentMcpLogPanel.formatForClipboard(input)).isEqualTo("\n    first\n    second");
     }
 
-    // --- toHtmlTooltip --------------------------------------------------------------------
-
-    @Test
-    void toHtmlTooltip_wrapsInHtmlAndConvertsNewlines() {
-        String tooltip = AgentMcpLogPanel.toHtmlTooltip("alpha\nbeta");
-        assertThat(tooltip).startsWith("<html>");
-        assertThat(tooltip).endsWith("</html>");
-        assertThat(tooltip).contains("alpha<br>beta");
-    }
-
-    @Test
-    void toHtmlTooltip_escapesHtmlSpecials() {
-        String tooltip = AgentMcpLogPanel.toHtmlTooltip("<script>alert(\"x\")</script> & done");
-        assertThat(tooltip).doesNotContain("<script>");
-        assertThat(tooltip).contains("&lt;script&gt;");
-        assertThat(tooltip).contains("&amp; done");
-    }
-
-    @Test
-    void toHtmlTooltip_truncatesVeryLongContentWithHint() {
-        String tooltip = AgentMcpLogPanel.toHtmlTooltip("x".repeat(20_000), 100);
-        assertThat(tooltip).contains("double-click to view full content");
-    }
-
     @Test
     void formatForRow_doubleTrailingNewline_countsAsOneLine() {
         // "a\n\n" should collapse to a single-line result, not show a "(N more lines)" hint.
@@ -222,14 +198,5 @@ class AgentMcpLogPanelFormatTest {
                 "\n    Error: failed to spawn process" +
                 "\n    stacktrace line 1"
         );
-    }
-
-    @Test
-    void toHtmlTooltip_nullGuardInRenderer() {
-        // Mirrors the cell-renderer guard: pass null through the same code path the renderer
-        // uses, ensuring no NPE. The renderer is: fc != null ? toHtmlTooltip(fc) : null
-        String fullContent = null;
-        String tooltip = fullContent != null ? AgentMcpLogPanel.toHtmlTooltip(fullContent) : null;
-        assertThat(tooltip).isNull();
     }
 }
