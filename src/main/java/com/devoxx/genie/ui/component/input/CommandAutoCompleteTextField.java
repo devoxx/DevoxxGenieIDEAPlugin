@@ -2,10 +2,10 @@ package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.tips.TipService;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
-import com.devoxx.genie.service.tips.TipService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -120,12 +120,11 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         }
         int x = getInsets().left;
         int baseline = g.getFontMetrics().getMaxAscent() + getInsets().top;
+        g.setColor(JBColor.GRAY);
         if (!placeholder.isEmpty()) {
-            g.setColor(JBColor.GRAY);
             g.drawString(placeholder, x, baseline);
         }
         if (currentTip != null && !currentTip.isBlank()) {
-            g.setColor(JBColor.GRAY);
             g.drawString("Tip: " + currentTip, x, baseline + g.getFontMetrics().getHeight());
         }
     }
