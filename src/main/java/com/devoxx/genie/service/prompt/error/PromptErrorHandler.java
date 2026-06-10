@@ -2,6 +2,9 @@ package com.devoxx.genie.service.prompt.error;
 
 import com.devoxx.genie.error.ErrorHandler;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.prompt.cancellation.PromptCancellationService;
+import com.devoxx.genie.ui.compose.model.TerminalState;
+import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -15,6 +18,9 @@ import org.jetbrains.annotations.Nullable;
  */
 @Slf4j
 public class PromptErrorHandler {
+
+    /** Maximum length of the error summary shown inline in the chat; full detail stays in idea.log. */
+    private static final int MAX_INLINE_ERROR_LENGTH = 300;
 
     /**
      * Handle a prompt exception with context information.
@@ -34,7 +40,11 @@ public class PromptErrorHandler {
         if (promptException.isUserVisible()) {
             showNotification(project, promptException);
         }
-        
+
+        // Durable in-chat record: mark the message with an ERROR terminal state so the
+        // conversation shows an inline error card (with Retry) that outlives the toast.
+        updateChatTerminalState(project, promptException, chatMessageContext);
+
         // Delegate to global error handler for tracking/reporting
         ErrorHandler.handleError(project, promptException);
         
@@ -49,6 +59,55 @@ public class PromptErrorHandler {
         handleException(project, exception, null);
     }
     
+    /**
+     * Derives the human-readable, truncated error summary for inline chat display.
+     * Reuses the exact same classification as the toast ({@link #convertToPromptException})
+     * — no second classification layer. Long provider stack traces are truncated; the
+     * full detail remains in idea.log.
+     */
+    public static @NotNull String userFacingMessage(@NotNull Throwable exception) {
+        String message = convertToPromptException(exception).getMessage();
+        if (message == null || message.isBlank()) {
+            message = exception.getClass().getSimpleName();
+        }
+        if (message.length() > MAX_INLINE_ERROR_LENGTH) {
+            message = message.substring(0, MAX_INLINE_ERROR_LENGTH) + "…";
+        }
+        return message;
+    }
+
+    /**
+     * Writes the ERROR terminal state onto the chat message of the failed execution.
+     * The panel is looked up via the cancellation service registry (still registered at
+     * error time); when no panel is found (headless paths, already unregistered) this is
+     * a silent no-op. The view model guarantees terminal states are final, so calling
+     * this after a STOPPED marker has no effect.
+     */
+    private static void updateChatTerminalState(@NotNull Project project,
+                                                @NotNull PromptException exception,
+                                                @Nullable ChatMessageContext chatMessageContext) {
+        if (chatMessageContext == null) {
+            return;
+        }
+        try {
+            PromptOutputPanel panel = PromptCancellationService.getInstance()
+                    .getRegisteredPanel(project, chatMessageContext.getId());
+            if (panel != null && panel.getConversationPanel() != null
+                    && panel.getConversationPanel().viewController != null) {
+                String messageId = chatMessageContext.getId();
+                String errorText = userFacingMessage(exception);
+                // Compose mutableStateOf mutations must happen on the EDT — this method is
+                // reached from prompt-execution pool threads (executeQuery().exceptionally,
+                // strategy error handlers), never guaranteed to be the EDT.
+                ApplicationManager.getApplication().invokeLater(() ->
+                        panel.getConversationPanel().viewController.setTerminalState(
+                                messageId, TerminalState.ERROR, errorText));
+            }
+        } catch (Exception e) {
+            log.debug("Could not set ERROR terminal state in chat", e);
+        }
+    }
+
     /**
      * Convert any exception to a PromptException
      */

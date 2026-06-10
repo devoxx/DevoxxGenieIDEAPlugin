@@ -8,6 +8,7 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.devoxx.genie.ui.compose.model.TerminalState;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -266,6 +267,19 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         // Hide the loading indicator in the WebView
         hideLoadingIndicator();
 
+        // Durable in-chat record of the failure (red error card with Retry), posted on
+        // the EDT like every other Compose state mutation. Note this intentionally
+        // coexists with the PromptErrorHandler.handleException call below, which also
+        // sets ERROR via the panel registry: this direct call runs first and derives the
+        // text from the RAW provider error, while handleException only sees the generic
+        // StreamingException wrapper ("Error during streaming response"). Terminal states
+        // are final, so the more specific text set here wins and the second set is a no-op.
+        if (conversationViewController != null) {
+            String errorText = PromptErrorHandler.userFacingMessage(error);
+            ApplicationManager.getApplication().invokeLater(() ->
+                conversationViewController.setTerminalState(context.getId(), TerminalState.ERROR, errorText));
+        }
+
         StreamingException streamingError = new StreamingException(
             "Error during streaming response", error);
         PromptErrorHandler.handleException(context.getProject(), streamingError, context);
@@ -312,6 +326,15 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
             // Hide the loading indicator in the WebView
             hideLoadingIndicator();
+
+            // Leave a visible, durable "stopped" marker on the message; the partial
+            // text flushed above stays in place. Posted via invokeLater so it executes
+            // AFTER the final flushToUi() above (also queued on the EDT) — otherwise the
+            // STOPPED guard in the view model would reject that last partial update.
+            if (conversationViewController != null) {
+                ApplicationManager.getApplication().invokeLater(() ->
+                    conversationViewController.setTerminalState(context.getId(), TerminalState.STOPPED, null));
+            }
         }
     }
 }

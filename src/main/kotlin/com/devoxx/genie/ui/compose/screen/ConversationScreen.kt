@@ -19,6 +19,8 @@ fun ConversationScreen(
     viewModel: ConversationViewModel,
     onFileClick: (String) -> Unit,
     onCustomPromptClick: (String) -> Unit,
+    onRetryClick: (String) -> Unit = {},
+    onOpenAgentSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state = viewModel.state
@@ -63,6 +65,8 @@ fun ConversationScreen(
                     ChatScreen(
                         messages = s.messages,
                         onFileClick = onFileClick,
+                        onRetryClick = onRetryClick,
+                        onOpenAgentSettings = onOpenAgentSettings,
                         isRestoring = s.isRestoringConversation,
                     )
                 }

@@ -1,10 +1,10 @@
 ---
 id: TASK-234
 title: 'Explicit terminal states in chat: stopped marker, inline error card with retry, loop-limit notice'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-10 12:00'
-updated_date: '2026-06-10 12:00'
+updated_date: '2026-06-10'
 labels:
   - enhancement
   - UX
@@ -40,13 +40,13 @@ Add a terminal-state model to the message UI:
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Stopping a streaming response leaves a visible "Stopped by user" marker on that message; partial text remains exactly as before (memory cleanup behavior unchanged)
-- [ ] #2 A failed prompt shows an inline error card in the conversation with a human-readable summary; the card persists across scrolling (it is part of the message model, not an overlay)
-- [ ] #3 The error card's Retry button re-submits the same prompt with the same attached context exactly once per click, using the normal submission flow (buttons disable, indicator shows, etc.)
-- [ ] #4 Hitting the agent loop limit shows an in-chat notice naming the configured limit, with an affordance that opens Settings → Agent
-- [ ] #5 Terminal states are mutually exclusive and final per message: a stopped message cannot later flip to completed by a straggling token (isStopped guard already blocks updates — assert it)
-- [ ] #6 Restored conversations from history render terminal markers gracefully (persisted conversations without the field default to COMPLETED; no crash on old data)
-- [ ] #7 Unit tests: stop mid-stream sets STOPPED and blocks further partials; error path sets ERROR with message; LOOP_LIMIT event sets state; retry invokes the submission entry point with the original prompt
+- [x] #1 Stopping a streaming response leaves a visible "Stopped by user" marker on that message; partial text remains exactly as before (memory cleanup behavior unchanged)
+- [x] #2 A failed prompt shows an inline error card in the conversation with a human-readable summary; the card persists across scrolling (it is part of the message model, not an overlay)
+- [x] #3 The error card's Retry button re-submits the same prompt with the same attached context exactly once per click, using the normal submission flow (buttons disable, indicator shows, etc.)
+- [x] #4 Hitting the agent loop limit shows an in-chat notice naming the configured limit, with an affordance that opens Settings → Agent
+- [x] #5 Terminal states are mutually exclusive and final per message: a stopped message cannot later flip to completed by a straggling token (isStopped guard already blocks updates — assert it)
+- [x] #6 Restored conversations from history render terminal markers gracefully (persisted conversations without the field default to COMPLETED; no crash on old data)
+- [x] #7 Unit tests: stop mid-stream sets STOPPED and blocks further partials; error path sets ERROR with message; LOOP_LIMIT event sets state; retry invokes the submission entry point with the original prompt
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -60,3 +60,9 @@ Add a terminal-state model to the message UI:
 - Synergy: task-233's status line should clear when any terminal state is set.
 - Out of scope: automatic retries/backoff, error categorization UI, partial-response regeneration ("continue").
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented in PR #1107 (https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1107), approved 2026-06-10, pending merge. `MessageUiModel` gained a `TerminalState` enum (COMPLETED|STOPPED|ERROR|LOOP_LIMIT) plus errorText/loopLimitMaxCalls/retryAttempted; states are mutually exclusive and final per message. Stop (streaming and non-streaming) renders a "⏹ Stopped by user" footer with partial text kept; errors render a red-tinted inline card with a one-shot Retry routed through PROMPT_SUBMISSION_TOPIC → the normal handlePromptSubmission flow; AgentLoopTracker now publishes LOOP_LIMIT regardless of the debug-logs setting and the chat shows "Reached max tool calls (N)" with a link opening Settings → Agent Mode. All `setTerminalState` mutations are dispatched on the EDT via invokeLater (review fix C1). Persistence decision: terminal state is session-only for v1 — restored conversations default to COMPLETED, no schema change (documented in MessageUiModel). Verification: 14 new unit tests (9 ConversationViewModelTest, 5 StreamingResponseHandlerTest); full suite green except the pre-existing ReadFileToolExecutorTest failure also present on clean master.
+<!-- SECTION:FINAL_SUMMARY:END -->

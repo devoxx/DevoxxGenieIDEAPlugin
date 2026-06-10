@@ -67,7 +67,20 @@ public class ConversationPanel
         super(new BorderLayout());
         this.tabId = tabId;
 
-        viewController = new ComposeConversationViewController(project, s -> kotlin.Unit.INSTANCE);
+        viewController = new ComposeConversationViewController(
+                project,
+                s -> kotlin.Unit.INSTANCE,
+                // Retry from an inline error card: route the original user prompt back
+                // through the normal submission entry point. The PROMPT_SUBMISSION_TOPIC
+                // subscriber (ActionButtonsPanel) drives PromptExecutionController
+                // .handlePromptSubmission with the current tab's context, and queues the
+                // prompt if another execution is still running.
+                prompt -> {
+                    project.getMessageBus()
+                            .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
+                            .onPromptSubmitted(project, prompt, tabId);
+                    return kotlin.Unit.INSTANCE;
+                });
 
         messageRenderer = new MessageRenderer(project, viewController);
 

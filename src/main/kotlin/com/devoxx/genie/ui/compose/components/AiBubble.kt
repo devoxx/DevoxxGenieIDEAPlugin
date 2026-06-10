@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.compose.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -15,9 +16,11 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.model.MessageUiModel
+import com.devoxx.genie.ui.compose.model.TerminalState
 import com.devoxx.genie.ui.compose.theme.*
 import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.compose.components.MarkdownComponent
@@ -109,6 +112,8 @@ private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
 fun AiBubble(
     message: MessageUiModel,
     modifier: Modifier = Modifier,
+    onRetryClick: (String) -> Unit = {},
+    onOpenAgentSettings: () -> Unit = {},
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
     val shape = RoundedCornerShape(8.dp)
@@ -196,6 +201,21 @@ fun AiBubble(
             }
         }
 
+        // Terminal-state markers: durable in-chat feedback for abnormal completion.
+        when (message.terminalState) {
+            TerminalState.STOPPED -> StoppedFooter(hasContent = message.aiResponseMarkdown.isNotBlank())
+            TerminalState.ERROR -> ErrorCard(
+                errorText = message.errorText,
+                retryAttempted = message.retryAttempted,
+                onRetryClick = { onRetryClick(message.id) },
+            )
+            TerminalState.LOOP_LIMIT -> LoopLimitNotice(
+                maxCalls = message.loopLimitMaxCalls,
+                onOpenAgentSettings = onOpenAgentSettings,
+            )
+            TerminalState.COMPLETED -> { /* normal completion — no marker */ }
+        }
+
         // Copy button
         if (message.aiResponseMarkdown.isNotBlank()) {
             Spacer(Modifier.height(4.dp))
@@ -241,5 +261,112 @@ private fun MetadataRow(message: MessageUiModel) {
                 style = typography.caption.copy(color = colors.textSecondary),
             )
         }
+    }
+}
+
+/**
+ * Muted footer rendered when the user stopped the response mid-stream. Whatever
+ * partial text was kept stays visible above it.
+ */
+@Composable
+private fun StoppedFooter(hasContent: Boolean) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    if (hasContent) {
+        Spacer(Modifier.height(8.dp))
+    }
+    BasicText(
+        text = "\u23F9 Stopped by user",
+        style = typography.caption.copy(color = colors.textSecondary),
+    )
+}
+
+/**
+ * Compact inline error card: red-tinted background, human-readable error summary and
+ * a Retry affordance. The card is part of the message model, so it persists across
+ * scrolling and is not a transient overlay. Retry is one-shot: [retryAttempted]
+ * disables the affordance after the first click (double-submission guard).
+ */
+@Composable
+private fun ErrorCard(
+    errorText: String?,
+    retryAttempted: Boolean,
+    onRetryClick: () -> Unit,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val errorRed = Color(0xFFE53935)
+    val shape = RoundedCornerShape(6.dp)
+
+    Spacer(Modifier.height(8.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, errorRed.copy(alpha = 0.6f), shape)
+            .background(errorRed.copy(alpha = if (colors.isDark) 0.15f else 0.08f), shape)
+            .padding(10.dp),
+    ) {
+        BasicText(
+            text = "\u26A0 Request failed",
+            style = typography.caption.copy(color = errorRed, fontWeight = FontWeight.Bold),
+        )
+        if (!errorText.isNullOrBlank()) {
+            Spacer(Modifier.height(4.dp))
+            BasicText(
+                text = errorText,
+                style = typography.caption.copy(color = colors.textPrimary),
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        val retryLabel = if (retryAttempted) "\u21BB Retried" else "\u21BB Retry"
+        val retryColor = if (retryAttempted) colors.textSecondary else DevoxxBlue
+        BasicText(
+            text = retryLabel,
+            style = typography.caption.copy(color = retryColor, fontWeight = FontWeight.SemiBold),
+            modifier = if (retryAttempted) {
+                Modifier.padding(2.dp) // disabled after first click — one retry per card
+            } else {
+                Modifier.padding(2.dp).clickable(onClick = onRetryClick)
+            },
+        )
+    }
+}
+
+/**
+ * Notice rendered when the agent hit its configured tool-call limit, with an
+ * affordance that opens Settings → Agent Mode.
+ */
+@Composable
+private fun LoopLimitNotice(
+    maxCalls: Int,
+    onOpenAgentSettings: () -> Unit,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val warnOrange = DevoxxOrange
+    val shape = RoundedCornerShape(6.dp)
+
+    Spacer(Modifier.height(8.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, warnOrange.copy(alpha = 0.6f), shape)
+            .background(warnOrange.copy(alpha = if (colors.isDark) 0.12f else 0.08f), shape)
+            .padding(10.dp),
+    ) {
+        val limitText = if (maxCalls > 0) "Reached max tool calls ($maxCalls)" else "Reached max tool calls"
+        BasicText(
+            text = "\u26A0 $limitText — you can raise the limit in Settings → Agent",
+            style = typography.caption.copy(color = colors.textPrimary),
+        )
+        Spacer(Modifier.height(4.dp))
+        BasicText(
+            text = "Open Agent settings",
+            style = typography.caption.copy(
+                color = DevoxxBlue,
+                textDecoration = TextDecoration.Underline,
+            ),
+            modifier = Modifier.padding(2.dp).clickable(onClick = onOpenAgentSettings),
+        )
     }
 }

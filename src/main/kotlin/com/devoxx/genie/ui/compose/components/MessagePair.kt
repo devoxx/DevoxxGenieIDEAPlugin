@@ -11,6 +11,8 @@ fun MessagePair(
     message: MessageUiModel,
     onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onRetryClick: (String) -> Unit = {},
+    onOpenAgentSettings: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -28,7 +30,11 @@ fun MessagePair(
         }
 
         // AI response bubble
-        AiBubble(message = message)
+        AiBubble(
+            message = message,
+            onRetryClick = onRetryClick,
+            onOpenAgentSettings = onOpenAgentSettings,
+        )
 
         // File references
         if (message.fileReferences.isNotEmpty()) {
