@@ -3,6 +3,8 @@ package com.devoxx.genie.service.projectscanner;
 import com.devoxx.genie.model.ScanContentResult;
 import com.intellij.openapi.application.ApplicationManager;
 import com.devoxx.genie.util.ReadAccess;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -14,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Setter
@@ -172,8 +173,33 @@ public class ProjectScannerService {
 
     // Changed from private to public for better testability
     public @NotNull String extractAllFileContents(@NotNull List<VirtualFile> files) {
-        return files.stream()
-                .map(contentExtractor::extractFileContent)
-                .collect(Collectors.joining());
+        // The file count is known up front, so surface determinate progress when this scan
+        // runs under a progress context (task-236). Outside one, the indicator is null and
+        // behavior is unchanged.
+        ProgressIndicator indicator = currentProgressIndicator();
+        int total = files.size();
+        if (indicator != null && total > 0) {
+            indicator.setIndeterminate(false);
+        }
+
+        StringBuilder contents = new StringBuilder();
+        for (int i = 0; i < total; i++) {
+            VirtualFile file = files.get(i);
+            if (indicator != null) {
+                indicator.checkCanceled();
+                indicator.setFraction((i + 1) / (double) total);
+                indicator.setText2(file.getName());
+            }
+            contents.append(contentExtractor.extractFileContent(file));
+        }
+        return contents.toString();
+    }
+
+    /** Null-safe lookup of the current progress indicator (null in unit tests / outside tasks). */
+    private static ProgressIndicator currentProgressIndicator() {
+        if (ApplicationManager.getApplication() == null) {
+            return null;
+        }
+        return ProgressManager.getInstance().getProgressIndicator();
     }
 }

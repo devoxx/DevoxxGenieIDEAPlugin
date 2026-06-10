@@ -327,6 +327,7 @@ class ConversationViewModel(
             callNumber = message.callNumber,
             maxCalls = message.maxCalls,
             status = ActivityStatus.RUNNING,
+            startedAt = System.currentTimeMillis(),
             isToolActivity = true,
             subAgentId = message.subAgentId,
         )
@@ -499,8 +500,38 @@ class ConversationViewModel(
     fun hideLoadingIndicator(messageId: String) {
         // Complete, error and stop all end up here — clearing the streaming flag in the
         // same place keeps one lifecycle for both the loading dots and the streaming caret.
+        // Rows still open at this point (e.g. a tool whose response was lost, or a stopped
+        // run) are resolved to INFO so neither the spinner nor the elapsed-time ticker can
+        // outlive the run.
         updateMessage(messageId) { msg ->
-            msg.copy(isLoadingIndicatorVisible = false, isStreaming = false)
+            msg.copy(
+                isLoadingIndicatorVisible = false,
+                isStreaming = false,
+                activityEntries = finalizeOpenEntries(msg.activityEntries),
+            )
+        }
+    }
+
+    /** Resolves any still-open (RUNNING/PENDING_APPROVAL) rows — including children — to INFO. */
+    private fun finalizeOpenEntries(
+        entries: List<ActivityEntryUiModel>,
+    ): List<ActivityEntryUiModel> {
+        if (entries.none { it.isOpen() || it.children.any { child -> child.isOpen() } }) return entries
+        return entries.map { entry ->
+            val children = if (entry.children.any { it.isOpen() }) {
+                entry.children.map { child ->
+                    if (child.isOpen()) child.copy(status = ActivityStatus.INFO) else child
+                }
+            } else {
+                entry.children
+            }
+            if (entry.isOpen()) {
+                entry.copy(status = ActivityStatus.INFO, children = children)
+            } else if (children !== entry.children) {
+                entry.copy(children = children)
+            } else {
+                entry
+            }
         }
     }
 
@@ -534,6 +565,7 @@ class ConversationViewModel(
                     loopLimitMaxCalls = maxCalls,
                     isLoadingIndicatorVisible = false,
                     isStreaming = false,
+                    activityEntries = finalizeOpenEntries(msg.activityEntries),
                 )
             }
         }

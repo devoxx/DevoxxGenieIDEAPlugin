@@ -14,6 +14,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -344,51 +348,62 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         // Make sure progress components are visible before starting the indexing process
         setStartButtons(false);
         
-        // Run the indexing process in a background thread to avoid blocking the UI
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                // Run the indexing process
-                ProjectIndexerService.getInstance().indexFiles(project, true, progressBar, progressLabel);
-                
-                // Update UI after indexing is complete
-                SwingUtilities.invokeLater(() -> {
-                    // Reset indexing flag
-                    isIndexing = false;
-                    
-                    // First reset the buttons
-                    setStartButtons(true);
-                    
-                    // Clear the table before reloading
-                    tableModel.setRowCount(0);
-                    tableModel.fireTableDataChanged();
-                    
-                    // Add a small delay to ensure ChromaDB has time to update its state
-                    Timer timer = new Timer(500, e -> {
-                        // Reload collections
-                        loadCollections();
-                        
-                        // Force table repaint
-                        collectionsTable.revalidate();
-                        collectionsTable.repaint();
-                        
-                        // Show a notification that indexing is complete
-                        if (ProjectIndexerService.getInstance().isIndexingCancelled()) {
-                            NotificationUtil.sendNotification(project, "Project indexing was cancelled");
-                        } else {
-                            NotificationUtil.sendNotification(project, "Project indexing completed successfully");
-                        }
-                    });
-                    timer.setRepeats(false);
-                    timer.start();
+        // Run the indexing process as a cancellable background task so the IDE shows
+        // determinate progress (n/total files, current file name) via the ProgressIndicator
+        // that ProjectIndexerService.indexFiles() picks up from the progress context.
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Indexing project for RAG", true) {
+            private Exception failure;
+
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                try {
+                    ProjectIndexerService.getInstance().indexFiles(project, true, progressBar, progressLabel);
+                } catch (ProcessCanceledException pce) {
+                    throw pce;
+                } catch (Exception e) {
+                    failure = e;
+                }
+            }
+
+            @Override
+            public void onCancel() {
+                // Cancellation via the IDE progress UI must stop the indexer loop too.
+                ProjectIndexerService.getInstance().cancelIndexing();
+            }
+
+            @Override
+            public void onFinished() {
+                // Runs on the EDT for both completion and cancellation.
+                isIndexing = false;
+                setStartButtons(true);
+
+                if (failure != null) {
+                    NotificationUtil.sendNotification(project, "Error indexing project: " + failure.getMessage());
+                    return;
+                }
+
+                // Clear the table before reloading
+                tableModel.setRowCount(0);
+                tableModel.fireTableDataChanged();
+
+                // Add a small delay to ensure ChromaDB has time to update its state
+                Timer timer = new Timer(500, e -> {
+                    // Reload collections
+                    loadCollections();
+
+                    // Force table repaint
+                    collectionsTable.revalidate();
+                    collectionsTable.repaint();
+
+                    // Show a notification that indexing is complete
+                    if (ProjectIndexerService.getInstance().isIndexingCancelled()) {
+                        NotificationUtil.sendNotification(project, "Project indexing was cancelled");
+                    } else {
+                        NotificationUtil.sendNotification(project, "Project indexing completed successfully");
+                    }
                 });
-            } catch (Exception e) {
-                SwingUtilities.invokeLater(() -> {
-                    // Reset indexing flag
-                    isIndexing = false;
-                    
-                    NotificationUtil.sendNotification(project, "Error indexing project: " + e.getMessage());
-                    setStartButtons(true);
-                });
+                timer.setRepeats(false);
+                timer.start();
             }
         });
     }

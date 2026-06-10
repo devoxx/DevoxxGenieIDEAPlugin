@@ -9,6 +9,8 @@ import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -149,6 +151,16 @@ public final class ProjectIndexerService {
                            JLabel progressLabel) {
         resetCancellationFlag();
 
+        // When running under a progress context (e.g. Task.Backgroundable from the RAG
+        // settings panel), surface determinate progress in the IDE progress UI as well.
+        ProgressIndicator indicator = ApplicationManager.getApplication() == null
+                ? null
+                : ProgressManager.getInstance().getProgressIndicator();
+        if (indicator != null) {
+            indicator.setIndeterminate(true);
+            indicator.setText("Scanning project files...");
+        }
+
         if (SwingUtilities.isEventDispatchThread()) {
             progressBar.setValue(0);
             progressBar.setVisible(true);
@@ -224,6 +236,13 @@ public final class ProjectIndexerService {
 
         int totalFiles = filesToProcess.size();
 
+        if (indicator != null) {
+            indicator.setIndeterminate(false);
+            indicator.setFraction(0);
+            indicator.setText("Indexing project files for RAG");
+            indicator.setText2("");
+        }
+
         // Bounded parallel pool: a handful of file-processing threads share access to the
         // batched embedAll / Chroma writes. We still cap progress + cancellation checks at the
         // file boundary, since per-file work is the meaningful unit.
@@ -239,11 +258,22 @@ public final class ProjectIndexerService {
             java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(totalFiles);
             for (Path path : filesToProcess) {
                 futures.add(pool.submit(() -> {
+                    // Bridge IDE progress-indicator cancellation into the indexer's own flag so
+                    // pressing Cancel on the background task stops the loop just like the
+                    // settings panel's Stop button does.
+                    if (indicator != null && indicator.isCanceled()) {
+                        cancelIndexing.set(true);
+                    }
                     if (isIndexingCancelled()) return;
                     indexFile(path, forceReindex);
                     int done = processedCount.incrementAndGet();
                     int progress = (int) (((double) done / totalFiles) * 100);
                     String fileName = path.getFileName().toString();
+                    if (indicator != null && !indicator.isCanceled()) {
+                        // ProgressIndicator API is thread-safe; no EDT hop needed.
+                        indicator.setFraction(done / (double) totalFiles);
+                        indicator.setText2(String.format("%d of %d: %s", done, totalFiles, fileName));
+                    }
                     SwingUtilities.invokeLater(() -> {
                         progressBar.setVisible(true);
                         progressLabel.setVisible(true);
@@ -253,6 +283,9 @@ public final class ProjectIndexerService {
                 }));
             }
             for (java.util.concurrent.Future<?> f : futures) {
+                if (indicator != null && indicator.isCanceled()) {
+                    cancelIndexing.set(true);
+                }
                 if (isIndexingCancelled()) break;
                 try {
                     f.get();
