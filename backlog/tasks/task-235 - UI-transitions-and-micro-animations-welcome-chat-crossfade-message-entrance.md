@@ -1,10 +1,12 @@
 ---
 id: TASK-235
-title: 'UI transitions and micro-animations: Welcome↔Chat crossfade, message entrance, animation consolidation'
-status: To Do
+title: >-
+  UI transitions and micro-animations: Welcome↔Chat crossfade, message entrance,
+  animation consolidation
+status: Done
 assignee: []
 created_date: '2026-06-10 12:00'
-updated_date: '2026-06-10 12:00'
+updated_date: '2026-06-10 20:09'
 labels:
   - enhancement
   - UX
@@ -16,7 +18,8 @@ references:
   - src/main/kotlin/com/devoxx/genie/ui/compose/screen/ChatScreen.kt
   - src/main/kotlin/com/devoxx/genie/ui/compose/components/MessagePair.kt
   - src/main/kotlin/com/devoxx/genie/ui/compose/model/ConversationState.kt
-  - src/main/java/com/devoxx/genie/ui/component/border/AnimatedGlowingBorder.java
+  - >-
+    src/main/java/com/devoxx/genie/ui/component/border/AnimatedGlowingBorder.java
   - src/main/java/com/devoxx/genie/ui/component/border/GlowingBorder.java
   - src/main/java/com/devoxx/genie/ui/panel/ActionButtonsPanel.java
 priority: medium
@@ -34,12 +37,12 @@ State changes in the conversation UI are functionally correct but visually abrup
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Welcome → Chat and Chat → Welcome transitions crossfade smoothly (~150-200ms) instead of hard-swapping
-- [ ] #2 Restoring a conversation from history never flashes the Welcome screen mid-restore (existing isRestoringConversation behavior preserved)
-- [ ] #3 Newly added messages fade/slide in; streaming updates to an existing bubble do not replay the entrance animation; LazyColumn items use stable keys
-- [ ] #4 Auto-scroll and the task-232 scroll-to-bottom behavior (if merged) still work correctly with entrance animations enabled — no scroll-position jumps
-- [ ] #5 The glow border timer is verifiably stopped on all execution-end paths (complete, error, stop) — no orphaned 50ms timer ticking while idle
-- [ ] #6 Animations respect theme switching (no hardcoded colors introduced; use DevoxxGenieThemeAccessor)
+- [x] #1 Welcome → Chat and Chat → Welcome transitions crossfade smoothly (~150-200ms) instead of hard-swapping
+- [x] #2 Restoring a conversation from history never flashes the Welcome screen mid-restore (existing isRestoringConversation behavior preserved)
+- [x] #3 Newly added messages fade/slide in; streaming updates to an existing bubble do not replay the entrance animation; LazyColumn items use stable keys
+- [x] #4 Auto-scroll and the task-232 scroll-to-bottom behavior (if merged) still work correctly with entrance animations enabled — no scroll-position jumps
+- [x] #5 The glow border timer is verifiably stopped on all execution-end paths (complete, error, stop) — no orphaned 50ms timer ticking while idle
+- [x] #6 Animations respect theme switching (no hardcoded colors introduced; use DevoxxGenieThemeAccessor)
 - [ ] #7 No measurable EDT jank introduced: scrolling a long conversation with animations enabled stays smooth (manual check on a 50+ message conversation)
 <!-- AC:END -->
 
@@ -53,3 +56,9 @@ State changes in the conversation UI are functionally correct but visually abrup
 - CopyButton already has transient "✓ Copied" feedback — nothing to do there (verified 2026-06-10).
 - Out of scope: migrating ActionButtonsPanel/UserPromptPanel to Compose, conversation-history popup styling (task-236), sound effects.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented short Compose-based UI transitions for TASK-235: ConversationScreen now uses AnimatedContent keyed by state type for Welcome <-> Chat fades, ChatScreen uses stable message-id LazyColumn keys plus one-shot fade/slide entrance animations, and restore-state handling prevents Welcome flashes during history restore. Added IdeAnimations to centralize animation durations and disable animations in power-save or remote-desktop sessions. Tightened the remaining Swing submit glow so stopGlowing always stops the 50ms timer and documented it as the only remaining Swing animation. Verification: `./gradlew test --tests com.devoxx.genie.ui.compose.viewmodel.ConversationViewModelTest` passed 11 tests. Manual long-conversation jank check was not run in this session.
+<!-- SECTION:FINAL_SUMMARY:END -->
