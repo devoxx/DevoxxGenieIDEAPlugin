@@ -210,11 +210,12 @@ class ConversationViewModel(
         )
 
         val currentState = state
-        val messages = when (currentState) {
-            is ConversationState.Chat -> currentState.messages + message
-            is ConversationState.Welcome -> listOf(message)
+        // copy() preserves isRestoringConversation — restored messages arrive through
+        // this method and must not end the restore window (see clearConversation).
+        state = when (currentState) {
+            is ConversationState.Chat -> currentState.copy(messages = currentState.messages + message)
+            is ConversationState.Welcome -> ConversationState.Chat(messages = listOf(message))
         }
-        state = ConversationState.Chat(messages = messages)
     }
 
     fun addSystemMessage(markdownContent: String) {
@@ -225,11 +226,11 @@ class ConversationViewModel(
         )
 
         val currentState = state
-        val messages = when (currentState) {
-            is ConversationState.Chat -> currentState.messages + message
-            is ConversationState.Welcome -> listOf(message)
+        // copy() preserves isRestoringConversation while a restore is in progress.
+        state = when (currentState) {
+            is ConversationState.Chat -> currentState.copy(messages = currentState.messages + message)
+            is ConversationState.Welcome -> ConversationState.Chat(messages = listOf(message))
         }
-        state = ConversationState.Chat(messages = messages)
     }
 
     fun addFileReferences(context: ChatMessageContext, files: List<VirtualFile>) {

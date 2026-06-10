@@ -50,6 +50,27 @@ class ConversationViewModelTest {
     }
 
     @Test
+    fun `restored messages keep the restoring flag set in chat state`() {
+        val viewModel = ConversationViewModel()
+
+        viewModel.setRestoringConversation(true)
+        viewModel.clearConversation()
+        viewModel.addChatMessage(
+            ChatMessageContext.builder()
+                .id("restored-1")
+                .userPrompt("old prompt")
+                .aiMessage(AiMessage.from("old answer"))
+                .build()
+        )
+
+        // addChatMessage must not reset the flag — the restore window is only closed
+        // by setRestoringConversation(false), a live user prompt, or an explicit welcome.
+        val midRestore = viewModel.state as ConversationState.Chat
+        assertThat(midRestore.messages).hasSize(1)
+        assertThat(midRestore.isRestoringConversation).isTrue()
+    }
+
+    @Test
     fun `clearConversation outside restore returns to welcome`() {
         val viewModel = ConversationViewModel()
         viewModel.addChatMessage(
