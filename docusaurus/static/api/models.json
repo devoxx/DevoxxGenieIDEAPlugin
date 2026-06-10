@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-05-26",
+  "lastUpdated": "2026-06-10",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -16,6 +16,15 @@
   },
   "providers": {
     "Anthropic": [
+      {
+        "modelName": "claude-fable-5",
+        "displayName": "Claude Fable 5",
+        "inputCost": 10,
+        "outputCost": 50,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "claude-opus-4-8",
         "displayName": "Claude 4.8 Opus",
@@ -132,6 +141,15 @@
         "inputCost": 0.20,
         "outputCost": 1.25,
         "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-5.3-codex",
+        "displayName": "GPT 5.3 Codex",
+        "inputCost": 1.75,
+        "outputCost": 14,
+        "inputMaxTokens": 400000,
         "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
@@ -266,17 +284,17 @@
       {
         "modelName": "deepseek-ai/DeepSeek-V4-Flash",
         "displayName": "DeepSeek V4 Flash",
-        "inputCost": 0.14,
-        "outputCost": 0.28,
+        "inputCost": 0.10,
+        "outputCost": 0.20,
         "inputMaxTokens": 1000000,
         "apiKeyUsed": true
       },
       {
         "modelName": "deepseek-ai/DeepSeek-V4-Pro",
         "displayName": "DeepSeek V4 Pro",
-        "inputCost": 1.74,
-        "outputCost": 3.48,
-        "inputMaxTokens": 64000,
+        "inputCost": 1.30,
+        "outputCost": 2.60,
+        "inputMaxTokens": 1048576,
         "apiKeyUsed": true
       },
       {
@@ -330,7 +348,7 @@
       {
         "modelName": "Qwen/Qwen3-235B-A22B-Instruct-2507",
         "displayName": "Qwen3 235B A22B Instruct",
-        "inputCost": 0.071,
+        "inputCost": 0.09,
         "outputCost": 0.10,
         "inputMaxTokens": 256000,
         "apiKeyUsed": true
@@ -357,6 +375,30 @@
         "inputCost": 0.02,
         "outputCost": 0.04,
         "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "moonshotai/Kimi-K2.6",
+        "displayName": "Kimi K2.6",
+        "inputCost": 0.75,
+        "outputCost": 3.50,
+        "inputMaxTokens": 262144,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "zai-org/GLM-5",
+        "displayName": "GLM-5",
+        "inputCost": 0.60,
+        "outputCost": 2.08,
+        "inputMaxTokens": 200000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
+        "displayName": "NVIDIA Nemotron 3 Super 120B",
+        "inputCost": 0.10,
+        "outputCost": 0.50,
+        "inputMaxTokens": 256000,
         "apiKeyUsed": true
       }
     ],
@@ -534,11 +576,19 @@
         "apiKeyUsed": true
       },
       {
+        "modelName": "devstral-small-2",
+        "displayName": "Devstral Small 2",
+        "inputCost": 0.1,
+        "outputCost": 0.3,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
         "modelName": "magistral-medium-2509",
         "displayName": "Magistral Medium",
         "inputCost": 2,
         "outputCost": 5,
-        "inputMaxTokens": 40000,
+        "inputMaxTokens": 131072,
         "apiKeyUsed": true
       },
       {
@@ -547,6 +597,30 @@
         "inputCost": 0.5,
         "outputCost": 1.5,
         "inputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "ministral-14b-2512",
+        "displayName": "Ministral 3 14B",
+        "inputCost": 0.2,
+        "outputCost": 0.2,
+        "inputMaxTokens": 262144,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "ministral-8b-2512",
+        "displayName": "Ministral 3 8B",
+        "inputCost": 0.15,
+        "outputCost": 0.15,
+        "inputMaxTokens": 262144,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "ministral-3b-2512",
+        "displayName": "Ministral 3 3B",
+        "inputCost": 0.1,
+        "outputCost": 0.1,
+        "inputMaxTokens": 131072,
         "apiKeyUsed": true
       }
     ],
@@ -572,6 +646,13 @@
     ],
     "Bedrock": [
       {
+        "modelName": "anthropic.claude-fable-5",
+        "displayName": "Claude Fable 5",
+        "inputCost": 10,
+        "outputCost": 50,
+        "inputMaxTokens": 1000000
+      },
+      {
         "modelName": "anthropic.claude-opus-4-8",
         "displayName": "Claude Opus 4.8",
         "inputCost": 5,
@@ -586,7 +667,7 @@
         "inputMaxTokens": 1000000
       },
       {
-        "modelName": "anthropic.claude-opus-4-6-v1",
+        "modelName": "anthropic.claude-opus-4-6",
         "displayName": "Claude Opus 4.6",
         "inputCost": 5,
         "outputCost": 25,
@@ -686,8 +767,8 @@
       {
         "modelName": "mistral.mistral-large-3-675b-instruct",
         "displayName": "Mistral AI - Mistral Large 3",
-        "inputCost": 2,
-        "outputCost": 6,
+        "inputCost": 0.5,
+        "outputCost": 1.5,
         "inputMaxTokens": 131000
       },
       {
@@ -771,11 +852,19 @@
         "apiKeyUsed": true
       },
       {
+        "modelName": "grok-build-0.1",
+        "displayName": "Grok Build 0.1",
+        "inputCost": 1.00,
+        "outputCost": 2.00,
+        "inputMaxTokens": 256000,
+        "apiKeyUsed": true
+      },
+      {
         "modelName": "grok-4.20-0309-reasoning",
         "displayName": "Grok 4.20 (Reasoning)",
         "inputCost": 1.25,
         "outputCost": 2.50,
-        "inputMaxTokens": 2000000,
+        "inputMaxTokens": 1000000,
         "apiKeyUsed": true
       },
       {
@@ -783,7 +872,7 @@
         "displayName": "Grok 4.20 (Non-Reasoning)",
         "inputCost": 1.25,
         "outputCost": 2.50,
-        "inputMaxTokens": 2000000,
+        "inputMaxTokens": 1000000,
         "apiKeyUsed": true
       },
       {
@@ -791,7 +880,7 @@
         "displayName": "Grok 4.20 Multi-Agent",
         "inputCost": 1.25,
         "outputCost": 2.50,
-        "inputMaxTokens": 2000000,
+        "inputMaxTokens": 1000000,
         "apiKeyUsed": true
       }
     ],
@@ -823,11 +912,20 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "glm-4.7-flash",
-        "displayName": "GLM-4.7 Flash",
-        "inputCost": 0.06,
+        "modelName": "glm-4.7-flashx",
+        "displayName": "GLM-4.7 FlashX",
+        "inputCost": 0.07,
         "outputCost": 0.40,
         "inputMaxTokens": 200000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "glm-4.6",
+        "displayName": "GLM-4.6",
+        "inputCost": 0.60,
+        "outputCost": 2.20,
+        "inputMaxTokens": 200000,
+        "outputMaxTokens": 128000,
         "apiKeyUsed": true
       },
       {
@@ -849,18 +947,10 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "kimi-k2-0905-preview",
-        "displayName": "Kimi K2 (0905)",
+        "modelName": "kimi-k2.5",
+        "displayName": "Kimi K2.5",
         "inputCost": 0.60,
-        "outputCost": 2.50,
-        "inputMaxTokens": 262144,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "kimi-k2-thinking",
-        "displayName": "Kimi K2 Thinking",
-        "inputCost": 0.60,
-        "outputCost": 2.50,
+        "outputCost": 3.00,
         "inputMaxTokens": 262144,
         "apiKeyUsed": true
       }
