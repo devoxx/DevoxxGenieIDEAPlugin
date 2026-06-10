@@ -52,8 +52,14 @@ public class ThemeDetector {
     }
 
     private static boolean detectCurrentThemeDark() {
-        UIThemeLookAndFeelInfo currentTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel();
-        return currentTheme != null && currentTheme.isDark();
+        try {
+            UIThemeLookAndFeelInfo currentTheme = LafManager.getInstance().getCurrentUIThemeLookAndFeel();
+            return currentTheme != null && currentTheme.isDark();
+        } catch (Exception | NoClassDefFoundError e) {
+            // No IntelliJ Application available (plain unit tests, headless tooling):
+            // fall back to light theme instead of failing class initialization.
+            return false;
+        }
     }
     
     /**

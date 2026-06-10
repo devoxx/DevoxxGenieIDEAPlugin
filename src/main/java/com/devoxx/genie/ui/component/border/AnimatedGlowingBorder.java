@@ -10,6 +10,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+ * Breathing glow border shown around the submit area while a prompt is executing.
+ *
+ * <p>NOTE (TASK-235): this 50ms {@link javax.swing.Timer} is the <b>only remaining
+ * Swing animation</b> in the plugin — all other UI transitions are Compose-based
+ * (see {@code com.devoxx.genie.ui.compose}). Migrate this to Compose when
+ * {@code ActionButtonsPanel}/{@code SubmitPanel} move to Compose.</p>
+ */
 public class AnimatedGlowingBorder implements Border, GlowingListener {
     private final Timer glowTimer;
     private final GlowingBorder glowingBorder;
@@ -57,9 +65,14 @@ public class AnimatedGlowingBorder implements Border, GlowingListener {
 
     @Override
     public void stopGlowing() {
+        // Always stop the timer, even when no glow is currently showing. stopGlowing()
+        // is invoked from every execution-end path (complete, error, user stop — all
+        // funnel through PromptExecutionController.endPromptExecution →
+        // ActionButtonsPanel.enableButtons) and must be idempotent so the 50ms
+        // breathing timer can never keep running behind a hidden border.
+        glowTimer.stop();
         if (isGlowing) {
             isGlowing = false;
-            glowTimer.stop();
             component.setBorder(defaultBorder);
             component.repaint();
         }

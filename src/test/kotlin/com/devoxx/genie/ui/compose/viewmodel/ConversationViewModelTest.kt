@@ -10,8 +10,91 @@ import dev.langchain4j.model.chat.StreamingChatModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import java.util.ResourceBundle
 
 class ConversationViewModelTest {
+
+    @Test
+    fun `clearConversation during restore keeps chat state and never flashes welcome`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addChatMessage(
+            ChatMessageContext.builder()
+                .id("msg-1")
+                .userPrompt("hello")
+                .aiMessage(AiMessage.from("hi"))
+                .build()
+        )
+
+        // Simulates ConversationHistoryManager.restoreConversation → clearWithoutWelcome
+        viewModel.setRestoringConversation(true)
+        viewModel.clearConversation()
+
+        val midRestore = viewModel.state
+        assertThat(midRestore).isInstanceOf(ConversationState.Chat::class.java)
+        assertThat((midRestore as ConversationState.Chat).messages).isEmpty()
+        assertThat(midRestore.isRestoringConversation).isTrue()
+
+        // Restored messages arrive, then the flag is cleared
+        viewModel.addChatMessage(
+            ChatMessageContext.builder()
+                .id("restored-1")
+                .userPrompt("old prompt")
+                .aiMessage(AiMessage.from("old answer"))
+                .build()
+        )
+        viewModel.setRestoringConversation(false)
+
+        val afterRestore = viewModel.state as ConversationState.Chat
+        assertThat(afterRestore.messages).hasSize(1)
+        assertThat(afterRestore.isRestoringConversation).isFalse()
+    }
+
+    @Test
+    fun `clearConversation outside restore returns to welcome`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addChatMessage(
+            ChatMessageContext.builder()
+                .id("msg-1")
+                .userPrompt("hello")
+                .aiMessage(AiMessage.from("hi"))
+                .build()
+        )
+
+        viewModel.clearConversation()
+
+        assertThat(viewModel.state).isInstanceOf(ConversationState.Welcome::class.java)
+    }
+
+    @Test
+    fun `live user prompt ends the restore window so a later clear shows welcome`() {
+        val viewModel = ConversationViewModel()
+
+        // First prompt of a new conversation goes through clearWithoutWelcome
+        viewModel.setRestoringConversation(true)
+        viewModel.clearConversation()
+        viewModel.addUserPromptMessage(
+            ChatMessageContext.builder().id("msg-1").userPrompt("hi").build()
+        )
+
+        assertThat(viewModel.state).isInstanceOf(ConversationState.Chat::class.java)
+
+        // New Conversation afterwards must show the welcome screen again
+        viewModel.clearConversation()
+        assertThat(viewModel.state).isInstanceOf(ConversationState.Welcome::class.java)
+    }
+
+    @Test
+    fun `explicit welcome request clears a stale restore flag`() {
+        val viewModel = ConversationViewModel()
+        viewModel.setRestoringConversation(true)
+
+        viewModel.loadWelcomeContent(ResourceBundle.getBundle("messages"))
+
+        assertThat(viewModel.state).isInstanceOf(ConversationState.Welcome::class.java)
+        // Flag was reset — a subsequent clear must also show welcome, not an empty chat
+        viewModel.clearConversation()
+        assertThat(viewModel.state).isInstanceOf(ConversationState.Welcome::class.java)
+    }
 
     @Test
     fun `theme change updates theme flag without dropping visible chat messages`() {
