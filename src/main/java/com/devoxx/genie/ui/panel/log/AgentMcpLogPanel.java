@@ -67,7 +67,6 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private static final int INLINE_PREVIEW_MAX_LINES = 10;
 
     /** Maximum characters shown in the hover tooltip. Beyond this, content is truncated with an ellipsis. */
-    private static final int TOOLTIP_MAX_LEN = 8_000;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -116,6 +115,9 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         logList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         // No fixed cell height — multi-line entries grow to fit their content.
         logList.setVisibleRowCount(20);
+        // No hover expansion popup: with large entries the popup repaints on every
+        // mouse move and flickers. Full content stays reachable via double-click.
+        logList.setExpandableItemsEnabled(false);
 
         logList.addMouseListener(new MouseAdapter() {
             @Override
@@ -648,25 +650,6 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         return sb.toString();
     }
 
-    /**
-     * Wraps text as an HTML Swing tooltip so newlines render as line breaks instead of being
-     * collapsed into a single line. Long content is truncated with an ellipsis to keep the
-     * tooltip usable; the full content remains available via double-click.
-     */
-    static @NotNull String toHtmlTooltip(@NotNull String text) {
-        return toHtmlTooltip(text, TOOLTIP_MAX_LEN);
-    }
-
-    static @NotNull String toHtmlTooltip(@NotNull String text, int maxLen) {
-        String trimmed = text.length() > maxLen ? text.substring(0, maxLen) + "\n… (double-click to view full content)" : text;
-        String escaped = trimmed
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\n", "<br>");
-        return "<html><pre style=\"font-family:monospace;margin:0\">" + escaped + "</pre></html>";
-    }
-
     private void openLogInEditor(LogEntry logEntry) {
         if (logEntry == null) return;
         try {
@@ -811,9 +794,9 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 String plain = entry.timestamp() + " " + badge + entry.message();
                 label.setText(toHtmlRow(plain));
                 label.setVerticalAlignment(SwingConstants.TOP);
-                // Tooltip shows the full (multi-line) result so users can hover instead of double-clicking.
-                String fc = entry.fullContent();
-                label.setToolTipText(fc != null ? toHtmlTooltip(fc) : null);
+                // No hover tooltip: large log entries produce a huge popup that flickers
+                // as the mouse moves. Double-click opens the full content in an editor.
+                label.setToolTipText(null);
                 Color fg = resolveEntryColor(entry);
                 if (fg != null) {
                     label.setForeground(fg);
