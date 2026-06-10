@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.0</h2>
+        <UL>
+                    <LI>feat(tips): rotating tip line under the prompt input, fetched from a remotely-updatable, 24h-cached tips.json with an offline fallback of 28 tips (#1099)</LI>
+                    <LI>refactor: replace deprecated future-removal APIs across agent, MCP, PSI and theme utilities — no behavior change (4c9b5ac)</LI>
+                </UL>
         <h2>v1.7.4</h2>
         <UL>
                     <LI>fix(credentials): don't read API keys from the OS keychain at IDE startup — provider availability now derives from the non-secret enabled flags, so macOS keychain prompts no longer appear on project open; keys are read lazily at prompt time (#1097)</LI>

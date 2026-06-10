@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.8.0 - 2026-06-10
+
+### Added
+- feat(tips): rotating "Tip:" line under the prompt input — shows a hint below the placeholder while the field is empty and rotates to a fresh tip after each submit/clear. Tips are fetched from `genie.devoxx.com/api/tips.json` (same mechanism as `models.json`), so the set of 28 tips can change without a plugin release; selection is weighted-random and never repeats the previous tip. Offline-safe via a 24h persistent cache, schema-version guard, and a hardcoded fallback list kept in parity with the published JSON (#1099)
+
+### Changed
+- refactor: replace deprecated future-removal APIs across agent tools, MCP tool providers, PSI executors, the project analyzer, and theme utilities — removes the compiler deprecation warnings with no behavioral change (4c9b5ac)
+
+### Documentation
+- docs(tips): add design and implementation plan for the rotating prompt-input tips (#1099)
+
+### Tests
+- test(tips): weighted-distribution, never-repeat-previous, and edge-case coverage for TipService; Gson round-trip for TipConfig; and a TipsJsonTest verifying the published tips.json parses and stays in parity with the fallback list (#1099)
+
+### Contributors
+- @stephanj
+
 ## v1.7.4 - 2026-06-10
 
 ### Fixed
