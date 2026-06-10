@@ -1,8 +1,8 @@
 package com.devoxx.genie.service.agent.tool;
 
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.ThrowableComputable;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,7 +91,7 @@ class ReadFileToolExecutorTest {
         assertThat(result).contains("Error");
     }
 
-    // --- execute() end-to-end tests (with mocked ReadAction) ---
+    // --- execute() end-to-end tests (with mocked ReadAccess) ---
 
     @SuppressWarnings("unchecked")
     @Test
@@ -106,10 +106,10 @@ class ReadFileToolExecutorTest {
                 .arguments("{\"path\": \"test.txt\"}")
                 .build();
 
-        try (MockedStatic<ReadAction> readActionMock = mockStatic(ReadAction.class)) {
-            readActionMock.when(() -> ReadAction.compute(any(ThrowableComputable.class)))
+        try (MockedStatic<ReadAccess> readAccessMock = mockStatic(ReadAccess.class)) {
+            readAccessMock.when(() -> ReadAccess.compute(any(Computable.class)))
                     .thenAnswer(invocation -> {
-                        ThrowableComputable<String, Exception> computable = invocation.getArgument(0);
+                        Computable<String> computable = invocation.getArgument(0);
                         return computable.compute();
                     });
 
@@ -126,8 +126,8 @@ class ReadFileToolExecutorTest {
                 .arguments("{\"path\": \"test.txt\"}")
                 .build();
 
-        try (MockedStatic<ReadAction> readActionMock = mockStatic(ReadAction.class)) {
-            readActionMock.when(() -> ReadAction.compute(any(ThrowableComputable.class)))
+        try (MockedStatic<ReadAccess> readAccessMock = mockStatic(ReadAccess.class)) {
+            readAccessMock.when(() -> ReadAccess.compute(any(Computable.class)))
                     .thenThrow(new RuntimeException("Read lock failed"));
 
             String result = executor.execute(request, null);
