@@ -14,7 +14,11 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
+import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -66,6 +70,8 @@ public class AgentApprovalService {
 
         CompletableFuture<Boolean> approvalFuture = new CompletableFuture<>();
 
+        publishApprovalEvent(project, AgentType.APPROVAL_REQUESTED, toolName, arguments);
+
         ApplicationManager.getApplication().invokeLater(() -> {
             AgentApprovalDialog dialog = new AgentApprovalDialog(project, toolName, arguments);
             boolean approved = dialog.showAndGet();
@@ -80,11 +86,49 @@ public class AgentApprovalService {
         });
 
         try {
-            return approvalFuture.get(APPROVAL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean approved = approvalFuture.get(APPROVAL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            publishApprovalEvent(project,
+                    approved ? AgentType.APPROVAL_GRANTED : AgentType.APPROVAL_DENIED,
+                    toolName, arguments);
+            return approved;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.warn("Agent approval request timed out or was interrupted", e);
+            publishApprovalEvent(project, AgentType.APPROVAL_DENIED, toolName, arguments);
             NotificationUtil.sendNotification(project, "Agent tool execution was cancelled due to timeout");
             return false;
+        }
+    }
+
+    /**
+     * Publishes the approval lifecycle on the shared activity topic so the chat timeline
+     * (and the Logs tool window, which already renders APPROVAL_* types) can show why the
+     * agent loop is paused. Gated behind the same debug-logs setting as the loop tracker's
+     * tool events — the chat row this event resolves only exists when that setting is on.
+     */
+    private static void publishApprovalEvent(@Nullable Project project,
+                                             @NotNull AgentType type,
+                                             @NotNull String toolName,
+                                             @NotNull String arguments) {
+        if (project == null || project.isDisposed()) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
+            return;
+        }
+        try {
+            ActivityMessage message = ActivityMessage.builder()
+                    .source(ActivitySource.AGENT)
+                    .agentType(type)
+                    .toolName(toolName)
+                    .arguments(arguments)
+                    .projectLocationHash(project.getLocationHash())
+                    .build();
+
+            ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(AppTopics.ACTIVITY_LOG_MSG)
+                    .onActivityMessage(message);
+        } catch (Exception e) {
+            log.debug("Failed to publish agent approval event", e);
         }
     }
 
