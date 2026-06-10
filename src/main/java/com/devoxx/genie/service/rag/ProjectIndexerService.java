@@ -7,6 +7,7 @@ import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -58,6 +59,12 @@ public final class ProjectIndexerService {
      *  Ollama serializes embed requests by default and the embedding model also competes
      *  for CPU, so going above 4 typically regresses throughput. */
     static final int INDEXING_PARALLELISM = 2;
+
+    /**
+     * Fraction of the shared progress bar consumed by the scan phase; the embedding phase
+     * fills the rest. One indicator, one monotonic 0→100% sweep across both phases.
+     */
+    static final double SCAN_PHASE_END = 0.5;
 
     private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
@@ -153,12 +160,14 @@ public final class ProjectIndexerService {
 
         // When running under a progress context (e.g. Task.Backgroundable from the RAG
         // settings panel), surface determinate progress in the IDE progress UI as well.
+        // The run is split into two phases sharing one indicator: scan fills 0.0→0.5,
+        // embedding fills 0.5→1.0 — a single monotonic sweep instead of two 0→100% passes.
         ProgressIndicator indicator = ApplicationManager.getApplication() == null
                 ? null
                 : ProgressManager.getInstance().getProgressIndicator();
         if (indicator != null) {
             indicator.setIndeterminate(true);
-            indicator.setText("Scanning project files...");
+            indicator.setText("Scanning project files (1/2)...");
         }
 
         if (SwingUtilities.isEventDispatchThread()) {
@@ -190,7 +199,14 @@ public final class ProjectIndexerService {
             return;
         }
 
-        ScanContentResult scanResult = projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false);
+        // Phase 1 (scan): run under a scaled sub-indicator so the determinate progress the
+        // scanner reports (ProjectScannerService.extractAllFileContents) lands in the 0.0→0.5
+        // half of the shared bar instead of sweeping it 0→100% on its own.
+        ScanContentResult scanResult = indicator == null
+                ? projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false)
+                : ProgressManager.getInstance().runProcess(
+                        () -> projectScannerService.scanProject(project, baseDir, Integer.MAX_VALUE, false),
+                        new PhaseScalingIndicator(indicator, 0.0, SCAN_PHASE_END, "Scanning (1/2): "));
         List<Path> filesToProcess = new ArrayList<>(scanResult.getFiles());
 
         // RAG-specific directory exclusion (task-220). Layered on top of the project-scanner
@@ -237,9 +253,10 @@ public final class ProjectIndexerService {
         int totalFiles = filesToProcess.size();
 
         if (indicator != null) {
+            // Phase 2 (embed): continue from where the scan phase left the bar.
             indicator.setIndeterminate(false);
-            indicator.setFraction(0);
-            indicator.setText("Indexing project files for RAG");
+            indicator.setFraction(SCAN_PHASE_END);
+            indicator.setText("Indexing project files for RAG (2/2)");
             indicator.setText2("");
         }
 
@@ -254,6 +271,7 @@ public final class ProjectIndexerService {
                     return t;
                 });
         java.util.concurrent.atomic.AtomicInteger processedCount = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger maxReported = new java.util.concurrent.atomic.AtomicInteger();
         try {
             java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(totalFiles);
             for (Path path : filesToProcess) {
@@ -269,10 +287,12 @@ public final class ProjectIndexerService {
                     int done = processedCount.incrementAndGet();
                     int progress = (int) (((double) done / totalFiles) * 100);
                     String fileName = path.getFileName().toString();
-                    if (indicator != null && !indicator.isCanceled()) {
-                        // ProgressIndicator API is thread-safe; no EDT hop needed.
-                        indicator.setFraction(done / (double) totalFiles);
-                        indicator.setText2(String.format("%d of %d: %s", done, totalFiles, fileName));
+                    if (indicator != null && !indicator.isCanceled()
+                            && maxReported.accumulateAndGet(done, Math::max) == done) {
+                        // ProgressIndicator API is thread-safe; no EDT hop needed. The max-guard
+                        // keeps parallel workers from briefly rolling the bar/text backwards.
+                        indicator.setFraction(SCAN_PHASE_END + (done / (double) totalFiles) * (1.0 - SCAN_PHASE_END));
+                        indicator.setText2(String.format("Indexing (2/2): %d of %d: %s", done, totalFiles, fileName));
                     }
                     SwingUtilities.invokeLater(() -> {
                         progressBar.setVisible(true);
@@ -541,6 +561,43 @@ public final class ProjectIndexerService {
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);
             return 0;
+        }
+    }
+
+    /**
+     * Maps a sub-phase's 0.0→1.0 progress into a [from, to] slice of the parent indicator
+     * and prefixes its detail text with the phase label. Cancellation, text and all other
+     * calls delegate straight through, so cancelling the parent task still cancels the phase.
+     */
+    private static final class PhaseScalingIndicator extends DelegatingProgressIndicator {
+        private final double from;
+        private final double to;
+        private final String text2Prefix;
+
+        private PhaseScalingIndicator(@NotNull ProgressIndicator delegate,
+                                      double from,
+                                      double to,
+                                      @NotNull String text2Prefix) {
+            super(delegate);
+            this.from = from;
+            this.to = to;
+            this.text2Prefix = text2Prefix;
+        }
+
+        @Override
+        public void setFraction(double fraction) {
+            super.setFraction(from + fraction * (to - from));
+        }
+
+        @Override
+        public double getFraction() {
+            double parent = super.getFraction();
+            return to == from ? parent : (parent - from) / (to - from);
+        }
+
+        @Override
+        public void setText2(String text) {
+            super.setText2(text == null ? null : text2Prefix + text);
         }
     }
 }

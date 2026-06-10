@@ -186,6 +186,13 @@ public class ProjectScannerService {
         for (int i = 0; i < total; i++) {
             VirtualFile file = files.get(i);
             if (indicator != null) {
+                // Intentional new exit path (task-236): checkCanceled() throws
+                // ProcessCanceledException, also from inside the surrounding ReadAction
+                // (read actions are cancellation-aware). An indicator only exists when the
+                // scan runs under a progress-managed context (Task.Backgroundable /
+                // ProgressManager.runProcess), and that framework always handles PCE —
+                // non-RAG callers (token calc, project-context scans) run without an
+                // indicator and are unaffected.
                 indicator.checkCanceled();
                 indicator.setFraction((i + 1) / (double) total);
                 indicator.setText2(file.getName());
