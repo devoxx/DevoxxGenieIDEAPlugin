@@ -267,12 +267,17 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         // Hide the loading indicator in the WebView
         hideLoadingIndicator();
 
-        // Durable in-chat record of the failure (red error card with Retry). The terminal
-        // state is final per message, so a later straggling callback can't overwrite it.
+        // Durable in-chat record of the failure (red error card with Retry), posted on
+        // the EDT like every other Compose state mutation. Note this intentionally
+        // coexists with the PromptErrorHandler.handleException call below, which also
+        // sets ERROR via the panel registry: this direct call runs first and derives the
+        // text from the RAW provider error, while handleException only sees the generic
+        // StreamingException wrapper ("Error during streaming response"). Terminal states
+        // are final, so the more specific text set here wins and the second set is a no-op.
         if (conversationViewController != null) {
-            conversationViewController.setTerminalState(
-                    context.getId(), TerminalState.ERROR,
-                    PromptErrorHandler.userFacingMessage(error));
+            String errorText = PromptErrorHandler.userFacingMessage(error);
+            ApplicationManager.getApplication().invokeLater(() ->
+                conversationViewController.setTerminalState(context.getId(), TerminalState.ERROR, errorText));
         }
 
         StreamingException streamingError = new StreamingException(

@@ -13,6 +13,7 @@ import com.devoxx.genie.service.blog.BlogPost
 import com.devoxx.genie.service.skill.SkillRegistry
 import com.devoxx.genie.ui.compose.model.*
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.ResourceBundle
@@ -381,8 +382,9 @@ class ConversationViewModel(
         updateMessage(messageId) { it.copy(retryAttempted = true) }
         try {
             onRetryPrompt(msg.userPrompt)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // best-effort — a failed re-submission must not break the chat UI
+            logger.debug("Retry re-submission failed for message $messageId", e)
         }
     }
 
@@ -525,5 +527,9 @@ class ConversationViewModel(
         } catch (_: Exception) {
             // best-effort — keep the welcome screen working if anything fails
         }
+    }
+
+    companion object {
+        private val logger = Logger.getInstance(ConversationViewModel::class.java)
     }
 }

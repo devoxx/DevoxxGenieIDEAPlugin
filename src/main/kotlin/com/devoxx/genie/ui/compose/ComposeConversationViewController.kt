@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.compose
 import androidx.compose.ui.awt.ComposePanel
 import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.ui.compose.model.TerminalState
 import com.devoxx.genie.ui.compose.screen.ConversationScreen
 import com.devoxx.genie.ui.compose.viewmodel.ConversationViewModel
 import com.intellij.openapi.diagnostic.Logger
@@ -144,7 +145,7 @@ class ComposeConversationViewController(
         viewModel.markMCPLogsAsCompleted(messageId)
     }
 
-    override fun setTerminalState(messageId: String, state: com.devoxx.genie.ui.compose.model.TerminalState, errorText: String?) {
+    override fun setTerminalState(messageId: String, state: TerminalState, errorText: String?) {
         viewModel.setTerminalState(messageId, state, errorText)
     }
 

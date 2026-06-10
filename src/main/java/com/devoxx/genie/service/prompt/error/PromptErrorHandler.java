@@ -94,8 +94,14 @@ public class PromptErrorHandler {
                     .getRegisteredPanel(project, chatMessageContext.getId());
             if (panel != null && panel.getConversationPanel() != null
                     && panel.getConversationPanel().viewController != null) {
-                panel.getConversationPanel().viewController.setTerminalState(
-                        chatMessageContext.getId(), TerminalState.ERROR, userFacingMessage(exception));
+                String messageId = chatMessageContext.getId();
+                String errorText = userFacingMessage(exception);
+                // Compose mutableStateOf mutations must happen on the EDT — this method is
+                // reached from prompt-execution pool threads (executeQuery().exceptionally,
+                // strategy error handlers), never guaranteed to be the EDT.
+                ApplicationManager.getApplication().invokeLater(() ->
+                        panel.getConversationPanel().viewController.setTerminalState(
+                                messageId, TerminalState.ERROR, errorText));
             }
         } catch (Exception e) {
             log.debug("Could not set ERROR terminal state in chat", e);

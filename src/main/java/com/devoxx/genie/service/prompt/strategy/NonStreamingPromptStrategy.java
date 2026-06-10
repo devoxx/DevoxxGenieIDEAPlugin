@@ -7,8 +7,10 @@ import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptE
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.ui.compose.model.TerminalState;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -162,8 +164,10 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 // Durable in-chat marker: non-streaming runs have no partial text, but the
                 // user must still see that the request was stopped rather than silently
                 // dropped. Terminal states are final, so a late completion can't undo it.
-                viewController.setTerminalState(messageId,
-                        com.devoxx.genie.ui.compose.model.TerminalState.STOPPED, null);
+                // Posted via invokeLater: cancel() can run on arbitrary threads and Compose
+                // state mutations belong on the EDT.
+                ApplicationManager.getApplication().invokeLater(() ->
+                        viewController.setTerminalState(messageId, TerminalState.STOPPED, null));
             }
         }
     }
