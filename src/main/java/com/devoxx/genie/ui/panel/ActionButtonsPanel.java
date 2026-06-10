@@ -229,6 +229,9 @@ public class ActionButtonsPanel extends JPanel
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
             promptInputArea.setEnabled(true);
+            // Stop the submit glow (and its Swing timer) on every execution-end path:
+            // enableButtons() is reached on completion, error and user stop via
+            // PromptExecutionController.endPromptExecution (TASK-235).
             submitPanel.stopGlowing();
             submitPendingSpecPrompt();
 

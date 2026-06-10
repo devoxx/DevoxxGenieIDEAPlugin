@@ -111,7 +111,22 @@ class ConversationViewModel(
     private val activityDeactivated = AtomicBoolean(false)
     private val activityGeneration = AtomicInteger(0)
 
+    /**
+     * True while a conversation restore (or a clear-without-welcome) is in progress.
+     * While set, [clearConversation] resets to an *empty chat* instead of the welcome
+     * screen, so the Welcome screen can never flash mid-restore — important now that
+     * Welcome ↔ Chat switches crossfade and a transient Welcome state would be visibly
+     * animated. The flag is released by [setRestoringConversation], by a live user
+     * prompt, or by an explicit [loadWelcomeContent] request.
+     */
+    private val restoringConversation = AtomicBoolean(false)
+
     fun loadWelcomeContent(resourceBundle: ResourceBundle) {
+        // An explicit welcome request (New Conversation / clear) ends any restore
+        // window. Restoration itself is fully synchronous with Compose, so this can
+        // never run mid-restore — mid-restore clears go through clearConversation,
+        // which is guarded by the flag above.
+        restoringConversation.set(false)
         state = ConversationState.Welcome(
             resourceBundle = resourceBundle,
             customPrompts = loadCustomPrompts(),
@@ -133,6 +148,9 @@ class ConversationViewModel(
     }
 
     fun addUserPromptMessage(context: ChatMessageContext) {
+        // A live user prompt means any restore / clear-without-welcome is over
+        restoringConversation.set(false)
+
         // Deactivate previous activity handlers
         deactivateActivityHandlers()
 
@@ -192,11 +210,12 @@ class ConversationViewModel(
         )
 
         val currentState = state
-        val messages = when (currentState) {
-            is ConversationState.Chat -> currentState.messages + message
-            is ConversationState.Welcome -> listOf(message)
+        // copy() preserves isRestoringConversation — restored messages arrive through
+        // this method and must not end the restore window (see clearConversation).
+        state = when (currentState) {
+            is ConversationState.Chat -> currentState.copy(messages = currentState.messages + message)
+            is ConversationState.Welcome -> ConversationState.Chat(messages = listOf(message))
         }
-        state = ConversationState.Chat(messages = messages)
     }
 
     fun addSystemMessage(markdownContent: String) {
@@ -207,11 +226,11 @@ class ConversationViewModel(
         )
 
         val currentState = state
-        val messages = when (currentState) {
-            is ConversationState.Chat -> currentState.messages + message
-            is ConversationState.Welcome -> listOf(message)
+        // copy() preserves isRestoringConversation while a restore is in progress.
+        state = when (currentState) {
+            is ConversationState.Chat -> currentState.copy(messages = currentState.messages + message)
+            is ConversationState.Welcome -> ConversationState.Chat(messages = listOf(message))
         }
-        state = ConversationState.Chat(messages = messages)
     }
 
     fun addFileReferences(context: ChatMessageContext, files: List<VirtualFile>) {
@@ -296,6 +315,12 @@ class ConversationViewModel(
     }
 
     fun clearConversation() {
+        if (restoringConversation.get()) {
+            // Mid-restore (or clearing before the first prompt of a new chat):
+            // reset to an empty chat so the welcome screen never flashes.
+            state = ConversationState.Chat(messages = emptyList(), isRestoringConversation = true)
+            return
+        }
         val current = state
         val rb = when (current) {
             is ConversationState.Welcome -> current.resourceBundle
@@ -310,6 +335,7 @@ class ConversationViewModel(
     }
 
     fun setRestoringConversation(restoring: Boolean) {
+        restoringConversation.set(restoring)
         val current = state
         if (current is ConversationState.Chat) {
             state = current.copy(isRestoringConversation = restoring)

@@ -1,8 +1,12 @@
 package com.devoxx.genie.ui.compose.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -34,6 +38,7 @@ import com.devoxx.genie.ui.compose.components.ConversationToolbar
 import com.devoxx.genie.ui.compose.components.MessagePair
 import com.devoxx.genie.ui.compose.model.MessageUiModel
 import com.devoxx.genie.ui.compose.theme.DevoxxBlue
+import com.devoxx.genie.ui.compose.util.IdeAnimations
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,10 +46,21 @@ fun ChatScreen(
     messages: List<MessageUiModel>,
     onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    isRestoring: Boolean = false,
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var previousMessageCount by remember { mutableStateOf(messages.size) }
+
+    val animationsEnabled = remember { IdeAnimations.enabled() }
+
+    // Message ids whose entrance animation has already played (or been skipped).
+    // Pre-seeded with the messages present on first composition so a conversation
+    // restored from history does not replay entrances for its whole transcript.
+    // Because LazyColumn items use stable message-id keys, streaming updates to an
+    // existing bubble recompose the same item and never re-trigger the entrance;
+    // items scrolled out and back in are also skipped via this set.
+    val seenMessageIds = remember { messages.mapTo(HashSet()) { it.id } }
 
     // Whether the list should follow the growing tail of the last message. Disabled the
     // moment the user scrolls up (see nestedScrollConnection), re-enabled when the user
@@ -114,10 +130,17 @@ fun ChatScreen(
                     items = messages,
                     key = { _, message -> message.id },
                 ) { _, message ->
-                    MessagePair(
-                        message = message,
-                        onFileClick = onFileClick,
-                    )
+                    // Play the entrance exactly once: the first time this id is ever
+                    // composed, and only for messages inserted while the chat is live.
+                    val playEntrance = remember(message.id) {
+                        seenMessageIds.add(message.id) && animationsEnabled && !isRestoring
+                    }
+                    MessageEntrance(messageId = message.id, playEntrance = playEntrance) {
+                        MessagePair(
+                            message = message,
+                            onFileClick = onFileClick,
+                        )
+                    }
                 }
                 // Bottom anchor used as the scroll target for tail-following.
                 item(key = "bottom-anchor") {
@@ -136,6 +159,31 @@ fun ChatScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
             )
         }
+    }
+}
+
+/**
+ * Entrance animation for a newly inserted message bubble: fade-in plus a slight upward
+ * slide (≤150ms). Neither effect changes the measured item size, so tail-following and
+ * scroll-to-bottom positions are not disturbed. When [playEntrance] is false (already
+ * seen, restoring from history, or animations disabled) the content shows immediately.
+ */
+@Composable
+private fun MessageEntrance(
+    messageId: String,
+    playEntrance: Boolean,
+    content: @Composable () -> Unit,
+) {
+    val entranceState = remember(messageId) {
+        MutableTransitionState(initialState = !playEntrance).apply { targetState = true }
+    }
+    AnimatedVisibility(
+        visibleState = entranceState,
+        enter = fadeIn(tween(IdeAnimations.MESSAGE_ENTRANCE_MS)) +
+            slideInVertically(tween(IdeAnimations.MESSAGE_ENTRANCE_MS)) { it / 6 },
+        exit = ExitTransition.None,
+    ) {
+        content()
     }
 }
 
