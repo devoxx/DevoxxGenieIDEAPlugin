@@ -48,6 +48,7 @@ fun ChatScreen(
     modifier: Modifier = Modifier,
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
+    onOpenLogs: () -> Unit = {},
     isRestoring: Boolean = false,
 ) {
     val listState = rememberLazyListState()
@@ -143,6 +144,7 @@ fun ChatScreen(
                             onFileClick = onFileClick,
                             onRetryClick = onRetryClick,
                             onOpenAgentSettings = onOpenAgentSettings,
+                            onOpenLogs = onOpenLogs,
                         )
                     }
                 }

@@ -13,6 +13,7 @@ fun MessagePair(
     modifier: Modifier = Modifier,
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
+    onOpenLogs: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -26,6 +27,8 @@ fun MessagePair(
                 entries = message.activityEntries,
                 visible = message.activitySectionVisible,
                 completed = message.mcpLogsCompleted,
+                showToolEntries = message.showToolActivity,
+                onOpenLogs = onOpenLogs,
             )
         }
 

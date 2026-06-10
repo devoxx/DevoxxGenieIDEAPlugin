@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.devoxx.genie.ui.compose.model.ActivityEntryUiModel
+import com.devoxx.genie.ui.compose.model.ActivityStatus
 import com.devoxx.genie.ui.compose.model.MessageUiModel
 import com.devoxx.genie.ui.compose.model.TerminalState
 import com.devoxx.genie.ui.compose.theme.*
@@ -137,6 +139,19 @@ fun AiBubble(
             ThinkingIndicator()
         }
 
+        // Always-on live agent status: while the run is in flight, surface the most
+        // recent open tool call ("Running search_files… (step 4/25)") regardless of the
+        // "Show tool activity in chat output" setting — without this, a multi-minute
+        // agent run with that setting off is completely silent.
+        if (message.isLoadingIndicatorVisible || message.isStreaming) {
+            val openEntry = message.activityEntries.lastOrNull {
+                it.status == ActivityStatus.RUNNING || it.status == ActivityStatus.PENDING_APPROVAL
+            }
+            if (openEntry != null) {
+                LiveStatusLine(openEntry)
+            }
+        }
+
         // AI Response content — rendered as Markdown
         if (message.aiResponseMarkdown.isNotBlank()) {
             val typography = DevoxxGenieThemeAccessor.typography
@@ -223,6 +238,38 @@ fun AiBubble(
                 CopyButton(textToCopy = message.aiResponseMarkdown)
             }
         }
+    }
+}
+
+/**
+ * One-line live agent status shown only while the run is active. RUNNING gets a
+ * pulsing dot and "Running <tool>… (step n/max)"; PENDING_APPROVAL explains why
+ * everything is frozen while the approval dialog (120s timeout) is up.
+ */
+@Composable
+private fun LiveStatusLine(entry: ActivityEntryUiModel) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    ) {
+        RunningSpinner()
+        Spacer(Modifier.width(6.dp))
+        val text = if (entry.status == ActivityStatus.PENDING_APPROVAL) {
+            "Waiting for your approval… (${entry.toolName ?: "tool"})"
+        } else {
+            val step = if (entry.callNumber > 0 && entry.maxCalls > 0) {
+                " (step ${entry.callNumber}/${entry.maxCalls})"
+            } else {
+                ""
+            }
+            "Running ${entry.toolName ?: "tool"}…$step"
+        }
+        BasicText(
+            text = text,
+            style = typography.caption.copy(color = colors.textSecondary),
+        )
     }
 }
 
