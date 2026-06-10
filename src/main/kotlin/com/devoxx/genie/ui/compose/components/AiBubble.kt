@@ -182,7 +182,17 @@ fun AiBubble(
                         codeBlock = codeBlockWithCopy(colors.isDark),
                         codeFence = codeFenceWithCopy(colors.isDark),
                     ),
+                    // Keep the previously rendered content visible while the updated
+                    // markdown is re-parsed. Without this every streaming update swaps
+                    // the bubble to a blank loading state first — full-text flicker.
+                    retainState = true,
                 )
+            }
+
+            // In-flight affordance: once the first token replaces the ThinkingIndicator,
+            // this caret is the only signal that the response is still streaming.
+            if (message.isStreaming) {
+                StreamingCaret()
             }
         }
 

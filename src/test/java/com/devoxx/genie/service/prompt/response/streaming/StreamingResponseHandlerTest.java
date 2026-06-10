@@ -27,6 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -57,6 +59,9 @@ class StreamingResponseHandlerTest {
     private AtomicReference<Throwable> capturedError = new AtomicReference<>();
     private AtomicBoolean onCompleteCalled = new AtomicBoolean(false);
     private AtomicBoolean onErrorCalled = new AtomicBoolean(false);
+
+    /** Flush tasks captured from the handler instead of being run on a timer thread. */
+    private final List<Runnable> pendingFlushes = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -95,6 +100,14 @@ class StreamingResponseHandlerTest {
         capturedError.set(null);
         onCompleteCalled.set(false);
         onErrorCalled.set(false);
+        pendingFlushes.clear();
+    }
+
+    /** Runs all captured batched-flush tasks synchronously, as the timer would. */
+    private void runPendingFlushes() {
+        List<Runnable> tasks = new ArrayList<>(pendingFlushes);
+        pendingFlushes.clear();
+        tasks.forEach(Runnable::run);
     }
 
     @AfterEach
@@ -123,7 +136,9 @@ class StreamingResponseHandlerTest {
             capturedError.set(error);
             onErrorCalled.set(true);
         };
-        return new StreamingResponseHandler(mockContext, viewController, onComplete, onError);
+        return new StreamingResponseHandler(mockContext, viewController, onComplete, onError,
+                (task, delayMillis) -> pendingFlushes.add(task),
+                StreamingResponseHandler.FLUSH_INTERVAL_MS);
     }
 
     @Test
@@ -132,9 +147,136 @@ class StreamingResponseHandlerTest {
 
         handler.onPartialResponse("Hello");
         handler.onPartialResponse(" World");
+        runPendingFlushes();
 
-        verify(mockContext, atLeast(2)).setAiMessage(any(AiMessage.class));
-        verify(mockViewController, atLeast(2)).updateAiMessageContent(mockContext);
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Hello World");
+        verify(mockViewController, atLeastOnce()).updateAiMessageContent(mockContext);
+    }
+
+    @Test
+    void onPartialResponse_batchesUiUpdatesAtFixedCadence() {
+        StreamingResponseHandler handler = createHandler();
+
+        StringBuilder expected = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            String token = "token" + i + " ";
+            expected.append(token);
+            handler.onPartialResponse(token);
+        }
+
+        // The first token is painted immediately; the remaining 99 must arm exactly
+        // ONE pending flush instead of posting 99 more EDT updates.
+        verify(mockViewController, times(1)).updateAiMessageContent(mockContext);
+        assertThat(pendingFlushes).hasSize(1);
+
+        runPendingFlushes();
+
+        // One immediate paint + one batched flush — far fewer than 100 posts.
+        verify(mockViewController, times(2)).updateAiMessageContent(mockContext);
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo(expected.toString());
+    }
+
+    @Test
+    void onPartialResponse_afterFlush_armsNewFlushForLaterTokens() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("first ");   // immediate paint
+        handler.onPartialResponse("second ");  // arms flush #1
+        runPendingFlushes();
+
+        handler.onPartialResponse("third");    // must arm flush #2
+
+        assertThat(pendingFlushes).hasSize(1);
+        runPendingFlushes();
+
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("first second third");
+    }
+
+    @Test
+    void onCompleteResponse_withUnflushedBufferedTokens_rendersFullAccumulatedText() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Hello");   // immediate paint
+        handler.onPartialResponse(" World");  // buffered, flush never runs
+
+        AiMessage lastTurnOnly = AiMessage.from(" World");
+        handler.onCompleteResponse(ChatResponse.builder().aiMessage(lastTurnOnly).build());
+
+        // The final render must include the buffered tail even though no timer fired.
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Hello World");
+        assertThat(onCompleteCalled.get()).isTrue();
+    }
+
+    @Test
+    void stop_flushesBufferedTokensToUi() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Hello");   // immediate paint
+        handler.onPartialResponse(" Wor");    // buffered
+        handler.onPartialResponse("ld!");     // buffered
+
+        handler.stop();
+
+        // The user-visible text after stop must contain every received token.
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Hello World!");
+        verify(mockViewController, times(2)).updateAiMessageContent(mockContext);
+    }
+
+    @Test
+    void scheduledFlush_afterStop_doesNotUpdateUi() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Hello");   // immediate paint
+        handler.onPartialResponse(" World");  // arms a flush
+
+        handler.stop();                       // flushes the buffer itself
+        clearInvocations(mockViewController);
+
+        runPendingFlushes();                  // stale timer firing after stop
+
+        verify(mockViewController, never()).updateAiMessageContent(any());
+    }
+
+    @Test
+    void scheduledFlush_afterComplete_doesNotUpdateUi() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Hello");   // immediate paint
+        handler.onPartialResponse(" World");  // arms a flush
+
+        handler.onCompleteResponse(ChatResponse.builder()
+            .aiMessage(AiMessage.from("Hello World")).build());
+        clearInvocations(mockViewController);
+
+        runPendingFlushes();                  // stale timer firing after completion
+
+        verify(mockViewController, never()).updateAiMessageContent(any());
+    }
+
+    @Test
+    void batchedFlush_straddlingTurnBoundary_keepsSeparator() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Let me check.");  // immediate paint (turn 1)
+        handler.onIntermediateResponse(ChatResponse.builder()
+            .aiMessage(AiMessage.from("Let me check.")).build());
+        handler.onPartialResponse("Here it is.");    // buffered (turn 2)
+
+        runPendingFlushes();
+
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Let me check.\n\nHere it is.");
     }
 
     @Test
