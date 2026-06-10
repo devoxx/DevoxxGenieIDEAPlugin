@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "lastUpdated": "2026-06-10",
+  "tips": [
+    { "text": "Type @ to add a file to the context.", "weight": 2 },
+    { "text": "Generate a DEVOXXGENIE.md with /init for project-aware answers.", "weight": 3 },
+    { "text": "Try /test, /explain or /review on selected code.", "weight": 2 },
+    { "text": "Discover and install MCP servers from the MCP Marketplace in Settings.", "weight": 1 },
+    { "text": "Enable Agent Mode to let DevoxxGenie read, search and edit files for you.", "weight": 1 },
+    { "text": "Turn on RAG in Settings to add semantic project context automatically.", "weight": 1 },
+    { "text": "Drag & drop images into the prompt when using a multimodal model.", "weight": 1 },
+    { "text": "Press Ctrl+Space to autocomplete a slash command.", "weight": 1 },
+    { "text": "Add the full project to context with large-context models like Gemini.", "weight": 1 },
+    { "text": "DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", "weight": 1 }
+  ]
+}
