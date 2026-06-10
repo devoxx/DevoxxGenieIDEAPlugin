@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.7.4</h2>
+        <UL>
+                    <LI>fix(credentials): don't read API keys from the OS keychain at IDE startup — provider availability now derives from the non-secret enabled flags, so macOS keychain prompts no longer appear on project open; keys are read lazily at prompt time (#1097)</LI>
+                    <LI>chore(models): refresh static models.json from provider sources (#1096)</LI>
+                </UL>
         <h2>v1.7.3</h2>
         <UL>
                     <LI>feat(agent): add PSI call-graph navigation agent tools — call_hierarchy, type_hierarchy and related code-navigation tools (task-229, #1093)</LI>

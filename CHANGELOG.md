@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.4 - 2026-06-10
+
+### Fixed
+- fix(credentials): don't read API keys from the OS keychain at IDE startup — populating the provider combo box previously called `PasswordSafe.get()` for every cloud provider on project open, triggering macOS keychain password dialogs at every startup. Provider availability is now derived solely from the non-secret per-provider enabled flags; API keys are read lazily via `getApiKey()` only when a prompt is executed. Behavior change: an enabled provider with no stored key now appears in the combo box and fails at prompt time instead of being silently hidden (#1097)
+
+### Changed
+- chore(models): refresh static models.json from provider sources (#1096)
+
+### Contributors
+- @stephanj
+
 ## v1.7.3 - 2026-06-09
 
 ### Added
