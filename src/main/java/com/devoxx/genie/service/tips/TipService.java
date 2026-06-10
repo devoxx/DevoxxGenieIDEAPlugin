@@ -16,6 +16,18 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public final class TipService {
 
+    private static final List<Tip> FALLBACK_TIPS = List.of(
+            new Tip("Type @ to add a file to the context.", 2),
+            new Tip("Generate a DEVOXXGENIE.md with /init for project-aware answers.", 3),
+            new Tip("Try /test, /explain or /review on selected code.", 2),
+            new Tip("Discover and install MCP servers from the MCP Marketplace in Settings.", 1),
+            new Tip("Enable Agent Mode to let DevoxxGenie read, search and edit files for you.", 1),
+            new Tip("Turn on RAG in Settings to add semantic project context automatically.", 1),
+            new Tip("Drag & drop images into the prompt when using a multimodal model.", 1),
+            new Tip("Press Ctrl+Space to autocomplete a slash command.", 1),
+            new Tip("Add the full project to context with large-context models like Gemini.", 1),
+            new Tip("DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", 1));
+
     @NotNull
     public static TipService getInstance() {
         return ApplicationManager.getApplication().getService(TipService.class);
@@ -96,22 +108,12 @@ public final class TipService {
                 return tip;
             }
         }
+        // Floating-point safety net: r is in [0,1), so this is only reached on rounding at the upper bound.
         return candidates.get(candidates.size() - 1);
     }
 
     @NotNull
     static List<Tip> getFallbackTips() {
-        List<Tip> tips = new ArrayList<>();
-        tips.add(new Tip("Type @ to add a file to the context.", 2));
-        tips.add(new Tip("Generate a DEVOXXGENIE.md with /init for project-aware answers.", 3));
-        tips.add(new Tip("Try /test, /explain or /review on selected code.", 2));
-        tips.add(new Tip("Discover and install MCP servers from the MCP Marketplace in Settings.", 1));
-        tips.add(new Tip("Enable Agent Mode to let DevoxxGenie read, search and edit files for you.", 1));
-        tips.add(new Tip("Turn on RAG in Settings to add semantic project context automatically.", 1));
-        tips.add(new Tip("Drag & drop images into the prompt when using a multimodal model.", 1));
-        tips.add(new Tip("Press Ctrl+Space to autocomplete a slash command.", 1));
-        tips.add(new Tip("Add the full project to context with large-context models like Gemini.", 1));
-        tips.add(new Tip("DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", 1));
-        return tips;
+        return FALLBACK_TIPS;
     }
 }

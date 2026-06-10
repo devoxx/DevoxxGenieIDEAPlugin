@@ -18,6 +18,7 @@ class TipServiceTest {
         assertThat(TipService.effectiveWeight(tip("a", 0))).isEqualTo(1);
         assertThat(TipService.effectiveWeight(tip("a", -5))).isEqualTo(1);
         assertThat(TipService.effectiveWeight(tip("a", 4))).isEqualTo(4);
+        assertThat(TipService.effectiveWeight(null)).isEqualTo(1);
     }
 
     @Test
