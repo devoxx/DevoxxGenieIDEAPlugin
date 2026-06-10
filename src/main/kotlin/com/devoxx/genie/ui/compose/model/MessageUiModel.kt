@@ -30,6 +30,20 @@ data class FileReferenceUiModel(
     val fileName: String,
 )
 
+/**
+ * Lifecycle of an activity timeline row. Tool calls start RUNNING and resolve to
+ * SUCCESS or ERROR when their response arrives; PENDING_APPROVAL is an intermediate
+ * state while the approval dialog is up. INFO is for entries with no lifecycle
+ * (agent reasoning, MCP/RAG log lines) — terminal immediately, never a spinner.
+ */
+enum class ActivityStatus {
+    RUNNING,
+    SUCCESS,
+    ERROR,
+    PENDING_APPROVAL,
+    INFO,
+}
+
 data class ActivityEntryUiModel(
     val source: String,
     val content: String,
@@ -38,6 +52,17 @@ data class ActivityEntryUiModel(
     val result: String? = null,
     val callNumber: Int = 0,
     val maxCalls: Int = 0,
+    val status: ActivityStatus = ActivityStatus.INFO,
+    /**
+     * True for tool-call activity (requests, MCP messages) — rendering of these rows is
+     * gated by [MessageUiModel.showToolActivity]. Agent reasoning entries are false and
+     * always rendered.
+     */
+    val isToolActivity: Boolean = false,
+    /** Set when the entry originates inside a parallel_explore sub-agent. */
+    val subAgentId: String? = null,
+    /** Indented child rows, e.g. sub-agents spawned by a parallel_explore call. */
+    val children: List<ActivityEntryUiModel> = emptyList(),
 )
 
 data class MessageUiModel(
@@ -53,6 +78,12 @@ data class MessageUiModel(
     val fileReferences: List<FileReferenceUiModel> = emptyList(),
     val activityEntries: List<ActivityEntryUiModel> = emptyList(),
     val activitySectionVisible: Boolean = true,
+    /**
+     * Snapshot of the "Show tool activity in chat output" setting taken when the prompt
+     * was submitted. Tool entries are always tracked in [activityEntries] (the live
+     * status line needs them); this flag only gates rendering of the detailed rows.
+     */
+    val showToolActivity: Boolean = false,
     val mcpLogsCompleted: Boolean = false,
     val intermediateTexts: List<String> = emptyList(),
     /** Terminal state of this message — defaults to COMPLETED for backward compat. */

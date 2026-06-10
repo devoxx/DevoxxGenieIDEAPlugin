@@ -21,6 +21,7 @@ fun ConversationScreen(
     onCustomPromptClick: (String) -> Unit,
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
+    onOpenLogs: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state = viewModel.state
@@ -67,6 +68,7 @@ fun ConversationScreen(
                         onFileClick = onFileClick,
                         onRetryClick = onRetryClick,
                         onOpenAgentSettings = onOpenAgentSettings,
+                        onOpenLogs = onOpenLogs,
                         isRestoring = s.isRestoringConversation,
                     )
                 }

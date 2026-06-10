@@ -50,6 +50,7 @@ class ComposeConversationViewController(
                             onCustomPromptClick = onCustomPromptClick,
                             onRetryClick = viewModel::onRetryClicked,
                             onOpenAgentSettings = ::openAgentSettings,
+                            onOpenLogs = ::openLogsToolWindow,
                         )
                     }
                 }
@@ -75,6 +76,20 @@ class ComposeConversationViewController(
             OpenFileDescriptor(proj, virtualFile),
             true,
         )
+    }
+
+    /** Focuses the DevoxxGenie Logs tool window — the full, untruncated activity trace. */
+    private fun openLogsToolWindow() {
+        val proj = project ?: return
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+            try {
+                com.intellij.openapi.wm.ToolWindowManager.getInstance(proj)
+                    .getToolWindow("DevoxxGenieActivityLogs")
+                    ?.show()
+            } catch (e: Exception) {
+                LOG.warn("Could not open the DevoxxGenie Logs tool window", e)
+            }
+        }
     }
 
     /** Opens Settings → DevoxxGenie → Agent Mode (loop-limit notice affordance). */
