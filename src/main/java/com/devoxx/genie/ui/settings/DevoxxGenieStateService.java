@@ -462,6 +462,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private long modelConfigLastFetchTimestamp = 0L;
     private String modelConfigPluginVersion = "";
 
+    // Tips cache
+    private String tipsCachedJson = "";
+    private long tipsLastFetchTimestamp = 0L;
+
     // Appearance settings
     private Double lineHeight = 1.6;  // Default line height multiplier
     private Integer messagePadding = 10;  // Padding inside messages in px
