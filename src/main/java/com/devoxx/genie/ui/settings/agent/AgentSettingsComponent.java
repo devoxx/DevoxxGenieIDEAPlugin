@@ -12,7 +12,7 @@ import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
-import com.intellij.openapi.options.ShowSettingsUtil;
+import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.ComboBox;
@@ -797,7 +797,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         link.addHyperlinkListener(e -> {
             Project[] projects = ProjectManager.getInstance().getOpenProjects();
             Project p = projects.length > 0 ? projects[0] : null;
-            ShowSettingsUtil.getInstance().showSettingsDialog(p, "Web search");
+            SettingsDialogUtil.showSettingsDialog(p, "Web search");
         });
         panel.add(link);
         return panel;
@@ -836,7 +836,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         link.addHyperlinkListener(e -> {
             Project[] projects = ProjectManager.getInstance().getOpenProjects();
             Project p = projects.length > 0 ? projects[0] : null;
-            ShowSettingsUtil.getInstance().showSettingsDialog(p, "RAG");
+            SettingsDialogUtil.showSettingsDialog(p, "RAG");
         });
         panel.add(link);
         return panel;
