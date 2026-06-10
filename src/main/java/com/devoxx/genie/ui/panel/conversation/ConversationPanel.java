@@ -16,6 +16,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.intellij.ide.ui.UISettingsListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -131,6 +132,12 @@ public class ConversationPanel
         // Subscribe to appearance settings changes (application-level bus)
         ApplicationManager.getApplication().getMessageBus().connect(messageBusConnection)
             .subscribe(AppTopics.APPEARANCE_SETTINGS_TOPIC, (AppearanceSettingsEvents) () ->
+                viewController.appearanceSettingsChanged());
+
+        // IDE zoom (Appearance → Zoom IDE) fires UISettingsListener; the Compose chat
+        // text must rescale because Compose density does not track the IDE scale factor.
+        ApplicationManager.getApplication().getMessageBus().connect(messageBusConnection)
+            .subscribe(UISettingsListener.TOPIC, (UISettingsListener) uiSettings ->
                 viewController.appearanceSettingsChanged());
         messageBusConnection.subscribe(ThemeChangeNotifier.THEME_CHANGED_TOPIC, isDarkTheme ->
             ApplicationManager.getApplication().invokeLater(() -> {

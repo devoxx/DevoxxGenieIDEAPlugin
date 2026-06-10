@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.model.ActivityEntryUiModel
 import com.devoxx.genie.ui.compose.theme.DevoxxBlue
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
@@ -101,7 +100,6 @@ private fun ActivityEntryRow(entry: ActivityEntryUiModel) {
                 BasicText(
                     text = summary,
                     style = typography.caption.copy(
-                        fontSize = 11.sp,
                         color = colors.textPrimary,
                         fontFamily = FontFamily.Monospace,
                     ),

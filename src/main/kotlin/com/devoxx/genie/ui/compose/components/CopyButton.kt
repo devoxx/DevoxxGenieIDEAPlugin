@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
 import java.awt.datatransfer.StringSelection
 import kotlinx.coroutines.delay
@@ -33,7 +32,6 @@ fun CopyButton(
     BasicText(
         text = if (copied) copiedLabel else label,
         style = typography.caption.copy(
-            fontSize = 11.sp,
             color = if (copied) colors.primary else colors.onSurface.copy(alpha = 0.5f),
         ),
         modifier = modifier
