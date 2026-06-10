@@ -1,7 +1,7 @@
 ---
 id: TASK-223
 title: Add web_search built-in tool to Agent Mode
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-04 12:37'
 updated_date: '2026-06-04 12:40'

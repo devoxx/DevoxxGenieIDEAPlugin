@@ -1,7 +1,7 @@
 ---
 id: TASK-205
 title: Fix @ file attachment double-click not adding file to window context
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-10 16:56'
 updated_date: '2026-03-10 17:39'

@@ -1,7 +1,6 @@
 ---
 id: TASK-207
-title: >-
-  GenieBuilder: surface DevoxxGenie prompt_executed events in analytics
+title: GenieBuilder: surface DevoxxGenie prompt_executed events in analytics
   dashboard
 status: Done
 assignee: []
