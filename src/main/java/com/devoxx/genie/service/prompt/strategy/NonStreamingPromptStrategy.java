@@ -159,6 +159,11 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
             String messageId = currentMessageId.get();
             if (messageId != null) {
                 viewController.hideLoadingIndicator(messageId);
+                // Durable in-chat marker: non-streaming runs have no partial text, but the
+                // user must still see that the request was stopped rather than silently
+                // dropped. Terminal states are final, so a late completion can't undo it.
+                viewController.setTerminalState(messageId,
+                        com.devoxx.genie.ui.compose.model.TerminalState.STOPPED, null);
             }
         }
     }

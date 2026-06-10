@@ -242,4 +242,13 @@ public class PromptCancellationService {
         Map<String, PromptOutputPanel> panels = activeOutputPanels.get(projectHash);
         return panels != null ? panels.get(contextId) : null;
     }
+
+    /**
+     * Returns the output panel registered for an in-flight execution, or null when the
+     * execution is unknown or already unregistered. Used by error handling to write a
+     * durable terminal-state marker into the chat view of the right tab.
+     */
+    public @Nullable PromptOutputPanel getRegisteredPanel(@NotNull Project project, @NotNull String contextId) {
+        return getPanel(project.getLocationHash(), contextId);
+    }
 }

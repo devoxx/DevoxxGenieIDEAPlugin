@@ -23,9 +23,11 @@ import javax.swing.JPanel
 class ComposeConversationViewController(
     private val project: Project? = null,
     private val onCustomPromptClick: (String) -> Unit = {},
+    /** Routes a Retry click back through the normal prompt-submission flow. */
+    private val onRetryPrompt: (String) -> Unit = {},
 ) : ConversationViewController {
 
-    private val viewModel = ConversationViewModel(project)
+    private val viewModel = ConversationViewModel(project, onRetryPrompt = onRetryPrompt)
     private var composeInitFailed = false
 
     private val composePanel: JComponent = createComposePanel()
@@ -45,6 +47,8 @@ class ComposeConversationViewController(
                             viewModel = viewModel,
                             onFileClick = ::openFileInEditor,
                             onCustomPromptClick = onCustomPromptClick,
+                            onRetryClick = viewModel::onRetryClicked,
+                            onOpenAgentSettings = ::openAgentSettings,
                         )
                     }
                 }
@@ -70,6 +74,16 @@ class ComposeConversationViewController(
             OpenFileDescriptor(proj, virtualFile),
             true,
         )
+    }
+
+    /** Opens Settings → DevoxxGenie → Agent Mode (loop-limit notice affordance). */
+    private fun openAgentSettings() {
+        try {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Agent Mode")
+        } catch (e: Exception) {
+            LOG.warn("Could not open Agent settings", e)
+        }
     }
 
     // ---- ConversationViewController ----
@@ -128,6 +142,10 @@ class ComposeConversationViewController(
 
     override fun markMCPLogsAsCompleted(messageId: String) {
         viewModel.markMCPLogsAsCompleted(messageId)
+    }
+
+    override fun setTerminalState(messageId: String, state: com.devoxx.genie.ui.compose.model.TerminalState, errorText: String?) {
+        viewModel.setTerminalState(messageId, state, errorText)
     }
 
     override fun clearConversation() {

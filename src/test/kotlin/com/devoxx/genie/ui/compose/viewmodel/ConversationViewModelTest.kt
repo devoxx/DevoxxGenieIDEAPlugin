@@ -5,6 +5,7 @@ import com.devoxx.genie.model.activity.ActivitySource
 import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
 import com.devoxx.genie.ui.compose.model.ConversationState
+import com.devoxx.genie.ui.compose.model.TerminalState
 import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.model.chat.StreamingChatModel
 import org.assertj.core.api.Assertions.assertThat
@@ -228,6 +229,166 @@ class ConversationViewModelTest {
         // default provider runs without an IntelliJ Application in unit tests
         val viewModel = ConversationViewModel()
         assertThat(viewModel.ideScale).isEqualTo(1f)
+    }
+
+    // --- Terminal states (task-234) ---
+
+    @Test
+    fun `stop mid-stream sets STOPPED, keeps partial text and blocks further partials`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addUserPromptMessage(
+            ChatMessageContext.builder()
+                .id("msg-1")
+                .userPrompt("hi")
+                .streamingChatModel(mock(StreamingChatModel::class.java))
+                .build()
+        )
+        viewModel.updateAiMessageContent(
+            ChatMessageContext.builder().id("msg-1").userPrompt("hi")
+                .aiMessage(AiMessage.from("partial answer")).build()
+        )
+
+        viewModel.setTerminalState("msg-1", TerminalState.STOPPED)
+
+        // A straggling token must not alter the kept partial text or revive streaming
+        viewModel.updateAiMessageContent(
+            ChatMessageContext.builder().id("msg-1").userPrompt("hi")
+                .aiMessage(AiMessage.from("partial answer plus straggler")).build()
+        )
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.STOPPED)
+        assertThat(msg.aiResponseMarkdown).isEqualTo("partial answer")
+        assertThat(msg.isStreaming).isFalse()
+        assertThat(msg.isLoadingIndicatorVisible).isFalse()
+    }
+
+    @Test
+    fun `error path sets ERROR with the human-readable message`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.setTerminalState("msg-1", TerminalState.ERROR, errorText = "Provider timed out")
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.ERROR)
+        assertThat(msg.errorText).isEqualTo("Provider timed out")
+        assertThat(msg.isLoadingIndicatorVisible).isFalse()
+    }
+
+    @Test
+    fun `terminal states are final - a stopped message cannot be re-marked`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.setTerminalState("msg-1", TerminalState.STOPPED)
+        viewModel.setTerminalState("msg-1", TerminalState.ERROR, errorText = "late failure")
+        viewModel.setTerminalState("msg-1", TerminalState.COMPLETED)
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.STOPPED)
+        assertThat(msg.errorText).isNull()
+    }
+
+    @Test
+    fun `LOOP_LIMIT activity event sets the terminal state with the configured limit`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { false })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(
+            ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(AgentType.LOOP_LIMIT)
+                .callNumber(26)
+                .maxCalls(25)
+                .build()
+        )
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.LOOP_LIMIT)
+        assertThat(msg.loopLimitMaxCalls).isEqualTo(25)
+    }
+
+    @Test
+    fun `sub-agent LOOP_LIMIT does not terminate the top-level message`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { false })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(
+            ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(AgentType.LOOP_LIMIT)
+                .subAgentId("explorer-1")
+                .maxCalls(10)
+                .build()
+        )
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.COMPLETED)
+    }
+
+    @Test
+    fun `LOOP_LIMIT still accepts the agent wrap-up text streamed after the notice`() {
+        val viewModel = ConversationViewModel()
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.setTerminalState("msg-1", TerminalState.LOOP_LIMIT, maxCalls = 25)
+        viewModel.updateAiMessageContent(
+            ChatMessageContext.builder().id("msg-1").userPrompt("hi")
+                .aiMessage(AiMessage.from("best answer with info gathered so far")).build()
+        )
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.terminalState).isEqualTo(TerminalState.LOOP_LIMIT)
+        assertThat(msg.aiResponseMarkdown).isEqualTo("best answer with info gathered so far")
+    }
+
+    @Test
+    fun `retry invokes the submission entry point with the original prompt exactly once`() {
+        val retries = mutableListOf<String>()
+        val viewModel = ConversationViewModel(onRetryPrompt = { retries.add(it) })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("explain this class").build())
+        viewModel.setTerminalState("msg-1", TerminalState.ERROR, errorText = "boom")
+
+        viewModel.onRetryClicked("msg-1")
+        viewModel.onRetryClicked("msg-1") // double click — must be a no-op
+
+        assertThat(retries).containsExactly("explain this class")
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.retryAttempted).isTrue()
+    }
+
+    @Test
+    fun `retry is ignored for messages that are not in ERROR state`() {
+        val retries = mutableListOf<String>()
+        val viewModel = ConversationViewModel(onRetryPrompt = { retries.add(it) })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onRetryClicked("msg-1") // still running
+        viewModel.setTerminalState("msg-1", TerminalState.STOPPED)
+        viewModel.onRetryClicked("msg-1") // stopped, not errored
+
+        assertThat(retries).isEmpty()
+    }
+
+    @Test
+    fun `messages restored from history default to COMPLETED and render no marker`() {
+        val viewModel = ConversationViewModel()
+        viewModel.setRestoringConversation(true)
+        viewModel.clearConversation()
+        viewModel.addChatMessage(
+            ChatMessageContext.builder()
+                .id("restored-1")
+                .userPrompt("old prompt")
+                .aiMessage(AiMessage.from("old answer"))
+                .build()
+        )
+        viewModel.setRestoringConversation(false)
+
+        val msg = (viewModel.state as ConversationState.Chat).messages.first()
+        assertThat(msg.terminalState).isEqualTo(TerminalState.COMPLETED)
+        assertThat(msg.errorText).isNull()
+        assertThat(msg.retryAttempted).isFalse()
     }
 
     private fun activeMessageEntries(viewModel: ConversationViewModel) =

@@ -8,6 +8,7 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.devoxx.genie.ui.compose.model.TerminalState;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -266,6 +267,14 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         // Hide the loading indicator in the WebView
         hideLoadingIndicator();
 
+        // Durable in-chat record of the failure (red error card with Retry). The terminal
+        // state is final per message, so a later straggling callback can't overwrite it.
+        if (conversationViewController != null) {
+            conversationViewController.setTerminalState(
+                    context.getId(), TerminalState.ERROR,
+                    PromptErrorHandler.userFacingMessage(error));
+        }
+
         StreamingException streamingError = new StreamingException(
             "Error during streaming response", error);
         PromptErrorHandler.handleException(context.getProject(), streamingError, context);
@@ -312,6 +321,15 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
 
             // Hide the loading indicator in the WebView
             hideLoadingIndicator();
+
+            // Leave a visible, durable "stopped" marker on the message; the partial
+            // text flushed above stays in place. Posted via invokeLater so it executes
+            // AFTER the final flushToUi() above (also queued on the EDT) — otherwise the
+            // STOPPED guard in the view model would reject that last partial update.
+            if (conversationViewController != null) {
+                ApplicationManager.getApplication().invokeLater(() ->
+                    conversationViewController.setTerminalState(context.getId(), TerminalState.STOPPED, null));
+            }
         }
     }
 }

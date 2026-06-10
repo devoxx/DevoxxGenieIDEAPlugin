@@ -51,6 +51,13 @@ class ConversationViewModel(
             1f
         }
     },
+    /**
+     * Invoked when the user clicks Retry on an inline error card. Receives the original
+     * user prompt; the host is expected to route it through the normal prompt submission
+     * entry point (PromptExecutionController.handlePromptSubmission flow). Injectable for
+     * tests; defaults to a no-op.
+     */
+    private val onRetryPrompt: (String) -> Unit = {},
 ) {
 
     var state: ConversationState by mutableStateOf(
@@ -178,6 +185,13 @@ class ConversationViewModel(
     fun updateAiMessageContent(context: ChatMessageContext) {
         val aiText = context.aiMessage?.text() ?: return
         updateMessage(context.id) { msg ->
+            // A stopped or errored message is final: straggling tokens arriving after the
+            // terminal state was set must not alter the (partial) text or make the message
+            // look completed. LOOP_LIMIT still accepts updates — the LLM legitimately
+            // streams its wrap-up answer after the limit notice was raised.
+            if (msg.terminalState == TerminalState.STOPPED || msg.terminalState == TerminalState.ERROR) {
+                return@updateMessage msg
+            }
             msg.copy(
                 aiResponseMarkdown = aiText,
                 executionTimeMs = context.executionTimeMs,
@@ -250,6 +264,17 @@ class ConversationViewModel(
 
         val msgId = activeMessageId ?: return
 
+        // Agent loop limit reached — surface a durable terminal notice in the chat
+        // instead of (only) the Logs tool window. Sub-agent limits are not terminal
+        // for the top-level message, so they fall through to regular activity handling.
+        if (message.source == ActivitySource.AGENT &&
+            message.agentType == AgentType.LOOP_LIMIT &&
+            message.subAgentId == null
+        ) {
+            setTerminalState(msgId, TerminalState.LOOP_LIMIT, maxCalls = message.maxCalls)
+            return
+        }
+
         // Agent intermediate responses (reasoning text) — show as activity entry
         // instead of appending to aiResponseMarkdown (which gets overwritten by streaming updates)
         if (message.source == ActivitySource.AGENT &&
@@ -311,6 +336,53 @@ class ConversationViewModel(
     fun markMCPLogsAsCompleted(messageId: String) {
         updateMessage(messageId) { msg ->
             msg.copy(mcpLogsCompleted = true)
+        }
+    }
+
+    /**
+     * Marks a message with an explicit terminal state. Terminal states are mutually
+     * exclusive and final: the first non-COMPLETED state wins and later calls are
+     * ignored, so e.g. a STOPPED message can never be re-marked as ERROR by a
+     * straggling failure callback. Also clears the loading/streaming affordances
+     * (the in-flight status line must not outlive the run).
+     */
+    fun setTerminalState(
+        messageId: String,
+        state: TerminalState,
+        errorText: String? = null,
+        maxCalls: Int = 0,
+    ) {
+        if (state == TerminalState.COMPLETED) return
+        updateMessage(messageId) { msg ->
+            if (msg.terminalState != TerminalState.COMPLETED) {
+                msg // already terminal — final, ignore
+            } else {
+                msg.copy(
+                    terminalState = state,
+                    errorText = errorText?.takeIf { it.isNotBlank() },
+                    loopLimitMaxCalls = maxCalls,
+                    isLoadingIndicatorVisible = false,
+                    isStreaming = false,
+                )
+            }
+        }
+    }
+
+    /**
+     * Retry handler for the inline error card. Re-submits the original user prompt
+     * through [onRetryPrompt] exactly once per message — the [MessageUiModel.retryAttempted]
+     * flag guards against double-submission (the button also renders disabled).
+     */
+    fun onRetryClicked(messageId: String) {
+        val current = state as? ConversationState.Chat ?: return
+        val msg = current.messages.firstOrNull { it.id == messageId } ?: return
+        if (msg.terminalState != TerminalState.ERROR || msg.retryAttempted) return
+        if (msg.userPrompt.isBlank()) return
+        updateMessage(messageId) { it.copy(retryAttempted = true) }
+        try {
+            onRetryPrompt(msg.userPrompt)
+        } catch (_: Exception) {
+            // best-effort — a failed re-submission must not break the chat UI
         }
     }
 

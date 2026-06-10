@@ -105,7 +105,12 @@ public class AgentLoopTracker implements ToolProvider {
         if (project == null || project.isDisposed()) {
             return;
         }
-        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
+        // LOOP_LIMIT is not a debug event: the chat view subscribes to it to render a
+        // durable "max tool calls reached" notice (task-234), so it must be published
+        // even when agent debug logging is switched off. All other event types remain
+        // gated behind the debug-logs setting.
+        if (type != AgentType.LOOP_LIMIT
+                && !Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
             return;
         }
         try {

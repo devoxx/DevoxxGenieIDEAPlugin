@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.compose
 
 import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.ui.compose.model.TerminalState
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.ResourceBundle
 import javax.swing.JComponent
@@ -45,6 +46,13 @@ interface ConversationViewController {
     fun deactivateActivityHandlers()
     fun hideLoadingIndicator(messageId: String)
     fun markMCPLogsAsCompleted(messageId: String)
+
+    /**
+     * Marks a message with an explicit terminal state (stopped / error / loop limit).
+     * Terminal states are final — the first one set wins. [errorText] is only used
+     * for [TerminalState.ERROR].
+     */
+    fun setTerminalState(messageId: String, state: TerminalState, errorText: String?)
 
     // ---- conversation lifecycle ----
 

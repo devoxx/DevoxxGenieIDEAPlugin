@@ -578,4 +578,71 @@ class StreamingResponseHandlerTest {
 
         verify(mockChatMemoryService).removeLastMessageByKey("test-memory-key");
     }
+
+    // --- Terminal states (task-234) ---
+
+    @Test
+    void stop_setsStoppedTerminalState() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.stop();
+
+        verify(mockViewController).setTerminalState(
+                "test-context-id", com.devoxx.genie.ui.compose.model.TerminalState.STOPPED, null);
+    }
+
+    @Test
+    void stop_setsStoppedStateAfterFinalPartialFlush_andBlocksFurtherPartials() {
+        StreamingResponseHandler handler = createHandler();
+        handler.onPartialResponse("partial ");  // immediate paint
+        handler.onPartialResponse("answer");    // buffered
+
+        handler.stop();
+
+        // The buffered tail is flushed to the UI before the STOPPED marker lands,
+        // so the partial text remains visible under the marker.
+        var inOrder = inOrder(mockViewController);
+        inOrder.verify(mockViewController, atLeastOnce()).updateAiMessageContent(mockContext);
+        inOrder.verify(mockViewController).setTerminalState(
+                "test-context-id", com.devoxx.genie.ui.compose.model.TerminalState.STOPPED, null);
+
+        // Straggling tokens after stop never reach the view
+        clearInvocations(mockViewController);
+        handler.onPartialResponse("straggler");
+        runPendingFlushes();
+        verify(mockViewController, never()).updateAiMessageContent(any());
+    }
+
+    @Test
+    void stop_calledTwice_setsTerminalStateOnlyOnce() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.stop();
+        handler.stop();
+
+        verify(mockViewController, times(1)).setTerminalState(
+                "test-context-id", com.devoxx.genie.ui.compose.model.TerminalState.STOPPED, null);
+    }
+
+    @Test
+    void onError_setsErrorTerminalStateWithUserFacingMessage() {
+        promptErrorHandlerMock
+                .when(() -> PromptErrorHandler.userFacingMessage(any(Throwable.class)))
+                .thenReturn("Provider exploded");
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onError(new RuntimeException("Provider exploded with a huge stack trace"));
+
+        verify(mockViewController).setTerminalState(
+                "test-context-id", com.devoxx.genie.ui.compose.model.TerminalState.ERROR, "Provider exploded");
+    }
+
+    @Test
+    void onError_withNullWebViewController_doesNotThrow() {
+        StreamingResponseHandler handler = createHandlerWithNullWebView();
+
+        handler.onError(new RuntimeException("Error"));
+
+        assertThat(onErrorCalled.get()).isTrue();
+    }
 }
