@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.component.input;
 
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.tips.TipService;
 import com.devoxx.genie.ui.listener.CustomPromptChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -13,8 +14,11 @@ import com.intellij.ui.components.JBTextArea;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -34,7 +38,10 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
     private boolean isAutoCompleting = false;
     @Getter
     private String placeholder = "";
-    
+
+    @Nullable
+    private String currentTip;
+
     private Runnable fileSelectionCallback;
 
     public CommandAutoCompleteTextField(@NotNull Project project) {
@@ -42,6 +49,25 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         this.project = project;
         setDocument(new CommandDocument());
         addKeyListener(new CommandKeyListener());
+
+        // Seed the first tip and refresh it whenever the field transitions to empty.
+        currentTip = TipService.getInstance().nextTip(null);
+        getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                // typing makes the field non-empty; nothing to do
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshTipIfEmpty();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                // attribute changes only; ignore
+            }
+        });
 
         project.getMessageBus()
                 .connect()
@@ -79,12 +105,27 @@ public class CommandAutoCompleteTextField extends JBTextArea implements CustomPr
         initializeCommands();
     }
 
+    private void refreshTipIfEmpty() {
+        if (getText().isEmpty()) {
+            currentTip = TipService.getInstance().nextTip(currentTip);
+            repaint();
+        }
+    }
+
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
-        if (getText().isEmpty() && !placeholder.isEmpty()) {
-            g.setColor(JBColor.GRAY);
-            g.drawString(placeholder, getInsets().left, g.getFontMetrics().getMaxAscent() + getInsets().top);
+        if (!getText().isEmpty()) {
+            return;
+        }
+        int x = getInsets().left;
+        int baseline = g.getFontMetrics().getMaxAscent() + getInsets().top;
+        g.setColor(JBColor.GRAY);
+        if (!placeholder.isEmpty()) {
+            g.drawString(placeholder, x, baseline);
+        }
+        if (currentTip != null && !currentTip.isBlank()) {
+            g.drawString("Tip: " + currentTip, x, baseline + g.getFontMetrics().getHeight());
         }
     }
 
