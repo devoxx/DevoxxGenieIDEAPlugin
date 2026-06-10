@@ -9,6 +9,8 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.CJKFontUtil;
 import com.devoxx.genie.util.MessageBusUtil;
+import com.intellij.ide.ui.UISettingsListener;
+import com.intellij.ide.ui.UISettingsUtils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.editor.colors.EditorColorsListener;
@@ -95,6 +97,11 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
 
         // Listen for IDE Editor font changes
         project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, this);
+
+        // Re-apply the font when the IDE zoom changes (Appearance → Zoom IDE), since the
+        // editor color scheme font size does not include the zoom factor
+        project.getMessageBus().connect().subscribe(UISettingsListener.TOPIC,
+                (UISettingsListener) uiSettings -> applyEditorFont());
 
         // Request focus when tool window is activated or switched from another plugin window
         project.getMessageBus().connect().subscribe(ToolWindowManagerListener.TOPIC, this);
@@ -256,13 +263,23 @@ public class PromptInputArea extends JPanel implements ShortcutChangeListener, N
      * box (see issue #1034). {@link CJKFontUtil#withCJKFallback(Font)} keeps
      * the editor font when it can render CJK and otherwise derives a fallback
      * font that can — preserving size and style.
+     *
+     * <p>The scheme font size does not include the IDE zoom factor
+     * (Appearance → Zoom IDE), so the font is derived at the zoom-scaled size
+     * from {@link UISettingsUtils#getScaledEditorFontSize()}.
      */
     private void applyEditorFont() {
         EditorColorsManager manager = EditorColorsManager.getInstance();
         if (manager != null) {
             EditorColorsScheme scheme = manager.getGlobalScheme();
             Font editorFont = scheme.getFont(null);
-            inputField.setFont(CJKFontUtil.withCJKFallback(editorFont));
+            float scaledSize = editorFont.getSize2D();
+            try {
+                scaledSize = UISettingsUtils.getInstance().getScaledEditorFontSize();
+            } catch (Exception e) {
+                // keep the unscaled scheme size if UISettings is unavailable
+            }
+            inputField.setFont(CJKFontUtil.withCJKFallback(editorFont.deriveFont(scaledSize)));
         }
     }
 

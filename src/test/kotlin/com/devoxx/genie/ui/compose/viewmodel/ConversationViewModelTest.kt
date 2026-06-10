@@ -102,6 +102,30 @@ class ConversationViewModelTest {
         assertThat(after.isLoadingIndicatorVisible).isFalse()
     }
 
+    @Test
+    fun `ide scale is read at construction and refreshed on appearance settings change`() {
+        var scale = 1f
+        val viewModel = ConversationViewModel(readIdeScale = { scale })
+        assertThat(viewModel.ideScale).isEqualTo(1f)
+
+        // user zooms the IDE in (Appearance → Zoom IDE)
+        scale = 1.5f
+        viewModel.onAppearanceSettingsChanged()
+        assertThat(viewModel.ideScale).isEqualTo(1.5f)
+
+        // and back out again
+        scale = 0.9f
+        viewModel.onAppearanceSettingsChanged()
+        assertThat(viewModel.ideScale).isEqualTo(0.9f)
+    }
+
+    @Test
+    fun `ide scale defaults to 1 when the platform is unavailable`() {
+        // default provider runs without an IntelliJ Application in unit tests
+        val viewModel = ConversationViewModel()
+        assertThat(viewModel.ideScale).isEqualTo(1f)
+    }
+
     private fun activeMessageEntries(viewModel: ConversationViewModel) =
         (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }.activityEntries
 

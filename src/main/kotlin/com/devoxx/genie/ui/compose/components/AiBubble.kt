@@ -155,11 +155,11 @@ fun AiBubble(
             val codeStyle = TextStyle(fontSize = codeSize, fontFamily = FontFamily.Monospace, color = textColor)
 
             val mdTypography = DefaultMarkdownTypography(
-                h1 = baseStyle.copy(fontSize = (typography.bodyFontSize + 9).sp, fontWeight = FontWeight.Bold),
-                h2 = baseStyle.copy(fontSize = (typography.bodyFontSize + 7).sp, fontWeight = FontWeight.Bold),
-                h3 = baseStyle.copy(fontSize = (typography.bodyFontSize + 5).sp, fontWeight = FontWeight.Bold),
-                h4 = baseStyle.copy(fontSize = (typography.bodyFontSize + 3).sp, fontWeight = FontWeight.SemiBold),
-                h5 = baseStyle.copy(fontSize = (typography.bodyFontSize + 1).sp, fontWeight = FontWeight.SemiBold),
+                h1 = baseStyle.copy(fontSize = typography.bodyPlus(9f).sp, fontWeight = FontWeight.Bold),
+                h2 = baseStyle.copy(fontSize = typography.bodyPlus(7f).sp, fontWeight = FontWeight.Bold),
+                h3 = baseStyle.copy(fontSize = typography.bodyPlus(5f).sp, fontWeight = FontWeight.Bold),
+                h4 = baseStyle.copy(fontSize = typography.bodyPlus(3f).sp, fontWeight = FontWeight.SemiBold),
+                h5 = baseStyle.copy(fontSize = typography.bodyPlus(1f).sp, fontWeight = FontWeight.SemiBold),
                 h6 = baseStyle.copy(fontSize = bodySize, fontWeight = FontWeight.SemiBold),
                 text = baseStyle,
                 code = codeStyle,

@@ -19,6 +19,7 @@ fun ConversationScreen(
         darkTheme = viewModel.isDarkTheme,
         bodyFontSize = viewModel.customFontSize,
         codeFontSize = viewModel.customCodeFontSize,
+        ideScale = viewModel.ideScale,
     ) {
         when (val s = state) {
             is ConversationState.Welcome -> {

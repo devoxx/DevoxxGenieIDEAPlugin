@@ -39,6 +39,18 @@ class ConversationViewModel(
             false
         }
     },
+    /**
+     * Supplies the current IDE zoom factor (Appearance → Zoom IDE). Compose density does
+     * not track this factor, so font sizes are multiplied by it explicitly. Defaults to
+     * the platform's UISettingsUtils; injectable for tests running without an Application.
+     */
+    private val readIdeScale: () -> Float = {
+        try {
+            com.intellij.ide.ui.UISettingsUtils.getInstance().currentIdeScale
+        } catch (_: Throwable) {
+            1f
+        }
+    },
 ) {
 
     var state: ConversationState by mutableStateOf(
@@ -68,6 +80,9 @@ class ConversationViewModel(
     var customCodeFontSize: Int by mutableStateOf(readCodeFontSize())
         private set
 
+    var ideScale: Float by mutableStateOf(readIdeScale())
+        private set
+
     fun onThemeChanged(dark: Boolean) {
         isDarkTheme = dark
     }
@@ -75,6 +90,7 @@ class ConversationViewModel(
     fun onAppearanceSettingsChanged() {
         customFontSize = readFontSize()
         customCodeFontSize = readCodeFontSize()
+        ideScale = readIdeScale()
     }
 
     private fun readFontSize(): Int {

@@ -32,7 +32,8 @@ data class DevoxxColors(
 
 /**
  * Custom typography replacing Material Typography.
- * Font sizes are derived from the user's appearance settings.
+ * Font sizes are derived from the user's appearance settings and are already
+ * multiplied by the IDE zoom scale (Appearance → Zoom IDE).
  */
 @Stable
 data class DevoxxTypography(
@@ -44,7 +45,43 @@ data class DevoxxTypography(
     val bodyFontSize: Float = 13f,
     /** Code font size in sp — used by markdown renderers for code blocks. */
     val codeFontSize: Float = 12f,
-)
+    /** Sanitized IDE zoom scale the sizes above were multiplied by. */
+    val scale: Float = 1f,
+) {
+    /** Body size plus a zoom-scaled offset — for markdown heading sizes. */
+    fun bodyPlus(offset: Float): Float = bodyFontSize + offset * scale
+}
+
+/**
+ * Compose density does not track IntelliJ's "Zoom IDE" factor, so an out-of-range
+ * or non-finite value coming from the platform must never blow up the chat UI.
+ */
+fun sanitizeIdeScale(ideScale: Float): Float =
+    if (ideScale.isFinite() && ideScale > 0f) ideScale.coerceIn(0.5f, 3f) else 1f
+
+/**
+ * Builds the typography from the user's configured font sizes and the IDE zoom scale.
+ * Pure function (no composition) so it can be unit tested.
+ */
+fun buildDevoxxTypography(
+    bodyFontSize: Int,
+    codeFontSize: Int,
+    ideScale: Float = 1f,
+): DevoxxTypography {
+    val scale = sanitizeIdeScale(ideScale)
+    val bodySp = bodyFontSize.coerceIn(8, 24) * scale
+    val codeSp = codeFontSize.coerceIn(8, 24) * scale
+
+    return DevoxxTypography(
+        h5 = TextStyle(fontSize = (bodySp + 11 * scale).sp, fontWeight = FontWeight.Normal),
+        body1 = TextStyle(fontSize = bodySp.sp),
+        body2 = TextStyle(fontSize = (bodySp - 1 * scale).sp),
+        caption = TextStyle(fontSize = (bodySp - 2 * scale).sp),
+        bodyFontSize = bodySp,
+        codeFontSize = codeSp,
+        scale = scale,
+    )
+}
 
 val LocalDevoxxColors = staticCompositionLocalOf<DevoxxColors> {
     error("No DevoxxColors provided")
@@ -101,6 +138,7 @@ fun DevoxxGenieTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     bodyFontSize: Int = 13,
     codeFontSize: Int = 12,
+    ideScale: Float = 1f,
     content: @Composable () -> Unit,
 ) {
     val colors = DevoxxColors(
@@ -116,17 +154,7 @@ fun DevoxxGenieTheme(
         isDark = darkTheme,
     )
 
-    val bodySp = bodyFontSize.coerceIn(8, 24)
-    val codeSp = codeFontSize.coerceIn(8, 24)
-
-    val typography = DevoxxTypography(
-        h5 = TextStyle(fontSize = (bodySp + 11).sp, fontWeight = FontWeight.Normal),
-        body1 = TextStyle(fontSize = bodySp.sp),
-        body2 = TextStyle(fontSize = (bodySp - 1).sp),
-        caption = TextStyle(fontSize = (bodySp - 2).sp),
-        bodyFontSize = bodySp.toFloat(),
-        codeFontSize = codeSp.toFloat(),
-    )
+    val typography = buildDevoxxTypography(bodyFontSize, codeFontSize, ideScale)
 
     CompositionLocalProvider(
         LocalDevoxxColors provides colors,
