@@ -2,6 +2,7 @@ package com.devoxx.genie.service.generator.tree;
 
 import com.devoxx.genie.service.generator.file.FileManager;
 import com.devoxx.genie.service.projectscanner.FileScanner;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public class ProjectTreeGenerator {
      * Generates tree content using the FileScanner.
      */
     private String generateTreeContent(VirtualFile baseDir) {
-        return com.intellij.openapi.application.ReadAction.compute(() -> 
+        return ReadAccess.compute(() -> 
             fileScanner.generateSourceTreeRecursive(baseDir, 0)
         );
     }

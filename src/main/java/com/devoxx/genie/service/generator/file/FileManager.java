@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.generator.file;
 
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -60,7 +61,7 @@ public class FileManager {
      * @return The file content or empty string if read fails
      */
     public String readFileContent(VirtualFile file) {
-        return com.intellij.openapi.application.ReadAction.compute(() -> {
+        return ReadAccess.compute(() -> {
             try {
                 return VfsUtilCore.loadText(file);
             } catch (IOException e) {

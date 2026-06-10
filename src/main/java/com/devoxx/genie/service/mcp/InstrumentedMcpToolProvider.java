@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.mcp;
 
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -8,7 +9,6 @@ import dev.langchain4j.service.tool.ToolProviderResult;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,9 +42,9 @@ public class InstrumentedMcpToolProvider implements ToolProvider {
         ToolProviderResult delegateResult = delegate.provideTools(request);
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
-        for (Map.Entry<ToolSpecification, ToolExecutor> entry : delegateResult.tools().entrySet()) {
-            ToolSpecification spec = entry.getKey();
-            ToolExecutor originalExecutor = entry.getValue();
+        for (AiServiceTool tool : delegateResult.aiServiceTools()) {
+            ToolSpecification spec = tool.toolSpecification();
+            ToolExecutor originalExecutor = tool.toolExecutor();
 
             ToolExecutor countingExecutor = (toolRequest, memoryId) -> {
                 String result = originalExecutor.execute(toolRequest, memoryId);
@@ -53,7 +53,7 @@ public class InstrumentedMcpToolProvider implements ToolProvider {
                 return result;
             };
 
-            builder.add(spec, countingExecutor);
+            builder.add(tool.toBuilder().toolExecutor(countingExecutor).build());
         }
 
         return builder.build();

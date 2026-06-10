@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -46,7 +46,7 @@ public class FindImplementationsToolExecutor implements ToolExecutor {
                 return "Error: 'line' parameter is required (1-based line number).";
             }
 
-            return ReadAction.compute(() -> findImplementations(file, line, symbol));
+            return ReadAccess.compute(() -> findImplementations(file, line, symbol));
         } catch (Exception e) {
             log.error("Error finding implementations", e);
             return "Error: Failed to find implementations - " + e.getMessage();

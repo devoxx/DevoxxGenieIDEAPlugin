@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -43,7 +43,7 @@ public class FindSymbolsToolExecutor implements ToolExecutor {
                 return "Error: 'name' parameter is required.";
             }
 
-            return ReadAction.compute(() -> findSymbols(name, kind));
+            return ReadAccess.compute(() -> findSymbols(name, kind));
         } catch (Exception e) {
             log.error("Error finding symbols", e);
             return "Error: Failed to find symbols - " + e.getMessage();

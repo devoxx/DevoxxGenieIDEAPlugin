@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiCallExpression;
@@ -51,7 +51,7 @@ public class FindCalleesToolExecutor implements ToolExecutor {
                 return "Error: 'line' parameter is required (1-based line number of the method).";
             }
 
-            return ReadAction.compute(() -> findCallees(file, line, symbol));
+            return ReadAccess.compute(() -> findCallees(file, line, symbol));
         } catch (Exception e) {
             log.error("Error finding callees", e);
             return "Error: Failed to find callees - " + e.getMessage();

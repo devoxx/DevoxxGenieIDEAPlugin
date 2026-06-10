@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiCallExpression;
@@ -72,7 +72,7 @@ public class TraceCallChainsToolExecutor implements ToolExecutor {
             boolean callees = "callees".equalsIgnoreCase(direction);
             int boundedDepth = Math.max(1, Math.min(depth, MAX_DEPTH));
 
-            return ReadAction.compute(() -> trace(file, line, symbol, target, callees, boundedDepth));
+            return ReadAccess.compute(() -> trace(file, line, symbol, target, callees, boundedDepth));
         } catch (Exception e) {
             log.error("Error tracing call chains", e);
             return "Error: Failed to trace call chains - " + e.getMessage();

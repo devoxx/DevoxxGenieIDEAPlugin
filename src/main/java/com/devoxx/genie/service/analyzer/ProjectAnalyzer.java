@@ -2,7 +2,7 @@ package com.devoxx.genie.service.analyzer;
 
 import com.devoxx.genie.service.analyzer.tools.GlobTool;
 import com.devoxx.genie.service.analyzer.util.GitignoreParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -92,7 +92,7 @@ public class ProjectAnalyzer {
 
     public Map<String, Object> scanProject() {
         // Run the entire scanning process in a read action
-        return ReadAction.compute(() -> {
+        return ReadAccess.compute(() -> {
             Map<String, Object> projectInfo = new HashMap<>();
 
             // IDE-agnostic detection
@@ -207,7 +207,7 @@ public class ProjectAnalyzer {
 
                 if (!file.isDirectory()) {
                     // Use ReadAction to safely access the ProjectFileIndex
-                    boolean isInContent = ReadAction.compute(() ->
+                    boolean isInContent = ReadAccess.compute(() ->
                             ProjectFileIndex.getInstance(project).isInContent(file));
 
                     if (isInContent) {

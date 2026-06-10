@@ -2,7 +2,7 @@ package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.model.ScanContentResult;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -69,7 +69,7 @@ public class ProjectScannerService {
                 (startDirectory != null ? startDirectory.getPath() : "null"));
 
         ScanContentResult scanContentResult = new ScanContentResult();
-        ReadAction.run(() -> {
+        ReadAccess.run(() -> {
             fileScanner.reset();
 
             // Get a valid startDirectory if null

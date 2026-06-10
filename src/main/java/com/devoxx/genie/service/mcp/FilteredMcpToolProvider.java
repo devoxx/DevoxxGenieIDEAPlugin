@@ -2,8 +2,8 @@ package com.devoxx.genie.service.mcp;
 
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
@@ -48,10 +48,10 @@ public class FilteredMcpToolProvider implements ToolProvider {
 
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
-        for (Map.Entry<ToolSpecification, ToolExecutor> entry : delegateResult.tools().entrySet()) {
-            ToolSpecification spec = entry.getKey();
+        for (AiServiceTool tool : delegateResult.aiServiceTools()) {
+            ToolSpecification spec = tool.toolSpecification();
             if (!allDisabledTools.contains(spec.name())) {
-                builder.add(spec, entry.getValue());
+                builder.add(tool);
             } else {
                 MCPService.logDebug("Filtered out disabled MCP tool: " + spec.name());
             }

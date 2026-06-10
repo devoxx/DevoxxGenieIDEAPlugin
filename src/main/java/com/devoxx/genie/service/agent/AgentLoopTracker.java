@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -60,9 +61,9 @@ public class AgentLoopTracker implements ToolProvider {
         ToolProviderResult result = delegate.provideTools(request);
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
-        for (var entry : result.tools().entrySet()) {
-            ToolSpecification spec = entry.getKey();
-            ToolExecutor original = entry.getValue();
+        for (AiServiceTool tool : result.aiServiceTools()) {
+            ToolSpecification spec = tool.toolSpecification();
+            ToolExecutor original = tool.toolExecutor();
 
             ToolExecutor tracked = (toolRequest, memoryId) -> {
                 if (cancelled.get()) {
@@ -94,7 +95,7 @@ public class AgentLoopTracker implements ToolProvider {
                 return toolResult;
             };
 
-            builder.add(spec, tracked);
+            builder.add(tool.toBuilder().toolExecutor(tracked).build());
         }
 
         return builder.build();

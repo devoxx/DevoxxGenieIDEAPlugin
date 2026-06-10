@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -37,7 +37,7 @@ public class DocumentSymbolsToolExecutor implements ToolExecutor {
                 return "Error: 'file' parameter is required.";
             }
 
-            return ReadAction.compute(() -> listSymbols(path));
+            return ReadAccess.compute(() -> listSymbols(path));
         } catch (Exception e) {
             log.error("Error listing document symbols", e);
             return "Error: Failed to list symbols - " + e.getMessage();

@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent;
 
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -46,9 +47,9 @@ public class AgentApprovalProvider implements ToolProvider {
         ToolProviderResult result = delegate.provideTools(request);
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
-        for (var entry : result.tools().entrySet()) {
-            ToolSpecification spec = entry.getKey();
-            ToolExecutor original = entry.getValue();
+        for (AiServiceTool tool : result.aiServiceTools()) {
+            ToolSpecification spec = tool.toolSpecification();
+            ToolExecutor original = tool.toolExecutor();
 
             ToolExecutor approvalExecutor = (toolRequest, memoryId) -> {
                 boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());
@@ -67,7 +68,7 @@ public class AgentApprovalProvider implements ToolProvider {
                 return original.execute(toolRequest, memoryId);
             };
 
-            builder.add(spec, approvalExecutor);
+            builder.add(tool.toBuilder().toolExecutor(approvalExecutor).build());
         }
 
         return builder.build();

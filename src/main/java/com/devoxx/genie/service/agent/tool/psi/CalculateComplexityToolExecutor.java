@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiCatchSection;
@@ -59,7 +59,7 @@ public class CalculateComplexityToolExecutor implements ToolExecutor {
             }
             int effectiveThreshold = threshold > 0 ? threshold : DEFAULT_THRESHOLD;
 
-            return ReadAction.compute(() -> compute(file, line, effectiveThreshold));
+            return ReadAccess.compute(() -> compute(file, line, effectiveThreshold));
         } catch (Exception e) {
             log.error("Error calculating complexity", e);
             return "Error: Failed to calculate complexity - " + e.getMessage();

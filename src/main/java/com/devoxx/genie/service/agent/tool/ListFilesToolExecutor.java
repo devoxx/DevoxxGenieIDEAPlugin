@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -32,7 +32,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
             String path = ToolArgumentParser.getString(request.arguments(), "path");
             boolean recursive = ToolArgumentParser.getBoolean(request.arguments(), "recursive", false);
 
-            return ReadAction.compute(() -> {
+            return ReadAccess.compute(() -> {
                 VirtualFile projectBase = getProjectBaseDir();
                 return listFiles(path, recursive, projectBase);
             });

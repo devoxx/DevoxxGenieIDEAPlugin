@@ -4,7 +4,7 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.ide.util.gotoByName.GotoFileModel;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAware;
@@ -193,7 +193,7 @@ public class FileSelectionPanelFactory implements DumbAware {
 
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
-            ReadAction.run(() -> searchVirtualFiles(indicator));
+            ReadAccess.run(() -> searchVirtualFiles(indicator));
         }
 
         private void searchVirtualFiles(@NotNull ProgressIndicator indicator) {

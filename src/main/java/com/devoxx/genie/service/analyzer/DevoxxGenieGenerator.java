@@ -6,7 +6,7 @@ import com.devoxx.genie.service.generator.tree.ProjectTreeGenerator;
 import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -72,7 +72,7 @@ public class DevoxxGenieGenerator {
 
         try {
             // Initialize FileScanner's gitignore parser in a read action
-            com.intellij.openapi.application.ReadAction.run(() -> 
+            ReadAccess.run(() -> 
                 fileScanner.initGitignoreParser(project, baseDir)
             );
 
@@ -129,6 +129,6 @@ public class DevoxxGenieGenerator {
     private Map<String, Object> scanProject() {
         ProjectAnalyzer scanner = new ProjectAnalyzer(project, baseDir);
         indicator.setText("Analyzing project structure...");
-        return ReadAction.compute(scanner::scanProject);
+        return ReadAccess.compute(scanner::scanProject);
     }
 }

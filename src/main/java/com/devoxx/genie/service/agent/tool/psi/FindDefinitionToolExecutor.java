@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -43,7 +43,7 @@ public class FindDefinitionToolExecutor implements ToolExecutor {
                 return "Error: 'line' parameter is required (1-based line number).";
             }
 
-            return ReadAction.compute(() -> findDefinition(file, line, column, symbol));
+            return ReadAccess.compute(() -> findDefinition(file, line, column, symbol));
         } catch (Exception e) {
             log.error("Error finding definition", e);
             return "Error: Failed to find definition - " + e.getMessage();

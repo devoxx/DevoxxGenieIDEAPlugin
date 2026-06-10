@@ -24,7 +24,7 @@ public class CompositeToolProvider implements ToolProvider {
 
         for (ToolProvider delegate : delegates) {
             ToolProviderResult result = delegate.provideTools(request);
-            builder.addAll(result.tools());
+            builder.addAll(result.aiServiceTools());
         }
 
         return builder.build();

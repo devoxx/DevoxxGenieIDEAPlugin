@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -29,7 +29,7 @@ public class ReadFileToolExecutor implements ToolExecutor {
                 return "Error: 'path' parameter is required.";
             }
 
-            return ReadAction.compute(() -> readFile(path));
+            return ReadAccess.compute(() -> readFile(path));
         } catch (Exception e) {
             log.error("Error reading file", e);
             return "Error: Failed to read file - " + e.getMessage();

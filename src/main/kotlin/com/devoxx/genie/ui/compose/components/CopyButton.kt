@@ -4,14 +4,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
+import java.awt.datatransfer.StringSelection
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CopyButton(
     textToCopy: String,
@@ -19,7 +23,8 @@ fun CopyButton(
     label: String = "\u2398 Copy",
     copiedLabel: String = "\u2713 Copied",
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
 
     val colors = DevoxxGenieThemeAccessor.colors
@@ -34,9 +39,9 @@ fun CopyButton(
         modifier = modifier
             .padding(4.dp)
             .clickable {
-                clipboardManager.setText(buildAnnotatedString {
-                    append(textToCopy)
-                })
+                coroutineScope.launch {
+                    clipboard.setClipEntry(ClipEntry(StringSelection(textToCopy)))
+                }
                 copied = true
             },
     )

@@ -1,6 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -54,7 +54,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
                     ? FileSystems.getDefault().getPathMatcher("glob:" + filePattern)
                     : null;
 
-            return ReadAction.compute(() -> {
+            return ReadAccess.compute(() -> {
                 VirtualFile projectBase = getProjectBaseDir();
                 return searchFiles(patternStr, path, regex, fileMatcher, projectBase);
             });

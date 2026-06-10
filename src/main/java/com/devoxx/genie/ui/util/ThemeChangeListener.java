@@ -2,10 +2,10 @@ package com.devoxx.genie.ui.util;
 
 import com.intellij.ide.ui.LafManager;
 import com.intellij.ide.ui.LafManagerListener;
+import com.intellij.ide.ui.laf.UIThemeLookAndFeelInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.util.ui.StartupUiUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,7 +39,8 @@ public class ThemeChangeListener implements LafManagerListener {
     @Override
     public void lookAndFeelChanged(@NotNull LafManager source) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            boolean isDarkTheme = StartupUiUtil.isUnderDarcula();
+            UIThemeLookAndFeelInfo currentTheme = source.getCurrentUIThemeLookAndFeel();
+            boolean isDarkTheme = currentTheme != null && currentTheme.isDark();
 
             for (Project project : ProjectManager.getInstance().getOpenProjects()) {
                 if (project.isDisposed()) {

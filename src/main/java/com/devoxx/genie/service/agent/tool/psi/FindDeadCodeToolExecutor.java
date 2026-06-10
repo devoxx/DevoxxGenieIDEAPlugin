@@ -1,7 +1,7 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
-import com.intellij.openapi.application.ReadAction;
+import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
@@ -57,7 +57,7 @@ public class FindDeadCodeToolExecutor implements ToolExecutor {
             if (file == null || file.isBlank()) {
                 return "Error: 'file' parameter is required.";
             }
-            return ReadAction.compute(() -> findDeadCode(file));
+            return ReadAccess.compute(() -> findDeadCode(file));
         } catch (Exception e) {
             log.error("Error finding dead code", e);
             return "Error: Failed to find dead code - " + e.getMessage();

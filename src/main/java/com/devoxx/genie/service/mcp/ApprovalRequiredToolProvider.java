@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -41,9 +42,9 @@ public class ApprovalRequiredToolProvider implements ToolProvider {
 
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
-        for (var entry : delegateResult.tools().entrySet()) {
-            ToolSpecification spec = entry.getKey();
-            ToolExecutor originalExecutor = entry.getValue();
+        for (AiServiceTool tool : delegateResult.aiServiceTools()) {
+            ToolSpecification spec = tool.toolSpecification();
+            ToolExecutor originalExecutor = tool.toolExecutor();
 
             // Wrap the original executor
             ToolExecutor approvalExecutor = (toolExecutionRequest, memoryId) -> {
@@ -61,7 +62,7 @@ public class ApprovalRequiredToolProvider implements ToolProvider {
                 }
             };
 
-            builder.add(spec, approvalExecutor);
+            builder.add(tool.toBuilder().toolExecutor(approvalExecutor).build());
         }
 
         return builder.build();
