@@ -68,6 +68,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.1</h2>
+        <UL>
+                    <LI>fix(agent): agent mode no longer crashes on non-Java IDEs (PyCharm, WebStorm, GoLand, …) — the Java-only PSI navigation tools are now skipped when the IntelliJ Java plugin is absent, instead of throwing NoClassDefFoundError (#1100)</LI>
+                </UL>
         <h2>v1.8.0</h2>
         <UL>
                     <LI>feat(tips): rotating tip line under the prompt input, fetched from a remotely-updatable, 24h-cached tips.json with an offline fallback of 28 tips (#1099)</LI>

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.8.1 - 2026-06-10
+
+### Fixed
+- fix(agent): agent mode no longer crashes on non-Java IDEs (PyCharm, WebStorm, GoLand, …) — toggling agent mode threw `NoClassDefFoundError: com/intellij/psi/PsiModifierListOwner` because four PSI agent-tool executors reference Java-plugin PSI types in their signatures, and `BuiltInToolProvider` constructed them unconditionally even though `com.intellij.modules.java` is an optional dependency. The classes failed to link before the existing runtime guard could run. Registration of the four Java-only tools (`find_callees`, `trace_call_chains`, `calculate_complexity`, `find_dead_code`) is now gated on `PsiToolUtils.isJavaAvailable()`; non-Java IDEs keep the five language-agnostic PSI tools and agent mode works again (#1100, #1101)
+
+### Contributors
+- @stephanj
+
 ## v1.8.0 - 2026-06-10
 
 ### Added
