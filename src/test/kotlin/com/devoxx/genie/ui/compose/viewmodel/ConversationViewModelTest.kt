@@ -4,6 +4,7 @@ import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.activity.ActivitySource
 import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.ui.compose.model.ActivityStatus
 import com.devoxx.genie.ui.compose.model.ConversationState
 import com.devoxx.genie.ui.compose.model.TerminalState
 import dev.langchain4j.data.message.AiMessage
@@ -143,18 +144,26 @@ class ConversationViewModelTest {
     }
 
     @Test
-    fun `when show tool activity is off only agent reasoning is shown not tool calls`() {
+    fun `when show tool activity is off tool entries are still tracked but flagged for hiding`() {
+        // Tool entries must always be tracked — the live status line in the AI bubble is
+        // derived from them. The setting only flips the per-message rendering flag.
         val viewModel = ConversationViewModel(showToolActivityInChat = { false })
         viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
 
         viewModel.onActivityMessage(toolRequest("list_files", "src/main/java"))
         viewModel.onActivityMessage(intermediateResponse("I'll explore the project structure first."))
 
-        val entries = activeMessageEntries(viewModel)
-        assertThat(entries).hasSize(1)
-        assertThat(entries[0].source).isEqualTo("AGENT")
-        assertThat(entries[0].content).isEqualTo("I'll explore the project structure first.")
-        assertThat(entries[0].toolName).isNull()
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.showToolActivity).isFalse()
+        assertThat(msg.activityEntries).hasSize(2)
+
+        val toolEntry = msg.activityEntries.first { it.toolName == "list_files" }
+        assertThat(toolEntry.isToolActivity).isTrue()
+        assertThat(toolEntry.status).isEqualTo(ActivityStatus.RUNNING)
+
+        val reasoning = msg.activityEntries.first { it.toolName == null }
+        assertThat(reasoning.isToolActivity).isFalse()
+        assertThat(reasoning.content).isEqualTo("I'll explore the project structure first.")
     }
 
     @Test
@@ -165,13 +174,14 @@ class ConversationViewModelTest {
         viewModel.onActivityMessage(toolRequest("list_files", "src/main/java"))
         viewModel.onActivityMessage(intermediateResponse("I'll explore the project structure first."))
 
-        val entries = activeMessageEntries(viewModel)
-        assertThat(entries).hasSize(2)
-        assertThat(entries.map { it.toolName }).contains("list_files")
+        val msg = (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }
+        assertThat(msg.showToolActivity).isTrue()
+        assertThat(msg.activityEntries).hasSize(2)
+        assertThat(msg.activityEntries.map { it.toolName }).contains("list_files")
     }
 
     @Test
-    fun `tool response does not add a duplicate activity entry, only the request is shown`() {
+    fun `tool response resolves into the request row instead of adding a duplicate entry`() {
         val viewModel = ConversationViewModel(showToolActivityInChat = { true })
         viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
 
@@ -182,6 +192,8 @@ class ConversationViewModelTest {
         assertThat(entries).hasSize(1)
         assertThat(entries[0].toolName).isEqualTo("run_command")
         assertThat(entries[0].arguments).contains("git status")
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(entries[0].result).isEqualTo("On branch master")
     }
 
     @Test
@@ -391,33 +403,237 @@ class ConversationViewModelTest {
         assertThat(msg.retryAttempted).isFalse()
     }
 
+    // --- Activity timeline pairing (task-233) ---
+
+    @Test
+    fun `tool request opens a RUNNING row that resolves to SUCCESS by callNumber`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("read_file", """{"path":"A.java"}""", callNumber = 1))
+        viewModel.onActivityMessage(toolRequest("read_file", """{"path":"B.java"}""", callNumber = 2))
+
+        assertThat(activeMessageEntries(viewModel)).allMatch { it.status == ActivityStatus.RUNNING }
+
+        // Resolve the SECOND call — matching is by callNumber, not just tool name
+        viewModel.onActivityMessage(toolResponse("read_file", "class B {}", callNumber = 2))
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(2)
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.RUNNING)
+        assertThat(entries[1].status).isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(entries[1].result).isEqualTo("class B {}")
+    }
+
+    @Test
+    fun `tool error resolves the open row to ERROR`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("run_command", """{"command":"rm x"}"""))
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.TOOL_ERROR) { it.toolName("run_command").result("Error: boom").callNumber(1) }
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1)
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.ERROR)
+        assertThat(entries[0].result).isEqualTo("Error: boom")
+    }
+
+    @Test
+    fun `unmatched tool response is tolerated and does not crash or add entries`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        // Response without any request (out-of-order / lost event)
+        viewModel.onActivityMessage(toolResponse("read_file", "data", callNumber = 7))
+
+        assertThat(activeMessageEntries(viewModel)).isEmpty()
+
+        // A request arriving after the stray response still opens a normal RUNNING row
+        viewModel.onActivityMessage(toolRequest("read_file", """{"path":"A.java"}""", callNumber = 7))
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1)
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.RUNNING)
+    }
+
+    @Test
+    fun `approval lifecycle - requested pauses the row, granted resumes it, response completes it`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("write_file", """{"path":"A.java"}"""))
+        viewModel.onActivityMessage(agentMessage(AgentType.APPROVAL_REQUESTED) { it.toolName("write_file") })
+
+        var entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.PENDING_APPROVAL)
+        assertThat(entry.content).isEqualTo("Waiting for your approval…")
+
+        viewModel.onActivityMessage(agentMessage(AgentType.APPROVAL_GRANTED) { it.toolName("write_file") })
+        entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.RUNNING)
+
+        viewModel.onActivityMessage(toolResponse("write_file", "written", callNumber = 1))
+        entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.SUCCESS)
+    }
+
+    @Test
+    fun `approval denied renders as ERROR and the follow-up tool response cannot flip it back`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("write_file", """{"path":"A.java"}"""))
+        viewModel.onActivityMessage(agentMessage(AgentType.APPROVAL_REQUESTED) { it.toolName("write_file") })
+        viewModel.onActivityMessage(agentMessage(AgentType.APPROVAL_DENIED) { it.toolName("write_file") })
+
+        var entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.ERROR)
+        assertThat(entry.content).contains("Denied")
+
+        // The loop tracker still publishes a TOOL_RESPONSE carrying the denial string —
+        // a resolved ERROR row is final and must not become a green check.
+        viewModel.onActivityMessage(toolResponse("write_file", "Tool execution was denied by the user.", callNumber = 1))
+        entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.ERROR)
+    }
+
+    @Test
+    fun `sub-agent events nest as children under the open parallel_explore row`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("parallel_explore", """{"queries":["a","b"]}"""))
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_STARTED) {
+                it.toolName("parallel_explore").arguments("Launching 2 sub-agents")
+            }
+        )
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_STARTED) { it.toolName("sub-agent-1").arguments("find usages").callNumber(1) }
+        )
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_STARTED) { it.toolName("sub-agent-2").arguments("check config").callNumber(2) }
+        )
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_COMPLETED) { it.toolName("sub-agent-1").result("found 3 usages").callNumber(1) }
+        )
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_ERROR) { it.toolName("sub-agent-2").result("timed out").callNumber(2) }
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1) // children are nested, not flat
+        val parent = entries.single()
+        assertThat(parent.toolName).isEqualTo("parallel_explore")
+        assertThat(parent.content).isEqualTo("Launching 2 sub-agents")
+        assertThat(parent.children).hasSize(2)
+        assertThat(parent.children[0].toolName).isEqualTo("sub-agent-1")
+        assertThat(parent.children[0].status).isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(parent.children[0].result).isEqualTo("found 3 usages")
+        assertThat(parent.children[1].toolName).isEqualTo("sub-agent-2")
+        assertThat(parent.children[1].status).isEqualTo(ActivityStatus.ERROR)
+    }
+
+    @Test
+    fun `sub-agent event without an open parallel_explore parent degrades to a top-level row`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.SUB_AGENT_STARTED) { it.toolName("sub-agent-1").arguments("orphan query").callNumber(1) }
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1)
+        assertThat(entries[0].toolName).isEqualTo("sub-agent-1")
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.RUNNING)
+    }
+
+    @Test
+    fun `tool calls inside sub-agents pair independently from the main loop via subAgentId`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        // Main loop call 1 and a sub-agent's internal call 1 share toolName + callNumber
+        viewModel.onActivityMessage(toolRequest("read_file", """{"path":"A.java"}""", callNumber = 1))
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.TOOL_REQUEST) {
+                it.toolName("read_file").arguments("""{"path":"B.java"}""").callNumber(1).subAgentId("sub-agent-1:p:m")
+            }
+        )
+
+        // The sub-agent's response must resolve ITS row, not the main loop's
+        viewModel.onActivityMessage(
+            agentMessage(AgentType.TOOL_RESPONSE) {
+                it.toolName("read_file").result("class B {}").callNumber(1).subAgentId("sub-agent-1:p:m")
+            }
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(2)
+        assertThat(entries.first { it.subAgentId == null }.status).isEqualTo(ActivityStatus.RUNNING)
+        assertThat(entries.first { it.subAgentId != null }.status).isEqualTo(ActivityStatus.SUCCESS)
+    }
+
+    @Test
+    fun `MCP messages get a terminal INFO status immediately - no eternal spinner`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(
+            ActivityMessage.builder()
+                .source(ActivitySource.MCP)
+                .content("Tool call: github_search")
+                .build()
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1)
+        assertThat(entries[0].status).isEqualTo(ActivityStatus.INFO)
+        assertThat(entries[0].isToolActivity).isTrue()
+    }
+
+    @Test
+    fun `tool arguments and results are truncated before entering Compose state`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        val hugeLine = "x".repeat(2000)
+        val manyLines = (1..50).joinToString("\n") { "line $it" }
+        viewModel.onActivityMessage(toolRequest("run_command", hugeLine))
+        viewModel.onActivityMessage(toolResponse("run_command", manyLines, callNumber = 1))
+
+        val entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.arguments!!.length).isLessThanOrEqualTo(501) // 499 chars + ellipsis
+        assertThat(entry.result!!.lines()).hasSize(11) // 10 lines + "(40 more lines)"
+        assertThat(entry.result).endsWith("(40 more lines)")
+    }
+
     private fun activeMessageEntries(viewModel: ConversationViewModel) =
         (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }.activityEntries
 
-    private fun toolRequest(toolName: String, arguments: String): ActivityMessage =
-        ActivityMessage.builder()
-            .source(ActivitySource.AGENT)
-            .agentType(AgentType.TOOL_REQUEST)
-            .toolName(toolName)
-            .arguments(arguments)
-            .callNumber(1)
-            .maxCalls(50)
-            .build()
+    private fun agentMessage(
+        type: AgentType,
+        customize: (ActivityMessage.ActivityMessageBuilder) -> ActivityMessage.ActivityMessageBuilder = { it },
+    ): ActivityMessage =
+        customize(
+            ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(type)
+        ).build()
 
-    private fun toolResponse(toolName: String, result: String): ActivityMessage =
-        ActivityMessage.builder()
-            .source(ActivitySource.AGENT)
-            .agentType(AgentType.TOOL_RESPONSE)
-            .toolName(toolName)
-            .result(result)
-            .callNumber(1)
-            .maxCalls(50)
-            .build()
+    private fun toolRequest(toolName: String, arguments: String, callNumber: Int = 1): ActivityMessage =
+        agentMessage(AgentType.TOOL_REQUEST) {
+            it.toolName(toolName).arguments(arguments).callNumber(callNumber).maxCalls(50)
+        }
+
+    private fun toolResponse(toolName: String, result: String, callNumber: Int = 1): ActivityMessage =
+        agentMessage(AgentType.TOOL_RESPONSE) {
+            it.toolName(toolName).result(result).callNumber(callNumber).maxCalls(50)
+        }
 
     private fun intermediateResponse(text: String): ActivityMessage =
-        ActivityMessage.builder()
-            .source(ActivitySource.AGENT)
-            .agentType(AgentType.INTERMEDIATE_RESPONSE)
-            .result(text)
-            .build()
+        agentMessage(AgentType.INTERMEDIATE_RESPONSE) { it.result(text) }
 }

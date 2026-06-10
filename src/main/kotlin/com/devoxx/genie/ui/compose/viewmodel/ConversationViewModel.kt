@@ -168,6 +168,7 @@ class ConversationViewModel(
             isLoadingIndicatorVisible = true,
             isStreaming = context.streamingChatModel != null,
             modelName = formatModelDisplayName(context.languageModel),
+            showToolActivity = showToolActivityInChat(),
         )
 
         val currentState = state
@@ -292,32 +293,201 @@ class ConversationViewModel(
             return
         }
 
-        // Everything else (tool requests/responses, MCP messages, approvals) is "tool
-        // activity" — only surfaced in the chat output when the user opted in. Pure agent
-        // reasoning above is always shown.
-        if (!showToolActivityInChat()) return
-
-        // A tool call is already listed via its TOOL_REQUEST entry (which carries the
-        // arguments); the matching TOOL_RESPONSE would render as a duplicate bare line.
-        if (message.source == ActivitySource.AGENT &&
-            message.agentType == AgentType.TOOL_RESPONSE
-        ) {
+        // Everything below is "tool activity". It is always *tracked* in the model — the
+        // live status line in the AI bubble is derived from it regardless of settings —
+        // but the detailed rows only *render* when MessageUiModel.showToolActivity is set.
+        if (message.source == ActivitySource.AGENT) {
+            when (message.agentType) {
+                AgentType.TOOL_REQUEST -> appendToolRequest(msgId, message)
+                AgentType.TOOL_RESPONSE -> resolveToolEntry(msgId, message, ActivityStatus.SUCCESS)
+                AgentType.TOOL_ERROR -> resolveToolEntry(msgId, message, ActivityStatus.ERROR)
+                AgentType.APPROVAL_REQUESTED -> markPendingApproval(msgId, message)
+                AgentType.APPROVAL_GRANTED -> resolveApproval(msgId, message, granted = true)
+                AgentType.APPROVAL_DENIED -> resolveApproval(msgId, message, granted = false)
+                AgentType.SUB_AGENT_STARTED,
+                AgentType.SUB_AGENT_COMPLETED,
+                AgentType.SUB_AGENT_ERROR -> handleSubAgentEvent(msgId, message)
+                else -> appendInfoEntry(msgId, message)
+            }
             return
         }
 
+        // MCP / RAG sourced messages are one-shot log lines with no paired response
+        // event — give them a terminal status immediately (no eternal spinner).
+        appendInfoEntry(msgId, message)
+    }
+
+    /** Opens a new RUNNING timeline row for a TOOL_REQUEST. */
+    private fun appendToolRequest(msgId: String, message: ActivityMessage) {
         val entry = ActivityEntryUiModel(
             source = message.source?.name ?: "UNKNOWN",
             content = message.content ?: "",
             toolName = message.toolName,
-            arguments = message.arguments,
-            result = message.result,
+            arguments = truncateForChat(message.arguments),
             callNumber = message.callNumber,
             maxCalls = message.maxCalls,
+            status = ActivityStatus.RUNNING,
+            isToolActivity = true,
+            subAgentId = message.subAgentId,
         )
-
         updateMessage(msgId) { msg ->
             msg.copy(activityEntries = msg.activityEntries + entry)
         }
+    }
+
+    /** Appends a lifecycle-less entry (MCP/RAG lines, stray agent events). */
+    private fun appendInfoEntry(msgId: String, message: ActivityMessage) {
+        val entry = ActivityEntryUiModel(
+            source = message.source?.name ?: "UNKNOWN",
+            content = message.content ?: "",
+            toolName = message.toolName,
+            arguments = truncateForChat(message.arguments),
+            result = truncateForChat(message.result),
+            callNumber = message.callNumber,
+            maxCalls = message.maxCalls,
+            status = ActivityStatus.INFO,
+            isToolActivity = true,
+            subAgentId = message.subAgentId,
+        )
+        updateMessage(msgId) { msg ->
+            msg.copy(activityEntries = msg.activityEntries + entry)
+        }
+    }
+
+    /**
+     * Resolves the open row matching this TOOL_RESPONSE/TOOL_ERROR by
+     * (subAgentId, toolName, callNumber) instead of appending a new entry. Only
+     * RUNNING/PENDING_APPROVAL rows can transition — a row already resolved to ERROR
+     * (e.g. by APPROVAL_DENIED) is final, so the denial's follow-up TOOL_RESPONSE
+     * cannot flip it back to SUCCESS. Unmatched and out-of-order events are ignored.
+     */
+    private fun resolveToolEntry(msgId: String, message: ActivityMessage, newStatus: ActivityStatus) {
+        updateMessage(msgId) { msg ->
+            val idx = msg.activityEntries.indexOfLast { entry ->
+                entry.toolName == message.toolName &&
+                    entry.callNumber == message.callNumber &&
+                    entry.subAgentId == message.subAgentId &&
+                    entry.isOpen()
+            }
+            if (idx < 0) return@updateMessage msg
+            msg.replaceEntryAt(idx) { entry ->
+                entry.copy(status = newStatus, result = truncateForChat(message.result))
+            }
+        }
+    }
+
+    /**
+     * APPROVAL_REQUESTED has no callNumber (it is published by the approval layer, not
+     * the loop tracker) — it marks the most recent RUNNING row for the same tool, which
+     * is the request the approval dialog was opened for.
+     */
+    private fun markPendingApproval(msgId: String, message: ActivityMessage) {
+        updateMessage(msgId) { msg ->
+            val idx = msg.activityEntries.indexOfLast { entry ->
+                entry.toolName == message.toolName && entry.status == ActivityStatus.RUNNING
+            }
+            if (idx < 0) return@updateMessage msg
+            msg.replaceEntryAt(idx) { entry ->
+                entry.copy(status = ActivityStatus.PENDING_APPROVAL, content = "Waiting for your approval…")
+            }
+        }
+    }
+
+    /** APPROVAL_GRANTED resumes the row; APPROVAL_DENIED resolves it as an error. */
+    private fun resolveApproval(msgId: String, message: ActivityMessage, granted: Boolean) {
+        updateMessage(msgId) { msg ->
+            val idx = msg.activityEntries.indexOfLast { entry ->
+                entry.toolName == message.toolName && entry.status == ActivityStatus.PENDING_APPROVAL
+            }
+            if (idx < 0) return@updateMessage msg
+            msg.replaceEntryAt(idx) { entry ->
+                if (granted) {
+                    entry.copy(status = ActivityStatus.RUNNING, content = "")
+                } else {
+                    entry.copy(status = ActivityStatus.ERROR, content = "Denied by user")
+                }
+            }
+        }
+    }
+
+    /**
+     * SUB_AGENT_* events nest as child rows under the open parallel_explore call.
+     * The launch announcement (toolName "parallel_explore") becomes the parent's
+     * content line; per-sub-agent events become RUNNING → SUCCESS/ERROR children
+     * matched by their "sub-agent-N" name. Without an open parent (defensive),
+     * events are appended as top-level rows.
+     */
+    private fun handleSubAgentEvent(msgId: String, message: ActivityMessage) {
+        updateMessage(msgId) { msg ->
+            val parentIdx = msg.activityEntries.indexOfLast { entry ->
+                entry.toolName == PARALLEL_EXPLORE_TOOL && entry.isOpen()
+            }
+
+            if (message.toolName == PARALLEL_EXPLORE_TOOL) {
+                // Launch announcement — annotate the parent row, no child needed
+                if (parentIdx < 0) return@updateMessage msg
+                return@updateMessage msg.replaceEntryAt(parentIdx) { parent ->
+                    parent.copy(content = message.arguments ?: parent.content)
+                }
+            }
+
+            val status = when (message.agentType) {
+                AgentType.SUB_AGENT_STARTED -> ActivityStatus.RUNNING
+                AgentType.SUB_AGENT_COMPLETED -> ActivityStatus.SUCCESS
+                else -> ActivityStatus.ERROR
+            }
+
+            if (parentIdx < 0) {
+                // No open parallel_explore row — degrade gracefully to a top-level entry
+                val orphan = ActivityEntryUiModel(
+                    source = message.source?.name ?: "UNKNOWN",
+                    content = message.content ?: "",
+                    toolName = message.toolName,
+                    arguments = truncateForChat(message.arguments),
+                    result = truncateForChat(message.result),
+                    callNumber = message.callNumber,
+                    status = status,
+                    isToolActivity = true,
+                )
+                return@updateMessage msg.copy(activityEntries = msg.activityEntries + orphan)
+            }
+
+            msg.replaceEntryAt(parentIdx) { parent ->
+                val childIdx = parent.children.indexOfLast { it.toolName == message.toolName }
+                if (childIdx < 0) {
+                    val child = ActivityEntryUiModel(
+                        source = message.source?.name ?: "UNKNOWN",
+                        content = message.content ?: "",
+                        toolName = message.toolName,
+                        arguments = truncateForChat(message.arguments),
+                        result = truncateForChat(message.result),
+                        callNumber = message.callNumber,
+                        status = status,
+                        isToolActivity = true,
+                    )
+                    parent.copy(children = parent.children + child)
+                } else {
+                    val children = parent.children.toMutableList()
+                    children[childIdx] = children[childIdx].copy(
+                        status = status,
+                        result = truncateForChat(message.result) ?: children[childIdx].result,
+                    )
+                    parent.copy(children = children)
+                }
+            }
+        }
+    }
+
+    private fun ActivityEntryUiModel.isOpen(): Boolean =
+        status == ActivityStatus.RUNNING || status == ActivityStatus.PENDING_APPROVAL
+
+    private fun MessageUiModel.replaceEntryAt(
+        index: Int,
+        transform: (ActivityEntryUiModel) -> ActivityEntryUiModel,
+    ): MessageUiModel {
+        val entries = activityEntries.toMutableList()
+        entries[index] = transform(entries[index])
+        return copy(activityEntries = entries)
     }
 
     fun deactivateActivityHandlers() {
@@ -531,5 +701,30 @@ class ConversationViewModel(
 
     companion object {
         private val logger = Logger.getInstance(ConversationViewModel::class.java)
+
+        private const val PARALLEL_EXPLORE_TOOL = "parallel_explore"
+
+        /** Same inline-preview limits as AgentMcpLogPanel. */
+        private const val MAX_LINE_LENGTH = 500
+        private const val MAX_LINES = 10
+
+        /**
+         * Truncates tool arguments/results before they enter Compose state — the full
+         * payload (a tool result can be megabytes) stays in the Logs tool window only.
+         * Limits mirror AgentMcpLogPanel's inline preview: 500 chars/line, 10 lines.
+         */
+        internal fun truncateForChat(text: String?): String? {
+            if (text.isNullOrEmpty()) return text
+            val lines = text.lines()
+            val kept = lines.take(MAX_LINES).map { line ->
+                if (line.length > MAX_LINE_LENGTH) line.take(MAX_LINE_LENGTH - 1) + "…" else line
+            }
+            val dropped = lines.size - MAX_LINES
+            return if (dropped > 0) {
+                (kept + "($dropped more lines)").joinToString("\n")
+            } else {
+                kept.joinToString("\n")
+            }
+        }
     }
 }
