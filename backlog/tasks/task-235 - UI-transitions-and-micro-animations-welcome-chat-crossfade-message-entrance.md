@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-06-10 12:00'
-updated_date: '2026-06-10 20:09'
+updated_date: '2026-06-10 20:11'
 labels:
   - enhancement
   - UX
@@ -60,5 +60,7 @@ State changes in the conversation UI are functionally correct but visually abrup
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented short Compose-based UI transitions for TASK-235: ConversationScreen now uses AnimatedContent keyed by state type for Welcome <-> Chat fades, ChatScreen uses stable message-id LazyColumn keys plus one-shot fade/slide entrance animations, and restore-state handling prevents Welcome flashes during history restore. Added IdeAnimations to centralize animation durations and disable animations in power-save or remote-desktop sessions. Tightened the remaining Swing submit glow so stopGlowing always stops the 50ms timer and documented it as the only remaining Swing animation. Verification: `./gradlew test --tests com.devoxx.genie.ui.compose.viewmodel.ConversationViewModelTest` passed 11 tests. Manual long-conversation jank check was not run in this session.
+Implemented short Compose-based UI transitions for TASK-235: ConversationScreen now uses AnimatedContent keyed by state type for Welcome <-> Chat fades, ChatScreen uses stable message-id LazyColumn keys plus one-shot fade/slide entrance animations, and restore-state handling prevents Welcome flashes during history restore, including restored messages added through addChatMessage/addSystemMessage. Added IdeAnimations to centralize animation durations and disable animations in power-save or remote-desktop sessions. Tightened the remaining Swing submit glow so stopGlowing always stops the 50ms timer and documented it as the only remaining Swing animation. Verification: `./gradlew test --tests com.devoxx.genie.ui.compose.viewmodel.ConversationViewModelTest` passed 12 tests. Manual long-conversation jank check was not run in this session.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1105
 <!-- SECTION:FINAL_SUMMARY:END -->
