@@ -1,10 +1,12 @@
 ---
 id: TASK-236
-title: 'Long-running feedback & history polish: elapsed-time ticker, determinate progress, history UX'
-status: To Do
+title: >-
+  Long-running feedback & history polish: elapsed-time ticker, determinate
+  progress, history UX
+status: Done
 assignee: []
 created_date: '2026-06-10 12:00'
-updated_date: '2026-06-10 12:00'
+updated_date: '2026-06-11 06:56'
 labels:
   - enhancement
   - UX
@@ -26,13 +28,13 @@ Bundle of smaller feedback gaps around long-running operations and the conversat
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An Activity row in RUNNING state for more than ~2s shows a live elapsed-time counter updating about once per second; the ticker stops when no row is running (no idle CPU churn)
-- [ ] #2 RAG indexing shows determinate progress (files processed / total, current file name) in the IntelliJ progress UI; cancellation via the progress indicator still works
-- [ ] #3 Project scanning shows determinate progress where the file count is known up front
-- [ ] #4 Conversation-history rows show a hover state; Enter opens the hovered/selected conversation; Delete key triggers deletion
-- [ ] #5 Deleting a conversation requires confirmation OR is undoable for a few seconds before the SQLite row is actually removed; accidental single-click can no longer destroy history silently
-- [ ] #6 All new background work stays off the EDT; progress text updates go through the ProgressIndicator API, not invokeLater loops
-- [ ] #7 Unit tests for the undo-deferred deletion logic (delete → undo restores, delete → timeout actually removes from ConversationStorageService)
+- [x] #1 An Activity row in RUNNING state for more than ~2s shows a live elapsed-time counter updating about once per second; the ticker stops when no row is running (no idle CPU churn)
+- [x] #2 RAG indexing shows determinate progress (files processed / total, current file name) in the IntelliJ progress UI; cancellation via the progress indicator still works
+- [x] #3 Project scanning shows determinate progress where the file count is known up front
+- [x] #4 Conversation-history rows show a hover state; Enter opens the hovered/selected conversation; Delete key triggers deletion
+- [x] #5 Deleting a conversation requires confirmation OR is undoable for a few seconds before the SQLite row is actually removed; accidental single-click can no longer destroy history silently
+- [x] #6 All new background work stays off the EDT; progress text updates go through the ProgressIndicator API, not invokeLater loops
+- [x] #7 Unit tests for the undo-deferred deletion logic (delete → undo restores, delete → timeout actually removes from ConversationStorageService)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -45,3 +47,15 @@ Bundle of smaller feedback gaps around long-running operations and the conversat
 - Hover in JTable: track row under mouse via MouseMotionListener, repaint, renderer checks hovered row — standard IntelliJ pattern, see `JBTable` usages elsewhere in the codebase.
 - Out of scope: redesigning the history popup into Compose, search within history, pagination.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented and merged via PR #1110 (commits 502831ae + review follow-up d0e28cfa).
+
+1. Elapsed-time ticker — ActivitySection.kt + ConversationViewModel.kt / MessageUiModel.kt: per-row RUNNING/COMPLETED/ERROR status with one shared 1s ticker per visible Activity section appending a "running… Ns" suffix to rows running >2s; ticker stops when nothing is running. Tests: ActivitySectionElapsedTest.kt, ConversationViewModelTest.kt.
+
+2/3. Determinate progress — ProjectIndexerService.java and ProjectScannerService.java run under a cancellable Task.Backgroundable with setFraction + setText2(file name). Follow-up d0e28cfa split scan+embed into a single monotonic 0.0→0.5 (scan) / 0.5→1.0 (embed) sweep via PhaseScalingIndicator so the bar no longer snaps back, plus a max-guard against parallel-worker progress rollback. All background work stays off the EDT through the ProgressIndicator API.
+
+4/5/7. History popup UX — ConversationHistoryPanel.java: row hover highlight, Enter opens selected, Delete key deletes; deletion is undo-deferred via PendingConversationDeletionManager.java (commits to SQLite only after a grace period, with an Undo notification action). Tests: PendingConversationDeletionManagerTest.java (undo restores / timeout removes / race).
+<!-- SECTION:FINAL_SUMMARY:END -->
