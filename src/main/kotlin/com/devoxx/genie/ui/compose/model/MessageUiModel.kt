@@ -54,6 +54,11 @@ data class ActivityEntryUiModel(
     val maxCalls: Int = 0,
     val status: ActivityStatus = ActivityStatus.INFO,
     /**
+     * Wall-clock millis when the tool request was observed; 0 for entries without a
+     * lifecycle. Drives the live "running… Ns" suffix on long-running RUNNING rows.
+     */
+    val startedAt: Long = 0,
+    /**
      * True for tool-call activity (requests, MCP messages) — rendering of these rows is
      * gated by [MessageUiModel.showToolActivity]. Agent reasoning entries are false and
      * always rendered.

@@ -2,11 +2,18 @@ package com.devoxx.genie.ui.panel.conversationhistory;
 
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
+import com.devoxx.genie.service.conversations.PendingConversationDeletionManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
@@ -21,13 +28,17 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
@@ -35,10 +46,14 @@ import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 public class ConversationHistoryPanel extends JPanel implements ConversationSelectionListener {
     private final transient ConversationStorageService storageService;
     private final ConversationTableModel tableModel;
+    private final JBTable table;
     private final transient Project project;
     private final String tabId;
     private transient JBPopup activePopup;
     private transient ConversationSelectionListener directSelectionListener;
+
+    /** Row currently under the mouse pointer, or -1; drives the hover highlight. */
+    private int hoveredRow = -1;
 
     public ConversationHistoryPanel(Project project) {
         this(project, null);
@@ -54,7 +69,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
         // Create table model
         tableModel = new ConversationTableModel();
-        JTable table = new JBTable(tableModel);
+        table = new JBTable(tableModel);
 
         // Configure table properties
         table.setShowGrid(false);
@@ -81,26 +96,52 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
                 int row = table.rowAtPoint(e.getPoint());
                 int column = table.columnAtPoint(e.getPoint());
                 if (row >= 0 && column != 0) {
-                    // Get the conversation from the model
-                    Conversation conversation = tableModel.getConversationAt(row);
-                    // Update chat memory
-                    updateChatMemory(conversation);
-                    // Notify listener
-                    onConversationSelected(conversation);
-                    // Dismiss the popup so the restored conversation is visible
-                    if (activePopup != null && !activePopup.isDisposed()) {
-                        activePopup.cancel();
-                    }
+                    openConversationAt(row);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setHoveredRow(-1);
+            }
+        });
+
+        // Track the row under the mouse so renderers can paint a hover highlight
+        table.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                setHoveredRow(table.rowAtPoint(e.getPoint()));
+            }
+        });
+
+        // Keyboard support: Enter opens the selected conversation, Delete removes it (undoable)
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "openConversation");
+        table.getActionMap().put("openConversation", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openConversationAt(table.getSelectedRow());
+            }
+        });
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "deleteConversation");
+        table.getActionMap().put("deleteConversation", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = table.getSelectedRow();
+                if (row >= 0 && row < tableModel.getRowCount()) {
+                    deleteWithUndo(tableModel.getConversationAt(row));
                 }
             }
         });
 
         // Configure columns
         TableColumnModel columnModel = table.getColumnModel();
+        IntSupplier hoveredRowSupplier = () -> hoveredRow;
 
         // Title column
         TableColumn titleColumn = columnModel.getColumn(1);
-        titleColumn.setCellRenderer(new TitleRenderer());
+        titleColumn.setCellRenderer(new TitleRenderer(hoveredRowSupplier));
 
         // Set a very large preferred width to encourage expansion
         titleColumn.setPreferredWidth(Integer.MAX_VALUE);
@@ -113,7 +154,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         TableColumn deleteColumn = columnModel.getColumn(0);
         deleteColumn.setMinWidth(40);
         deleteColumn.setMaxWidth(40);
-        deleteColumn.setCellRenderer(new ButtonRenderer(AllIcons.Actions.GC));
+        deleteColumn.setCellRenderer(new ButtonRenderer(AllIcons.Actions.GC, hoveredRowSupplier));
 
         JButton deleteButton = new JButton(AllIcons.Actions.GC);
         deleteButton.setBorder(BorderFactory.createEmptyBorder());
@@ -121,7 +162,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         deleteButton.setMaximumSize(new Dimension(40, 40));
 
         ButtonEditor buttonEditor = new ButtonEditor(deleteButton, conversation -> {
-            removeConversation(conversation);
+            deleteWithUndo(conversation);
             return true;
         });
 
@@ -131,7 +172,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         TableColumn timeColumn = columnModel.getColumn(2);
         timeColumn.setMinWidth(100);
         timeColumn.setMaxWidth(100);
-        timeColumn.setCellRenderer(new TimeRenderer());
+        timeColumn.setCellRenderer(new TimeRenderer(hoveredRowSupplier));
 
         // Add table to scroll pane
         JBScrollPane scrollPane = new JBScrollPane(table);
@@ -159,9 +200,36 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     public void loadConversations() {
         List<Conversation> conversations = storageService.getConversations(project);
+        // Conversations parked for (undoable) deletion are hidden but not yet removed
+        // from storage — see PendingConversationDeletionManager.
+        Set<String> pendingDeletion = PendingConversationDeletionManager.getInstance().pendingIds();
+        if (!pendingDeletion.isEmpty()) {
+            conversations.removeIf(c -> pendingDeletion.contains(c.getId()));
+        }
         conversations.sort((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
+        hoveredRow = -1;
         tableModel.setConversations(conversations);
         tableModel.fireTableDataChanged();
+    }
+
+    private void setHoveredRow(int row) {
+        if (row != hoveredRow) {
+            hoveredRow = row;
+            table.repaint();
+        }
+    }
+
+    /** Opens the conversation at {@code row}: restores chat memory, notifies, closes the popup. */
+    private void openConversationAt(int row) {
+        if (row < 0 || row >= tableModel.getRowCount()) {
+            return;
+        }
+        Conversation conversation = tableModel.getConversationAt(row);
+        updateChatMemory(conversation);
+        onConversationSelected(conversation);
+        if (activePopup != null && !activePopup.isDisposed()) {
+            activePopup.cancel();
+        }
     }
 
     @Override
@@ -264,8 +332,11 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     // Custom renderers
     private static class ButtonRenderer extends JButton implements TableCellRenderer {
-        public ButtonRenderer(Icon icon) {
+        private final transient IntSupplier hoveredRowSupplier;
+
+        public ButtonRenderer(Icon icon, IntSupplier hoveredRowSupplier) {
             super(icon);
+            this.hoveredRowSupplier = hoveredRowSupplier;
             setPreferredSize(new Dimension(40, 40));
             setMaximumSize(new Dimension(40, 40));
         }
@@ -274,13 +345,35 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
+            applyHoverBackground(this, table, isSelected, row, hoveredRowSupplier.getAsInt());
             return this;
+        }
+    }
+
+    /** Shared hover/selection background logic for all renderers in this table. */
+    private static void applyHoverBackground(@NotNull JComponent component,
+                                             @NotNull JTable table,
+                                             boolean isSelected,
+                                             int row,
+                                             int hoveredRow) {
+        component.setOpaque(true);
+        if (isSelected) {
+            component.setBackground(table.getSelectionBackground());
+        } else if (row == hoveredRow) {
+            component.setBackground(JBUI.CurrentTheme.Table.Hover.background(true));
+        } else {
+            component.setBackground(table.getBackground());
         }
     }
 
     private static class TitleRenderer extends DefaultTableCellRenderer {
         private static final int MAX_TITLE_LENGTH = 50;
-        
+        private final transient IntSupplier hoveredRowSupplier;
+
+        public TitleRenderer(IntSupplier hoveredRowSupplier) {
+            this.hoveredRowSupplier = hoveredRowSupplier;
+        }
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
@@ -302,6 +395,8 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
             // Store the full text as tooltip
             setToolTipText(fullText);
 
+            applyHoverBackground(this, table, isSelected, row, hoveredRowSupplier.getAsInt());
+
             return this;
         }
 
@@ -320,7 +415,10 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     }
 
     private static class TimeRenderer extends DefaultTableCellRenderer {
-        public TimeRenderer() {
+        private final transient IntSupplier hoveredRowSupplier;
+
+        public TimeRenderer(IntSupplier hoveredRowSupplier) {
+            this.hoveredRowSupplier = hoveredRowSupplier;
             setForeground(JBColor.GRAY);
         }
 
@@ -330,6 +428,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
                                                        int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             setBorder(JBUI.Borders.empty(0, 8));
+            applyHoverBackground(this, table, isSelected, row, hoveredRowSupplier.getAsInt());
             return this;
         }
     }
@@ -387,14 +486,32 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         }
     }
 
-    private void removeConversation(Conversation conversation) {
-        try {
-            storageService.removeConversation(project, conversation);
-            loadConversations();
-            NotificationUtil.sendNotification(project, "Conversation removed");
-        } catch (Exception e) {
-            NotificationUtil.sendNotification(project, "Failed to remove conversation: " + e.getMessage());
+    /**
+     * Undoable deletion (task-236): the row disappears immediately, but the SQLite delete is
+     * deferred for a grace period during which an "Undo" notification action restores it.
+     */
+    private void deleteWithUndo(@NotNull Conversation conversation) {
+        PendingConversationDeletionManager deletionManager = PendingConversationDeletionManager.getInstance();
+        if (deletionManager.isPendingDeletion(conversation.getId())) {
+            return;
         }
+
+        Notification notification = NotificationGroupManager.getInstance()
+                .getNotificationGroup("com.devoxx.genie.notifications")
+                .createNotification("Conversation deleted", NotificationType.INFORMATION);
+        notification.addAction(NotificationAction.createSimpleExpiring("Undo", () -> {
+            if (deletionManager.undo(conversation.getId())) {
+                loadConversations();
+            }
+        }));
+
+        deletionManager.scheduleDeletion(project, conversation, () ->
+                // Commit runs on a scheduler thread; expiring the balloon must happen on the EDT.
+                ApplicationManager.getApplication().invokeLater(notification::expire));
+
+        // Hide the row right away — loadConversations() filters ids pending deletion.
+        loadConversations();
+        Notifications.Bus.notify(notification, project);
     }
 
     private void removeAllConversations() {

@@ -22,9 +22,14 @@ import com.devoxx.genie.ui.compose.model.ActivityEntryUiModel
 import com.devoxx.genie.ui.compose.model.ActivityStatus
 import com.devoxx.genie.ui.compose.theme.DevoxxBlue
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 private val SuccessGreen = Color(0xFF43A047)
 private val ErrorRed = Color(0xFFE53935)
+
+/** A row must be RUNNING for at least this long before the elapsed suffix appears. */
+private const val ELAPSED_SUFFIX_THRESHOLD_MS = 2_000L
 
 @Composable
 fun ActivitySection(
@@ -42,6 +47,23 @@ fun ActivitySection(
     var expanded by remember { mutableStateOf(!completed) }
     val colors = DevoxxGenieThemeAccessor.colors
     val typography = DevoxxGenieThemeAccessor.typography
+
+    // One shared 1s ticker per visible Activity section (not per row). It only runs while
+    // at least one visible row is RUNNING and the rows are actually on screen — otherwise
+    // the LaunchedEffect restarts with tick=false and exits immediately, so a finished or
+    // collapsed timeline causes no idle CPU churn.
+    val anyRunning = visibleEntries.any { entry ->
+        entry.status == ActivityStatus.RUNNING || entry.children.any { it.status == ActivityStatus.RUNNING }
+    }
+    val tick = anyRunning && expanded && visible
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(tick) {
+        if (!tick) return@LaunchedEffect
+        while (isActive) {
+            nowMs = System.currentTimeMillis()
+            delay(1_000L)
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         // Header
@@ -93,11 +115,12 @@ fun ActivitySection(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 visibleEntries.forEachIndexed { index, entry ->
-                    ActivityEntryRow(entry, rowKey = "$index/${entry.toolName}/${entry.callNumber}")
+                    ActivityEntryRow(entry, rowKey = "$index/${entry.toolName}/${entry.callNumber}", nowMs = nowMs)
                     entry.children.forEach { child ->
                         ActivityEntryRow(
                             child,
                             rowKey = "$index/${entry.callNumber}/${child.toolName}",
+                            nowMs = nowMs,
                             modifier = Modifier.padding(start = 16.dp),
                         )
                     }
@@ -111,6 +134,7 @@ fun ActivitySection(
 private fun ActivityEntryRow(
     entry: ActivityEntryUiModel,
     rowKey: String,
+    nowMs: Long,
     modifier: Modifier = Modifier,
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
@@ -155,6 +179,13 @@ private fun ActivityEntryRow(
                 Spacer(Modifier.width(4.dp))
                 BasicText(
                     text = "(${entry.callNumber}/${entry.maxCalls})",
+                    style = typography.caption.copy(color = colors.textSecondary),
+                )
+            }
+            elapsedSuffix(entry, nowMs)?.let { suffix ->
+                Spacer(Modifier.width(4.dp))
+                BasicText(
+                    text = suffix,
                     style = typography.caption.copy(color = colors.textSecondary),
                 )
             }
@@ -256,6 +287,18 @@ internal fun RunningSpinner(modifier: Modifier = Modifier) {
             .alpha(pulseAlpha)
             .background(DevoxxBlue, CircleShape),
     )
+}
+
+/**
+ * Live elapsed-time suffix for a long-running tool row, derived from the shared section
+ * ticker rather than mutating the entry every second. Returns null until the row has been
+ * RUNNING for more than [ELAPSED_SUFFIX_THRESHOLD_MS] so quick tools don't flicker.
+ */
+internal fun elapsedSuffix(entry: ActivityEntryUiModel, nowMs: Long): String? {
+    if (entry.status != ActivityStatus.RUNNING || entry.startedAt <= 0) return null
+    val elapsedMs = nowMs - entry.startedAt
+    if (elapsedMs < ELAPSED_SUFFIX_THRESHOLD_MS) return null
+    return "running\u2026 ${elapsedMs / 1_000}s"
 }
 
 /**

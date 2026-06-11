@@ -426,6 +426,44 @@ class ConversationViewModelTest {
     }
 
     @Test
+    fun `tool request records a start timestamp for the elapsed-time ticker`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        val before = System.currentTimeMillis()
+        viewModel.onActivityMessage(toolRequest("run_command", """{"command":"gradle test"}"""))
+
+        val entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.RUNNING)
+        assertThat(entry.startedAt).isBetween(before, System.currentTimeMillis())
+    }
+
+    @Test
+    fun `hide loading indicator resolves dangling RUNNING rows so the ticker stops`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        // Tool whose response never arrives (e.g. run stopped mid-call)
+        viewModel.onActivityMessage(toolRequest("run_command", """{"command":"gradle test"}"""))
+        assertThat(activeMessageEntries(viewModel).single().status).isEqualTo(ActivityStatus.RUNNING)
+
+        viewModel.hideLoadingIndicator("msg-1")
+
+        assertThat(activeMessageEntries(viewModel).single().status).isEqualTo(ActivityStatus.INFO)
+    }
+
+    @Test
+    fun `stop terminal state resolves dangling RUNNING rows so the ticker stops`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("run_command", """{"command":"gradle test"}"""))
+        viewModel.setTerminalState("msg-1", TerminalState.STOPPED)
+
+        assertThat(activeMessageEntries(viewModel).single().status).isEqualTo(ActivityStatus.INFO)
+    }
+
+    @Test
     fun `tool error resolves the open row to ERROR`() {
         val viewModel = ConversationViewModel(showToolActivityInChat = { true })
         viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
