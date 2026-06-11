@@ -68,6 +68,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.2</h2>
+        <UL>
+                    <LI>feat(ui): live agent activity timeline — per-tool status rows (spinner/✓/✗/⏸), an always-on live status line in the AI bubble, and nested sub-agent rows (task-233, #1109)</LI>
+                    <LI>feat(ui): explicit terminal states in chat — stopped marker, inline error card with Retry, and a max-tool-calls notice (task-234, #1107)</LI>
+                    <LI>feat(ui): chat input/output text scales live with the IDE Zoom (Appearance) factor (task-237, #1106)</LI>
+                    <LI>feat(ui): UI transitions and micro-animations — Welcome↔Chat crossfade, message-entrance and submit-glow polish (task-235, #1105)</LI>
+                    <LI>feat(ui): long-running feedback — elapsed ticker on running tools, determinate cancellable RAG indexing, and undo-deferred history deletion (task-236, #1110)</LI>
+                    <LI>feat(streaming): batched token updates with a blinking caret, tail-follow and a scroll-to-bottom button for smoother streaming (task-232, #1104)</LI>
+                    <LI>fix(settings): open DevoxxGenie settings without blocking the EDT — fixes the intermittent PyCharm crash on opening settings (task-238, #1108)</LI>
+                </UL>
         <h2>v1.8.1</h2>
         <UL>
                     <LI>fix(agent): agent mode no longer crashes on non-Java IDEs (PyCharm, WebStorm, GoLand, …) — the Java-only PSI navigation tools are now skipped when the IntelliJ Java plugin is absent, instead of throwing NoClassDefFoundError (#1100)</LI>

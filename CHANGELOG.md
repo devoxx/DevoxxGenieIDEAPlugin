@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.8.2 - 2026-06-11
+
+### Added
+- feat(ui): live agent activity timeline — `TOOL_REQUEST`/`TOOL_RESPONSE`/`TOOL_ERROR` events are paired into single Activity-section rows with per-row status (pulsing spinner while running, ✓ on success, ✗ on error, ⏸ while awaiting approval), click-to-expand arguments/result, and nested sub-agent rows under `parallel_explore`. Adds an always-on one-line live status in the AI bubble ("Running search_files… (step 4/25)" / "Waiting for your approval…") so a multi-minute agent run is never dead-silent, plus an "Open Logs" link to the Logs tool window. Approval lifecycle events (`APPROVAL_REQUESTED/GRANTED/DENIED`) are now published (task-233, #1109)
+- feat(ui): explicit terminal states in chat — abnormal completions now leave durable in-chat feedback instead of failing silently. Stopped responses show a muted "⏹ Stopped by user" footer, errors render a red-tinted card with a one-shot Retry that re-submits the original prompt, and hitting the agent loop limit shows a "Reached max tool calls (N)" notice linking to Settings → Agent Mode (task-234, #1107)
+- feat(ui): chat input/output text now scales with IntelliJ's Appearance → Zoom IDE factor and applies live (no tool-window reopen). Compose typography and Markdown heading offsets multiply by the sanitized IDE scale, and the Swing prompt input derives its editor font from the scaled size (task-237, #1106)
+- feat(ui): UI transitions and micro-animations — Welcome ↔ Chat crossfade, message-entrance fade-and-slide, and submit-glow polish, with animations disabled in power-save mode and remote-desktop sessions (task-235, #1105)
+- feat(ui): long-running feedback polish — Activity rows running over 2s show a live "running… Ns" elapsed ticker, RAG indexing now runs as a determinate, cancellable background task with per-file progress, and conversation-history deletion is undo-deferred with a 5s grace window and an Undo notification action (task-236, #1110)
+
+### Changed
+- feat(streaming): batched token updates — `StreamingResponseHandler` now flushes on a 75ms one-shot instead of one EDT post per token (immediate first paint, lossless final flush), fixing EDT flooding and jank with fast providers. Adds a blinking caret while streaming, true tail-follow via a bottom-anchor item, and a floating scroll-to-bottom button when scrolled up mid-stream; removes flickering hover popups in the Agent/MCP log panel (detail stays on double-click) and de-duplicates tool-call rows (task-232, #1104)
+
+### Fixed
+- fix(settings): open the settings dialog without blocking the EDT — fixes the intermittent PyCharm `IllegalStateException: This method is forbidden on EDT` crash when opening DevoxxGenie settings. `SettingsDialogUtil` now collects configurable groups on a pooled thread and shows the dialog on the EDT, mirroring the platform's own ShowSettingsAction; the "Open Web search settings" / "Open RAG settings" links route through the same utility (task-238, #1108)
+
+### Dependencies
+- chore(deps): bump software.amazon.awssdk:bom 2.46.6 → 2.46.7 (#1111)
+
+### Contributors
+- @stephanj
+
 ## v1.8.1 - 2026-06-10
 
 ### Fixed
