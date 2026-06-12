@@ -842,5 +842,25 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="CopyDirectoryToClipboard"/>
         </action>
 
+        <action id="DevoxxGenie.IncreaseChatFontSize"
+                class="com.devoxx.genie.action.IncreaseChatFontSizeAction"
+                text="Increase Chat Font Size"
+                description="Increase the DevoxxGenie chat output font size">
+            <keyboard-shortcut keymap="$default" first-keystroke="control EQUALS"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control ADD"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta EQUALS"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta ADD"/>
+        </action>
+
+        <action id="DevoxxGenie.DecreaseChatFontSize"
+                class="com.devoxx.genie.action.DecreaseChatFontSizeAction"
+                text="Decrease Chat Font Size"
+                description="Decrease the DevoxxGenie chat output font size">
+            <keyboard-shortcut keymap="$default" first-keystroke="control MINUS"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control SUBTRACT"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta MINUS"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta SUBTRACT"/>
+        </action>
+
     </actions>
 </idea-plugin>
