@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-06-10",
+  "lastUpdated": "2026-06-12",
   "tips": [
     { "text": "Type @ to add a file to the context.", "weight": 2 },
     { "text": "Generate a DEVOXXGENIE.md with /init for project-aware answers.", "weight": 3 },
@@ -19,6 +19,7 @@
     { "text": "Watch the live token count and cost estimate as you build a prompt.", "weight": 1 },
     { "text": "Tune chat memory size in Settings to control how much history the LLM sees.", "weight": 1 },
     { "text": "Set your own submit and newline shortcuts in Settings.", "weight": 1 },
+    { "text": "Zoom the chat font with Cmd/Ctrl +/- — the size sticks across restarts.", "weight": 1 },
     { "text": "Enable Inline Completion for AI code suggestions as you type.", "weight": 1 },
     { "text": "Enable Security Scanning — Gitleaks, OpenGrep and Trivy run as agent tools.", "weight": 1 },
     { "text": "Define tasks in Backlog.md and let the Agent implement them from the Spec Browser.", "weight": 1 },
