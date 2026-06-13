@@ -47,7 +47,20 @@ const config = {
     locales: ['en'],
   },
 
-  plugins: [],
+  plugins: [
+    // Algolia Experiences documentation search.
+    // Injects the Algolia Experiences library which renders into the
+    // #autocomplete container provided by src/theme/SearchBar.
+    [
+      './src/plugins/algolia-experiences',
+      {
+        appId: 'YFQ8A065SY',
+        apiKey: '6ae04ce6197d1e96bad9c0c99d56ddac',
+        experienceId: 'YFQ8A065SY',
+        env: 'prod',
+      },
+    ],
+  ],
 
   presets: [
     [
