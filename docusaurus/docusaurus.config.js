@@ -47,6 +47,10 @@ const config = {
     locales: ['en'],
   },
 
+  // Makes Algolia Experiences autocomplete results clickable (stopgap until
+  // the result URL/click-through is configured in the Algolia dashboard).
+  clientModules: ['./src/clientModules/algoliaResultLinks.js'],
+
   plugins: [
     // Algolia Experiences documentation search.
     // Injects the Algolia Experiences library which renders into the

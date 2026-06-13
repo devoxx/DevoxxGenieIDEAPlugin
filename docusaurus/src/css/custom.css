@@ -74,3 +74,9 @@
     width: 100%;
   }
 }
+
+/* Make Algolia Experiences result items look clickable (see algoliaResultLinks.js) */
+#autocomplete .ais-AutocompleteIndexItem,
+#autocomplete .ais-ItemTemplate {
+  cursor: pointer;
+}
