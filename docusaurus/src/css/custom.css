@@ -59,3 +59,18 @@
   margin-bottom: 1rem;
   color: var(--ifm-color-primary);
 }
+
+/* Algolia Experiences search container in the navbar */
+#autocomplete.algolia-experiences-autocomplete {
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+  margin: 0 0.5rem;
+}
+
+@media (max-width: 996px) {
+  #autocomplete.algolia-experiences-autocomplete {
+    min-width: auto;
+    width: 100%;
+  }
+}
