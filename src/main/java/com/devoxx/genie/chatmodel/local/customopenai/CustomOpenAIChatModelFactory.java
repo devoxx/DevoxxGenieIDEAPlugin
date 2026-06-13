@@ -1,9 +1,13 @@
 package com.devoxx.genie.chatmodel.local.customopenai;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.local.LocalLLMProviderUtil;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.gpt4all.ResponseDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.diagnostic.Logger;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
@@ -15,9 +19,12 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.net.http.HttpClient;
 
 public class CustomOpenAIChatModelFactory implements ChatModelFactory {
+
+    private static final Logger LOG = Logger.getInstance(CustomOpenAIChatModelFactory.class);
 
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
@@ -25,8 +32,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         return OpenAiChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
-                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
-                        (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
+                .modelName(resolveModelName(customChatModel))
                 .maxRetries(customChatModel.getMaxRetries())
                 .temperature(customChatModel.getTemperature())
                 .maxTokens(customChatModel.getMaxTokens())
@@ -43,14 +49,38 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         return OpenAiStreamingChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
-                .modelName(stateInstance.isCustomOpenAIModelNameEnabled() ?
-                        (stateInstance.getCustomOpenAIModelName().isBlank() ? "default" : stateInstance.getCustomOpenAIModelName()) : "")
+                .modelName(resolveModelName(customChatModel))
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .listeners(getListener())
                 .httpClientBuilder(getHttpClientBuilder())
                 .build();
+    }
+
+    /**
+     * Resolve the model name to send. Priority:
+     * <ol>
+     *   <li>the explicit "Custom OpenAI Model Name" override field, when enabled and non-blank;</li>
+     *   <li>the model selected in the dropdown ({@code customChatModel.getModelName()});</li>
+     *   <li>{@code "default"} as a last resort.</li>
+     * </ol>
+     * Never returns blank: an empty model name makes the OpenAI client omit the
+     * required {@code "model"} field, which servers reject.
+     */
+    private static String resolveModelName(@NotNull CustomChatModel customChatModel) {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        if (state.isCustomOpenAIModelNameEnabled()) {
+            String override = state.getCustomOpenAIModelName();
+            if (override != null && !override.isBlank()) {
+                return override;
+            }
+        }
+        String selected = customChatModel.getModelName();
+        if (selected != null && !selected.isBlank()) {
+            return selected;
+        }
+        return "default";
     }
 
     private JdkHttpClientBuilder getHttpClientBuilder() {
@@ -62,11 +92,46 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
     }
 
     /**
-     * Get the model names from the custom local OpenAI compliant service.
-     * @return List of model names
+     * Fetch the model list from the custom OpenAI-compatible server's
+     * {@code /models} endpoint (standard OpenAI {@code {"data":[{"id":...}]}}
+     * shape) so the UI can offer a model picker.
+     *
+     * Best-effort: if the URL is unset, the server is unreachable, has no
+     * {@code /models} endpoint, or returns an empty/unparseable body, this
+     * returns an empty list rather than throwing — the user can still type a
+     * model name manually and the rest of model loading is unaffected.
+     *
+     * @return list of available models, or an empty list on any failure
      */
     @Override
     public List<LanguageModel> getModels() {
-        return Collections.emptyList();
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String baseUrl = state.getCustomOpenAIUrl();
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return Collections.emptyList();
+        }
+        try {
+            String modelsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "models";
+            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class);
+            if (response == null || response.getData() == null) {
+                return Collections.emptyList();
+            }
+            return response.getData().stream()
+                    .filter(model -> model != null && model.getId() != null && !model.getId().isBlank())
+                    .map(model -> LanguageModel.builder()
+                            .provider(ModelProvider.CustomOpenAI)
+                            .modelName(model.getId())
+                            .displayName(model.getId())
+                            .inputCost(0)
+                            .outputCost(0)
+                            .apiKeyUsed(state.isCustomOpenAIApiKeyEnabled())
+                            .build())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Degrade gracefully: a missing/empty/failing models endpoint must
+            // not break model loading for the Custom OpenAI provider.
+            LOG.warn("Could not fetch models from custom OpenAI endpoint '" + baseUrl + "': " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 }

@@ -167,9 +167,18 @@ class CustomOpenAIChatModelFactoryTest {
     }
 
     @Test
-    void getModelsShouldReturnEmptyList() {
+    void getModelsWithBlankUrlReturnsEmptyList() {
+        when(mockState.getCustomOpenAIUrl()).thenReturn("");
         CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
-        List<LanguageModel> models = factory.getModels();
-        assertThat(models).isEmpty();
+        assertThat(factory.getModels()).isEmpty();
+    }
+
+    @Test
+    void getModelsWhenServerUnreachableReturnsEmptyList() {
+        // A missing/empty/failing /models endpoint must degrade gracefully
+        // (return empty) rather than throw and break model loading.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://127.0.0.1:1/v1/");
+        CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+        assertThat(factory.getModels()).isEmpty();
     }
 }
