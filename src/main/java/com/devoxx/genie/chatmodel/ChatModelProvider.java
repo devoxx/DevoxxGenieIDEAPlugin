@@ -93,7 +93,9 @@ public class ChatModelProvider {
             case CustomOpenAI:
                 customChatModel.setBaseUrl(stateService.getCustomOpenAIUrl());
                 break;
-            // Add other local providers as needed
+            default:
+                // No base URL override needed for cloud providers
+                break;
         }
     }
 

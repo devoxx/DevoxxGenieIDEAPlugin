@@ -19,6 +19,7 @@ import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +38,7 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
     private final ProjectContextController projectContextController;
     private final TokenCalculationController tokenCalculationController;
     private final String tabId;
+    @Setter
     private DevoxxGenieToolWindowContent toolWindowContent;
 
     public ActionButtonsPanelController(Project project,
@@ -104,10 +106,6 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
         }
 
         return result;
-    }
-
-    public void setToolWindowContent(DevoxxGenieToolWindowContent toolWindowContent) {
-        this.toolWindowContent = toolWindowContent;
     }
 
     /**

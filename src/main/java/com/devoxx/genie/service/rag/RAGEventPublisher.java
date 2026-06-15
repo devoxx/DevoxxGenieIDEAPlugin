@@ -74,7 +74,6 @@ public final class RAGEventPublisher {
             // Guard for tests where ApplicationManager isn't initialised.
             if (ApplicationManager.getApplication() == null) return;
             MessageBus bus = ApplicationManager.getApplication().getMessageBus();
-            if (bus == null) return;
             bus.syncPublisher(AppTopics.RAG_LOG_MSG).onRAGLoggingMessage(message);
         } catch (Exception e) {
             log.debug("Could not publish RAG event to message bus: {}", e.getMessage());

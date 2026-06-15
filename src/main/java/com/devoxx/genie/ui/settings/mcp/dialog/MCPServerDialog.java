@@ -34,7 +34,7 @@ public class MCPServerDialog extends DialogWrapper {
     private final JComboBox<MCPServer.TransportType> transportTypeCombo = new JComboBox<>(MCPServer.TransportType.values());
     private final JButton testConnectionButton = new JButton("Test Connection & Fetch Tools");
     
-    private final Map<MCPServer.TransportType, TransportPanel> transportPanels = new HashMap<>();
+    private final Map<MCPServer.TransportType, TransportPanel> transportPanels = new EnumMap<>(MCPServer.TransportType.class);
     private final JPanel cardPanel = new JPanel(new CardLayout());
     
     private final MCPServer existingServer;
@@ -575,10 +575,10 @@ public class MCPServerDialog extends DialogWrapper {
         }
 
         private void setValueFieldText(String text) {
-            if (valueField instanceof JPasswordField) {
-                ((JPasswordField) valueField).setText(text);
-            } else if (valueField instanceof JTextField) {
-                ((JTextField) valueField).setText(text);
+            if (valueField instanceof JPasswordField jPasswordField) {
+                jPasswordField.setText(text);
+            } else if (valueField instanceof JTextField jTextField) {
+                jTextField.setText(text);
             }
         }
 

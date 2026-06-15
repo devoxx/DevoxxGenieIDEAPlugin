@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
@@ -77,10 +78,7 @@ public class OllamaFimProvider implements FimProvider {
                 return null;
             }
 
-            ResponseBody responseBody = response.body();
-            if (responseBody == null) {
-                return null;
-            }
+            ResponseBody responseBody = Objects.requireNonNull(response.body(), "Response body is null");
 
             JsonObject jsonResponse = GSON.fromJson(responseBody.string(), JsonObject.class);
             String completionText = jsonResponse.has("response")
