@@ -9,3 +9,13 @@ updates:
       gradle-dependencies:
         patterns:
           - "*"
+    # Pin the Kotlin and IntelliJ Platform Gradle plugins.
+    # - Kotlin must match the stdlib bundled in the minimum supported IDE
+    #   (2.2.20 for IntelliJ 2025.3); newer versions break runtime stdlib compat.
+    # - IntelliJ Platform plugin 2.16.0 forces compileJava to JVM 21, conflicting
+    #   with the Kotlin jvmTarget of 17 and failing the build.
+    ignore:
+      - dependency-name: "org.jetbrains.kotlin.jvm"
+      - dependency-name: "org.jetbrains.kotlin.plugin.lombok"
+      - dependency-name: "org.jetbrains.kotlin.plugin.compose"
+      - dependency-name: "org.jetbrains.intellij.platform"

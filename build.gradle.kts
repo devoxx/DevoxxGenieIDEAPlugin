@@ -262,9 +262,9 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.16.1"
-    val lg4j_beta_version = "1.16.1-beta26"
-    val awsSdkVersion = "2.46.7"
+    val lg4j_version = "1.16.2"
+    val lg4j_beta_version = "1.16.2-beta26"
+    val awsSdkVersion = "2.46.10"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.0"
     val dockerJavaVersion = "3.7.1"
@@ -275,12 +275,12 @@ dependencies {
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
     // backwards binary compatibility guarantee.
-    val markdownRendererVersion = "0.38.1"
+    val markdownRendererVersion = "0.41.0"
     val nettyVersion = "4.2.15.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.34"
-    val gitignoreReaderVersion = "1.14.1"
+    val gitignoreReaderVersion = "2.0.0"
     val junitJupiterVersion = "6.1.0"
     val junitPlatformVersion = "6.1.0"
     val lombokVersion = "1.18.46"
