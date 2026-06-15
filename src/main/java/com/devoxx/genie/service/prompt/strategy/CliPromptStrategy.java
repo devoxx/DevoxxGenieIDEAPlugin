@@ -13,6 +13,9 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.AiMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -237,6 +240,11 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
         String exitMsg = "\n=== Process exited with code " + outcome.exitCode() + " (after " + outcome.elapsed() + "ms) ===\n";
 
         ApplicationManager.getApplication().invokeLater(() -> {
+            // The CLI tool runs as an external process and may have created/modified/deleted
+            // files on disk. Refresh the VFS so open editors reflect the changes without the
+            // user having to close/reopen the file or run "Reload from disk" manually.
+            refreshProjectFiles();
+
             if (outcome.exitCode() == 0) {
                 finalizeSuccess(exitMsg, outcome.startTime(), outcome.accumulatedResponse(), consoleManager,
                         viewController, context, resultTask);
@@ -244,6 +252,23 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                 finalizeError(outcome.exitCode(), exitMsg, outcome.stderrLines(), consoleManager, context, resultTask);
             }
         });
+    }
+
+    /**
+     * Refresh the project's files in the IntelliJ VFS to pick up on-disk changes made by the
+     * external CLI process. Without this, the editor keeps showing its stale in-memory snapshot
+     * until the file is reopened or "Reload from disk" is invoked.
+     */
+    private void refreshProjectFiles() {
+        String basePath = project.getBasePath();
+        if (basePath == null) {
+            return;
+        }
+        VirtualFile root = LocalFileSystem.getInstance().findFileByPath(basePath);
+        if (root != null) {
+            // async, recursive, reloadChildren — detects files created/modified/deleted by the CLI
+            VfsUtil.markDirtyAndRefresh(true, true, true, root);
+        }
     }
 
     private void finalizeSuccess(@NotNull String exitMsg,
