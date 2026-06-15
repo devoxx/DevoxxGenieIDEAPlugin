@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.8.4 - 2026-06-15
+
+### Fixed
+- fix(cli-runner): refresh the IntelliJ VFS after a CLI Runner (Copilot, Claude, …) finishes so edits made by the external process appear in open editors immediately. CLI Runners write directly to disk while the IDE works against its in-memory snapshot, so changes previously only showed after closing/reopening the file or running "Reload from disk". `CliPromptStrategy` now calls `VfsUtil.markDirtyAndRefresh` on the project root on both success and error exit codes, forcing a re-stat so externally-changed files are actually detected (#1119)
+- fix(settings): stop the "Tools > DevoxxGenie" LLM settings panel from overflowing the dialog width and clipping the input-field borders. A long stored API key (e.g. a ~150-char OpenAI `sk-proj-…` key) made an unbounded `JPasswordField`/`JTextField` size its preferred width to the full string, pushing the GridBag column and the whole auto-sized dialog past the screen edge. Fields are now capped to a fixed column count, the input column absorbs width via `weightx`, and hints word-wrap — dropping the form's minimum width from ~728px to ~625px (#1121)
+- fix(devoxxgenie-md): DEVOXXGENIE.md generation no longer hangs. The "Tree depth" setting was never wired through, so generation always walked the entire project; depth is now honored with bounded recursion, the task is cancellable, and per-file progress is shown. "Analyzing project structure…" is also dramatically faster — `ProjectAnalyzer` collapsed ~11+ full project-tree walks into one and fixed a `.gitignore` skip that descended into `node_modules`/`.git`/`build` instead of skipping them (#1122)
+
+### Changed
+- refactor(quality): apply SonarQube code-quality fixes across LLM providers and services — extract duplicated string literals to constants (S1192), make `ModelVersionComparator` `Serializable`, add exhaustive `default` switch branches, replace a provider switch with an `EnumMap` registry, use pattern-matching `instanceof`, swap null-body checks for `Objects.requireNonNull`, and register `BlogFeedService` as an IntelliJ application service (#1120)
+- build: pin the Kotlin and IntelliJ Platform Gradle plugins to known-working versions for reproducible builds (188441d1)
+
+### Documentation
+- docs(tips): add an agent debug-log tip to the rotating prompt tips (543089cd)
+
+### Tests
+- test(settings): stop the `LLMProvidersConfigurable` tests from building the real Swing panel, which failed under a mocked `Application` that can't resolve the platform `ExperimentalUI` service — fixing two long-standing pre-existing test failures (#1123)
+
+### Dependencies
+- build(deps): bump the gradle-dependencies group with 24 updates (#1112)
+- build(deps): bump shell-quote 1.8.3 → 1.8.4 in /docusaurus (#1102)
+
+### Contributors
+- @stephanj
+- @dependabot
+
 ## v1.8.3 - 2026-06-15
 
 ### Added

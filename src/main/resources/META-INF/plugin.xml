@@ -68,6 +68,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.4</h2>
+        <UL>
+                    <LI>fix(cli-runner): CLI Runner (Copilot, Claude, …) edits now show up in open editors immediately — the VFS is refreshed when the external process finishes (#1119)</LI>
+                    <LI>fix(settings): the DevoxxGenie LLM settings panel no longer overflows the dialog width when a long API key is stored, so input borders stay visible (#1121)</LI>
+                    <LI>fix(devoxxgenie-md): DEVOXXGENIE.md generation no longer hangs — the Tree depth setting is honored, generation is cancellable, and project analysis is much faster (#1122)</LI>
+                    <LI>refactor(quality): SonarQube code-quality fixes across providers and services (#1120)</LI>
+                </UL>
         <h2>v1.8.3</h2>
         <UL>
                     <LI>feat(welcome): the welcome screen now leads with Latest from the Blog, and Explore Features is collapsible (collapsed by default) so the chip grid no longer dominates the page (#1118)</LI>
