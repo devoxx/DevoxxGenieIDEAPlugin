@@ -7,10 +7,10 @@ plugins {
     // Kotlin 2.2.20 matches the stdlib bundled in IntelliJ 2025.3, the minimum supported IDE.
     // Do NOT bump beyond the bundled stdlib of the lowest supported IDE line: the plugin runs
     // on the IDE-provided stdlib (see binaryIncompatibleRuntimeJarPatterns below).
-    kotlin("jvm") version "2.4.0"
-    kotlin("plugin.lombok") version "2.4.0"
-    kotlin("plugin.compose") version "2.4.0"
-    id("org.jetbrains.intellij.platform") version "2.16.0"
+    kotlin("jvm") version "2.2.20"
+    kotlin("plugin.lombok") version "2.2.20"
+    kotlin("plugin.compose") version "2.2.20"
+    id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
 
