@@ -4,8 +4,8 @@ import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
+import com.intellij.openapi.ui.panel.ComponentPanelBuilder;
 import com.intellij.ui.JBIntSpinner;
-import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +17,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
+
+    /**
+     * Preferred width of text/password fields, expressed in columns. Keeps a long stored
+     * value from dictating the field's preferred width; the field still grows to fill the
+     * available horizontal space.
+     */
+    private static final int TEXT_FIELD_COLUMNS = 20;
+
+    /**
+     * Max line length (in characters) before a hint label wraps. Keeps long hints from
+     * widening the input column — and thus the whole settings dialog — beyond the view.
+     */
+    private static final int HINT_WRAP_COLUMNS = 60;
 
     @Getter
     private final JTextField projectVersion = new JTextField(PropertiesService.getInstance().getVersion());
@@ -231,6 +244,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Plugin version");
         addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
 
+        boundTextFieldWidths(panel);
+
         return panel;
     }
 
@@ -335,14 +350,17 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     ) {
         gbc.gridwidth = 1;
         gbc.gridx = 0;
+        gbc.weightx = 0;
         gbc.insets = JBUI.insets(5, 20, 5, 5); // Indent by 20 pixels on the left
         JLabel jLabel = new JLabel(label);
         panel.add(jLabel, gbc);
         componentsGroup.add(jLabel);
 
         gbc.gridx = 1;
+        gbc.weightx = 1.0;
         panel.add(component, gbc);
         componentsGroup.add(component);
+        gbc.weightx = 0;
         gbc.gridy++;
 
         gbc.insets = JBUI.insets(5);
@@ -400,16 +418,38 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             @NotNull GridBagConstraints gbc,
             String text
     ) {
-        JLabel hintLabel = new JLabel(text);
-        hintLabel.setFont(hintLabel.getFont().deriveFont(hintLabel.getFont().getSize() - 2f));
-        hintLabel.setForeground(JBColor.GRAY);
+        // Use a word-wrapping comment component so long hints reflow to multiple lines
+        // instead of stretching the input column (and the whole dialog) past its edge.
+        JComponent hintLabel = ComponentPanelBuilder.createCommentComponent(text, true, HINT_WRAP_COLUMNS, true);
 
         JPanel providerPanel = new JPanel(new BorderLayout(5, 0));
         providerPanel.add(hintLabel, BorderLayout.CENTER);
 
         gbc.gridwidth = 1;
         gbc.gridx = 1;
+        gbc.weightx = 1.0;
         panel.add(providerPanel, gbc);
+        gbc.weightx = 0;
         gbc.gridy++;
+    }
+
+    /**
+     * Bound the preferred width of every text/password field so a long stored value
+     * (e.g. a 150-char API key) cannot blow up the settings form width and push the
+     * input borders off the edge of the dialog. The fields still expand to fill the
+     * available width via {@code fill=HORIZONTAL} + {@code weightx}; this only caps
+     * their <em>preferred</em> width. Spinners are left untouched.
+     */
+    private void boundTextFieldWidths(@NotNull Container container) {
+        for (Component child : container.getComponents()) {
+            if (child instanceof JSpinner) {
+                continue; // spinners manage their own editor size
+            }
+            if (child instanceof JTextField textField) {
+                textField.setColumns(TEXT_FIELD_COLUMNS);
+            } else if (child instanceof Container nested) {
+                boundTextFieldWidths(nested);
+            }
+        }
     }
 }
