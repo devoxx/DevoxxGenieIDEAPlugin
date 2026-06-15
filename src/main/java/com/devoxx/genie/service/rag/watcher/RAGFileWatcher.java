@@ -5,7 +5,6 @@ import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 @Data
@@ -49,7 +50,12 @@ public class LanguageModel implements Comparable<LanguageModel> {
         return "";
     }
 
-    private static class ModelVersionComparator implements Comparator<String> {
+    private static class ModelVersionComparator implements Comparator<String>, Serializable {
+        // Special version names for Anthropic models (Opus > Sonnet > Haiku)
+        private static final String SPECIAL_OPUS = "Opus";
+        private static final String SPECIAL_SONNET = "Sonnet";
+        private static final String SPECIAL_HAIKU = "Haiku";
+
         @Override
         public int compare(String v1, String v2) {
             String[] parts1 = v1.split(" ");
@@ -73,15 +79,15 @@ public class LanguageModel implements Comparable<LanguageModel> {
         }
 
         private boolean isSpecialVersion(@NotNull String version) {
-            return version.equals("Sonnet") || version.equals("Haiku") || version.equals("Opus");
+            return version.equals(SPECIAL_SONNET) || version.equals(SPECIAL_HAIKU) || version.equals(SPECIAL_OPUS);
         }
 
         private int compareSpecialVersions(@NotNull String v1, String v2) {
             if (v1.equals(v2)) return 0;
-            if (v1.equals("Opus")) return 1;
-            if (v2.equals("Opus")) return -1;
-            if (v1.equals("Sonnet")) return 1;
-            if (v2.equals("Sonnet")) return -1;
+            if (v1.equals(SPECIAL_OPUS)) return 1;
+            if (v2.equals(SPECIAL_OPUS)) return -1;
+            if (v1.equals(SPECIAL_SONNET)) return 1;
+            if (v2.equals(SPECIAL_SONNET)) return -1;
             return v1.compareTo(v2);
         }
 

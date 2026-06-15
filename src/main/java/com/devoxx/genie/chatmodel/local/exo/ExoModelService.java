@@ -3,7 +3,6 @@ package com.devoxx.genie.chatmodel.local.exo;
 import com.devoxx.genie.chatmodel.local.LocalLLMProvider;
 import com.devoxx.genie.model.exo.ExoModelDTO;
 import com.devoxx.genie.model.exo.ExoModelEntryDTO;
-import com.devoxx.genie.service.exception.UnsuccessfulRequestException;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
@@ -28,6 +27,11 @@ public class ExoModelService implements LocalLLMProvider {
 
     private static final Gson gson = new Gson();
     private static final MediaType JSON_TYPE = MediaType.parse("application/json");
+    private static final String INSTANCES_KEY = "instances";
+    private static final String RUNNERS_KEY = "runners";
+    public static final String MODEL_CARD = "modelCard";
+    public static final String INSTANCE = "instance";
+    public static final String INSTANCE_ID = "instanceId";
 
     /**
      * Returns the Exo API base URL (without /v1/ suffix).
@@ -57,22 +61,30 @@ public class ExoModelService implements LocalLLMProvider {
     @Override
     public ExoModelEntryDTO[] getModels() throws IOException {
         String baseUrl = getExoApiBaseUrl();
-
-        // Get downloaded model IDs from /state (DownloadCompleted entries)
         Set<String> downloadedModelIds = getDownloadedModelIds(baseUrl);
 
         if (downloadedModelIds.isEmpty()) {
             throw new IOException("No downloaded models found. Use the Exo dashboard to download models first.");
         }
 
-        // Fetch full model metadata from /models and filter to only downloaded ones
+        List<ExoModelEntryDTO> result = fetchDownloadedModelsFromApi(baseUrl, downloadedModelIds);
+        if (result.isEmpty()) {
+            result = createFallbackModelEntries(downloadedModelIds);
+        }
+
+        return result.toArray(new ExoModelEntryDTO[0]);
+    }
+
+    /**
+     * Fetches full model metadata from /models and returns only those present in downloadedModelIds.
+     */
+    private List<ExoModelEntryDTO> fetchDownloadedModelsFromApi(String baseUrl,
+                                                                Set<String> downloadedModelIds) throws IOException {
         List<ExoModelEntryDTO> result = new ArrayList<>();
-        String url = baseUrl + "models";
-        Request request = new Request.Builder().url(url).build();
+        Request request = new Request.Builder().url(baseUrl + "models").build();
         try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
-            if (response.isSuccessful() && response.body() != null) {
-                String json = response.body().string();
-                ExoModelDTO dto = gson.fromJson(json, ExoModelDTO.class);
+            if (response.isSuccessful()) {
+                ExoModelDTO dto = gson.fromJson(response.body().string(), ExoModelDTO.class);
                 if (dto.getData() != null) {
                     for (ExoModelEntryDTO model : dto.getData()) {
                         if (downloadedModelIds.contains(model.getId())) {
@@ -82,19 +94,22 @@ public class ExoModelService implements LocalLLMProvider {
                 }
             }
         }
+        return result;
+    }
 
-        // If /models didn't match, create entries from state info
-        if (result.isEmpty()) {
-            for (String modelId : downloadedModelIds) {
-                ExoModelEntryDTO dto = new ExoModelEntryDTO();
-                dto.setId(modelId);
-                dto.setName(modelId.contains("/") ? modelId.substring(modelId.indexOf('/') + 1) : modelId);
-                dto.setContextLength(0);
-                result.add(dto);
-            }
+    /**
+     * Creates minimal model entries from state info when /models returns no matching results.
+     */
+    private List<ExoModelEntryDTO> createFallbackModelEntries(Set<String> downloadedModelIds) {
+        List<ExoModelEntryDTO> result = new ArrayList<>();
+        for (String modelId : downloadedModelIds) {
+            ExoModelEntryDTO dto = new ExoModelEntryDTO();
+            dto.setId(modelId);
+            dto.setName(modelId.contains("/") ? modelId.substring(modelId.indexOf('/') + 1) : modelId);
+            dto.setContextLength(0);
+            result.add(dto);
         }
-
-        return result.toArray(new ExoModelEntryDTO[0]);
+        return result;
     }
 
     /**
@@ -128,11 +143,12 @@ public class ExoModelService implements LocalLLMProvider {
             if (shardMetadata == null) return null;
             for (var entry : shardMetadata.entrySet()) {
                 JsonObject shard = entry.getValue().getAsJsonObject();
-                if (shard.has("modelCard")) {
-                    return shard.getAsJsonObject("modelCard").get("modelId").getAsString();
+                if (shard.has(MODEL_CARD)) {
+                    return shard.getAsJsonObject(MODEL_CARD).get("modelId").getAsString();
                 }
             }
         } catch (Exception ignored) {
+            // Ignore exception
         }
         return null;
     }
@@ -145,10 +161,10 @@ public class ExoModelService implements LocalLLMProvider {
         try {
             String baseUrl = getExoApiBaseUrl();
             JsonObject state = fetchState(baseUrl);
-            JsonObject instances = state.getAsJsonObject("instances");
+            JsonObject instances = state.getAsJsonObject(INSTANCES_KEY);
             if (instances == null || instances.entrySet().isEmpty()) return false;
 
-            JsonObject runners = state.getAsJsonObject("runners");
+            JsonObject runners = state.getAsJsonObject(RUNNERS_KEY);
             for (var entry : instances.entrySet()) {
                 String instModelId = extractModelIdFromInstance(entry.getValue());
                 if (modelId.equals(instModelId)) {
@@ -157,6 +173,7 @@ public class ExoModelService implements LocalLLMProvider {
                 }
             }
         } catch (Exception ignored) {
+            // Exo API may be unavailable or return unexpected JSON; treat as not ready
         }
         return false;
     }
@@ -167,70 +184,10 @@ public class ExoModelService implements LocalLLMProvider {
      */
     public void ensureInstance(String modelId) throws IOException {
         String baseUrl = getExoApiBaseUrl();
-
-        // Check if an instance already exists for this model
-        JsonObject state = fetchState(baseUrl);
-        JsonObject instances = state.getAsJsonObject("instances");
-        if (instances != null) {
-            for (var entry : instances.entrySet()) {
-                String instanceModelId = extractModelIdFromInstance(entry.getValue());
-                if (modelId.equals(instanceModelId)) {
-                    // Instance exists — check if its runners are ready
-                    String instanceId = extractInstanceId(entry.getValue());
-                    JsonObject runners = state.getAsJsonObject("runners");
-                    if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
-                        return; // Instance exists and is ready
-                    }
-                    // Instance exists but runners not ready — wait for them
-                    waitForInstanceReady(baseUrl, modelId, 120);
-                    return;
-                }
-            }
+        if (!checkExistingInstance(baseUrl, modelId)) {
+            createInstance(baseUrl, fetchChosenPreview(baseUrl, modelId));
+            waitForInstanceReady(baseUrl, modelId);
         }
-
-        // Preview placements
-        String previewUrl = baseUrl + "instance/previews?model_id=" + modelId;
-        Request previewRequest = new Request.Builder().url(previewUrl).build();
-        String previewBody;
-        try (Response previewResponse = HttpClientProvider.getClient().newCall(previewRequest).execute()) {
-            if (!previewResponse.isSuccessful() || previewResponse.body() == null) {
-                throw new IOException("Failed to preview placements for model: " + modelId);
-            }
-            previewBody = previewResponse.body().string();
-        }
-
-        // Find first valid placement
-        JsonObject previewObj = gson.fromJson(previewBody, JsonObject.class);
-        JsonArray previews = previewObj.getAsJsonArray("previews");
-        JsonElement chosenPreview = null;
-
-        for (JsonElement p : previews) {
-            JsonObject preview = p.getAsJsonObject();
-            if (preview.get("error").isJsonNull() && preview.get("instance") != null && !preview.get("instance").isJsonNull()) {
-                chosenPreview = p;
-                break;
-            }
-        }
-
-        if (chosenPreview == null) {
-            throw new IOException("No valid placement found for model: " + modelId +
-                    ". Ensure enough devices are connected in the Exo cluster.");
-        }
-
-        // Create instance
-        String instanceUrl = baseUrl + "instance";
-        RequestBody body = RequestBody.create(chosenPreview.toString(), JSON_TYPE);
-        Request instanceRequest = new Request.Builder().url(instanceUrl).post(body).build();
-
-        try (Response instanceResponse = HttpClientProvider.getClient().newCall(instanceRequest).execute()) {
-            if (!instanceResponse.isSuccessful()) {
-                String errorBody = instanceResponse.body() != null ? instanceResponse.body().string() : "unknown";
-                throw new IOException("Failed to create Exo instance: " + errorBody);
-            }
-        }
-
-        // Wait for the instance runners to be ready
-        waitForInstanceReady(baseUrl, modelId, 120);
     }
 
     /**
@@ -242,127 +199,170 @@ public class ExoModelService implements LocalLLMProvider {
         indicator.setText("Checking for existing instance...");
         indicator.setFraction(0.1);
 
-        // Check if an instance already exists for this model
-        JsonObject state = fetchState(baseUrl);
-        JsonObject instances = state.getAsJsonObject("instances");
-        if (instances != null) {
-            for (var entry : instances.entrySet()) {
-                String instanceModelId = extractModelIdFromInstance(entry.getValue());
-                if (modelId.equals(instanceModelId)) {
-                    String instanceId = extractInstanceId(entry.getValue());
-                    JsonObject runners = state.getAsJsonObject("runners");
-                    if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
-                        indicator.setText("Instance already running");
-                        indicator.setFraction(1.0);
-                        return;
-                    }
-                    indicator.setText("Waiting for runners to warm up...");
-                    indicator.setFraction(0.5);
-                    waitForInstanceReadyWithProgress(baseUrl, modelId, 120, indicator);
-                    return;
-                }
-            }
-        }
+        if (checkExistingInstanceWithProgress(baseUrl, modelId, indicator)) return;
 
         indicator.setText("Previewing placements across cluster...");
         indicator.setFraction(0.2);
         if (indicator.isCanceled()) return;
 
-        // Preview placements
-        String previewUrl = baseUrl + "instance/previews?model_id=" + modelId;
-        Request previewRequest = new Request.Builder().url(previewUrl).build();
-        String previewBody;
-        try (Response previewResponse = HttpClientProvider.getClient().newCall(previewRequest).execute()) {
-            if (!previewResponse.isSuccessful() || previewResponse.body() == null) {
-                throw new IOException("Failed to preview placements for model: " + modelId);
-            }
-            previewBody = previewResponse.body().string();
-        }
-
-        JsonObject previewObj = gson.fromJson(previewBody, JsonObject.class);
-        JsonArray previews = previewObj.getAsJsonArray("previews");
-        JsonElement chosenPreview = null;
-        for (JsonElement p : previews) {
-            JsonObject preview = p.getAsJsonObject();
-            if (preview.get("error").isJsonNull() && preview.get("instance") != null && !preview.get("instance").isJsonNull()) {
-                chosenPreview = p;
-                break;
-            }
-        }
-
-        if (chosenPreview == null) {
-            throw new IOException("No valid placement found for model: " + modelId +
-                    ". Ensure enough devices are connected in the Exo cluster.");
-        }
+        JsonElement chosenPreview = fetchChosenPreview(baseUrl, modelId);
 
         indicator.setText("Creating instance...");
         indicator.setFraction(0.3);
         if (indicator.isCanceled()) return;
 
-        // Create instance
-        String instanceUrl = baseUrl + "instance";
-        RequestBody body = RequestBody.create(chosenPreview.toString(), JSON_TYPE);
-        Request instanceRequest = new Request.Builder().url(instanceUrl).post(body).build();
-
-        try (Response instanceResponse = HttpClientProvider.getClient().newCall(instanceRequest).execute()) {
-            if (!instanceResponse.isSuccessful()) {
-                String errorBody = instanceResponse.body() != null ? instanceResponse.body().string() : "unknown";
-                throw new IOException("Failed to create Exo instance: " + errorBody);
-            }
-        }
+        createInstance(baseUrl, chosenPreview);
 
         indicator.setText("Loading model across cluster...");
         indicator.setFraction(0.4);
 
-        waitForInstanceReadyWithProgress(baseUrl, modelId, 120, indicator);
+        waitForInstanceReadyWithProgress(baseUrl, modelId, indicator);
+    }
+
+    /**
+     * Checks if an instance already exists for the given model, and waits for it if not yet ready.
+     * Returns true if the instance was found (either ready or waited for), false if no instance exists.
+     */
+    private boolean checkExistingInstance(String baseUrl, String modelId) throws IOException {
+        JsonObject state = fetchState(baseUrl);
+        JsonObject instances = state.getAsJsonObject(INSTANCES_KEY);
+        if (instances == null) return false;
+
+        for (var entry : instances.entrySet()) {
+            if (modelId.equals(extractModelIdFromInstance(entry.getValue()))) {
+                String instanceId = extractInstanceId(entry.getValue());
+                JsonObject runners = state.getAsJsonObject(RUNNERS_KEY);
+                if (instanceId == null || !areInstanceRunnersReady(instances, runners, instanceId)) {
+                    waitForInstanceReady(baseUrl, modelId);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if an instance already exists for the given model, reporting progress.
+     * Returns true if handled (instance found and ready or waited for), false if no instance exists.
+     */
+    private boolean checkExistingInstanceWithProgress(String baseUrl, String modelId,
+                                                      ProgressIndicator indicator) throws IOException {
+        JsonObject state = fetchState(baseUrl);
+        JsonObject instances = state.getAsJsonObject(INSTANCES_KEY);
+        if (instances == null) return false;
+
+        for (var entry : instances.entrySet()) {
+            if (modelId.equals(extractModelIdFromInstance(entry.getValue()))) {
+                String instanceId = extractInstanceId(entry.getValue());
+                JsonObject runners = state.getAsJsonObject(RUNNERS_KEY);
+                if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
+                    indicator.setText("Instance already running");
+                    indicator.setFraction(1.0);
+                } else {
+                    indicator.setText("Waiting for runners to warm up...");
+                    indicator.setFraction(0.5);
+                    waitForInstanceReadyWithProgress(baseUrl, modelId, indicator);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Fetches cluster placement previews and returns the first valid one, or throws if none found.
+     */
+    private JsonElement fetchChosenPreview(String baseUrl, String modelId) throws IOException {
+        String previewUrl = baseUrl + "instance/previews?model_id=" + modelId;
+        Request previewRequest = new Request.Builder().url(previewUrl).build();
+        String previewBody;
+        try (Response previewResponse = HttpClientProvider.getClient().newCall(previewRequest).execute()) {
+            if (!previewResponse.isSuccessful()) {
+                throw new IOException("Failed to preview placements for model: " + modelId);
+            }
+            previewBody = previewResponse.body().string();
+        }
+
+        JsonArray previews = gson.fromJson(previewBody, JsonObject.class).getAsJsonArray("previews");
+        for (JsonElement p : previews) {
+            JsonObject preview = p.getAsJsonObject();
+            if (preview.get("error").isJsonNull() && preview.get(INSTANCE) != null && !preview.get(INSTANCE).isJsonNull()) {
+                return p;
+            }
+        }
+        throw new IOException("No valid placement found for model: " + modelId +
+                ". Ensure enough devices are connected in the Exo cluster.");
+    }
+
+    /**
+     * Posts the chosen preview to the instance endpoint to create a new Exo instance.
+     */
+    private void createInstance(String baseUrl, JsonElement chosenPreview) throws IOException {
+        Request instanceRequest = new Request.Builder()
+                .url(baseUrl + INSTANCE)
+                .post(RequestBody.create(chosenPreview.toString(), JSON_TYPE))
+                .build();
+        try (Response instanceResponse = HttpClientProvider.getClient().newCall(instanceRequest).execute()) {
+            if (!instanceResponse.isSuccessful()) {
+                throw new IOException("Failed to create Exo instance: " + instanceResponse.body().string());
+            }
+        }
     }
 
     private void waitForInstanceReadyWithProgress(String baseUrl, String modelId,
-                                                   int timeoutSeconds, ProgressIndicator indicator) throws IOException {
-        long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+                                                  ProgressIndicator indicator) throws IOException {
+        long deadline = System.currentTimeMillis() + (120 * 1000L);
         long startTime = System.currentTimeMillis();
 
         while (System.currentTimeMillis() < deadline) {
             if (indicator.isCanceled()) return;
 
             JsonObject state = fetchState(baseUrl);
-            JsonObject instances = state.getAsJsonObject("instances");
-            JsonObject runners = state.getAsJsonObject("runners");
-
-            if (instances != null) {
-                for (var entry : instances.entrySet()) {
-                    String instModelId = extractModelIdFromInstance(entry.getValue());
-                    if (modelId.equals(instModelId)) {
-                        String instanceId = extractInstanceId(entry.getValue());
-                        if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
-                            indicator.setText("Exo instance ready");
-                            indicator.setFraction(1.0);
-                            return;
-                        }
-                    }
-                }
+            if (isModelInstanceReady(state, modelId)) {
+                indicator.setText("Exo instance ready");
+                indicator.setFraction(1.0);
+                return;
             }
 
-            // Update progress (0.4 to 0.95 over the timeout period)
-            double elapsed = (System.currentTimeMillis() - startTime) / (double) (timeoutSeconds * 1000L);
+            double elapsed = (System.currentTimeMillis() - startTime) / (double) (120 * 1000L);
             indicator.setFraction(0.4 + elapsed * 0.55);
             indicator.setText("Warming up model runners...");
 
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while waiting for Exo runners", e);
-            }
+            sleepOrThrow();
         }
         throw new IOException("Timed out waiting for Exo runners to become ready");
+    }
+
+    private boolean isModelInstanceReady(JsonObject state, String modelId) {
+        JsonObject instances = state.getAsJsonObject(INSTANCES_KEY);
+        JsonObject runners = state.getAsJsonObject(RUNNERS_KEY);
+        if (instances == null) return false;
+
+        for (var entry : instances.entrySet()) {
+            if (modelId.equals(extractModelIdFromInstance(entry.getValue()))) {
+                String instanceId = extractInstanceId(entry.getValue());
+                if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void sleepOrThrow() throws IOException {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while waiting for Exo runners", e);
+        }
     }
 
     private JsonObject fetchState(String baseUrl) throws IOException {
         String stateUrl = baseUrl + "state";
         Request request = new Request.Builder().url(stateUrl).build();
         try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null) {
+            if (!response.isSuccessful()) {
                 throw new IOException("Failed to fetch Exo state");
             }
             return gson.fromJson(response.body().string(), JsonObject.class);
@@ -389,8 +389,8 @@ public class ExoModelService implements LocalLLMProvider {
             JsonObject inst = instanceValue.getAsJsonObject();
             for (var entry : inst.entrySet()) {
                 JsonObject inner = entry.getValue().getAsJsonObject();
-                if (inner.has("instanceId")) {
-                    return inner.get("instanceId").getAsString();
+                if (inner.has(INSTANCE_ID)) {
+                    return inner.get(INSTANCE_ID).getAsString();
                 }
             }
         } catch (Exception ignored) {
@@ -405,70 +405,71 @@ public class ExoModelService implements LocalLLMProvider {
     private boolean areInstanceRunnersReady(JsonObject instances, JsonObject runners, String instanceId) {
         if (runners == null || instances == null) return false;
 
-        // Find runner IDs belonging to this instance
-        Set<String> instanceRunnerIds = new HashSet<>();
-        for (var entry : instances.entrySet()) {
-            String iid = extractInstanceId(entry.getValue());
-            if (instanceId.equals(iid)) {
-                try {
-                    JsonObject inst = entry.getValue().getAsJsonObject();
-                    for (var inner : inst.entrySet()) {
-                        JsonObject shardAssignments = inner.getValue().getAsJsonObject().getAsJsonObject("shardAssignments");
-                        if (shardAssignments != null) {
-                            JsonObject nodeToRunner = shardAssignments.getAsJsonObject("nodeToRunner");
-                            if (nodeToRunner != null) {
-                                for (var nr : nodeToRunner.entrySet()) {
-                                    instanceRunnerIds.add(nr.getValue().getAsString());
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {
-                }
-                break;
-            }
-        }
-
+        Set<String> instanceRunnerIds = collectInstanceRunnerIds(instances, instanceId);
         if (instanceRunnerIds.isEmpty()) return false;
 
-        // Check only those runners
-        return instanceRunnerIds.stream().allMatch(runnerId -> {
-            JsonElement runner = runners.get(runnerId);
-            if (runner == null) return false;
-            JsonObject r = runner.getAsJsonObject();
-            return r.has("RunnerReady") || r.has("RunnerRunning");
-        });
+        return instanceRunnerIds.stream().allMatch(runnerId -> isRunnerReady(runners, runnerId));
+    }
+
+    /**
+     * Collects runner IDs from the nodeToRunner mapping for the given instanceId.
+     */
+    private Set<String> collectInstanceRunnerIds(JsonObject instances, String instanceId) {
+        Set<String> runnerIds = new HashSet<>();
+        for (var entry : instances.entrySet()) {
+            if (!instanceId.equals(extractInstanceId(entry.getValue()))) continue;
+            try {
+                JsonObject inst = entry.getValue().getAsJsonObject();
+                for (var inner : inst.entrySet()) {
+                    collectRunnerIdsFromShard(inner.getValue(), runnerIds);
+                }
+            } catch (Exception ignored) {
+                // Ignore exception
+            }
+            break;
+        }
+        return runnerIds;
+    }
+
+    /**
+     * Adds runner IDs from a shard's nodeToRunner mapping into the provided set.
+     */
+    private void collectRunnerIdsFromShard(JsonElement shardElement, Set<String> runnerIds) {
+        try {
+            JsonObject shardAssignments = shardElement.getAsJsonObject().getAsJsonObject("shardAssignments");
+            if (shardAssignments == null) return;
+            JsonObject nodeToRunner = shardAssignments.getAsJsonObject("nodeToRunner");
+            if (nodeToRunner == null) return;
+            for (var nr : nodeToRunner.entrySet()) {
+                runnerIds.add(nr.getValue().getAsString());
+            }
+        } catch (Exception ignored) {
+            // Ignore exception
+        }
+    }
+
+    /**
+     * Returns true if the runner with the given ID is in a ready or running state.
+     */
+    private boolean isRunnerReady(JsonObject runners, String runnerId) {
+        JsonElement runner = runners.get(runnerId);
+        if (runner == null) return false;
+        JsonObject r = runner.getAsJsonObject();
+        return r.has("RunnerReady") || r.has("RunnerRunning");
     }
 
     /**
      * Waits for the instance running the given model to have all its runners ready.
      */
-    private void waitForInstanceReady(String baseUrl, String modelId, int timeoutSeconds) throws IOException {
-        long deadline = System.currentTimeMillis() + (timeoutSeconds * 1000L);
+    private void waitForInstanceReady(String baseUrl, String modelId) throws IOException {
+        long deadline = System.currentTimeMillis() + (120 * 1000L);
 
         while (System.currentTimeMillis() < deadline) {
             JsonObject state = fetchState(baseUrl);
-            JsonObject instances = state.getAsJsonObject("instances");
-            JsonObject runners = state.getAsJsonObject("runners");
-
-            if (instances != null) {
-                for (var entry : instances.entrySet()) {
-                    String instModelId = extractModelIdFromInstance(entry.getValue());
-                    if (modelId.equals(instModelId)) {
-                        String instanceId = extractInstanceId(entry.getValue());
-                        if (instanceId != null && areInstanceRunnersReady(instances, runners, instanceId)) {
-                            return;
-                        }
-                    }
-                }
+            if (isModelInstanceReady(state, modelId)) {
+                return;
             }
-
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while waiting for Exo runners", e);
-            }
+            sleepOrThrow();
         }
         throw new IOException("Timed out waiting for Exo runners to become ready");
     }

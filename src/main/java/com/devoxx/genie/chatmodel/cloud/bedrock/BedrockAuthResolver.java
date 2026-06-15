@@ -21,69 +21,74 @@ public class BedrockAuthResolver {
 
     public @NotNull BedrockRuntimeClientBuilder configure(@NotNull BedrockRuntimeClientBuilder builder) {
         return configureAuth(builder.region(getRegion()));
-    }
+     }
 
     public @NotNull BedrockRuntimeAsyncClientBuilder configure(@NotNull BedrockRuntimeAsyncClientBuilder builder) {
         return configureAuth(builder.region(getRegion()));
-    }
+     }
 
     public @NotNull BedrockClientBuilder configure(@NotNull BedrockClientBuilder builder) {
         return configureAuth(builder.region(getRegion()));
-    }
+     }
 
     public @NotNull Region getRegion() {
         return Region.of(DevoxxGenieStateService.getInstance().getAwsRegion());
-    }
+     }
 
+    /**
+      * Returns the effective AWS Bedrock auth mode. The underlying
+      * {@code DevoxxGenieStateService.getAwsBedrockAuthMode()} is annotated @NotNull
+      * and will never return null (it falls back to a default mode), so no
+      * additional null check is needed here.
+      */
     public @NotNull AwsBedrockAuthMode getAuthMode() {
-        AwsBedrockAuthMode authMode = DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode();
-        return authMode != null ? authMode : AwsBedrockAuthMode.defaultMode();
-    }
+        return DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode();
+     }
 
     public @NotNull AwsCredentialsProvider getCredentialsProvider() {
         return switch (getAuthMode()) {
             case ACCESS_KEY -> StaticCredentialsProvider.create(AwsBasicCredentials.create(
                     DevoxxGenieStateService.getInstance().getAwsAccessKeyId(),
                     DevoxxGenieStateService.getInstance().getAwsSecretKey()
-            ));
+             ));
             case PROFILE -> ProfileCredentialsProvider.create(DevoxxGenieStateService.getInstance().getAwsProfileName());
             case BEARER_TOKEN -> throw new IllegalStateException("Bearer token auth does not use AWS credentials.");
-        };
-    }
+         };
+     }
 
     public @NotNull IdentityProvider<TokenIdentity> getTokenProvider() {
         String bearerToken = DevoxxGenieStateService.getInstance().getAwsBearerToken();
         return new IdentityProvider<>() {
-            @Override
+             @Override
             public Class<TokenIdentity> identityType() {
                 return TokenIdentity.class;
-            }
+             }
 
-            @Override
+             @Override
             public CompletableFuture<TokenIdentity> resolveIdentity(ResolveIdentityRequest request) {
                 return CompletableFuture.completedFuture(TokenIdentity.create(bearerToken));
-            }
-        };
-    }
+             }
+         };
+     }
 
     private @NotNull BedrockRuntimeClientBuilder configureAuth(@NotNull BedrockRuntimeClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
             case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
-        };
-    }
+         };
+     }
 
     private @NotNull BedrockRuntimeAsyncClientBuilder configureAuth(@NotNull BedrockRuntimeAsyncClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
             case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
-        };
-    }
+         };
+     }
 
     private @NotNull BedrockClientBuilder configureAuth(@NotNull BedrockClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
             case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
-        };
-    }
+         };
+     }
 }

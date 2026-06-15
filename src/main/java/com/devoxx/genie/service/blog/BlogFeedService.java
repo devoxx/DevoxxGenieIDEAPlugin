@@ -53,14 +53,10 @@ public final class BlogFeedService {
     private static final String CACHE_TIMESTAMP_KEY = "devoxxgenie.blog.cache.ts";
     private static final long CACHE_TTL_MILLIS = 6L * 60 * 60 * 1000; // 6 hours
 
-    private static final BlogFeedService INSTANCE = new BlogFeedService();
-
     private final Gson gson = new Gson();
 
-    private BlogFeedService() {}
-
     public static BlogFeedService getInstance() {
-        return INSTANCE;
+        return ApplicationManager.getApplication().getService(BlogFeedService.class);
     }
 
     /** Synchronously load the bundled blog post list from the plugin classpath. */
@@ -154,7 +150,6 @@ public final class BlogFeedService {
                 return null;
             }
             ResponseBody body = response.body();
-            if (body == null) return null;
             return parseRss(body.bytes());
         } catch (Exception e) {
             log.debug("Blog RSS fetch failed", e);
