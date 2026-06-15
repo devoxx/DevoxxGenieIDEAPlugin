@@ -88,7 +88,6 @@ class LLMProvidersConfigurableTest {
 
     @Test
     void shouldApplyOllamaContextWindowOverrideSetting() {
-        configurable.createComponent();
         LLMProvidersComponent component = getSettingsComponent();
 
         component.getOllamaContextWindowOverrideCheckBox().setSelected(true);
@@ -103,7 +102,6 @@ class LLMProvidersConfigurableTest {
     @Test
     void shouldResetOllamaContextWindowOverrideSetting() {
         stateService.setOllamaContextWindowOverrideEnabled(true);
-        configurable.createComponent();
 
         configurable.reset();
 
