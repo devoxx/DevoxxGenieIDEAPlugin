@@ -76,9 +76,12 @@ public class AbstractSettingsComponent implements SettingsComponent {
     protected void addSettingRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String label, JComponent component) {
         gbc.gridwidth = 1;
         gbc.gridx = 0;
+        gbc.weightx = 0;
         panel.add(new JLabel(label), gbc);
         gbc.gridx = 1;
+        gbc.weightx = 1.0; // let the input column absorb the available width instead of overflowing the dialog
         panel.add(component, gbc);
+        gbc.weightx = 0;
         gbc.gridy++;
     }
 
