@@ -8,6 +8,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiNameIdentifierOwner;
 import com.intellij.psi.PsiReference;
+import com.intellij.psi.util.PsiTreeUtil;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +59,9 @@ public class FindDefinitionToolExecutor implements ToolExecutor {
 
         PsiFile psiFile = PsiToolUtils.resolvePsiFile(project, filePath);
         if (psiFile == null) {
-            return "Error: File not found or cannot be parsed: " + filePath;
+            return "Error: File not found or cannot be parsed: " + filePath
+                    + ". Verify the path (it is relative to the project root) - use 'search_files'"
+                    + " or 'find_symbols' to locate the correct file.";
         }
 
         // Try to find the element at the specific position
@@ -106,7 +109,31 @@ public class FindDefinitionToolExecutor implements ToolExecutor {
         PsiElement fromLine = resolveBySearchingLine(psiFile, line, symbol);
         if (fromLine != null) return fromLine;
 
-        return PsiToolUtils.findNamedElementOnLine(psiFile, line, symbol);
+        PsiElement namedOnLine = PsiToolUtils.findNamedElementOnLine(psiFile, line, symbol);
+        if (namedOnLine != null) return namedOnLine;
+
+        // Last resort: the supplied line may be imprecise (LLMs often guess it). When a symbol name
+        // is given, search the whole file for it - either a usage that resolves to its definition,
+        // or a declaration of that name living in this file.
+        return resolveBySymbolInFile(psiFile, symbol);
+    }
+
+    /**
+     * Strategy 4 (file-wide): when the line-scoped strategies fail but a symbol name is known,
+     * scan the entire file. First look for a usage of the symbol that resolves to a definition
+     * (possibly in another file); failing that, return a declaration of that name in this file.
+     */
+    @Nullable
+    private PsiElement resolveBySymbolInFile(@NotNull PsiFile psiFile, @Nullable String symbol) {
+        if (symbol == null || symbol.isBlank()) return null;
+
+        for (PsiElement leaf : PsiTreeUtil.collectElements(psiFile,
+                e -> e.getFirstChild() == null && symbol.equals(e.getText()))) {
+            PsiElement resolved = resolveElement(leaf);
+            if (resolved != null) return resolved;
+        }
+
+        return PsiToolUtils.findNamedElementInFile(psiFile, symbol);
     }
 
     /** Strategy 1: resolve the element at the exact column offset. */
