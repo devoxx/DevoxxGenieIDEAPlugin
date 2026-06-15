@@ -39,6 +39,8 @@ public class MCPServerDialog extends DialogWrapper {
     
     private final MCPServer existingServer;
     private MCPServer server;
+
+    private final ExistingServerConfigurationSupport existingServerSupport = new ExistingServerConfigurationSupport();
     
     // Environment variables components
     private final EnvVarTableModel envVarTableModel = new EnvVarTableModel();
@@ -297,8 +299,7 @@ public class MCPServerDialog extends DialogWrapper {
                     // Step 1: Create client (pass headers from existing server for auth)
                     indicator.setText("Connecting to MCP server...");
                     indicator.setIndeterminate(true);
-                    Map<String, String> headers = existingServer != null && existingServer.getHeaders() != null
-                            ? existingServer.getHeaders() : Map.of();
+                    Map<String, String> headers = existingServerSupport.headersForConnection(existingServer);
                     mcpClient = panel.createClient(headers);
 
                     indicator.checkCanceled();
@@ -318,10 +319,7 @@ public class MCPServerDialog extends DialogWrapper {
                     panel.processTools(tools, builder);
 
                     if (existingServer != null) {
-                        builder.env(new HashMap<>(existingServer.getEnv()));
-                        if (existingServer.getHeaders() != null && !existingServer.getHeaders().isEmpty()) {
-                            builder.headers(new HashMap<>(existingServer.getHeaders()));
-                        }
+                        existingServerSupport.applyPreservedSettings(existingServer, builder);
                     }
 
                     result[0] = builder.build();
@@ -395,14 +393,57 @@ public class MCPServerDialog extends DialogWrapper {
         // Apply environment variables from the table
         builder.env(envVarTableModel.getEnvVars());
 
-        // Preserve headers from existing server
-        if (existingServer != null && existingServer.getHeaders() != null && !existingServer.getHeaders().isEmpty()) {
-            builder.headers(new HashMap<>(existingServer.getHeaders()));
+        // Preserve headers from existing server (env is already set from the table above)
+        if (existingServer != null) {
+            existingServerSupport.applyPreservedHeaders(existingServer, builder);
         }
 
         return builder.build();
     }
     
+    /**
+     * Encapsulates how configuration from an existing (edited) MCP server is preserved when
+     * building an updated server. Extracted as a static, dependency-free helper so the
+     * preservation rules can be unit-tested without constructing the Swing dialog.
+     */
+    public static class ExistingServerConfigurationSupport {
+
+        /**
+         * Returns the headers to use when opening a connection to {@code server}, as a defensive
+         * copy. Never returns null; an absent or empty header set yields an empty map.
+         */
+        @NotNull
+        public Map<String, String> headersForConnection(@Nullable MCPServer server) {
+            if (server == null || server.getHeaders() == null || server.getHeaders().isEmpty()) {
+                return new HashMap<>();
+            }
+            return new HashMap<>(server.getHeaders());
+        }
+
+        /**
+         * Copies both the environment variables and the (non-empty) headers from
+         * {@code existingServer} onto {@code builder}.
+         */
+        public void applyPreservedSettings(@NotNull MCPServer existingServer,
+                                           @NotNull MCPServer.MCPServerBuilder builder) {
+            if (existingServer.getEnv() != null) {
+                builder.env(new HashMap<>(existingServer.getEnv()));
+            }
+            applyPreservedHeaders(existingServer, builder);
+        }
+
+        /**
+         * Copies only the (non-empty) headers from {@code existingServer} onto {@code builder},
+         * leaving any environment variables already set on the builder untouched.
+         */
+        public void applyPreservedHeaders(@NotNull MCPServer existingServer,
+                                          @NotNull MCPServer.MCPServerBuilder builder) {
+            if (existingServer.getHeaders() != null && !existingServer.getHeaders().isEmpty()) {
+                builder.headers(new HashMap<>(existingServer.getHeaders()));
+            }
+        }
+    }
+
     /**
      * Table model for environment variables
      */

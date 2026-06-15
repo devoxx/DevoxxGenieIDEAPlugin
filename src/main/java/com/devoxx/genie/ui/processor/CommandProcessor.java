@@ -58,7 +58,7 @@ public class CommandProcessor {
         Integer treeDepth = DevoxxGenieStateService.getInstance().getProjectTreeDepth();
         
         // Use ProgressManager to run in a background task
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Generating DEVOXXGENIE.md", false) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Generating DEVOXXGENIE.md", true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {

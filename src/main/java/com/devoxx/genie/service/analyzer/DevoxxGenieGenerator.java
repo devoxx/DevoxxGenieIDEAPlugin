@@ -29,6 +29,7 @@ public class DevoxxGenieGenerator {
     private final Project project;
     private final VirtualFile baseDir;
     private final Boolean includeTree;
+    private final int treeDepth;
     private final ProgressIndicator indicator;
     
     // Components
@@ -51,6 +52,7 @@ public class DevoxxGenieGenerator {
                                 ProgressIndicator indicator) {
         this.project = project;
         this.includeTree = includeTree;
+        this.treeDepth = treeDepth;
         this.baseDir = ProjectUtil.guessProjectDir(project);
         this.indicator = indicator;
         
@@ -79,7 +81,7 @@ public class DevoxxGenieGenerator {
             // Step 1: Analyze the project and create prompt - computeInNonDispatchThread to avoid EDT blocking
             indicator.setText("Analyzing project structure...");
             Map<String, Object> projectInfo = com.intellij.openapi.application.ReadAction.nonBlocking(() -> {
-                ProjectAnalyzer scanner = new ProjectAnalyzer(project, baseDir);
+                ProjectAnalyzer scanner = new ProjectAnalyzer(project, baseDir, indicator);
                 return scanner.scanProject();
             }).executeSynchronously();
             
@@ -100,10 +102,10 @@ public class DevoxxGenieGenerator {
             
             // Step 4: Handle project tree generation if needed - also requires write action
             if (Boolean.TRUE.equals(includeTree)) {
-                indicator.setText("Generating project tree...");
+                indicator.setText("Generating project tree (depth " + treeDepth + ")...");
                 com.intellij.openapi.application.WriteAction.runAndWait(() -> {
                     try {
-                        treeGenerator.appendProjectTree(baseDir, DEVOXX_GENIE_MD);
+                        treeGenerator.appendProjectTree(baseDir, DEVOXX_GENIE_MD, treeDepth, indicator);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -115,20 +117,16 @@ public class DevoxxGenieGenerator {
                 NotificationUtil.sendNotification(project, "DEVOXXGENIE.md generated successfully in " 
                         + baseDir.getPath());
             });
+        } catch (com.intellij.openapi.progress.ProcessCanceledException e) {
+            // User cancelled the background task - not an error.
+            log.info("DEVOXXGENIE.md generation cancelled by user");
+            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() ->
+                    NotificationUtil.sendNotification(project, "DEVOXXGENIE.md generation cancelled"));
         } catch (Exception e) {
             log.error("Error generating DEVOXXGENIE.md", e);
             com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
                 NotificationUtil.sendNotification(project, "Error generating DEVOXXGENIE.md: " + e.getMessage());
             });
         }
-    }
-
-    /**
-     * Scans the project for information.
-     */
-    private Map<String, Object> scanProject() {
-        ProjectAnalyzer scanner = new ProjectAnalyzer(project, baseDir);
-        indicator.setText("Analyzing project structure...");
-        return ReadAccess.compute(scanner::scanProject);
     }
 }

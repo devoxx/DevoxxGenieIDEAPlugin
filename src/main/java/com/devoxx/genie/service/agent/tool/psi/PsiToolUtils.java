@@ -1,11 +1,15 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.project.DumbService;
+import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
+import com.intellij.psi.search.FilenameIndex;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,16 +28,124 @@ public final class PsiToolUtils {
 
     /**
      * Resolves a relative path to a PsiFile within the project.
+     * <p>
+     * First tries an exact lookup relative to the project root. When that fails - typically
+     * because the LLM guessed the wrong package directory (e.g. {@code .../ui/Foo.java} when the
+     * file actually lives under {@code .../controller/Foo.java}) - it falls back to a filename
+     * search across the project and picks the candidate whose path best matches the requested one.
      */
     @Nullable
     public static PsiFile resolvePsiFile(@NotNull Project project, @NotNull String relativePath) {
+        VirtualFile vf = resolveVirtualFile(project, relativePath);
+        if (vf == null) return null;
+        return PsiManager.getInstance(project).findFile(vf);
+    }
+
+    /**
+     * Resolves a relative path to a VirtualFile, with a filename-based fallback. See
+     * {@link #resolvePsiFile} for the resolution strategy.
+     */
+    @Nullable
+    public static VirtualFile resolveVirtualFile(@NotNull Project project, @NotNull String relativePath) {
         VirtualFile projectBase = ProjectUtil.guessProjectDir(project);
         if (projectBase == null) return null;
 
-        VirtualFile vf = projectBase.findFileByRelativePath(relativePath);
-        if (vf == null || vf.isDirectory()) return null;
+        String normalized = normalizeRelativePath(relativePath);
+        if (normalized.isEmpty()) return null;
 
-        return PsiManager.getInstance(project).findFile(vf);
+        // 1. Exact relative-path match (fast path).
+        VirtualFile vf = projectBase.findFileByRelativePath(normalized);
+        if (vf != null && !vf.isDirectory()) return vf;
+
+        // 2. Fallback: locate by filename and pick the closest path match.
+        return resolveByFileName(project, normalized);
+    }
+
+    @Nullable
+    private static VirtualFile resolveByFileName(@NotNull Project project, @NotNull String normalizedPath) {
+        String fileName = fileNameOf(normalizedPath);
+        if (fileName.isEmpty()) return null;
+
+        // FilenameIndex requires a built index; bail out gracefully during indexing.
+        if (DumbService.getInstance(project).isDumb()) return null;
+
+        try {
+            Collection<VirtualFile> matches =
+                    FilenameIndex.getVirtualFilesByName(fileName, GlobalSearchScope.projectScope(project));
+            return pickBestPathMatch(matches, normalizedPath);
+        } catch (IndexNotReadyException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Normalizes a user-supplied path: trims whitespace, converts back-slashes, and strips
+     * leading {@code ./} and {@code /} segments so it is relative to the project root.
+     */
+    @NotNull
+    static String normalizeRelativePath(@NotNull String path) {
+        String normalized = path.trim().replace('\\', '/');
+        while (normalized.startsWith("./")) {
+            normalized = normalized.substring(2);
+        }
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    /** Returns the last path segment (the file name) of a normalized path. */
+    @NotNull
+    static String fileNameOf(@NotNull String normalizedPath) {
+        int slash = normalizedPath.lastIndexOf('/');
+        return slash < 0 ? normalizedPath : normalizedPath.substring(slash + 1);
+    }
+
+    /**
+     * From a set of files that all share the requested file name, picks the one whose path shares
+     * the longest trailing run of path segments with the requested path. This disambiguates when
+     * several files have the same name in different packages. Returns null when there are no
+     * candidates, and the single candidate when there is exactly one.
+     */
+    @Nullable
+    static VirtualFile pickBestPathMatch(@NotNull Collection<VirtualFile> candidates, @NotNull String requestedPath) {
+        if (candidates.isEmpty()) return null;
+
+        List<String> requestedSegments = splitSegments(requestedPath);
+
+        VirtualFile best = null;
+        int bestScore = -1;
+        for (VirtualFile candidate : candidates) {
+            if (candidate == null || candidate.isDirectory()) continue;
+            int score = trailingSegmentOverlap(requestedSegments, splitSegments(candidate.getPath()));
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    @NotNull
+    private static List<String> splitSegments(@NotNull String path) {
+        List<String> segments = new ArrayList<>();
+        for (String part : path.split("/")) {
+            if (!part.isBlank()) segments.add(part);
+        }
+        return segments;
+    }
+
+    /** Counts how many trailing path segments two paths have in common (file name counts as one). */
+    private static int trailingSegmentOverlap(@NotNull List<String> a, @NotNull List<String> b) {
+        int overlap = 0;
+        int i = a.size() - 1;
+        int j = b.size() - 1;
+        while (i >= 0 && j >= 0 && a.get(i).equals(b.get(j))) {
+            overlap++;
+            i--;
+            j--;
+        }
+        return overlap;
     }
 
     /**
@@ -78,15 +190,31 @@ public final class PsiToolUtils {
 
         if (onLine.isEmpty()) return null;
 
-        // If symbol name is provided, find the matching one
+        // If a symbol name is provided, only return an element that actually matches it. Returning
+        // an arbitrary unrelated declaration that merely happens to share the line would produce a
+        // wrong definition; instead return null so callers can fall back or report a clear error.
         if (symbolName != null && !symbolName.isBlank()) {
             for (PsiNameIdentifierOwner owner : onLine) {
                 if (symbolName.equals(owner.getName())) return owner;
             }
+            return null;
         }
 
-        // Return the first one found on the line
+        // No symbol requested: return the first declaration found on the line.
         return onLine.get(0);
+    }
+
+    /**
+     * Finds the first PsiNameIdentifierOwner declared anywhere in the file whose name matches the
+     * given symbol. Used as a file-wide fallback when a precise line is unavailable.
+     */
+    @Nullable
+    public static PsiNameIdentifierOwner findNamedElementInFile(@NotNull PsiFile psiFile, @Nullable String symbolName) {
+        if (symbolName == null || symbolName.isBlank()) return null;
+        for (PsiNameIdentifierOwner owner : PsiTreeUtil.findChildrenOfType(psiFile, PsiNameIdentifierOwner.class)) {
+            if (symbolName.equals(owner.getName())) return owner;
+        }
+        return null;
     }
 
     /**

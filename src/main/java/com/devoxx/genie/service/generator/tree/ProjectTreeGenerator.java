@@ -3,9 +3,11 @@ package com.devoxx.genie.service.generator.tree;
 import com.devoxx.genie.service.generator.file.FileManager;
 import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.devoxx.genie.util.ReadAccess;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Handles generation of project tree structure.
@@ -27,17 +29,22 @@ public class ProjectTreeGenerator {
     }
     
     /**
-     * Appends a project tree to the specified file.
-     * 
+     * Appends a project tree to the specified file, descending at most {@code maxDepth} levels.
+     *
      * @param baseDir The base directory
      * @param fileName The file to append the tree to
+     * @param maxDepth The maximum number of directory levels to descend
+     * @param indicator Optional progress indicator for status updates and cancellation
      */
-    public void appendProjectTree(VirtualFile baseDir, String fileName) {
+    public void appendProjectTree(VirtualFile baseDir,
+                                  String fileName,
+                                  int maxDepth,
+                                  @Nullable ProgressIndicator indicator) {
         try {
-            log.info("Generating project tree for file: {}", fileName);
-            
+            log.info("Generating project tree for file: {} (maxDepth={})", fileName, maxDepth);
+
             // Generate tree content
-            String treeContent = generateTreeContent(baseDir);
+            String treeContent = generateTreeContent(baseDir, maxDepth, indicator);
             String formattedTree = formatTreeContent(treeContent);
             
             // Get file reference
@@ -59,11 +66,11 @@ public class ProjectTreeGenerator {
     }
     
     /**
-     * Generates tree content using the FileScanner.
+     * Generates tree content using the FileScanner, bounded by {@code maxDepth}.
      */
-    private String generateTreeContent(VirtualFile baseDir) {
-        return ReadAccess.compute(() -> 
-            fileScanner.generateSourceTreeRecursive(baseDir, 0)
+    private String generateTreeContent(VirtualFile baseDir, int maxDepth, @Nullable ProgressIndicator indicator) {
+        return ReadAccess.compute(() ->
+            fileScanner.generateSourceTreeRecursive(baseDir, 0, maxDepth, indicator)
         );
     }
     

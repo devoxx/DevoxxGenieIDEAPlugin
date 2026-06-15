@@ -3,6 +3,7 @@ package com.devoxx.genie.service.analyzer;
 import com.devoxx.genie.service.analyzer.tools.GlobTool;
 import com.devoxx.genie.service.analyzer.util.GitignoreParser;
 import com.devoxx.genie.util.ReadAccess;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -81,10 +82,16 @@ public class ProjectAnalyzer {
     private final Project project;
     private final VirtualFile baseDir;
     private final GitignoreParser gitignoreParser;
+    private final ProgressIndicator indicator;
 
     public ProjectAnalyzer(Project project, VirtualFile baseDir) {
+        this(project, baseDir, null);
+    }
+
+    public ProjectAnalyzer(Project project, VirtualFile baseDir, @Nullable ProgressIndicator indicator) {
         this.project = project;
         this.baseDir = baseDir;
+        this.indicator = indicator;
 
         // Initialize the GitignoreParser with support for nested .gitignore files
         this.gitignoreParser = new GitignoreParser(baseDir);
@@ -96,10 +103,20 @@ public class ProjectAnalyzer {
             Map<String, Object> projectInfo = new HashMap<>();
 
             // IDE-agnostic detection
+            setStep("Detecting build system...");
             projectInfo.put("buildSystem", detectBuildSystem());
-            projectInfo.put("languages", detectLanguages());
+
+            setStep("Detecting code style...");
             projectInfo.put("codeStyle", detectCodeStyle());
-            projectInfo.put("frameworks", detectFrameworks());
+
+            // A single walk of the project tree feeds both language and framework detection,
+            // instead of one walk for languages plus ~10 more (one per framework pattern).
+            setStep("Scanning source files...");
+            SourceScanResult scan = scanSourceTree();
+            projectInfo.put("languages", scan.toLanguagesMap());
+            projectInfo.put("frameworks", buildFrameworks(scan));
+
+            setStep("Detecting dependencies...");
             projectInfo.put("dependencies", detectDependencies());
 
             // IDE-specific enhancements through extension points
@@ -109,6 +126,24 @@ public class ProjectAnalyzer {
 
             return projectInfo;
         });
+    }
+
+    /** Updates the main progress label, when an indicator is available. */
+    private void setStep(@NotNull String text) {
+        if (indicator != null) {
+            indicator.setText(text);
+        }
+    }
+
+    /**
+     * Reports the file/dir currently being read and honours cancellation
+     * (throws {@link com.intellij.openapi.progress.ProcessCanceledException} when the user cancels).
+     */
+    private void reportProgress(@NotNull VirtualFile file) {
+        if (indicator != null) {
+            indicator.checkCanceled();
+            indicator.setText2(file.getPath());
+        }
     }
 
     private @NotNull Map<String, Object> detectBuildSystem() {
@@ -163,116 +198,101 @@ public class ProjectAnalyzer {
         return buildInfo;
     }
 
-    private @NotNull Map<String, Object> detectLanguages() {
-        Map<String, Object> languages = new HashMap<>();
-        Set<String> detectedLanguages = new HashSet<>();
-        Map<String, Integer> languageFileCount = new HashMap<>();
-
-        // Check for language-specific project files first
-        if (baseDir.findChild(CARGO_TOML) != null) {
-            detectedLanguages.add(RUST);
-            languageFileCount.put(RUST, 1);  // Start with 1 for the project file
-        }
-        if (baseDir.findChild(POM_XML) != null) {
-            detectedLanguages.add(JAVA);
-            languageFileCount.put(JAVA, 1);
-        }
-        if (baseDir.findChild(BUILD_GRADLE) != null || baseDir.findChild(BUILD_GRADLE_KTS) != null) {
-            detectedLanguages.add(JAVA);
-            detectedLanguages.add(KOTLIN);
-            languageFileCount.put(JAVA, languageFileCount.getOrDefault(JAVA, 0) + 1);
-            languageFileCount.put(KOTLIN, languageFileCount.getOrDefault(KOTLIN, 0) + 1);
-        }
-        if (baseDir.findChild(GO_MOD) != null) {
-            detectedLanguages.add(GO);
-            languageFileCount.put(GO, 1);
-        }
-        if (baseDir.findChild(PACKAGE_JSON) != null) {
-            detectedLanguages.add(JAVA_SCRIPT_TYPE_SCRIPT);
-            languageFileCount.put(JAVA_SCRIPT_TYPE_SCRIPT, 1);
-        }
-        if (baseDir.findChild(CMAKE_LISTS_TXT) != null) {
-            detectedLanguages.add(C_C_PLUS_PLUS);
-            languageFileCount.put(C_C_PLUS_PLUS, 1);
-        }
+    /**
+     * Walks the project tree exactly once, collecting both language statistics and framework
+     * matches. Gitignored files and directories are skipped (their subtrees are not descended).
+     */
+    private @NotNull SourceScanResult scanSourceTree() {
+        SourceScanResult result = new SourceScanResult(createFrameworkMatchers());
+        seedLanguagesFromProjectFiles(result);
 
         VfsUtil.visitChildrenRecursively(baseDir, new VirtualFileVisitor<Void>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
-                // Check if the file should be ignored based on .gitignore rules
+                // Skip ignored files and do not descend into ignored directories.
                 String relativePath = getRelativePath(baseDir, file);
                 if (relativePath != null && gitignoreParser.shouldIgnore(relativePath, file.isDirectory())) {
-                    return true; // Skip this file and its children
+                    return false;
                 }
 
-                if (!file.isDirectory()) {
-                    // Use ReadAction to safely access the ProjectFileIndex
-                    boolean isInContent = ReadAccess.compute(() ->
-                            ProjectFileIndex.getInstance(project).isInContent(file));
+                reportProgress(file);
 
-                    if (isInContent) {
-                        String extension = file.getExtension();
-                        if (extension != null) {
-                            switch (extension) {
-                                case "java" -> {
-                                    detectedLanguages.add(JAVA);
-                                    languageFileCount.put(JAVA, languageFileCount.getOrDefault(JAVA, 0) + 1);
-                                }
-                                case "kt" -> {
-                                    detectedLanguages.add(KOTLIN);
-                                    languageFileCount.put(KOTLIN, languageFileCount.getOrDefault(KOTLIN, 0) + 1);
-                                }
-                                case "php" -> {
-                                    detectedLanguages.add(PHP);
-                                    languageFileCount.put(PHP, languageFileCount.getOrDefault(PHP, 0) + 1);
-                                }
-                                case "py" -> {
-                                    detectedLanguages.add(PYTHON);
-                                    languageFileCount.put(PYTHON, languageFileCount.getOrDefault(PYTHON, 0) + 1);
-                                }
-                                case "js", "ts" -> {
-                                    detectedLanguages.add(JAVA_SCRIPT_TYPE_SCRIPT);
-                                    languageFileCount.put(JAVA_SCRIPT_TYPE_SCRIPT, languageFileCount.getOrDefault(JAVA_SCRIPT_TYPE_SCRIPT, 0) + 1);
-                                }
-                                case "cpp", "h", "c" -> {
-                                    detectedLanguages.add(C_C_PLUS_PLUS);
-                                    languageFileCount.put(C_C_PLUS_PLUS, languageFileCount.getOrDefault(C_C_PLUS_PLUS, 0) + 1);
-                                }
-                                case "rs" -> {
-                                    detectedLanguages.add(RUST);
-                                    languageFileCount.put(RUST, languageFileCount.getOrDefault(RUST, 0) + 1);
-                                }
-                                case "go" -> {
-                                    detectedLanguages.add(GO);
-                                    languageFileCount.put(GO, languageFileCount.getOrDefault(GO, 0) + 1);
-                                }
-                            }
-                        }
-                    }
+                if (!file.isDirectory()) {
+                    countLanguageForFile(file, result);
+                    matchFrameworks(file, result);
                 }
                 return true;
             }
         });
 
-        // Determine primary language based on file count
-        if (!detectedLanguages.isEmpty()) {
-            languages.put("detected", new ArrayList<>(detectedLanguages));
+        return result;
+    }
 
-            // Find the language with the most files
-            String primaryLanguage = detectedLanguages.iterator().next();
-            int maxFiles = 0;
+    /** Seeds language counts from language-specific project files (pom.xml, Cargo.toml, ...). */
+    private void seedLanguagesFromProjectFiles(@NotNull SourceScanResult result) {
+        if (baseDir.findChild(CARGO_TOML) != null) {
+            result.addLanguage(RUST);
+        }
+        if (baseDir.findChild(POM_XML) != null) {
+            result.addLanguage(JAVA);
+        }
+        if (baseDir.findChild(BUILD_GRADLE) != null || baseDir.findChild(BUILD_GRADLE_KTS) != null) {
+            result.addLanguage(JAVA);
+            result.addLanguage(KOTLIN);
+        }
+        if (baseDir.findChild(GO_MOD) != null) {
+            result.addLanguage(GO);
+        }
+        if (baseDir.findChild(PACKAGE_JSON) != null) {
+            result.addLanguage(JAVA_SCRIPT_TYPE_SCRIPT);
+        }
+        if (baseDir.findChild(CMAKE_LISTS_TXT) != null) {
+            result.addLanguage(C_C_PLUS_PLUS);
+        }
+    }
 
-            for (Map.Entry<String, Integer> entry : languageFileCount.entrySet()) {
-                if (entry.getValue() > maxFiles) {
-                    maxFiles = entry.getValue();
-                    primaryLanguage = entry.getKey();
-                }
-            }
-
-            languages.put("primary", primaryLanguage);
+    /** Counts a single file towards its language, if it is part of the project content. */
+    private void countLanguageForFile(@NotNull VirtualFile file, @NotNull SourceScanResult result) {
+        String extension = file.getExtension();
+        if (extension == null) {
+            return;
         }
 
-        return languages;
+        boolean isInContent = ReadAccess.compute(() ->
+                ProjectFileIndex.getInstance(project).isInContent(file));
+        if (!isInContent) {
+            return;
+        }
+
+        String language = languageForExtension(extension);
+        if (language != null) {
+            result.addLanguage(language);
+        }
+    }
+
+    @Nullable
+    private static String languageForExtension(@NotNull String extension) {
+        return switch (extension) {
+            case "java" -> JAVA;
+            case "kt" -> KOTLIN;
+            case "php" -> PHP;
+            case "py" -> PYTHON;
+            case "js", "ts" -> JAVA_SCRIPT_TYPE_SCRIPT;
+            case "cpp", "h", "c" -> C_C_PLUS_PLUS;
+            case "rs" -> RUST;
+            case "go" -> GO;
+            default -> null;
+        };
+    }
+
+    /** Marks any framework whose path pattern matches this file as found. */
+    private void matchFrameworks(@NotNull VirtualFile file, @NotNull SourceScanResult result) {
+        String path = file.getPath();
+        for (FrameworkMatcher matcher : result.frameworkMatchers) {
+            if (!matcher.found && matcher.matches(path)) {
+                matcher.found = true;
+            }
+        }
     }
 
     private @NotNull Map<String, Object> detectCodeStyle() {
@@ -308,82 +328,118 @@ public class ProjectAnalyzer {
         return styleInfo;
     }
 
-    private @NotNull Map<String, Object> detectFrameworks() {
+    /** The framework path patterns evaluated during the single source-tree walk. */
+    private @NotNull List<FrameworkMatcher> createFrameworkMatchers() {
+        List<FrameworkMatcher> matchers = new ArrayList<>();
+        // Testing frameworks
+        matchers.add(new FrameworkMatcher(J_UNIT, TESTING, TEST_JAVA_PATTERN, "**/JUnit*.java"));
+        matchers.add(new FrameworkMatcher(PHP_UNIT, TESTING, TEST_PHP_PATTERN, "**/PHPUnit*.php"));
+        matchers.add(new FrameworkMatcher(PYTEST, TESTING, TEST_PY_PATTERN, "**/pytest*.py"));
+        matchers.add(new FrameworkMatcher(GO_TESTING, TESTING, TEST_GO_PATTERN));
+        matchers.add(new FrameworkMatcher(JEST, TESTING, SPEC_JS_PATTERN, "**/jest.config.js"));
+        matchers.add(new FrameworkMatcher(RUST_TESTING, TESTING, TEST_RS_PATTERN));
+        // Web frameworks
+        matchers.add(new FrameworkMatcher(SPRING_BOOT, WEB, SPRING_BOOT_JAR, "**/SpringBoot*.java"));
+        matchers.add(new FrameworkMatcher(LARAVEL, WEB, LARAVEL_PHP));
+        matchers.add(new FrameworkMatcher(DJANGO, WEB, DJANGO_PY));
+        matchers.add(new FrameworkMatcher(REACT, WEB, REACT_JS));
+        return matchers;
+    }
+
+    /**
+     * Builds the frameworks map from the single walk's matches, plus a few content-based checks
+     * that only read direct child files (no tree walk required).
+     */
+    private @NotNull Map<String, Object> buildFrameworks(@NotNull SourceScanResult scan) {
         Map<String, Object> frameworks = new HashMap<>();
         List<String> testingFrameworks = new ArrayList<>();
         List<String> webFrameworks = new ArrayList<>();
-        List<String> otherFrameworks = new ArrayList<>();
 
-        // Check for testing frameworks in various languages
-        if (containsFile(baseDir, TEST_JAVA_PATTERN) || containsFile(baseDir, "**/JUnit*.java")) {
-            testingFrameworks.add(J_UNIT);
-        }
-        if (containsFile(baseDir, TEST_PHP_PATTERN) || containsFile(baseDir, "**/PHPUnit*.php")) {
-            testingFrameworks.add(PHP_UNIT);
-        }
-        if (containsFile(baseDir, TEST_PY_PATTERN) || containsFile(baseDir, "**/pytest*.py")) {
-            testingFrameworks.add(PYTEST);
-        }
-        if (containsFile(baseDir, TEST_GO_PATTERN)) {
-            testingFrameworks.add(GO_TESTING);
-        }
-        if (containsFile(baseDir, SPEC_JS_PATTERN) || containsFile(baseDir, "**/jest.config.js")) {
-            testingFrameworks.add(JEST);
-        }
-        if (containsFile(baseDir, TEST_RS_PATTERN)) {
-            testingFrameworks.add(RUST_TESTING);
+        for (FrameworkMatcher matcher : scan.frameworkMatchers) {
+            if (matcher.found) {
+                (TESTING.equals(matcher.category) ? testingFrameworks : webFrameworks).add(matcher.name);
+            }
         }
 
-        // Web frameworks detection
-        if (containsFile(baseDir, SPRING_BOOT_JAR) || containsFile(baseDir, "**/SpringBoot*.java")) {
-            webFrameworks.add(SPRING_BOOT);
-        }
-        if (containsFile(baseDir, LARAVEL_PHP) || findInFile(baseDir, "composer.json", "laravel/framework")) {
-            webFrameworks.add(LARAVEL);
-        }
-        if (containsFile(baseDir, DJANGO_PY) || findInFile(baseDir, "requirements.txt", "django")) {
-            webFrameworks.add(DJANGO);
-        }
-        if (containsFile(baseDir, REACT_JS) || findInFile(baseDir, PACKAGE_JSON, "react")) {
-            webFrameworks.add(REACT);
-        }
+        // Content-based detection (direct child reads, not tree walks).
+        addIfAbsent(webFrameworks, LARAVEL, findInFile(baseDir, "composer.json", "laravel/framework"));
+        addIfAbsent(webFrameworks, DJANGO, findInFile(baseDir, "requirements.txt", "django"));
+        addIfAbsent(webFrameworks, REACT, findInFile(baseDir, PACKAGE_JSON, "react"));
 
         frameworks.put(TESTING, testingFrameworks);
         frameworks.put(WEB, webFrameworks);
-        frameworks.put(OTHER, otherFrameworks);
+        frameworks.put(OTHER, new ArrayList<>());
 
         return frameworks;
     }
 
-    private boolean containsFile(VirtualFile dir, String pattern) {
-        // Use a direct approach without GlobalSearchScope for better reliability
-        Pattern regex = Pattern.compile(GlobTool.convertGlobToRegex(pattern));
+    private static void addIfAbsent(@NotNull List<String> list, @NotNull String value, boolean condition) {
+        if (condition && !list.contains(value)) {
+            list.add(value);
+        }
+    }
 
-        final boolean[] found = {false};
+    /** Accumulates language statistics and framework matches gathered during a single tree walk. */
+    private static final class SourceScanResult {
+        private final Set<String> detectedLanguages = new HashSet<>();
+        private final Map<String, Integer> languageFileCount = new HashMap<>();
+        private final List<FrameworkMatcher> frameworkMatchers;
 
-        // Manually search through the directory structure
-        VfsUtil.visitChildrenRecursively(dir, new VirtualFileVisitor<Void>() {
-            @Override
-            public boolean visitFile(@NotNull VirtualFile file) {
-                // Check if the file should be ignored based on .gitignore rules
-                String relativePath = getRelativePath(dir, file);
-                if (relativePath != null && gitignoreParser.shouldIgnore(relativePath, file.isDirectory())) {
-                    return true; // Skip this file and its children
-                }
+        SourceScanResult(@NotNull List<FrameworkMatcher> frameworkMatchers) {
+            this.frameworkMatchers = frameworkMatchers;
+        }
 
-                // Only check file contents, not directories
-                if (!file.isDirectory()) {
-                    // Check if the path matches our pattern
-                    if (regex.matcher(file.getPath()).find()) {
-                        found[0] = true;
-                        return false; // Stop visiting once found
-                    }
-                }
-                return true;
+        void addLanguage(@NotNull String language) {
+            detectedLanguages.add(language);
+            languageFileCount.merge(language, 1, Integer::sum);
+        }
+
+        @NotNull Map<String, Object> toLanguagesMap() {
+            Map<String, Object> languages = new HashMap<>();
+            if (detectedLanguages.isEmpty()) {
+                return languages;
             }
-        });
 
-        return found[0];
+            languages.put("detected", new ArrayList<>(detectedLanguages));
+
+            // Primary language = the one with the most files.
+            String primaryLanguage = detectedLanguages.iterator().next();
+            int maxFiles = 0;
+            for (Map.Entry<String, Integer> entry : languageFileCount.entrySet()) {
+                if (entry.getValue() > maxFiles) {
+                    maxFiles = entry.getValue();
+                    primaryLanguage = entry.getKey();
+                }
+            }
+            languages.put("primary", primaryLanguage);
+            return languages;
+        }
+    }
+
+    /** A framework and the path patterns that, when matched by any project file, indicate its use. */
+    private static final class FrameworkMatcher {
+        private final String name;
+        private final String category;
+        private final List<Pattern> patterns;
+        private boolean found;
+
+        FrameworkMatcher(@NotNull String name, @NotNull String category, @NotNull String... globs) {
+            this.name = name;
+            this.category = category;
+            this.patterns = new ArrayList<>(globs.length);
+            for (String glob : globs) {
+                patterns.add(Pattern.compile(GlobTool.convertGlobToRegex(glob)));
+            }
+        }
+
+        boolean matches(@NotNull String path) {
+            for (Pattern pattern : patterns) {
+                if (pattern.matcher(path).find()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     /**
