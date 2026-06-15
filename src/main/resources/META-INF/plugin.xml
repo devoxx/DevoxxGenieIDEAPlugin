@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.3</h2>
+        <UL>
+                    <LI>feat(welcome): the welcome screen now leads with Latest from the Blog, and Explore Features is collapsible (collapsed by default) so the chip grid no longer dominates the page (#1118)</LI>
+                    <LI>feat(ui): zoom the chat output font with Cmd +/- (macOS) or Ctrl +/- (Windows/Linux) — scales prose and code together and persists across restarts (task-237, #1113)</LI>
+                    <LI>fix(customopenai): send a valid model name (override → selected model → "default") so servers stop rejecting requests, and populate the model picker from the server's /models endpoint (#1116)</LI>
+                </UL>
         <h2>v1.8.2</h2>
         <UL>
                     <LI>feat(ui): live agent activity timeline — per-tool status rows (spinner/✓/✗/⏸), an always-on live status line in the AI bubble, and nested sub-agent rows (task-233, #1109)</LI>

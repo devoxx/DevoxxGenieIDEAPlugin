@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.8.3 - 2026-06-15
+
+### Added
+- feat(welcome): the welcome screen now leads with **Latest from the Blog** instead of burying it below a long Features scroll. The RSS-fed blog section moved up under the greeting/CFP banner so fresh posts are visible first, and **Explore Features** became a collapsible section (new `CollapsibleSectionHeader` with chevron + item count), collapsed by default so the 14-chip grid no longer dominates the page and Skills/Quick Commands stay reachable (#1118)
+- feat(ui): chat output font zoom via **Cmd +/-** (macOS) / **Ctrl +/-** (Windows/Linux) — scales both prose and code font sizes together (clamped 8–24) and persists across IDE restarts via `DevoxxGenieStateService`. The actions are scoped to the DevoxxGenie tool window so the shortcuts pass through to the editor everywhere else (task-237, #1113)
+
+### Fixed
+- fix(customopenai): resolve the Custom OpenAI model name and populate its model list. When the "Custom OpenAI Model Name" override was disabled (the default), the factory sent an empty `model` field and servers rejected the request; `resolveModelName()` now falls through explicit override → selected dropdown model → `"default"` so a non-blank value is always sent. `getModels()` was a hardcoded empty list and now queries the server's `/models` endpoint to populate the picker, degrading gracefully to an empty list on a missing URL, unreachable server, or unparseable response (#1116)
+
+### Documentation
+- docs: add Algolia Experiences documentation search to the Docusaurus site, with clickable search results (#1114, #1115)
+- docs: add the Engram persistent-memory blog post (9869d3c7)
+
+### Contributors
+- @stephanj
+
 ## v1.8.2 - 2026-06-11
 
 ### Added
