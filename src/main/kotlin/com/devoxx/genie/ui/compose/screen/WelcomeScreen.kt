@@ -13,7 +13,10 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -157,10 +160,32 @@ fun WelcomeScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Features section
-        SectionHeader("Explore Features")
-        Spacer(Modifier.height(8.dp))
-        FeatureChipGrid()
+        // Latest from the blog — surfaced near the top because it's the only
+        // section whose content actually changes (fetched from the RSS feed and
+        // refreshed periodically). Keeping it above the mostly-static Features
+        // and Commands ensures fresh posts aren't buried below the fold.
+        if (blogPosts.isNotEmpty()) {
+            SectionHeader("Latest from the Blog")
+            Spacer(Modifier.height(8.dp))
+            BlogPostList(blogPosts)
+            Spacer(Modifier.height(20.dp))
+        }
+
+        // Features section — collapsed by default. The feature chip grid is the
+        // single biggest vertical consumer and is reference material users learn
+        // once, so it's tucked behind a collapsible header to keep the welcome
+        // page short and the fresh/changing sections reachable.
+        var featuresExpanded by remember { mutableStateOf(false) }
+        CollapsibleSectionHeader(
+            title = "Explore Features",
+            count = FEATURES.size,
+            expanded = featuresExpanded,
+            onToggle = { featuresExpanded = !featuresExpanded },
+        )
+        if (featuresExpanded) {
+            Spacer(Modifier.height(8.dp))
+            FeatureChipGrid()
+        }
 
         Spacer(Modifier.height(20.dp))
 
@@ -181,14 +206,6 @@ fun WelcomeScreen(
         }
 
         Spacer(Modifier.height(20.dp))
-
-        // Latest from the blog
-        if (blogPosts.isNotEmpty()) {
-            SectionHeader("Latest from the Blog")
-            Spacer(Modifier.height(8.dp))
-            BlogPostList(blogPosts)
-            Spacer(Modifier.height(20.dp))
-        }
 
         // Footer
         FooterLinks()
@@ -211,6 +228,49 @@ private fun SectionHeader(title: String) {
         ),
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+/**
+ * A [SectionHeader] variant that toggles its section's visibility. Shows a
+ * chevron and an item count so collapsed content stays discoverable. The whole
+ * row is clickable.
+ */
+@Composable
+private fun CollapsibleSectionHeader(
+    title: String,
+    count: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .clickable { onToggle() }
+            .pointerHoverIcon(PointerIcon.Hand)
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicText(
+            text = if (expanded) "▾" else "▸",
+            style = typography.body2.copy(
+                fontSize = 10.sp,
+                color = colors.textSecondary,
+            ),
+        )
+        Spacer(Modifier.width(6.dp))
+        BasicText(
+            text = "$title ($count)",
+            style = typography.body2.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                letterSpacing = 0.8.sp,
+                color = colors.textSecondary,
+            ),
+        )
+    }
 }
 
 @Composable
