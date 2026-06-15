@@ -5,6 +5,7 @@ import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -273,14 +274,43 @@ public class FileScanner {
     }
 
     /**
-     * Generates a source tree representation of a directory.
+     * Generates a source tree representation of a directory, without a depth limit.
+     * Kept for backwards compatibility; prefer the overload that takes a {@code maxDepth}.
      *
      * @param virtualFile the directory to represent
      * @param depth       the current recursion depth
      * @return a string representation of the source tree
      */
     public String generateSourceTreeRecursive(VirtualFile virtualFile, int depth) {
+        return generateSourceTreeRecursive(virtualFile, depth, Integer.MAX_VALUE, null);
+    }
+
+    /**
+     * Generates a source tree representation of a directory, bounded by {@code maxDepth}.
+     * <p>
+     * The {@code maxDepth} is the number of directory levels to descend, counting the
+     * starting directory as level 0. For example {@code maxDepth == 1} lists the starting
+     * directory, its files and the names of its immediate sub-directories, but does not
+     * descend into those sub-directories. This prevents the generator from walking the
+     * entire project tree (and from looping forever on symlink cycles).
+     *
+     * @param virtualFile the directory to represent
+     * @param depth       the current recursion depth (start at 0)
+     * @param maxDepth    the maximum number of levels to descend
+     * @param indicator   optional progress indicator for status updates and cancellation
+     * @return a string representation of the source tree
+     */
+    public String generateSourceTreeRecursive(VirtualFile virtualFile,
+                                              int depth,
+                                              int maxDepth,
+                                              @Nullable ProgressIndicator indicator) {
         StringBuilder result = new StringBuilder();
+
+        // Stop quietly if the user cancelled the background task.
+        if (indicator != null && indicator.isCanceled()) {
+            return result.toString();
+        }
+
         String indent = "  ".repeat(depth);
 
         boolean excludeFile = shouldExcludeFile(virtualFile);
@@ -291,11 +321,20 @@ public class FileScanner {
 
         result.append(indent).append(virtualFile.getName()).append("/\n");
 
+        if (indicator != null) {
+            indicator.setText2(virtualFile.getPath());
+        }
+
+        // Stop descending once the configured depth has been reached.
+        if (depth + 1 > maxDepth) {
+            return result.toString();
+        }
+
         VirtualFile[] children = virtualFile.getChildren();
         if (children != null) {
             for (VirtualFile child : children) {
                 if (child.isDirectory()) {
-                    result.append(generateSourceTreeRecursive(child, depth + 1));
+                    result.append(generateSourceTreeRecursive(child, depth + 1, maxDepth, indicator));
                 } else if (shouldIncludeFile(child)) {
                     result.append(indent).append("  ").append(child.getName()).append("\n");
                 }

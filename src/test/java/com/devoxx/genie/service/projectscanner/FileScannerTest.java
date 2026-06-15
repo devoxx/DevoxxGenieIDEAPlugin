@@ -347,6 +347,55 @@ class FileScannerTest {
     }
 
     @Test
+    void testGenerateSourceTreeRecursive_respectsMaxDepth() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
+            mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+
+            when(mockStateService.getExcludedDirectories()).thenReturn(List.of());
+            when(mockStateService.getExcludedFiles()).thenReturn(List.of());
+            when(mockStateService.getIncludedFileExtensions()).thenReturn(List.of("java"));
+            when(mockStateService.getUseGitIgnore()).thenReturn(false);
+
+            // Build a 3-level deep tree: root -> level1 -> level2 (with a file at the deepest level)
+            VirtualFile deepFile = mock(VirtualFile.class);
+            when(deepFile.isDirectory()).thenReturn(false);
+            when(deepFile.getName()).thenReturn("Deep.java");
+            when(deepFile.getPath()).thenReturn("/project/root/level1/level2/Deep.java");
+            when(deepFile.getExtension()).thenReturn("java");
+
+            VirtualFile level2 = mock(VirtualFile.class);
+            when(level2.isDirectory()).thenReturn(true);
+            when(level2.getName()).thenReturn("level2");
+            when(level2.getPath()).thenReturn("/project/root/level1/level2");
+            when(level2.getChildren()).thenReturn(new VirtualFile[]{deepFile});
+
+            VirtualFile level1 = mock(VirtualFile.class);
+            when(level1.isDirectory()).thenReturn(true);
+            when(level1.getName()).thenReturn("level1");
+            when(level1.getPath()).thenReturn("/project/root/level1");
+            when(level1.getChildren()).thenReturn(new VirtualFile[]{level2});
+
+            VirtualFile root = mock(VirtualFile.class);
+            when(root.isDirectory()).thenReturn(true);
+            when(root.getName()).thenReturn("root");
+            when(root.getPath()).thenReturn("/project/root");
+            when(root.getChildren()).thenReturn(new VirtualFile[]{level1});
+
+            // maxDepth = 1 => only the root level should be descended; deeper dirs/files must NOT appear
+            String shallow = fileScanner.generateSourceTreeRecursive(root, 0, 1, null);
+            assertTrue("Root must be present", shallow.contains("root/"));
+            assertTrue("Immediate child dir name must be present", shallow.contains("level1/"));
+            assertFalse("level2 must NOT be traversed at depth 1", shallow.contains("level2/"));
+            assertFalse("Deep file must NOT appear at depth 1", shallow.contains("Deep.java"));
+
+            // A generous maxDepth should include everything
+            String deep = fileScanner.generateSourceTreeRecursive(root, 0, 10, null);
+            assertTrue(deep.contains("level2/"));
+            assertTrue(deep.contains("Deep.java"));
+        }
+    }
+
+    @Test
     void testScanDirectory() {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
             mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
