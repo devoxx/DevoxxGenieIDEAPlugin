@@ -6,6 +6,8 @@ import com.devoxx.genie.controller.listener.TokenCalculationListener;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.agent.AgentToggleManager;
 import com.devoxx.genie.ui.mcp.MCPToolsManager;
 import com.devoxx.genie.service.spec.SpecTaskRunnerService;
@@ -28,6 +30,9 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,7 +46,8 @@ import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionBut
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.*;
 
 public class ActionButtonsPanel extends JPanel
-        implements SettingsChangeListener, PromptSubmissionListener, GlowingListener, TokenCalculationListener {
+        implements SettingsChangeListener, PromptSubmissionListener, GlowingListener,
+        TokenCalculationListener, ConversationEventListener {
 
     private final transient Project project;
 
@@ -57,6 +63,16 @@ public class ActionButtonsPanel extends JPanel
     private final JPanel calcProjectPanel = createCalcProjectPanel();
     private final PromptInputArea promptInputArea;
     private final TokenUsageBar tokenUsageBar = createTokenUsageBar();
+
+    // Persistent indicator showing how much of the selected model's context window the
+    // ongoing conversation occupies. Updated after every completed response (latest turn's
+    // input + output tokens) and reset when a new conversation starts.
+    private final JBLabel conversationContextLabel = createConversationContextLabel();
+    private final TokenUsageBar conversationContextBar = createConversationContextBar();
+    private final JPanel conversationContextPanel = new JPanel(new BorderLayout());
+    private int conversationMaxTokens;
+    private int conversationUsedTokens;
+
     private final transient DevoxxGenieToolWindowContent devoxxGenieToolWindowContent;
 
     private final transient ActionButtonsPanelController controller;
@@ -186,9 +202,102 @@ public class ActionButtonsPanel extends JPanel
     }
 
     private @NotNull JPanel createProgressPanel() {
-        JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.add(tokenUsageBar, BorderLayout.CENTER);
+        JPanel progressPanel = new JPanel();
+        progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.Y_AXIS));
+
+        // Persistent conversation context indicator (label + thin colored bar).
+        conversationContextPanel.add(conversationContextLabel, BorderLayout.CENTER);
+        conversationContextPanel.add(conversationContextBar, BorderLayout.SOUTH);
+        conversationContextPanel.setVisible(false);
+        progressPanel.add(conversationContextPanel);
+
+        // Transient project-context preview bar (shown only while adding project to context).
+        progressPanel.add(tokenUsageBar);
         return progressPanel;
+    }
+
+    private @NotNull JBLabel createConversationContextLabel() {
+        JBLabel label = new JBLabel();
+        label.setBorder(JBUI.Borders.empty(0, 2));
+        Font base = label.getFont();
+        label.setFont(base.deriveFont(base.getSize2D() - 1f));
+        label.setForeground(JBColor.GRAY);
+        return label;
+    }
+
+    private @NotNull TokenUsageBar createConversationContextBar() {
+        TokenUsageBar bar = new TokenUsageBar();
+        bar.setPreferredSize(new Dimension(Integer.MAX_VALUE, 3));
+        bar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 3));
+        return bar;
+    }
+
+    /**
+     * Sets the model's context window (max input tokens) used as the denominator of the
+     * conversation context indicator. Called when the selected model changes. The used-token
+     * count is preserved — switching models does not clear the conversation memory.
+     */
+    public void setConversationContextMax(int maxTokens) {
+        this.conversationMaxTokens = maxTokens;
+        ApplicationManager.getApplication().invokeLater(this::refreshConversationContext);
+    }
+
+    /**
+     * Records the context occupied by the latest completed exchange (input + output tokens)
+     * and refreshes the indicator.
+     */
+    public void updateConversationContextUsage(int usedTokens, int maxTokens) {
+        this.conversationUsedTokens = usedTokens;
+        if (maxTokens > 0) {
+            this.conversationMaxTokens = maxTokens;
+        }
+        ApplicationManager.getApplication().invokeLater(this::refreshConversationContext);
+    }
+
+    /** Resets the conversation context indicator (e.g. when a new conversation starts). */
+    public void resetConversationContext() {
+        this.conversationUsedTokens = 0;
+        ApplicationManager.getApplication().invokeLater(this::refreshConversationContext);
+    }
+
+    private void refreshConversationContext() {
+        if (conversationMaxTokens <= 0) {
+            // No known window (e.g. CLI/ACP/local providers) — hide the indicator entirely.
+            conversationContextPanel.setVisible(false);
+            return;
+        }
+        conversationContextPanel.setVisible(true);
+        conversationContextBar.setTokens(conversationUsedTokens, conversationMaxTokens);
+
+        int pct = (int) Math.round(conversationUsedTokens * 100.0 / conversationMaxTokens);
+        String usedStr = WindowContextFormatterUtil.format(conversationUsedTokens).trim();
+        String maxStr = WindowContextFormatterUtil.format(conversationMaxTokens).trim();
+        conversationContextLabel.setText(String.format("Context window: %s / %s (%d%%)", usedStr, maxStr, pct));
+        conversationContextLabel.setToolTipText(String.format(
+                "This conversation uses %,d of %,d tokens (%d%%) of the model's context window",
+                conversationUsedTokens, conversationMaxTokens, pct));
+    }
+
+    /**
+     * Conversation completion hook (CONVERSATION_TOPIC). Updates the persistent context
+     * indicator for this tab only, using the latest exchange's total token usage.
+     */
+    @Override
+    public void onNewConversation(ChatMessageContext chatMessageContext) {
+        String myTabId = devoxxGenieToolWindowContent.getTabId();
+        String eventTabId = chatMessageContext.getTabId();
+        if (myTabId != null && eventTabId != null && !myTabId.equals(eventTabId)) {
+            return;
+        }
+        var tokenUsage = chatMessageContext.getTokenUsage();
+        if (tokenUsage == null) {
+            return;
+        }
+        int input = tokenUsage.inputTokenCount() != null ? tokenUsage.inputTokenCount() : 0;
+        int output = tokenUsage.outputTokenCount() != null ? tokenUsage.outputTokenCount() : 0;
+        LanguageModel model = chatMessageContext.getLanguageModel();
+        int max = model != null ? model.getInputMaxTokens() : conversationMaxTokens;
+        updateConversationContextUsage(input + output, max);
     }
 
     private void handleProjectContext(ActionEvent e) {
@@ -318,6 +427,7 @@ public class ActionButtonsPanel extends JPanel
 
     public void updateTokenUsage(int maxTokens) {
         ApplicationManager.getApplication().invokeLater(() -> tokenUsageBar.setMaxTokens(maxTokens));
+        setConversationContextMax(maxTokens);
     }
 
     @Override

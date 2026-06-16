@@ -23,6 +23,12 @@ data class TokenUsageInfo(
     val inputTokens: Long = 0,
     val outputTokens: Long = 0,
     val cost: Double = 0.0,
+    /**
+     * Max input context window of the model used for this message (0 when unknown, e.g.
+     * local providers). Combined with [inputTokens] + [outputTokens] it lets the UI show
+     * how much of the model's window this exchange occupied.
+     */
+    val contextWindowMax: Long = 0,
 )
 
 data class FileReferenceUiModel(
