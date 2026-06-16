@@ -84,7 +84,15 @@ class MetadataSummaryTest {
     }
 
     @Test
-    fun `full row combines time tokens cost and context window`() {
+    fun `time and tokens are joined with a tilde`() {
+        val summary = formatMetadataSummary(message(executionTimeMs = 1_800, inputTokens = 10_502, outputTokens = 179))
+        assertEquals("1.8s ~ 10.5K in / 179 out", summary)
+    }
+
+    @Test
+    fun `context window is never shown in the bubble`() {
+        // The overall context-window usage lives under the prompt; it must not be repeated
+        // per-bubble even when the model's max window is known.
         val summary = formatMetadataSummary(
             message(
                 executionTimeMs = 7_700,
@@ -93,17 +101,19 @@ class MetadataSummaryTest {
                 contextWindowMax = 131_072,
             ),
         )
-        assertEquals("7.7s | 10.5K in / 476 out | 11K/131K context (8%)", summary)
+        assertEquals("7.7s ~ 10.5K in / 476 out", summary)
+    }
+
+    @Test
+    fun `cost is appended when present`() {
+        val summary = formatMetadataSummary(
+            message(executionTimeMs = 1_800, inputTokens = 100, outputTokens = 50, cost = 0.0023),
+        )
+        assertEquals("1.8s ~ 100 in / 50 out ~ \$0.0023", summary)
     }
 
     @Test
     fun `empty when nothing is known`() {
         assertEquals("", formatMetadataSummary(message()))
-    }
-
-    @Test
-    fun `context window omitted when max unknown`() {
-        val summary = formatMetadataSummary(message(inputTokens = 100, outputTokens = 50))
-        assertEquals("100 in / 50 out", summary)
     }
 }

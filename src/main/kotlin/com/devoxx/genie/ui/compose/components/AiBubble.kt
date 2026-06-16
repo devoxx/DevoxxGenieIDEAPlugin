@@ -39,9 +39,9 @@ import kotlin.math.roundToInt
 
 /**
  * Compact token formatter for the metadata row, mirroring WindowContextFormatterUtil
- * (e.g. 128000 -> "128K", 1_000_000 -> "1M"). Keeps the context indicator short while
- * preserving one decimal of precision for smaller magnitudes (10502 -> "10.5K") so the
- * per-exchange token counts stay readable instead of being truncated to "10K".
+ * (e.g. 128000 -> "128K", 1_000_000 -> "1M"). Keeps the per-exchange counts short while
+ * preserving one decimal of precision for smaller magnitudes (10502 -> "10.5K") so they
+ * stay readable instead of being truncated to "10K".
  */
 internal fun formatTokens(tokens: Long): String = when {
     tokens >= 1_000_000_000 -> scaled(tokens, 1_000_000_000.0) + "B"
@@ -69,9 +69,11 @@ private fun scaled(tokens: Long, unit: Double): String {
 
 /**
  * Builds the right-aligned metadata summary shown next to the model name: elapsed time,
- * token usage (clearly labelled input/output), cost, and how much of the model's context
- * window the exchange occupied. Extracted as an internal, Compose-free function so the
- * formatting can be unit-tested directly. Returns an empty string when nothing is known.
+ * token usage (clearly labelled input/output) and cost. The model's overall context-window
+ * usage is intentionally omitted here — it is already surfaced as a persistent indicator
+ * under the prompt, so repeating it per-bubble was redundant noise (e.g. "1.8s ~ 10.5K in
+ * / 179 out"). Extracted as an internal, Compose-free function so the formatting can be
+ * unit-tested directly. Returns an empty string when nothing is known.
  */
 internal fun formatMetadataSummary(message: MessageUiModel): String {
     val parts = mutableListOf<String>()
@@ -90,13 +92,7 @@ internal fun formatMetadataSummary(message: MessageUiModel): String {
     if (usage.cost > 0) {
         parts.add(String.format(java.util.Locale.US, "$%.4f", usage.cost))
     }
-    // Used window context: how much of the model's input window this exchange occupied.
-    if (usage.contextWindowMax > 0 && (usage.inputTokens > 0 || usage.outputTokens > 0)) {
-        val used = usage.inputTokens + usage.outputTokens
-        val pct = (used.toDouble() / usage.contextWindowMax * 100).roundToInt()
-        parts.add("${formatTokens(used)}/${formatTokens(usage.contextWindowMax)} context ($pct%)")
-    }
-    return parts.joinToString(" | ")
+    return parts.joinToString(" ~ ")
 }
 
 /**
