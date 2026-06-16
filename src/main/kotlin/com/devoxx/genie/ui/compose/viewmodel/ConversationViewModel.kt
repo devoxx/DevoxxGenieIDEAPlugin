@@ -197,13 +197,7 @@ class ConversationViewModel(
             msg.copy(
                 aiResponseMarkdown = aiText,
                 executionTimeMs = context.executionTimeMs,
-                tokenUsage = context.tokenUsage?.let {
-                    TokenUsageInfo(
-                        inputTokens = it.inputTokenCount()?.toLong() ?: 0,
-                        outputTokens = it.outputTokenCount()?.toLong() ?: 0,
-                        cost = context.cost,
-                    )
-                } ?: msg.tokenUsage,
+                tokenUsage = buildTokenUsage(context) ?: msg.tokenUsage,
                 modelName = formatModelDisplayName(context.languageModel).ifEmpty { msg.modelName },
             )
         }
@@ -216,13 +210,7 @@ class ConversationViewModel(
             aiResponseMarkdown = context.aiMessage?.text() ?: "",
             modelName = formatModelDisplayName(context.languageModel),
             executionTimeMs = context.executionTimeMs,
-            tokenUsage = context.tokenUsage?.let {
-                TokenUsageInfo(
-                    inputTokens = it.inputTokenCount()?.toLong() ?: 0,
-                    outputTokens = it.outputTokenCount()?.toLong() ?: 0,
-                    cost = context.cost,
-                )
-            } ?: TokenUsageInfo(),
+            tokenUsage = buildTokenUsage(context) ?: TokenUsageInfo(),
         )
 
         val currentState = state
@@ -630,6 +618,21 @@ class ConversationViewModel(
             }
             state = current.copy(messages = updated)
         }
+    }
+
+    /**
+     * Builds the per-message token usage info from a completed context, or null when the
+     * provider returned no token usage (e.g. some local models). The model's input context
+     * window is carried along so the chat bubble can show how full the window was.
+     */
+    private fun buildTokenUsage(context: ChatMessageContext): TokenUsageInfo? {
+        val usage = context.tokenUsage ?: return null
+        return TokenUsageInfo(
+            inputTokens = usage.inputTokenCount()?.toLong() ?: 0,
+            outputTokens = usage.outputTokenCount()?.toLong() ?: 0,
+            cost = context.cost,
+            contextWindowMax = context.languageModel?.inputMaxTokens?.toLong() ?: 0,
+        )
     }
 
     private fun formatModelDisplayName(model: LanguageModel?): String {

@@ -36,18 +36,23 @@ public class TokenUsageBar extends JComponent {
         int width = getWidth();
         int height = getHeight();
 
-        int usageWidth = (int) ((double) usedTokens / maxTokens * width);
-        g.setColor(getColor(usageWidth));
+        double ratio = maxTokens <= 0 ? 0 : Math.min(1.0, (double) usedTokens / maxTokens);
+        int usageWidth = (int) (ratio * width);
+        g.setColor(getColor(ratio));
         g.fillRect(0, 0, usageWidth, height);
     }
 
-    private Color getColor(int usageWidth) {
-        if (usageWidth < 50) {
+    /**
+     * Colors the bar by how full the context window is: green below 50%, yellow up to 80%,
+     * red beyond that to warn the user before the window overflows.
+     */
+    private Color getColor(double ratio) {
+        if (ratio < 0.5) {
             return JBColor.GREEN;
-        } else if (usageWidth < 80) {
+        } else if (ratio < 0.8) {
             return JBColor.YELLOW;
         } else {
-            return JBColor.BLUE;
+            return JBColor.RED;
         }
     }
 }

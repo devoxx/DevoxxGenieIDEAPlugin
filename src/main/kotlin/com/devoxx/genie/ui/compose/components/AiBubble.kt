@@ -35,6 +35,18 @@ import dev.snipme.highlights.Highlights
 import dev.snipme.highlights.model.SyntaxThemes
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
+import kotlin.math.roundToInt
+
+/**
+ * Compact token formatter for the metadata row, mirroring WindowContextFormatterUtil
+ * (e.g. 128000 -> "128K", 1_000_000 -> "1M"). Keeps the context indicator short.
+ */
+private fun formatTokens(tokens: Long): String = when {
+    tokens >= 1_000_000_000 -> "${tokens / 1_000_000_000}B"
+    tokens >= 1_000_000 -> "${tokens / 1_000_000}M"
+    tokens >= 1_000 -> "${tokens / 1_000}K"
+    else -> tokens.toString()
+}
 
 /**
  * Extracts the raw code text from a code fence or code block AST node.
@@ -300,6 +312,12 @@ private fun MetadataRow(message: MessageUiModel) {
         }
         if (usage.cost > 0) {
             parts.add("$%.4f".format(usage.cost))
+        }
+        // Used window context: how much of the model's input window this exchange occupied.
+        if (usage.contextWindowMax > 0 && (usage.inputTokens > 0 || usage.outputTokens > 0)) {
+            val used = usage.inputTokens + usage.outputTokens
+            val pct = (used.toDouble() / usage.contextWindowMax * 100).roundToInt()
+            parts.add("${formatTokens(used)}/${formatTokens(usage.contextWindowMax)} context ($pct%)")
         }
 
         if (parts.isNotEmpty()) {

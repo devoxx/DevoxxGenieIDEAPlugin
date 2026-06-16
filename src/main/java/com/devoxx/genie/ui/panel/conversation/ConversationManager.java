@@ -100,6 +100,9 @@ public class ConversationManager implements ConversationEventListener, Conversat
         // Clear the current conversation state
         currentConversation = null;
 
+        // Reset the persistent conversation context indicator for this tab.
+        resetConversationContextIndicator();
+
         chatService.startNewConversation("");
 
         ApplicationManager.getApplication().invokeLater(() -> {
@@ -120,6 +123,19 @@ public class ConversationManager implements ConversationEventListener, Conversat
             }
         });
     }
+    /**
+     * Resets the persistent conversation context indicator on the action buttons panel for
+     * this tab (or every tab when no tabId is set), since the chat memory was just cleared.
+     */
+    private void resetConversationContextIndicator() {
+        ConversationTabRegistry registry = ConversationTabRegistry.getInstance();
+        for (DevoxxGenieToolWindowContent twc : registry.getContentsForProject(project)) {
+            if (tabId == null || tabId.equals(twc.getTabId())) {
+                twc.getSubmitPanel().getActionButtonsPanel().resetConversationContext();
+            }
+        }
+    }
+
     /**
      * Handle selection of a conversation from history.
      *

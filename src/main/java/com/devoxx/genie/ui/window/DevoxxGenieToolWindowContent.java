@@ -209,6 +209,8 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
             MessageBusUtil.subscribe(connection, AppTopics.SETTINGS_CHANGED_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, AppTopics.PROMPT_SUBMISSION_TOPIC, submitPanel.getActionButtonsPanel());
+            // Keep the persistent conversation context indicator in sync with completed responses.
+            MessageBusUtil.subscribe(connection, AppTopics.CONVERSATION_TOPIC, submitPanel.getActionButtonsPanel());
             MessageBusUtil.subscribe(connection, FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
                 @Override
                 public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {

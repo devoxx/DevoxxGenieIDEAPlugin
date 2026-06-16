@@ -156,6 +156,33 @@ class StreamingResponseHandlerTest {
     }
 
     @Test
+    void onCompleteResponse_capturesTokenUsageFromResponse() {
+        StreamingResponseHandler handler = createHandler();
+
+        TokenUsage tokenUsage = new TokenUsage(120, 30);
+        handler.onCompleteResponse(ChatResponse.builder()
+            .aiMessage(AiMessage.from("Hello World"))
+            .tokenUsage(tokenUsage)
+            .build());
+
+        // The streaming path must record token usage so the chat panel can show token
+        // counts, cost, and used window context (previously only the non-streaming path did).
+        verify(mockContext).setTokenUsageAndCost(tokenUsage);
+    }
+
+    @Test
+    void onCompleteResponse_withoutTokenUsage_doesNotSetUsage() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onCompleteResponse(ChatResponse.builder()
+            .aiMessage(AiMessage.from("Hello World"))
+            .build());
+
+        // Local providers may return a null TokenUsage — we must not call through with null.
+        verify(mockContext, never()).setTokenUsageAndCost(any());
+    }
+
+    @Test
     void onPartialResponse_batchesUiUpdatesAtFixedCadence() {
         StreamingResponseHandler handler = createHandler();
 

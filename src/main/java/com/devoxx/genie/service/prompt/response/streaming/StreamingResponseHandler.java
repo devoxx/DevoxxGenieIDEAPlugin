@@ -200,6 +200,14 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             long endTime = System.currentTimeMillis();
             context.setExecutionTimeMs(endTime - startTime);
 
+            // Capture token usage from the final ChatResponse so the chat panel can show
+            // input/output token counts, cost, and the used window context. The non-streaming
+            // path already does this; without it streaming responses (the default) would never
+            // report any token metrics. Local providers may return a null TokenUsage.
+            if (response.tokenUsage() != null) {
+                context.setTokenUsageAndCost(response.tokenUsage());
+            }
+
             // In agent mode the LLM streams intermediate reasoning (e.g. "Let me take a
             // look...") before each tool call. langchain4j delivers those tokens through
             // onPartialResponse (so they accumulate here), but the final ChatResponse only
