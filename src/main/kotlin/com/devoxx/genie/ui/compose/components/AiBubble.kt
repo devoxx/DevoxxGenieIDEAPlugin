@@ -39,13 +39,64 @@ import kotlin.math.roundToInt
 
 /**
  * Compact token formatter for the metadata row, mirroring WindowContextFormatterUtil
- * (e.g. 128000 -> "128K", 1_000_000 -> "1M"). Keeps the context indicator short.
+ * (e.g. 128000 -> "128K", 1_000_000 -> "1M"). Keeps the context indicator short while
+ * preserving one decimal of precision for smaller magnitudes (10502 -> "10.5K") so the
+ * per-exchange token counts stay readable instead of being truncated to "10K".
  */
-private fun formatTokens(tokens: Long): String = when {
-    tokens >= 1_000_000_000 -> "${tokens / 1_000_000_000}B"
-    tokens >= 1_000_000 -> "${tokens / 1_000_000}M"
-    tokens >= 1_000 -> "${tokens / 1_000}K"
+internal fun formatTokens(tokens: Long): String = when {
+    tokens >= 1_000_000_000 -> scaled(tokens, 1_000_000_000.0) + "B"
+    tokens >= 1_000_000 -> scaled(tokens, 1_000_000.0) + "M"
+    tokens >= 1_000 -> scaled(tokens, 1_000.0) + "K"
     else -> tokens.toString()
+}
+
+/**
+ * Scales [tokens] by [unit] and renders it with one decimal when the result is below 100
+ * (e.g. 10.5, 1.5), otherwise as a rounded integer (e.g. 131, 476). Trailing ".0" is
+ * dropped so 1_000_000 renders as "1M" rather than "1.0M". Uses Locale.US so the decimal
+ * separator is always a period — a comma would be ambiguous with thousands grouping.
+ */
+private fun scaled(tokens: Long, unit: Double): String {
+    val value = tokens / unit
+    return if (value < 100.0) {
+        val oneDecimal = (value * 10).roundToInt() / 10.0
+        if (oneDecimal % 1.0 == 0.0) oneDecimal.toInt().toString()
+        else String.format(java.util.Locale.US, "%.1f", oneDecimal)
+    } else {
+        value.roundToInt().toString()
+    }
+}
+
+/**
+ * Builds the right-aligned metadata summary shown next to the model name: elapsed time,
+ * token usage (clearly labelled input/output), cost, and how much of the model's context
+ * window the exchange occupied. Extracted as an internal, Compose-free function so the
+ * formatting can be unit-tested directly. Returns an empty string when nothing is known.
+ */
+internal fun formatMetadataSummary(message: MessageUiModel): String {
+    val parts = mutableListOf<String>()
+    if (message.executionTimeMs > 0) {
+        val seconds = message.executionTimeMs / 1000.0
+        // Locale.US keeps the decimal separator a period so the row reads consistently
+        // with the period-formatted token counts (a comma locale gave "7,7s").
+        parts.add(String.format(java.util.Locale.US, "%.1fs", seconds))
+    }
+    val usage = message.tokenUsage
+    if (usage.inputTokens > 0 || usage.outputTokens > 0) {
+        // Label the two counts so it's unambiguous which is the prompt (input) and which
+        // is the generated response (output); "12/34 tokens" gave no such hint.
+        parts.add("${formatTokens(usage.inputTokens)} in / ${formatTokens(usage.outputTokens)} out")
+    }
+    if (usage.cost > 0) {
+        parts.add(String.format(java.util.Locale.US, "$%.4f", usage.cost))
+    }
+    // Used window context: how much of the model's input window this exchange occupied.
+    if (usage.contextWindowMax > 0 && (usage.inputTokens > 0 || usage.outputTokens > 0)) {
+        val used = usage.inputTokens + usage.outputTokens
+        val pct = (used.toDouble() / usage.contextWindowMax * 100).roundToInt()
+        parts.add("${formatTokens(used)}/${formatTokens(usage.contextWindowMax)} context ($pct%)")
+    }
+    return parts.joinToString(" | ")
 }
 
 /**
@@ -301,28 +352,10 @@ private fun MetadataRow(message: MessageUiModel) {
             )
         }
 
-        val parts = mutableListOf<String>()
-        if (message.executionTimeMs > 0) {
-            val seconds = message.executionTimeMs / 1000.0
-            parts.add("%.1fs".format(seconds))
-        }
-        val usage = message.tokenUsage
-        if (usage.inputTokens > 0 || usage.outputTokens > 0) {
-            parts.add("${usage.inputTokens}/${usage.outputTokens} tokens")
-        }
-        if (usage.cost > 0) {
-            parts.add("$%.4f".format(usage.cost))
-        }
-        // Used window context: how much of the model's input window this exchange occupied.
-        if (usage.contextWindowMax > 0 && (usage.inputTokens > 0 || usage.outputTokens > 0)) {
-            val used = usage.inputTokens + usage.outputTokens
-            val pct = (used.toDouble() / usage.contextWindowMax * 100).roundToInt()
-            parts.add("${formatTokens(used)}/${formatTokens(usage.contextWindowMax)} context ($pct%)")
-        }
-
-        if (parts.isNotEmpty()) {
+        val summary = formatMetadataSummary(message)
+        if (summary.isNotEmpty()) {
             BasicText(
-                text = parts.joinToString(" | "),
+                text = summary,
                 style = typography.caption.copy(color = colors.textSecondary),
             )
         }
