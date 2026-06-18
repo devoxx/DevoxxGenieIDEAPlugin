@@ -266,24 +266,17 @@ class MCPRegistryServiceTest {
             mockServer.shutdown();
         }
 
-        private MCPRegistryService createServiceWithMockUrl() throws Exception {
-            // We need to override the base URL; use reflection to replace the constant
-            // or use a subclass. Simpler: create a testable subclass that overrides the URL.
-            // Actually, the service uses a hardcoded URL. We'll use MockWebServer + OkHttpClient
-            // and test searchServers indirectly through fetchAllServers with a test subclass.
-
-            // Better approach: create a package-private MCPRegistryService with the mock URL injected.
-            // For now, we'll test the service by pointing the OkHttpClient to mock server via interceptor.
+        private MCPRegistryService createServiceWithMockUrl() {
+            // Point the real service at the local MockWebServer via the injectable base URL,
+            // so these tests exercise the production searchServers() implementation.
             String mockUrl = mockServer.url("/v0.1/servers").toString();
             OkHttpClient client = new OkHttpClient.Builder().build();
             Gson testGson = new GsonBuilder().create();
-
-            // Create a service that uses our mock server URL
-            return new TestMCPRegistryService(client, testGson, mockUrl);
+            return new MCPRegistryService(client, testGson, mockUrl);
         }
 
         @Test
-        void searchServers_buildsUrlWithQueryParameter() throws Exception {
+        void searchServers_buildsUrlWithSearchParameter() throws Exception {
             MCPRegistryResponse responseBody = new MCPRegistryResponse();
             mockServer.enqueue(new MockResponse()
                     .addHeader("Content-Type", "application/json")
@@ -293,7 +286,9 @@ class MCPRegistryServiceTest {
             service.searchServers("my-search", null, 50);
 
             RecordedRequest request = mockServer.takeRequest();
-            assertThat(request.getRequestUrl().queryParameter("q")).isEqualTo("my-search");
+            // The registry expects "search" (substring match on name), not "q".
+            assertThat(request.getRequestUrl().queryParameter("search")).isEqualTo("my-search");
+            assertThat(request.getRequestUrl().queryParameter("q")).isNull();
             assertThat(request.getRequestUrl().queryParameter("limit")).isEqualTo("50");
         }
 
@@ -309,7 +304,7 @@ class MCPRegistryServiceTest {
 
             RecordedRequest request = mockServer.takeRequest();
             assertThat(request.getRequestUrl().queryParameter("cursor")).isEqualTo("abc123");
-            assertThat(request.getRequestUrl().queryParameter("q")).isNull();
+            assertThat(request.getRequestUrl().queryParameter("search")).isNull();
         }
 
         @Test
@@ -358,7 +353,7 @@ class MCPRegistryServiceTest {
         }
     }
 
-    // ─── fetchAllServers tests ─────────────────────────────────
+    // ─── fetchAllMarketplaceMCPServers tests ─────────────────────────────────
 
     @Nested
     class FetchAllServers {
@@ -373,7 +368,7 @@ class MCPRegistryServiceTest {
             String mockUrl = mockServer.url("/v0.1/servers").toString();
             OkHttpClient client = new OkHttpClient.Builder().build();
             Gson testGson = new GsonBuilder().create();
-            service = new TestMCPRegistryService(client, testGson, mockUrl);
+            service = new MCPRegistryService(client, testGson, mockUrl);
         }
 
         @AfterEach
@@ -396,11 +391,11 @@ class MCPRegistryServiceTest {
                     .setBody(gson.toJson(responseBody)));
 
             // First call: fetches from network
-            List<MCPRegistryServerEntry> first = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> first = service.fetchAllMarketplaceMCPServers(false);
             assertThat(first).hasSize(1);
 
             // Second call: should use cache (no network request queued)
-            List<MCPRegistryServerEntry> second = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> second = service.fetchAllMarketplaceMCPServers(false);
             assertThat(second).hasSize(1);
             assertThat(mockServer.getRequestCount()).isEqualTo(1);
         }
@@ -423,8 +418,8 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(secondResponse)));
 
-            service.fetchAllServers(false);
-            List<MCPRegistryServerEntry> refreshed = service.fetchAllServers(true);
+            service.fetchAllMarketplaceMCPServers(false);
+            List<MCPRegistryServerEntry> refreshed = service.fetchAllMarketplaceMCPServers(true);
 
             assertThat(refreshed).hasSize(1);
             assertThat(mockServer.getRequestCount()).isEqualTo(2);
@@ -458,7 +453,7 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(page2)));
 
-            List<MCPRegistryServerEntry> all = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> all = service.fetchAllMarketplaceMCPServers(false);
 
             assertThat(all).hasSize(2);
             assertThat(mockServer.getRequestCount()).isEqualTo(2);
@@ -471,75 +466,117 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(emptyResponse)));
 
-            List<MCPRegistryServerEntry> result = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> result = service.fetchAllMarketplaceMCPServers(false);
 
             assertThat(result).isEmpty();
         }
     }
 
-    // ─── Test subclass with overridable URL ────────────────────
+    // ─── Paged server-side search integration tests ────────────
+    //
+    // These exercise the real searchServers() against a local MockWebServer, mirroring how the
+    // MCP Marketplace dialog now drives paging: load the first page only, then page lazily via the
+    // cursor, with the search query pushed server-side rather than filtering a fully-loaded list.
 
-    /**
-     * A test-only subclass that allows overriding the registry URL
-     * to point at MockWebServer.
-     */
-    static class TestMCPRegistryService extends MCPRegistryService {
-        private final String baseUrl;
+    @Nested
+    class PagedSearch {
 
-        TestMCPRegistryService(OkHttpClient client, Gson gson, String baseUrl) {
-            super(client, gson);
-            this.baseUrl = baseUrl;
+        private MockWebServer mockServer;
+        private MCPRegistryService service;
+
+        @BeforeEach
+        void setUp() throws IOException {
+            mockServer = new MockWebServer();
+            mockServer.start();
+            String mockUrl = mockServer.url("/v0.1/servers").toString();
+            service = new MCPRegistryService(new OkHttpClient.Builder().build(),
+                    new GsonBuilder().create(), mockUrl);
         }
 
-        @Override
-        public MCPRegistryResponse searchServers(String query, String cursor, int limit) throws IOException {
-            // Build URL against mock server instead of real registry
-            okhttp3.HttpUrl.Builder urlBuilder = java.util.Objects.requireNonNull(
-                    okhttp3.HttpUrl.parse(baseUrl)).newBuilder();
-            urlBuilder.addQueryParameter("limit", String.valueOf(limit));
-            if (query != null && !query.isBlank()) {
-                urlBuilder.addQueryParameter("q", query);
-            }
-            if (cursor != null && !cursor.isBlank()) {
-                urlBuilder.addQueryParameter("cursor", cursor);
-            }
-
-            okhttp3.Request request = new okhttp3.Request.Builder()
-                    .url(urlBuilder.build())
-                    .build();
-
-            // Access client and gson via reflection-free path: call the parent's OkHttpClient
-            try (okhttp3.Response response = getClient().newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Registry API returned HTTP " + response.code());
-                }
-                if (response.body() == null) {
-                    throw new IOException("Registry API returned empty response");
-                }
-                MCPRegistryResponse result = getGson().fromJson(response.body().string(), MCPRegistryResponse.class);
-                return result != null ? result : new MCPRegistryResponse();
-            }
+        @AfterEach
+        void tearDown() throws IOException {
+            mockServer.shutdown();
         }
 
-        // Expose fields for the test subclass
-        private OkHttpClient getClient() {
-            try {
-                java.lang.reflect.Field f = MCPRegistryService.class.getDeclaredField("client");
-                f.setAccessible(true);
-                return (OkHttpClient) f.get(this);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        @Test
+        void firstPageLoadsOnlyOnePageAndExposesNextCursor() throws Exception {
+            mockServer.enqueue(jsonResponse(pageJson(List.of(serverEntry("server-1"), serverEntry("server-2")),
+                    "next-cursor-123")));
+
+            MCPRegistryResponse page = service.searchServers(null, null, 100);
+
+            // Exactly one network request — no eager loop over the whole registry.
+            assertThat(mockServer.getRequestCount()).isEqualTo(1);
+            assertThat(page.getServers()).hasSize(2);
+            assertThat(page.getMetadata().getNextCursor()).isEqualTo("next-cursor-123");
+
+            RecordedRequest request = mockServer.takeRequest();
+            assertThat(request.getRequestUrl().queryParameter("limit")).isEqualTo("100");
+            assertThat(request.getRequestUrl().queryParameter("cursor")).isNull();
+            assertThat(request.getRequestUrl().queryParameter("search")).isNull();
         }
 
-        private com.google.gson.Gson getGson() {
-            try {
-                java.lang.reflect.Field f = MCPRegistryService.class.getDeclaredField("gson");
-                f.setAccessible(true);
-                return (com.google.gson.Gson) f.get(this);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        @Test
+        void loadMoreSendsCursorForNextPage() throws Exception {
+            mockServer.enqueue(jsonResponse(pageJson(List.of(serverEntry("server-3")), null)));
+
+            MCPRegistryResponse page = service.searchServers(null, "next-cursor-123", 100);
+
+            assertThat(page.getServers()).hasSize(1);
+            // Last page: no further cursor.
+            assertThat(page.getMetadata()).isNull();
+
+            RecordedRequest request = mockServer.takeRequest();
+            assertThat(request.getRequestUrl().queryParameter("cursor")).isEqualTo("next-cursor-123");
+        }
+
+        @Test
+        void searchPushesQueryServerSideAndPagesWithinResults() throws Exception {
+            // Page 1 of search results, with a cursor for the next page of matches.
+            mockServer.enqueue(jsonResponse(pageJson(List.of(serverEntry("github-mcp")), "search-cursor-2")));
+            // Page 2 of search results (Load More), same query carried along with the cursor.
+            mockServer.enqueue(jsonResponse(pageJson(List.of(serverEntry("github-actions-mcp")), null)));
+
+            MCPRegistryResponse first = service.searchServers("github", null, 100);
+            assertThat(first.getServers()).hasSize(1);
+            assertThat(first.getMetadata().getNextCursor()).isEqualTo("search-cursor-2");
+
+            MCPRegistryResponse second = service.searchServers("github",
+                    first.getMetadata().getNextCursor(), 100);
+            assertThat(second.getServers()).hasSize(1);
+
+            RecordedRequest firstRequest = mockServer.takeRequest();
+            assertThat(firstRequest.getRequestUrl().queryParameter("search")).isEqualTo("github");
+            assertThat(firstRequest.getRequestUrl().queryParameter("cursor")).isNull();
+
+            RecordedRequest secondRequest = mockServer.takeRequest();
+            assertThat(secondRequest.getRequestUrl().queryParameter("search")).isEqualTo("github");
+            assertThat(secondRequest.getRequestUrl().queryParameter("cursor")).isEqualTo("search-cursor-2");
+        }
+
+        private MockResponse jsonResponse(String body) {
+            return new MockResponse()
+                    .addHeader("Content-Type", "application/json")
+                    .setBody(body);
+        }
+
+        private MCPRegistryServerEntry serverEntry(String name) {
+            MCPRegistryServerInfo info = new MCPRegistryServerInfo();
+            info.setName(name);
+            MCPRegistryServerEntry entry = new MCPRegistryServerEntry();
+            entry.setServer(info);
+            return entry;
+        }
+
+        private String pageJson(List<MCPRegistryServerEntry> servers, String nextCursor) {
+            MCPRegistryResponse response = new MCPRegistryResponse();
+            response.setServers(servers);
+            if (nextCursor != null) {
+                MCPRegistryMetadata metadata = new MCPRegistryMetadata();
+                metadata.setNextCursor(nextCursor);
+                response.setMetadata(metadata);
             }
+            return gson.toJson(response);
         }
     }
 

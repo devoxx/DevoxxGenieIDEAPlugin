@@ -1,12 +1,12 @@
 package com.devoxx.genie.ui.settings.mcp.dialog;
 
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.model.mcp.registry.MCPRegistryResponse;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerEntry;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerInfo;
 import com.devoxx.genie.service.mcp.MCPRegistryService;
-import com.intellij.openapi.progress.ProcessCanceledException;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.SearchTextField;
 import com.intellij.ui.components.JBScrollPane;
@@ -21,6 +21,7 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class MCPMarketplaceDialog extends DialogWrapper {
@@ -29,19 +30,30 @@ public class MCPMarketplaceDialog extends DialogWrapper {
     private static final String LOCAL_FILTER = "Local";
     private static final String REMOTE_FILTER = "Remote";
 
+    /** Number of servers requested per registry page. */
+    private static final int PAGE_SIZE = 100;
+    /** Debounce delay (ms) before a search keystroke triggers a registry request. */
+    private static final int SEARCH_DEBOUNCE_MS = 350;
+
     private final SearchTextField searchField = new SearchTextField();
     private final JComboBox<String> locationFilter = new JComboBox<>(new String[]{ALL_FILTER, LOCAL_FILTER, REMOTE_FILTER});
     private final JComboBox<String> typeFilter = new JComboBox<>(new String[]{ALL_FILTER});
     private final ServerTableModel tableModel = new ServerTableModel();
     private final JBTable serverTable = new JBTable(tableModel);
     private final JButton refreshButton = new JButton("Refresh");
+    private final JButton loadMoreButton = new JButton("Load More");
     private final JLabel statusLabel = new JLabel("Loading...");
 
     @Getter
     private MCPServer selectedMcpServer;
 
-    private List<MCPRegistryServerEntry> allServers = new ArrayList<>();
+    /** Accumulated paging state for the current search query (loaded servers + cursor). */
+    private final PagingState pagingState = new PagingState();
+    /** Monotonic counter used to discard responses from superseded (stale) requests. */
+    private final AtomicInteger requestGeneration = new AtomicInteger();
+    private final Timer searchDebounceTimer = new Timer(SEARCH_DEBOUNCE_MS, e -> triggerSearch());
     private boolean populatingFilters;
+    private boolean disposed;
 
     public MCPMarketplaceDialog() {
         super(true);
@@ -51,18 +63,29 @@ public class MCPMarketplaceDialog extends DialogWrapper {
 
         init();
 
-        // Initial load (uses cache if available)
-        loadAllServers(false);
+        searchDebounceTimer.setRepeats(false);
 
-        // Search field and filter combos all trigger the same local filter
+        // Initial load: first page only, no query.
+        pagingState.setQuery("");
+        loadPage(false);
+
+        // Typing in the search field triggers a debounced server-side search.
         searchField.addDocumentListener(new com.intellij.ui.DocumentAdapter() {
             @Override
             protected void textChanged(javax.swing.event.@NotNull DocumentEvent e) {
-                applyFilters();
+                searchDebounceTimer.restart();
             }
         });
+        // Location/Type are client-side filters over the pages loaded so far.
         locationFilter.addActionListener(e -> applyFilters());
         typeFilter.addActionListener(e -> applyFilters());
+    }
+
+    @Override
+    protected void dispose() {
+        disposed = true;
+        searchDebounceTimer.stop();
+        super.dispose();
     }
 
     @Override
@@ -99,10 +122,15 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         JBScrollPane scrollPane = new JBScrollPane(serverTable);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Bottom panel with Refresh and status
+        // Bottom panel with Refresh, Load More and status
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        refreshButton.addActionListener(e -> loadAllServers(true));
-        bottomPanel.add(refreshButton, BorderLayout.WEST);
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        refreshButton.addActionListener(e -> loadPage(false));
+        loadMoreButton.addActionListener(e -> loadPage(true));
+        loadMoreButton.setEnabled(false);
+        leftButtons.add(refreshButton);
+        leftButtons.add(loadMoreButton);
+        bottomPanel.add(leftButtons, BorderLayout.WEST);
         bottomPanel.add(statusLabel, BorderLayout.EAST);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
@@ -137,53 +165,73 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         setOKActionEnabled(serverTable.getSelectedRow() >= 0);
     }
 
-    @SuppressWarnings("unchecked")
-    private void loadAllServers(boolean forceRefresh) {
-        refreshButton.setEnabled(false);
+    /**
+     * Trigger a fresh server-side search using the current text in the search field.
+     * Invoked (debounced) when the user types.
+     */
+    private void triggerSearch() {
+        pagingState.setQuery(searchField.getText().trim());
+        loadPage(false);
+    }
+
+    /**
+     * Load a single page of registry results on a background thread and update the table on the EDT.
+     * <p>
+     * The registry is paged rather than fully downloaded, so this never blocks on an unbounded
+     * loop. A monotonically increasing generation counter ensures that if a newer request starts
+     * (e.g. the user keeps typing) the response of a superseded request is discarded.
+     *
+     * @param append {@code true} to fetch the next page and append it; {@code false} to (re)load
+     *               the first page of the current query, replacing the loaded list
+     */
+    private void loadPage(boolean append) {
+        final int generation = requestGeneration.incrementAndGet();
+        setLoading(true);
         statusLabel.setText("Loading...");
 
-        final List<MCPRegistryServerEntry>[] result = new List[]{null};
-        final Exception[] error = {null};
-        boolean cancelled = false;
+        final String query = pagingState.getQuery();
+        final String effectiveQuery = (query == null || query.isBlank()) ? null : query;
+        final String cursor = append ? pagingState.getNextCursor() : null;
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            MCPRegistryResponse response = null;
+            Exception error = null;
+            try {
+                response = MCPRegistryService.getInstance().searchServers(effectiveQuery, cursor, PAGE_SIZE);
+            } catch (Exception e) {
+                error = e;
+            }
+            final MCPRegistryResponse result = response;
+            final Exception err = error;
+            ApplicationManager.getApplication().invokeLater(
+                    () -> onPageLoaded(generation, result, err, append),
+                    ModalityState.any());
+        });
+    }
 
-        try {
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
-                ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-                indicator.setIndeterminate(true);
-                indicator.setText("Fetching servers from MCP registry...");
-                try {
-                    result[0] = MCPRegistryService.getInstance().fetchAllServers(forceRefresh);
-                } catch (ProcessCanceledException e) {
-                    throw e;
-                } catch (Exception e) {
-                    error[0] = e;
-                }
-            }, "Loading MCP Servers", true, null);
-        } catch (ProcessCanceledException e) {
-            cancelled = true;
+    private void onPageLoaded(int generation, @Nullable MCPRegistryResponse result,
+                              @Nullable Exception error, boolean append) {
+        // Discard stale responses and updates after the dialog has been closed.
+        if (disposed || generation != requestGeneration.get()) {
+            return;
         }
+        setLoading(false);
 
-        refreshButton.setEnabled(true);
-
-        if (cancelled) {
-            statusLabel.setText("Cancelled");
+        if (error != null) {
+            log.error("Failed to fetch MCP servers from registry", error);
+            statusLabel.setText("Error: " + error.getMessage());
             return;
         }
 
-        if (error[0] != null) {
-            log.error("Failed to fetch MCP servers from registry", error[0]);
-            statusLabel.setText("Error: " + error[0].getMessage());
-            return;
-        }
-
-        if (result[0] == null) {
-            allServers = new ArrayList<>();
-        } else {
-            allServers = new ArrayList<>(result[0]);
-        }
+        pagingState.apply(result, append);
 
         populateTypeFilter();
         applyFilters();
+    }
+
+    /** Toggle button state while a registry request is in flight. */
+    private void setLoading(boolean loading) {
+        refreshButton.setEnabled(!loading);
+        loadMoreButton.setEnabled(!loading && pagingState.hasMorePages());
     }
 
     private void populateTypeFilter() {
@@ -191,40 +239,113 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         try {
             MCPRegistryService registryService = MCPRegistryService.getInstance();
             Set<String> types = new TreeSet<>();
-            for (MCPRegistryServerEntry entry : allServers) {
+            for (MCPRegistryServerEntry entry : pagingState.getLoadedServers()) {
                 if (entry.getServer() != null) {
                     types.add(registryService.getServerType(entry.getServer()));
                 }
             }
+            // Preserve the current selection across rebuilds (types only ever grow as more pages load).
+            String previouslySelected = (String) typeFilter.getSelectedItem();
             typeFilter.removeAllItems();
             typeFilter.addItem(ALL_FILTER);
             for (String type : types) {
                 typeFilter.addItem(type);
+            }
+            if (previouslySelected != null) {
+                typeFilter.setSelectedItem(previouslySelected);
             }
         } finally {
             populatingFilters = false;
         }
     }
 
+    /**
+     * Apply the client-side Location/Type filters over the pages loaded so far.
+     * Text search is performed server-side (see {@link #loadPage}), so it is not re-applied here.
+     */
     private void applyFilters() {
         if (populatingFilters) {
             return;
         }
-        String query = searchField.getText().trim();
         String selectedLocation = (String) locationFilter.getSelectedItem();
         String selectedType = (String) typeFilter.getSelectedItem();
         MCPRegistryService registryService = MCPRegistryService.getInstance();
 
-        List<MCPRegistryServerEntry> filtered = allServers.stream()
-                .filter(entry -> SERVER_FILTER.matches(entry, query, selectedLocation, selectedType, registryService))
+        List<MCPRegistryServerEntry> filtered = pagingState.getLoadedServers().stream()
+                .filter(entry -> SERVER_FILTER.matches(entry, "", selectedLocation, selectedType, registryService))
                 .toList();
 
         tableModel.setServers(filtered);
-        statusLabel.setText("Showing " + filtered.size() + " of " + allServers.size() + " servers");
+        statusLabel.setText(buildStatusText(filtered.size()));
+        loadMoreButton.setEnabled(refreshButton.isEnabled() && pagingState.hasMorePages());
         updateOkAction();
     }
 
+    private String buildStatusText(int shownCount) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Showing ").append(shownCount).append(" of ")
+                .append(pagingState.size()).append(" loaded");
+        if (pagingState.hasMorePages()) {
+            sb.append(" (more available)");
+        }
+        return sb.toString();
+    }
+
     private static final ServerEntryFilter SERVER_FILTER = new ServerEntryFilter();
+
+    /**
+     * Holds the accumulated paging state for the currently active search query: the servers
+     * loaded so far and the cursor for the next page. Extracted as a static nested class so the
+     * append/replace/cursor-exhaustion logic can be unit tested without the IntelliJ platform.
+     */
+    static class PagingState {
+        private final List<MCPRegistryServerEntry> loadedServers = new ArrayList<>();
+        private String nextCursor;
+        private String query = "";
+
+        void setQuery(@Nullable String query) {
+            this.query = query == null ? "" : query;
+        }
+
+        String getQuery() {
+            return query;
+        }
+
+        /**
+         * Merge a page of registry results into the loaded state.
+         *
+         * @param response the registry response (may be {@code null} on a no-op load)
+         * @param append   {@code true} to append to the existing list (Load More),
+         *                 {@code false} to replace it (new search / refresh)
+         */
+        void apply(@Nullable MCPRegistryResponse response, boolean append) {
+            if (!append) {
+                loadedServers.clear();
+            }
+            if (response != null && response.getServers() != null) {
+                loadedServers.addAll(response.getServers());
+            }
+            nextCursor = (response != null && response.getMetadata() != null)
+                    ? response.getMetadata().getNextCursor() : null;
+        }
+
+        List<MCPRegistryServerEntry> getLoadedServers() {
+            return loadedServers;
+        }
+
+        @Nullable
+        String getNextCursor() {
+            return nextCursor;
+        }
+
+        boolean hasMorePages() {
+            return nextCursor != null && !nextCursor.isBlank();
+        }
+
+        int size() {
+            return loadedServers.size();
+        }
+    }
 
     /**
      * Pure filter logic for MCP registry server entries.
