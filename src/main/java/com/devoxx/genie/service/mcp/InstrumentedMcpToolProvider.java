@@ -1,7 +1,10 @@
 package com.devoxx.genie.service.mcp;
 
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -46,11 +49,25 @@ public class InstrumentedMcpToolProvider implements ToolProvider {
             ToolSpecification spec = tool.toolSpecification();
             ToolExecutor originalExecutor = tool.toolExecutor();
 
-            ToolExecutor countingExecutor = (toolRequest, memoryId) -> {
-                String result = originalExecutor.execute(toolRequest, memoryId);
-                // Increment AFTER successful execution so failures don't inflate usage counts.
-                counter.incrementAndGet();
-                return result;
+            // Override executeWithContext (not just legacy execute) so tools requiring the
+            // new contract (e.g. skill-backed tools that throw "executeWithContext must be
+            // called instead" from execute()) keep working while still being counted.
+            ToolExecutor countingExecutor = new ToolExecutor() {
+                @Override
+                public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
+                    String result = originalExecutor.execute(toolRequest, memoryId);
+                    // Increment AFTER successful execution so failures don't inflate usage counts.
+                    counter.incrementAndGet();
+                    return result;
+                }
+
+                @Override
+                public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest, InvocationContext context) {
+                    ToolExecutionResult result = originalExecutor.executeWithContext(toolRequest, context);
+                    // Increment AFTER successful execution so failures don't inflate usage counts.
+                    counter.incrementAndGet();
+                    return result;
+                }
             };
 
             builder.add(tool.toBuilder().toolExecutor(countingExecutor).build());

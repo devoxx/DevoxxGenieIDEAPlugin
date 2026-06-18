@@ -146,6 +146,28 @@ public class StdioTransportPanel implements TransportPanel {
 
     @Override
     public McpClient createClient() throws Exception {
+        return createClient(Map.of(), Map.of());
+    }
+
+    @Override
+    public McpClient createClient(Map<String, String> headers) throws Exception {
+        // STDIO transport ignores HTTP headers but keeps the env contract intact.
+        return createClient(headers, Map.of());
+    }
+
+    /**
+     * Creates a STDIO MCP client for the "Test Connection" action.
+     *
+     * <p>Crucially, the user-supplied {@code customEnv} (entered in the dialog's
+     * "Environment Variables" table) is merged on top of the inherited system
+     * environment, so the spawned process (e.g. {@code npx}) receives variables
+     * such as {@code GITHUB_TOKEN}. This mirrors the runtime behaviour in
+     * {@code MCPExecutionService.initStdioClient}; previously these variables were
+     * dropped here, which made "Test Connection" fail and blocked creating the
+     * server.</p>
+     */
+    @Override
+    public McpClient createClient(Map<String, String> headers, Map<String, String> customEnv) throws Exception {
         // Parse arguments and create command list
         List<String> args = parseArguments();
         List<String> mcpCommand = buildCommand(args);
@@ -158,8 +180,13 @@ public class StdioTransportPanel implements TransportPanel {
             throw new Exception("Command not found: " + commandField.getText().trim());
         }
         
-        // Create the transport and connect to the server
+        // Create the transport and connect to the server.
+        // Merge the user-supplied environment variables on top of the system
+        // environment so the spawned process actually receives them.
         Map<String, String> env = createEnvironmentMap();
+        if (customEnv != null) {
+            env.putAll(customEnv);
+        }
         StdioMcpTransport transport = new StdioMcpTransport.Builder()
                 .command(mcpCommand)
                 .environment(env)

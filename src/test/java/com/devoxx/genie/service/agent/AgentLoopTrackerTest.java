@@ -3,10 +3,12 @@ package com.devoxx.genie.service.agent;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
+import dev.langchain4j.invocation.InvocationContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -101,6 +103,93 @@ class AgentLoopTrackerTest {
 
         tracker.reset();
         assertThat(tracker.getCallCount()).isEqualTo(0);
+    }
+
+    @Test
+    void executeWithContext_delegatesAndCounts() {
+        ToolSpecification spec = createSpec("test_tool");
+        ToolExecutor original = new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                return "legacy";
+            }
+
+            @Override
+            public ToolExecutionResult executeWithContext(ToolExecutionRequest req, InvocationContext ctx) {
+                return ToolExecutionResult.builder().resultText("ctx-success").build();
+            }
+        };
+        ToolProvider delegate = req -> ToolProviderResult.builder().add(spec, original).build();
+
+        AgentLoopTracker tracker = new AgentLoopTracker(delegate, 3);
+        ToolProviderResult result = tracker.provideTools(providerRequest);
+        ToolExecutor trackedExecutor = result.tools().values().iterator().next();
+
+        ToolExecutionResult execResult =
+                trackedExecutor.executeWithContext(createExecRequest("test_tool"), null);
+
+        assertThat(execResult.resultText()).isEqualTo("ctx-success");
+        assertThat(tracker.getCallCount()).isEqualTo(1);
+    }
+
+    /**
+     * Reproduces the langchain4j-skills contract where the legacy {@code execute} throws
+     * "executeWithContext must be called instead". The tracker must route through
+     * executeWithContext so such tools keep working instead of surfacing the exception
+     * as an "Error: ..." tool result.
+     */
+    @Test
+    void executeWithContext_worksForExecuteThrowingTool() {
+        ToolSpecification spec = createSpec("skill_tool");
+        ToolExecutor skillStyle = new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                throw new IllegalStateException("executeWithContext must be called instead");
+            }
+
+            @Override
+            public ToolExecutionResult executeWithContext(ToolExecutionRequest req, InvocationContext ctx) {
+                return ToolExecutionResult.builder().resultText("skill-ok").build();
+            }
+        };
+        ToolProvider delegate = req -> ToolProviderResult.builder().add(spec, skillStyle).build();
+
+        AgentLoopTracker tracker = new AgentLoopTracker(delegate, 3);
+        ToolExecutor trackedExecutor =
+                tracker.provideTools(providerRequest).tools().values().iterator().next();
+
+        ToolExecutionResult execResult =
+                trackedExecutor.executeWithContext(createExecRequest("skill_tool"), null);
+
+        assertThat(execResult.resultText()).isEqualTo("skill-ok");
+        assertThat(tracker.getCallCount()).isEqualTo(1);
+    }
+
+    @Test
+    void executeWithContext_exceedingLimit_returnsErrorText() {
+        ToolSpecification spec = createSpec("test_tool");
+        ToolExecutor original = new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                return "success";
+            }
+
+            @Override
+            public ToolExecutionResult executeWithContext(ToolExecutionRequest req, InvocationContext ctx) {
+                return ToolExecutionResult.builder().resultText("success").build();
+            }
+        };
+        ToolProvider delegate = req -> ToolProviderResult.builder().add(spec, original).build();
+
+        AgentLoopTracker tracker = new AgentLoopTracker(delegate, 1);
+        ToolExecutor trackedExecutor =
+                tracker.provideTools(providerRequest).tools().values().iterator().next();
+
+        trackedExecutor.executeWithContext(createExecRequest("test_tool"), null); // 1
+        ToolExecutionResult overLimit =
+                trackedExecutor.executeWithContext(createExecRequest("test_tool"), null); // 2 > limit
+
+        assertThat(overLimit.resultText()).contains("Agent loop limit reached");
     }
 
     private ToolSpecification createSpec(String name) {

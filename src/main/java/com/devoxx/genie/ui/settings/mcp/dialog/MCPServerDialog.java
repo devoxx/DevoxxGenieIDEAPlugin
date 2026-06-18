@@ -283,6 +283,7 @@ public class MCPServerDialog extends DialogWrapper {
 
         // Capture field values on EDT before background work
         String serverName = nameField.getText().trim();
+        final Map<String, String> envForConnection = envVarTableModel.getEnvVars();
 
         // Use single-element arrays to pass results out of the background runnable
         final MCPServer[] result = {null};
@@ -300,7 +301,9 @@ public class MCPServerDialog extends DialogWrapper {
                     indicator.setText("Connecting to MCP server...");
                     indicator.setIndeterminate(true);
                     Map<String, String> headers = existingServerSupport.headersForConnection(existingServer);
-                    mcpClient = panel.createClient(headers);
+                    // Pass the user-supplied environment variables (captured on the EDT) to the
+                    // transport so STDIO processes like npx receive them during the test.
+                    mcpClient = panel.createClient(headers, envForConnection);
 
                     indicator.checkCanceled();
 
