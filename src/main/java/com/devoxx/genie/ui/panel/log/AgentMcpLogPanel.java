@@ -507,7 +507,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     static @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message,
                                                       @NotNull Function<String, String> contentFormatter) {
         StringBuilder sb = new StringBuilder();
-        if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE) {
+        if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE
+                && message.getAgentType() != AgentType.SYSTEM_PROMPT) {
             sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
         }
         if (message.getSubAgentId() != null) {
@@ -542,6 +543,12 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case SUB_AGENT_ERROR:
                 sb.append("✖ Sub-agent error: ").append(message.getSubAgentId());
                 if (message.getResult() != null) sb.append(" → ").append(contentFormatter.apply(message.getResult()));
+                break;
+            case SYSTEM_PROMPT:
+                sb.append("📋 System prompt");
+                if (message.getResult() != null) {
+                    sb.append('\n').append(contentFormatter.apply(message.getResult()));
+                }
                 break;
         }
         return sb.toString();
@@ -827,6 +834,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     case SUB_AGENT_STARTED -> null;
                     case SUB_AGENT_COMPLETED -> null;
                     case SUB_AGENT_ERROR -> null;
+                    case SYSTEM_PROMPT -> JBColor.foreground();
                 };
             }
             if (entry.source() == LogSource.MCP) {

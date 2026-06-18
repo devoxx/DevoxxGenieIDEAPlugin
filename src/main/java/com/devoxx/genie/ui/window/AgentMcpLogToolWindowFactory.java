@@ -1,8 +1,6 @@
 package com.devoxx.genie.ui.window;
 
-import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.panel.log.AgentMcpLogPanel;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -27,10 +25,10 @@ public class AgentMcpLogToolWindowFactory implements ToolWindowFactory {
 
     @Override
     public boolean shouldBeAvailable(@NotNull Project project) {
-        DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
-        boolean hasCliTools = s.getCliTools() != null && !s.getCliTools().isEmpty();
-        boolean ragOn = Boolean.TRUE.equals(s.getRagEnabled());
-        return Boolean.TRUE.equals(s.getAgentModeEnabled()) || MCPService.isMCPEnabled() || hasCliTools || ragOn;
+        // Always available: every chat publishes its system prompt to this panel
+        // (AGENT/SYSTEM_PROMPT entry), so users can inspect the exact instructions the
+        // model received even in plain chat mode without agent/MCP/CLI/RAG enabled.
+        return true;
     }
 
     @Override

@@ -298,6 +298,7 @@ class ConversationViewModel(
                 AgentType.SUB_AGENT_STARTED,
                 AgentType.SUB_AGENT_COMPLETED,
                 AgentType.SUB_AGENT_ERROR -> handleSubAgentEvent(msgId, message)
+                AgentType.SYSTEM_PROMPT -> appendInfoEntry(msgId, message, "SYSTEM PROMPT", truncate = false)
                 else -> appendInfoEntry(msgId, message)
             }
             return
@@ -327,14 +328,24 @@ class ConversationViewModel(
         }
     }
 
-    /** Appends a lifecycle-less entry (MCP/RAG lines, stray agent events). */
-    private fun appendInfoEntry(msgId: String, message: ActivityMessage) {
+    /**
+     * Appends a lifecycle-less entry (MCP/RAG lines, stray agent events).
+     *
+     * [truncate] caps the arguments/result preview to 10 lines for noisy tool output. The
+     * system prompt entry sets it false so users see the complete prompt the model received.
+     */
+    private fun appendInfoEntry(
+        msgId: String,
+        message: ActivityMessage,
+        sourceLabel: String = message.source?.name ?: "UNKNOWN",
+        truncate: Boolean = true,
+    ) {
         val entry = ActivityEntryUiModel(
-            source = message.source?.name ?: "UNKNOWN",
+            source = sourceLabel,
             content = message.content ?: "",
             toolName = message.toolName,
-            arguments = truncateForChat(message.arguments),
-            result = truncateForChat(message.result),
+            arguments = if (truncate) truncateForChat(message.arguments) else message.arguments,
+            result = if (truncate) truncateForChat(message.result) else message.result,
             callNumber = message.callNumber,
             maxCalls = message.maxCalls,
             status = ActivityStatus.INFO,

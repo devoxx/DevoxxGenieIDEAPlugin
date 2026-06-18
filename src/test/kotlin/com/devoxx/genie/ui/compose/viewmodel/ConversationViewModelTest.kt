@@ -649,6 +649,23 @@ class ConversationViewModelTest {
         assertThat(entry.result).endsWith("(40 more lines)")
     }
 
+    @Test
+    fun `system prompt entry is labelled SYSTEM PROMPT and keeps the full untruncated prompt`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        // A long prompt (> 10 lines) would be capped with "(N more lines)" for normal tool
+        // output; the system prompt entry must show every line so users see exactly what the
+        // model received.
+        val fullPrompt = (1..30).joinToString("\n") { "prompt line $it" }
+        viewModel.onActivityMessage(agentMessage(AgentType.SYSTEM_PROMPT) { it.result(fullPrompt) })
+
+        val entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.source).isEqualTo("SYSTEM PROMPT")
+        assertThat(entry.result).isEqualTo(fullPrompt)
+        assertThat(entry.result).doesNotContain("more lines")
+    }
+
     private fun activeMessageEntries(viewModel: ConversationViewModel) =
         (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }.activityEntries
 

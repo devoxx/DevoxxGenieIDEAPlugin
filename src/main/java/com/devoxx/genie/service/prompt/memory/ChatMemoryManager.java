@@ -1,12 +1,16 @@
 package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.activity.ActivitySource;
+import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.service.skill.SkillRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
@@ -96,6 +100,7 @@ public class ChatMemoryManager {
                     String systemPrompt = buildSystemPrompt(context);
                     chatMemoryService.addMessageByKey(memoryKey, SystemMessage.from(systemPrompt));
                     log.debug("Added system message to memory");
+                    publishSystemPromptToActivityLog(context.getProject(), systemPrompt);
                 }
             }
         } catch (Exception e) {
@@ -331,6 +336,33 @@ public class ChatMemoryManager {
             }
         }
         return prompt;
+    }
+
+    /**
+     * Publishes the conversation's system prompt to the Agent/MCP log panel so users can
+     * inspect the exact instructions the model received. Fired once per conversation, when
+     * the system message is first added to memory. Published unconditionally (not gated by
+     * the agent-debug-logs setting) since it's a one-time informational entry that answers
+     * "what system prompt is this chat actually using?".
+     *
+     * @param project the project that owns the conversation
+     * @param systemPrompt the fully built system prompt added to memory
+     */
+    private void publishSystemPromptToActivityLog(@NotNull Project project, @NotNull String systemPrompt) {
+        try {
+            ActivityMessage message = ActivityMessage.builder()
+                    .source(ActivitySource.AGENT)
+                    .agentType(AgentType.SYSTEM_PROMPT)
+                    .result(systemPrompt)
+                    .projectLocationHash(project.getLocationHash())
+                    .build();
+
+            ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(AppTopics.ACTIVITY_LOG_MSG)
+                    .onActivityMessage(message);
+        } catch (Exception e) {
+            log.debug("Failed to publish system prompt to activity log", e);
+        }
     }
 
     public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project) {
