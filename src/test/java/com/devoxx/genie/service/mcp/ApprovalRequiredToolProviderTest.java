@@ -242,6 +242,73 @@ class ApprovalRequiredToolProviderTest {
         verify(checker).requestApproval(null, "tool_a", "{}");
     }
 
+    @Test
+    void provideTools_approvalGranted_callsOriginalExecutorWithContext() {
+        ToolSpecification spec = toolSpec("read_file");
+        ToolExecutor original = new dev.langchain4j.service.tool.ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                return "legacy";
+            }
+
+            @Override
+            public dev.langchain4j.service.tool.ToolExecutionResult executeWithContext(
+                    ToolExecutionRequest req, dev.langchain4j.invocation.InvocationContext ctx) {
+                return dev.langchain4j.service.tool.ToolExecutionResult.builder()
+                        .resultText("file contents").build();
+            }
+        };
+        ToolProviderResult delegateResult = buildResult(Map.of(spec, original));
+        when(delegate.provideTools(request)).thenReturn(delegateResult);
+
+        ApprovalRequiredToolProvider provider = new ApprovalRequiredToolProvider(
+                delegate, project, (p, name, args) -> true
+        );
+
+        ToolExecutor wrappedExecutor = provider.provideTools(request).tools().values().iterator().next();
+        ToolExecutionRequest toolRequest = ToolExecutionRequest.builder()
+                .name("read_file").arguments("{}").build();
+
+        dev.langchain4j.service.tool.ToolExecutionResult result =
+                wrappedExecutor.executeWithContext(toolRequest, null);
+
+        assertThat(result.resultText()).isEqualTo("file contents");
+    }
+
+    @Test
+    void provideTools_approvalDenied_returnsDeniedMessageForContext() {
+        ToolSpecification spec = toolSpec("delete_file");
+        // execute() throws to mimic skill-style tools; only executeWithContext is valid.
+        ToolExecutor original = new dev.langchain4j.service.tool.ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                throw new IllegalStateException("executeWithContext must be called instead");
+            }
+
+            @Override
+            public dev.langchain4j.service.tool.ToolExecutionResult executeWithContext(
+                    ToolExecutionRequest req, dev.langchain4j.invocation.InvocationContext ctx) {
+                return dev.langchain4j.service.tool.ToolExecutionResult.builder()
+                        .resultText("should not run").build();
+            }
+        };
+        ToolProviderResult delegateResult = buildResult(Map.of(spec, original));
+        when(delegate.provideTools(request)).thenReturn(delegateResult);
+
+        ApprovalRequiredToolProvider provider = new ApprovalRequiredToolProvider(
+                delegate, project, (p, name, args) -> false
+        );
+
+        ToolExecutor wrappedExecutor = provider.provideTools(request).tools().values().iterator().next();
+        ToolExecutionRequest toolRequest = ToolExecutionRequest.builder()
+                .name("delete_file").arguments("{}").build();
+
+        dev.langchain4j.service.tool.ToolExecutionResult result =
+                wrappedExecutor.executeWithContext(toolRequest, null);
+
+        assertThat(result.resultText()).isEqualTo("Tool execution was denied by the user.");
+    }
+
     // -- Helpers --
 
     private static ToolSpecification toolSpec(String name) {

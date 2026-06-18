@@ -1,8 +1,11 @@
 package com.devoxx.genie.service.agent;
 
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -51,26 +54,54 @@ public class AgentApprovalProvider implements ToolProvider {
             ToolSpecification spec = tool.toolSpecification();
             ToolExecutor original = tool.toolExecutor();
 
-            ToolExecutor approvalExecutor = (toolRequest, memoryId) -> {
-                boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());
-                boolean needsApproval = !(autoApproveReadOnly && isReadOnly);
-
-                if (needsApproval) {
-                    boolean approved = AgentApprovalService.requestApproval(
-                            project, toolRequest.name(), toolRequest.arguments());
-                    if (!approved) {
-                        log.debug("Agent tool execution denied: {}", toolRequest.name());
+            // Override executeWithContext (not just legacy execute) so skill-backed tools
+            // (e.g. activate_skill from langchain4j-skills, which throw from execute() with
+            // "executeWithContext must be called instead") keep working through this wrapper.
+            ToolExecutor approvalExecutor = new ToolExecutor() {
+                @Override
+                public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
+                    if (isDenied(toolRequest)) {
                         return "Tool execution was denied by the user.";
                     }
+                    return original.execute(toolRequest, memoryId);
                 }
 
-                log.debug("Agent tool execution approved: {}", toolRequest.name());
-                return original.execute(toolRequest, memoryId);
+                @Override
+                public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest, InvocationContext context) {
+                    if (isDenied(toolRequest)) {
+                        return ToolExecutionResult.builder()
+                                .resultText("Tool execution was denied by the user.")
+                                .build();
+                    }
+                    return original.executeWithContext(toolRequest, context);
+                }
             };
 
             builder.add(tool.toBuilder().toolExecutor(approvalExecutor).build());
         }
 
         return builder.build();
+    }
+
+    /**
+     * Determines whether the given tool request must be denied. Read-only tools may be
+     * auto-approved; everything else requires explicit user approval. Returns {@code true}
+     * when the user denied the request (so the caller should short-circuit).
+     */
+    private boolean isDenied(@NotNull ToolExecutionRequest toolRequest) {
+        boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());
+        boolean needsApproval = !(autoApproveReadOnly && isReadOnly);
+
+        if (needsApproval) {
+            boolean approved = AgentApprovalService.requestApproval(
+                    project, toolRequest.name(), toolRequest.arguments());
+            if (!approved) {
+                log.debug("Agent tool execution denied: {}", toolRequest.name());
+                return true;
+            }
+        }
+
+        log.debug("Agent tool execution approved: {}", toolRequest.name());
+        return false;
     }
 }
