@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.8.5 - 2026-06-16
+
+### Added
+- feat(ui): show how much of the selected model's context window the ongoing conversation occupies. A persistent "Context window: used / max (pct%)" label with a thin colored bar sits near the prompt input (`ActionButtonsPanel`), updating after every completed response and resetting on a new conversation; each AI bubble also appends the running used/max context to its metadata line. The `TokenUsageBar` now colors by fill ratio (green/yellow/red) so it actually warns near overflow (#1126)
+
+### Fixed
+- fix(streaming): record `TokenUsage` on the streaming path. Streaming responses (the default) previously reported no token metrics because `onCompleteResponse` never called `setTokenUsageAndCost`; it now derives input/output tokens and cost from the final `ChatResponse`, guarded for local providers that return null usage (#1126)
+
+### Changed
+- refactor(ui): clean up the AI response bubble token display. The header now reads `1.8s ~ 10.5K in / 179 out` — input/output are labelled, large counts are abbreviated via a shared K/M/B `formatTokens` helper, the duplicated context-window readout is dropped (it's already shown under the prompt), and time/cost/token decimals render with `Locale.US` so the separator is always a period. The summary logic is extracted into a Compose-free, unit-tested `formatMetadataSummary()` (#1127)
+
+### Documentation
+- docs: README updates (7aa5189a)
+
+### Contributors
+- @stephanj
+
 ## v1.8.4 - 2026-06-15
 
 ### Fixed
