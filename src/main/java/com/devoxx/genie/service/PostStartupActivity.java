@@ -13,6 +13,7 @@ import com.devoxx.genie.service.rag.watcher.RAGFileWatcher;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.ThemeChangeListener;
+import com.devoxx.genie.util.LangChain4JJsonCodecInitializer;
 import com.intellij.execution.ExecutionManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompilerTopics;
@@ -33,6 +34,11 @@ public class PostStartupActivity implements ProjectActivity {
     @Nullable
     @Override
     public Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
+        // Warm up langchain4j's JSON codec early, under a controlled classloader, so the first
+        // LLM call does not hit a ServiceConfigurationError from the IntelliJ platform's
+        // jackson-module-kotlin clashing with the bundled jackson-databind.
+        LangChain4JJsonCodecInitializer.ensureInitialized();
+
         // Initialize chat memory for this project
         ChatMemoryManager chatMemoryManager = ChatMemoryManager.getInstance();
         if (chatMemoryManager != null) {

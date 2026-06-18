@@ -7,6 +7,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.util.LangChain4JJsonCodecInitializer;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 
@@ -23,11 +24,13 @@ public class ChatModelProvider {
     private static final ModelProvider DEFAULT_PROVIDER = ModelProvider.OpenAI;
 
     public ChatModel getChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        LangChain4JJsonCodecInitializer.ensureInitialized();
         CustomChatModel customChatModel = initChatModel(chatMessageContext);
         return getFactory(chatMessageContext).createChatModel(customChatModel);
     }
 
     public StreamingChatModel getStreamingChatLanguageModel(@NotNull ChatMessageContext chatMessageContext) {
+        LangChain4JJsonCodecInitializer.ensureInitialized();
         CustomChatModel customChatModel = initChatModel(chatMessageContext);
         return getFactory(chatMessageContext).createStreamingChatModel(customChatModel);
     }
