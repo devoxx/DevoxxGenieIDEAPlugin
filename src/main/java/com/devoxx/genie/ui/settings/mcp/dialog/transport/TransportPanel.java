@@ -68,26 +68,6 @@ public interface TransportPanel {
     default McpClient createClient(Map<String, String> headers) throws Exception {
         return createClient();
     }
-
-    /**
-     * Create an MCP client for testing the connection, with custom headers
-     * for HTTP-based transports and custom environment variables for STDIO
-     * transports.
-     *
-     * <p>This is the variant the dialog's "Test Connection" action uses so that
-     * the user-supplied environment variables (e.g. {@code GITHUB_TOKEN}) are
-     * actually passed to the spawned process — matching the runtime behaviour of
-     * {@code MCPExecutionService}. Transports that don't use environment variables
-     * simply ignore {@code env}.</p>
-     *
-     * @param headers custom headers to include in HTTP requests
-     * @param env     custom environment variables to pass to STDIO processes
-     * @return The created MCP client
-     * @throws Exception If client creation fails
-     */
-    default McpClient createClient(Map<String, String> headers, Map<String, String> env) throws Exception {
-        return createClient(headers);
-    }
     
     /**
      * Apply settings to a server builder
