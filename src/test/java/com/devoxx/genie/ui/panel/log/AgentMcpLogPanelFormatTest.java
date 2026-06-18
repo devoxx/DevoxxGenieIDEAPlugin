@@ -199,4 +199,23 @@ class AgentMcpLogPanelFormatTest {
                 "\n    stacktrace line 1"
         );
     }
+
+    @Test
+    void formatAgentActivityMessage_systemPrompt_hasNoCallPrefixAndRendersBody() {
+        ActivityMessage prompt = ActivityMessage.builder()
+                .source(ActivitySource.AGENT)
+                .agentType(AgentType.SYSTEM_PROMPT)
+                .result("You are a helpful assistant.\n<ProjectContext>\nrules\n</ProjectContext>")
+                .build();
+        String row = AgentMcpLogPanel.formatAgentActivityMessage(prompt, AgentMcpLogPanel::formatForRow);
+        // No "[n/n]" call-count prefix for an informational system-prompt entry.
+        assertThat(row).doesNotContain("[0/0]");
+        assertThat(row.split("\n")).containsExactly(
+                "\ud83d\udccb System prompt",
+                "You are a helpful assistant.",
+                "<ProjectContext>",
+                "rules",
+                "</ProjectContext>"
+        );
+    }
 }
