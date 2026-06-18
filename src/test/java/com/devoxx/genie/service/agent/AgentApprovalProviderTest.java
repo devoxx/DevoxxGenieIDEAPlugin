@@ -211,6 +211,78 @@ class AgentApprovalProviderTest {
         }
     }
 
+    @Test
+    void executeWithContext_readOnlyTool_autoApproved() {
+        // Read-only tool through the new executeWithContext path: must delegate
+        // without consulting AgentApprovalService.
+        ToolExecutor ctxExecutor = new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                return "legacy";
+            }
+
+            @Override
+            public dev.langchain4j.service.tool.ToolExecutionResult executeWithContext(
+                    ToolExecutionRequest req, dev.langchain4j.invocation.InvocationContext ctx) {
+                return dev.langchain4j.service.tool.ToolExecutionResult.builder()
+                        .resultText("ctx: " + req.name()).build();
+            }
+        };
+        ToolProvider ctxDelegate = req -> ToolProviderResult.builder()
+                .add(readFileSpec, ctxExecutor).build();
+
+        try (MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class);
+             MockedStatic<AgentApprovalService> agentApprovalMock = mockStatic(AgentApprovalService.class)) {
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+
+            AgentApprovalProvider approvalProvider = new AgentApprovalProvider(ctxDelegate, project, true);
+            ToolExecutor readExecutor =
+                    approvalProvider.provideTools(providerRequest).toolExecutorByName("read_file");
+
+            dev.langchain4j.service.tool.ToolExecutionResult output =
+                    readExecutor.executeWithContext(createExecRequest("read_file"), null);
+
+            assertThat(output.resultText()).isEqualTo("ctx: read_file");
+            agentApprovalMock.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    void executeWithContext_writeToolDenied_returnsDenialMessage() {
+        // Skill-style executor: execute() throws, only executeWithContext is valid.
+        ToolExecutor ctxExecutor = new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest req, Object id) {
+                throw new IllegalStateException("executeWithContext must be called instead");
+            }
+
+            @Override
+            public dev.langchain4j.service.tool.ToolExecutionResult executeWithContext(
+                    ToolExecutionRequest req, dev.langchain4j.invocation.InvocationContext ctx) {
+                return dev.langchain4j.service.tool.ToolExecutionResult.builder()
+                        .resultText("should not run").build();
+            }
+        };
+        ToolProvider ctxDelegate = req -> ToolProviderResult.builder()
+                .add(writeFileSpec, ctxExecutor).build();
+
+        try (MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class);
+             MockedStatic<AgentApprovalService> agentApprovalMock = mockStatic(AgentApprovalService.class)) {
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+            agentApprovalMock.when(() -> AgentApprovalService.requestApproval(
+                    eq(project), eq("write_file"), anyString())).thenReturn(false);
+
+            AgentApprovalProvider approvalProvider = new AgentApprovalProvider(ctxDelegate, project, true);
+            ToolExecutor writeExecutor =
+                    approvalProvider.provideTools(providerRequest).toolExecutorByName("write_file");
+
+            dev.langchain4j.service.tool.ToolExecutionResult output =
+                    writeExecutor.executeWithContext(createExecRequest("write_file"), null);
+
+            assertThat(output.resultText()).isEqualTo("Tool execution was denied by the user.");
+        }
+    }
+
     private ToolSpecification createSpec(String name) {
         return ToolSpecification.builder()
                 .name(name)
