@@ -68,6 +68,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.6</h2>
+        <UL>
+                    <LI>feat(welcome): the Welcome screen now nudges you to set up skills and/or MCP servers when none are configured, with "Add Skill" / "Add MCP" buttons that open the right settings panel (#1130)</LI>
+                    <LI>fix(skills): skill-backed agent tools (e.g. <code>activate_skill</code>) no longer fail with "executeWithContext must be called instead" — tool wrappers now honor langchain4j's context-aware executor contract (#1135)</LI>
+                    <LI>fix(mcp-marketplace): the MCP Marketplace dialog no longer hangs on open — it pages the registry lazily with "Load More", searches server-side, and the Cancel button works again (#1128)</LI>
+                    <LI>fix(mcp): the STDIO "Test Connection" in the Add MCP Server dialog now uses your entered environment variables, so servers that need env tokens can be tested and added (#1137)</LI>
+                    <LI>build(deps): bump langchain4j 1.16.2 &rarr; 1.16.3, Kotlin 2.2.20 &rarr; 2.4.0, and AWS SDK BOM (#1125)</LI>
+                </UL>
         <h2>v1.8.5</h2>
         <UL>
                     <LI>feat(ui): a persistent "Context window: used / max (pct%)" indicator with a colored bar under the prompt shows how much of the model's context the conversation is using, and warns near overflow (#1126)</LI>

@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.8.6 - 2026-06-18
+
+### Added
+- feat(welcome): add setup nudges that guide new users to configure skills and/or MCP servers. When either capability is unconfigured, a "Get Started" `SetupCard` appears on the Welcome screen with contextual messaging and "Add Skill" / "Add MCP" buttons that open the matching settings panels directly. The `Welcome` state gains a `hasMcpServers` flag (`ConversationViewModel.loadHasMcpServers()`) threaded through to the Compose UI (#1130)
+
+### Fixed
+- fix(agent/skills): make tool-provider wrappers honor langchain4j's `executeWithContext` contract so skill-backed tools work. langchain4j 1.16.2 added `ToolExecutor.executeWithContext(...)`, and `AbstractSkillToolExecutor` throws `IllegalStateException("executeWithContext must be called instead")` from the legacy `execute(...)`. Our wrappers (`AgentLoopTracker`, `AgentApprovalProvider`, `ApprovalRequiredToolProvider`, `InstrumentedMcpToolProvider`) only overrode the legacy method, so `activate_skill` and other skill tools surfaced `"Error: executeWithContext must be called instead"`. They now implement both methods and thread the invocation context through the whole wrapper chain (#1135)
+- fix(mcp): pass user-entered environment variables to the STDIO connection test in the *Add MCP Server* dialog. The test previously spawned the server process without the env-var table values (e.g. API tokens), so any MCP server needing them to authenticate failed the test and couldn't be created. `TransportPanel` gains a `createClient(headers, env)` method, `StdioTransportPanel` merges the user env on top of the inherited system environment (user values win, mirroring `MCPExecutionService#initStdioClient`), and `MCPServerDialog` captures the env-var table on the EDT and threads it into the test client (#1137)
+- fix(mcp-marketplace): page the MCP Marketplace registry instead of loading the entire list up front. The dialog previously fetched every page into memory and filtered client-side, hanging on open as the registry grew to thousands of entries — and the Cancel button did nothing because the fetch loop never polled progress. It now lazily loads the first page with a "Load More" cursor button, moves search server-side (debounced, with a generation counter discarding stale responses), and runs fetches on a pooled thread updating the table via `invokeLater(ModalityState.any())`. Also fixes a latent bug where the search query was sent as `q` instead of the registry's `search` parameter (#1128, #1129)
+
+### Dependencies
+- build(deps): bump the gradle-dependencies group with 20 updates — langchain4j `1.16.2` → `1.16.3` (and beta artifacts `1.16.2-beta26` → `1.16.3-beta26`), Kotlin `2.2.20` → `2.4.0`, AWS SDK BOM `2.46.10` → `2.46.12` (#1125, #1133)
+
+### Contributors
+- @coradead
+- @stephanj
+
 ## v1.8.5 - 2026-06-16
 
 ### Added
