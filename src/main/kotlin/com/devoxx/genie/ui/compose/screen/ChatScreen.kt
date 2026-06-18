@@ -32,6 +32,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.components.ConversationToolbar
@@ -65,37 +66,51 @@ fun ChatScreen(
     // items scrolled out and back in are also skipped via this set.
     val seenMessageIds = remember { messages.mapTo(HashSet()) { it.id } }
 
+    // Last measured height of each finished AI bubble, keyed by message id. A bubble's
+    // Markdown content reports a tiny height on its first frame and grows once parsed; when
+    // a recycled item re-enters at the top of the viewport that one-frame growth makes
+    // LazyColumn re-pin the item's top edge, snapping the viewport to the start of the
+    // message. Replaying the cached height as a minimum on re-entry keeps the first frame
+    // at full size so the anchor is preserved. Survives recomposition (not config changes).
+    val aiBubbleHeights = remember { mutableStateMapOf<String, Dp>() }
+
     // Whether the list should follow the growing tail of the last message. Disabled the
     // moment the user scrolls up (see nestedScrollConnection), re-enabled when the user
     // returns to the bottom or a new message is submitted.
     var autoFollow by remember { mutableStateOf(true) }
 
-    // True when the very end of the conversation is visible. The bottom anchor item is
-    // the last list item, so "at bottom" means the last item's bottom edge is inside the
-    // viewport (small tolerance for rounding).
+    // True when the very end of the conversation is visible. The bottom anchor is the
+    // last list item, so "at bottom" means that anchor is laid out and its bottom edge is
+    // within the viewport. The tolerance is kept tiny (2px, rounding only): a larger fuzzy
+    // window combined with the 1dp anchor would treat a small upward scroll as "still at
+    // bottom" and immediately re-enable following, yanking the reader back down.
     val isAtBottom by remember {
         derivedStateOf {
             val info = listState.layoutInfo
             val last = info.visibleItemsInfo.lastOrNull()
             last == null || (
                 last.index == info.totalItemsCount - 1 &&
-                    last.offset + last.size <= info.viewportEndOffset + 8
+                    last.offset + last.size <= info.viewportEndOffset + 2
                 )
         }
     }
 
-    // Reaching the bottom by any means (manual scroll, button, programmatic) resumes following.
+    // Re-enable following only when the end of the conversation is actually reached AND the
+    // user is not mid-gesture. Without the isScrollInProgress guard, the brief moment a
+    // streaming update relayouts the list can satisfy isAtBottom and flip autoFollow back
+    // on while the user is still dragging upward.
     LaunchedEffect(isAtBottom) {
-        if (isAtBottom) autoFollow = true
+        if (isAtBottom && !listState.isScrollInProgress) autoFollow = true
     }
 
     // Only user gestures (drag / mouse wheel / fling) pass through the nested-scroll chain;
     // programmatic animateScrollToItem calls do not. Any upward user scroll stops following
-    // so streaming updates can't yank the reader back down.
+    // so streaming updates can't yank the reader back down. In Compose a scroll that reveals
+    // earlier content (finger/content moving down) reports a positive available.y.
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y > 0f) autoFollow = false
+                if (available.y > 0.5f) autoFollow = false
                 return Offset.Zero
             }
         }
@@ -113,8 +128,11 @@ fun ChatScreen(
     // Follow the tail while streaming. Scrolling to the 1px bottom anchor (index ==
     // messages.size) shows the END of the growing last message; scrolling to the message
     // item itself would pin the viewport at its top once it outgrows the screen.
+    // The isScrollInProgress guard is essential: a streaming token must never start a
+    // programmatic scroll while the user is dragging/flinging upward, otherwise the reader
+    // is snapped back down to the start of the message below them.
     LaunchedEffect(messages.lastOrNull()?.aiResponseMarkdown) {
-        if (autoFollow && messages.isNotEmpty()) {
+        if (autoFollow && messages.isNotEmpty() && !listState.isScrollInProgress) {
             listState.animateScrollToItem(messages.size)
         }
     }
@@ -135,8 +153,16 @@ fun ChatScreen(
                 ) { _, message ->
                     // Play the entrance exactly once: the first time this id is ever
                     // composed, and only for messages inserted while the chat is live.
+                    // Computed in `remember(message.id)` so an item scrolled out and back
+                    // in (a fresh composition) re-checks `seenMessageIds` and resolves to
+                    // false, never replaying the transition. See shouldPlayEntrance.
                     val playEntrance = remember(message.id) {
-                        seenMessageIds.add(message.id) && animationsEnabled && !isRestoring
+                        shouldPlayEntrance(
+                            seenMessageIds = seenMessageIds,
+                            messageId = message.id,
+                            animationsEnabled = animationsEnabled,
+                            isRestoring = isRestoring,
+                        )
                     }
                     MessageEntrance(messageId = message.id, playEntrance = playEntrance) {
                         MessagePair(
@@ -145,6 +171,8 @@ fun ChatScreen(
                             onRetryClick = onRetryClick,
                             onOpenAgentSettings = onOpenAgentSettings,
                             onOpenLogs = onOpenLogs,
+                            cachedAiBubbleHeight = aiBubbleHeights[message.id] ?: Dp.Unspecified,
+                            onAiBubbleMeasured = { height -> aiBubbleHeights[message.id] = height },
                         )
                     }
                 }
@@ -169,10 +197,45 @@ fun ChatScreen(
 }
 
 /**
+ * Decides whether a bubble should play its one-shot entrance transition.
+ *
+ * Contract (intentionally side-effecting on [seenMessageIds] so the decision is made
+ * exactly once per id): returns true only the FIRST time an id is ever observed while
+ * the chat is live and animations are on. Every later call for the same id — including
+ * when a recycled LazyColumn item re-enters composition after being scrolled away —
+ * returns false, because the id is already in [seenMessageIds]. Keeping re-entering
+ * items out of the animated path is what prevents the list from losing its scroll anchor
+ * and snapping to the top of the conversation.
+ *
+ * [seenMessageIds] must be pre-seeded with the ids present on first composition so a
+ * conversation restored from history does not replay entrances for its whole transcript.
+ */
+internal fun shouldPlayEntrance(
+    seenMessageIds: MutableSet<String>,
+    messageId: String,
+    animationsEnabled: Boolean,
+    isRestoring: Boolean,
+): Boolean {
+    val firstTimeSeen = seenMessageIds.add(messageId)
+    return firstTimeSeen && animationsEnabled && !isRestoring
+}
+
+/**
  * Entrance animation for a newly inserted message bubble: fade-in plus a slight upward
- * slide (≤150ms). Neither effect changes the measured item size, so tail-following and
- * scroll-to-bottom positions are not disturbed. When [playEntrance] is false (already
- * seen, restoring from history, or animations disabled) the content shows immediately.
+ * slide (≤150ms).
+ *
+ * IMPORTANT — scroll anchoring: [AnimatedVisibility] sits in the measurement path of the
+ * item it wraps and can report a transient/zero size while its transition settles. Inside
+ * a [LazyColumn] that breaks the list's scroll-offset bookkeeping: when the user scrolls
+ * up and a recycled item re-enters composition, the momentary size change makes the list
+ * lose its anchor and snap `firstVisibleItemIndex` back to 0 — i.e. the viewport jumps to
+ * the very top of the conversation.
+ *
+ * To avoid this we only ever put [AnimatedVisibility] in the layout path for the single
+ * bubble that is genuinely playing its one-shot entrance ([playEntrance] == true). Every
+ * other bubble — already seen, restored from history, animations disabled, or simply
+ * scrolled back into view — renders [content] directly at its full, stable height, so
+ * scrolling never disturbs the list anchor.
  */
 @Composable
 private fun MessageEntrance(
@@ -180,8 +243,14 @@ private fun MessageEntrance(
     playEntrance: Boolean,
     content: @Composable () -> Unit,
 ) {
+    if (!playEntrance) {
+        // Stable, full-height content with no transition in the measurement path.
+        content()
+        return
+    }
+
     val entranceState = remember(messageId) {
-        MutableTransitionState(initialState = !playEntrance).apply { targetState = true }
+        MutableTransitionState(initialState = false).apply { targetState = true }
     }
     AnimatedVisibility(
         visibleState = entranceState,
