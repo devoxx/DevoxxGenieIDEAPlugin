@@ -31,6 +31,8 @@ sealed class ConversationState {
         val customPrompts: List<CustomPromptUi> = emptyList(),
         val skills: List<SkillUi> = emptyList(),
         val blogPosts: List<BlogPostUi> = emptyList(),
+        /** Whether at least one MCP server is configured. Drives the "Add MCP" setup nudge. */
+        val hasMcpServers: Boolean = false,
     ) : ConversationState()
 
     data class Chat(

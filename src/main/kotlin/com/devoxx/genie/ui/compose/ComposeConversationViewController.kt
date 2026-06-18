@@ -52,6 +52,7 @@ class ComposeConversationViewController(
                             onOpenAgentSettings = ::openAgentSettings,
                             onOpenLogs = ::openLogsToolWindow,
                             onAddMcpClick = ::openMcpSettings,
+                            onAddSkillClick = ::openSkillSettings,
                         )
                     }
                 }
@@ -110,6 +111,16 @@ class ComposeConversationViewController(
                 .showSettingsDialog(project, "MCP Settings")
         } catch (e: Exception) {
             LOG.warn("Could not open MCP settings", e)
+        }
+    }
+
+    /** Opens Settings → DevoxxGenie → Skills (welcome-page "Add Skill" affordance). */
+    private fun openSkillSettings() {
+        try {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Skills")
+        } catch (e: Exception) {
+            LOG.warn("Could not open Skills settings", e)
         }
     }
 
