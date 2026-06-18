@@ -146,6 +146,17 @@ public class StdioTransportPanel implements TransportPanel {
 
     @Override
     public McpClient createClient() throws Exception {
+        return createClient(java.util.Collections.emptyMap(), java.util.Collections.emptyMap());
+    }
+
+    @Override
+    public McpClient createClient(Map<String, String> headers) throws Exception {
+        // STDIO transport ignores HTTP headers; keep behaviour but without custom env.
+        return createClient(headers, java.util.Collections.emptyMap());
+    }
+
+    @Override
+    public McpClient createClient(Map<String, String> headers, Map<String, String> customEnv) throws Exception {
         // Parse arguments and create command list
         List<String> args = parseArguments();
         List<String> mcpCommand = buildCommand(args);
@@ -158,8 +169,11 @@ public class StdioTransportPanel implements TransportPanel {
             throw new Exception("Command not found: " + commandField.getText().trim());
         }
         
-        // Create the transport and connect to the server
-        Map<String, String> env = createEnvironmentMap();
+        // Create the transport and connect to the server.
+        // Merge the user-supplied environment variables (e.g. API tokens) on
+        // top of the inherited system environment so the connection test runs
+        // with the same environment as the configured server would at runtime.
+        Map<String, String> env = createEnvironmentMap(customEnv);
         StdioMcpTransport transport = new StdioMcpTransport.Builder()
                 .command(mcpCommand)
                 .environment(env)
@@ -212,7 +226,7 @@ public class StdioTransportPanel implements TransportPanel {
      * Creates environment map with PATH updated to include command directory
      * @return Environment variables map
      */
-    private @NotNull Map<String, String> createEnvironmentMap() {
+    private @NotNull Map<String, String> createEnvironmentMap(Map<String, String> customEnv) {
         Map<String, String> env = new HashMap<>(System.getenv());
         String command = commandField.getText().trim();
         int lastSeparatorIndex = command.lastIndexOf(File.separator);
@@ -220,6 +234,13 @@ public class StdioTransportPanel implements TransportPanel {
         if (lastSeparatorIndex > 0) {
             String directoryPath = command.substring(0, lastSeparatorIndex);
             env.put("PATH", directoryPath + File.pathSeparator + env.getOrDefault("PATH", ""));
+        }
+
+        // Apply user-supplied environment variables last so they take
+        // precedence, mirroring MCPExecutionService#initStdioClient.
+        if (customEnv != null && !customEnv.isEmpty()) {
+            env.putAll(customEnv);
+            log.debug("Added {} custom environment variable(s) for connection test", customEnv.size());
         }
         
         return env;
