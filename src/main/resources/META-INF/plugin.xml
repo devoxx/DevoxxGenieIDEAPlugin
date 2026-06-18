@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.5</h2>
+        <UL>
+                    <LI>feat(ui): a persistent "Context window: used / max (pct%)" indicator with a colored bar under the prompt shows how much of the model's context the conversation is using, and warns near overflow (#1126)</LI>
+                    <LI>fix(streaming): streaming responses now report token usage and cost — previously the default streaming path recorded no token metrics (#1126)</LI>
+                    <LI>refactor(ui): the AI bubble token line is now clearer — labelled input/output with abbreviated counts (e.g. <code>10.5K in / 179 out</code>) and locale-stable formatting (#1127)</LI>
+                </UL>
         <h2>v1.8.4</h2>
         <UL>
                     <LI>fix(cli-runner): CLI Runner (Copilot, Claude, …) edits now show up in open editors immediately — the VFS is refreshed when the external process finishes (#1119)</LI>

@@ -1,7 +1,6 @@
 ---
 id: TASK-236
-title: >-
-  Long-running feedback & history polish: elapsed-time ticker, determinate
+title: Long-running feedback & history polish: elapsed-time ticker, determinate
   progress, history UX
 status: Done
 assignee: []
