@@ -22,6 +22,8 @@ fun ConversationScreen(
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
+    onAddMcpClick: () -> Unit = {},
+    onAddSkillClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state = viewModel.state
@@ -58,8 +60,11 @@ fun ConversationScreen(
                         resourceBundle = s.resourceBundle,
                         customPrompts = s.customPrompts,
                         skills = s.skills,
+                        hasMcpServers = s.hasMcpServers,
                         blogPosts = s.blogPosts,
                         onCustomPromptClick = onCustomPromptClick,
+                        onAddMcpClick = onAddMcpClick,
+                        onAddSkillClick = onAddSkillClick,
                     )
                 }
                 is ConversationState.Chat -> {

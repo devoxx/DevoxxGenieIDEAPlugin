@@ -51,6 +51,8 @@ class ComposeConversationViewController(
                             onRetryClick = viewModel::onRetryClicked,
                             onOpenAgentSettings = ::openAgentSettings,
                             onOpenLogs = ::openLogsToolWindow,
+                            onAddMcpClick = ::openMcpSettings,
+                            onAddSkillClick = ::openSkillSettings,
                         )
                     }
                 }
@@ -99,6 +101,26 @@ class ComposeConversationViewController(
                 .showSettingsDialog(project, "Agent Mode")
         } catch (e: Exception) {
             LOG.warn("Could not open Agent settings", e)
+        }
+    }
+
+    /** Opens Settings → DevoxxGenie → MCP Settings (welcome-page "Add MCP" affordance). */
+    private fun openMcpSettings() {
+        try {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "MCP Settings")
+        } catch (e: Exception) {
+            LOG.warn("Could not open MCP settings", e)
+        }
+    }
+
+    /** Opens Settings → DevoxxGenie → Skills (welcome-page "Add Skill" affordance). */
+    private fun openSkillSettings() {
+        try {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Skills")
+        } catch (e: Exception) {
+            LOG.warn("Could not open Skills settings", e)
         }
     }
 

@@ -67,6 +67,7 @@ class ConversationViewModel(
             customPrompts = loadCustomPrompts(),
             skills = loadSkills(),
             blogPosts = loadBlogPosts(),
+            hasMcpServers = loadHasMcpServers(),
         )
     )
         private set
@@ -140,6 +141,7 @@ class ConversationViewModel(
             customPrompts = loadCustomPrompts(),
             skills = loadSkills(),
             blogPosts = loadBlogPosts(),
+            hasMcpServers = loadHasMcpServers(),
         )
         refreshBlogPostsAsync()
         refreshSkillsAsync()
@@ -151,6 +153,7 @@ class ConversationViewModel(
             state = current.copy(
                 customPrompts = loadCustomPrompts(),
                 skills = loadSkills(),
+                hasMcpServers = loadHasMcpServers(),
             )
         }
     }
@@ -595,6 +598,7 @@ class ConversationViewModel(
             customPrompts = loadCustomPrompts(),
             skills = loadSkills(),
             blogPosts = loadBlogPosts(),
+            hasMcpServers = loadHasMcpServers(),
         )
     }
 
@@ -715,6 +719,21 @@ class ConversationViewModel(
     }
 
     /**
+     * Whether at least one MCP server is configured. Drives the welcome-page
+     * "Add MCP" setup nudge. Reads the project-independent application settings.
+     */
+    private fun loadHasMcpServers(): Boolean {
+        return try {
+            DevoxxGenieStateService.getInstance()
+                .mcpSettings
+                ?.mcpServers
+                ?.isNotEmpty() ?: false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
      * Triggers a pooled-thread re-scan of the skill directories and, on completion,
      * updates the welcome state with whatever the registry produced. Cheap to call:
      * the registry no-ops when the cache is already populated.
@@ -726,7 +745,7 @@ class ConversationViewModel(
             registry.reloadAsync {
                 val current = state
                 if (current is ConversationState.Welcome) {
-                    state = current.copy(skills = loadSkills())
+                    state = current.copy(skills = loadSkills(), hasMcpServers = loadHasMcpServers())
                 }
             }
         } catch (_: Exception) {

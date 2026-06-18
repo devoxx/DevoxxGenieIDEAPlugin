@@ -50,8 +50,11 @@ fun WelcomeScreen(
     resourceBundle: ResourceBundle,
     customPrompts: List<CustomPromptUi>,
     skills: List<SkillUi> = emptyList(),
+    hasMcpServers: Boolean = false,
     blogPosts: List<BlogPostUi> = emptyList(),
     onCustomPromptClick: (String) -> Unit,
+    onAddMcpClick: () -> Unit = {},
+    onAddSkillClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
@@ -195,6 +198,23 @@ fun WelcomeScreen(
             SectionHeader("Active Skills")
             Spacer(Modifier.height(8.dp))
             SkillsList(skills)
+            Spacer(Modifier.height(20.dp))
+        }
+
+        // Setup nudges — when no skill and/or no MCP server has been defined yet, offer
+        // an "Add Skill" / "Add MCP" button that jumps straight to the matching settings
+        // panel. Each button is shown only for the capability that isn't configured.
+        val needsSkill = skills.isEmpty()
+        val needsMcp = !hasMcpServers
+        if (needsSkill || needsMcp) {
+            SectionHeader("Get Started")
+            Spacer(Modifier.height(8.dp))
+            SetupCard(
+                showAddSkill = needsSkill,
+                showAddMcp = needsMcp,
+                onAddSkillClick = onAddSkillClick,
+                onAddMcpClick = onAddMcpClick,
+            )
             Spacer(Modifier.height(20.dp))
         }
 
@@ -469,6 +489,84 @@ private fun SkillsList(skills: List<SkillUi>) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Shown on the welcome page when no skill and/or no MCP server has been configured.
+ * Explains how to extend DevoxxGenie and offers "Add Skill" / "Add MCP" buttons that
+ * open the matching settings panel. Each button is rendered only when its capability
+ * is still unconfigured.
+ */
+@Composable
+private fun SetupCard(
+    showAddSkill: Boolean,
+    showAddMcp: Boolean,
+    onAddSkillClick: () -> Unit,
+    onAddMcpClick: () -> Unit,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val cardBg = colors.surface.blendWith(colors.onSurface, 0.04f)
+    val cardBorder = colors.surface.blendWith(colors.onSurface, 0.12f)
+    val shape = RoundedCornerShape(8.dp)
+
+    val message = when {
+        showAddSkill && showAddMcp ->
+            "Extend DevoxxGenie with skills and MCP servers to give it new capabilities."
+        showAddSkill ->
+            "No skills defined yet. Add a skill to give DevoxxGenie new capabilities."
+        else ->
+            "No MCP servers defined yet. Connect one to give DevoxxGenie new capabilities."
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(cardBg, shape)
+            .border(1.dp, cardBorder, shape)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        BasicText(
+            text = message,
+            style = typography.body2.copy(color = colors.textSecondary),
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (showAddSkill) {
+                SetupButton("Add Skill", onAddSkillClick, typography)
+            }
+            if (showAddMcp) {
+                SetupButton("Add MCP", onAddMcpClick, typography)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupButton(
+    label: String,
+    onClick: () -> Unit,
+    typography: DevoxxTypography,
+) {
+    val buttonShape = RoundedCornerShape(6.dp)
+    Row(
+        modifier = Modifier
+            .clip(buttonShape)
+            .background(DevoxxOrange, buttonShape)
+            .clickable { onClick() }
+            .pointerHoverIcon(PointerIcon.Hand)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicText(
+            text = label,
+            style = typography.body2.copy(
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            ),
+        )
     }
 }
 
