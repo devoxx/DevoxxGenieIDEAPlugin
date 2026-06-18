@@ -51,6 +51,7 @@ class ComposeConversationViewController(
                             onRetryClick = viewModel::onRetryClicked,
                             onOpenAgentSettings = ::openAgentSettings,
                             onOpenLogs = ::openLogsToolWindow,
+                            onAddMcpClick = ::openMcpSettings,
                         )
                     }
                 }
@@ -99,6 +100,16 @@ class ComposeConversationViewController(
                 .showSettingsDialog(project, "Agent Mode")
         } catch (e: Exception) {
             LOG.warn("Could not open Agent settings", e)
+        }
+    }
+
+    /** Opens Settings → DevoxxGenie → MCP Settings (welcome-page "Add MCP" affordance). */
+    private fun openMcpSettings() {
+        try {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "MCP Settings")
+        } catch (e: Exception) {
+            LOG.warn("Could not open MCP settings", e)
         }
     }
 

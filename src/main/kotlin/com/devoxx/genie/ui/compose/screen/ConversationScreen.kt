@@ -22,6 +22,7 @@ fun ConversationScreen(
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
+    onAddMcpClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state = viewModel.state
@@ -60,6 +61,7 @@ fun ConversationScreen(
                         skills = s.skills,
                         blogPosts = s.blogPosts,
                         onCustomPromptClick = onCustomPromptClick,
+                        onAddMcpClick = onAddMcpClick,
                     )
                 }
                 is ConversationState.Chat -> {

@@ -52,6 +52,7 @@ fun WelcomeScreen(
     skills: List<SkillUi> = emptyList(),
     blogPosts: List<BlogPostUi> = emptyList(),
     onCustomPromptClick: (String) -> Unit,
+    onAddMcpClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
@@ -195,6 +196,13 @@ fun WelcomeScreen(
             SectionHeader("Active Skills")
             Spacer(Modifier.height(8.dp))
             SkillsList(skills)
+            Spacer(Modifier.height(20.dp))
+        } else {
+            // No skills installed yet — nudge the user toward MCP, the easiest way to
+            // add capabilities. The button jumps straight to the MCP settings panel.
+            SectionHeader("Skills")
+            Spacer(Modifier.height(8.dp))
+            AddMcpCard(onAddMcpClick)
             Spacer(Modifier.height(20.dp))
         }
 
@@ -468,6 +476,52 @@ private fun SkillsList(skills: List<SkillUi>) {
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Shown on the welcome page when no skills are installed. Explains that skills can be
+ * added through MCP and offers an "Add MCP" button that opens the MCP settings panel.
+ */
+@Composable
+private fun AddMcpCard(onAddMcpClick: () -> Unit) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val cardBg = colors.surface.blendWith(colors.onSurface, 0.04f)
+    val cardBorder = colors.surface.blendWith(colors.onSurface, 0.12f)
+    val shape = RoundedCornerShape(8.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(cardBg, shape)
+            .border(1.dp, cardBorder, shape)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        BasicText(
+            text = "No skills installed yet. Connect an MCP server to give DevoxxGenie new capabilities.",
+            style = typography.body2.copy(color = colors.textSecondary),
+        )
+
+        val buttonShape = RoundedCornerShape(6.dp)
+        Row(
+            modifier = Modifier
+                .clip(buttonShape)
+                .background(DevoxxOrange, buttonShape)
+                .clickable { onAddMcpClick() }
+                .pointerHoverIcon(PointerIcon.Hand)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                text = "Add MCP",
+                style = typography.body2.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                ),
+            )
         }
     }
 }
