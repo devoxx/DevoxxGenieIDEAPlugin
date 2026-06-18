@@ -353,7 +353,7 @@ class MCPRegistryServiceTest {
         }
     }
 
-    // ─── fetchAllServers tests ─────────────────────────────────
+    // ─── fetchAllMarketplaceMCPServers tests ─────────────────────────────────
 
     @Nested
     class FetchAllServers {
@@ -391,11 +391,11 @@ class MCPRegistryServiceTest {
                     .setBody(gson.toJson(responseBody)));
 
             // First call: fetches from network
-            List<MCPRegistryServerEntry> first = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> first = service.fetchAllMarketplaceMCPServers(false);
             assertThat(first).hasSize(1);
 
             // Second call: should use cache (no network request queued)
-            List<MCPRegistryServerEntry> second = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> second = service.fetchAllMarketplaceMCPServers(false);
             assertThat(second).hasSize(1);
             assertThat(mockServer.getRequestCount()).isEqualTo(1);
         }
@@ -418,8 +418,8 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(secondResponse)));
 
-            service.fetchAllServers(false);
-            List<MCPRegistryServerEntry> refreshed = service.fetchAllServers(true);
+            service.fetchAllMarketplaceMCPServers(false);
+            List<MCPRegistryServerEntry> refreshed = service.fetchAllMarketplaceMCPServers(true);
 
             assertThat(refreshed).hasSize(1);
             assertThat(mockServer.getRequestCount()).isEqualTo(2);
@@ -453,7 +453,7 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(page2)));
 
-            List<MCPRegistryServerEntry> all = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> all = service.fetchAllMarketplaceMCPServers(false);
 
             assertThat(all).hasSize(2);
             assertThat(mockServer.getRequestCount()).isEqualTo(2);
@@ -466,7 +466,7 @@ class MCPRegistryServiceTest {
                     .addHeader("Content-Type", "application/json")
                     .setBody(gson.toJson(emptyResponse)));
 
-            List<MCPRegistryServerEntry> result = service.fetchAllServers(false);
+            List<MCPRegistryServerEntry> result = service.fetchAllMarketplaceMCPServers(false);
 
             assertThat(result).isEmpty();
         }

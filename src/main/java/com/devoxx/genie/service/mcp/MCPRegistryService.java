@@ -54,14 +54,14 @@ public class MCPRegistryService {
     }
 
     /**
-     * Fetch all servers from the registry and cache them in memory.
+     * Fetch all MCP servers from the marketplace registry and cache them in memory.
      *
      * @param forceRefresh if true, re-fetches from the registry even if cached
      * @return the complete list of servers
      * @throws IOException if any network request fails
      */
     @NotNull
-    public List<MCPRegistryServerEntry> fetchAllServers(boolean forceRefresh) throws IOException {
+    public List<MCPRegistryServerEntry> fetchAllMarketplaceMCPServers(boolean forceRefresh) throws IOException {
         if (cachedServers != null && !forceRefresh) {
             return cachedServers;
         }
