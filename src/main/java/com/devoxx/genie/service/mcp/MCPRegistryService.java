@@ -23,6 +23,7 @@ public class MCPRegistryService {
     private static final String REGISTRY_BASE_URL = "https://registry.modelcontextprotocol.io/v0.1/servers";
     private final OkHttpClient client;
     private final Gson gson;
+    private final String registryBaseUrl;
 
     private List<MCPRegistryServerEntry> cachedServers = null;
 
@@ -34,8 +35,17 @@ public class MCPRegistryService {
      * Package-private constructor for testing with injectable dependencies.
      */
     MCPRegistryService(OkHttpClient client, Gson gson) {
+        this(client, gson, REGISTRY_BASE_URL);
+    }
+
+    /**
+     * Package-private constructor allowing the registry base URL to be overridden, so integration
+     * tests can point the real {@link #searchServers} implementation at a local mock server.
+     */
+    MCPRegistryService(OkHttpClient client, Gson gson, String registryBaseUrl) {
         this.client = client;
         this.gson = gson;
+        this.registryBaseUrl = registryBaseUrl;
     }
 
     @NotNull
@@ -70,8 +80,11 @@ public class MCPRegistryService {
 
     /**
      * Search for MCP servers in the registry.
+     * <p>
+     * Note: the registry's {@code search} parameter performs a substring match on the
+     * server <em>name</em> only (it does not search descriptions).
      *
-     * @param query  optional search query
+     * @param query  optional search query (substring match on server name)
      * @param cursor optional pagination cursor from a previous response
      * @param limit  max number of results to return
      * @return the registry response containing servers and pagination metadata
@@ -81,11 +94,11 @@ public class MCPRegistryService {
     public MCPRegistryResponse searchServers(@Nullable String query,
                                              @Nullable String cursor,
                                              int limit) throws IOException {
-        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(REGISTRY_BASE_URL)).newBuilder();
+        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(registryBaseUrl)).newBuilder();
         urlBuilder.addQueryParameter("limit", String.valueOf(limit));
 
         if (query != null && !query.isBlank()) {
-            urlBuilder.addQueryParameter("q", query);
+            urlBuilder.addQueryParameter("search", query);
         }
         if (cursor != null && !cursor.isBlank()) {
             urlBuilder.addQueryParameter("cursor", cursor);
