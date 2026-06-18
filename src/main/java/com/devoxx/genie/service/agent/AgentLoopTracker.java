@@ -7,8 +7,10 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.service.tool.AiServiceTool;
-import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -62,43 +64,83 @@ public class AgentLoopTracker implements ToolProvider {
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
         for (AiServiceTool tool : result.aiServiceTools()) {
-            ToolSpecification spec = tool.toolSpecification();
             ToolExecutor original = tool.toolExecutor();
 
-            ToolExecutor tracked = (toolRequest, memoryId) -> {
-                if (cancelled.get()) {
-                    String cancelMsg = "Execution cancelled by user. Stop calling tools and provide your best answer now.";
-                    log.debug("Tool call '{}' skipped — agent cancelled", toolRequest.name());
-                    return cancelMsg;
+            // Implement both ToolExecutor methods. langchain4j invokes executeWithContext()
+            // (see ToolService), and some executors — notably the langchain4j-skills
+            // activate_skill executor — only implement executeWithContext() and throw
+            // IllegalStateException("executeWithContext must be called instead") from
+            // execute(). Routing both through runTracked() forwards the InvocationContext and
+            // returns the original ToolExecutionResult untouched on success, preserving
+            // attributes such as the activated-skill marker. See issue #1040 regression.
+            ToolExecutor tracked = new ToolExecutor() {
+                @Override
+                public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
+                    return runTracked(toolRequest,
+                            () -> ToolExecutionResult.builder()
+                                    .resultText(original.execute(toolRequest, memoryId))
+                                    .build())
+                            .resultText();
                 }
 
-                int count = callCount.incrementAndGet();
-                if (count > maxToolCalls) {
-                    String errorMsg = "Error: Agent loop limit reached (" + maxToolCalls
-                            + " tool calls). Provide your best answer with the information gathered so far.";
-                    publishLogEvent(AgentType.LOOP_LIMIT, toolRequest.name(), toolRequest.arguments(), errorMsg, count);
-                    return errorMsg;
+                @Override
+                public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest,
+                                                              InvocationContext context) {
+                    return runTracked(toolRequest, () -> original.executeWithContext(toolRequest, context));
                 }
-
-                publishLogEvent(AgentType.TOOL_REQUEST, toolRequest.name(), toolRequest.arguments(), null, count);
-
-                String toolResult;
-                try {
-                    toolResult = original.execute(toolRequest, memoryId);
-                } catch (Exception e) {
-                    String errorResult = "Error: " + e.getMessage();
-                    publishLogEvent(AgentType.TOOL_ERROR, toolRequest.name(), toolRequest.arguments(), errorResult, count);
-                    return errorResult;
-                }
-
-                publishLogEvent(AgentType.TOOL_RESPONSE, toolRequest.name(), null, toolResult, count);
-                return toolResult;
             };
 
             builder.add(tool.toBuilder().toolExecutor(tracked).build());
         }
 
         return builder.build();
+    }
+
+    /**
+     * Applies cancellation, loop-limit and debug-logging bookkeeping around a single tool
+     * invocation. The {@code delegate} performs the actual call; its {@link ToolExecutionResult}
+     * is returned untouched on success so attributes (e.g. the langchain4j-skills activated-skill
+     * marker) survive the wrapping. Short-circuit and error paths return a text-only result.
+     */
+    private ToolExecutionResult runTracked(@NotNull ToolExecutionRequest toolRequest,
+                                           @NotNull DelegateCall delegate) {
+        if (cancelled.get()) {
+            String cancelMsg = "Execution cancelled by user. Stop calling tools and provide your best answer now.";
+            log.debug("Tool call '{}' skipped — agent cancelled", toolRequest.name());
+            return textResult(cancelMsg);
+        }
+
+        int count = callCount.incrementAndGet();
+        if (count > maxToolCalls) {
+            String errorMsg = "Error: Agent loop limit reached (" + maxToolCalls
+                    + " tool calls). Provide your best answer with the information gathered so far.";
+            publishLogEvent(AgentType.LOOP_LIMIT, toolRequest.name(), toolRequest.arguments(), errorMsg, count);
+            return textResult(errorMsg);
+        }
+
+        publishLogEvent(AgentType.TOOL_REQUEST, toolRequest.name(), toolRequest.arguments(), null, count);
+
+        ToolExecutionResult toolResult;
+        try {
+            toolResult = delegate.call();
+        } catch (Exception e) {
+            String errorResult = "Error: " + e.getMessage();
+            publishLogEvent(AgentType.TOOL_ERROR, toolRequest.name(), toolRequest.arguments(), errorResult, count);
+            return textResult(errorResult);
+        }
+
+        publishLogEvent(AgentType.TOOL_RESPONSE, toolRequest.name(), null, toolResult.resultText(), count);
+        return toolResult;
+    }
+
+    private static ToolExecutionResult textResult(@NotNull String text) {
+        return ToolExecutionResult.builder().resultText(text).build();
+    }
+
+    /** Performs the wrapped tool call, surfacing checked exceptions to {@link #runTracked}. */
+    @FunctionalInterface
+    private interface DelegateCall {
+        ToolExecutionResult call() throws Exception;
     }
 
     private void publishLogEvent(AgentType type, String toolName, String arguments, String result, int callNumber) {

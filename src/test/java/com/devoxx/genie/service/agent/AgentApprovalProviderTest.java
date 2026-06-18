@@ -6,11 +6,15 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
+
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -209,6 +213,91 @@ class AgentApprovalProviderTest {
             agentApprovalMock.verify(() -> AgentApprovalService.requestApproval(
                     eq(project), eq("run_command"), anyString()));
         }
+    }
+
+    /**
+     * Regression test for issue #1040: skills stopped activating with
+     * IllegalStateException("executeWithContext must be called instead").
+     *
+     * <p>The langchain4j-skills activate_skill executor only implements
+     * {@code executeWithContext()} — its {@code execute()} throws. langchain4j's ToolService
+     * invokes {@code executeWithContext()}, so the approval wrapper must forward that call (and
+     * the InvocationContext) instead of routing through {@code execute()}.</p>
+     */
+    @Test
+    void skillExecutor_executeWithContext_forwardsToOriginalAndPreservesAttributes() {
+        ToolSpecification activateSkillSpec = createSpec("activate_skill");
+        ToolExecutor skillExecutor = skillStyleExecutor("Skill body", Map.of("activated_skill", "release"));
+        ToolProvider skillDelegate = req -> ToolProviderResult.builder()
+                .add(activateSkillSpec, skillExecutor)
+                .build();
+
+        try (MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class);
+             MockedStatic<AgentApprovalService> agentApprovalMock = mockStatic(AgentApprovalService.class)) {
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+            agentApprovalMock.when(() -> AgentApprovalService.requestApproval(
+                    eq(project), eq("activate_skill"), anyString())).thenReturn(true);
+
+            AgentApprovalProvider approvalProvider = new AgentApprovalProvider(skillDelegate, project, false);
+            ToolProviderResult result = approvalProvider.provideTools(providerRequest);
+
+            ToolExecutor wrapped = result.toolExecutorByName("activate_skill");
+            assertThat(wrapped).isNotNull();
+
+            // The wrapped executor must forward executeWithContext() rather than throwing.
+            ToolExecutionResult execResult =
+                    wrapped.executeWithContext(createExecRequest("activate_skill"), null);
+
+            assertThat(execResult.resultText()).isEqualTo("Skill body");
+            assertThat(execResult.attributes()).containsEntry("activated_skill", "release");
+        }
+    }
+
+    @Test
+    void skillExecutor_executeWithContext_deniedReturnsDenialWithoutInvokingSkill() {
+        ToolSpecification activateSkillSpec = createSpec("activate_skill");
+        ToolExecutor skillExecutor = skillStyleExecutor("Skill body", Map.of("activated_skill", "release"));
+        ToolProvider skillDelegate = req -> ToolProviderResult.builder()
+                .add(activateSkillSpec, skillExecutor)
+                .build();
+
+        try (MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class);
+             MockedStatic<AgentApprovalService> agentApprovalMock = mockStatic(AgentApprovalService.class)) {
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+            agentApprovalMock.when(() -> AgentApprovalService.requestApproval(
+                    eq(project), eq("activate_skill"), anyString())).thenReturn(false);
+
+            AgentApprovalProvider approvalProvider = new AgentApprovalProvider(skillDelegate, project, false);
+            ToolProviderResult result = approvalProvider.provideTools(providerRequest);
+
+            ToolExecutor wrapped = result.toolExecutorByName("activate_skill");
+            ToolExecutionResult execResult =
+                    wrapped.executeWithContext(createExecRequest("activate_skill"), null);
+
+            assertThat(execResult.resultText()).isEqualTo("Tool execution was denied by the user.");
+        }
+    }
+
+    /**
+     * Builds a ToolExecutor that behaves like the langchain4j-skills executors: {@code execute()}
+     * throws, while {@code executeWithContext()} returns the real result.
+     */
+    private ToolExecutor skillStyleExecutor(String text, Map<String, Object> attributes) {
+        return new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest request, Object memoryId) {
+                throw new IllegalStateException("executeWithContext must be called instead");
+            }
+
+            @Override
+            public ToolExecutionResult executeWithContext(ToolExecutionRequest request,
+                                                          InvocationContext context) {
+                return ToolExecutionResult.builder()
+                        .resultText(text)
+                        .attributes(attributes)
+                        .build();
+            }
+        };
     }
 
     private ToolSpecification createSpec(String name) {

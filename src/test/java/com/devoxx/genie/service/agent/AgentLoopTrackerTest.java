@@ -2,7 +2,9 @@ package com.devoxx.genie.service.agent;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,6 +105,71 @@ class AgentLoopTrackerTest {
 
         tracker.reset();
         assertThat(tracker.getCallCount()).isEqualTo(0);
+    }
+
+    /**
+     * Regression test for issue #1040: skills stopped activating with
+     * IllegalStateException("executeWithContext must be called instead").
+     *
+     * <p>The loop tracker must forward executeWithContext() (the method langchain4j's ToolService
+     * actually invokes) to the wrapped executor instead of routing through execute(), and must
+     * return the original ToolExecutionResult so skill-activation attributes survive.</p>
+     */
+    @Test
+    void executeWithContext_skillExecutor_forwardsAndPreservesAttributes() {
+        ToolSpecification spec = createSpec("activate_skill");
+        ToolExecutor skillExecutor = skillStyleExecutor("Skill body", Map.of("activated_skill", "release"));
+        ToolProvider delegate = req -> ToolProviderResult.builder().add(spec, skillExecutor).build();
+
+        AgentLoopTracker tracker = new AgentLoopTracker(delegate, 3);
+        ToolProviderResult result = tracker.provideTools(providerRequest);
+
+        ToolExecutor wrapped = result.tools().values().iterator().next();
+        ToolExecutionResult execResult =
+                wrapped.executeWithContext(createExecRequest("activate_skill"), null);
+
+        assertThat(execResult.resultText()).isEqualTo("Skill body");
+        assertThat(execResult.attributes()).containsEntry("activated_skill", "release");
+        assertThat(tracker.getCallCount()).isEqualTo(1);
+    }
+
+    @Test
+    void executeWithContext_overLimit_returnsErrorWithoutInvokingSkill() {
+        ToolSpecification spec = createSpec("activate_skill");
+        ToolExecutor skillExecutor = skillStyleExecutor("Skill body", Map.of("activated_skill", "release"));
+        ToolProvider delegate = req -> ToolProviderResult.builder().add(spec, skillExecutor).build();
+
+        AgentLoopTracker tracker = new AgentLoopTracker(delegate, 1);
+        ToolProviderResult result = tracker.provideTools(providerRequest);
+
+        ToolExecutor wrapped = result.tools().values().iterator().next();
+        wrapped.executeWithContext(createExecRequest("activate_skill"), null); // 1 (allowed)
+
+        ToolExecutionResult execResult =
+                wrapped.executeWithContext(createExecRequest("activate_skill"), null); // 2 > limit
+        assertThat(execResult.resultText()).contains("Agent loop limit reached");
+    }
+
+    /**
+     * Builds a ToolExecutor that behaves like the langchain4j-skills executors: {@code execute()}
+     * throws, while {@code executeWithContext()} returns the real result.
+     */
+    private ToolExecutor skillStyleExecutor(String text, Map<String, Object> attributes) {
+        return new ToolExecutor() {
+            @Override
+            public String execute(ToolExecutionRequest request, Object memoryId) {
+                throw new IllegalStateException("executeWithContext must be called instead");
+            }
+
+            @Override
+            public ToolExecutionResult executeWithContext(ToolExecutionRequest request,
+                                                          InvocationContext context) {
+                return ToolExecutionResult.builder()
+                        .resultText(text)
+                        .attributes(attributes)
+                        .build();
+            }
+        };
     }
 
     private ToolSpecification createSpec(String name) {

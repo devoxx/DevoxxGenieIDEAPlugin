@@ -1,14 +1,17 @@
 package com.devoxx.genie.service.agent;
 
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.invocation.InvocationContext;
 import dev.langchain4j.service.tool.AiServiceTool;
-import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
@@ -48,29 +51,63 @@ public class AgentApprovalProvider implements ToolProvider {
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
         for (AiServiceTool tool : result.aiServiceTools()) {
-            ToolSpecification spec = tool.toolSpecification();
             ToolExecutor original = tool.toolExecutor();
 
-            ToolExecutor approvalExecutor = (toolRequest, memoryId) -> {
-                boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());
-                boolean needsApproval = !(autoApproveReadOnly && isReadOnly);
-
-                if (needsApproval) {
-                    boolean approved = AgentApprovalService.requestApproval(
-                            project, toolRequest.name(), toolRequest.arguments());
-                    if (!approved) {
-                        log.debug("Agent tool execution denied: {}", toolRequest.name());
-                        return "Tool execution was denied by the user.";
+            // Implement both ToolExecutor methods. langchain4j invokes executeWithContext()
+            // (see ToolService), and some executors — notably the langchain4j-skills
+            // activate_skill executor — only implement executeWithContext() and throw
+            // IllegalStateException("executeWithContext must be called instead") from
+            // execute(). Forwarding the InvocationContext keeps those tools working and
+            // preserves the original ToolExecutionResult (including attributes such as the
+            // activated-skill marker). See issue #1040 regression.
+            ToolExecutor approvalExecutor = new ToolExecutor() {
+                @Override
+                public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
+                    String denial = denialMessageOrNull(toolRequest);
+                    if (denial != null) {
+                        return denial;
                     }
+                    return original.execute(toolRequest, memoryId);
                 }
 
-                log.debug("Agent tool execution approved: {}", toolRequest.name());
-                return original.execute(toolRequest, memoryId);
+                @Override
+                public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest,
+                                                              InvocationContext context) {
+                    String denial = denialMessageOrNull(toolRequest);
+                    if (denial != null) {
+                        return ToolExecutionResult.builder().resultText(denial).build();
+                    }
+                    return original.executeWithContext(toolRequest, context);
+                }
             };
 
             builder.add(tool.toBuilder().toolExecutor(approvalExecutor).build());
         }
 
         return builder.build();
+    }
+
+    /**
+     * Runs the approval gate for a single tool invocation.
+     *
+     * @return {@code null} when the tool may proceed, or the denial message to return to the
+     *         LLM when the user declined.
+     */
+    @Nullable
+    private String denialMessageOrNull(@NotNull ToolExecutionRequest toolRequest) {
+        boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());
+        boolean needsApproval = !(autoApproveReadOnly && isReadOnly);
+
+        if (needsApproval) {
+            boolean approved = AgentApprovalService.requestApproval(
+                    project, toolRequest.name(), toolRequest.arguments());
+            if (!approved) {
+                log.debug("Agent tool execution denied: {}", toolRequest.name());
+                return "Tool execution was denied by the user.";
+            }
+        }
+
+        log.debug("Agent tool execution approved: {}", toolRequest.name());
+        return null;
     }
 }
