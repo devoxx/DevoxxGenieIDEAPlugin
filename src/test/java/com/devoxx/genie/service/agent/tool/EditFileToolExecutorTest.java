@@ -361,6 +361,60 @@ class EditFileToolExecutorTest {
     }
 
     @Test
+    void editFile_crlfFileContent_lfMultilineOldString_matchesAndPreservesCrlf() throws IOException {
+        // Issue #1144: file saved with Windows CRLF line endings, but the LLM emits the
+        // multi-line old_string with LF only. The match must still succeed, and the write
+        // must preserve the file's original CRLF line endings.
+        VirtualFile projectBase = mock(VirtualFile.class);
+        VirtualFile file = createMockFileWithContent("import a.A\r\nimport a.B\r\nclass Foo {}\r\n");
+
+        EditFileToolExecutor testExecutor = createTestableExecutor(projectBase, file);
+
+        String result = testExecutor.editFile("Foo.java",
+                "import a.A\nimport a.B", "import a.B\nimport a.A", false);
+        assertThat(result).contains("Successfully edited");
+
+        ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+        verify(file).setBinaryContent(captor.capture());
+        assertThat(new String(captor.getValue(), StandardCharsets.UTF_8))
+                .isEqualTo("import a.B\r\nimport a.A\r\nclass Foo {}\r\n");
+    }
+
+    @Test
+    void editFile_crlfFileContent_lfSingleLineOldString_stillWorks() throws IOException {
+        VirtualFile projectBase = mock(VirtualFile.class);
+        VirtualFile file = createMockFileWithContent("line1\r\nline2\r\nline3\r\n");
+
+        EditFileToolExecutor testExecutor = createTestableExecutor(projectBase, file);
+
+        String result = testExecutor.editFile("test.txt", "line2", "replaced", false);
+        assertThat(result).contains("Successfully edited");
+
+        ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+        verify(file).setBinaryContent(captor.capture());
+        assertThat(new String(captor.getValue(), StandardCharsets.UTF_8))
+                .isEqualTo("line1\r\nreplaced\r\nline3\r\n");
+    }
+
+    @Test
+    void editFile_lfFileContent_lfMultilineOldString_preservesLf() throws IOException {
+        // Guard against the CRLF normalization accidentally rewriting an LF file to CRLF.
+        VirtualFile projectBase = mock(VirtualFile.class);
+        VirtualFile file = createMockFileWithContent("import a.A\nimport a.B\nclass Foo {}\n");
+
+        EditFileToolExecutor testExecutor = createTestableExecutor(projectBase, file);
+
+        String result = testExecutor.editFile("Foo.java",
+                "import a.A\nimport a.B", "import a.B\nimport a.A", false);
+        assertThat(result).contains("Successfully edited");
+
+        ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+        verify(file).setBinaryContent(captor.capture());
+        assertThat(new String(captor.getValue(), StandardCharsets.UTF_8))
+                .isEqualTo("import a.B\nimport a.A\nclass Foo {}\n");
+    }
+
+    @Test
     void editFile_setBinaryContentThrows_returnsError() throws IOException {
         VirtualFile projectBase = mock(VirtualFile.class);
         VirtualFile file = createMockFileWithContent("hello world");

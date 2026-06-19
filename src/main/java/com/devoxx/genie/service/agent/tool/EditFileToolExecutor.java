@@ -88,10 +88,20 @@ public class EditFileToolExecutor implements ToolExecutor {
                 return "Error: Access denied - path is outside the project root.";
             }
 
-            String content = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+            String rawContent = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+
+            // Normalize line endings to LF before matching. LLMs emit old_string with LF
+            // even when the file on disk uses CRLF (typical on Windows), which would
+            // otherwise make any multi-line old_string impossible to match (issue #1144).
+            // We detect the file's original separator so we can restore it on write and
+            // avoid silently rewriting the whole file's line endings.
+            String lineSeparator = detectLineSeparator(rawContent);
+            String content = normalizeLineEndings(rawContent);
+            String normalizedOld = normalizeLineEndings(oldString);
+            String normalizedNew = normalizeLineEndings(newString);
 
             // Count occurrences
-            int count = countOccurrences(content, oldString);
+            int count = countOccurrences(content, normalizedOld);
             if (count == 0) {
                 return "Error: The specified old_string was not found in " + path;
             }
@@ -101,17 +111,22 @@ public class EditFileToolExecutor implements ToolExecutor {
                         "or set replace_all to true.";
             }
 
-            // Perform replacement
+            // Perform replacement (in LF space)
             String newContent;
             if (replaceAll) {
-                newContent = content.replace(oldString, newString);
+                newContent = content.replace(normalizedOld, normalizedNew);
             } else {
-                int idx = content.indexOf(oldString);
-                newContent = content.substring(0, idx) + newString +
-                        content.substring(idx + oldString.length());
+                int idx = content.indexOf(normalizedOld);
+                newContent = content.substring(0, idx) + normalizedNew +
+                        content.substring(idx + normalizedOld.length());
             }
 
-            file.setBinaryContent(newContent.getBytes(StandardCharsets.UTF_8));
+            // Restore the file's original line separator before writing.
+            String outContent = "\n".equals(lineSeparator)
+                    ? newContent
+                    : newContent.replace("\n", lineSeparator);
+
+            file.setBinaryContent(outContent.getBytes(StandardCharsets.UTF_8));
 
             if (replaceAll && count > 1) {
                 return "Successfully replaced " + count + " occurrences in " + path;
@@ -134,6 +149,26 @@ public class EditFileToolExecutor implements ToolExecutor {
 
     boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
         return VfsUtilCore.isAncestor(ancestor, descendant, false);
+    }
+
+    /** Converts CRLF and lone CR line endings to LF so matching is line-ending agnostic. */
+    static @NotNull String normalizeLineEndings(@NotNull String s) {
+        return s.replace("\r\n", "\n").replace('\r', '\n');
+    }
+
+    /**
+     * Detects the dominant line separator used by the file content so it can be preserved
+     * on write. Returns "\r\n" if any CRLF is present, "\r" for lone CR (classic Mac),
+     * otherwise "\n".
+     */
+    static @NotNull String detectLineSeparator(@NotNull String content) {
+        if (content.contains("\r\n")) {
+            return "\r\n";
+        }
+        if (content.indexOf('\r') != -1) {
+            return "\r";
+        }
+        return "\n";
     }
 
     static int countOccurrences(@NotNull String content, @NotNull String search) {

@@ -144,8 +144,21 @@ public class AgentLoopTracker implements ToolProvider {
             return errorResult;
         }
 
-        publishLogEvent(AgentType.TOOL_RESPONSE, toolRequest.name(), null, toolResult, count);
+        // Tool executors signal failure by returning an "Error: ..." string rather than
+        // throwing (e.g. EditFileToolExecutor when old_string is not found). Classify
+        // those as TOOL_ERROR so the activity view shows a failure icon instead of a
+        // green "valid" check (issue #1144).
+        AgentType type = isErrorResult(toolResult) ? AgentType.TOOL_ERROR : AgentType.TOOL_RESPONSE;
+        publishLogEvent(type, toolRequest.name(), null, toolResult, count);
         return toolResult;
+    }
+
+    /**
+     * Returns {@code true} when a tool result string represents an error by convention —
+     * i.e. it starts with the "Error:" prefix used across the built-in tool executors.
+     */
+    static boolean isErrorResult(@Nullable String result) {
+        return result != null && result.stripLeading().startsWith("Error:");
     }
 
     /**
