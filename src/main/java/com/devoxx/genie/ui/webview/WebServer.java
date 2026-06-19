@@ -1,20 +1,19 @@
 package com.devoxx.genie.ui.webview;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.devoxx.genie.ui.webview.template.ResourceLoader.loadResource;
@@ -22,11 +21,16 @@ import static com.devoxx.genie.ui.webview.template.ResourceLoader.loadResource;
 @Slf4j
 @SuppressWarnings("java:S6548") // Singleton is intentional — single web server instance per IDE
 public class WebServer {
+
+    private static final String HEADER_CONTENT_TYPE = "Content-Type";
+    private static final String HEADER_ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    private static final String HEADER_ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
+    private static final String HEADER_ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+
     private static WebServer instance;
     private int port = -1;
-    private EventLoopGroup bossGroup;
-    private EventLoopGroup workerGroup;
-    private Channel serverChannel;
+    private HttpServer httpServer;
+    private ExecutorService executor;
     private final Map<String, String> resources = new ConcurrentHashMap<>();
     private final Map<String, String> scripts = new ConcurrentHashMap<>();
 
@@ -46,32 +50,12 @@ public class WebServer {
 
         try {
             port = findAvailablePort();
-            bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
-            workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) {
-                            ch.pipeline().addLast(
-                                    new HttpServerCodec(),
-                                    new HttpObjectAggregator(65536),
-                                    new WebServerHandler()
-                            );
-                        }
-                    })
-                    .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true);
-
-            ChannelFuture future = bootstrap.bind(port).sync();
-            serverChannel = future.channel();
+            httpServer = HttpServer.create(new InetSocketAddress("localhost", port), 0);
+            httpServer.createContext("/", this::handleRequest);
+            executor = Executors.newCachedThreadPool();
+            httpServer.setExecutor(executor);
+            httpServer.start();
             log.info("Web server started on port {}", port);
-        } catch (InterruptedException e) {
-            log.error("Web server start interrupted", e);
-            Thread.currentThread().interrupt();
-            stop();
         } catch (Exception e) {
             log.error("Failed to start web server", e);
             stop();
@@ -79,23 +63,19 @@ public class WebServer {
     }
 
     public void stop() {
-        if (serverChannel != null) {
-            serverChannel.close();
-            serverChannel = null;
+        if (httpServer != null) {
+            httpServer.stop(0);
+            httpServer = null;
         }
-        if (bossGroup != null) {
-            bossGroup.shutdownGracefully();
-            bossGroup = null;
-        }
-        if (workerGroup != null) {
-            workerGroup.shutdownGracefully();
-            workerGroup = null;
+        if (executor != null) {
+            executor.shutdownNow();
+            executor = null;
         }
         port = -1;
     }
 
     public boolean isRunning() {
-        return serverChannel != null && serverChannel.isOpen();
+        return httpServer != null;
     }
 
     public String getServerUrl() {
@@ -112,7 +92,7 @@ public class WebServer {
     public String getResourceUrl(String resourcePath) {
         return getServerUrl() + resourcePath;
     }
-    
+
     /**
      * Add a dynamic JavaScript script that can be injected into web views.
      *
@@ -125,10 +105,10 @@ public class WebServer {
         resources.put(resourcePath, content);
         scripts.put(scriptId, resourcePath);
     }
-    
+
     /**
      * Get the URL for a previously registered script.
-     * 
+     *
      * @param scriptId the script identifier
      * @return URL to the script, or null if not found
      */
@@ -138,11 +118,8 @@ public class WebServer {
     }
 
     private int findAvailablePort() {
-        try {
-            java.net.ServerSocket socket = new java.net.ServerSocket(0);
-            int availablePort = socket.getLocalPort();
-            socket.close();
-            return availablePort;
+        try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
+            return socket.getLocalPort();
         } catch (Exception e) {
             log.error("Failed to find available port", e);
             return 8090; // Fallback port
@@ -153,7 +130,7 @@ public class WebServer {
         addStaticResource("/icons/copy.svg", "icons/copy.svg");
         addStaticResource("/icons/copy_dark.svg", "icons/copy_dark.svg");
     }
-    
+
     /**
      * Add a static resource from the resources directory to be served by the web server.
      *
@@ -174,116 +151,90 @@ public class WebServer {
         }
     }
 
-    private class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-            String uri = request.uri();
-            
-            // Normalize URI by removing query string if present
-            if (uri.contains("?")) {
-                uri = uri.substring(0, uri.indexOf("?"));
-            }
-
+    private void handleRequest(@NotNull HttpExchange exchange) throws IOException {
+        try {
+            // getPath() already excludes any query string
+            String uri = exchange.getRequestURI().getPath();
             log.info("Handling request for: " + uri);
-            
-            // Handle health check endpoint
+
             if ("/health-check".equals(uri)) {
-                handleHealthCheckRequest(ctx);
+                handleHealthCheckRequest(exchange);
                 return;
             }
-            
+
             if (resources.containsKey(uri)) {
                 String content = resources.get(uri);
-                ByteBuf buffer = Unpooled.copiedBuffer(content, CharsetUtil.UTF_8);
-                
-                FullHttpResponse response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buffer);
-                
+                Headers headers = exchange.getResponseHeaders();
                 String contentType = getContentType(uri);
                 log.info("Serving content with type: {}", contentType);
-                
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, contentType);
-                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
-                
-                // Set CORS headers
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, OPTIONS");
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type");
-                
-                ctx.writeAndFlush(response);
+                headers.set(HEADER_CONTENT_TYPE, contentType);
+                addCorsHeaders(headers);
+                writeResponse(exchange, 200, content);
             } else {
                 log.warn("Resource not found: {}", uri);
-                ByteBuf buffer = Unpooled.copiedBuffer("Resource not found: " + uri, CharsetUtil.UTF_8);
-                FullHttpResponse response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND, buffer);
-                
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
-                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
-                
-                ctx.writeAndFlush(response);
+                exchange.getResponseHeaders().set(HEADER_CONTENT_TYPE, "text/plain");
+                writeResponse(exchange, 404, "Resource not found: " + uri);
             }
+        } catch (Exception e) {
+            log.error("Exception in web server handler", e);
+        } finally {
+            exchange.close();
         }
+    }
 
-        /**
-         * Handle health check requests to verify server connectivity.
-         */
-        private void handleHealthCheckRequest(ChannelHandlerContext ctx) {
+    /**
+     * Handle health check requests to verify server connectivity.
+     */
+    private void handleHealthCheckRequest(@NotNull HttpExchange exchange) {
+        try {
+            String healthStatus = "{\"status\":\"ok\",\"timestamp\":" + System.currentTimeMillis() + "}";
+            Headers headers = exchange.getResponseHeaders();
+            headers.set(HEADER_CONTENT_TYPE, "application/json");
+            addCorsHeaders(headers);
+
+            // Add cache control to prevent caching
+            headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+            headers.set("Pragma", "no-cache");
+            headers.set("Expires", "0");
+
+            writeResponse(exchange, 200, healthStatus);
+            log.debug("Health check response sent");
+        } catch (Exception e) {
+            log.error("Error handling health check request", e);
             try {
-                String healthStatus = "{\"status\":\"ok\",\"timestamp\":" + System.currentTimeMillis() + "}";
-                ByteBuf buffer = Unpooled.copiedBuffer(healthStatus, CharsetUtil.UTF_8);
-                
-                FullHttpResponse response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buffer);
-                
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
-                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
-                
-                // Set CORS headers
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, OPTIONS");
-                response.headers().set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type");
-                
-                // Add cache control to prevent caching
-                response.headers().set(HttpHeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
-                response.headers().set(HttpHeaderNames.PRAGMA, "no-cache");
-                response.headers().set(HttpHeaderNames.EXPIRES, "0");
-                
-                ctx.writeAndFlush(response);
-                log.debug("Health check response sent");
-                
-            } catch (Exception e) {
-                log.error("Error handling health check request", e);
-                
-                // Send error response
-                ByteBuf buffer = Unpooled.copiedBuffer("{\"status\":\"error\"}", CharsetUtil.UTF_8);
-                FullHttpResponse response = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, buffer);
-                
-                response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
-                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, buffer.readableBytes());
-                
-                ctx.writeAndFlush(response);
+                exchange.getResponseHeaders().set(HEADER_CONTENT_TYPE, "application/json");
+                writeResponse(exchange, 500, "{\"status\":\"error\"}");
+            } catch (IOException ioe) {
+                log.error("Failed to send health check error response", ioe);
             }
         }
+    }
 
-        private @NotNull String getContentType(@NotNull String uri) {
-            if (uri.endsWith(".js")) {
-                return "application/javascript";
-            } else if (uri.endsWith(".css")) {
-                return "text/css";
-            } else if (uri.endsWith(".html") || uri.startsWith("/dynamic/")) {
-                return "text/html";
-            } else if (uri.endsWith(".svg")) {
-                return "image/svg+xml";
-            } else {
-                return "text/plain";
-            }
+    private void addCorsHeaders(@NotNull Headers headers) {
+        headers.set(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        headers.set(HEADER_ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, OPTIONS");
+        headers.set(HEADER_ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type");
+    }
+
+    private void writeResponse(@NotNull HttpExchange exchange, int statusCode, @NotNull String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(statusCode, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
         }
+    }
 
-        @Override
-        public void exceptionCaught(@NotNull ChannelHandlerContext ctx, Throwable cause) {
-            log.error("Exception in web server handler", cause);
-            ctx.close();
+    private @NotNull String getContentType(@NotNull String uri) {
+        if (uri.endsWith(".js")) {
+            return "application/javascript";
+        } else if (uri.endsWith(".css")) {
+            return "text/css";
+        } else if (uri.endsWith(".html") || uri.startsWith("/dynamic/")) {
+            return "text/html";
+        } else if (uri.endsWith(".svg")) {
+            return "image/svg+xml";
+        } else {
+            return "text/plain";
         }
     }
 }
