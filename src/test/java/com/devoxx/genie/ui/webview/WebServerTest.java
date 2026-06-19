@@ -11,12 +11,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Tests for the embedded Netty WebServer used by the JCEF WebView.
+ * Tests for the embedded WebServer (JDK {@code com.sun.net.httpserver.HttpServer})
+ * used by the JCEF WebView.
  * <p>
- * The Netty server lifecycle tests use {@code assumeTrue} because the IntelliJ
- * test harness bundles Netty 4.1.x which may conflict with the project's 4.2.x
- * at the classloader level. These tests run fully in CI / standalone Gradle but
- * are gracefully skipped when the classpath conflict is detected.
+ * The lifecycle tests use {@code assumeTrue} as a defensive guard: if the server
+ * cannot bind in a restricted test environment they are skipped rather than failed.
  */
 class WebServerTest {
 
@@ -76,22 +75,21 @@ class WebServerTest {
         assertThat(url).endsWith("/test.css");
     }
 
-    // --- Netty server lifecycle tests (may be skipped due to classpath conflicts) ---
+    // --- Server lifecycle tests (skipped if the server cannot bind in this environment) ---
 
     private boolean tryStartServer() {
         try {
             WebServer.getInstance().start();
             serverStartedByTest = true;
             return WebServer.getInstance().isRunning();
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            // IntelliJ test harness bundles Netty 4.1.x which conflicts with 4.2.x
+        } catch (NoClassDefFoundError e) {
             return false;
         }
     }
 
     @Test
     void startAndStop() {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         WebServer server = WebServer.getInstance();
         assertThat(server.isRunning()).isTrue();
@@ -104,7 +102,7 @@ class WebServerTest {
 
     @Test
     void startIsIdempotent() {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         WebServer server = WebServer.getInstance();
         String firstUrl = server.getServerUrl();
@@ -117,7 +115,7 @@ class WebServerTest {
 
     @Test
     void healthCheckEndpoint() throws Exception {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         HttpURLConnection conn = openConnection("/health-check");
         assertThat(conn.getResponseCode()).isEqualTo(200);
@@ -129,7 +127,7 @@ class WebServerTest {
 
     @Test
     void serveDynamicResourceViaHttp() throws Exception {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         String html = "<html><body>hello</body></html>";
         String resourcePath = WebServer.getInstance().addDynamicResource(html);
@@ -143,7 +141,7 @@ class WebServerTest {
 
     @Test
     void serveDynamicScriptViaHttp() throws Exception {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         String js = "console.log('test');";
         WebServer server = WebServer.getInstance();
@@ -163,7 +161,7 @@ class WebServerTest {
 
     @Test
     void notFoundForUnknownResource() throws Exception {
-        assumeTrue(tryStartServer(), "Skipped: Netty classpath conflict in test environment");
+        assumeTrue(tryStartServer(), "Skipped: web server could not bind in this environment");
 
         HttpURLConnection conn = openConnection("/does-not-exist");
         assertThat(conn.getResponseCode()).isEqualTo(404);
