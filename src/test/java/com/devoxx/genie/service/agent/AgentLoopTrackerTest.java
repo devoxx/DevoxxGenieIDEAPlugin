@@ -192,6 +192,36 @@ class AgentLoopTrackerTest {
         assertThat(overLimit.resultText()).contains("Agent loop limit reached");
     }
 
+    // --- isErrorResult() tests (issue #1144: error result strings must be flagged
+    //     as TOOL_ERROR, not shown with a green "valid" icon) ---
+
+    @Test
+    void isErrorResult_errorPrefixedString_isError() {
+        assertThat(AgentLoopTracker.isErrorResult(
+                "Error: The specified old_string was not found in Foo.java")).isTrue();
+    }
+
+    @Test
+    void isErrorResult_leadingWhitespaceBeforeError_isError() {
+        assertThat(AgentLoopTracker.isErrorResult("  Error: something went wrong")).isTrue();
+    }
+
+    @Test
+    void isErrorResult_successString_isNotError() {
+        assertThat(AgentLoopTracker.isErrorResult("Successfully edited Foo.java")).isFalse();
+    }
+
+    @Test
+    void isErrorResult_nullResult_isNotError() {
+        assertThat(AgentLoopTracker.isErrorResult(null)).isFalse();
+    }
+
+    @Test
+    void isErrorResult_textMentioningErrorMidSentence_isNotError() {
+        assertThat(AgentLoopTracker.isErrorResult(
+                "The build produced no error and finished cleanly")).isFalse();
+    }
+
     private ToolSpecification createSpec(String name) {
         return ToolSpecification.builder()
                 .name(name)
