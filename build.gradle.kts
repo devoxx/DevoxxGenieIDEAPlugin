@@ -442,6 +442,14 @@ tasks {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 
+    // Skip building the searchable-options index. It boots a headless IDE whose
+    // Grazie/PluginManager subsystem spews kotlinx.coroutines cancellation stack
+    // traces (network/SSL calls cancelled at shutdown) — harmless noise that the
+    // build does not need. Disabling it also speeds up buildPlugin.
+    buildSearchableOptions {
+        enabled = false
+    }
+
     test {
         doFirst {
             val tmpDir = File("/tmp/test")
