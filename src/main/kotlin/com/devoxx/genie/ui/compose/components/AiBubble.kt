@@ -10,6 +10,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -175,13 +178,32 @@ fun AiBubble(
     modifier: Modifier = Modifier,
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
+    cachedHeight: Dp = Dp.Unspecified,
+    onMeasured: (Dp) -> Unit = {},
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
     val shape = RoundedCornerShape(8.dp)
+    val density = LocalDensity.current
 
     Column(
         modifier = modifier
             .fillMaxWidth()
+            // Reserve the bubble's last-known height on the very first measurement after a
+            // recycled item re-enters the viewport. The Markdown renderer reports a tiny
+            // height for its first frame and grows once parsing/highlighting completes; for
+            // a finished response that one-frame jump, when the bubble is the topmost
+            // visible item, makes LazyColumn re-pin its top edge and the viewport snaps to
+            // the start of the message. Pre-sizing to the cached height removes the jump.
+            .then(if (cachedHeight != Dp.Unspecified) Modifier.heightIn(min = cachedHeight) else Modifier)
+            // Cache the stable height only for finished responses; a streaming bubble grows
+            // legitimately and must not be frozen.
+            .then(
+                if (!message.isStreaming) {
+                    Modifier.onSizeChanged { size ->
+                        if (size.height > 0) onMeasured(with(density) { size.height.toDp() })
+                    }
+                } else Modifier
+            )
             .padding(vertical = 4.dp)
             .border(1.dp, DevoxxBlue, shape)
             .background(colors.assistantBubbleBackground, shape)
