@@ -45,7 +45,7 @@ message, and show me a summary of what you changed and why.
 **IMPORTANT**: This project requires **JDK 21** for building. JDK 25 causes Gradle build script failures. Always set `JAVA_HOME` before running Gradle commands:
 
 ```bash
-export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home
+export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 ```
 
 ### Building
