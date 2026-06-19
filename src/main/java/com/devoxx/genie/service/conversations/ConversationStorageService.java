@@ -15,6 +15,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Instead of using the IntelliJ State API, we use a separate database to store conversations.
@@ -29,6 +30,11 @@ import java.util.concurrent.CompletableFuture;
 public class ConversationStorageService {
 
     private final String dbPath;
+    /** Shared instance: a single monitor serializes writes from all chat tabs. */
+    private static volatile ConversationStorageService instance;
+    /** Serializes write transactions so concurrent tab closes don't hit SQLITE_BUSY. */
+    private final ReentrantLock writeLock = new ReentrantLock();
+    private static final int BUSY_TIMEOUT_MS = 5_000;
     private static final long MAX_DB_SIZE_BYTES = 50 * 1024 * 1024;  // 50 MB threshold
     private static final int DELETE_COUNT = 10; // Delete 10 oldest conversations
 
@@ -60,8 +66,30 @@ public class ConversationStorageService {
         migrateDatabase();
     }
 
+    /** Test-only constructor that targets an explicit db file and skips PathManager/migration. */
+    ConversationStorageService(@NotNull String dbPath) {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("SQLite JDBC driver not found", e);
+        }
+        this.dbPath = dbPath;
+        createTableIfNotExists();
+        migrateDatabase();
+    }
+
     public static @NotNull ConversationStorageService getInstance() {
-        return new ConversationStorageService();
+        ConversationStorageService local = instance;
+        if (local == null) {
+            synchronized (ConversationStorageService.class) {
+                local = instance;
+                if (local == null) {
+                    local = new ConversationStorageService();
+                    instance = local;
+                }
+            }
+        }
+        return local;
     }
 
     /**
@@ -85,7 +113,16 @@ public class ConversationStorageService {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        try (Statement statement = connection.createStatement()) {
+            // WAL allows readers and a writer to work in parallel; busy_timeout makes a
+            // writer wait for the lock instead of failing immediately with SQLITE_BUSY.
+            statement.execute("PRAGMA busy_timeout = " + BUSY_TIMEOUT_MS);
+            statement.execute("PRAGMA journal_mode = WAL");
+        } catch (SQLException e) {
+            log.warn("Failed to apply SQLite pragmas (busy_timeout/WAL): {}", e.getMessage());
+        }
+        return connection;
     }
 
     private void createTableIfNotExists() {
@@ -140,7 +177,9 @@ public class ConversationStorageService {
             }
         });
 
-        // Add the conversation
+        // Add the conversation. Serialize writers so two tabs closing at once can't
+        // collide on SQLite's write lock and silently lose a conversation.
+        writeLock.lock();
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -193,6 +232,8 @@ public class ConversationStorageService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error adding conversation", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -254,6 +295,7 @@ public class ConversationStorageService {
     }
 
     public void removeConversation(@NotNull Project project, @NotNull Conversation conversation) {
+        writeLock.lock();
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -289,10 +331,13 @@ public class ConversationStorageService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error removing conversation", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
     public void clearAllConversations(@NotNull Project project) {
+        writeLock.lock();
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -324,10 +369,13 @@ public class ConversationStorageService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error clearing conversations", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
     private void cleanupOldConversations() {
+        writeLock.lock();
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -353,6 +401,8 @@ public class ConversationStorageService {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error clearing conversations", e);
+        } finally {
+            writeLock.unlock();
         }
     }
     

@@ -15,6 +15,8 @@ import com.devoxx.genie.util.ChatMessageContextUtil;
 import com.devoxx.genie.util.TemplateVariableEscaper;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
@@ -166,6 +168,67 @@ public class ChatMemoryManager {
             }
         } catch (Exception e) {
             throw new MemoryException("Failed to remove last user message from memory", e);
+        }
+    }
+
+    /**
+     * Drops a dangling tool_use left in memory when a tool loop is cancelled mid-flight.
+     * Such a tail (AiMessage with unanswered tool requests, or orphan tool results) breaks
+     * the Anthropic/OpenAI contract and fails every later request until restart.
+     * No-op when the tail is valid.
+     */
+    public void sanitizeOrphanedToolMessages(@NotNull String memoryKey) {
+        try {
+            if (!chatMemoryService.hasMemory(memoryKey)) {
+                return;
+            }
+
+            List<ChatMessage> messages = chatMemoryService.getMessagesByKey(memoryKey);
+            if (messages.isEmpty()) {
+                return;
+            }
+
+            List<ChatMessage> toRemove = new ArrayList<>();
+
+            // collect trailing tool results
+            int i = messages.size() - 1;
+            java.util.Set<String> trailingResultIds = new java.util.HashSet<>();
+            while (i >= 0 && messages.get(i) instanceof ToolExecutionResultMessage resultMessage) {
+                trailingResultIds.add(resultMessage.id());
+                i--;
+            }
+
+            // AiMessage requesting tools: valid only if every request has a matching result
+            if (i >= 0 && messages.get(i) instanceof AiMessage aiMessage && aiMessage.hasToolExecutionRequests()) {
+                boolean allAnswered = true;
+                for (ToolExecutionRequest request : aiMessage.toolExecutionRequests()) {
+                    if (!trailingResultIds.contains(request.id())) {
+                        allAnswered = false;
+                        break;
+                    }
+                }
+                if (!allAnswered) {
+                    // dangling tool_use: drop it and any partial results
+                    toRemove.add(messages.get(i));
+                    for (int j = i + 1; j < messages.size(); j++) {
+                        toRemove.add(messages.get(j));
+                    }
+                }
+            } else if (!trailingResultIds.isEmpty()) {
+                // tool results without an originating tool_use: drop them
+                for (int j = i + 1; j < messages.size(); j++) {
+                    toRemove.add(messages.get(j));
+                }
+            }
+
+            if (!toRemove.isEmpty()) {
+                chatMemoryService.removeMessagesByKey(memoryKey, toRemove);
+                log.info("Sanitized {} orphaned tool message(s) from memory key {} after cancellation",
+                        toRemove.size(), memoryKey);
+            }
+        } catch (Exception e) {
+            // best-effort: don't let cleanup mask the cancellation
+            log.warn("Failed to sanitize orphaned tool messages for memory key {}", memoryKey, e);
         }
     }
 

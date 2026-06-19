@@ -219,6 +219,9 @@ public class PromptCancellationService {
             Object userData = task.getUserData(PromptTask.CONTEXT_KEY);
             if (userData instanceof ChatMessageContext context) {
 
+                // cancelling a tool loop can leave a dangling tool_use in memory; clear it first
+                ChatMemoryManager.getInstance().sanitizeOrphanedToolMessages(context.getMemoryKey());
+
                 // Remove last user message from memory
                 ChatMemoryManager.getInstance().removeLastUserMessage(context);
                 
