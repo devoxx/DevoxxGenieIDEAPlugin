@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.8.7 - 2026-06-19
+
+### Added
+- feat(logs): surface the exact system prompt each chat sends to the model so users can inspect what the LLM actually received. It is published once per conversation (when the system message is first added to memory) under a new `AgentType.SYSTEM_PROMPT`: the inline chat **Activity** panel shows it as `[SYSTEM PROMPT]` with the full, untruncated prompt (collapsed by default, click to expand) and the standalone **DevoxxGenie Logs** panel shows a `📋 System prompt` entry (double-click → open the full prompt in an editor tab). The Logs tool window is now always available, so the prompt is inspectable even in plain chat mode (no agent/MCP/CLI/RAG required) (#1138)
+
+### Fixed
+- fix(webserver): replace the embedded `WebServer`'s IntelliJ-bundled Netty implementation with the JDK built-in `com.sun.net.httpserver.HttpServer`, eliminating all 9 Plugin Verifier "internal API" flags (`ByteBuf`, `Unpooled`, `ByteBufHolder`, `readableBytes`, `copiedBuffer`). The public API is preserved exactly, so the only caller (`SpecKanbanPanel`) is unaffected; resource serving, `/health-check`, CORS, content-type detection and 404 handling all carry over (#1141)
+- fix(storage): make conversation history safe under concurrent access so closing two chats at almost the same time no longer drops a conversation. `ConversationStorageService.getInstance()` was returning a new instance (and its own JDBC connection) on every call, and the SQLite connection had no busy timeout or WAL mode, so concurrent saves failed instantly with `SQLITE_BUSY` and lost that conversation. It is now a real double-checked singleton, the connection sets `PRAGMA busy_timeout = 5000` and `PRAGMA journal_mode = WAL`, and a shared `ReentrantLock` serializes all mutating operations (`addConversation`, `removeConversation`, `clearAllConversations`, `cleanupOldConversations`) (#1140)
+- fix(chat): stop the Compose chat viewport from teleporting while scrolling up. Two distinct bugs caused jumps: every bubble's `MessageEntrance` always placed an `AnimatedVisibility` in each `LazyColumn` item's measurement path, so recycled items reporting a transient zero size reset `firstVisibleItemIndex` to `0`; and an assistant bubble scrolling in at the top edge was first measured short (lazy `Markdown`/syntax rendering) then grew, snapping the viewport to the start of the message. `MessageEntrance` now renders content directly unless a bubble is genuinely playing its one-shot entrance (`shouldPlayEntrance(...)` extracted and unit-tested), finished AI bubbles reserve their measured height via a per-message cache, and auto-follow is guarded against re-pinning the view while the user scrolls (#1139)
+
+### Contributors
+- @coradead
+- @stephanj
+
 ## v1.8.6 - 2026-06-18
 
 ### Added

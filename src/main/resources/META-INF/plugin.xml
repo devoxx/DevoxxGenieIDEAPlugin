@@ -68,6 +68,13 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.7</h2>
+        <UL>
+                    <LI>feat(logs): inspect the exact system prompt each chat sends to the model — shown once per conversation as <code>[SYSTEM PROMPT]</code> in the inline Activity panel (full, untruncated) and as <code>&#128203; System prompt</code> in the always-available DevoxxGenie Logs panel (#1138)</LI>
+                    <LI>fix(storage): closing two chats at almost the same moment no longer drops a conversation — conversation storage is now a real singleton with SQLite WAL mode, a busy timeout, and serialized writes (#1140)</LI>
+                    <LI>fix(chat): scrolling up in the chat no longer teleports the viewport to the top or to the start of an assistant message (#1139)</LI>
+                    <LI>fix(webserver): replaced the embedded web server's bundled-Netty internals with the JDK <code>HttpServer</code>, removing all Plugin Verifier internal-API warnings (#1141)</LI>
+                </UL>
         <h2>v1.8.6</h2>
         <UL>
                     <LI>feat(welcome): the Welcome screen now nudges you to set up skills and/or MCP servers when none are configured, with "Add Skill" / "Add MCP" buttons that open the right settings panel (#1130)</LI>
