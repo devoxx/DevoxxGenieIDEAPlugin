@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.8.8 - 2026-06-19
+
+### Fixed
+- fix(edit): make the agent's edit tool match multiline `old_string` blocks on Windows files. `EditFileToolExecutor` compared `old_string` against the file's raw on-disk bytes with an exact `indexOf`, but Windows files use CRLF line endings while the LLM emits `old_string` with LF, so any multi-line block (e.g. several imports) could never match and surfaced "The specified old_string was not found". Single-line edits were unaffected, matching the reported symptom. Matching and replacement now normalize line endings to LF, and the file's detected original separator is restored on write (#1144, #1145)
+
+### Changed
+- chore(build): repoint the documented JDK 21 path to the available SDKMAN `21-zulu` JDK (the old `azul-21.0.5` path no longer existed, so Gradle silently fell back to JDK 25) and silence the `buildSearchableOptions` shutdown noise that made a passing `clean buildPlugin` look like it was failing (#1146)
+
+### Contributors
+- @stephanj
+
 ## v1.8.7 - 2026-06-19
 
 ### Added
