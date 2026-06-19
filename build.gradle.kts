@@ -7,9 +7,9 @@ plugins {
     // Kotlin 2.2.20 matches the stdlib bundled in IntelliJ 2025.3, the minimum supported IDE.
     // Do NOT bump beyond the bundled stdlib of the lowest supported IDE line: the plugin runs
     // on the IDE-provided stdlib (see binaryIncompatibleRuntimeJarPatterns below).
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.lombok") version "2.2.20"
-    kotlin("plugin.compose") version "2.2.20"
+    kotlin("jvm") version "2.4.0"
+    kotlin("plugin.lombok") version "2.4.0"
+    kotlin("plugin.compose") version "2.4.0"
     id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
@@ -264,7 +264,7 @@ dependencies {
     
     val lg4j_version = "1.16.3"
     val lg4j_beta_version = "1.16.3-beta26"
-    val awsSdkVersion = "2.46.10"
+    val awsSdkVersion = "2.46.14"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.0"
     val dockerJavaVersion = "3.7.1"
