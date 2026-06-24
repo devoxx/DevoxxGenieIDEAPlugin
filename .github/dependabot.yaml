@@ -14,8 +14,15 @@ updates:
     #   (2.2.20 for IntelliJ 2025.3); newer versions break runtime stdlib compat.
     # - IntelliJ Platform plugin 2.16.0 forces compileJava to JVM 21, conflicting
     #   with the Kotlin jvmTarget of 17 and failing the build.
+    # - multiplatform-markdown-renderer must stay on 0.38.x: 0.39.x+ links against a
+    #   Kotlin 2.3 stdlib / newer kotlinx-coroutines ABI absent from the runtime bundled in
+    #   IJ 2025.3.3, crashing the Compose code-highlighter with NoSuchMethodError.
     ignore:
       - dependency-name: "org.jetbrains.kotlin.jvm"
       - dependency-name: "org.jetbrains.kotlin.plugin.lombok"
       - dependency-name: "org.jetbrains.kotlin.plugin.compose"
       - dependency-name: "org.jetbrains.intellij.platform"
+      - dependency-name: "com.mikepenz:multiplatform-markdown-renderer-jvm"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "com.mikepenz:multiplatform-markdown-renderer-code-jvm"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
