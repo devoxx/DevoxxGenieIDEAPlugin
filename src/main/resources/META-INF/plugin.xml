@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.9</h2>
+        <UL>
+                    <LI>fix(chat): the Compose chat no longer crashes with <code>NoSuchMethodError</code> after MCP or streamed responses — the markdown renderer is pinned to a coroutines-compatible version (#1158)</LI>
+                    <LI>fix(mcp): <code>HTTP SSE</code> MCP servers (e.g. the JetBrains built-in MCP server) now connect correctly — "Test Connection" and tool calls use the SSE transport instead of failing with a 405 (#1151)</LI>
+                    <LI>fix(cost): agent runs no longer abort with a <code>NullPointerException</code> when a provider returns null token counts (#1149)</LI>
+                </UL>
         <h2>v1.8.8</h2>
         <UL>
                     <LI>fix(edit): the agent's edit tool now matches multiline <code>old_string</code> blocks on Windows (CRLF) files — multi-line edits no longer fail with "The specified old_string was not found" (#1144)</LI>

@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.8.9 - 2026-06-24
+
+### Fixed
+- fix(chat): stop the Compose chat from crashing with `NoSuchMethodError: kotlinx.coroutines.Job.cancel$default` after MCP or streamed responses. A Dependabot group bump had pulled `multiplatform-markdown-renderer` up to 0.43.0, which links against a newer kotlinx-coroutines ABI than the IntelliJ platform ships, so syntax-highlighted code blocks blew up at render time. The renderer is now pinned to the `0.38.x` line (0.38.1 — the newest build that still runs on the bundled coroutines), with an explicit Gradle guard so Dependabot can't push it past 0.38.x again (#1158)
+- fix(mcp): use the SSE transport for `HTTP_SSE` MCP servers so "Test Connection" and live tool calls work against SSE endpoints such as the JetBrains built-in MCP server (`http://127.0.0.1:64342/sse`). Both the test-connection and runtime paths were using the streamable-HTTP transport against an SSE endpoint, which the server rejected with `Unexpected status code: 405` (#1151)
+- fix(cost): guard against null token counts when calculating cost so agent runs no longer abort with `NullPointerException` from `TokenUsage.inputTokenCount()`. Some providers (reported with Ollama + cloud models) return a `TokenUsage` whose input/output counts are null; the cost calculation now treats missing counts as zero instead of unboxing them (#1149)
+- fix(ui): replace the deprecated `ComponentPanelBuilder` comment with a `JBLabel` hint, removing a deprecation warning while keeping the same inline help text (#1154)
+
+### Dependencies
+- chore(deps): bump the gradle-dependencies group — AWS SDK BOM 2.46.10 → 2.46.17, commonmark 0.28.0 → 0.29.0, logback-classic 1.5.34 → 1.5.35, Kotlin (jvm/lombok/compose) 2.2.20 → 2.4.0, and the Gradle wrapper 9.5.1 → 9.6.0 (#1153)
+- chore(deps): bump docusaurus dev dependencies — webpack-dev-server 5.2.4 → 5.2.5 (#1155), launch-editor 2.12.0 → 2.14.1 (#1147), and `ws` (#1152)
+
+### Documentation
+- docs(tips): add rotating tips promoting the companion SpotBugs and SonarLint DevoxxGenie plugins, and remove obsolete docs (#1148)
+
+### Contributors
+- @stephanj
+
 ## v1.8.8 - 2026-06-19
 
 ### Fixed
