@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 
 /**
  * Panel for configuring HTTP SSE MCP transport
@@ -94,6 +94,29 @@ public class HttpSseTransportPanel implements TransportPanel {
 
     @Override
     public McpClient createClient(Map<String, String> headers) throws Exception {
+        McpTransport transport = createTransport(headers);
+
+        // Create and return the client
+        return new DefaultMcpClient.Builder()
+                .clientName("DevoxxGenie")
+                .protocolVersion("2024-11-05")
+                .transport(transport)
+                .build();
+    }
+
+    /**
+     * Builds the MCP transport for this panel without opening a connection.
+     * <p>
+     * This uses the SSE-based {@link HttpMcpTransport} (which opens the event stream via a GET
+     * request to the configured {@code /sse} endpoint). The legacy SSE transport must NOT be
+     * replaced by {@code StreamableHttpMcpTransport}: the streamable transport POSTs to the single
+     * URL, and an SSE-only endpoint (e.g. the JetBrains MCP server) rejects that with HTTP 405
+     * (see issue #1151).
+     * <p>
+     * Package-private for testing.
+     */
+    @SuppressWarnings({"deprecation", "removal"}) // SSE transport is required for SSE-only servers (issue #1151)
+    McpTransport createTransport(Map<String, String> headers) {
         String sseUrl = sseUrlField.getText().trim();
 
         // Validate URL
@@ -107,9 +130,8 @@ public class HttpSseTransportPanel implements TransportPanel {
 
         log.debug("Creating HTTP SSE transport with URL: {}", sseUrl);
 
-        // Use Streamable HTTP transport (recommended replacement for legacy HTTP/SSE transport)
-        StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
-                .url(sseUrl)
+        HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
+                .sseUrl(sseUrl)
                 .timeout(Duration.ofSeconds(60))
                 .logRequests(true)
                 .logResponses(true);
@@ -118,14 +140,7 @@ public class HttpSseTransportPanel implements TransportPanel {
             transportBuilder.customHeaders(headers);
         }
 
-        McpTransport transport = transportBuilder.build();
-
-        // Create and return the client
-        return new DefaultMcpClient.Builder()
-                .clientName("DevoxxGenie")
-                .protocolVersion("2024-11-05")
-                .transport(transport)
-                .build();
+        return transportBuilder.build();
     }
 
     @Override
