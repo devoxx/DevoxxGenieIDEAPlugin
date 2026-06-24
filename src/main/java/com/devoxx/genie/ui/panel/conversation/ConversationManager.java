@@ -11,6 +11,7 @@ import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.listener.ConversationStarter;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.panel.PromptPanelRegistry;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -206,6 +207,33 @@ public class ConversationManager implements ConversationEventListener, Conversat
      */
     public void updateNewConversationLabel() {
         conversationLabel.setText("New conversation " + getCurrentTimestamp());
+    }
+
+    /**
+     * Persist the current conversation without opening a new tab.
+     * <p>
+     * This reuses the same message-bus save mechanism that
+     * {@link ChatService#startNewConversation(String)} relies on: it publishes a
+     * {@link AppTopics#CONVERSATION_TOPIC} event so the tab-scoped
+     * {@link ChatService} stores the in-progress conversation via
+     * {@code ChatService.saveConversation(...)}. Unlike starting a new
+     * conversation, it does not clear the panel or create a fresh tab.
+     * <p>
+     * Used by the tab-close path so closing a chat tab (× button or "close all")
+     * does not lose the active conversation. Because {@code saveConversation}
+     * ignores contexts without a user prompt / empty memory, closing an empty tab
+     * creates no junk history entries.
+     */
+    public void saveCurrentConversation() {
+        // Publish the same event used when starting a new conversation, but without
+        // touching the panel/tab. The per-tab ChatService filters by tabId, so pass
+        // it through to ensure the owning tab handles the save.
+        project.getMessageBus()
+                .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                .onNewConversation(ChatMessageContext.builder()
+                        .project(project)
+                        .tabId(tabId)
+                        .build());
     }
 
     /**

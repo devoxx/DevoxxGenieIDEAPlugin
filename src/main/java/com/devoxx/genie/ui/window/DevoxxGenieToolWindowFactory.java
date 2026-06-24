@@ -353,6 +353,10 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
             // Dispose conversation panel resources
             if (toolWindowContent.getPromptOutputPanel() != null
                     && toolWindowContent.getPromptOutputPanel().getConversationPanel() != null) {
+                // Save the in-progress conversation before disposing the panel so closing
+                // a tab (× button or "close all") does not lose the active conversation.
+                // saveConversation ignores empty memory, so no junk entries are created.
+                toolWindowContent.getPromptOutputPanel().getConversationPanel().saveCurrentConversation();
                 toolWindowContent.getPromptOutputPanel().getConversationPanel().dispose();
             }
 

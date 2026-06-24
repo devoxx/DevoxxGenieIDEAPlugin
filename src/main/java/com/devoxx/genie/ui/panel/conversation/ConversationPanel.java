@@ -279,6 +279,17 @@ public class ConversationPanel
     }
     
     /**
+     * Persist the current conversation to history without opening a new tab.
+     * <p>
+     * Invoked on the tab-close path (× button / "close all") so the in-progress
+     * conversation in the active tab is saved before the panel is disposed.
+     * Delegates to {@link ConversationManager#saveCurrentConversation()}.
+     */
+    public void saveCurrentConversation() {
+        conversationManager.saveCurrentConversation();
+    }
+
+    /**
      * Dispose of resources when the panel is no longer needed.
      * This should be called when the panel is being removed or when the project closes.
      */
