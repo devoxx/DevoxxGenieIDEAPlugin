@@ -81,9 +81,13 @@ public class ChatMessageContext {
 
     public void setTokenUsageAndCost(TokenUsage tokenUsage) {
         this.tokenUsage = tokenUsage;
-        if (this.tokenUsage != null) {
-            this.cost = (tokenUsage.inputTokenCount() * languageModel.getInputCost() +
-                tokenUsage.outputTokenCount() * languageModel.getOutputCost()) / 1_000_000.0;
+        if (this.tokenUsage != null && languageModel != null) {
+            // Some providers (e.g. cloud models in agent mode) return a non-null TokenUsage
+            // whose input/output counts are null. Guard against unboxing null Integers (#1149).
+            int inputTokens = tokenUsage.inputTokenCount() != null ? tokenUsage.inputTokenCount() : 0;
+            int outputTokens = tokenUsage.outputTokenCount() != null ? tokenUsage.outputTokenCount() : 0;
+            this.cost = (inputTokens * languageModel.getInputCost() +
+                outputTokens * languageModel.getOutputCost()) / 1_000_000.0;
         }
     }
 }
