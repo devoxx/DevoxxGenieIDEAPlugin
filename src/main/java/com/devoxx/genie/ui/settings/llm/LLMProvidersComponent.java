@@ -4,9 +4,10 @@ import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
-import com.intellij.openapi.ui.panel.ComponentPanelBuilder;
 import com.intellij.ui.JBIntSpinner;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -418,9 +419,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             @NotNull GridBagConstraints gbc,
             String text
     ) {
-        // Use a word-wrapping comment component so long hints reflow to multiple lines
+        // Use a word-wrapping comment label so long hints reflow to multiple lines
         // instead of stretching the input column (and the whole dialog) past its edge.
-        JComponent hintLabel = ComponentPanelBuilder.createCommentComponent(text, true, HINT_WRAP_COLUMNS, true);
+        JComponent hintLabel = createWrappingHint(text);
 
         JPanel providerPanel = new JPanel(new BorderLayout(5, 0));
         providerPanel.add(hintLabel, BorderLayout.CENTER);
@@ -431,6 +432,24 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         panel.add(providerPanel, gbc);
         gbc.weightx = 0;
         gbc.gridy++;
+    }
+
+    /**
+     * Creates a small, gray, word-wrapping hint label that mimics the look of the (now deprecated)
+     * {@code ComponentPanelBuilder.createCommentComponent}. The HTML body width is capped at roughly
+     * {@link #HINT_WRAP_COLUMNS} characters so long hints reflow onto multiple lines instead of
+     * widening the input column — and thus the whole settings dialog — beyond the view.
+     *
+     * @param text the hint text (may contain HTML).
+     * @return a configured comment-style label.
+     */
+    private @NotNull JComponent createWrappingHint(String text) {
+        JBLabel hint = new JBLabel();
+        hint.setComponentStyle(UIUtil.ComponentStyle.SMALL);
+        hint.setForeground(UIUtil.getContextHelpForeground());
+        int wrapWidth = hint.getFontMetrics(hint.getFont()).charWidth('a') * HINT_WRAP_COLUMNS;
+        hint.setText("<html><body style='width:" + wrapWidth + "px'>" + text + "</body></html>");
+        return hint;
     }
 
     /**
