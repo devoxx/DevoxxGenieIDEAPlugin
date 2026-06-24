@@ -275,7 +275,11 @@ dependencies {
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
     // backwards binary compatibility guarantee.
-    val markdownRendererVersion = "0.43.0"
+    // DO NOT let Dependabot bump this past 0.38.x: 0.41.0/0.43.0 link against a newer
+    // kotlinx-coroutines ABI whose synthetic `Job.cancel$default` bridge is absent from the
+    // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
+    // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
+    val markdownRendererVersion = "0.38.1"
     val nettyVersion = "4.2.15.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
