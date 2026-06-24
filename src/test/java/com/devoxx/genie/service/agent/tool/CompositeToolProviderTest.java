@@ -2,6 +2,7 @@ package com.devoxx.genie.service.agent.tool;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
+import dev.langchain4j.service.tool.AiServiceTool;
 import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
@@ -45,6 +46,40 @@ class CompositeToolProviderTest {
         ToolProviderResult result = composite.provideTools(request);
 
         assertThat(result.tools()).hasSize(2);
+    }
+
+    @Test
+    void provideTools_duplicateToolName_doesNotThrow_andLaterProviderWins() throws Exception {
+        // Both providers define a tool named "read_file": the built-in one and an MCP one.
+        // Without deduplication, langchain4j's ToolProviderResult.Builder throws
+        // IllegalConfigurationException("Duplicated definition for tool: read_file").
+        ToolSpecification builtInReadFile = ToolSpecification.builder()
+                .name("read_file")
+                .description("Built-in read_file")
+                .parameters(JsonObjectSchema.builder().build())
+                .build();
+        ToolSpecification mcpReadFile = ToolSpecification.builder()
+                .name("read_file")
+                .description("JetBrains MCP read_file")
+                .parameters(JsonObjectSchema.builder().build())
+                .build();
+
+        ToolExecutor builtInExec = (req, id) -> "built-in";
+        ToolExecutor mcpExec = (req, id) -> "mcp";
+
+        // Provider order mirrors AgentToolProviderFactory: built-in first, MCP second.
+        ToolProvider builtInProvider = req -> ToolProviderResult.builder().add(builtInReadFile, builtInExec).build();
+        ToolProvider mcpProvider = req -> ToolProviderResult.builder().add(mcpReadFile, mcpExec).build();
+
+        CompositeToolProvider composite = new CompositeToolProvider(List.of(builtInProvider, mcpProvider));
+        ToolProviderResult result = composite.provideTools(request);
+
+        // Only one read_file survives, and the MCP one (later provider) wins.
+        assertThat(result.aiServiceTools()).hasSize(1);
+        AiServiceTool surviving = result.aiServiceTools().get(0);
+        assertThat(surviving.name()).isEqualTo("read_file");
+        assertThat(surviving.toolSpecification().description()).isEqualTo("JetBrains MCP read_file");
+        assertThat(surviving.toolExecutor().execute(null, null)).isEqualTo("mcp");
     }
 
     @Test
