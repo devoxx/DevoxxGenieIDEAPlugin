@@ -14,6 +14,7 @@ import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -270,6 +271,7 @@ public class MCPExecutionService implements Disposable {
      * @return An initialized MCP client or null if creation fails
      */
     @Nullable
+    @SuppressWarnings({"deprecation", "removal"}) // SSE transport is required for SSE-only servers (issue #1151)
     static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
         try {
             String sseUrl = mcpServer.getUrl();
@@ -279,11 +281,13 @@ public class MCPExecutionService implements Disposable {
                 return null;
             }
 
-            MCPService.logDebug("Initializing streamable HTTP transport for HTTP_SSE config with URL: " + sseUrl);
+            MCPService.logDebug("Initializing SSE transport for HTTP_SSE config with URL: " + sseUrl);
 
-            // Use Streamable HTTP transport as replacement for legacy HTTP/SSE transport
-            StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
-                    .url(sseUrl)
+            // Use the SSE-based transport for HTTP_SSE servers. The streamable HTTP transport POSTs
+            // to the single URL, which SSE-only endpoints (e.g. the JetBrains MCP server) reject with
+            // HTTP 405 (see issue #1151). HttpMcpTransport opens the event stream via a GET on /sse.
+            HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
+                    .sseUrl(sseUrl)
                     .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                     .logRequests(MCPService.isDebugLogsEnabled())
                     .logResponses(MCPService.isDebugLogsEnabled())
