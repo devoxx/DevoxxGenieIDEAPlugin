@@ -157,7 +157,7 @@ public class AgentLoopTracker implements ToolProvider {
      * Returns {@code true} when a tool result string represents an error by convention —
      * i.e. it starts with the "Error:" prefix used across the built-in tool executors.
      */
-    static boolean isErrorResult(@Nullable String result) {
+    public static boolean isErrorResult(@Nullable String result) {
         return result != null && result.stripLeading().startsWith("Error:");
     }
 

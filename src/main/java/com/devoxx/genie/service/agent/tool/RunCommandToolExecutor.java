@@ -189,7 +189,10 @@ public class RunCommandToolExecutor implements ToolExecutor {
         if (exitCode == 0) {
             return result.isEmpty() ? "(command completed successfully with no output)" : result;
         } else {
-            return "Exit code: " + exitCode + "\n" + result;
+            // Prefix with "Error:" so AgentLoopTracker.isErrorResult() classifies a non-zero
+            // exit as TOOL_ERROR (red icon) instead of a green "success" check in the Activity
+            // panel. The exit code is kept in the message for the LLM's benefit.
+            return "Error: Command exited with code " + exitCode + "\n" + result;
         }
     }
 
