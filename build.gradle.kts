@@ -262,8 +262,8 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.16.3"
-    val lg4j_beta_version = "1.16.3-beta26"
+    val lg4j_version = "1.17.0"
+    val lg4j_beta_version = "1.17.0-beta27"
     val awsSdkVersion = "2.46.17"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.0"
@@ -283,10 +283,10 @@ dependencies {
     val nettyVersion = "4.2.15.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.5.36"
+    val logbackVersion = "1.5.37"
     val gitignoreReaderVersion = "2.0.0"
-    val junitJupiterVersion = "6.1.0"
-    val junitPlatformVersion = "6.1.0"
+    val junitJupiterVersion = "6.1.1"
+    val junitPlatformVersion = "6.1.1"
     val lombokVersion = "1.18.46"
     val mockitoVersion = "5.23.0"
     val mockitoInlineVersion = "5.2.0"
