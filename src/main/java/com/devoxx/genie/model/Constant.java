@@ -61,7 +61,14 @@ public class Constant {
     public static final Integer MCP_APPROVAL_TIMEOUT = 60;
 
     // Agent mode settings
-    public static final int AGENT_MAX_TOOL_CALLS = 25;
+    public static final int AGENT_MAX_TOOL_CALLS = 50;
+    /**
+     * Upper bound for the agent max tool-calls spinner (issue #1163). Large codebases
+     * regularly need more research/implementation iterations than the previous cap of 100
+     * allowed, which interrupted work mid-task. When this limit is reached the agent is
+     * asked to wrap up with its best answer rather than being hard-stopped.
+     */
+    public static final int AGENT_MAX_TOOL_CALLS_UPPER_BOUND = 500;
     /**
      * Wall-clock cap (seconds) for a single MCP/agent prompt conversation.
      * Simple (non-agent, non-MCP) prompts use the per-request timeout instead. The agent cap is

@@ -34,7 +34,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBCheckBox enableAgentModeCheckbox =
             new JBCheckBox("Enable agent mode", stateService.getAgentModeEnabled());
     private final JBIntSpinner maxToolCallsSpinner =
-            new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, 100);
+            new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, AGENT_MAX_TOOL_CALLS_UPPER_BOUND);
     private final JBCheckBox autoApproveReadOnlyCheckbox =
             new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files, fetch_page)", stateService.getAgentAutoApproveReadOnly());
     private final JBCheckBox writeApprovalRequiredCheckbox =
