@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -142,7 +143,7 @@ class RunCommandToolExecutorTest {
                 .build();
 
         String result = executor.execute(request, null);
-        assertThat(result).contains("Exit code: 2").contains("failing");
+        assertThat(result).contains("exited with code 2").contains("failing");
     }
 
     @Test
@@ -247,7 +248,40 @@ class RunCommandToolExecutorTest {
                 .build();
 
         String result = executor.execute(request, null);
-        assertThat(result).contains("Exit code: 1");
+        assertThat(result).contains("exited with code 1");
+    }
+
+    /**
+     * Reproduces the bug where a command exiting with a non-zero code was rendered
+     * with the green "success" icon in the agent Activity panel. The icon is decided
+     * by {@link AgentLoopTracker#isErrorResult(String)}, which only flags strings
+     * beginning with "Error:". A non-zero exit must therefore produce an
+     * "Error:"-prefixed result so it is classified as TOOL_ERROR (red icon).
+     */
+    @Test
+    void execute_nonZeroExitCode_isClassifiedAsError() {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"exit 1\"}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(AgentLoopTracker.isErrorResult(result))
+                .as("Non-zero exit code must be classified as an error result")
+                .isTrue();
+    }
+
+    @Test
+    void execute_zeroExitCode_isNotClassifiedAsError() {
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo ok\"}")
+                .build();
+
+        String result = executor.execute(request, null);
+        assertThat(AgentLoopTracker.isErrorResult(result))
+                .as("Successful command must not be classified as an error result")
+                .isFalse();
     }
 
     @Test
