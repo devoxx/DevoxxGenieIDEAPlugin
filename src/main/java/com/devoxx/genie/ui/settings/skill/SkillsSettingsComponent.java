@@ -5,6 +5,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
@@ -34,6 +35,29 @@ import java.util.Set;
 public class SkillsSettingsComponent extends AbstractSettingsComponent {
 
     private static final String DOCS_URL = "https://genie.devoxx.com/docs/features/skills";
+
+    /** A curated external source where users can discover and download skills. */
+    private record SkillLink(String title, String url, String description) {}
+
+    /**
+     * Curated links shown in the "Browse skills online" section. Skills follow the open
+     * {@code SKILL.md} standard, so a skill folder downloaded from any of these sources can be
+     * dropped into one of the scanned skill directories and picked up by the {@link SkillRegistry}.
+     */
+    private static final SkillLink[] SKILL_LINKS = {
+            new SkillLink("Anthropic Skills",
+                    "https://github.com/anthropics/skills",
+                    "Official Agent Skills published by Anthropic"),
+            new SkillLink("Agent Skills standard",
+                    "https://agentskills.io",
+                    "The open SKILL.md specification, portable across AI coding tools"),
+            new SkillLink("Claude Code Marketplace",
+                    "https://github.com/netresearch/claude-code-marketplace",
+                    "40+ community skills for AI-assisted development"),
+            new SkillLink("SkillsMP",
+                    "https://skillsmp.com",
+                    "Searchable directory of community SKILL.md files"),
+    };
 
     private final Project project;
     private final SkillRegistry registry;
@@ -99,6 +123,17 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
         description.setOpaque(false);
         gbc.gridy++;
         panel.add(description, gbc);
+
+        // Curated links to places where users can find skills to download into the folders above.
+        addSection(panel, gbc, "Browse skills online");
+
+        JBLabel linksHint = new JBLabel(
+                "Download a skill's folder from one of these sources into a directory above, then click Reload.");
+        gbc.gridy++;
+        panel.add(linksHint, gbc);
+
+        gbc.gridy++;
+        panel.add(buildLinksPanel(), gbc);
 
         // Toolbar: a single "Open Skills Folder" button + dropdown that selects which of the
         // six skill directories to open, followed by the Reload button on the same row. The
@@ -170,6 +205,36 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
         panel.add(scrollPane, gbc);
 
         return panel;
+    }
+
+    /**
+     * Builds a panel listing the curated {@link #SKILL_LINKS}, one per row: a clickable
+     * {@link HyperlinkLabel} opening the source in the browser, followed by a short description.
+     */
+    private JPanel buildLinksPanel() {
+        JPanel linksPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints lgbc = new GridBagConstraints();
+        lgbc.gridy = 0;
+        lgbc.anchor = GridBagConstraints.WEST;
+        lgbc.insets = JBUI.insets(2, 0, 2, 12);
+
+        for (SkillLink link : SKILL_LINKS) {
+            HyperlinkLabel label = new HyperlinkLabel(link.title());
+            label.setHyperlinkTarget(link.url());
+            label.setToolTipText(link.url());
+            lgbc.gridx = 0;
+            lgbc.weightx = 0;
+            linksPanel.add(label, lgbc);
+
+            JBLabel desc = new JBLabel(link.description());
+            desc.setForeground(JBColor.GRAY);
+            lgbc.gridx = 1;
+            lgbc.weightx = 1.0;
+            linksPanel.add(desc, lgbc);
+
+            lgbc.gridy++;
+        }
+        return linksPanel;
     }
 
     public boolean isModified() {
