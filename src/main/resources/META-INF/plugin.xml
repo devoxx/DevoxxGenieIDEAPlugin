@@ -68,6 +68,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.10</h2>
+        <UL>
+                    <LI>feat(skills): new "Browse skills online" section in Skills settings with curated links (Anthropic Skills, agentskills.io, Claude Code Marketplace, SkillsMP) for finding and downloading <code>SKILL.md</code> skills (#1168)</LI>
+                    <LI>feat(agent): raise the agent max tool-calls ceiling to 500 and the default to 50, so discovery + implementation on large codebases no longer stalls mid-run (#1163)</LI>
+                    <LI>fix(agent): enabling both a built-in tool and an MCP tool of the same name (e.g. <code>read_file</code>) no longer crashes the agent — the enabled MCP tool now wins (#1159)</LI>
+                    <LI>fix(agent): a non-zero <code>run_command</code> exit is now shown with a red ✗ in the Activity panel instead of a green ✓ (#1164)</LI>
+                    <LI>refactor(models): remove deprecated OpenAI models (GPT-4, GPT-4o, GPT-4o mini, GPT-4 Turbo, GPT-3.5 Turbo) in favour of the GPT-4.1 family</LI>
+                    <LI>chore(deps): Langchain4J 1.16.3 → 1.17.0 and assorted dependency bumps (#1161, #1162, #1166)</LI>
+                </UL>
         <h2>v1.8.9</h2>
         <UL>
                     <LI>fix(chat): the Compose chat no longer crashes with <code>NoSuchMethodError</code> after MCP or streamed responses — the markdown renderer is pinned to a coroutines-compatible version (#1158)</LI>

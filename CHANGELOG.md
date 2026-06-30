@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.8.10 - 2026-06-30
+
+### Added
+- feat(skills): add a "Browse skills online" section to the Skills settings page with curated, clickable links to where users can find and download `SKILL.md` skills — Anthropic Skills, the agentskills.io open standard, the Claude Code Marketplace and SkillsMP — each paired with a short description, plus a hint to drop a downloaded skill folder into a scanned directory and hit Reload. A lightweight first step toward in-plugin skill discovery (#1168)
+- feat(agent): raise the agent's max tool-calls ceiling from 100 to 500 and bump the default from 25 to 50 so discovery + implementation on larger codebases no longer stalls mid-run. The limit was already a soft stop (`AgentLoopTracker` returns a wrap-up message to the LLM rather than aborting); existing users keep their stored spinner value, only the selectable ceiling and the new-install default change (#1163)
+
+### Fixed
+- fix(agent): dedupe agent tools by name in `CompositeToolProvider` so an explicitly enabled MCP tool now overrides a built-in tool of the same name instead of crashing. Enabling both the built-in `read_file` and the JetBrains MCP server's `read_file` blew up agent execution with `IllegalConfigurationException: Duplicated definition for tool: read_file`; the merge now keeps first-seen ordering, lets the later (MCP) provider win, and logs the clash at INFO (#1159)
+- fix(agent): classify a non-zero `run_command` exit as a tool error so the Activity panel renders a red ✗ instead of a green ✓. The icon is decided by `AgentLoopTracker.isErrorResult()` (results starting with `"Error:"`); a non-zero command returned `"Exit code: N"` and slipped through as success. Non-zero results are now prefixed `"Error: Command exited with code N"`, preserving the exit code for the LLM (#1164)
+
+### Changed
+- refactor(models): drop the deprecated OpenAI models (GPT-4, GPT-4o, GPT-4o mini, GPT-4 Turbo, GPT-3.5 Turbo) from the model registry in favour of the newer GPT-4.1 family
+- build: pin the Gradle wrapper to 9.6.0 (later bumped to 9.6.1 by Dependabot, see Dependencies)
+
+### Dependencies
+- chore(deps): bump the gradle-dependencies group — Langchain4J 1.16.3 → 1.17.0 (beta26 → beta27 for the chroma/mcp/web-search/reactor/skills modules), logback-classic 1.5.36 → 1.5.37, and JUnit 6.1.0 → 6.1.1 (#1162)
+- chore(deps): bump logback-classic 1.5.35 → 1.5.36 (#1161)
+- chore(deps): bump AWS SDK BOM 2.46.17 → 2.46.18 and the Gradle wrapper 9.6.0 → 9.6.1 (#1166)
+
+### Documentation
+- docs(blog): add a DevoxxGenie plugin analytics post (#1167)
+
+### Contributors
+- @stephanj
+
 ## v1.8.9 - 2026-06-24
 
 ### Fixed
