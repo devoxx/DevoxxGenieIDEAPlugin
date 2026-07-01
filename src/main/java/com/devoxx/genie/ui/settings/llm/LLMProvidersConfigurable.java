@@ -68,6 +68,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGrokApiKeyField(), stateService.getGrokKey());
         isModified |= isFieldModified(llmSettingsComponent.getKimiApiKeyField(), stateService.getKimiKey());
         isModified |= isFieldModified(llmSettingsComponent.getGlmApiKeyField(), stateService.getGlmKey());
+        isModified |= isFieldModified(llmSettingsComponent.getNvidiaApiKeyField(), stateService.getNvidiaKey());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
         isModified |= Boolean.TRUE.equals(stateService.getOllamaContextWindowOverrideEnabled())
@@ -123,6 +124,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isGrokEnabled() != llmSettingsComponent.getGrokEnabledCheckBox().isSelected();
         isModified |= stateService.isKimiEnabled() != llmSettingsComponent.getKimiEnabledCheckBox().isSelected();
         isModified |= stateService.isGlmEnabled() != llmSettingsComponent.getGlmEnabledCheckBox().isSelected();
+        isModified |= stateService.isNvidiaEnabled() != llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected();
         isModified |= stateService.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
 
         return isModified;
@@ -168,6 +170,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGrokKey(new String(llmSettingsComponent.getGrokApiKeyField().getPassword()));
         settings.setKimiKey(new String(llmSettingsComponent.getKimiApiKeyField().getPassword()));
         settings.setGlmKey(new String(llmSettingsComponent.getGlmApiKeyField().getPassword()));
+        settings.setNvidiaKey(new String(llmSettingsComponent.getNvidiaApiKeyField().getPassword()));
 
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
@@ -205,6 +208,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGrokEnabled(llmSettingsComponent.getGrokEnabledCheckBox().isSelected());
         settings.setKimiEnabled(llmSettingsComponent.getKimiEnabledCheckBox().isSelected());
         settings.setGlmEnabled(llmSettingsComponent.getGlmEnabledCheckBox().isSelected());
+        settings.setNvidiaEnabled(llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected());
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
@@ -234,6 +238,7 @@ public class LLMProvidersConfigurable implements Configurable {
                 (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
                 (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
                 (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
+                (!settings.getNvidiaKey().isBlank() && settings.isNvidiaEnabled()) ||
                 (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled());
     }
 
@@ -277,6 +282,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getOpenRouterApiKeyField().setText(settings.getOpenRouterKey());
         llmSettingsComponent.getKimiApiKeyField().setText(settings.getKimiKey());
         llmSettingsComponent.getGlmApiKeyField().setText(settings.getGlmKey());
+        llmSettingsComponent.getNvidiaApiKeyField().setText(settings.getNvidiaKey());
 
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());
         llmSettingsComponent.getAzureOpenAIEndpointField().setText(settings.getAzureOpenAIEndpoint());
@@ -317,6 +323,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGrokEnabledCheckBox().setSelected(settings.isGrokEnabled());
         llmSettingsComponent.getKimiEnabledCheckBox().setSelected(settings.isKimiEnabled());
         llmSettingsComponent.getGlmEnabledCheckBox().setSelected(settings.isGlmEnabled());
+        llmSettingsComponent.getNvidiaEnabledCheckBox().setSelected(settings.isNvidiaEnabled());
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());
     }
 }

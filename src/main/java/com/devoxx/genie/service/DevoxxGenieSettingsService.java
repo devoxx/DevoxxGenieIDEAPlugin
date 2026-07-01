@@ -63,6 +63,8 @@ public interface DevoxxGenieSettingsService {
 
     String getGlmKey();
 
+    String getNvidiaKey();
+
     String getCustomOpenAIApiKey();
 
     Boolean getIsWebSearchEnabled();
@@ -166,6 +168,8 @@ public interface DevoxxGenieSettingsService {
     void setKimiKey(String key);
 
     void setGlmKey(String key);
+
+    void setNvidiaKey(String key);
 
     void setCustomOpenAIApiKey(String key);
 

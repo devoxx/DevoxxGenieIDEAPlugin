@@ -359,6 +359,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case Grok -> state.isGrokEnabled();
                     case Kimi -> state.isKimiEnabled();
                     case GLM -> state.isGlmEnabled();
+                    case Nvidia -> state.isNvidiaEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
                     case CLIRunners -> false;
@@ -588,6 +589,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case Grok -> state.isGrokEnabled();
                         case Kimi -> state.isKimiEnabled();
                         case GLM -> state.isGlmEnabled();
+                        case Nvidia -> state.isNvidiaEnabled();
                         case AzureOpenAI -> state.isAzureOpenAIEnabled();
                         case Bedrock -> state.isAwsEnabled();
                         case CLIRunners -> false;

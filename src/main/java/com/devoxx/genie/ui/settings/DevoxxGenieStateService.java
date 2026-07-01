@@ -155,6 +155,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGrokEnabled = false;
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
+    private boolean isNvidiaEnabled = false;
 
     // ============================================================================
     // LEGACY-XML CREDENTIAL LANDING PADS
@@ -217,6 +218,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String kimiKey = "";
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("glmKey")
     private String glmKey = "";
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("nvidiaKey")
+    private String nvidiaKey = "";
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("azureOpenAIKey")
@@ -862,6 +865,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getGlmKey()       { return creds().getCredential(CredentialKey.GLM_KEY); }
     @Transient @Override public void          setGlmKey(String v) { creds().setCredential(CredentialKey.GLM_KEY, v); }
+
+    @Transient @Override public @NotNull String getNvidiaKey()       { return creds().getCredential(CredentialKey.NVIDIA_KEY); }
+    @Transient @Override public void          setNvidiaKey(String v) { creds().setCredential(CredentialKey.NVIDIA_KEY, v); }
 
     @Transient @Override public @NotNull String getAzureOpenAIKey()       { return creds().getCredential(CredentialKey.AZURE_OPEN_AI_KEY); }
     @Transient @Override public void          setAzureOpenAIKey(String v) { creds().setCredential(CredentialKey.AZURE_OPEN_AI_KEY, v); }

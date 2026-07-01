@@ -34,6 +34,7 @@ public class LLMProviderService {
         providerKeyMap.put(Grok, () -> DevoxxGenieStateService.getInstance().getGrokKey());
         providerKeyMap.put(Kimi, () -> DevoxxGenieStateService.getInstance().getKimiKey());
         providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
+        providerKeyMap.put(Nvidia, () -> DevoxxGenieStateService.getInstance().getNvidiaKey());
         providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
         providerKeyMap.put(Bedrock, () -> switch (Optional.ofNullable(DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode())
                 .orElse(AwsBedrockAuthMode.defaultMode())) {
@@ -92,6 +93,7 @@ public class LLMProviderService {
                 case Grok -> stateService.isGrokEnabled();
                 case Kimi -> stateService.isKimiEnabled();
                 case GLM -> stateService.isGlmEnabled();
+                case Nvidia -> stateService.isNvidiaEnabled();
                 case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                 case Bedrock -> stateService.isAwsEnabled();
                 default -> false;

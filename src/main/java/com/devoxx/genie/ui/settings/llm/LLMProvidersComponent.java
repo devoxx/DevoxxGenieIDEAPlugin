@@ -91,6 +91,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField glmApiKeyField = new JPasswordField(stateService.getGlmKey());
     @Getter
+    private final JPasswordField nvidiaApiKeyField = new JPasswordField(stateService.getNvidiaKey());
+    @Getter
     private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JPasswordField awsBearerTokenField = new JPasswordField(stateService.getAwsBearerToken());
@@ -146,6 +148,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox kimiEnabledCheckBox = new JCheckBox("", stateService.isKimiEnabled());
     @Getter
     private final JCheckBox glmEnabledCheckBox = new JCheckBox("", stateService.isGlmEnabled());
+    @Getter
+    private final JCheckBox nvidiaEnabledCheckBox = new JCheckBox("", stateService.isNvidiaEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
@@ -238,6 +242,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "GLM API Key", glmEnabledCheckBox,
                 createTextWithPasswordButton(glmApiKeyField, "https://z.ai/manage-apikey/apikey-list"));
         addHintText(panel, gbc, "Uses Zhipu AI (Z.AI) platform API; get your key at z.ai");
+        addProviderSettingRow(panel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
+                createTextWithPasswordButton(nvidiaApiKeyField, "https://build.nvidia.com"));
+        addHintText(panel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
 
         addAzureOpenAIPanel(panel, gbc);
         addAWSPanel(panel, gbc);
@@ -291,6 +298,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         grokEnabledCheckBox.addItemListener(e -> updateUrlFieldState(grokEnabledCheckBox, grokApiKeyField));
         kimiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(kimiEnabledCheckBox, kimiApiKeyField));
         glmEnabledCheckBox.addItemListener(e -> updateUrlFieldState(glmEnabledCheckBox, glmApiKeyField));
+        nvidiaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nvidiaEnabledCheckBox, nvidiaApiKeyField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);

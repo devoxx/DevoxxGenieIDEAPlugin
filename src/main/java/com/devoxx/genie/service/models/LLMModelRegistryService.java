@@ -50,6 +50,7 @@ public final class LLMModelRegistryService {
         addGrokModels();
         addKimiModels();
         addGLMModels();
+        addNvidiaModels();
     }
 
     /**
@@ -1206,6 +1207,39 @@ public final class LLMModelRegistryService {
                         .inputCost(0.55)
                         .outputCost(2.19)
                         .inputMaxTokens(131_072)
+                        .apiKeyUsed(true)
+                        .build());
+    }
+
+    /**
+     * NVIDIA NIM models exposed through the OpenAI-compatible endpoint at
+     * {@code https://integrate.api.nvidia.com/v1}. Each model declares an explicit
+     * {@code inputMaxTokens} (context window) so it is never left at the primitive
+     * default of 0 — the zero-context symptom seen when NVIDIA is used through the
+     * generic "Custom OpenAI URL" path (whose {@code /v1/models} probe carries no
+     * context length). NVIDIA's build.nvidia.com endpoints are credit-based rather
+     * than per-token priced, so costs are left at 0.
+     */
+    private void addNvidiaModels() {
+        addNvidiaModel("deepseek-ai/deepseek-r1", "DeepSeek R1", 128_000);
+        addNvidiaModel("meta/llama-3.3-70b-instruct", "Llama 3.3 70B Instruct", 128_000);
+        addNvidiaModel("meta/llama-3.1-405b-instruct", "Llama 3.1 405B Instruct", 128_000);
+        addNvidiaModel("meta/llama-3.1-70b-instruct", "Llama 3.1 70B Instruct", 128_000);
+        addNvidiaModel("meta/llama-3.1-8b-instruct", "Llama 3.1 8B Instruct", 128_000);
+        addNvidiaModel("nvidia/llama-3.1-nemotron-70b-instruct", "Llama 3.1 Nemotron 70B", 128_000);
+        addNvidiaModel("mistralai/mistral-large-2-instruct", "Mistral Large 2", 128_000);
+        addNvidiaModel("qwen/qwen2.5-coder-32b-instruct", "Qwen2.5 Coder 32B", 32_768);
+    }
+
+    private void addNvidiaModel(@NotNull String modelName, @NotNull String displayName, int inputMaxTokens) {
+        models.put(ModelProvider.Nvidia.getName() + ":" + modelName,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Nvidia)
+                        .modelName(modelName)
+                        .displayName(displayName)
+                        .inputCost(0)
+                        .outputCost(0)
+                        .inputMaxTokens(inputMaxTokens)
                         .apiKeyUsed(true)
                         .build());
     }
