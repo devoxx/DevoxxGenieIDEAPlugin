@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -63,6 +63,31 @@ function HomepageHeader() {
 
 export default function Home() {
   const {siteConfig} = useDocusaurusContext();
+
+  useEffect(() => {
+    // Load the Mailjet embedded form script so the newsletter iframe resizes itself.
+    // The script auto-inits on window 'load', which has already fired by the time this
+    // effect runs, so we call window.iFrameResize() ourselves once it has loaded.
+    const script = document.createElement('script');
+    script.src = 'https://app.mailjet.com/pas-nc-embedded-v2.js';
+    script.type = 'text/javascript';
+    script.async = true;
+    script.onload = () => {
+      const iframe = document.querySelector('iframe[data-w-type="embedded"]');
+      if (iframe && typeof window.iFrameResize === 'function') {
+        window.iFrameResize({checkOrigin: false}, iframe);
+        window.addEventListener('message', (e) => {
+          if (e.data?.type === 'CAPTCHA_OPEN') iframe.style.minHeight = '650px';
+          if (e.data?.type === 'CAPTCHA_CLOSE') iframe.style.minHeight = '0px';
+        });
+      }
+    };
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   return (
     <Layout
       title="Free AI Code Assistant Plugin for IntelliJ IDEA"
@@ -402,6 +427,27 @@ milestone: v2.0
                   style={{marginLeft: '10px'}}>
                   Explore Features
                 </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container home-section home-section-alternate">
+          <div className="row">
+            <div className="col col--8 col--offset-2 text--center">
+              <h2>Stay in the Loop</h2>
+              <p>Subscribe to our newsletter for the latest DevoxxGenie features, releases, and AI coding tips — straight to your inbox.</p>
+              <div style={{maxWidth: '520px', margin: '1.5rem auto 0', background: '#fff', borderRadius: '8px', padding: '1rem 1.25rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)'}}>
+                <iframe
+                  data-w-type="embedded"
+                  frameBorder="0"
+                  scrolling="no"
+                  marginHeight="0"
+                  marginWidth="0"
+                  src="https://redirect.devoxx.be/wgt/lkvt/0r4x/form?c=4860e3b0"
+                  width="100%"
+                  style={{height: 0}}
+                  title="Subscribe to the DevoxxGenie newsletter"
+                />
               </div>
             </div>
           </div>
