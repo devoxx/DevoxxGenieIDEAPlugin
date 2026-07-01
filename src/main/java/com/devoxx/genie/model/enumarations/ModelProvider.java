@@ -29,6 +29,7 @@ public enum ModelProvider {
     Grok("Grok", Type.CLOUD),
     Kimi("Kimi", Type.CLOUD),
     GLM("GLM", Type.CLOUD),
+    Nvidia("NVIDIA", Type.CLOUD),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);
