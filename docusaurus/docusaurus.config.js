@@ -258,6 +258,10 @@ const config = {
                 to: '/blog',
               },
               {
+                label: 'Newsletter',
+                to: '/newsletter',
+              },
+              {
                 label: 'RSS Feed',
                 href: 'https://genie.devoxx.com/blog/rss.xml',
               },
