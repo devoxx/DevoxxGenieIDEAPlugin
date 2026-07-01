@@ -262,9 +262,9 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.17.0"
-    val lg4j_beta_version = "1.17.0-beta27"
-    val awsSdkVersion = "2.46.18"
+    val lg4j_version = "1.17.1"
+    val lg4j_beta_version = "1.17.1-beta27"
+    val awsSdkVersion = "2.46.19"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.0"
     val dockerJavaVersion = "3.7.1"
