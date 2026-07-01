@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.8.11 - 2026-07-01
+
+### Added
+- feat(nvidia): add **NVIDIA NIM** (build.nvidia.com) as a first-class, OpenAI-compatible cloud LLM provider — base URL `https://integrate.api.nvidia.com/v1`, a single free `nvapi` key unlocks 100+ models. `NvidiaChatModelFactory` fetches the full catalogue (~120 models) live from `/v1/models` rather than a hardcoded subset; since NVIDIA's model listing carries no context length, each model is assigned a best-effort context-window heuristic (default 128K). Adds a Settings row with an enable checkbox, API-key field, and a link to `https://build.nvidia.com` (#1171)
+- feat(ui): make the model-name dropdown type-to-filter via a new reusable `FilteringComboBox<T>` — typing narrows the list to matching models, essential now that a provider like NVIDIA can list 100+ entries. The combo stays editable but a custom `ComboBoxEditor` guarantees `getSelectedItem()` always returns a `T` (or `null`), never the typed String, so existing `(LanguageModel) getSelectedItem()` call sites keep working unchanged (#1172)
+- feat(skills): add **NVIDIA Build Skills** to the "Browse skills online" links on the Skills settings page (#1174)
+
+### Fixed
+- fix(customopenai): stop the IDE freezing when the **CustomOpenAI** provider is selected with a slow or unreachable URL. The provider-selection handler was calling `getModels()` on the EDT, doing a blocking `/models` GET (10s connect timeout × 3 retries). Model loading now runs off the EDT on a pooled thread and applies results via `invokeLater`, with a fast-fail probe; the previously-selected model is also correctly restored on restart (#1169)
+- fix(providers): only show **ACP Runners** / **CLI Runners** in the LLM provider dropdown when a corresponding tool is actually enabled. Both were declared as `Type.LOCAL`, so `getLocalModelProviders()` added them unconditionally via `fromType(Type.LOCAL)`, bypassing the enabled-tool guards. They're now filtered out of `getLocalModelProviders()` so the guards are the single source of truth (#1173)
+
+### Dependencies
+- chore(deps): bump the gradle-dependencies group (17 updates) — Langchain4J 1.17.0 → 1.17.1 (beta27 for the chroma/mcp/web-search/reactor/skills modules) and AWS SDK BOM 2.46.18 → 2.46.19 (#1170)
+
+### Documentation
+- docs(blog): announce NVIDIA free model support — one free `nvapi` key → 100+ OpenAI-compatible models, 2-minute setup, the type-to-filter dropdown, and the context-window heuristic (#1175)
+
+### Contributors
+- @stephanj
+
 ## v1.8.10 - 2026-06-30
 
 ### Added

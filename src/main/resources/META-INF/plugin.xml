@@ -68,6 +68,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.11</h2>
+        <UL>
+                    <LI>feat(nvidia): add <b>NVIDIA NIM</b> as a cloud LLM provider — one free <code>nvapi</code> key unlocks 100+ OpenAI-compatible models, fetched live from build.nvidia.com (#1171)</LI>
+                    <LI>feat(ui): the model dropdown is now type-to-filter, so you can narrow a 100+ model list by typing (#1172)</LI>
+                    <LI>feat(skills): add NVIDIA Build Skills to the "Browse skills online" links (#1174)</LI>
+                    <LI>fix(customopenai): selecting CustomOpenAI with a slow/unreachable URL no longer freezes the IDE, and the selected model is restored on restart (#1169)</LI>
+                    <LI>fix(providers): ACP Runners / CLI Runners now appear in the provider dropdown only when a corresponding tool is enabled (#1173)</LI>
+                    <LI>chore(deps): Langchain4J 1.17.0 → 1.17.1 and assorted dependency bumps (#1170)</LI>
+                </UL>
         <h2>v1.8.10</h2>
         <UL>
                     <LI>feat(skills): new "Browse skills online" section in Skills settings with curated links (Anthropic Skills, agentskills.io, Claude Code Marketplace, SkillsMP) for finding and downloading <code>SKILL.md</code> skills (#1168)</LI>
