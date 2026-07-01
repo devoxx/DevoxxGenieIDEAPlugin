@@ -57,6 +57,9 @@ public class SkillsSettingsComponent extends AbstractSettingsComponent {
             new SkillLink("SkillsMP",
                     "https://skillsmp.com",
                     "Searchable directory of community SKILL.md files"),
+            new SkillLink("NVIDIA Build Skills",
+                    "https://build.nvidia.com/skills",
+                    "Agent Skills published by NVIDIA on build.nvidia.com"),
     };
 
     private final Project project;
