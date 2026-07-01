@@ -16,6 +16,7 @@ import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.devoxx.genie.ui.component.FilteringComboBox;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.components.JBPanel;
@@ -51,7 +52,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     @Getter
     private final ComboBox<ModelProvider> modelProviderComboBox = new ComboBox<>();
     @Getter
-    private final ComboBox<LanguageModel> modelNameComboBox = new ComboBox<>();
+    private final FilteringComboBox<LanguageModel> modelNameComboBox = new FilteringComboBox<>(
+            model -> model.getDisplayName() != null ? model.getDisplayName() : model.getModelName(),
+            model -> (model.getDisplayName() == null ? "" : model.getDisplayName()) + " "
+                    + (model.getModelName() == null ? "" : model.getModelName()));
 
     private JButton refreshButton;
 
