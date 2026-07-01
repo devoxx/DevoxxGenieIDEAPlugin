@@ -15,6 +15,7 @@ import com.devoxx.genie.service.rag.RAGEventPublisher;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
@@ -304,6 +305,36 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
             "Error in " + getStrategyName() + " execution", error);
         PromptErrorHandler.handleException(context.getProject(), executionError, context);
         resultTask.complete(PromptResult.failure(context, executionError));
+    }
+
+    /**
+     * Persists a partially-completed run to conversation history after a failure. Strategies
+     * that display answer text incrementally (streaming, CLI, ACP) otherwise only persist on
+     * clean completion, so a run that streamed a visible answer and then failed would vanish
+     * from history entirely. Mirrors the streaming {@code onError} behaviour.
+     * <p>
+     * No-op when no text was produced (nothing worth saving). Best-effort: a persistence
+     * failure is logged and swallowed so it can never mask the original error.
+     *
+     * @param context         the chat message context (its AI message and execution time are set here)
+     * @param partialText     the answer text streamed before the failure
+     * @param startTimeMillis the run start time, used to compute the execution duration
+     */
+    protected void persistPartialResponseOnError(@NotNull ChatMessageContext context,
+                                                 @NotNull String partialText,
+                                                 long startTimeMillis) {
+        if (partialText.isEmpty()) {
+            return;
+        }
+        try {
+            context.setExecutionTimeMs(System.currentTimeMillis() - startTimeMillis);
+            context.setAiMessage(AiMessage.from(partialText));
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                    .onNewConversation(context);
+        } catch (Exception e) {
+            log.warn("Failed to persist partial response after error for context {}", context.getId(), e);
+        }
     }
     
     /**

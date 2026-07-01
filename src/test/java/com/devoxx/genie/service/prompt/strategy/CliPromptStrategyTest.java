@@ -229,6 +229,72 @@ class CliPromptStrategyTest {
     }
 
     @Test
+    void finalizeError_withStreamedOutput_persistsConversationToHistory() throws Exception {
+        // A CLI tool that streamed a visible answer but exited non-zero must still be saved.
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("cli-error-persist")
+                .tabId("tab-1")
+                .userPrompt("do the thing")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        java.lang.reflect.Method finalizeError = CliPromptStrategy.class.getDeclaredMethod(
+                "finalizeError", int.class, String.class, List.class, StringBuilder.class, long.class,
+                CliConsoleManager.class, ChatMessageContext.class, PromptTask.class);
+        finalizeError.setAccessible(true);
+
+        StringBuilder streamed = new StringBuilder("Partial answer before the crash");
+        finalizeError.invoke(strategy, 1, "exit msg", Collections.singletonList("boom"),
+                streamed, System.currentTimeMillis(), localConsoleManager, context, localResultTask);
+
+        verify(mockListener).onNewConversation(context);
+        assertThat(context.getAiMessage()).isNotNull();
+        assertThat(context.getAiMessage().text()).isEqualTo("Partial answer before the crash");
+        verify(localResultTask).complete(any(PromptResult.class));
+    }
+
+    @Test
+    void finalizeError_withoutStreamedOutput_doesNotPersist() throws Exception {
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("cli-error-empty")
+                .userPrompt("do the thing")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        java.lang.reflect.Method finalizeError = CliPromptStrategy.class.getDeclaredMethod(
+                "finalizeError", int.class, String.class, List.class, StringBuilder.class, long.class,
+                CliConsoleManager.class, ChatMessageContext.class, PromptTask.class);
+        finalizeError.setAccessible(true);
+
+        // Process failed before producing any output — nothing to persist.
+        finalizeError.invoke(strategy, 127, "exit msg", Collections.singletonList("not found"),
+                new StringBuilder(), System.currentTimeMillis(), localConsoleManager, context, localResultTask);
+
+        verify(mockListener, never()).onNewConversation(any());
+        verify(localResultTask).complete(any(PromptResult.class));
+    }
+
+    @Test
     void cancel_withActiveProcess_destroysProcess() throws Exception {
         Process mockProcess = mock(Process.class);
         when(mockProcess.isAlive()).thenReturn(true);

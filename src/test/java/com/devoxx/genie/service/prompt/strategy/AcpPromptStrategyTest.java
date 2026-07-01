@@ -13,11 +13,15 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -202,5 +206,105 @@ class AcpPromptStrategyTest {
         strategy.cancel();
 
         verify(mockClient).close();
+    }
+
+    // --- Persistence to conversation history (ACP previously never saved runs at all) ---
+
+    @Test
+    void finalizeAcpSuccess_persistsConversationToHistory() throws Exception {
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("acp-success-persist")
+                .tabId("tab-1")
+                .userPrompt("hello acp")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        java.lang.reflect.Method finalizeSuccess = AcpPromptStrategy.class.getDeclaredMethod(
+                "finalizeAcpSuccess", long.class, StringBuilder.class, CliConsoleManager.class,
+                ConversationViewController.class, ChatMessageContext.class, PromptTask.class);
+        finalizeSuccess.setAccessible(true);
+
+        finalizeSuccess.invoke(strategy, 1234L, new StringBuilder("ACP answer"),
+                localConsoleManager, null, context, localResultTask);
+
+        // ACP runs must now appear in history like every other strategy.
+        verify(mockListener).onNewConversation(context);
+        verify(mockChatMemoryManager).addAiResponse(context);
+        verify(localResultTask).complete(any(PromptResult.class));
+    }
+
+    @Test
+    void finalizeAcpError_withStreamedOutput_persistsConversationToHistory() throws Exception {
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("acp-error-persist")
+                .userPrompt("hello acp")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        java.lang.reflect.Method finalizeError = AcpPromptStrategy.class.getDeclaredMethod(
+                "finalizeAcpError", Exception.class, StringBuilder.class, long.class,
+                CliConsoleManager.class, ChatMessageContext.class, PromptTask.class);
+        finalizeError.setAccessible(true);
+
+        finalizeError.invoke(strategy, new RuntimeException("acp crashed"),
+                new StringBuilder("Partial ACP answer"), System.currentTimeMillis(),
+                localConsoleManager, context, localResultTask);
+
+        verify(mockListener).onNewConversation(context);
+        assertThat(context.getAiMessage()).isNotNull();
+        assertThat(context.getAiMessage().text()).isEqualTo("Partial ACP answer");
+        verify(localResultTask).complete(any(PromptResult.class));
+    }
+
+    @Test
+    void finalizeAcpError_withoutStreamedOutput_doesNotPersist() throws Exception {
+        ConversationEventListener mockListener = mock(ConversationEventListener.class);
+        MessageBus mockMessageBus = mock(MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(AppTopics.CONVERSATION_TOPIC)).thenReturn(mockListener);
+
+        CliConsoleManager localConsoleManager = mock(CliConsoleManager.class);
+        @SuppressWarnings("unchecked")
+        PromptTask<PromptResult> localResultTask = mock(PromptTask.class);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(mockProject)
+                .id("acp-error-empty")
+                .userPrompt("hello acp")
+                .languageModel(mockLanguageModel)
+                .build();
+
+        java.lang.reflect.Method finalizeError = AcpPromptStrategy.class.getDeclaredMethod(
+                "finalizeAcpError", Exception.class, StringBuilder.class, long.class,
+                CliConsoleManager.class, ChatMessageContext.class, PromptTask.class);
+        finalizeError.setAccessible(true);
+
+        // Failed before producing any output — nothing to persist.
+        finalizeError.invoke(strategy, new RuntimeException("acp failed to start"),
+                new StringBuilder(), System.currentTimeMillis(),
+                localConsoleManager, context, localResultTask);
+
+        verify(mockListener, never()).onNewConversation(any());
+        verify(localResultTask).complete(any(PromptResult.class));
     }
 }

@@ -9,6 +9,7 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.compose.ConversationViewController;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -124,33 +125,61 @@ public class AcpPromptStrategy extends AbstractPromptExecutionStrategy {
             long elapsed = System.currentTimeMillis() - startTime;
             log.info("ACP session completed: elapsed={}ms, responseLength={}", elapsed, accumulatedResponse.length());
 
-            ApplicationManager.getApplication().invokeLater(() -> {
-                String exitMsg = "\n=== ACP session completed (after " + elapsed + "ms) ===\n";
-                consoleManager.printSystem(exitMsg);
-
-                context.setExecutionTimeMs(elapsed);
-                String finalText = accumulatedResponse.toString();
-                if (!finalText.isEmpty()) {
-                    context.setAiMessage(AiMessage.from(finalText));
-                }
-
-                if (viewController != null) {
-                    viewController.updateAiMessageContent(context);
-                    viewController.markMCPLogsAsCompleted(context.getId());
-                }
-
-                ChatMemoryManager.getInstance().addAiResponse(context);
-                resultTask.complete(PromptResult.success(context));
-            });
+            ApplicationManager.getApplication().invokeLater(() ->
+                    finalizeAcpSuccess(elapsed, accumulatedResponse, consoleManager, viewController, context, resultTask));
 
         } catch (Exception e) {
             activeClient = null;
             log.error("ACP session failed: {}", e.getMessage(), e);
-            ApplicationManager.getApplication().invokeLater(() -> {
-                consoleManager.printError("[ACP] Error: " + e.getMessage());
-                resultTask.complete(PromptResult.failure(context, e));
-            });
+            ApplicationManager.getApplication().invokeLater(() ->
+                    finalizeAcpError(e, accumulatedResponse, startTime, consoleManager, context, resultTask));
         }
+    }
+
+    private void finalizeAcpSuccess(long elapsed,
+                                    @NotNull StringBuilder accumulatedResponse,
+                                    @NotNull CliConsoleManager consoleManager,
+                                    @Nullable ConversationViewController viewController,
+                                    @NotNull ChatMessageContext context,
+                                    @NotNull PromptTask<PromptResult> resultTask) {
+        String exitMsg = "\n=== ACP session completed (after " + elapsed + "ms) ===\n";
+        consoleManager.printSystem(exitMsg);
+
+        context.setExecutionTimeMs(elapsed);
+        String finalText = accumulatedResponse.toString();
+        if (!finalText.isEmpty()) {
+            context.setAiMessage(AiMessage.from(finalText));
+        }
+
+        if (viewController != null) {
+            viewController.updateAiMessageContent(context);
+            viewController.markMCPLogsAsCompleted(context.getId());
+        }
+
+        ChatMemoryManager.getInstance().addAiResponse(context);
+
+        // Persist to conversation history. ACP previously never published this event, so every
+        // ACP run — success or failure — was absent from history; align it with the
+        // Streaming/NonStreaming/CLI strategies which all persist here.
+        project.getMessageBus()
+                .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                .onNewConversation(context);
+
+        resultTask.complete(PromptResult.success(context));
+    }
+
+    private void finalizeAcpError(@NotNull Exception e,
+                                  @NotNull StringBuilder accumulatedResponse,
+                                  long startTime,
+                                  @NotNull CliConsoleManager consoleManager,
+                                  @NotNull ChatMessageContext context,
+                                  @NotNull PromptTask<PromptResult> resultTask) {
+        consoleManager.printError("[ACP] Error: " + e.getMessage());
+
+        // Persist any answer already streamed before the failure so the run survives in history.
+        persistPartialResponseOnError(context, accumulatedResponse.toString(), startTime);
+
+        resultTask.complete(PromptResult.failure(context, e));
     }
 
     @Override
