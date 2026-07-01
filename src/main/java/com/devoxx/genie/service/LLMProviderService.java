@@ -61,7 +61,14 @@ public class LLMProviderService {
     }
 
     private List<ModelProvider> getLocalModelProviders() {
-        return ModelProvider.fromType(Type.LOCAL);
+        // CLIRunners and ACPRunners are declared as Type.LOCAL but are only available
+        // when the user has configured (and enabled) at least one CLI/ACP tool. They are
+        // added conditionally by getCliRunnersProvider()/getAcpRunnersProvider(), so they
+        // must be excluded from the blanket local list here to avoid appearing unconditionally.
+        return ModelProvider.fromType(Type.LOCAL).stream()
+                .filter(provider -> provider != ModelProvider.CLIRunners
+                        && provider != ModelProvider.ACPRunners)
+                .toList();
     }
 
     /**

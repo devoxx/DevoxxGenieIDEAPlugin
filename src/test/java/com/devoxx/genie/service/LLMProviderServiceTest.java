@@ -2,6 +2,8 @@ package com.devoxx.genie.service;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.spec.AcpToolConfig;
+import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.credentials.CredentialKey;
 import com.devoxx.genie.service.credentials.CredentialService;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
@@ -106,6 +108,54 @@ class LLMProviderServiceTest {
         List<ModelProvider> providers = providerService.getAvailableModelProviders();
 
         assertThat(providers).doesNotContain(ModelProvider.OpenAI);
+    }
+
+    @Test
+    void acpRunnersNotAvailableWhenNoAcpToolConfigured() {
+        // No ACP tools configured (the default) -> ACP Runners must NOT appear in the provider list.
+        List<ModelProvider> providers = providerService.getAvailableModelProviders();
+
+        assertThat(providers).doesNotContain(ModelProvider.ACPRunners);
+    }
+
+    @Test
+    void acpRunnersNotAvailableWhenAllAcpToolsDisabled() {
+        stateService.setAcpTools(List.of(
+                AcpToolConfig.builder().name("Claude ACP").enabled(false).build()
+        ));
+
+        List<ModelProvider> providers = providerService.getAvailableModelProviders();
+
+        assertThat(providers).doesNotContain(ModelProvider.ACPRunners);
+    }
+
+    @Test
+    void acpRunnersAvailableWhenAnAcpToolIsEnabled() {
+        stateService.setAcpTools(List.of(
+                AcpToolConfig.builder().name("Claude ACP").enabled(true).build()
+        ));
+
+        List<ModelProvider> providers = providerService.getAvailableModelProviders();
+
+        assertThat(providers).contains(ModelProvider.ACPRunners);
+    }
+
+    @Test
+    void cliRunnersNotAvailableWhenNoCliToolConfigured() {
+        List<ModelProvider> providers = providerService.getAvailableModelProviders();
+
+        assertThat(providers).doesNotContain(ModelProvider.CLIRunners);
+    }
+
+    @Test
+    void cliRunnersAvailableWhenACliToolIsEnabled() {
+        stateService.setCliTools(List.of(
+                CliToolConfig.builder().name("Aider").enabled(true).build()
+        ));
+
+        List<ModelProvider> providers = providerService.getAvailableModelProviders();
+
+        assertThat(providers).contains(ModelProvider.CLIRunners);
     }
 
     @Test
