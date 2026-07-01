@@ -241,22 +241,23 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         LanguageModel currentModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
 
         suppressModelSelectionTracking = true;
-        try {
-            llmProviderPanel.getModelProviderComboBox().removeAllItems();
-            llmProviderPanel.getModelNameComboBox().removeAllItems();
-            llmProviderPanel.addModelProvidersToComboBox();
 
-            if (currentProvider != null) {
-                llmProviderPanel.getModelProviderComboBox().setSelectedItem(currentProvider);
-                llmProviderPanel.updateModelNamesComboBox(currentProvider.getName());
+        llmProviderPanel.getModelProviderComboBox().removeAllItems();
+        llmProviderPanel.getModelNameComboBox().removeAllItems();
+        llmProviderPanel.addModelProvidersToComboBox();
 
+        if (currentProvider != null) {
+            llmProviderPanel.getModelProviderComboBox().setSelectedItem(currentProvider);
+            // Model loading is asynchronous, so re-select the current model and lift the
+            // tracking suppression only once the combo has actually been repopulated.
+            llmProviderPanel.updateModelNamesComboBox(currentProvider.getName(), () -> {
                 if (currentModel != null) {
                     llmProviderPanel.getModelNameComboBox().setSelectedItem(currentModel);
                 }
-            } else {
-                llmProviderPanel.setLastSelectedProvider();
-            }
-        } finally {
+                suppressModelSelectionTracking = false;
+            });
+        } else {
+            llmProviderPanel.setLastSelectedProvider();
             suppressModelSelectionTracking = false;
         }
     }

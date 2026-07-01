@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +63,18 @@ class LlmProviderPanelTest {
         appManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
         appManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
         lenient().when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
+
+        // Model loading is now dispatched off the EDT via executeOnPooledThread and applied back
+        // via invokeLater. In tests we run both inline so the (otherwise asynchronous) combo
+        // population completes synchronously and the assertions below remain deterministic.
+        lenient().when(application.executeOnPooledThread(any(Runnable.class))).thenAnswer(invocation -> {
+            invocation.getArgument(0, Runnable.class).run();
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        });
+        lenient().doAnswer(invocation -> {
+            invocation.getArgument(0, Runnable.class).run();
+            return null;
+        }).when(application).invokeLater(any(Runnable.class));
 
         stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
         stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
@@ -122,17 +135,9 @@ class LlmProviderPanelTest {
         when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
 
         ChatModelFactory factory = mock(ChatModelFactory.class);
-        boolean[] flagSnapshotDuringPopulate = new boolean[]{false};
-        // Capture the flag value at the moment the factory is asked for models — that runs
-        // inside updateModelNamesComboBox after isUpdatingModelNames was set true.
-        LlmProviderPanel[] panelHolder = new LlmProviderPanel[1];
-        when(factory.getModels()).thenAnswer(invocation -> {
-            flagSnapshotDuringPopulate[0] = panelHolder[0].isUpdatingModelNames();
-            return List.of(
-                    LanguageModel.builder().provider(ModelProvider.OpenAI)
-                            .modelName("gpt-4").displayName("GPT-4").build()
-            );
-        });
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
 
         factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
                 .thenReturn(Optional.of(factory));
@@ -140,7 +145,13 @@ class LlmProviderPanelTest {
                 .thenReturn(Optional.empty());
 
         LlmProviderPanel panel = new LlmProviderPanel(project);
-        panelHolder[0] = panel;
+
+        // The network fetch now runs off the EDT (without the flag); the flag must be true while
+        // the combo items are added on the EDT — that is when the selection ActionEvents (which
+        // drive model_selected analytics) fire and must be suppressed. Capture the flag at that point.
+        boolean[] flagDuringPopulate = new boolean[]{false};
+        panel.getModelNameComboBox().addActionListener(e ->
+                flagDuringPopulate[0] = flagDuringPopulate[0] || panel.isUpdatingModelNames());
 
         assertThat(panel.isUpdatingModelNames())
                 .as("Flag is false before any programmatic update")
@@ -148,12 +159,46 @@ class LlmProviderPanelTest {
 
         panel.updateModelNamesComboBox("OpenAI");
 
-        assertThat(flagSnapshotDuringPopulate[0])
+        assertThat(flagDuringPopulate[0])
                 .as("Flag must be true while combo is being repopulated")
                 .isTrue();
         assertThat(panel.isUpdatingModelNames())
                 .as("Flag must reset to false after updateModelNamesComboBox completes")
                 .isFalse();
+    }
+
+    @Test
+    void updateModelNamesComboBox_fetchesModelsOffTheEdt() {
+        // Regression for the CustomOpenAI freeze: getModels() can perform blocking network I/O,
+        // so it must be dispatched to a background thread (executeOnPooledThread) rather than
+        // called directly on the EDT while the provider combo selection is being handled.
+        List<ModelProvider> providers = List.of(ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        boolean[] fetchedViaPool = new boolean[]{false};
+        // The pooled-thread stub records that the fetch runnable actually ran through it.
+        when(application.executeOnPooledThread(any(Runnable.class))).thenAnswer(invocation -> {
+            fetchedViaPool[0] = true;
+            invocation.getArgument(0, Runnable.class).run();
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        });
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        fetchedViaPool[0] = false; // ignore any construction-time loading
+
+        panel.updateModelNamesComboBox("OpenAI");
+
+        assertThat(fetchedViaPool[0])
+                .as("Model fetch must be dispatched off the EDT")
+                .isTrue();
+        verify(factory, atLeastOnce()).getModels();
     }
 
     @Test
@@ -326,6 +371,61 @@ class LlmProviderPanelTest {
         LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
         assertThat(selected).isNotNull();
         assertThat(selected.getModelName()).isEqualTo("gpt-4");
+    }
+
+    @Test
+    void restoresCustomOpenAiModelAfterRestart() {
+        // Reproduction for "CustomOpenAI selected model not restored after restart":
+        // when the provider and model were persisted and the /models probe returns the
+        // saved model, it must be re-selected on construction.
+        when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("CustomOpenAI");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("meta/llama-3.1-70b");
+
+        List<ModelProvider> providers = List.of(ModelProvider.CustomOpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("meta/llama-3.1-8b").displayName("meta/llama-3.1-8b").build(),
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("meta/llama-3.1-70b").displayName("meta/llama-3.1-70b").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("CustomOpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("meta/llama-3.1-70b");
+    }
+
+    @Test
+    void restoresCustomOpenAiModelEvenWhenNotInFetchedList() {
+        // The /models endpoint may be slow/unavailable at startup or may not enumerate the
+        // chosen model. The persisted selection must still be restored (re-added and selected).
+        when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("CustomOpenAI");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("meta/llama-3.1-70b");
+
+        List<ModelProvider> providers = List.of(ModelProvider.CustomOpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        // Endpoint returns nothing (cold start / unreachable).
+        when(factory.getModels()).thenReturn(Collections.emptyList());
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("CustomOpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("meta/llama-3.1-70b");
+        assertThat(selected.getProvider()).isEqualTo(ModelProvider.CustomOpenAI);
     }
 
     @Test

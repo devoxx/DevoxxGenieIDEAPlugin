@@ -22,6 +22,7 @@ import com.intellij.ui.components.JBPanel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import javax.swing.*;
@@ -114,8 +115,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(stateKey);
         lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(stateKey);
 
+        // restoreLastSelectedProvider() triggers asynchronous model loading and restores the
+        // previously selected language model via its completion callback once the combo is
+        // populated (see updateModelNamesComboBox), so no separate restore call is needed here.
         restoreLastSelectedProvider();
-        restoreLastSelectedLanguageModel();
 
         modelProviderComboBox.addActionListener(this::handleModelProviderSelectionChange);
         modelNameComboBox.addActionListener(this::handleModelNameSelectionChange);
@@ -208,36 +211,35 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     .orElseThrow(() -> new IllegalArgumentException("No factory for provider: " + selectedProvider));
             factory.resetModels();
 
-            refreshModelComboBox(selectedProvider);
-            refreshButton.setEnabled(true);
+            // Reload asynchronously (getModels() may hit the network) and re-enable the
+            // button once the combo has been repopulated.
+            updateModelNamesComboBox(selectedProvider.getName(), () -> refreshButton.setEnabled(true));
         });
     }
 
     private void refreshCloudModels(@NonNull ModelProvider selectedProvider) {
         refreshButton.setEnabled(false);
 
-        Set<String> beforeNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                .map(f -> f.getModels().stream()
-                        .map(LanguageModel::getModelName)
-                        .collect(Collectors.toSet()))
-                .orElse(Collections.emptySet());
+        // Capture the "before" model names off the EDT: getModels() may hit the network
+        // (e.g. Custom OpenAI probes its /models endpoint) and must never block the UI.
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            Set<String> beforeNames = ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                    .map(f -> f.getModels().stream()
+                            .map(LanguageModel::getModelName)
+                            .collect(Collectors.toSet()))
+                    .orElse(Collections.emptySet());
 
-        ModelConfigService.getInstance().forceRefresh(() -> {
-            ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
-                    .ifPresent(ChatModelFactory::resetModels);
-            refreshModelComboBox(selectedProvider);
-            refreshButton.setEnabled(true);
-
-            notifyModelChanges(selectedProvider, beforeNames);
+            ModelConfigService.getInstance().forceRefresh(() -> {
+                ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.name())
+                        .ifPresent(ChatModelFactory::resetModels);
+                // Reload the combo asynchronously; re-enable the button and report the
+                // diff once the (now-cached) models have been populated.
+                updateModelNamesComboBox(selectedProvider.getName(), () -> {
+                    refreshButton.setEnabled(true);
+                    notifyModelChanges(selectedProvider, beforeNames);
+                });
+            });
         });
-    }
-
-    private void refreshModelComboBox(@NonNull ModelProvider selectedProvider) {
-        updateModelNamesComboBox(selectedProvider.getName());
-        modelNameComboBox.setRenderer(new ModelInfoRenderer());
-        modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
-        modelNameComboBox.revalidate();
-        modelNameComboBox.repaint();
     }
 
     private void notifyModelChanges(@NonNull ModelProvider selectedProvider,
@@ -267,51 +269,78 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Update the model names combobox.
      */
     public void updateModelNamesComboBox(String modelProvider) {
-        Optional.ofNullable(modelProvider).ifPresent(provider -> {
+        updateModelNamesComboBox(modelProvider, null);
+    }
+
+    /**
+     * Update the model names combobox, invoking {@code onComplete} on the EDT once the combo
+     * has been repopulated.
+     * <p>
+     * The actual {@link ChatModelFactory#getModels()} call is dispatched to a background thread
+     * because it can perform blocking network I/O (e.g. the Custom OpenAI provider probes its
+     * {@code /models} endpoint). Running it on the EDT froze the IDE when the endpoint was slow
+     * or unreachable. Results are applied back to the combo on the EDT.
+     *
+     * @param modelProvider the provider name; when {@code null} nothing happens
+     * @param onComplete    optional callback run on the EDT after the combo is updated
+     */
+    public void updateModelNamesComboBox(String modelProvider, @Nullable Runnable onComplete) {
+        if (modelProvider == null) {
+            return;
+        }
+
+        Optional<ChatModelFactory> factoryOpt = ChatModelFactoryProvider.getFactoryByProvider(modelProvider);
+        if (factoryOpt.isEmpty()) {
+            applyModelsOnEdt(Collections.emptyList(), onComplete);
+            return;
+        }
+
+        ChatModelFactory factory = factoryOpt.get();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            List<LanguageModel> models;
+            try {
+                models = new ArrayList<>(factory.getModels());
+            } catch (Exception e) {
+                log.error("Error fetching models for provider {}", modelProvider, e);
+                models = Collections.emptyList();
+            }
+            applyModelsOnEdt(models, onComplete);
+        });
+    }
+
+    /**
+     * Apply the fetched models to the combo on the EDT. Keeps {@link #isUpdatingModelNames}
+     * {@code true} while the combo is repopulated so the selection listener can distinguish
+     * programmatic updates from user actions.
+     */
+    private void applyModelsOnEdt(@NotNull List<LanguageModel> models, @Nullable Runnable onComplete) {
+        ApplicationManager.getApplication().invokeLater(() -> {
             boolean wasUpdating = isUpdatingModelNames;
             isUpdatingModelNames = true;
             try {
                 modelNameComboBox.removeAllItems();
-                modelNameComboBox.setVisible(true);
-                // Ensure font consistency is maintained when updating
                 modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
-
-                ChatModelFactoryProvider
-                        .getFactoryByProvider(provider)
-                        .ifPresentOrElse(
-                                factory -> {
-                                    List<LanguageModel> models = factory.getModels();
-                                    if (models.isEmpty()) {
-                                        hideModelNameComboBox();
-                                    } else {
-                                        populateModelNames(factory);
-                                    }
-                                },
-                                this::hideModelNameComboBox
-                        );
+                if (models.isEmpty()) {
+                    hideModelNameComboBox();
+                } else {
+                    modelNameComboBox.setVisible(true);
+                    List<LanguageModel> sorted = new ArrayList<>(models);
+                    sorted.sort(Comparator.naturalOrder());
+                    sorted.forEach(modelNameComboBox::addItem);
+                }
+                modelNameComboBox.setRenderer(new ModelInfoRenderer());
+                modelNameComboBox.revalidate();
+                modelNameComboBox.repaint();
             } catch (Exception e) {
                 log.error("Error updating model names", e);
                 Messages.showErrorDialog(project, "Failed to update model names: " + e.getMessage(), "Error");
             } finally {
                 isUpdatingModelNames = wasUpdating;
             }
+            if (onComplete != null) {
+                onComplete.run();
+            }
         });
-    }
-
-    /**
-     * Populate the model names.
-     *
-     * @param chatModelFactory the chat model factory
-     */
-    private void populateModelNames(@NotNull ChatModelFactory chatModelFactory) {
-        modelNameComboBox.removeAllItems();
-        List<LanguageModel> modelNames = new ArrayList<>(chatModelFactory.getModels());
-        if (modelNames.isEmpty()) {
-            hideModelNameComboBox();
-        } else {
-            modelNames.sort(Comparator.naturalOrder());
-            modelNames.forEach(modelNameComboBox::addItem);
-        }
     }
 
     /**
@@ -330,7 +359,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 ModelProvider provider = modelProviderComboBox.getItemAt(i);
                 if (provider.getName().equals(lastSelectedProvider)) {
                     modelProviderComboBox.setSelectedIndex(i);
-                    updateModelNamesComboBox(lastSelectedProvider);
+                    // Model loading is asynchronous, so restore the previously selected
+                    // language model only once the combo has been repopulated.
+                    updateModelNamesComboBox(lastSelectedProvider, this::restoreLastSelectedLanguageModel);
                     break;
                 }
             }
@@ -343,21 +374,47 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Restore the last selected language model from persistent storage
      */
     public void restoreLastSelectedLanguageModel() {
-        if (lastSelectedLanguageModel != null) {
-            boolean wasUpdating = isUpdatingModelNames;
-            isUpdatingModelNames = true;
-            try {
-                for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
-                    LanguageModel model = modelNameComboBox.getItemAt(i);
-                    if (model.getModelName().equals(lastSelectedLanguageModel)) {
-                        modelNameComboBox.setSelectedIndex(i);
-                        break;
-                    }
-                }
-            } finally {
-                isUpdatingModelNames = wasUpdating;
-            }
+        if (lastSelectedLanguageModel == null) {
+            return;
         }
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                LanguageModel model = modelNameComboBox.getItemAt(i);
+                if (model.getModelName().equals(lastSelectedLanguageModel)) {
+                    modelNameComboBox.setSelectedIndex(i);
+                    return;
+                }
+            }
+            // The persisted model is not in the freshly fetched list. This is common for the
+            // Custom OpenAI provider whose /models endpoint may be slow, unavailable at startup,
+            // or simply not enumerate the chosen model. Re-add it so the user's selection still
+            // survives an IDE restart rather than silently resetting.
+            restorePersistedModelNotInList();
+        } finally {
+            isUpdatingModelNames = wasUpdating;
+        }
+    }
+
+    /**
+     * Re-add the persisted language model to the combo when the provider did not return it,
+     * so the previous selection is preserved across restarts. A minimal {@link LanguageModel}
+     * is synthesised from the persisted name and current provider.
+     */
+    private void restorePersistedModelNotInList() {
+        ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        if (provider == null) {
+            return;
+        }
+        LanguageModel restored = LanguageModel.builder()
+                .provider(provider)
+                .modelName(lastSelectedLanguageModel)
+                .displayName(lastSelectedLanguageModel)
+                .build();
+        modelNameComboBox.addItem(restored);
+        modelNameComboBox.setSelectedItem(restored);
+        modelNameComboBox.setVisible(true);
     }
 
     /**
@@ -403,24 +460,15 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             isUpdatingModelNames)
             return;
 
-        isUpdatingModelNames = true;
-
-        try {
-            DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
-            JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
-            ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
-            if (modelProvider != null) {
-                stateInstance.setSelectedProvider(stateKey, modelProvider.getName());
-
-                updateModelNamesComboBox(modelProvider.getName());
-
-                modelNameComboBox.setRenderer(new ModelInfoRenderer());
-                modelNameComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
-                modelNameComboBox.revalidate();
-                modelNameComboBox.repaint();
-            }
-        } finally {
-            isUpdatingModelNames = false;
+        DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
+        JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+        ModelProvider modelProvider = (ModelProvider) comboBox.getSelectedItem();
+        if (modelProvider != null) {
+            stateInstance.setSelectedProvider(stateKey, modelProvider.getName());
+            // Models are fetched off the EDT and applied back asynchronously (see
+            // updateModelNamesComboBox), which also manages isUpdatingModelNames while it
+            // repopulates the combo. This keeps the UI responsive for slow/unreachable endpoints.
+            updateModelNamesComboBox(modelProvider.getName());
         }
     }
 }
