@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.prompt.threading;
 
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -31,6 +32,14 @@ public class ThreadPoolShutdownManager implements ProjectManagerListener {
      */
     private static void shutdownThreadPools() {
         try {
+            // The JVM shutdown hook can fire after the IntelliJ Application has already been
+            // torn down, at which point ApplicationManager.getApplication() returns null and
+            // ThreadPoolManager.getInstance() would NPE inside getApplication().getService(...).
+            // Skip cleanly in that case — the pools die with the JVM anyway.
+            Application application = ApplicationManager.getApplication();
+            if (application == null) {
+                return;
+            }
             ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
             if (threadPoolManager != null) {
                 log.info("Shutting down thread pools");
