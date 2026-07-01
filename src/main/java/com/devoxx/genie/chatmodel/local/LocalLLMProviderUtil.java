@@ -6,6 +6,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
@@ -29,7 +30,7 @@ public class LocalLLMProviderUtil {
         String baseUrl = ensureEndsWithSlash(Objects.requireNonNull(configValue));
         String url = endpoint == null || endpoint.isBlank() ? Objects.requireNonNull(configValue) : baseUrl + endpoint;
 
-        return fetchModels(url, responseType);
+        return fetchModels(url, responseType, HttpClientProvider.getClient());
     }
 
     /**
@@ -38,15 +39,25 @@ public class LocalLLMProviderUtil {
      * (e.g., LMStudio uses /v1/ for chat but /api/v1/models for rich metadata).
      */
     public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType) throws IOException {
-        return fetchModels(fullUrl, responseType);
+        return fetchModels(fullUrl, responseType, HttpClientProvider.getClient());
     }
 
-    private static <T> T fetchModels(String url, Class<T> responseType) throws IOException {
+    /**
+     * Fetches models from a fully-qualified URL using a caller-supplied HTTP client.
+     * Use this when the default shared client's long connect timeout and retry/backoff
+     * behaviour is undesirable (e.g. a best-effort model-list probe that must fail fast
+     * so it never blocks the UI for a slow or unreachable endpoint).
+     */
+    public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType, OkHttpClient client) throws IOException {
+        return fetchModels(fullUrl, responseType, client);
+    }
+
+    private static <T> T fetchModels(String url, Class<T> responseType, OkHttpClient client) throws IOException {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
 
-        try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
+        try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new UnsuccessfulRequestException("Unexpected code " + response);
             }

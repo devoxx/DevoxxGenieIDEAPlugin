@@ -14,6 +14,7 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.http.client.jdk.JdkHttpClient;
 import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
+import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -25,6 +26,29 @@ import java.net.http.HttpClient;
 public class CustomOpenAIChatModelFactory implements ChatModelFactory {
 
     private static final Logger LOG = Logger.getInstance(CustomOpenAIChatModelFactory.class);
+
+    /**
+     * Dedicated fast-fail client for the best-effort {@code /models} probe.
+     *
+     * <p>Unlike the shared {@link com.devoxx.genie.util.HttpClientProvider} client (10s connect
+     * timeout + 3 retries with exponential backoff), this client makes a single attempt with a
+     * short connect/read timeout. A model-list probe should degrade quickly to "type the model
+     * name manually" rather than tie up the caller for tens of seconds when the endpoint is slow
+     * or unreachable (e.g. a mistyped host).</p>
+     */
+    private static final OkHttpClient MODELS_PROBE_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .readTimeout(Duration.ofSeconds(5))
+            .writeTimeout(Duration.ofSeconds(5))
+            .retryOnConnectionFailure(false)
+            .build();
+
+    /**
+     * Cached result of the last {@link #getModels()} probe. {@code null} means "not yet fetched".
+     * Cleared by {@link #resetModels()} (the Refresh button). Caching prevents a network round-trip
+     * on every provider selection, which otherwise re-probed the endpoint each time.
+     */
+    private volatile List<LanguageModel> cachedModels = null;
 
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
@@ -105,6 +129,27 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
+        List<LanguageModel> cached = cachedModels;
+        if (cached != null) {
+            return cached;
+        }
+        List<LanguageModel> models = fetchModelsFromServer();
+        // Only cache a successful, non-empty probe. An empty result usually means the endpoint
+        // was momentarily unreachable/slow (e.g. right after IDE startup); caching it would make
+        // the model list stick empty until a manual Refresh. Leaving it uncached lets the next
+        // (background, bounded) probe recover once the endpoint is available.
+        if (!models.isEmpty()) {
+            cachedModels = models;
+        }
+        return models;
+    }
+
+    @Override
+    public void resetModels() {
+        cachedModels = null;
+    }
+
+    private List<LanguageModel> fetchModelsFromServer() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String baseUrl = state.getCustomOpenAIUrl();
         if (baseUrl == null || baseUrl.isBlank()) {
@@ -112,7 +157,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         }
         try {
             String modelsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "models";
-            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class);
+            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, MODELS_PROBE_CLIENT);
             if (response == null || response.getData() == null) {
                 return Collections.emptyList();
             }
