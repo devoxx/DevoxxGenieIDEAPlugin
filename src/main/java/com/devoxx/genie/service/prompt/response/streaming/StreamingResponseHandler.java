@@ -267,6 +267,10 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     public void onError(@NotNull Throwable error) {
         log.error("Streaming error for context {}: {}", context.getId(), error.getMessage());
 
+        // Persist any answer already streamed before the failure so the run survives in
+        // conversation history. Must run before the UI teardown below.
+        persistPartialResponseOnError();
+
         // Deactivate activity handlers BEFORE hiding to prevent race condition
         if (conversationViewController != null) {
             conversationViewController.deactivateActivityHandlers();
@@ -292,6 +296,39 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             "Error during streaming response", error);
         PromptErrorHandler.handleException(context.getProject(), streamingError, context);
         onErrorCallback.accept(streamingError);
+    }
+
+    /**
+     * Persists a run that produced visible answer text but then failed. Conversation
+     * persistence is normally triggered only from {@link #onCompleteResponse} (which
+     * publishes {@link AppTopics#CONVERSATION_TOPIC} → {@code ChatService.saveConversation}).
+     * Without this, an agent/streaming run that streamed a visible answer and then hit a
+     * trailing provider error (e.g. NVIDIA 404 / ConnectException mid tool-loop) would be
+     * dropped from conversation history entirely, even though the user already saw the
+     * answer. Mirrors how {@link #stop()} preserves the partial text in the live view.
+     */
+    private void persistPartialResponseOnError() {
+        if (isStopped || isCompleted) {
+            // stop() finalizes its own message; a completed run already persisted. Avoid
+            // re-publishing a fresh conversation for a trailing/duplicate error callback.
+            return;
+        }
+        String partial = getAccumulatedText();
+        if (partial.isEmpty()) {
+            // Provider failed before producing any text — there is nothing worth saving.
+            return;
+        }
+        try {
+            context.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+            context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(partial));
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                    .onNewConversation(context);
+            log.debug("Persisted partial response to history after streaming error for context {}", context.getId());
+        } catch (Exception e) {
+            // Best-effort: a persistence failure must not mask the original streaming error.
+            log.warn("Failed to persist partial response after streaming error for context {}", context.getId(), e);
+        }
     }
 
     /**

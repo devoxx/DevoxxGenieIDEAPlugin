@@ -249,7 +249,8 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
                 finalizeSuccess(exitMsg, outcome.startTime(), outcome.accumulatedResponse(), consoleManager,
                         viewController, context, resultTask);
             } else {
-                finalizeError(outcome.exitCode(), exitMsg, outcome.stderrLines(), consoleManager, context, resultTask);
+                finalizeError(outcome.exitCode(), exitMsg, outcome.stderrLines(),
+                        outcome.accumulatedResponse(), outcome.startTime(), consoleManager, context, resultTask);
             }
         });
     }
@@ -304,10 +305,18 @@ public class CliPromptStrategy extends AbstractPromptExecutionStrategy {
     private void finalizeError(int exitCode,
                                @NotNull String exitMsg,
                                @NotNull List<String> stderrLines,
+                               @NotNull StringBuilder accumulatedResponse,
+                               long startTime,
                                @NotNull CliConsoleManager consoleManager,
                                @NotNull ChatMessageContext context,
                                @NotNull PromptTask<PromptResult> resultTask) {
         consoleManager.printError(exitMsg);
+
+        // A CLI tool can stream a full, visible answer and still exit non-zero (e.g. a trailing
+        // cleanup error). Persist whatever was already shown so the run survives in conversation
+        // history instead of vanishing — matching the streaming/onError behaviour.
+        persistPartialResponseOnError(context, accumulatedResponse.toString(), startTime);
+
         String errorOutput = String.join("\n", stderrLines).trim();
         resultTask.complete(PromptResult.failure(context,
                 new RuntimeException("CLI process exited with code " + exitCode +

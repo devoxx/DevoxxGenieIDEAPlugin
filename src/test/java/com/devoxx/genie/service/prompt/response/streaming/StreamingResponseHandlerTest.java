@@ -672,4 +672,63 @@ class StreamingResponseHandlerTest {
 
         assertThat(onErrorCalled.get()).isTrue();
     }
+
+    // --- Persist partial answer on error (bug: agent/streaming runs that error mid-loop
+    //     were never saved to conversation history, even after streaming a visible answer) ---
+
+    @Test
+    void onError_afterStreamingAnswer_persistsConversationToHistory() {
+        StreamingResponseHandler handler = createHandler();
+
+        // Agent mode: the model streams a visible answer (turn 1)...
+        handler.onPartialResponse("Here is the answer you asked for.");
+        // ...then a later request in the tool loop fails (e.g. NVIDIA 404 / ConnectException).
+        handler.onError(new RuntimeException("{\"status\":404,\"title\":\"Not Found\"}"));
+
+        // The run produced a visible answer, so it must be persisted (published on the
+        // CONVERSATION_TOPIC) — otherwise it silently vanishes from conversation history.
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC))
+                .onNewConversation(mockContext);
+    }
+
+    @Test
+    void onError_afterStreamingAnswer_setsAccumulatedTextAsAiMessageBeforePersisting() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialResponse("Partial answer ");
+        handler.onPartialResponse("before the error.");
+        handler.onError(new RuntimeException("boom"));
+
+        // The persisted AI message must carry the full accumulated text, so history shows
+        // the answer the user actually saw (not an empty AI turn).
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Partial answer before the error.");
+    }
+
+    @Test
+    void onError_withoutAnyStreamedText_doesNotPersist() {
+        StreamingResponseHandler handler = createHandler();
+
+        // The provider errored before producing any text — there is nothing worth saving.
+        handler.onError(new RuntimeException("Immediate connection failure"));
+
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC), never())
+                .onNewConversation(any());
+    }
+
+    @Test
+    void onError_afterStop_doesNotPersist() {
+        StreamingResponseHandler handler = createHandler();
+        handler.onPartialResponse("Some partial text");
+
+        // A user-initiated stop already finalizes the message; a trailing provider error
+        // must not re-persist it as a fresh conversation.
+        handler.stop();
+        clearInvocations(mockMessageBus);
+
+        handler.onError(new RuntimeException("late error after stop"));
+
+        verify(mockMessageBus, never()).syncPublisher(AppTopics.CONVERSATION_TOPIC);
+    }
 }
