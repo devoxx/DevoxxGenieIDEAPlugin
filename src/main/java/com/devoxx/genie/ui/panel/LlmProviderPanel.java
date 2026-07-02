@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
@@ -64,6 +65,11 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
     private boolean isInitializationComplete = false;
     private boolean isUpdatingModelNames = false;
+
+    // Monotonically increasing token per updateModelNamesComboBox call. Model fetches run on
+    // background threads and may complete out of order (an instant cloud list vs. a slow local
+    // HTTP probe); only the response belonging to the LATEST request may touch the combo.
+    private final AtomicInteger modelComboGeneration = new AtomicInteger();
 
     /**
      * @return {@code true} while the model name combo is being repopulated programmatically
@@ -294,9 +300,11 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             return;
         }
 
+        int generation = modelComboGeneration.incrementAndGet();
+
         Optional<ChatModelFactory> factoryOpt = ChatModelFactoryProvider.getFactoryByProvider(modelProvider);
         if (factoryOpt.isEmpty()) {
-            applyModelsOnEdt(Collections.emptyList(), onComplete);
+            applyModelsOnEdt(Collections.emptyList(), generation, onComplete);
             return;
         }
 
@@ -309,7 +317,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 log.error("Error fetching models for provider {}", modelProvider, e);
                 models = Collections.emptyList();
             }
-            applyModelsOnEdt(models, onComplete);
+            applyModelsOnEdt(models, generation, onComplete);
         });
     }
 
@@ -317,9 +325,19 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Apply the fetched models to the combo on the EDT. Keeps {@link #isUpdatingModelNames}
      * {@code true} while the combo is repopulated so the selection listener can distinguish
      * programmatic updates from user actions.
+     * <p>
+     * A response belonging to a superseded request (stale {@code generation}) is dropped so a
+     * slow fetch cannot overwrite the models of a provider selected later. Its {@code onComplete}
+     * still runs so callers waiting on completion (e.g. refresh button re-enable) are not stuck.
      */
-    private void applyModelsOnEdt(@NotNull List<LanguageModel> models, @Nullable Runnable onComplete) {
+    private void applyModelsOnEdt(@NotNull List<LanguageModel> models, int generation, @Nullable Runnable onComplete) {
         ApplicationManager.getApplication().invokeLater(() -> {
+            if (generation != modelComboGeneration.get()) {
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+                return;
+            }
             boolean wasUpdating = isUpdatingModelNames;
             isUpdatingModelNames = true;
             try {
@@ -379,7 +397,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Restore the last selected language model from persistent storage
      */
     public void restoreLastSelectedLanguageModel() {
-        if (lastSelectedLanguageModel == null) {
+        if (lastSelectedLanguageModel == null || lastSelectedLanguageModel.isBlank()) {
             return;
         }
         boolean wasUpdating = isUpdatingModelNames;
@@ -392,14 +410,33 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     return;
                 }
             }
-            // The persisted model is not in the freshly fetched list. This is common for the
-            // Custom OpenAI provider whose /models endpoint may be slow, unavailable at startup,
-            // or simply not enumerate the chosen model. Re-add it so the user's selection still
-            // survives an IDE restart rather than silently resetting.
-            restorePersistedModelNotInList();
+            ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+            if (modelNameComboBox.getItemCount() == 0 || provider == ModelProvider.CustomOpenAI) {
+                // The provider returned nothing (e.g. unreachable at cold start), or it is
+                // Custom OpenAI whose /models endpoint may not enumerate the chosen model.
+                // Re-add the persisted model so the user's selection survives an IDE restart.
+                restorePersistedModelNotInList();
+            } else {
+                // The provider returned a healthy model list that does not contain the persisted
+                // name: the saved model belongs to another provider (stale/corrupted state, e.g.
+                // an Anthropic model persisted under the Ollama key) or was removed. Fall back to
+                // the first available model and persist it so the inconsistent state heals.
+                fallBackToFirstAvailableModel();
+            }
         } finally {
             isUpdatingModelNames = wasUpdating;
         }
+    }
+
+    /**
+     * Select the first model of the freshly fetched list and persist it, replacing a persisted
+     * model name that the current provider does not offer.
+     */
+    private void fallBackToFirstAvailableModel() {
+        modelNameComboBox.setSelectedIndex(0);
+        LanguageModel first = modelNameComboBox.getItemAt(0);
+        lastSelectedLanguageModel = first.getModelName();
+        DevoxxGenieStateService.getInstance().setSelectedLanguageModel(stateKey, first.getModelName());
     }
 
     /**
@@ -473,7 +510,45 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             // Models are fetched off the EDT and applied back asynchronously (see
             // updateModelNamesComboBox), which also manages isUpdatingModelNames while it
             // repopulates the combo. This keeps the UI responsive for slow/unreachable endpoints.
-            updateModelNamesComboBox(modelProvider.getName());
+            // Once the combo is repopulated, persist the resulting model together with the
+            // provider: persisting only the provider would leave the previous provider's model
+            // in state, which a later restart restores as a foreign model (e.g. an Anthropic
+            // model under Ollama).
+            updateModelNamesComboBox(modelProvider.getName(), this::persistSelectedModel);
+        }
+    }
+
+    /**
+     * Persist the currently selected model for this tab, or clear the persisted model when the
+     * current provider has none, keeping the stored provider/model pair consistent.
+     */
+    private void persistSelectedModel() {
+        LanguageModel selected = (LanguageModel) modelNameComboBox.getSelectedItem();
+        String modelName = selected != null ? selected.getModelName() : "";
+        lastSelectedLanguageModel = modelName;
+        DevoxxGenieStateService.getInstance().setSelectedLanguageModel(stateKey, modelName);
+    }
+
+    /**
+     * Re-populate the provider combo (e.g. after settings changed) without firing the provider
+     * selection handler. Without the suppression, clearing and re-adding items auto-selects the
+     * first provider, transiently persisting a wrong provider and fetching its models.
+     *
+     * @param providerToSelect the provider to re-select afterwards, or {@code null} to leave the
+     *                         default (first) selection
+     */
+    public void repopulateProviders(@Nullable ModelProvider providerToSelect) {
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            modelProviderComboBox.removeAllItems();
+            modelNameComboBox.removeAllItems();
+            addModelProvidersToComboBox();
+            if (providerToSelect != null) {
+                modelProviderComboBox.setSelectedItem(providerToSelect);
+            }
+        } finally {
+            isUpdatingModelNames = wasUpdating;
         }
     }
 }

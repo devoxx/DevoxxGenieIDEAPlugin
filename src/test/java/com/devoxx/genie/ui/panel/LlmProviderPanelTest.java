@@ -429,6 +429,177 @@ class LlmProviderPanelTest {
     }
 
     @Test
+    void doesNotRestoreForeignProviderModelWhenProviderListIsHealthy() {
+        // Reproduction for "Ollama provider restored with an Anthropic model selected":
+        // corrupted/stale state can persist a model name that belongs to another provider
+        // (e.g. a Claude model under the Ollama key). When the provider returns a healthy,
+        // non-empty model list that does not contain the saved name, the panel must NOT
+        // synthesise the foreign model but fall back to the first available model.
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("claude-sonnet-4-20250514");
+
+        List<ModelProvider> providers = List.of(ModelProvider.Ollama);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.Ollama)
+                        .modelName("llama3.2:latest").displayName("llama3.2:latest").build(),
+                LanguageModel.builder().provider(ModelProvider.Ollama)
+                        .modelName("qwen2.5-coder").displayName("qwen2.5-coder").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName())
+                .as("A model from the fetched Ollama list must be selected, not the foreign persisted one")
+                .isIn("llama3.2:latest", "qwen2.5-coder");
+
+        for (int i = 0; i < panel.getModelNameComboBox().getItemCount(); i++) {
+            assertThat(panel.getModelNameComboBox().getItemAt(i).getModelName())
+                    .as("The foreign model must not be synthesised into the combo")
+                    .isNotEqualTo("claude-sonnet-4-20250514");
+        }
+
+        // The corrected selection must be persisted so the corrupted state heals itself.
+        verify(stateService).setSelectedLanguageModel(eq("test-hash"), eq(selected.getModelName()));
+    }
+
+    @Test
+    void restoresCustomOpenAiModelNotInNonEmptyFetchedList() {
+        // The CustomOpenAI /models endpoint may not enumerate the chosen model even when it
+        // returns other models. For this provider the persisted selection must still be
+        // synthesised and selected (original fix for the CustomOpenAI restore bug).
+        when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("CustomOpenAI");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("meta/llama-3.1-70b");
+
+        List<ModelProvider> providers = List.of(ModelProvider.CustomOpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("meta/llama-3.1-8b").displayName("meta/llama-3.1-8b").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("CustomOpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("meta/llama-3.1-70b");
+    }
+
+    @Test
+    void providerSwitchPersistsProviderAndModelAsPair() {
+        // Switching provider must persist the provider AND the resulting model selection
+        // together. Persisting only the provider leaves the previous provider's model in
+        // state, which later restores a foreign model (Anthropic model under Ollama).
+        List<ModelProvider> providers = List.of(ModelProvider.Ollama, ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory openAiFactory = mock(ChatModelFactory.class);
+        when(openAiFactory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.empty());
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(openAiFactory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        panel.getModelProviderComboBox().setSelectedItem(ModelProvider.OpenAI);
+
+        verify(stateService).setSelectedProvider("test-hash", "OpenAI");
+        verify(stateService).setSelectedLanguageModel("test-hash", "gpt-4");
+    }
+
+    @Test
+    void providerSwitchWithoutModelsClearsPersistedModel() {
+        // When the newly selected provider yields no models, the stale model of the previous
+        // provider must be cleared from state instead of surviving under the new provider.
+        List<ModelProvider> providers = List.of(ModelProvider.Ollama, ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory ollamaFactory = mock(ChatModelFactory.class);
+        when(ollamaFactory.getModels()).thenReturn(Collections.emptyList());
+
+        ChatModelFactory openAiFactory = mock(ChatModelFactory.class);
+        when(openAiFactory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.of(ollamaFactory));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(openAiFactory));
+
+        // Start on OpenAI, then switch to Ollama which is unreachable (no models).
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("OpenAI");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("gpt-4");
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        panel.getModelProviderComboBox().setSelectedItem(ModelProvider.Ollama);
+
+        verify(stateService).setSelectedProvider("test-hash", "Ollama");
+        verify(stateService).setSelectedLanguageModel("test-hash", "");
+    }
+
+    @Test
+    void staleModelFetchDoesNotOverwriteNewerSelection() {
+        // Two concurrent updateModelNamesComboBox calls for different providers may complete
+        // out of order (e.g. a slow Ollama fetch vs. an instant cloud list). Only the models
+        // of the LATEST request may be applied to the combo; a stale response must be dropped.
+        List<ModelProvider> providers = List.of(ModelProvider.Ollama, ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory openAiFactory = mock(ChatModelFactory.class);
+        when(openAiFactory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
+        ChatModelFactory ollamaFactory = mock(ChatModelFactory.class);
+        when(ollamaFactory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.Ollama)
+                        .modelName("llama3.2:latest").displayName("llama3.2:latest").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(openAiFactory));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.of(ollamaFactory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        // From here on, queue background work instead of running it inline so the two
+        // fetches can be completed out of order.
+        List<Runnable> queued = new java.util.ArrayList<>();
+        when(application.executeOnPooledThread(any(Runnable.class))).thenAnswer(invocation -> {
+            queued.add(invocation.getArgument(0, Runnable.class));
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        });
+
+        panel.updateModelNamesComboBox("OpenAI");   // request #1 (stale)
+        panel.updateModelNamesComboBox("Ollama");   // request #2 (latest)
+
+        assertThat(queued).hasSize(2);
+        queued.get(1).run();  // latest completes first
+        queued.get(0).run();  // stale completes last — must be dropped
+
+        assertThat(panel.getModelNameComboBox().getItemCount()).isEqualTo(1);
+        assertThat(panel.getModelNameComboBox().getItemAt(0).getModelName())
+                .as("The combo must show the models of the latest request")
+                .isEqualTo("llama3.2:latest");
+    }
+
+    @Test
     void testSetLastSelectedProvider_SavesFirstProvider() {
         List<ModelProvider> providers = List.of(ModelProvider.Ollama);
         when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
