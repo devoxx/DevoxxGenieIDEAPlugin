@@ -55,6 +55,17 @@ class ThinkingResponseFormatterTest {
     }
 
     @Test
+    void format_aiMessageWithNullTextAndNoThinking_normalizesTextToEmpty() {
+        // Issue #1176: OpenAI-compatible providers can return a final assistant message
+        // with null content (e.g. reasoning models or empty replies after tool calls).
+        AiMessage aiMessage = AiMessage.builder().build();
+
+        AiMessage formatted = ThinkingResponseFormatter.format(aiMessage);
+
+        assertThat(formatted.text()).isEmpty();
+    }
+
+    @Test
     void extractors_withPlainContent_returnAnswerOnly() {
         assertThat(ThinkingResponseFormatter.extractThinking("plain answer")).isEmpty();
         assertThat(ThinkingResponseFormatter.extractAnswer("plain answer")).isEqualTo("plain answer");

@@ -160,6 +160,27 @@ class ConversationHistoryManagerTest {
     }
 
     @Test
+    void testRestoreConversation_NullAiMessageContent_RestoresWithEmptyText() {
+        // Issue #1176: conversations persisted while the provider returned a null-text
+        // response must not crash history restore with "text cannot be null".
+        Conversation conversation = createConversation("conv-null", "OpenAI", "gpt-4");
+        conversation.setExecutionTimeMs(500);
+
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(createChatMessage(true, "Edit this file"));
+        messages.add(createChatMessage(false, null));
+        conversation.setMessages(messages);
+
+        when(messageRenderer.isInitialized()).thenReturn(true);
+
+        manager.restoreConversation(conversation);
+
+        ArgumentCaptor<ChatMessageContext> captor = ArgumentCaptor.forClass(ChatMessageContext.class);
+        verify(messageRenderer).addCompleteChatMessage(captor.capture());
+        assertThat(captor.getValue().getAiMessage().text()).isEmpty();
+    }
+
+    @Test
     void testRestoreConversation_ContextHasStableMessageIds() {
         Conversation conversation = createConversation("conv-7", "OpenAI", "gpt-4");
         conversation.setExecutionTimeMs(1000);
