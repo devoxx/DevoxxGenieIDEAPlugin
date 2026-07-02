@@ -8,6 +8,8 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -16,6 +18,73 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OllamaChatModelFactoryTest {
+
+    private static boolean returnThinking(Object ollamaModel) {
+        try {
+            Field field = ollamaModel.getClass().getSuperclass().getDeclaredField("returnThinking");
+            field.setAccessible(true);
+            return (boolean) field.get(ollamaModel);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Unable to read LangChain4j Ollama returnThinking flag", e);
+        }
+    }
+
+    @Test
+    void testCreateChatModelDoesNotEnableThinkingWhenSettingDisabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
+            when(mockSettingsState.getShowThinkingEnabled()).thenReturn(false);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+
+            ChatModel result = factory.createChatModel(customChatModel);
+
+            assertThat(((OllamaChatModel) result).defaultRequestParameters().think()).isNull();
+            assertThat(returnThinking(result)).isFalse();
+        }
+    }
+
+    @Test
+    void testCreateChatModelEnablesThinkingWhenSettingEnabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
+            when(mockSettingsState.getShowThinkingEnabled()).thenReturn(true);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+
+            ChatModel result = factory.createChatModel(customChatModel);
+
+            assertThat(((OllamaChatModel) result).defaultRequestParameters().think()).isTrue();
+            assertThat(returnThinking(result)).isTrue();
+        }
+    }
+
+    @Test
+    void testCreateStreamingChatModelEnablesThinkingWhenSettingEnabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
+            when(mockSettingsState.getShowThinkingEnabled()).thenReturn(true);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+
+            StreamingChatModel result = factory.createStreamingChatModel(customChatModel);
+
+            assertThat(((OllamaStreamingChatModel) result).defaultRequestParameters().think()).isTrue();
+            assertThat(returnThinking(result)).isTrue();
+        }
+    }
 
     @Test
     void testCreateChatModelDoesNotSendNumCtxWithoutExplicitOverride() {

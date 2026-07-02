@@ -15,6 +15,8 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -29,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -87,11 +90,13 @@ class NonStreamingPromptExecutionServiceTest {
         fileListManagerMock.when(FileListManager::getInstance).thenReturn(mockFileListManager);
         mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
         agentToolProviderMock.when(() -> AgentToolProviderFactory.createToolProvider(any())).thenReturn(null);
+        agentToolProviderMock.when(() -> AgentToolProviderFactory.createToolProvider(any(), any())).thenReturn(null);
         contextUtilMock.when(() -> ChatMessageContextUtil.hasMultimodalContent(any())).thenReturn(false);
 
         when(mockContext.getProject()).thenReturn(mockProject);
         when(mockContext.getChatModel()).thenReturn(mockChatModel);
         when(mockContext.getUserMessage()).thenReturn(UserMessage.from("test question"));
+        when(mockContext.getMemoryKey()).thenReturn("test-project-hash");
         when(mockContext.getTimeout()).thenReturn(60);
         when(mockProject.getLocationHash()).thenReturn("test-project-hash");
         when(mockChatMemoryManager.getChatMemory("test-project-hash")).thenReturn(mockChatMemory);
@@ -105,10 +110,7 @@ class NonStreamingPromptExecutionServiceTest {
         // Execute tasks synchronously
         when(mockThreadPoolManager.getPromptExecutionPool()).thenReturn(mockExecutor);
         doAnswer(invocation -> {
-            // Run inline
-            CompletableFuture.runAsync(() -> {
-                ((Runnable) invocation.getArgument(0)).run();
-            }).join();
+            ((Runnable) invocation.getArgument(0)).run();
             return null;
         }).when(mockExecutor).execute(any(Runnable.class));
 
@@ -139,6 +141,55 @@ class NonStreamingPromptExecutionServiceTest {
     @Test
     void isRunning_initiallyFalse() {
         assertThat(service.isRunning()).isFalse();
+    }
+
+
+    @Test
+    void executeQuery_withoutToolsUsesChatModelDirectlySoThinkingIsPreserved() throws Exception {
+        AiMessage aiMessage = AiMessage.builder()
+            .thinking("I should reason first.")
+            .text("The answer is 42.")
+            .build();
+        ChatResponse modelResponse = ChatResponse.builder()
+            .aiMessage(aiMessage)
+            .build();
+        when(mockChatMemory.messages()).thenReturn(List.<ChatMessage>of(UserMessage.from("test question")));
+        when(mockChatModel.chat(anyList())).thenReturn(modelResponse);
+
+        ChatResponse response = service.executeQuery(mockContext).get();
+
+        assertThat(response.aiMessage().thinking()).isEqualTo("I should reason first.");
+        assertThat(response.aiMessage().text()).isEqualTo("The answer is 42.");
+        verify(mockChatMemory).add(mockContext.getUserMessage());
+        verify(mockChatModel).chat(anyList());
+        verify(mockChatMemory).add(aiMessage);
+    }
+
+    @Test
+    void executeQuery_withToolProviderPreservesThinking() throws Exception {
+        // Agent/MCP mode routes through AiServices; the response must still carry
+        // the model's thinking so the UI can render the thinking bubble.
+        dev.langchain4j.service.tool.ToolProvider mockToolProvider =
+            mock(dev.langchain4j.service.tool.ToolProvider.class);
+        when(mockToolProvider.provideTools(any()))
+            .thenReturn(dev.langchain4j.service.tool.ToolProviderResult.builder().build());
+        agentToolProviderMock.when(() -> AgentToolProviderFactory.createToolProvider(any(), any()))
+            .thenReturn(mockToolProvider);
+        chatMemoryManagerMock.when(() -> ChatMemoryManager.buildAugmentedSystemPrompt(any()))
+            .thenReturn("You are a helpful assistant");
+
+        AiMessage aiMessage = AiMessage.builder()
+            .thinking("I should reason first.")
+            .text("The answer is 42.")
+            .build();
+        when(mockChatModel.chat(any(dev.langchain4j.model.chat.request.ChatRequest.class)))
+            .thenReturn(ChatResponse.builder().aiMessage(aiMessage).build());
+        when(mockChatMemory.messages()).thenReturn(List.<ChatMessage>of(UserMessage.from("test question")));
+
+        ChatResponse response = service.executeQuery(mockContext).get();
+
+        assertThat(response.aiMessage().thinking()).isEqualTo("I should reason first.");
+        assertThat(response.aiMessage().text()).isEqualTo("The answer is 42.");
     }
 
     @Test

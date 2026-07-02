@@ -10,6 +10,7 @@ import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
 import com.devoxx.genie.service.blog.BlogFeedService
 import com.devoxx.genie.service.blog.BlogPost
+import com.devoxx.genie.service.prompt.response.streaming.ThinkingResponseFormatter
 import com.devoxx.genie.service.skill.SkillRegistry
 import com.devoxx.genie.ui.compose.model.*
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService
@@ -198,7 +199,8 @@ class ConversationViewModel(
                 return@updateMessage msg
             }
             msg.copy(
-                aiResponseMarkdown = aiText,
+                aiResponseMarkdown = ThinkingResponseFormatter.extractAnswer(aiText),
+                thinkingMarkdown = ThinkingResponseFormatter.extractThinking(aiText),
                 executionTimeMs = context.executionTimeMs,
                 tokenUsage = buildTokenUsage(context) ?: msg.tokenUsage,
                 modelName = formatModelDisplayName(context.languageModel).ifEmpty { msg.modelName },
@@ -207,10 +209,12 @@ class ConversationViewModel(
     }
 
     fun addChatMessage(context: ChatMessageContext) {
+        val aiText = context.aiMessage?.text() ?: ""
         val message = MessageUiModel(
             id = context.id,
             userPrompt = context.userPrompt ?: "",
-            aiResponseMarkdown = context.aiMessage?.text() ?: "",
+            aiResponseMarkdown = ThinkingResponseFormatter.extractAnswer(aiText),
+            thinkingMarkdown = ThinkingResponseFormatter.extractThinking(aiText),
             modelName = formatModelDisplayName(context.languageModel),
             executionTimeMs = context.executionTimeMs,
             tokenUsage = buildTokenUsage(context) ?: TokenUsageInfo(),

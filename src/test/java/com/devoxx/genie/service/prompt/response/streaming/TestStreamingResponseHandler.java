@@ -26,11 +26,6 @@ public class TestStreamingResponseHandler extends StreamingResponseHandler {
         super(context, null, onCompleteCallback, onErrorCallback);
     }
 
-    @Override
-    public void onPartialResponse(String partialResponse) {
-        // Do nothing in the test implementation to avoid NullPointerException
-        // due to null viewController
-    }
 
     @Override
     public void onCompleteResponse(ChatResponse response) {

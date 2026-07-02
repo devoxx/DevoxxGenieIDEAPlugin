@@ -4,6 +4,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService;
+import com.devoxx.genie.service.prompt.response.streaming.ThinkingResponseFormatter;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
@@ -94,7 +95,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 }
                 
                 log.debug("Adding AI message to prompt output panel for context {}", context.getId());
-                context.setAiMessage(response.aiMessage());
+                context.setAiMessage(ThinkingResponseFormatter.format(response.aiMessage()));
                 context.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
                 // Set token usage and cost

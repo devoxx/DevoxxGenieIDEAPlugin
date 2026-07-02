@@ -6,6 +6,8 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
+import com.devoxx.genie.service.agent.AgentToolProviderFactory;
+import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
@@ -16,7 +18,13 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -173,6 +181,61 @@ class StreamingPromptStrategyTest {
 
         // With early cancellation, the executor should not have started real work
         // The handler should have been stopped
+    }
+
+    @Test
+    void executeStrategySpecific_subscribesToPartialThinkingFromAiServicesTokenStream() {
+        StreamingChatModel thinkingStreamingModel = new StreamingChatModel() {
+            @Override
+            public void doChat(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
+                handler.onPartialThinking(new PartialThinking("I should reason first."));
+                handler.onPartialResponse("The answer is 42.");
+                handler.onCompleteResponse(ChatResponse.builder()
+                        .aiMessage(AiMessage.builder()
+                                .thinking("I should reason first.")
+                                .text("The answer is 42.")
+                                .build())
+                        .build());
+            }
+        };
+
+        when(mockContext.getStreamingChatModel()).thenReturn(thinkingStreamingModel);
+        when(mockContext.getMemoryKey()).thenReturn("test-memory-key");
+        when(mockContext.getUserPrompt()).thenReturn("test question");
+        when(mockContext.getUserMessage()).thenReturn(
+                dev.langchain4j.data.message.UserMessage.from("test question"));
+        when(mockChatMemoryManager.getChatMemory("test-memory-key"))
+                .thenReturn(MessageWindowChatMemory.withMaxMessages(10));
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(mockExecutor).execute(any(Runnable.class));
+        var mockMessageBus = mock(com.intellij.util.messages.MessageBus.class);
+        var mockPublisher = mock(com.devoxx.genie.ui.listener.ConversationEventListener.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        when(mockMessageBus.syncPublisher(com.devoxx.genie.ui.topic.AppTopics.CONVERSATION_TOPIC))
+                .thenReturn(mockPublisher);
+
+        try (MockedStatic<AgentToolProviderFactory> agentToolProviderMock = mockStatic(AgentToolProviderFactory.class);
+             MockedStatic<MCPExecutionService> mcpExecutionServiceMock = mockStatic(MCPExecutionService.class)) {
+            MCPExecutionService mcpExecutionService = mock(MCPExecutionService.class);
+            agentToolProviderMock.when(() -> AgentToolProviderFactory.createToolProvider(any(), any()))
+                    .thenReturn(null);
+            mcpExecutionServiceMock.when(MCPExecutionService::getInstance).thenReturn(mcpExecutionService);
+            when(mcpExecutionService.createMCPToolProvider(any(), any())).thenReturn(null);
+
+            strategy.executeStrategySpecific(mockContext, mockPanel, mockResultTask);
+        }
+
+        org.mockito.ArgumentCaptor<AiMessage> captor =
+                org.mockito.ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("""
+                <!-- devoxx-genie-thinking-start -->
+                I should reason first.
+                <!-- devoxx-genie-thinking-end -->
+
+                The answer is 42.""".stripIndent());
     }
 
     /**

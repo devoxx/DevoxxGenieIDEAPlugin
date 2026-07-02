@@ -173,6 +173,100 @@ private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
 }
 
 @Composable
+private fun MarkdownContent(
+    content: String,
+    textColor: Color = DevoxxGenieThemeAccessor.colors.textPrimary,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val secondaryColor = colors.textSecondary
+    val codeBg = colors.codeBackground
+    val bodySize = typography.bodyFontSize.sp
+    val codeSize = typography.codeFontSize.sp
+
+    // markdown-renderer 0.38+: text colors moved into typography TextStyles;
+    // link styling moved to MarkdownTypography.textLink.
+    val mdColors = DefaultMarkdownColors(
+        text = textColor,
+        codeBackground = codeBg,
+        inlineCodeBackground = codeBg,
+        dividerColor = secondaryColor,
+        tableBackground = Color.Transparent,
+    )
+
+    val baseStyle = TextStyle(fontSize = bodySize, color = textColor)
+    val codeStyle = TextStyle(fontSize = codeSize, fontFamily = FontFamily.Monospace, color = textColor)
+
+    val mdTypography = DefaultMarkdownTypography(
+        h1 = baseStyle.copy(fontSize = typography.bodyPlus(9f).sp, fontWeight = FontWeight.Bold),
+        h2 = baseStyle.copy(fontSize = typography.bodyPlus(7f).sp, fontWeight = FontWeight.Bold),
+        h3 = baseStyle.copy(fontSize = typography.bodyPlus(5f).sp, fontWeight = FontWeight.Bold),
+        h4 = baseStyle.copy(fontSize = typography.bodyPlus(3f).sp, fontWeight = FontWeight.SemiBold),
+        h5 = baseStyle.copy(fontSize = typography.bodyPlus(1f).sp, fontWeight = FontWeight.SemiBold),
+        h6 = baseStyle.copy(fontSize = bodySize, fontWeight = FontWeight.SemiBold),
+        text = baseStyle,
+        code = codeStyle,
+        inlineCode = codeStyle.copy(color = DevoxxBlue),
+        quote = baseStyle.copy(color = secondaryColor),
+        paragraph = baseStyle,
+        ordered = baseStyle,
+        bullet = baseStyle,
+        list = baseStyle,
+        textLink = TextLinkStyles(style = SpanStyle(color = DevoxxBlue)),
+        table = baseStyle,
+    )
+
+    SelectionContainer {
+        Markdown(
+            content = content,
+            colors = mdColors,
+            typography = mdTypography,
+            components = markdownComponents(
+                codeBlock = codeBlockWithCopy(colors.isDark),
+                codeFence = codeFenceWithCopy(colors.isDark),
+            ),
+            // Keep the previously rendered content visible while the updated markdown is
+            // re-parsed. Without this every streaming update swaps the bubble to a blank
+            // loading state first — full-text flicker.
+            retainState = true,
+        )
+    }
+}
+
+
+@Composable
+fun ThinkingBubble(
+    thinkingMarkdown: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val shape = RoundedCornerShape(8.dp)
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .border(1.dp, colors.thinkingBubbleBorder, shape)
+            .background(colors.thinkingBubbleBackground, shape)
+            .padding(12.dp),
+    ) {
+        BasicText(
+            text = "🧠 Thinking",
+            style = typography.body1.copy(
+                color = colors.textPrimary,
+                fontWeight = FontWeight.Bold,
+            ),
+        )
+        Spacer(Modifier.height(8.dp))
+        MarkdownContent(
+            content = thinkingMarkdown,
+            textColor = colors.textSecondary,
+        )
+    }
+}
+
+@Composable
 fun AiBubble(
     message: MessageUiModel,
     modifier: Modifier = Modifier,
@@ -235,60 +329,7 @@ fun AiBubble(
 
         // AI Response content — rendered as Markdown
         if (message.aiResponseMarkdown.isNotBlank()) {
-            val typography = DevoxxGenieThemeAccessor.typography
-            val textColor = colors.textPrimary
-            val secondaryColor = colors.textSecondary
-            val codeBg = colors.codeBackground
-            val bodySize = typography.bodyFontSize.sp
-            val codeSize = typography.codeFontSize.sp
-
-            // markdown-renderer 0.38+: text colors moved into typography TextStyles;
-            // link styling moved to MarkdownTypography.textLink.
-            val mdColors = DefaultMarkdownColors(
-                text = textColor,
-                codeBackground = codeBg,
-                inlineCodeBackground = codeBg,
-                dividerColor = secondaryColor,
-                tableBackground = Color.Transparent,
-            )
-
-            val baseStyle = TextStyle(fontSize = bodySize, color = textColor)
-            val codeStyle = TextStyle(fontSize = codeSize, fontFamily = FontFamily.Monospace, color = textColor)
-
-            val mdTypography = DefaultMarkdownTypography(
-                h1 = baseStyle.copy(fontSize = typography.bodyPlus(9f).sp, fontWeight = FontWeight.Bold),
-                h2 = baseStyle.copy(fontSize = typography.bodyPlus(7f).sp, fontWeight = FontWeight.Bold),
-                h3 = baseStyle.copy(fontSize = typography.bodyPlus(5f).sp, fontWeight = FontWeight.Bold),
-                h4 = baseStyle.copy(fontSize = typography.bodyPlus(3f).sp, fontWeight = FontWeight.SemiBold),
-                h5 = baseStyle.copy(fontSize = typography.bodyPlus(1f).sp, fontWeight = FontWeight.SemiBold),
-                h6 = baseStyle.copy(fontSize = bodySize, fontWeight = FontWeight.SemiBold),
-                text = baseStyle,
-                code = codeStyle,
-                inlineCode = codeStyle.copy(color = DevoxxBlue),
-                quote = baseStyle.copy(color = secondaryColor),
-                paragraph = baseStyle,
-                ordered = baseStyle,
-                bullet = baseStyle,
-                list = baseStyle,
-                textLink = TextLinkStyles(style = SpanStyle(color = DevoxxBlue)),
-                table = baseStyle,
-            )
-
-            SelectionContainer {
-                Markdown(
-                    content = message.aiResponseMarkdown,
-                    colors = mdColors,
-                    typography = mdTypography,
-                    components = markdownComponents(
-                        codeBlock = codeBlockWithCopy(colors.isDark),
-                        codeFence = codeFenceWithCopy(colors.isDark),
-                    ),
-                    // Keep the previously rendered content visible while the updated
-                    // markdown is re-parsed. Without this every streaming update swaps
-                    // the bubble to a blank loading state first — full-text flicker.
-                    retainState = true,
-                )
-            }
+            MarkdownContent(content = message.aiResponseMarkdown)
 
             // In-flight affordance: once the first token replaces the ThinkingIndicator,
             // this caret is the only signal that the response is still streaming.

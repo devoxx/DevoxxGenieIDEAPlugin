@@ -35,6 +35,11 @@ fun MessagePair(
             )
         }
 
+        if (message.thinkingMarkdown.isNotBlank()) {
+            ThinkingBubble(thinkingMarkdown = message.thinkingMarkdown)
+            Spacer(Modifier.height(4.dp))
+        }
+
         // AI response bubble
         AiBubble(
             message = message,

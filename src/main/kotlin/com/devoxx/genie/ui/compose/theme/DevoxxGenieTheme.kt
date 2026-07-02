@@ -24,6 +24,8 @@ data class DevoxxColors(
     val onSurface: Color,
     val userBubbleBackground: Color,
     val assistantBubbleBackground: Color,
+    val thinkingBubbleBackground: Color,
+    val thinkingBubbleBorder: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     val codeBackground: Color,
@@ -114,6 +116,12 @@ object DevoxxGenieColors {
     fun assistantBubbleBackground(dark: Boolean): Color = if (dark) Color(0xFF1E282E) else Color(0xFFF0F7FF)
 
     @Composable
+    fun thinkingBubbleBackground(dark: Boolean): Color = if (dark) Color(0xFF25202C) else Color(0xFFF7F1FF)
+
+    @Composable
+    fun thinkingBubbleBorder(dark: Boolean): Color = if (dark) Color(0xFF7D6A9E) else Color(0xFFBCA7E8)
+
+    @Composable
     fun textPrimary(dark: Boolean): Color = if (dark) Color(0xFFE0E0E0) else Color(0xFF000000)
 
     @Composable
@@ -148,6 +156,8 @@ fun DevoxxGenieTheme(
         onSurface = DevoxxGenieColors.textPrimary(darkTheme),
         userBubbleBackground = DevoxxGenieColors.userBubbleBackground(darkTheme),
         assistantBubbleBackground = DevoxxGenieColors.assistantBubbleBackground(darkTheme),
+        thinkingBubbleBackground = DevoxxGenieColors.thinkingBubbleBackground(darkTheme),
+        thinkingBubbleBorder = DevoxxGenieColors.thinkingBubbleBorder(darkTheme),
         textPrimary = DevoxxGenieColors.textPrimary(darkTheme),
         textSecondary = DevoxxGenieColors.textSecondary(darkTheme),
         codeBackground = DevoxxGenieColors.codeBackground(darkTheme),

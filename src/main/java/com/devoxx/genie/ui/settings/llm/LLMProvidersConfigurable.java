@@ -55,6 +55,8 @@ public class LLMProvidersConfigurable implements Configurable {
         boolean isModified = false;
 
         isModified |= !stateService.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
+        isModified |= Boolean.TRUE.equals(stateService.getShowThinkingEnabled())
+                != llmSettingsComponent.getShowThinkingCheckBox().isSelected();
 
         isModified |= isFieldModified(llmSettingsComponent.getOpenAIKeyField(), stateService.getOpenAIKey());
         isModified |= isFieldModified(llmSettingsComponent.getMistralApiKeyField(), stateService.getMistralKey());
@@ -140,6 +142,7 @@ public class LLMProvidersConfigurable implements Configurable {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
+        settings.setShowThinkingEnabled(llmSettingsComponent.getShowThinkingCheckBox().isSelected());
 
         settings.setOllamaModelUrl(llmSettingsComponent.getOllamaModelUrlField().getText());
         settings.setOllamaContextWindowOverrideEnabled(llmSettingsComponent.getOllamaContextWindowOverrideCheckBox().isSelected());
@@ -255,6 +258,7 @@ public class LLMProvidersConfigurable implements Configurable {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
         llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
+        llmSettingsComponent.getShowThinkingCheckBox().setSelected(Boolean.TRUE.equals(settings.getShowThinkingEnabled()));
 
         llmSettingsComponent.getOllamaModelUrlField().setText(settings.getOllamaModelUrl());
         llmSettingsComponent.getOllamaContextWindowOverrideCheckBox().setSelected(Boolean.TRUE.equals(settings.getOllamaContextWindowOverrideEnabled()));

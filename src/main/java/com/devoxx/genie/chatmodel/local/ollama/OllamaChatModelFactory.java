@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.chatmodel.local.LocalChatModelFactory;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
@@ -33,6 +34,8 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .listeners(getListener());
 
+        applyThinkingSetting(builder);
+
         // Only send num_ctx when the user explicitly enabled request-time overriding.
         if (customChatModel.getContextWindowOverride() != null) {
             builder.numCtx(customChatModel.getContextWindowOverride());
@@ -50,12 +53,28 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()));
 
+        applyThinkingSetting(builder);
+
         // Only send num_ctx when the user explicitly enabled request-time overriding.
         if (customChatModel.getContextWindowOverride() != null) {
             builder.numCtx(customChatModel.getContextWindowOverride());
         }
 
         return builder.build();
+    }
+
+    // Unlike the client-side-only returnThinking flag, think(true) is sent to the Ollama API,
+    // so both are applied conditionally to keep the request unchanged when the setting is off.
+    private void applyThinkingSetting(@NotNull OllamaChatModel.OllamaChatModelBuilder builder) {
+        if (ThinkingSupport.isEnabled()) {
+            builder.think(true).returnThinking(true);
+        }
+    }
+
+    private void applyThinkingSetting(@NotNull OllamaStreamingChatModel.OllamaStreamingChatModelBuilder builder) {
+        if (ThinkingSupport.isEnabled()) {
+            builder.think(true).returnThinking(true);
+        }
     }
 
     @Override

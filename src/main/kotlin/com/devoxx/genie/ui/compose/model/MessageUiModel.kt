@@ -80,6 +80,7 @@ data class MessageUiModel(
     val id: String,
     val userPrompt: String,
     val aiResponseMarkdown: String = "",
+    val thinkingMarkdown: String = "",
     val modelName: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val executionTimeMs: Long = 0,

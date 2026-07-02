@@ -105,6 +105,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox streamModeCheckBox = new JCheckBox("", stateService.getStreamMode());
     @Getter
+    private final JCheckBox showThinkingCheckBox = new JCheckBox("", Boolean.TRUE.equals(stateService.getShowThinkingEnabled()));
+    @Getter
     private final JCheckBox ollamaEnabledCheckBox = new JCheckBox("", stateService.isOllamaEnabled());
     @Getter
     private final JCheckBox lmStudioEnabledCheckBox = new JCheckBox("", stateService.isLmStudioEnabled());
@@ -188,6 +190,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         addSection(panel, gbc, "Large Language Model Response");
         addSettingRow(panel, gbc, "Enable Stream Mode", streamModeCheckBox);
+        addSettingRow(panel, gbc, "Show Thinking", showThinkingCheckBox);
+        addHintText(panel, gbc, "When enabled, reasoning models (Ollama, LMStudio, Jan, Llama.cpp, DeepSeek, Mistral, ...) show their thinking in a separate section before the final answer.");
 
         // Local LLM Providers section
         addSection(panel, gbc, "Local LLM Providers");

@@ -108,6 +108,29 @@ class LLMProvidersConfigurableTest {
         assertThat(getSettingsComponent().getOllamaContextWindowOverrideCheckBox().isSelected()).isTrue();
     }
 
+
+    @Test
+    void shouldApplyShowThinkingSetting() {
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getShowThinkingCheckBox().setSelected(true);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.getShowThinkingEnabled()).isTrue();
+    }
+
+    @Test
+    void shouldResetShowThinkingSetting() {
+        stateService.setShowThinkingEnabled(true);
+
+        configurable.reset();
+
+        assertThat(getSettingsComponent().getShowThinkingCheckBox().isSelected()).isTrue();
+    }
+
     @Nested
     class IsAnyApiKeyEnabled {
 
