@@ -66,6 +66,40 @@ public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
+    void createChatModelEnablesThinkingWhenSettingEnabled() {
+        when(DevoxxGenieStateService.getInstance().getShowThinkingEnabled()).thenReturn(true);
+
+        MistralChatModelFactory factory = new MistralChatModelFactory();
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("magistral-medium-latest");
+
+        assertThat(returnThinking(factory.createChatModel(customChatModel))).isTrue();
+        assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isTrue();
+    }
+
+    @Test
+    void createChatModelDoesNotEnableThinkingWhenSettingDisabled() {
+        when(DevoxxGenieStateService.getInstance().getShowThinkingEnabled()).thenReturn(false);
+
+        MistralChatModelFactory factory = new MistralChatModelFactory();
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("magistral-medium-latest");
+
+        assertThat(returnThinking(factory.createChatModel(customChatModel))).isFalse();
+        assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isFalse();
+    }
+
+    private static boolean returnThinking(Object mistralModel) {
+        try {
+            java.lang.reflect.Field field = mistralModel.getClass().getDeclaredField("returnThinking");
+            field.setAccessible(true);
+            return (boolean) field.get(mistralModel);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Unable to read LangChain4j Mistral returnThinking flag", e);
+        }
+    }
+
+    @Test
     public void testModelNames() {
         MistralChatModelFactory factory = new MistralChatModelFactory();
         Assertions.assertThat(factory.getModels()).isNotEmpty();

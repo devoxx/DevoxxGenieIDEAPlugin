@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.cloud.grok;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -27,6 +28,7 @@ public class GrokChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(customChatModel))
                 .maxRetries(customChatModel.getMaxRetries())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
                 .baseUrl(GROK_API_ENDPOINT)
                 .build();
@@ -39,6 +41,7 @@ public class GrokChatModelFactory implements ChatModelFactory {
                 .defaultRequestParameters(createChatContextParameters(customChatModel))
                 .modelName(customChatModel.getModelName())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
                 .baseUrl(GROK_API_ENDPOINT)
                 .build();

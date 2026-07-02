@@ -41,6 +41,50 @@ class LMStudioChatModelFactoryTest {
         }
     }
 
+    private static boolean returnThinking(Object openAiModel) {
+        try {
+            java.lang.reflect.Field field = openAiModel.getClass().getDeclaredField("returnThinking");
+            field.setAccessible(true);
+            return (boolean) field.get(openAiModel);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Unable to read LangChain4j OpenAI returnThinking flag", e);
+        }
+    }
+
+    @Test
+    void testCreateChatModelEnablesThinkingWhenSettingEnabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getLmstudioModelUrl()).thenReturn("http://localhost:1234/v1/");
+            when(mockSettingsState.getShowThinkingEnabled()).thenReturn(true);
+
+            LMStudioChatModelFactory factory = new LMStudioChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("lmstudio");
+
+            assertThat(returnThinking(factory.createChatModel(customChatModel))).isTrue();
+            assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isTrue();
+        }
+    }
+
+    @Test
+    void testCreateChatModelDoesNotEnableThinkingWhenSettingDisabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+            when(mockSettingsState.getLmstudioModelUrl()).thenReturn("http://localhost:1234/v1/");
+            when(mockSettingsState.getShowThinkingEnabled()).thenReturn(false);
+
+            LMStudioChatModelFactory factory = new LMStudioChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("lmstudio");
+
+            assertThat(returnThinking(factory.createChatModel(customChatModel))).isFalse();
+            assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isFalse();
+        }
+    }
+
     @Test
     void buildLanguageModel_usesConfiguredFallbackContextLengthWhenModelContextIsMissing() throws Exception {
         try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {

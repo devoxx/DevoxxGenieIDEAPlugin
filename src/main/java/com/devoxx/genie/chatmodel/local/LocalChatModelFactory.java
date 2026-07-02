@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.local;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -70,6 +71,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
                 .maxTokens(customChatModel.getMaxTokens())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .topP(customChatModel.getTopP())
+                .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
                 .build();
     }
@@ -83,6 +85,7 @@ public abstract class LocalChatModelFactory implements ChatModelFactory {
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
                 .build();
     }
