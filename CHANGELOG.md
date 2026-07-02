@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.8.12 - 2026-07-02
+
+### Added
+- feat(thinking): add an opt-in **"Show Thinking"** setting (default off) that renders a reasoning model's chain of thought in a dedicated, theme-aware bubble above the final answer, in both streaming and non-streaming mode. Closes the non-streaming gap by having the AiServices `Assistant` return `AiMessage` instead of `String` (langchain4j drops `AiMessage.thinking()` for `String` returns) and calling `ChatModel.chat(...)` directly on the no-tool path. Applies `returnThinking` across all OpenAI-compatible factories (LMStudio, Jan, GPT4All, Exo, llama.cpp, CustomOpenAI, OpenAI, DeepSeek, DeepInfra, OpenRouter, Groq, Grok, GLM, Kimi, NVIDIA) and Mistral; Anthropic/Gemini/Bedrock are excluded for now (extended thinking there needs a token budget → cost impact) (task-240, #1181)
+- feat(tips): add a new rotating tip to the prompt-input tip line
+
+### Fixed
+- fix(models): prevent a foreign provider's model being restored after an IDE restart — restarting could restore the **Ollama** provider yet show an **Anthropic** model as selected. The persisted provider/model pair could become cross-provider inconsistent (`processModelNameSelection` persisted the model on programmatic combo events, a transient auto-select of the first provider persisted its models when the async fetch landed, provider switches persisted only the provider, and concurrent fetches had no stale-response guard), and the not-in-list restore path then presented the foreign model under Ollama. Adds a programmatic-update guard, pair-writes, a fetch generation token, and a safer restore fallback (#1184)
+- fix(providers): handle null-text AI responses from OpenAI-compatible providers so a final assistant message with `null` content (e.g. reasoning models, or empty replies after tool-call file edits) no longer silently drops in the Compose UI, persists `null` to history, or crashes `ConversationHistoryManager` with `IllegalArgumentException` on reopen — "Provider unavailable: text cannot be null" (#1176, #1182)
+- fix(history): persist a conversation to history when a run fails **after** an answer has already streamed — previously an error late in the turn (seen intermittently with the NVIDIA provider in agent + streaming mode) left the correct answer unsaved and absent from conversation history (#1177)
+- fix(shutdown): guard thread-pool shutdown against a null `Application` during JVM exit. `ThreadPoolShutdownManager`'s JVM shutdown hook could fire after the IntelliJ `Application` was torn down, so `ThreadPoolManager.getInstance()` NPE'd inside `getApplication().getService(...)` (#1178)
+
+### Dependencies
+- chore(deps): bump AWS SDK BOM 2.46.19 → 2.46.20 (#1180)
+
+### Documentation
+- docs(blog): add a blog post on the visible LLM thinking feature — the Show Thinking setting surfacing a reasoning model's chain of thought before the final answer, with screenshots of the live thinking block and the settings toggle (#1183)
+- docs(web): add a Mailjet newsletter signup section to the landing page and a dedicated welcome page for confirmed subscribers (#1179)
+- docs(readme): add NVIDIA to the cloud provider list in the README
+
+### Contributors
+- @stephanj
+
 ## v1.8.11 - 2026-07-01
 
 ### Added

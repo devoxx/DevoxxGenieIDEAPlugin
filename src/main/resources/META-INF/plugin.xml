@@ -68,6 +68,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.12</h2>
+        <UL>
+                    <LI>feat(thinking): new opt-in <b>"Show Thinking"</b> setting renders a reasoning model's chain of thought in a dedicated bubble above the answer, in both streaming and non-streaming mode — across OpenAI-compatible providers and Mistral (#1181)</LI>
+                    <LI>fix(models): after an IDE restart, the restored provider no longer shows a foreign provider's model (e.g. Ollama selected with an Anthropic model) (#1184)</LI>
+                    <LI>fix(providers): OpenAI-compatible models that return null text (some reasoning models, or empty replies after tool edits) no longer drop the reply, corrupt history, or crash on reopen (#1182)</LI>
+                    <LI>fix(history): a conversation is now saved to history even when a run fails after the answer has already streamed (#1177)</LI>
+                    <LI>fix(shutdown): guard against a null Application during JVM exit so the thread-pool shutdown hook no longer NPEs (#1178)</LI>
+                    <LI>chore(deps): AWS SDK BOM 2.46.19 → 2.46.20 (#1180)</LI>
+                </UL>
         <h2>v1.8.11</h2>
         <UL>
                     <LI>feat(nvidia): add <b>NVIDIA NIM</b> as a cloud LLM provider — one free <code>nvapi</code> key unlocks 100+ OpenAI-compatible models, fetched live from build.nvidia.com (#1171)</LI>
