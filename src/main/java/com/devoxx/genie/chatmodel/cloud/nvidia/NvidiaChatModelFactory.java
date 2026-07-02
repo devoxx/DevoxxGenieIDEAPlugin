@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.cloud.nvidia;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.chatmodel.local.LocalLLMProviderUtil;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
@@ -164,6 +165,7 @@ public class NvidiaChatModelFactory implements ChatModelFactory {
             .maxTokens(customChatModel.getMaxTokens())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }
@@ -177,6 +179,7 @@ public class NvidiaChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .topP(customChatModel.getTopP())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }

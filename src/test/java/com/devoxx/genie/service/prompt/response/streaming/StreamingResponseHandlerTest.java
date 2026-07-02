@@ -14,6 +14,7 @@ import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.output.TokenUsage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,6 +241,30 @@ class StreamingResponseHandlerTest {
         verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
         assertThat(captor.getValue().text()).isEqualTo("Hello World");
         assertThat(onCompleteCalled.get()).isTrue();
+    }
+
+    @Test
+    void onPartialThinking_rendersThinkingBeforeAnswer() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.onPartialThinking(new PartialThinking("I should inspect this first."));
+        handler.onPartialResponse("The answer is 42.");
+
+        handler.onCompleteResponse(ChatResponse.builder()
+                .aiMessage(AiMessage.builder()
+                        .thinking("I should inspect this first.")
+                        .text("The answer is 42.")
+                        .build())
+                .build());
+
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("""
+                <!-- devoxx-genie-thinking-start -->
+                I should inspect this first.
+                <!-- devoxx-genie-thinking-end -->
+
+                The answer is 42.""".stripIndent());
     }
 
     @Test

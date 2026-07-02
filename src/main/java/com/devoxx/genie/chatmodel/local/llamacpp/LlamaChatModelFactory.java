@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.local.llamacpp;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -25,6 +26,7 @@ public class LlamaChatModelFactory implements ChatModelFactory {
             .topP(customChatModel.getTopP())
             .maxRetries(customChatModel.getMaxRetries())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }

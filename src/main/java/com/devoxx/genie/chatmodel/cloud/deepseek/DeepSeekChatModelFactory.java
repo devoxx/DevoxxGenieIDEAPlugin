@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.cloud.deepseek;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -28,6 +29,7 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
             .maxTokens(4_000)   // 8K Beta https://platform.deepseek.com/api-docs/quick_start/pricing
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }
@@ -42,6 +44,7 @@ public class DeepSeekChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .topP(customChatModel.getTopP())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }

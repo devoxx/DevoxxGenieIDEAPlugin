@@ -181,6 +181,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
             assistant.chat(cleanText)
                 .onPartialResponse(handler::onPartialResponse)
+                .onPartialThinking(handler::onPartialThinking)
                 .onIntermediateResponse(handler::onIntermediateResponse)
                 .onToolExecuted(this::logToolExecution)
                 .onCompleteResponse(handler::onCompleteResponse)

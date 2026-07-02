@@ -116,6 +116,40 @@ class DeepSeekChatModelFactoryTest {
         assertThat(result).isNotNull();
     }
 
+    private static boolean returnThinking(Object openAiModel) {
+        try {
+            java.lang.reflect.Field field = openAiModel.getClass().getDeclaredField("returnThinking");
+            field.setAccessible(true);
+            return (boolean) field.get(openAiModel);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Unable to read LangChain4j OpenAI returnThinking flag", e);
+        }
+    }
+
+    @Test
+    void createChatModelEnablesThinkingWhenSettingEnabled() {
+        when(DevoxxGenieStateService.getInstance().getShowThinkingEnabled()).thenReturn(true);
+
+        DeepSeekChatModelFactory factory = new DeepSeekChatModelFactory();
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("deepseek-reasoner");
+
+        assertThat(returnThinking(factory.createChatModel(customChatModel))).isTrue();
+        assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isTrue();
+    }
+
+    @Test
+    void createChatModelDoesNotEnableThinkingWhenSettingDisabled() {
+        when(DevoxxGenieStateService.getInstance().getShowThinkingEnabled()).thenReturn(false);
+
+        DeepSeekChatModelFactory factory = new DeepSeekChatModelFactory();
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("deepseek-reasoner");
+
+        assertThat(returnThinking(factory.createChatModel(customChatModel))).isFalse();
+        assertThat(returnThinking(factory.createStreamingChatModel(customChatModel))).isFalse();
+    }
+
     @Test
     void getModelsShouldReturnList() {
         DeepSeekChatModelFactory factory = new DeepSeekChatModelFactory();

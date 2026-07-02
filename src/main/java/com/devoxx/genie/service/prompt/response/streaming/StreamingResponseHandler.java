@@ -12,6 +12,7 @@ import com.devoxx.genie.ui.compose.model.TerminalState;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +58,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private final java.util.concurrent.atomic.AtomicBoolean flushScheduled =
             new java.util.concurrent.atomic.AtomicBoolean(false);
     private final StringBuilder accumulatedResponse = new StringBuilder();
+    private final StringBuilder accumulatedThinking = new StringBuilder();
 
     /**
      * Creates a new streaming response handler
@@ -153,7 +155,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
      * thread; only the EDT runnable touches the view, matching the pre-batching contract.
      */
     private void flushToUi() {
-        String fullText = getAccumulatedText();
+        String fullText = getVisibleAccumulatedText();
         ApplicationManager.getApplication().invokeLater(() -> {
             context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(fullText));
             conversationViewController.updateAiMessageContent(context);
@@ -163,6 +165,31 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
     private String getAccumulatedText() {
         synchronized (accumulatedResponse) {
             return accumulatedResponse.toString();
+        }
+    }
+
+    private String getAccumulatedThinking() {
+        synchronized (accumulatedThinking) {
+            return accumulatedThinking.toString();
+        }
+    }
+
+    private String getVisibleAccumulatedText() {
+        String answer = getAccumulatedText();
+        String thinking = getAccumulatedThinking();
+        if (thinking.isEmpty()) {
+            return answer;
+        }
+        return ThinkingResponseFormatter.format(thinking, answer);
+    }
+
+    @Override
+    public void onPartialThinking(PartialThinking partialThinking) {
+        if (isStopped || partialThinking == null || partialThinking.text() == null) {
+            return;
+        }
+        synchronized (accumulatedThinking) {
+            accumulatedThinking.append(partialThinking.text());
         }
     }
 
@@ -215,7 +242,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // therefore erase all intermediate reasoning from the chat panel. Prefer the
             // accumulated text whenever we streamed partials, so the full visible turn is
             // what we render and persist.
-            String accumulatedText = getAccumulatedText();
+            String accumulatedText = getVisibleAccumulatedText();
             if (hasAddedInitialMessage && !accumulatedText.isEmpty()) {
                 context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(accumulatedText));
             } else {
@@ -313,7 +340,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
             // re-publishing a fresh conversation for a trailing/duplicate error callback.
             return;
         }
-        String partial = getAccumulatedText();
+        String partial = getVisibleAccumulatedText();
         if (partial.isEmpty()) {
             // Provider failed before producing any text — there is nothing worth saving.
             return;

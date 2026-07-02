@@ -221,6 +221,41 @@ class NonStreamingPromptStrategyTest {
         verify(mockPromptExecutionService).executeQuery(mockChatMessageContext);
     }
 
+
+    @Test
+    void executeStrategySpecific_rendersNonStreamingThinkingBeforeAnswer() {
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(mockExecutor).execute(any(Runnable.class));
+
+        ChatResponse response = ChatResponse.builder()
+            .aiMessage(AiMessage.builder()
+                .thinking("I should reason first.")
+                .text("The answer is 42.")
+                .build())
+            .build();
+        when(mockPromptExecutionService.executeQuery(any()))
+            .thenReturn(CompletableFuture.completedFuture(response));
+
+        when(mockPanel.getConversationPanel()).thenReturn(null);
+
+        var mockMessageBus = mock(com.intellij.util.messages.MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        var mockPublisher = mock(ConversationEventListener.class);
+        when(mockMessageBus.syncPublisher(com.devoxx.genie.ui.topic.AppTopics.CONVERSATION_TOPIC))
+            .thenReturn(mockPublisher);
+
+        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
+
+        verify(mockChatMessageContext).setAiMessage(argThat(message -> message.text().equals("""
+                <!-- devoxx-genie-thinking-start -->
+                I should reason first.
+                <!-- devoxx-genie-thinking-end -->
+
+                The answer is 42.""".stripIndent())));
+    }
+
     @Test
     void executeStrategySpecific_withNullResponse_completesWithFailure() {
         doAnswer(invocation -> {

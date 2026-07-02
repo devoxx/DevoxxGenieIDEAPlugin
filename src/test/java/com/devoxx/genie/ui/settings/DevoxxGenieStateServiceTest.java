@@ -80,6 +80,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getRagActivated()).isFalse();
             assertThat(stateService.getWebSearchActivated()).isFalse();
             assertThat(stateService.getStreamMode()).isEqualTo(STREAM_MODE);
+            assertThat(stateService.getShowThinkingEnabled()).isFalse();
             assertThat(stateService.getExcludeJavaDoc()).isFalse();
             assertThat(stateService.getUseGitIgnore()).isTrue();
         }

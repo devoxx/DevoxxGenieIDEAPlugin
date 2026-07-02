@@ -272,6 +272,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Enable stream mode
     private Boolean streamMode = STREAM_MODE;
 
+    // Show thinking/reasoning output of reasoning models (Ollama, OpenAI-compatible providers, Mistral)
+    private Boolean showThinkingEnabled = false;
+
     // LLM settings
     private Double temperature = TEMPERATURE;
     private Double topP = TOP_P;

@@ -20,6 +20,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
@@ -201,11 +202,7 @@ public class NonStreamingPromptExecutionService {
             // and call chatModel directly with the multimodal UserMessage
             if (ChatMessageContextUtil.hasMultimodalContent(chatMessageContext)) {
                 log.info("Multimodal content detected — using direct chat model call (bypassing AiServices)");
-                chatMemory.add(chatMessageContext.getUserMessage());
-                List<ChatMessage> messages = chatMemory.messages();
-                ChatResponse response = chatModel.chat(messages);
-                chatMemory.add(response.aiMessage());
-                return response;
+                return executeDirectChat(chatModel, chatMemory, chatMessageContext.getUserMessage());
             }
 
             Assistant assistant = buildAssistant(chatModel, chatMemory, project);
@@ -222,23 +219,25 @@ public class NonStreamingPromptExecutionService {
                         .createMCPToolProvider(project, chatMessageContext.getMcpCallCount());
             }
 
-            if (toolProvider != null) {
-                log.debug("Tool provider created for non-streaming prompt");
-                assistant = AiServices.builder(Assistant.class)
-                        .chatModel(chatModel)
-                        .chatMemoryProvider(memoryId -> chatMemory)
-                        .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
-                        .toolProvider(toolProvider)
-                        .build();
-            }
-
             String userMessage = chatMessageContext.getUserMessage().singleText();
             String cleanText = TemplateVariableEscaper.escape(userMessage);
 
-            String queryResponse = assistant.chat(cleanText);
+            if (toolProvider == null) {
+                return executeDirectChat(chatModel, chatMemory, UserMessage.from(cleanText));
+            }
+
+            log.debug("Tool provider created for non-streaming prompt");
+            assistant = AiServices.builder(Assistant.class)
+                    .chatModel(chatModel)
+                    .chatMemoryProvider(memoryId -> chatMemory)
+                    .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
+                    .toolProvider(toolProvider)
+                    .build();
+
+            AiMessage queryResponse = assistant.chat(cleanText);
 
             return ChatResponse.builder()
-                    .aiMessage(AiMessage.aiMessage(queryResponse))
+                    .aiMessage(queryResponse)
                     .build();
 
         } catch (Exception e) {
@@ -262,6 +261,17 @@ public class NonStreamingPromptExecutionService {
         }
     }
 
+
+    private static @NotNull ChatResponse executeDirectChat(@NotNull ChatModel chatModel,
+                                                           @NotNull ChatMemory chatMemory,
+                                                           @NotNull UserMessage userMessage) {
+        chatMemory.add(userMessage);
+        List<ChatMessage> messages = chatMemory.messages();
+        ChatResponse response = chatModel.chat(messages);
+        chatMemory.add(response.aiMessage());
+        return response;
+    }
+
     private static @NotNull String buildToolSystemPrompt(@NotNull Project project) {
         return ChatMemoryManager.buildAugmentedSystemPrompt(project);
     }
@@ -277,9 +287,10 @@ public class NonStreamingPromptExecutionService {
     }
 
     /**
-     * The Code Assistant chat method
+     * The Code Assistant chat method. Returns the full {@link AiMessage} (not a plain
+     * String) so provider thinking/reasoning survives the AiServices round-trip.
      */
     interface Assistant {
-        String chat(String userMessage);
+        AiMessage chat(String userMessage);
     }
 }

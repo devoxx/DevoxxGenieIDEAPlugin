@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.cloud.openrouter;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ThinkingSupport;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -40,6 +41,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             .maxTokens(4_000)
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }
@@ -54,6 +56,7 @@ public class OpenRouterChatModelFactory implements ChatModelFactory {
             .temperature(customChatModel.getTemperature())
             .topP(customChatModel.getTopP())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+            .returnThinking(ThinkingSupport.isEnabled())
             .listeners(getListener())
             .build();
     }

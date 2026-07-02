@@ -69,18 +69,26 @@ public class GPT4AllChatModelFactoryTest {
 
     @Test
     public void testCreateChatModel() {
-        ChatModel model = factory.createChatModel(customChatModel);
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
+            mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
 
-        assertNotNull(model);
-        assertTrue(model instanceof OpenAiChatModel);
+            ChatModel model = factory.createChatModel(customChatModel);
+
+            assertNotNull(model);
+            assertTrue(model instanceof OpenAiChatModel);
+        }
     }
 
     @Test
     public void testCreateStreamingChatModel() {
-        StreamingChatModel model = factory.createStreamingChatModel(customChatModel);
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = mockStatic(DevoxxGenieStateService.class)) {
+            mockedSettings.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
 
-        assertNotNull(model);
-        assertTrue(model instanceof OpenAiStreamingChatModel);
+            StreamingChatModel model = factory.createStreamingChatModel(customChatModel);
+
+            assertNotNull(model);
+            assertTrue(model instanceof OpenAiStreamingChatModel);
+        }
     }
 
     @Test
