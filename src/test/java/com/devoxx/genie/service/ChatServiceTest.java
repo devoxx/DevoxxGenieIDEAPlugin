@@ -120,6 +120,33 @@ class ChatServiceTest {
     }
 
     @Test
+    void testOnNewConversation_NullAiText_PersistsEmptyContent() {
+        // Issue #1176: providers can produce a null-text AiMessage; persisting null
+        // content would crash a later history restore with "text cannot be null".
+        when(languageModel.getModelName()).thenReturn("gpt-4");
+        when(languageModel.isApiKeyUsed()).thenReturn(true);
+        when(languageModel.getProvider()).thenReturn(ModelProvider.OpenAI);
+        when(aiMessage.text()).thenReturn(null);
+
+        ChatMessageContext context = ChatMessageContext.builder()
+                .project(project)
+                .userPrompt("Edit this file")
+                .languageModel(languageModel)
+                .aiMessage(aiMessage)
+                .executionTimeMs(150)
+                .build();
+
+        chatService.onNewConversation(context);
+
+        ArgumentCaptor<Conversation> conversationCaptor = ArgumentCaptor.forClass(Conversation.class);
+        verify(storageService).addConversation(eq(project), conversationCaptor.capture());
+
+        Conversation savedConversation = conversationCaptor.getValue();
+        assertThat(savedConversation.getMessages()).hasSize(2);
+        assertThat(savedConversation.getMessages().get(1).getContent()).isEmpty();
+    }
+
+    @Test
     void testOnNewConversation_AppendsToExistingConversation() {
         chatService.setConversationManager(conversationManager);
 

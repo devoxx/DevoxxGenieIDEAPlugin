@@ -100,7 +100,10 @@ public class ChatService implements ConversationEventListener {
         // Add the new messages to the conversation
         String currentTime = LocalDateTime.now().toString();
         conversation.getMessages().add(new ChatMessage(true, chatMessageContext.getUserPrompt(), currentTime));
-        conversation.getMessages().add(new ChatMessage(false, chatMessageContext.getAiMessage().text(), currentTime));
+        // Providers can return a null-text response (issue #1176) — persist empty content
+        // so a later history restore never feeds null into AiMessage.from().
+        String aiText = chatMessageContext.getAiMessage().text();
+        conversation.getMessages().add(new ChatMessage(false, aiText == null ? "" : aiText, currentTime));
 
         // Save or update the conversation
         storageService.addConversation(project, conversation);

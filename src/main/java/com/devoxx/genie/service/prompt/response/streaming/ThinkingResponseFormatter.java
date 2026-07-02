@@ -29,7 +29,9 @@ public final class ThinkingResponseFormatter {
         String thinking = aiMessage.thinking() == null ? "" : aiMessage.thinking();
         if (thinking.isBlank()) {
             // Nothing to embed — keep the original message (and its attributes) intact.
-            return aiMessage;
+            // OpenAI-compatible providers can return a final message with null content
+            // (issue #1176); normalize so downstream text() consumers never see null.
+            return aiMessage.text() == null ? aiMessage.withText("") : aiMessage;
         }
         String answer = aiMessage.text() == null ? "" : aiMessage.text();
         return AiMessage.from(format(thinking, answer));

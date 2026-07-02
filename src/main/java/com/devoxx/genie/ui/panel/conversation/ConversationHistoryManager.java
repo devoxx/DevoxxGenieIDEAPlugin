@@ -170,7 +170,7 @@ public class ConversationHistoryManager {
         if (!currentMessage.isUser()) {
             log.warn("Found unpaired AI message at position {}", messageIndex);
             context.setUserPrompt("");
-            context.setAiMessage(AiMessage.from(currentMessage.getContent()));
+            context.setAiMessage(toAiMessage(currentMessage.getContent()));
             messageRenderer.addCompleteChatMessage(context);
             return messageIndex + 1;
         }
@@ -179,13 +179,21 @@ public class ConversationHistoryManager {
 
         if (messageIndex + 1 < messages.size() && !messages.get(messageIndex + 1).isUser()) {
             ChatMessage aiMessage = messages.get(messageIndex + 1);
-            context.setAiMessage(AiMessage.from(aiMessage.getContent()));
+            context.setAiMessage(toAiMessage(aiMessage.getContent()));
             messageRenderer.addCompleteChatMessage(context);
             return messageIndex + 2;
         }
 
         messageRenderer.addUserMessageOnly(context);
         return messageIndex + 1;
+    }
+
+    /**
+     * Older conversations may have been persisted with null AI content when the provider
+     * returned a null-text response (issue #1176) — never feed null into AiMessage.from().
+     */
+    private static @NotNull AiMessage toAiMessage(String content) {
+        return AiMessage.from(content == null ? "" : content);
     }
 
     /**
