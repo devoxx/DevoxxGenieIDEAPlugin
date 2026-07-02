@@ -242,12 +242,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
         suppressModelSelectionTracking = true;
 
-        llmProviderPanel.getModelProviderComboBox().removeAllItems();
-        llmProviderPanel.getModelNameComboBox().removeAllItems();
-        llmProviderPanel.addModelProvidersToComboBox();
+        // Repopulate with the provider selection handler suppressed: clearing and re-adding
+        // items auto-selects the first provider (alphabetically e.g. Anthropic), which would
+        // transiently persist a wrong provider and fetch its models, corrupting the stored
+        // provider/model pair when the fetches race.
+        llmProviderPanel.repopulateProviders(currentProvider);
 
         if (currentProvider != null) {
-            llmProviderPanel.getModelProviderComboBox().setSelectedItem(currentProvider);
             // Model loading is asynchronous, so re-select the current model and lift the
             // tracking suppression only once the combo has actually been repopulated.
             llmProviderPanel.updateModelNamesComboBox(currentProvider.getName(), () -> {
@@ -270,19 +271,27 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         if (e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) && isInitializationComplete) {
             LanguageModel selectedModel = (LanguageModel) llmProviderPanel.getModelNameComboBox().getSelectedItem();
             if (selectedModel != null) {
-                DevoxxGenieStateService.getInstance().setSelectedLanguageModel(getMemoryKey(), selectedModel.getModelName());
-                submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getInputMaxTokens());
-
-                // Anonymous usage analytics — fires only on user-initiated changes (task-206).
-                // Three guards combine to filter out programmatic combo events:
-                //  - isInitializationComplete: blocks events during initial state load
+                // Guards that filter out programmatic combo events:
                 //  - suppressModelSelectionTracking: blocks events during settingsChanged()
                 //    when this class itself is repopulating combos
                 //  - llmProviderPanel.isUpdatingModelNames(): blocks events fired indirectly
                 //    by provider switch / refresh / restore inside LlmProviderPanel
-                if (!suppressModelSelectionTracking
-                        && !llmProviderPanel.isUpdatingModelNames()
-                        && selectedModel.getProvider() != null) {
+                // (isInitializationComplete above blocks events during initial state load.)
+                boolean programmaticUpdate = suppressModelSelectionTracking
+                        || llmProviderPanel.isUpdatingModelNames();
+
+                // Persist only user-initiated selections. Programmatic repopulation (e.g. a
+                // transient provider's models arriving during settingsChanged) must never
+                // overwrite the stored model, or a foreign model ends up persisted under the
+                // current provider's key. LlmProviderPanel persists the pair itself on
+                // provider switches.
+                if (!programmaticUpdate) {
+                    DevoxxGenieStateService.getInstance().setSelectedLanguageModel(getMemoryKey(), selectedModel.getModelName());
+                }
+                submitPanel.getActionButtonsPanel().updateTokenUsage(selectedModel.getInputMaxTokens());
+
+                // Anonymous usage analytics — fires only on user-initiated changes (task-206).
+                if (!programmaticUpdate && selectedModel.getProvider() != null) {
                     AnalyticsService.trackModelSelectedSafely(
                             selectedModel.getProvider().getName(),
                             selectedModel.getModelName());
