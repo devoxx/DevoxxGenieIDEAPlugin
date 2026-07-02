@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-06-19",
+  "lastUpdated": "2026-07-02",
   "tips": [
     { "text": "Type @ to add a file to the context.", "weight": 2 },
     { "text": "Generate a DEVOXXGENIE.md with /init for project-aware answers.", "weight": 3 },
@@ -33,6 +33,7 @@
     { "text": "DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", "weight": 1 },
     { "text": "With Agent debug logs enabled, click the [Agent] tag in a message to see its input/output log details.", "weight": 1 },
     { "text": "Fix SpotBugs findings with AI — the SpotBugs DevoxxGenie plugin: https://github.com/stephanj/spotbugs-devoxxgenie-plugin", "weight": 1 },
-    { "text": "Resolve SonarLint issues with AI — the SonarLint DevoxxGenie plugin: https://github.com/stephanj/sonarlint-devoxxgenie-intellij", "weight": 1 }
+    { "text": "Resolve SonarLint issues with AI — the SonarLint DevoxxGenie plugin: https://github.com/stephanj/sonarlint-devoxxgenie-intellij", "weight": 1 },
+    { "text": "Enable Thinking in Settings to show model reasoning separately when supported.", "weight": 1 }
   ]
 }
