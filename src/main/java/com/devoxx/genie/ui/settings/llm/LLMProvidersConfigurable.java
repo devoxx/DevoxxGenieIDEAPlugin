@@ -5,6 +5,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -88,6 +89,13 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIModelNameField(), stateService.getCustomOpenAIModelName());
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIApiKeyField(), stateService.getCustomOpenAIApiKey());
+        isModified |= (stateService.getCustomOpenAIContextWindow() != null) != llmSettingsComponent.getCustomOpenAIContextWindowEnabledCheckBox().isSelected();
+        if (llmSettingsComponent.getCustomOpenAIContextWindowEnabledCheckBox().isSelected()) {
+            Integer savedContextWindow = stateService.getCustomOpenAIContextWindow();
+            isModified |= savedContextWindow == null || !savedContextWindow.equals(llmSettingsComponent.getCustomOpenAIContextWindowField().getNumber());
+        }
+        isModified |= costFieldModified(stateService.getCustomOpenAIInputCost(), llmSettingsComponent.getCustomOpenAIInputCostField());
+        isModified |= costFieldModified(stateService.getCustomOpenAIOutputCost(), llmSettingsComponent.getCustomOpenAIOutputCostField());
 
         isModified |= !stateService.getShowAzureOpenAIFields().equals(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         isModified |= isFieldModified(llmSettingsComponent.getAzureOpenAIEndpointField(), stateService.getAzureOpenAIEndpoint());
@@ -161,6 +169,13 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setCustomOpenAIApiKey(new String(llmSettingsComponent.getCustomOpenAIApiKeyField().getPassword()));
         settings.setCustomOpenAIApiKeyEnabled(llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected());
         settings.setCustomOpenAIForceHttp11(llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().isSelected());
+        settings.setCustomOpenAIContextWindow(
+                llmSettingsComponent.getCustomOpenAIContextWindowEnabledCheckBox().isSelected()
+                        ? llmSettingsComponent.getCustomOpenAIContextWindowField().getNumber()
+                        : null
+        );
+        settings.setCustomOpenAIInputCost(costFieldValue(llmSettingsComponent.getCustomOpenAIInputCostField()));
+        settings.setCustomOpenAIOutputCost(costFieldValue(llmSettingsComponent.getCustomOpenAIOutputCostField()));
 
         settings.setOpenAIKey(new String(llmSettingsComponent.getOpenAIKeyField().getPassword()));
         settings.setMistralKey(new String(llmSettingsComponent.getMistralApiKeyField().getPassword()));
@@ -222,6 +237,28 @@ public class LLMProvidersConfigurable implements Configurable {
         }
     }
 
+    /**
+     * A cost spinner is "modified" when its value differs from the stored setting, treating a null
+     * stored value as 0 (the "no cost" / hidden state).
+     */
+    private static boolean costFieldModified(Double storedCost, @NotNull JSpinner field) {
+        double stored = storedCost != null ? storedCost : 0.0d;
+        return Double.compare(stored, spinnerDouble(field)) != 0;
+    }
+
+    /**
+     * Reads a cost spinner value, normalising 0 (or below) to {@code null} so an unset cost is not
+     * persisted as an explicit 0 — keeping the "no cost configured" semantics.
+     */
+    private static Double costFieldValue(@NotNull JSpinner field) {
+        double value = spinnerDouble(field);
+        return value > 0 ? value : null;
+    }
+
+    private static double spinnerDouble(@NotNull JSpinner field) {
+        return ((Number) field.getValue()).doubleValue();
+    }
+
     private boolean isAnyApiKeyEnabled(DevoxxGenieStateService settings) {
         return hasEnabledMainCloudKey(settings) || hasEnabledAuxCloudKey(settings) || hasEnabledAwsOrAzureKey(settings);
     }
@@ -275,6 +312,15 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
         llmSettingsComponent.getCustomOpenAIModelNameField().setText(settings.getCustomOpenAIModelName());
         llmSettingsComponent.getCustomOpenAIApiKeyField().setText(settings.getCustomOpenAIApiKey());
+        llmSettingsComponent.getCustomOpenAIContextWindowEnabledCheckBox().setSelected(settings.getCustomOpenAIContextWindow() != null);
+        llmSettingsComponent.getCustomOpenAIContextWindowField().setNumber(
+                settings.getCustomOpenAIContextWindow() != null
+                        ? settings.getCustomOpenAIContextWindow()
+                        : com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW
+        );
+        llmSettingsComponent.getCustomOpenAIContextWindowField().setEnabled(settings.getCustomOpenAIContextWindow() != null);
+        llmSettingsComponent.getCustomOpenAIInputCostField().setValue(settings.getCustomOpenAIInputCost() != null ? settings.getCustomOpenAIInputCost() : 0.0d);
+        llmSettingsComponent.getCustomOpenAIOutputCostField().setValue(settings.getCustomOpenAIOutputCost() != null ? settings.getCustomOpenAIOutputCost() : 0.0d);
 
         llmSettingsComponent.getOpenAIKeyField().setText(settings.getOpenAIKey());
         llmSettingsComponent.getMistralApiKeyField().setText(settings.getMistralKey());

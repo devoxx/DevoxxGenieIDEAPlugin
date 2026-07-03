@@ -126,6 +126,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Local custom OpenAI-compliant LLM fields
     private String customOpenAIUrl = "";
     private String customOpenAIModelName = "";
+    // Null means "use the default context window"; a positive value overrides it for token calc / usage bar.
+    private Integer customOpenAIContextWindow;
+    // Cost in dollars per 1,000,000 tokens; null/0 means "no cost" (cost figure hidden in the bubble).
+    private Double customOpenAIInputCost;
+    private Double customOpenAIOutputCost;
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("customOpenAIApiKey")
     private String customOpenAIApiKey = "";
 
