@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.8.13</h2>
+        <UL>
+                    <LI>feat(customopenai): configurable <b>context window</b> and <b>input/output cost</b> for the Custom OpenAI provider — the token-usage bar reflects the real window (no more false "context exceeded" warning) and configured costs show in each response bubble (#1187)</LI>
+                    <LI>fix(agent): agent tool-call limits above 100 are now respected — runs no longer die at tool call 100 with "exceeded 100 tool calling round trips" (#1188)</LI>
+                </UL>
         <h2>v1.8.12</h2>
         <UL>
                     <LI>feat(thinking): new opt-in <b>"Show Thinking"</b> setting renders a reasoning model's chain of thought in a dedicated bubble above the answer, in both streaming and non-streaming mode — across OpenAI-compatible providers and Mistral (#1181)</LI>

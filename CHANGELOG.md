@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.8.13 - 2026-07-03
+
+### Added
+- feat(customopenai): configurable **context window** and **input/output cost** for the Custom OpenAI provider (Settings → Large Language Models) — internal/OpenAI-compatible models no longer assume a hardcoded 4096-token window, so the token-usage bar reflects the real window instead of showing a false red "context exceeded" warning, and setting costs (dollars per 1M tokens) makes the estimated cost appear in each AI response bubble; leaving costs at 0 keeps them hidden as before (#1186, #1187)
+
+### Fixed
+- fix(agent): respect user-configured agent tool-call limits above 100 — Langchain4j's `ToolService` defaults `maxToolCallingRoundTrips` to 100 and throws when exceeded, so limits raised above 100 (allowed up to 500 since #1163) still died at tool call 100 with "exceeded 100 tool calling round trips". The plugin's own graceful `AgentLoopTracker` limit (which asks the LLM to wrap up instead of throwing) now always fires first: all three tool-using `AiServices` builders (non-streaming, streaming, and sub-agents) override the Langchain4j round-trip limit to the configured max plus a small grace margin, keeping it as a hard backstop against runaway loops (#1188, #1189)
+
+### Contributors
+- @stephanj
+
 ## v1.8.12 - 2026-07-02
 
 ### Added
