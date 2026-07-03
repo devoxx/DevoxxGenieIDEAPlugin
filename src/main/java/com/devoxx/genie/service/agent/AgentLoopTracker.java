@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
@@ -253,6 +254,19 @@ public class AgentLoopTracker implements ToolProvider {
 
     public boolean isCancelled() {
         return cancelled.get();
+    }
+
+    /**
+     * The value to pass to {@code AiServices.builder(...).maxToolCallingRoundTrips(...)}
+     * wherever this tracker is used as the tool provider (issue #1188). Langchain4j
+     * defaults that limit to 100 round trips and throws a runtime error when exceeded,
+     * which silently overrode user-configured limits above 100. One round trip executes
+     * at least one tool call, so this tracker's graceful limit always fires first; the
+     * grace margin leaves the LLM a few extra round trips to deliver its wrap-up answer,
+     * with the Langchain4j limit remaining as a hard backstop against infinite loops.
+     */
+    public int getMaxToolCallingRoundTrips() {
+        return maxToolCalls + Constant.AGENT_LOOP_ROUND_TRIP_GRACE;
     }
 
     public int getCallCount() {

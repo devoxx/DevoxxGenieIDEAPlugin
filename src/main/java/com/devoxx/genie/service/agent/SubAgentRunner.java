@@ -97,6 +97,9 @@ public class SubAgentRunner {
             SubAssistant assistant = AiServices.builder(SubAssistant.class)
                     .chatModel(model)
                     .toolProvider(tracker)
+                    // Issue #1188: override Langchain4j's default of 100 round trips so the
+                    // configured sub-agent tool-call limit is the one that actually applies.
+                    .maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips())
                     .chatMemoryProvider(memoryId -> memory)
                     .systemMessageProvider(memoryId -> SYSTEM_PROMPT)
                     .build();

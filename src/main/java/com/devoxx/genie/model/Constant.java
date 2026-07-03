@@ -70,6 +70,17 @@ public class Constant {
      */
     public static final int AGENT_MAX_TOOL_CALLS_UPPER_BOUND = 500;
     /**
+     * Extra Langchain4j tool-calling round trips granted beyond the configured max
+     * tool calls (issue #1188). Langchain4j's {@code ToolService} defaults
+     * {@code maxToolCallingRoundTrips} to 100 and kills the run with an execution
+     * error when exceeded, so every tool-using AiServices builder must override it
+     * with the configured limit plus this margin. The margin gives the LLM room to
+     * wrap up gracefully after {@code AgentLoopTracker} starts short-circuiting
+     * tool calls with the loop-limit message, while the Langchain4j limit remains
+     * a hard backstop against a model that never stops calling tools.
+     */
+    public static final int AGENT_LOOP_ROUND_TRIP_GRACE = 10;
+    /**
      * Wall-clock cap (seconds) for a single MCP/agent prompt conversation.
      * Simple (non-agent, non-MCP) prompts use the per-request timeout instead. The agent cap is
      * a *safety net* against silent hangs (e.g., an MCP tool that never returns); each individual

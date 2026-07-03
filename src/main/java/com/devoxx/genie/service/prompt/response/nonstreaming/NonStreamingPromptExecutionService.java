@@ -227,12 +227,17 @@ public class NonStreamingPromptExecutionService {
             }
 
             log.debug("Tool provider created for non-streaming prompt");
-            assistant = AiServices.builder(Assistant.class)
+            var assistantBuilder = AiServices.builder(Assistant.class)
                     .chatModel(chatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
-                    .toolProvider(toolProvider)
-                    .build();
+                    .toolProvider(toolProvider);
+            if (toolProvider instanceof AgentLoopTracker tracker) {
+                // Issue #1188: Langchain4j defaults maxToolCallingRoundTrips to 100,
+                // which silently overrides user-configured tool-call limits above 100.
+                assistantBuilder.maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips());
+            }
+            assistant = assistantBuilder.build();
 
             AiMessage queryResponse = assistant.chat(cleanText);
 
