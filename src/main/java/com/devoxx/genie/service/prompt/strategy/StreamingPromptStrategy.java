@@ -235,6 +235,11 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
 
         if (toolProvider != null) {
             builder.toolProvider(toolProvider);
+            if (toolProvider instanceof AgentLoopTracker tracker) {
+                // Issue #1188: Langchain4j defaults maxToolCallingRoundTrips to 100,
+                // which silently overrides user-configured tool-call limits above 100.
+                builder.maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips());
+            }
         }
 
         return builder.build();
