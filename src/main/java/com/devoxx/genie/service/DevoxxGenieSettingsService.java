@@ -240,4 +240,16 @@ public interface DevoxxGenieSettingsService {
     void setCustomOpenAIModelName(String text);
 
     String getCustomOpenAIModelName();
+
+    void setCustomOpenAIContextWindow(Integer contextWindow);
+
+    Integer getCustomOpenAIContextWindow();
+
+    void setCustomOpenAIInputCost(Double inputCost);
+
+    Double getCustomOpenAIInputCost();
+
+    void setCustomOpenAIOutputCost(Double outputCost);
+
+    Double getCustomOpenAIOutputCost();
 }

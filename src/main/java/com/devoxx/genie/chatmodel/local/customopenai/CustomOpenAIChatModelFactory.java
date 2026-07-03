@@ -170,8 +170,9 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                             .provider(ModelProvider.CustomOpenAI)
                             .modelName(model.getId())
                             .displayName(model.getId())
-                            .inputCost(0)
-                            .outputCost(0)
+                            .inputCost(CustomOpenAICost.resolve(state.getCustomOpenAIInputCost()))
+                            .outputCost(CustomOpenAICost.resolve(state.getCustomOpenAIOutputCost()))
+                            .inputMaxTokens(CustomOpenAIContextWindow.resolve(state.getCustomOpenAIContextWindow()))
                             .apiKeyUsed(state.isCustomOpenAIApiKeyEnabled())
                             .build())
                     .collect(Collectors.toList());

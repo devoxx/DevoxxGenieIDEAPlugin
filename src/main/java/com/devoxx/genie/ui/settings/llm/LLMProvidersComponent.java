@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -62,6 +63,28 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JTextField customOpenAIModelNameField = new JTextField(stateService.getCustomOpenAIModelName());
     @Getter
     private final JPasswordField customOpenAIApiKeyField = new JPasswordField(stateService.getCustomOpenAIApiKey());
+    @Getter
+    private final JCheckBox customOpenAIContextWindowEnabledCheckBox = new JCheckBox("", stateService.getCustomOpenAIContextWindow() != null);
+    @Getter
+    private final JBIntSpinner customOpenAIContextWindowField = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getCustomOpenAIContextWindow() != null
+                            ? stateService.getCustomOpenAIContextWindow()
+                            : CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW,
+                    1,
+                    2_000_000
+            )
+    );
+    @Getter
+    private final JSpinner customOpenAIInputCostField = new JSpinner(
+            new SpinnerNumberModel(
+                    stateService.getCustomOpenAIInputCost() != null ? stateService.getCustomOpenAIInputCost() : 0.0d,
+                    0.0d, 1_000_000.0d, 0.01d));
+    @Getter
+    private final JSpinner customOpenAIOutputCostField = new JSpinner(
+            new SpinnerNumberModel(
+                    stateService.getCustomOpenAIOutputCost() != null ? stateService.getCustomOpenAIOutputCost() : 0.0d,
+                    0.0d, 1_000_000.0d, 0.01d));
     @Getter
     private final JPasswordField openAIKeyField = new JPasswordField(stateService.getOpenAIKey());
     @Getter
@@ -220,6 +243,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
         addHintText(panel, gbc, "Use HTTP/2 when unchecked");
+        addProviderSettingRow(panel, gbc, "Custom OpenAI Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
+        addHintText(panel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
+        addSettingRow(panel, gbc, "Custom OpenAI Input Cost", customOpenAIInputCostField);
+        addSettingRow(panel, gbc, "Custom OpenAI Output Cost", customOpenAIOutputCostField);
+        addHintText(panel, gbc, "Cost in US dollars per 1,000,000 tokens (e.g. 3 for $3/1M input, 15 for $15/1M output). Leave at 0 to hide the cost. When set, the estimated cost is shown in each AI response bubble.");
         // Cloud LLM Providers section
         addSection(panel, gbc, "Cloud LLM Providers");
         addProviderSettingRow(panel, gbc, "OpenAI API Key", openAIEnabledCheckBox,
@@ -290,6 +318,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         customOpenAIUrlEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIUrlEnabledCheckBox, customOpenAIUrlField));
         customOpenAIModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField));
         enableCustomOpenAIApiKeyCheckBox.addItemListener(e -> updateUrlFieldState(enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField));
+        customOpenAIContextWindowEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField));
 
         openAIEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openAIEnabledCheckBox, openAIKeyField));
         mistralEnabledCheckBox.addItemListener(e -> updateUrlFieldState(mistralEnabledCheckBox, mistralApiKeyField));

@@ -1,6 +1,8 @@
 package com.devoxx.genie.controller;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAICost;
 import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.ChatContextParameters;
 import com.devoxx.genie.model.LanguageModel;
@@ -217,9 +219,9 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
                 .provider(provider)
                 .apiKeyUsed(true)
                 .modelName(!customModelName.isBlank() ? customModelName : "na")
-                .inputCost(0)
-                .outputCost(0)
-                .inputMaxTokens(4096)
+                .inputCost(CustomOpenAICost.resolve(stateService.getCustomOpenAIInputCost()))
+                .outputCost(CustomOpenAICost.resolve(stateService.getCustomOpenAIOutputCost()))
+                .inputMaxTokens(CustomOpenAIContextWindow.resolve(stateService.getCustomOpenAIContextWindow()))
                 .build();
     }
 

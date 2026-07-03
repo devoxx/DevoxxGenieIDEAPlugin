@@ -110,6 +110,80 @@ class LLMProvidersConfigurableTest {
 
 
     @Test
+    void shouldApplyCustomOpenAIContextWindowSetting() {
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getCustomOpenAIContextWindowEnabledCheckBox().setSelected(true);
+        component.getCustomOpenAIContextWindowField().setNumber(32_000);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.getCustomOpenAIContextWindow()).isEqualTo(32_000);
+    }
+
+    @Test
+    void shouldClearCustomOpenAIContextWindowWhenDisabled() {
+        stateService.setCustomOpenAIContextWindow(32_000);
+        LLMProvidersComponent component = getSettingsComponent();
+        component.getCustomOpenAIContextWindowEnabledCheckBox().setSelected(false);
+
+        configurable.apply();
+
+        assertThat(stateService.getCustomOpenAIContextWindow()).isNull();
+    }
+
+    @Test
+    void shouldResetCustomOpenAIContextWindowSetting() {
+        stateService.setCustomOpenAIContextWindow(64_000);
+
+        configurable.reset();
+
+        LLMProvidersComponent component = getSettingsComponent();
+        assertThat(component.getCustomOpenAIContextWindowEnabledCheckBox().isSelected()).isTrue();
+        assertThat(component.getCustomOpenAIContextWindowField().getNumber()).isEqualTo(64_000);
+    }
+
+    @Test
+    void shouldApplyCustomOpenAICostSettings() {
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getCustomOpenAIInputCostField().setValue(3.0d);
+        component.getCustomOpenAIOutputCostField().setValue(15.0d);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.getCustomOpenAIInputCost()).isEqualTo(3.0d);
+        assertThat(stateService.getCustomOpenAIOutputCost()).isEqualTo(15.0d);
+    }
+
+    @Test
+    void shouldStoreNullCustomOpenAICostWhenZero() {
+        stateService.setCustomOpenAIInputCost(3.0d);
+        LLMProvidersComponent component = getSettingsComponent();
+        component.getCustomOpenAIInputCostField().setValue(0.0d);
+
+        configurable.apply();
+
+        assertThat(stateService.getCustomOpenAIInputCost()).isNull();
+    }
+
+    @Test
+    void shouldResetCustomOpenAICostSettings() {
+        stateService.setCustomOpenAIInputCost(3.0d);
+        stateService.setCustomOpenAIOutputCost(15.0d);
+
+        configurable.reset();
+
+        LLMProvidersComponent component = getSettingsComponent();
+        assertThat(((Number) component.getCustomOpenAIInputCostField().getValue()).doubleValue()).isEqualTo(3.0d);
+        assertThat(((Number) component.getCustomOpenAIOutputCostField().getValue()).doubleValue()).isEqualTo(15.0d);
+    }
+
+    @Test
     void shouldApplyShowThinkingSetting() {
         LLMProvidersComponent component = getSettingsComponent();
 
