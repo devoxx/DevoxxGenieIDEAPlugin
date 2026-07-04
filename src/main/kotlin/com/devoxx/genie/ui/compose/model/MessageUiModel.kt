@@ -70,8 +70,10 @@ data class ActivityEntryUiModel(
      * always rendered.
      */
     val isToolActivity: Boolean = false,
-    /** Set when the entry originates inside a parallel_explore sub-agent. */
+    /** Set when the entry originates inside a parallel_explore or delegate_task sub-agent. */
     val subAgentId: String? = null,
+    /** Provider · model label for delegated agents (e.g. "Ollama · qwen3"); null otherwise. */
+    val agentLabel: String? = null,
     /** Indented child rows, e.g. sub-agents spawned by a parallel_explore call. */
     val children: List<ActivityEntryUiModel> = emptyList(),
 )

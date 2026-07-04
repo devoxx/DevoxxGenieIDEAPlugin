@@ -8,6 +8,7 @@ import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.team.AgentRegistry;
 import com.devoxx.genie.service.agent.team.AgentRunner;
+import com.devoxx.genie.service.agent.team.RemoteAgentBackend;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -54,6 +55,9 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
 
     private final Project project;
     private final List<AgentRunner> activeRunners = new CopyOnWriteArrayList<>();
+    /** Remote session ids in flight; DELETEd on cancellation (TASK-248). */
+    private final List<String> activeRemoteSessions = new CopyOnWriteArrayList<>();
+    private volatile @Nullable RemoteAgentBackend activeRemoteBackend;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     public DelegateTaskToolExecutor(@NotNull Project project) {
@@ -71,6 +75,13 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             return "Error: 'tasks' must be a non-empty array of {agent, task, intent?} objects.";
         }
 
+        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        if (Boolean.TRUE.equals(settings.getAgentTeamRemoteEnabled())
+                && settings.getAgentTeamRemoteUrl() != null
+                && !settings.getAgentTeamRemoteUrl().isBlank()) {
+            return executeRemote(tasks, settings);
+        }
+
         // Fail fast on ANY unknown agent before spawning anything (DockerAgents 404 analog).
         AgentRegistry registry = AgentRegistry.getInstance();
         List<AgentDefinition> resolved = new ArrayList<>(tasks.size());
@@ -83,7 +94,6 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             resolved.add(def.get());
         }
 
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         int maxParallelism = settings.getSubAgentParallelism() != null
                 ? settings.getSubAgentParallelism()
                 : SUB_AGENT_DEFAULT_PARALLELISM;
@@ -106,7 +116,7 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             activeRunners.add(runner);
 
             publishEvent(AgentType.SUB_AGENT_STARTED, definition.getName(),
-                    describeTask(task), null, i + 1);
+                    modelLabelOf(definition), describeTask(task), null, i + 1);
             futures.add(executor.submit(() -> runner.execute(task.task())));
         }
 
@@ -143,8 +153,11 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
 
             AgentType eventType = result.status() == AgentResult.Status.OK
                     ? AgentType.SUB_AGENT_COMPLETED : AgentType.SUB_AGENT_ERROR;
-            publishEvent(eventType, result.label(), describeTask(task),
-                    truncate(result.summary()), i + 1);
+            // subAgentId must stay the bare agent name on every event of one delegation —
+            // the chat view keys the running→done row transition on it. The provider·model
+            // goes in the separate label field.
+            publishEvent(eventType, result.agent(), providerModelLabel(result),
+                    describeTask(task), truncate(result.summary()), i + 1);
         }
 
         activeRunners.clear();
@@ -162,6 +175,93 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         for (AgentRunner runner : activeRunners) {
             runner.cancel();
         }
+        RemoteAgentBackend backend = activeRemoteBackend;
+        if (backend != null) {
+            for (String sessionId : activeRemoteSessions) {
+                backend.delete(sessionId);
+            }
+            activeRemoteSessions.clear();
+        }
+    }
+
+    /**
+     * Remote execution path (TASK-248): the same delegation contract, but each task runs
+     * as a one-shot container session on a DockerAgents orchestrator-api. Agent names
+     * are validated against the remote /agents directory; per-task failures stay
+     * structured entries; cancellation DELETEs the remote sessions.
+     */
+    private String executeRemote(@NotNull List<DelegatedTask> tasks,
+                                 @NotNull DevoxxGenieStateService settings) {
+        RemoteAgentBackend backend = new RemoteAgentBackend(settings.getAgentTeamRemoteUrl());
+        activeRemoteBackend = backend;
+
+        List<String> remoteAgents;
+        try {
+            remoteAgents = backend.listAgentNames();
+        } catch (Exception e) {
+            return "Error: DockerAgents orchestrator-api at " + settings.getAgentTeamRemoteUrl()
+                    + " is unreachable (" + e.getMessage() + "). Fix the URL in "
+                    + "Settings > Agent > Agent Team or disable remote execution.";
+        }
+        for (DelegatedTask task : tasks) {
+            if (!remoteAgents.contains(task.agent())) {
+                return "Error: unknown remote agent '" + task.agent()
+                        + "'. Available remote agents: " + String.join(", ", remoteAgents) + ".";
+            }
+        }
+
+        int timeoutSeconds = settings.getSubAgentTimeoutSeconds() != null
+                ? settings.getSubAgentTimeoutSeconds()
+                : SUB_AGENT_TIMEOUT_SECONDS;
+        ExecutorService executor = ThreadPoolManager.getInstance().getSubAgentPool();
+
+        List<Future<AgentResult>> futures = new ArrayList<>(tasks.size());
+        for (int i = 0; i < tasks.size(); i++) {
+            DelegatedTask task = tasks.get(i);
+            publishEvent(AgentType.SUB_AGENT_STARTED, task.agent(), "remote",
+                    describeTask(task), null, i + 1);
+            futures.add(executor.submit(() -> {
+                String sessionId = backend.spawn(task.agent(), task.task(), task.intent());
+                activeRemoteSessions.add(sessionId);
+                try {
+                    return backend.waitFor(sessionId, task.agent(), task.intent(), timeoutSeconds);
+                } finally {
+                    activeRemoteSessions.remove(sessionId);
+                }
+            }));
+        }
+
+        List<AgentResult> results = new ArrayList<>(tasks.size());
+        for (int i = 0; i < futures.size(); i++) {
+            DelegatedTask task = tasks.get(i);
+            AgentResult result;
+            try {
+                // The api blocks server-side for timeoutSeconds; the extra margin covers transport.
+                result = futures.get(i).get(timeoutSeconds + 60L, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                futures.get(i).cancel(true);
+                result = AgentResult.timeout(task.agent(), task.intent(), timeoutSeconds);
+            } catch (CancellationException e) {
+                result = AgentResult.cancelled(task.agent(), task.intent());
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                result = AgentResult.error(task.agent(), task.intent(),
+                        "Remote agent '" + task.agent() + "' failed: " + cause.getMessage(),
+                        0, 0, "remote", null);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                result = AgentResult.cancelled(task.agent(), task.intent());
+            }
+            results.add(result);
+
+            AgentType eventType = result.status() == AgentResult.Status.OK
+                    ? AgentType.SUB_AGENT_COMPLETED : AgentType.SUB_AGENT_ERROR;
+            publishEvent(eventType, task.agent(), "remote",
+                    describeTask(task), truncate(result.summary()), i + 1);
+        }
+
+        activeRemoteBackend = null;
+        return formatResults(results);
     }
 
     static @NotNull List<DelegatedTask> parseTasks(@Nullable String arguments) {
@@ -234,7 +334,32 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         return text.length() > 200 ? text.substring(0, 200) + "..." : text;
     }
 
-    private void publishEvent(AgentType type, String agentLabel, String arguments, String result, int callNumber) {
+    /** "Ollama · qwen3" from a definition's binding, or null when inheriting. */
+    private static @Nullable String modelLabelOf(@NotNull AgentDefinition definition) {
+        if (definition.getModelProvider() == null || definition.getModelProvider().isBlank()) {
+            return null;
+        }
+        String label = definition.getModelProvider();
+        if (definition.getModelName() != null && !definition.getModelName().isBlank()) {
+            label += " · " + definition.getModelName();
+        }
+        return label;
+    }
+
+    /** "Ollama · qwen3" from a result's resolved provider/model, or null when unknown. */
+    private static @Nullable String providerModelLabel(@NotNull AgentResult result) {
+        if (result.provider() == null || result.provider().isBlank()) {
+            return null;
+        }
+        String label = result.provider();
+        if (result.model() != null && !result.model().isBlank()) {
+            label += " · " + result.model();
+        }
+        return label;
+    }
+
+    private void publishEvent(AgentType type, String agentName, @Nullable String agentModelLabel,
+                              String arguments, String result, int callNumber) {
         if (project.isDisposed()) return;
         if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())
                 && !Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getShowToolActivityInChat())) {
@@ -249,7 +374,8 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
                     .result(result)
                     .callNumber(callNumber)
                     .maxCalls(0)
-                    .subAgentId(agentLabel)
+                    .subAgentId(agentName)
+                    .agentModelLabel(agentModelLabel)
                     .projectLocationHash(project.getLocationHash())
                     .build();
 

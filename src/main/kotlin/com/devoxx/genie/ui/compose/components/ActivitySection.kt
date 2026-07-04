@@ -165,7 +165,16 @@ private fun ActivityEntryRow(
             )
             if (entry.toolName != null) {
                 Spacer(Modifier.width(4.dp))
-                val summary = summarizeToolAction(entry.toolName, entry.arguments)
+                // Delegation progress rows (delegate_task children keyed by agent name) show
+                // "🤖 reviewer (Ollama · qwen3)" instead of the shared tool name. Tool rows
+                // executed INSIDE a sub-agent also carry subAgentId but keep their action
+                // summary — only the delegate_task rows are agent-identity rows (TASK-246).
+                val summary = if (entry.subAgentId != null && entry.toolName == "delegate_task") {
+                    val label = entry.agentLabel?.let { " ($it)" } ?: ""
+                    "🤖 ${entry.subAgentId}$label"
+                } else {
+                    summarizeToolAction(entry.toolName, entry.arguments)
+                }
                 BasicText(
                     text = summary,
                     style = typography.caption.copy(

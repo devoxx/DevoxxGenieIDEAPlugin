@@ -535,13 +535,13 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 break;
             case INTERMEDIATE_RESPONSE: formatIntermediateResponse(sb, message, contentFormatter); break;
             case SUB_AGENT_STARTED:
-                sb.append("⬇ Sub-agent started: ").append(message.getSubAgentId());
+                sb.append("⬇ Sub-agent started: ").append(subAgentLabel(message));
                 break;
             case SUB_AGENT_COMPLETED:
-                sb.append("⬆ Sub-agent completed: ").append(message.getSubAgentId());
+                sb.append("⬆ Sub-agent completed: ").append(subAgentLabel(message));
                 break;
             case SUB_AGENT_ERROR:
-                sb.append("✖ Sub-agent error: ").append(message.getSubAgentId());
+                sb.append("✖ Sub-agent error: ").append(subAgentLabel(message));
                 if (message.getResult() != null) sb.append(" → ").append(contentFormatter.apply(message.getResult()));
                 break;
             case SYSTEM_PROMPT:
@@ -552,6 +552,14 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 break;
         }
         return sb.toString();
+    }
+
+    /** "reviewer (Ollama · qwen3)" when a provider·model label is present, else just the id. */
+    private static @NotNull String subAgentLabel(@NotNull ActivityMessage message) {
+        String id = message.getSubAgentId() != null ? message.getSubAgentId() : "?";
+        return message.getAgentModelLabel() != null && !message.getAgentModelLabel().isBlank()
+                ? id + " (" + message.getAgentModelLabel() + ")"
+                : id;
     }
 
     private static void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message,

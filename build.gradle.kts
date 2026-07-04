@@ -326,6 +326,8 @@ dependencies {
     // Tokenizer, markdown, HTML, networking
     implementation("com.knuddels:jtokkit:$jtokkitVersion")
     implementation("org.commonmark:commonmark:$commonmarkVersion")
+    // Genie-format agent spec import/export (Agent Team <-> DockerAgents interop, TASK-247)
+    implementation("org.yaml:snakeyaml:2.3")
     implementation("org.jsoup:jsoup:$jsoupVersion")
     implementation("io.netty:netty-all:$nettyVersion")
     // Compose Markdown Renderer aligned with the 253 Compose/Kotlin toolchain

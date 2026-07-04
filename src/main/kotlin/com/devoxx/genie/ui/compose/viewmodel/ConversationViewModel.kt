@@ -418,16 +418,19 @@ class ConversationViewModel(
     }
 
     /**
-     * SUB_AGENT_* events nest as child rows under the open parallel_explore call.
-     * The launch announcement (toolName "parallel_explore") becomes the parent's
-     * content line; per-sub-agent events become RUNNING → SUCCESS/ERROR children
-     * matched by their "sub-agent-N" name. Without an open parent (defensive),
-     * events are appended as top-level rows.
+     * SUB_AGENT_* events nest as child rows under the open parallel_explore or
+     * delegate_task call. The launch announcement (toolName "parallel_explore") becomes
+     * the parent's content line; per-sub-agent events become RUNNING → SUCCESS/ERROR
+     * children. parallel_explore children are keyed by their distinct "sub-agent-N"
+     * toolName; delegate_task children all share toolName "delegate_task" and are keyed
+     * by [ActivityMessage.subAgentId] (the agent name) instead — TASK-246. Without an
+     * open parent (defensive), events are appended as top-level rows.
      */
     private fun handleSubAgentEvent(msgId: String, message: ActivityMessage) {
         updateMessage(msgId) { msg ->
             val parentIdx = msg.activityEntries.indexOfLast { entry ->
-                entry.toolName == PARALLEL_EXPLORE_TOOL && entry.isOpen()
+                (entry.toolName == PARALLEL_EXPLORE_TOOL || entry.toolName == DELEGATE_TASK_TOOL) &&
+                    entry.isOpen()
             }
 
             if (message.toolName == PARALLEL_EXPLORE_TOOL) {
@@ -445,7 +448,7 @@ class ConversationViewModel(
             }
 
             if (parentIdx < 0) {
-                // No open parallel_explore row — degrade gracefully to a top-level entry
+                // No open parent row — degrade gracefully to a top-level entry
                 val orphan = ActivityEntryUiModel(
                     source = message.source?.name ?: "UNKNOWN",
                     content = message.content ?: "",
@@ -455,12 +458,18 @@ class ConversationViewModel(
                     callNumber = message.callNumber,
                     status = status,
                     isToolActivity = true,
+                    subAgentId = message.subAgentId,
+                    agentLabel = message.agentModelLabel,
                 )
                 return@updateMessage msg.copy(activityEntries = msg.activityEntries + orphan)
             }
 
             msg.replaceEntryAt(parentIdx) { parent ->
-                val childIdx = parent.children.indexOfLast { it.toolName == message.toolName }
+                // delegate_task events share one toolName; the agent name (subAgentId) is
+                // the stable key that lets the completion event resolve the started row.
+                val childIdx = parent.children.indexOfLast {
+                    (it.subAgentId ?: it.toolName) == (message.subAgentId ?: message.toolName)
+                }
                 if (childIdx < 0) {
                     val child = ActivityEntryUiModel(
                         source = message.source?.name ?: "UNKNOWN",
@@ -470,7 +479,10 @@ class ConversationViewModel(
                         result = truncateForChat(message.result),
                         callNumber = message.callNumber,
                         status = status,
+                        startedAt = if (status == ActivityStatus.RUNNING) System.currentTimeMillis() else 0,
                         isToolActivity = true,
+                        subAgentId = message.subAgentId,
+                        agentLabel = message.agentModelLabel,
                     )
                     parent.copy(children = parent.children + child)
                 } else {
@@ -478,6 +490,7 @@ class ConversationViewModel(
                     children[childIdx] = children[childIdx].copy(
                         status = status,
                         result = truncateForChat(message.result) ?: children[childIdx].result,
+                        agentLabel = message.agentModelLabel ?: children[childIdx].agentLabel,
                     )
                     parent.copy(children = children)
                 }
@@ -772,6 +785,7 @@ class ConversationViewModel(
         private val logger = Logger.getInstance(ConversationViewModel::class.java)
 
         private const val PARALLEL_EXPLORE_TOOL = "parallel_explore"
+        private const val DELEGATE_TASK_TOOL = "delegate_task"
 
         /** Same inline-preview limits as AgentMcpLogPanel. */
         private const val MAX_LINE_LENGTH = 500

@@ -7,9 +7,20 @@ import com.devoxx.genie.model.agent.AgentToolsetPreset;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.agent.team.AgentRegistry;
+import com.devoxx.genie.service.agent.team.GenieAgentSpecMapper;
+import com.devoxx.genie.service.agent.team.RemoteAgentBackend;
+import com.intellij.openapi.progress.ProgressManager;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.fileChooser.FileChooserFactory;
+import com.intellij.openapi.fileChooser.FileSaverDescriptor;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -23,6 +34,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -60,6 +74,14 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     private final JButton copyButton = new JButton("Copy");
     private final JButton deleteButton = new JButton("Delete");
     private final JButton resetAgentButton = new JButton("Reset to Default");
+    private final JButton importButton = new JButton("Import YAML…");
+    private final JButton exportButton = new JButton("Export YAML…");
+
+    // Remote execution backend (TASK-248)
+    private final JBCheckBox remoteEnabledCheckbox =
+            new JBCheckBox("Run delegations on a DockerAgents orchestrator-api (containers instead of in-process)");
+    private final JBTextField remoteUrlField = new JBTextField();
+    private final JButton remoteTestButton = new JButton("Test Connection");
 
     /** Index of the agent currently shown in the editor; -1 = none. */
     private int editedIndex = -1;
@@ -68,7 +90,7 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
 
     public AgentTeamSettingsComponent() {
         buildUi();
-        loadWorkingCopy();
+        reset();
     }
 
     // ---------------------------------------------------------------- UI --
@@ -94,11 +116,18 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         deleteButton.addActionListener(e -> deleteSelectedAgent());
         resetAgentButton.addActionListener(e -> resetSelectedAgentToDefault());
 
+        importButton.setToolTipText("Import a Genie-format agent spec (DockerAgents agents/*.yml)");
+        importButton.addActionListener(e -> importAgentFromYaml());
+        exportButton.setToolTipText("Export the selected agent as a Genie-format spec usable by DockerAgents");
+        exportButton.addActionListener(e -> exportSelectedAgentToYaml());
+
         JPanel listButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         listButtons.add(addButton);
         listButtons.add(copyButton);
         listButtons.add(deleteButton);
         listButtons.add(resetAgentButton);
+        listButtons.add(importButton);
+        listButtons.add(exportButton);
 
         JPanel listPanel = new JPanel(new BorderLayout(0, 4));
         listPanel.add(new JBScrollPane(agentList), BorderLayout.CENTER);
@@ -163,6 +192,22 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         addSettingRow(form, gbc, "Timeout (seconds)", timeoutSpinner);
         addSettingRow(form, gbc, "Temperature (empty = global)", temperatureField);
         addSettingRow(form, gbc, "", enabledCheckbox);
+
+        addSection(form, gbc, "Remote Execution (DockerAgents)");
+        addSettingRow(form, gbc, "", remoteEnabledCheckbox);
+        JPanel remoteUrlRow = new JPanel(new BorderLayout(5, 0));
+        remoteUrlRow.add(remoteUrlField, BorderLayout.CENTER);
+        remoteUrlRow.add(remoteTestButton, BorderLayout.EAST);
+        addSettingRow(form, gbc, "Orchestrator-api URL", remoteUrlRow);
+        addSettingRow(form, gbc, "",
+                new JBLabel("When enabled, delegate_task spawns one-shot container sessions on the " +
+                        "DockerAgents orchestrator-api (agents validated against its live /agents " +
+                        "directory) instead of running in-process."));
+        remoteTestButton.addActionListener(e -> testRemoteConnection());
+        remoteEnabledCheckbox.addActionListener(e -> {
+            remoteUrlField.setEnabled(remoteEnabledCheckbox.isSelected());
+            remoteTestButton.setEnabled(remoteEnabledCheckbox.isSelected());
+        });
 
         // absorb remaining vertical space
         gbc.gridwidth = 2;
@@ -336,6 +381,93 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         }
     }
 
+    private void importAgentFromYaml() {
+        FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+                .withFileFilter(vf -> "yml".equalsIgnoreCase(vf.getExtension())
+                        || "yaml".equalsIgnoreCase(vf.getExtension()))
+                .withTitle("Import Genie Agent Spec");
+        VirtualFile file = FileChooser.chooseFile(descriptor, null, null);
+        if (file == null) {
+            return;
+        }
+        try {
+            String yaml = new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+            String baseName = sanitizeName(file.getNameWithoutExtension());
+            GenieAgentSpecMapper.ImportResult result =
+                    GenieAgentSpecMapper.fromYaml(uniqueName(baseName), yaml);
+
+            syncFormIntoEditedAgent();
+            listModel.addElement(result.definition());
+            agentList.setSelectedIndex(listModel.size() - 1);
+
+            if (!result.warnings().isEmpty()) {
+                Messages.showWarningDialog(panel,
+                        String.join("\n", result.warnings()),
+                        "Imported With Warnings");
+            }
+        } catch (IllegalArgumentException e) {
+            Messages.showErrorDialog(panel, e.getMessage(), "Import Failed");
+        } catch (IOException e) {
+            Messages.showErrorDialog(panel, "Could not read file: " + e.getMessage(), "Import Failed");
+        }
+    }
+
+    private void exportSelectedAgentToYaml() {
+        AgentDefinition selected = agentList.getSelectedValue();
+        if (selected == null) {
+            return;
+        }
+        syncFormIntoEditedAgent();
+        FileSaverDescriptor descriptor = new FileSaverDescriptor(
+                "Export Genie Agent Spec", "Save as a DockerAgents-compatible agents/*.yml", "yml");
+        VirtualFileWrapper wrapper = FileChooserFactory.getInstance()
+                .createSaveFileDialog(descriptor, (com.intellij.openapi.project.Project) null)
+                .save(selected.getName() + ".yml");
+        if (wrapper == null) {
+            return;
+        }
+        try {
+            Files.writeString(wrapper.getFile().toPath(),
+                    GenieAgentSpecMapper.toYaml(selected), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            Messages.showErrorDialog(panel, "Could not write file: " + e.getMessage(), "Export Failed");
+        }
+    }
+
+    /** Synchronous connectivity test with a bounded timeout, mirroring DockerAgents' provider test. */
+    private void testRemoteConnection() {
+        String url = remoteUrlField.getText().trim();
+        if (url.isEmpty()) {
+            Messages.showErrorDialog(panel, "Enter the orchestrator-api base URL first.", "Test Connection");
+            return;
+        }
+        try {
+            java.util.List<String> agents = ProgressManager.getInstance()
+                    .runProcessWithProgressSynchronously(
+                            () -> new RemoteAgentBackend(url).listAgentNames(),
+                            "Contacting DockerAgents orchestrator-api…", true, null);
+            Messages.showInfoMessage(panel,
+                    "Connected. Remote agents: " + String.join(", ", agents),
+                    "Test Connection");
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            Messages.showErrorDialog(panel,
+                    "Could not reach " + url + ": " + cause.getMessage(),
+                    "Test Connection");
+        }
+    }
+
+    /** Derives a valid agent name from a filename ("My Reviewer!" → "my-reviewer"). */
+    static @NotNull String sanitizeName(@NotNull String raw) {
+        String name = raw.trim().toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9-]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (name.isEmpty() || !Character.isLetter(name.charAt(0))) {
+            name = "agent-" + name;
+        }
+        return name.length() > 32 ? name.substring(0, 32).replaceAll("-+$", "") : name;
+    }
+
     private void resetSelectedAgentToDefault() {
         int index = agentList.getSelectedIndex();
         if (index < 0) {
@@ -444,6 +576,12 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
 
     public boolean isModified() {
         syncFormIntoEditedAgent();
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        if (remoteEnabledCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentTeamRemoteEnabled())
+                || !Objects.equals(remoteUrlField.getText().trim(),
+                        state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "")) {
+            return true;
+        }
         List<AgentDefinition> persisted = AgentRegistry.getInstance().getAll();
         List<AgentDefinition> working = workingCopy();
         if (persisted.size() != working.size()) {
@@ -467,11 +605,19 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     public void apply() {
         syncFormIntoEditedAgent();
         AgentRegistry.getInstance().saveAll(workingCopy());
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        state.setAgentTeamRemoteEnabled(remoteEnabledCheckbox.isSelected());
+        state.setAgentTeamRemoteUrl(remoteUrlField.getText().trim());
     }
 
     public void reset() {
         populateProviderComboBox();
         loadWorkingCopy();
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        remoteEnabledCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentTeamRemoteEnabled()));
+        remoteUrlField.setText(state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "");
+        remoteUrlField.setEnabled(remoteEnabledCheckbox.isSelected());
+        remoteTestButton.setEnabled(remoteEnabledCheckbox.isSelected());
     }
 
     // -------------------------------------------------------- renderers --

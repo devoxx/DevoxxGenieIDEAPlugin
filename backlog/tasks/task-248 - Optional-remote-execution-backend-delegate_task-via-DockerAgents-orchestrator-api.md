@@ -1,10 +1,10 @@
 ---
 id: TASK-248
 title: 'Optional remote execution backend: delegate_task via DockerAgents orchestrator-api'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-04 10:30'
-updated_date: '2026-07-04 10:30'
+updated_date: '2026-07-04 13:15'
 labels:
   - agent-mode
   - agent-team
@@ -44,8 +44,16 @@ and validates that the tool seam is genuinely backend-agnostic.
 ## Acceptance Criteria
 
 <!-- AC:BEGIN -->
-- [ ] #1 Backend switch with in-process as default; remote requires a passing connectivity test.
-- [ ] #2 Remote delegation round-trips: spawn → wait → structured summary entry, including timeout/error mapping.
-- [ ] #3 Cancellation DELETEs the remote session(s).
-- [ ] #4 Chat progress blocks (TASK-246) work identically for remote children.
+- [x] #1 Backend switch with in-process as default; remote requires a passing connectivity test.
+- [x] #2 Remote delegation round-trips: spawn → wait → structured summary entry, including timeout/error mapping.
+- [x] #3 Cancellation DELETEs the remote session(s).
+- [x] #4 Chat progress blocks (TASK-246) work identically for remote children.
 <!-- AC:END -->
+
+## Implementation Notes
+
+Implemented on branch claude/devoxxgenie-multi-agent-setup-iahcby.
+- `service/agent/team/RemoteAgentBackend`: java.net.http client for the orchestrator-api — GET /agents (names), POST /sessions (spawn, 404 → readable error), GET /sessions/{id}/wait?timeout=N (504 → TIMEOUT; result.json {status, exit_code, summary} → AgentResult, ok requires status==ok && exit_code==0), DELETE /sessions/{id} (best-effort cancellation).
+- `DelegateTaskToolExecutor.executeRemote`: gated by `agentTeamRemoteEnabled` + URL; validates agent names against the live remote /agents directory; per-task spawn→wait on the sub-agent pool with wait_all semantics; active session ids tracked and DELETEd on cancel; SUB_AGENT_* events published identically (label "remote") so the TASK-246 progress blocks work unchanged.
+- Settings: `agentTeamRemoteEnabled` (default off = in-process) + `agentTeamRemoteUrl` (default http://localhost:8090, compose's published port) with a synchronous bounded Test Connection button on the Agent Team page.
+- Tests: RemoteAgentBackendTest (wait-payload mapping incl. exit 124, missing summary, garbage, ok+nonzero-exit) — green. Full end-to-end against a running compose stack is a manual smoke.

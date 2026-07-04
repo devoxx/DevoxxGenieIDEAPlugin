@@ -666,6 +666,76 @@ class ConversationViewModelTest {
         assertThat(entry.result).doesNotContain("more lines")
     }
 
+    @Test
+    fun `delegate_task sub-agent events nest as keyed children transitioning running to done`() {
+        // TASK-246: every delegate_task event shares toolName "delegate_task"; children are
+        // keyed by subAgentId (the agent name) so the completion event resolves the started
+        // row in place instead of appending a second one.
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("delegate_task", """{"tasks":[...]}"""))
+        viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "reviewer", "Ollama · qwen3"))
+        viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "implementer", null))
+        viewModel.onActivityMessage(
+            subAgentEvent(AgentType.SUB_AGENT_COMPLETED, "reviewer", "Ollama · qwen3", "LGTM, one nit.")
+        )
+
+        val entries = activeMessageEntries(viewModel)
+        assertThat(entries).hasSize(1)
+        val parent = entries.single()
+        assertThat(parent.toolName).isEqualTo("delegate_task")
+        assertThat(parent.children).hasSize(2)
+
+        val reviewer = parent.children.first { it.subAgentId == "reviewer" }
+        assertThat(reviewer.status).isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(reviewer.result).isEqualTo("LGTM, one nit.")
+        assertThat(reviewer.agentLabel).isEqualTo("Ollama · qwen3")
+
+        val implementer = parent.children.first { it.subAgentId == "implementer" }
+        assertThat(implementer.status).isEqualTo(ActivityStatus.RUNNING)
+    }
+
+    @Test
+    fun `delegate_task error event resolves the child row to error`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(toolRequest("delegate_task", "{}"))
+        viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "documentalist", null))
+        viewModel.onActivityMessage(
+            subAgentEvent(AgentType.SUB_AGENT_ERROR, "documentalist", null, "timed out after 120s")
+        )
+
+        val child = activeMessageEntries(viewModel).single().children.single()
+        assertThat(child.subAgentId).isEqualTo("documentalist")
+        assertThat(child.status).isEqualTo(ActivityStatus.ERROR)
+        assertThat(child.result).contains("timed out")
+    }
+
+    @Test
+    fun `sub-agent event without open parent degrades to labeled top-level row`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "reviewer", "Ollama · qwen3"))
+
+        val orphan = activeMessageEntries(viewModel).single()
+        assertThat(orphan.subAgentId).isEqualTo("reviewer")
+        assertThat(orphan.agentLabel).isEqualTo("Ollama · qwen3")
+        assertThat(orphan.status).isEqualTo(ActivityStatus.RUNNING)
+    }
+
+    private fun subAgentEvent(
+        type: AgentType,
+        agentName: String,
+        modelLabel: String?,
+        result: String? = null,
+    ): ActivityMessage =
+        agentMessage(type) {
+            it.toolName("delegate_task").subAgentId(agentName).agentModelLabel(modelLabel).result(result)
+        }
+
     private fun activeMessageEntries(viewModel: ConversationViewModel) =
         (viewModel.state as ConversationState.Chat).messages.first { it.id == "msg-1" }.activityEntries
 

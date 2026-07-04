@@ -390,6 +390,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentTeamEnabled = false;
     /** When true, the orchestrating conversation loses direct write/run tools and must delegate. */
     private Boolean agentTeamPureCoordinator = true;
+    /** When true, delegate_task spawns sessions on a DockerAgents orchestrator-api instead of in-process. */
+    private Boolean agentTeamRemoteEnabled = false;
+    /** Base URL of the DockerAgents orchestrator-api (compose publishes it on :8090). */
+    private String agentTeamRemoteUrl = "http://localhost:8090";
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private List<AgentDefinition> agentDefinitions = new ArrayList<>();
