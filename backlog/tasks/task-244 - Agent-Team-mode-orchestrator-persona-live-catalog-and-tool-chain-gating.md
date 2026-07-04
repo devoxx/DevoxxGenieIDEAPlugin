@@ -1,10 +1,10 @@
 ---
 id: TASK-244
 title: 'Agent Team mode: orchestrator persona, live catalog and tool-chain gating'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-07-04 10:30'
-updated_date: '2026-07-04 10:30'
+updated_date: '2026-07-04 11:45'
 labels:
   - agent-mode
   - agent-team
@@ -45,8 +45,16 @@ Turn the existing main agent loop into the orchestrator — no new loop:
 ## Acceptance Criteria
 
 <!-- AC:BEGIN -->
-- [ ] #1 Toggle gates everything; OFF = zero behavior change (default OFF).
-- [ ] #2 System prompt contains the team fragment with the live catalog only when team mode is on (platform test on prompt assembly).
-- [ ] #3 Orchestrator write/run tools stripped when the pure-coordinator option is on; delegate_task present.
+- [x] #1 Toggle gates everything; OFF = zero behavior change (default OFF).
+- [x] #2 System prompt contains the team fragment with the live catalog only when team mode is on (platform test on prompt assembly).
+- [x] #3 Orchestrator write/run tools stripped when the pure-coordinator option is on; delegate_task present.
 - [ ] #4 Works with a local-provider orchestrator model end-to-end (manual smoke: local orchestrator + cloud implementer).
 <!-- AC:END -->
+
+## Implementation Notes
+
+Implemented on branch claude/devoxxgenie-multi-agent-setup-iahcby (code complete; AC #4 manual hybrid smoke still to be run in a real IDE).
+- `agentTeamEnabled` + `agentTeamPureCoordinator` flags on DevoxxGenieStateService with checkboxes in Settings → Agent → "Agent Team (Experimental)" (full definitions editor remains TASK-245).
+- `ChatMemoryManager.buildAugmentedSystemPrompt` appends `<AGENT_TEAM_INSTRUCTION>` (orchestrator mandate + live catalog from AgentRegistry) only when agent mode AND team mode are on.
+- `AgentToolProviderFactory`: delegate_task in the chain via BuiltInToolProvider gate; `CoordinatorToolFilter` strips write/run tools from the orchestrating conversation when pure-coordinator is on (children unaffected — they build their own scoped providers).
+- Tests: `AgentTeamPromptTest`, `CoordinatorToolFilterTest` (green).

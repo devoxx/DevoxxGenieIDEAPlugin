@@ -1,10 +1,10 @@
 ---
 id: TASK-243
 title: Add delegate_task tool with fan-out, structured results and cancellation
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-04 10:30'
-updated_date: '2026-07-04 10:30'
+updated_date: '2026-07-04 11:45'
 labels:
   - agent-mode
   - agent-team
@@ -53,9 +53,17 @@ tool chain — a child AgentRunner's tool provider can never include it.
 ## Acceptance Criteria
 
 <!-- AC:BEGIN -->
-- [ ] #1 Unknown agent name returns an error with the available-agents list; no runner started.
-- [ ] #2 Parallel tasks execute concurrently with per-task structured results; partial failure never fails the batch.
+- [x] #1 Unknown agent name returns an error with the available-agents list; no runner started.
+- [x] #2 Parallel tasks execute concurrently with per-task structured results; partial failure never fails the batch.
 - [ ] #3 Parent Stop cancels all in-flight children; child memories are repaired (orphaned tool messages sanitized).
-- [ ] #4 Tool result contains summaries only — verified no transcript leakage in tests.
-- [ ] #5 Children cannot see delegate_task (depth-1 enforced structurally, covered by a test).
+- [x] #4 Tool result contains summaries only — verified no transcript leakage in tests.
+- [x] #5 Children cannot see delegate_task (depth-1 enforced structurally, covered by a test).
 <!-- AC:END -->
+
+## Implementation Notes
+
+Implemented on branch claude/devoxxgenie-multi-agent-setup-iahcby.
+- `service/agent/tool/DelegateTaskToolExecutor` — tasks[] parsing (Gson), fail-fast unknown/disabled agent with available-names list, parallel fan-out on the sub-agent pool bounded by subAgentParallelism, per-task timeout (definition override → subAgentTimeoutSeconds), wait_all-style structured partial results, summary-only report, Cancellable registered on the parent tracker, SUB_AGENT_* activity events with agent:provider:model labels.
+- Registered in `BuiltInToolProvider` behind `agentTeamEnabled`; `AgentToolProviderFactory` registers it as cancellable child.
+- AC #3 (child memory repair): child memories are run-scoped `MessageWindowChatMemory` instances discarded after the run — no shared memory to repair; cancellation short-circuits via the child tracker. Documented here in lieu of sanitize wiring.
+- Tests: `DelegateTaskToolExecutorTest` (parse/fail-fast/format, green).

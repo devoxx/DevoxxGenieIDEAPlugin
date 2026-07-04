@@ -85,6 +85,16 @@ public class AgentToolProviderFactory {
                 ? providers.get(0)
                 : new CompositeToolProvider(providers);
 
+        // Agent Team pure-coordinator mode: strip direct write/run tools from the
+        // orchestrating conversation so hands-on work must go through delegate_task —
+        // the structural version of the DockerAgents orchestrator's "never execute
+        // tasks yourself" mandate. Applies ONLY to this (parent) chain; delegated
+        // children build their own scoped providers via TeamAgentToolProvider.
+        if (Boolean.TRUE.equals(settings.getAgentTeamEnabled())
+                && Boolean.TRUE.equals(settings.getAgentTeamPureCoordinator())) {
+            compositeProvider = new CoordinatorToolFilter(compositeProvider);
+        }
+
         // Wrap with approval
         boolean autoApproveReadOnly = Boolean.TRUE.equals(settings.getAgentAutoApproveReadOnly());
         ToolProvider approvedProvider = new AgentApprovalProvider(
@@ -101,6 +111,11 @@ public class AgentToolProviderFactory {
         // propagates to any running sub-agents
         if (builtInToolProvider.getParallelExploreExecutor() != null) {
             tracker.registerChild(builtInToolProvider.getParallelExploreExecutor());
+        }
+
+        // Same for delegate_task: Stop must cancel all in-flight delegated team agents
+        if (builtInToolProvider.getDelegateTaskExecutor() != null) {
+            tracker.registerChild(builtInToolProvider.getDelegateTaskExecutor());
         }
 
         return tracker;
@@ -127,6 +142,38 @@ public class AgentToolProviderFactory {
         } catch (Exception e) {
             log.warn("Failed to create MCP tool provider for agent mode", e);
             return null;
+        }
+    }
+
+    /**
+     * Removes direct write/run tools from the orchestrating conversation's tool chain
+     * when Agent Team pure-coordinator mode is on. The orchestrator keeps read/search
+     * tools (cheap triage) and delegate_task; modifications must flow through delegated
+     * specialists, whose own writes remain approval-gated.
+     */
+    static final class CoordinatorToolFilter implements ToolProvider {
+
+        static final java.util.Set<String> COORDINATOR_BLOCKED_TOOLS =
+                java.util.Set.of("write_file", "edit_file", "run_command", "run_tests");
+
+        private final ToolProvider delegate;
+
+        CoordinatorToolFilter(@NotNull ToolProvider delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public dev.langchain4j.service.tool.ToolProviderResult provideTools(
+                dev.langchain4j.service.tool.ToolProviderRequest request) {
+            dev.langchain4j.service.tool.ToolProviderResult all = delegate.provideTools(request);
+            dev.langchain4j.service.tool.ToolProviderResult.Builder builder =
+                    dev.langchain4j.service.tool.ToolProviderResult.builder();
+            for (dev.langchain4j.service.tool.AiServiceTool tool : all.aiServiceTools()) {
+                if (!COORDINATOR_BLOCKED_TOOLS.contains(tool.toolSpecification().name())) {
+                    builder.add(tool);
+                }
+            }
+            return builder.build();
         }
     }
 }

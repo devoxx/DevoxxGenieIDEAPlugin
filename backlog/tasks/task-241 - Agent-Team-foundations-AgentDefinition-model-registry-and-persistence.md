@@ -1,10 +1,10 @@
 ---
 id: TASK-241
 title: 'Agent Team foundations: AgentDefinition model, registry and persistence'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-04 10:30'
-updated_date: '2026-07-04 10:30'
+updated_date: '2026-07-04 11:45'
 labels:
   - agent-mode
   - agent-team
@@ -47,9 +47,19 @@ Built-ins are editable and reset-able but not deletable. Existing `SubAgentConfi
 ## Acceptance Criteria
 
 <!-- AC:BEGIN -->
-- [ ] #1 `AgentDefinition` persists and round-trips through `DevoxxGenieStateService` XML serialization.
-- [ ] #2 `AgentRegistry` seeds the built-in personas exactly once and validates unique, well-formed names.
-- [ ] #3 `buildCatalogPrompt()` renders enabled agents with name, description and provider:model label.
-- [ ] #4 Toolset presets resolve to concrete tool names and honor `getDisabledAgentTools()`.
-- [ ] #5 Unit tests cover seeding, validation, preset resolution and persistence round-trip.
+- [x] #1 `AgentDefinition` persists and round-trips through `DevoxxGenieStateService` XML serialization.
+- [x] #2 `AgentRegistry` seeds the built-in personas exactly once and validates unique, well-formed names.
+- [x] #3 `buildCatalogPrompt()` renders enabled agents with name, description and provider:model label.
+- [x] #4 Toolset presets resolve to concrete tool names and honor `getDisabledAgentTools()`.
+- [x] #5 Unit tests cover seeding, validation, preset resolution and persistence round-trip.
 <!-- AC:END -->
+
+## Implementation Notes
+
+Implemented on branch claude/devoxxgenie-multi-agent-setup-iahcby.
+- `model/agent/AgentDefinition` (Lombok @Data/@Builder, @Builder.Default for initialized fields — builder ignores plain initializers).
+- `model/agent/AgentToolsetPreset` — filesystem-ro/filesystem/shell/fetch/analysis presets + readOnly clamping.
+- `service/agent/team/AgentRegistry` — singleton over DevoxxGenieStateService persistence; seeds built-ins once; name validation; markdown catalog + orchestrator instruction builder.
+- `service/agent/team/BuiltInAgents` — architect/implementer/reviewer/documentalist personas (condensed from DockerAgents specs) + orchestrator mandate text.
+- `DevoxxGenieStateService`: `agentDefinitions` list persisted (defensive copies), plus `agentTeamEnabled`/`agentTeamPureCoordinator` flags.
+- Tests: `AgentRegistryTest` (9 tests, green).

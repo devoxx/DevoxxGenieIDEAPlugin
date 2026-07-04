@@ -1,10 +1,10 @@
 ---
 id: TASK-242
 title: Generalize SubAgentRunner into AgentRunner with persona, toolset and result contract
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-07-04 10:30'
-updated_date: '2026-07-04 10:30'
+updated_date: '2026-07-04 11:45'
 labels:
   - agent-mode
   - agent-team
@@ -54,9 +54,18 @@ wrapper over AgentRunner (or delegates to it) with the existing read-only explor
 ## Acceptance Criteria
 
 <!-- AC:BEGIN -->
-- [ ] #1 AgentRunner executes a definition with its own provider/model/memory/tools/budget, concurrently safe on the sub-agent pool.
-- [ ] #2 AgentResult is returned on every exit path; unit tests cover all five terminal statuses.
-- [ ] #3 Child tool allowlist is clamped to the parent conversation's effective toolset.
-- [ ] #4 Per-agent temperature/budgets are threaded through — no global DevoxxGenieStateService reads inside the child loop for these values.
-- [ ] #5 Existing parallel_explore tests stay green (no behavior change).
+- [x] #1 AgentRunner executes a definition with its own provider/model/memory/tools/budget, concurrently safe on the sub-agent pool.
+- [x] #2 AgentResult is returned on every exit path; unit tests cover all five terminal statuses.
+- [x] #3 Child tool allowlist is clamped to the parent conversation's effective toolset.
+- [x] #4 Per-agent temperature/budgets are threaded through — no global DevoxxGenieStateService reads inside the child loop for these values.
+- [x] #5 Existing parallel_explore tests stay green (no behavior change).
 <!-- AC:END -->
+
+## Implementation Notes
+
+Implemented on branch claude/devoxxgenie-multi-agent-setup-iahcby.
+- `service/agent/team/AgentRunner` — persona-first system prompt (+PROJECT_ROOT, one-shot output contract), per-definition model via ChatModelFactoryProvider with conversation-model fallback, per-agent temperature/budget threaded through config, AgentResult on every exit path, local-model tool-calling failures produce actionable summaries.
+- `model/agent/AgentResult` — record with OK/ERROR/TIMEOUT/CANCELLED + label().
+- `service/agent/team/TeamAgentToolProvider` — preset resolution ∩ BuiltInToolProvider output (global disables/feature gates clamp automatically); delegate_task/parallel_explore structurally excluded.
+- `SubAgentRunner`/`parallel_explore` untouched — regression-safe by construction; consolidation deferred.
+- Tests: `AgentRunnerTest`, `TeamAgentToolProviderTest` (green). TIMEOUT path covered via DelegateTaskToolExecutor wait handling.

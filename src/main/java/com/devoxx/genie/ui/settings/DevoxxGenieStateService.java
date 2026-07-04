@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.agent.AgentDefinition;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -385,6 +386,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter(AccessLevel.NONE)
     private List<SubAgentConfig> subAgentConfigs = new ArrayList<>();
 
+    // Agent Team (multi-agent orchestration) settings — see docs/specs/agent-team-orchestration.md
+    private Boolean agentTeamEnabled = false;
+    /** When true, the orchestrating conversation loses direct write/run tools and must delegate. */
+    private Boolean agentTeamPureCoordinator = true;
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private List<AgentDefinition> agentDefinitions = new ArrayList<>();
+
     // Test execution settings
     private Boolean testExecutionEnabled = true;
     private Integer testExecutionTimeoutSeconds = TEST_EXECUTION_DEFAULT_TIMEOUT;
@@ -731,6 +740,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public List<SubAgentConfig> getSubAgentConfigs() {
         return subAgentConfigs;
+    }
+
+    public List<AgentDefinition> getAgentDefinitions() {
+        return agentDefinitions;
+    }
+
+    public void setAgentDefinitions(List<AgentDefinition> definitions) {
+        this.agentDefinitions = definitions != null ? new ArrayList<>(definitions) : new ArrayList<>();
     }
 
     /**

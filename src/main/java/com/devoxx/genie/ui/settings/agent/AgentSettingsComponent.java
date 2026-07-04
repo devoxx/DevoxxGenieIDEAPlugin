@@ -74,6 +74,14 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     // Parallel exploration settings
     private final JBCheckBox enableParallelExploreCheckbox =
             new JBCheckBox("Enable parallel explore tool", Boolean.TRUE.equals(stateService.getParallelExploreEnabled()));
+
+    // Agent Team (multi-agent orchestration) — docs/specs/agent-team-orchestration.md
+    private final JBCheckBox enableAgentTeamCheckbox =
+            new JBCheckBox("Enable Agent Team mode (delegate_task + specialist agents)",
+                    Boolean.TRUE.equals(stateService.getAgentTeamEnabled()));
+    private final JBCheckBox agentTeamPureCoordinatorCheckbox =
+            new JBCheckBox("Pure coordinator: orchestrator must delegate writes (strips write/run tools)",
+                    Boolean.TRUE.equals(stateService.getAgentTeamPureCoordinator()));
     private final JBIntSpinner subAgentMaxToolCallsSpinner =
             new JBIntSpinner(stateService.getSubAgentMaxToolCalls() != null ? stateService.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS, 1, 200);
     private final JBIntSpinner subAgentTimeoutSpinner =
@@ -284,6 +292,27 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         // Build initial rows from saved configs (or default parallelism)
         initAgentConfigRows();
+
+        // --- Agent Team ---
+        addSection(contentPanel, gbc, "Agent Team (Experimental)");
+
+        addFullWidthRow(contentPanel, gbc, enableAgentTeamCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, the conversation acts as an orchestrator: it gets a 'delegate_task' " +
+                "tool and a live catalog of specialist agents (architect, implementer, reviewer, " +
+                "documentalist). Each specialist runs one-shot with its own tools and can be bound " +
+                "to its own provider/model — e.g. local Ollama for review, a cloud model for " +
+                "implementation. Requires agent mode.");
+
+        addFullWidthRow(contentPanel, gbc, agentTeamPureCoordinatorCheckbox);
+        addHelpText(contentPanel, gbc,
+                "Strips write_file/edit_file/run_command/run_tests from the orchestrating " +
+                "conversation so all hands-on work flows through delegated specialists " +
+                "(whose writes remain approval-gated).");
+
+        enableAgentTeamCheckbox.addActionListener(e ->
+                agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected()));
+        agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected());
 
         // --- Debug ---
         addSection(contentPanel, gbc, "Debug");
@@ -899,6 +928,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || !Objects.equals(getComboText(agentShellField), state.getAgentShell() != null ? state.getAgentShell() : "")
                 || enablePsiToolsCheckbox.isSelected() != Boolean.TRUE.equals(state.getPsiToolsEnabled())
                 || enableParallelExploreCheckbox.isSelected() != Boolean.TRUE.equals(state.getParallelExploreEnabled())
+                || enableAgentTeamCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentTeamEnabled())
+                || agentTeamPureCoordinatorCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentTeamPureCoordinator())
                 || subAgentMaxToolCallsSpinner.getNumber() != (state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS)
                 || subAgentTimeoutSpinner.getNumber() != (state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS)
                 || !Objects.equals(getSelectedProviderName(), state.getSubAgentModelProvider() != null ? state.getSubAgentModelProvider() : "")
@@ -935,6 +966,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentShell(getComboText(agentShellField));
         stateService.setPsiToolsEnabled(enablePsiToolsCheckbox.isSelected());
         stateService.setParallelExploreEnabled(enableParallelExploreCheckbox.isSelected());
+        stateService.setAgentTeamEnabled(enableAgentTeamCheckbox.isSelected());
+        stateService.setAgentTeamPureCoordinator(agentTeamPureCoordinatorCheckbox.isSelected());
         stateService.setSubAgentMaxToolCalls(subAgentMaxToolCallsSpinner.getNumber());
         stateService.setSubAgentTimeoutSeconds(subAgentTimeoutSpinner.getNumber());
         stateService.setSubAgentModelProvider(getSelectedProviderName());
@@ -972,6 +1005,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         agentShellField.setSelectedItem(state.getAgentShell() != null ? state.getAgentShell() : "");
         enablePsiToolsCheckbox.setSelected(Boolean.TRUE.equals(state.getPsiToolsEnabled()));
         enableParallelExploreCheckbox.setSelected(Boolean.TRUE.equals(state.getParallelExploreEnabled()));
+        enableAgentTeamCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentTeamEnabled()));
+        agentTeamPureCoordinatorCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentTeamPureCoordinator()));
+        agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected());
         subAgentMaxToolCallsSpinner.setNumber(state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
         subAgentTimeoutSpinner.setNumber(state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS);
 

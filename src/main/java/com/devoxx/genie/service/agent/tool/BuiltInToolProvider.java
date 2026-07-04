@@ -24,6 +24,7 @@ public class BuiltInToolProvider implements ToolProvider {
 
     private final Map<ToolSpecification, ToolExecutor> tools;
     private @Nullable ParallelExploreToolExecutor parallelExploreExecutor;
+    private @Nullable DelegateTaskToolExecutor delegateTaskExecutor;
 
     public BuiltInToolProvider(@NotNull Project project) {
         tools = new LinkedHashMap<>();
@@ -197,6 +198,41 @@ public class BuiltInToolProvider implements ToolProvider {
                                     .build())
                             .build(),
                     parallelExploreExecutor
+            );
+        }
+
+        // delegate_task — only when Agent Team mode is enabled. Delegates self-contained
+        // tasks to named specialist agents (each with its own provider/model binding).
+        // Children never see this tool: TeamAgentToolProvider excludes it structurally,
+        // so delegation depth is always 1.
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentTeamEnabled())) {
+            delegateTaskExecutor = new DelegateTaskToolExecutor(project);
+            tools.put(
+                    ToolSpecification.builder()
+                            .name("delegate_task")
+                            .description("Delegate one or more self-contained tasks to specialist agents from the "
+                                    + "agent catalog (see your system instructions for available agents). "
+                                    + "Each task runs as a ONE-SHOT agent with its own model and tools: it sees "
+                                    + "none of this conversation, so the task prompt must contain ALL needed "
+                                    + "context (file paths, requirements, prior findings). Multiple tasks run "
+                                    + "in parallel. You receive only each agent's final summary.")
+                            .parameters(JsonObjectSchema.builder()
+                                    .addProperty("tasks", JsonArraySchema.builder()
+                                            .items(JsonObjectSchema.builder()
+                                                    .addStringProperty("agent",
+                                                            "Name of the specialist agent from the catalog (e.g. 'reviewer')")
+                                                    .addStringProperty("task",
+                                                            "Complete, self-contained task prompt for the agent")
+                                                    .addStringProperty("intent",
+                                                            "Short label describing why this task was delegated (for tracking)")
+                                                    .required("agent", "task")
+                                                    .build())
+                                            .description("Tasks to delegate; independent tasks in one call run in parallel")
+                                            .build())
+                                    .required("tasks")
+                                    .build())
+                            .build(),
+                    delegateTaskExecutor
             );
         }
 
@@ -467,6 +503,16 @@ public class BuiltInToolProvider implements ToolProvider {
     @Nullable
     public ParallelExploreToolExecutor getParallelExploreExecutor() {
         return parallelExploreExecutor;
+    }
+
+    /**
+     * Returns the DelegateTaskToolExecutor if Agent Team mode is enabled. Used by
+     * {@link com.devoxx.genie.service.agent.AgentToolProviderFactory} to register it as
+     * a cancellable child of the AgentLoopTracker so Stop cancels running delegations.
+     */
+    @Nullable
+    public DelegateTaskToolExecutor getDelegateTaskExecutor() {
+        return delegateTaskExecutor;
     }
 
     @Override

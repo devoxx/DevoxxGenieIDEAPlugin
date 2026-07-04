@@ -6,6 +6,7 @@ import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.agent.team.AgentRegistry;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.service.skill.SkillRegistry;
@@ -477,6 +478,21 @@ public class ChatMemoryManager {
                     returns no useful hits.
                     </RAG_INSTRUCTION>
                     """;
+        }
+
+        // Agent Team mode: append the orchestrator mandate + the live agent catalog —
+        // the in-process analog of the DockerAgents runner's DELEGATION TRANSPORT
+        // addendum with its runtime-fetched /agents table. Only when agent mode is on;
+        // the delegate_task tool is registered under the same gate.
+        if (Boolean.TRUE.equals(state.getAgentModeEnabled())
+                && Boolean.TRUE.equals(state.getAgentTeamEnabled())) {
+            try {
+                systemPrompt += "\n<AGENT_TEAM_INSTRUCTION>\n"
+                        + AgentRegistry.getInstance().buildOrchestratorInstruction()
+                        + "\n</AGENT_TEAM_INSTRUCTION>\n";
+            } catch (Exception e) {
+                log.warn("Failed to append Agent Team system-prompt fragment", e);
+            }
         }
 
         systemPrompt += getDevoxxGenieMdSection(project, state);
