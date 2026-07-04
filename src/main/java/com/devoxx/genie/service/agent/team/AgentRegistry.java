@@ -81,6 +81,50 @@ public final class AgentRegistry {
     }
 
     /**
+     * Validates and persists a full replacement of the agent list (settings apply()).
+     * Throws {@link IllegalArgumentException} with a user-presentable message when a
+     * name is invalid or duplicated, or a built-in agent was removed.
+     */
+    public void saveAll(@NotNull List<AgentDefinition> definitions) {
+        List<String> seen = new ArrayList<>(definitions.size());
+        for (AgentDefinition def : definitions) {
+            if (!isValidName(def.getName())) {
+                throw new IllegalArgumentException("Invalid agent name '" + def.getName()
+                        + "': use 2-32 chars, lowercase letters/digits/dashes, starting with a letter.");
+            }
+            if (seen.contains(def.getName())) {
+                throw new IllegalArgumentException("Duplicate agent name '" + def.getName() + "'.");
+            }
+            if (def.getInstruction() == null || def.getInstruction().isBlank()) {
+                throw new IllegalArgumentException("Agent '" + def.getName() + "' has an empty persona instruction.");
+            }
+            seen.add(def.getName());
+        }
+        for (AgentDefinition shipped : BuiltInAgents.defaults()) {
+            if (!seen.contains(shipped.getName())) {
+                throw new IllegalArgumentException("Built-in agent '" + shipped.getName()
+                        + "' cannot be deleted (disable it instead).");
+            }
+        }
+        List<AgentDefinition> copy = new ArrayList<>(definitions.size());
+        for (AgentDefinition def : definitions) {
+            copy.add(def.copy());
+        }
+        DevoxxGenieStateService.getInstance().setAgentDefinitions(copy);
+    }
+
+    /** The shipped default for a built-in agent name, or empty for custom/unknown names. */
+    public @NotNull Optional<AgentDefinition> shippedDefault(@Nullable String name) {
+        if (name == null) {
+            return Optional.empty();
+        }
+        return BuiltInAgents.defaults().stream()
+                .filter(def -> def.getName().equals(name))
+                .findFirst()
+                .map(AgentDefinition::copy);
+    }
+
+    /**
      * Restores a built-in agent's shipped persona/config, preserving nothing from the
      * edited version. No-op for unknown or non-built-in names.
      */

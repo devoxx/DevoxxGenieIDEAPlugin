@@ -711,6 +711,11 @@
                              instance="com.devoxx.genie.ui.settings.agent.AgentSettingsConfigurable"
                              displayName="Agent Mode (BETA)"/>
 
+        <projectConfigurable id="com.devoxx.genie.agentteamsettings"
+                             parentId="com.devoxx.genie.agentsettings"
+                             instance="com.devoxx.genie.ui.settings.agentteam.AgentTeamSettingsConfigurable"
+                             displayName="Agent Team"/>
+
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -150,6 +151,63 @@ class AgentRegistryTest {
             assertThat(reviewer.getInstruction()).contains("senior code reviewer");
             assertThat(reviewer.getModelProvider()).isEmpty();
             assertThat(reviewer.isReadOnly()).isTrue();
+        }
+    }
+
+    @Test
+    void saveAll_persistsValidListAndRejectsInvalidOnes() {
+        try (MockedStatic<DevoxxGenieStateService> ignored = mockState()) {
+            AgentRegistry registry = AgentRegistry.getInstance();
+            List<AgentDefinition> all = registry.getAll();
+
+            // valid: add a custom agent
+            all.add(AgentDefinition.builder()
+                    .name("my-agent").instruction("Do things.").build());
+            registry.saveAll(all);
+            assertThat(registry.byName("my-agent")).isPresent();
+
+            // invalid name
+            List<AgentDefinition> badName = registry.getAll();
+            badName.add(AgentDefinition.builder().name("Bad Name").instruction("x").build());
+            assertThatThrownBy(() -> registry.saveAll(badName))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Invalid agent name");
+
+            // duplicate name
+            List<AgentDefinition> dup = registry.getAll();
+            dup.add(AgentDefinition.builder().name("reviewer").instruction("x").build());
+            assertThatThrownBy(() -> registry.saveAll(dup))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Duplicate");
+
+            // empty persona
+            List<AgentDefinition> empty = registry.getAll();
+            empty.add(AgentDefinition.builder().name("blank-agent").instruction("  ").build());
+            assertThatThrownBy(() -> registry.saveAll(empty))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("empty persona");
+
+            // deleting a built-in
+            List<AgentDefinition> withoutBuiltIn = registry.getAll().stream()
+                    .filter(d -> !d.getName().equals("reviewer")).toList();
+            assertThatThrownBy(() -> registry.saveAll(withoutBuiltIn))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("cannot be deleted");
+
+            // failed saves must not have corrupted the stored list
+            assertThat(registry.byName("reviewer")).isPresent();
+            assertThat(registry.byName("blank-agent")).isEmpty();
+        }
+    }
+
+    @Test
+    void shippedDefault_returnsCopyForBuiltInsOnly() {
+        try (MockedStatic<DevoxxGenieStateService> ignored = mockState()) {
+            AgentRegistry registry = AgentRegistry.getInstance();
+            assertThat(registry.shippedDefault("reviewer")).isPresent();
+            assertThat(registry.shippedDefault("reviewer").orElseThrow().isReadOnly()).isTrue();
+            assertThat(registry.shippedDefault("custom-thing")).isEmpty();
+            assertThat(registry.shippedDefault(null)).isEmpty();
         }
     }
 
