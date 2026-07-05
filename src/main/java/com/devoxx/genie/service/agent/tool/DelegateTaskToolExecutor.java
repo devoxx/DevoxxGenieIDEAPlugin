@@ -9,6 +9,7 @@ import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.team.AgentRegistry;
 import com.devoxx.genie.service.agent.team.AgentRunner;
+import com.devoxx.genie.service.agent.team.LocalContainerAgentRunner;
 import com.devoxx.genie.service.agent.team.RemoteAgentBackend;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -59,6 +60,8 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
     /** Remote session ids in flight; DELETEd on cancellation (TASK-248). */
     private final List<String> activeRemoteSessions = new CopyOnWriteArrayList<>();
     private volatile @Nullable RemoteAgentBackend activeRemoteBackend;
+    /** Local containers in flight; stopped/removed on cancellation (TASK-251). */
+    private final List<LocalContainerAgentRunner> activeLocalContainers = new CopyOnWriteArrayList<>();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     public DelegateTaskToolExecutor(@NotNull Project project) {
@@ -131,19 +134,19 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         ExecutorService executor = ThreadPoolManager.getInstance().getSubAgentPool();
 
         List<Future<AgentResult>> futures = new ArrayList<>(tasks.size());
-        List<AgentRunner> runners = new ArrayList<>(tasks.size()); // null entries for remote tasks
-        List<Boolean> remoteFlags = new ArrayList<>(tasks.size());
+        List<AgentRunner> runners = new ArrayList<>(tasks.size()); // null entries for container tasks
+        List<LocalContainerAgentRunner> localRunners = new ArrayList<>(tasks.size()); // null unless LOCAL_CONTAINER
         for (int i = 0; i < tasks.size(); i++) {
             DelegatedTask task = tasks.get(i);
             AgentDefinition definition = resolved.get(i);
-            boolean remote = definition.effectiveExecutionTarget() == AgentExecutionTarget.DOCKER_AGENTS;
-            remoteFlags.add(remote);
+            AgentExecutionTarget target = definition.effectiveExecutionTarget();
 
             publishEvent(AgentType.SUB_AGENT_STARTED, definition.getName(),
-                    remote ? "remote" : modelLabelOf(definition), describeTask(task), null, i + 1);
+                    startLabel(target, definition), describeTask(task), null, i + 1);
 
-            if (remote) {
+            if (target == AgentExecutionTarget.DOCKER_AGENTS) {
                 runners.add(null);
+                localRunners.add(null);
                 if (remoteSetupError != null) {
                     futures.add(CompletableFuture.completedFuture(AgentResult.error(
                             definition.getName(), task.intent(),
@@ -171,9 +174,20 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
                         }
                     }));
                 }
+            } else if (target == AgentExecutionTarget.LOCAL_CONTAINER) {
+                // TASK-251: docker-java-spawned container with the project bind-mounted
+                // (ro/rw per the agent's readOnly flag). Docker problems surface as the
+                // runner's own readable AgentResult errors — never batch failures.
+                runners.add(null);
+                LocalContainerAgentRunner containerRunner =
+                        new LocalContainerAgentRunner(project, definition, task.intent(), cancelled);
+                localRunners.add(containerRunner);
+                activeLocalContainers.add(containerRunner);
+                futures.add(executor.submit(() -> containerRunner.execute(task.task())));
             } else {
                 AgentRunner runner = new AgentRunner(project, definition, task.intent(), cancelled);
                 runners.add(runner);
+                localRunners.add(null);
                 activeRunners.add(runner);
                 futures.add(executor.submit(() -> runner.execute(task.task())));
             }
@@ -185,16 +199,21 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         for (int i = 0; i < futures.size(); i++) {
             DelegatedTask task = tasks.get(i);
             AgentDefinition definition = resolved.get(i);
-            boolean remote = remoteFlags.get(i);
+            AgentExecutionTarget target = definition.effectiveExecutionTarget();
             int timeoutSeconds = taskTimeoutSeconds(definition, settings);
+            // Containerized tasks (remote or local) block up to timeoutSeconds on their own
+            // side; the margin covers spawn/start-up/transport so their internal timeout
+            // result wins over this outer one.
+            long margin = target == AgentExecutionTarget.IN_PROCESS ? 0L : 90L;
             AgentResult result;
             try {
-                // Remote sessions block server-side for timeoutSeconds; the extra margin
-                // covers spawn + transport.
-                result = futures.get(i).get(timeoutSeconds + (remote ? 60L : 0L), TimeUnit.SECONDS);
+                result = futures.get(i).get(timeoutSeconds + margin, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 if (runners.get(i) != null) {
                     runners.get(i).cancel();
+                }
+                if (localRunners.get(i) != null) {
+                    localRunners.get(i).cancel();
                 }
                 futures.get(i).cancel(true);
                 result = AgentResult.timeout(definition.getName(), task.intent(), timeoutSeconds);
@@ -204,7 +223,7 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 result = AgentResult.error(definition.getName(), task.intent(),
                         "Agent '" + definition.getName() + "' failed: " + cause.getMessage(),
-                        0, 0, remote ? "remote" : null, null);
+                        0, 0, providerLabelFor(target), null);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 result = AgentResult.cancelled(definition.getName(), task.intent());
@@ -221,8 +240,28 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         }
 
         activeRunners.clear();
+        activeLocalContainers.clear();
         activeRemoteBackend = null;
         return formatResults(results);
+    }
+
+    /** Progress-event label at start time, per execution target. */
+    private static @Nullable String startLabel(@NotNull AgentExecutionTarget target,
+                                               @NotNull AgentDefinition definition) {
+        return switch (target) {
+            case DOCKER_AGENTS -> "remote";
+            case LOCAL_CONTAINER -> "container";
+            case IN_PROCESS -> modelLabelOf(definition);
+        };
+    }
+
+    /** Provider label used on error results, per execution target. */
+    private static @Nullable String providerLabelFor(@NotNull AgentExecutionTarget target) {
+        return switch (target) {
+            case DOCKER_AGENTS -> "remote";
+            case LOCAL_CONTAINER -> "container";
+            case IN_PROCESS -> null;
+        };
     }
 
     /** Per-task timeout: definition override → global sub-agent timeout → constant. */
@@ -254,6 +293,10 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             }
             activeRemoteSessions.clear();
         }
+        for (LocalContainerAgentRunner containerRunner : activeLocalContainers) {
+            containerRunner.cancel();
+        }
+        activeLocalContainers.clear();
     }
 
     static @NotNull List<DelegatedTask> parseTasks(@Nullable String arguments) {

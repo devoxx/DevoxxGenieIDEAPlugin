@@ -52,6 +52,21 @@ class RemoteAgentBackendTest {
     }
 
     @Test
+    void parseResultPayload_plainResultJsonWithCustomLabel() {
+        // The LOCAL_CONTAINER runner reads result.json straight from the artifacts mount:
+        // top-level fields, no wait envelope, "container" provider label.
+        String body = """
+                {"session_id": "reviewer-ab12cd34", "agent": "reviewer", "status": "ok",
+                 "exit_code": 0, "summary": "All good.", "parent_session_id": null, "intent": null}
+                """;
+        AgentResult result = RemoteAgentBackend.parseResultPayload(body, "reviewer", null, 42, "container");
+
+        assertThat(result.status()).isEqualTo(AgentResult.Status.OK);
+        assertThat(result.summary()).isEqualTo("All good.");
+        assertThat(result.provider()).isEqualTo("container");
+    }
+
+    @Test
     void parseWaitResponse_okStatusWithNonZeroExit_isError() {
         String body = "{\"result\": {\"status\": \"ok\", \"exit_code\": 1, \"summary\": \"partial\"}}";
         assertThat(RemoteAgentBackend.parseWaitResponse(body, "x", null, 5).status())

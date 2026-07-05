@@ -18,10 +18,16 @@ public enum AgentExecutionTarget {
      * full isolation, works on a fresh clone, returns a summary (+ pushed branch).
      * Requires the compose stack and an agent of the same name in its /agents directory.
      */
-    DOCKER_AGENTS("DockerAgents container");
+    DOCKER_AGENTS("DockerAgents container"),
 
-    // Phase B (task-251) adds LOCAL_CONTAINER: docker-java-spawned container with the
-    // project bind-mounted, preserving in-editor edit semantics while sandboxing the process.
+    /**
+     * Docker container spawned directly by the plugin (docker-java) with the PROJECT
+     * BIND-MOUNTED at /session/repo — read-only for read-only agents, read-write
+     * otherwise (TASK-251, Phase B). Sandboxes the process/host while keeping in-editor
+     * edit semantics; requires Docker and the DockerAgents runner image, but no
+     * orchestrator-api.
+     */
+    LOCAL_CONTAINER("Local container (project mounted)");
 
     private final String displayName;
 

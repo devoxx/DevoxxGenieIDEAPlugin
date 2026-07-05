@@ -14,6 +14,8 @@ class AgentExecutionTargetTest {
                 .isEqualTo(AgentExecutionTarget.DOCKER_AGENTS);
         assertThat(AgentExecutionTarget.fromString("IN_PROCESS"))
                 .isEqualTo(AgentExecutionTarget.IN_PROCESS);
+        assertThat(AgentExecutionTarget.fromString("LOCAL_CONTAINER"))
+                .isEqualTo(AgentExecutionTarget.LOCAL_CONTAINER);
         assertThat(AgentExecutionTarget.fromString(null))
                 .isEqualTo(AgentExecutionTarget.IN_PROCESS);
         assertThat(AgentExecutionTarget.fromString(""))

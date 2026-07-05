@@ -84,6 +84,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     // execution target is DOCKER_AGENTS; there is no global on/off switch anymore.
     private final JBTextField remoteUrlField = new JBTextField();
     private final JButton remoteTestButton = new JButton("Test Connection");
+    // Runner image for LOCAL_CONTAINER agents (TASK-251)
+    private final JBTextField localContainerImageField = new JBTextField();
 
     /** Index of the agent currently shown in the editor; -1 = none. */
     private int editedIndex = -1;
@@ -196,20 +198,23 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         executionTargetCombo.setRenderer(new ExecutionTargetRenderer());
         addSettingRow(form, gbc, "Execution target", executionTargetCombo);
         addSettingRow(form, gbc, "",
-                new JBLabel("Where this agent's delegated tasks run. 'DockerAgents container' gives an " +
-                        "isolated one-shot container per task (recommended for agents with write/run " +
-                        "tools); the agent must also exist in the DockerAgents agents/ directory " +
-                        "(use Export YAML). Direct chat with the agent stays in-process."));
+                new JBLabel("Where this agent's delegated tasks run. 'DockerAgents container' = one-shot " +
+                        "session on the orchestrator-api (fresh clone; export the agent YAML there). " +
+                        "'Local container (project mounted)' = Docker container on this machine with the " +
+                        "project bind-mounted (read-only for read-only agents, read-write otherwise — " +
+                        "rw spawns are approval-gated). Direct chat with the agent stays in-process."));
         addSettingRow(form, gbc, "", enabledCheckbox);
 
-        addSection(form, gbc, "DockerAgents Connection");
+        addSection(form, gbc, "Container Execution");
         JPanel remoteUrlRow = new JPanel(new BorderLayout(5, 0));
         remoteUrlRow.add(remoteUrlField, BorderLayout.CENTER);
         remoteUrlRow.add(remoteTestButton, BorderLayout.EAST);
         addSettingRow(form, gbc, "Orchestrator-api URL", remoteUrlRow);
+        addSettingRow(form, gbc, "Local container image", localContainerImageField);
         addSettingRow(form, gbc, "",
-                new JBLabel("Used by agents whose execution target is 'DockerAgents container'. " +
-                        "One delegate_task fan-out can mix in-process and containerized agents."));
+                new JBLabel("The URL serves 'DockerAgents container' agents; the image (built by " +
+                        "DockerAgents' bin/build.sh) serves 'Local container' agents. One delegate_task " +
+                        "fan-out can mix in-process and containerized agents freely."));
         remoteTestButton.addActionListener(e -> testRemoteConnection());
 
         // absorb remaining vertical space
@@ -587,7 +592,9 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         syncFormIntoEditedAgent();
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         if (!Objects.equals(remoteUrlField.getText().trim(),
-                state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "")) {
+                state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "")
+                || !Objects.equals(localContainerImageField.getText().trim(),
+                state.getAgentTeamLocalContainerImage() != null ? state.getAgentTeamLocalContainerImage() : "")) {
             return true;
         }
         List<AgentDefinition> persisted = AgentRegistry.getInstance().getAll();
@@ -615,6 +622,7 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         AgentRegistry.getInstance().saveAll(workingCopy());
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         state.setAgentTeamRemoteUrl(remoteUrlField.getText().trim());
+        state.setAgentTeamLocalContainerImage(localContainerImageField.getText().trim());
     }
 
     public void reset() {
@@ -622,6 +630,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         loadWorkingCopy();
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         remoteUrlField.setText(state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "");
+        localContainerImageField.setText(state.getAgentTeamLocalContainerImage() != null
+                ? state.getAgentTeamLocalContainerImage() : "");
     }
 
     // -------------------------------------------------------- renderers --
@@ -638,8 +648,11 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
                             ? "" : " · " + def.getModelName());
                 String suffix = def.isEnabled() ? "" : "  [disabled]";
                 String badge = def.isBuiltIn() ? "" : "  [custom]";
-                String container = def.effectiveExecutionTarget() == AgentExecutionTarget.DOCKER_AGENTS
-                        ? "  [container]" : "";
+                String container = switch (def.effectiveExecutionTarget()) {
+                    case DOCKER_AGENTS -> "  [container]";
+                    case LOCAL_CONTAINER -> "  [local container]";
+                    case IN_PROCESS -> "";
+                };
                 setText(def.getName() + "  —  " + model + container + badge + suffix);
                 setEnabled(def.isEnabled());
             }

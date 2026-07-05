@@ -399,6 +399,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentTeamRemoteEnabled = false;
     /** Base URL of the DockerAgents orchestrator-api (compose publishes it on :8090). */
     private String agentTeamRemoteUrl = "http://localhost:8090";
+    /** Runner image for LOCAL_CONTAINER agents (built by DockerAgents' bin/build.sh). */
+    private String agentTeamLocalContainerImage = "geniebuilder-agent-runner:latest";
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private List<AgentDefinition> agentDefinitions = new ArrayList<>();

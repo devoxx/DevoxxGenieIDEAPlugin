@@ -145,10 +145,18 @@ public class RemoteAgentBackend {
     /**
      * Maps the api's wait payload — {@code {session_id, status, exit_code?, result:
      * {status, exit_code, summary, ...}}} — into an AgentResult. Tolerant of missing
-     * fields: a readable summary is always produced.
+     * fields: a readable summary is always produced. Also accepts a plain
+     * {@code result.json} body (top-level status/exit_code/summary), which is what the
+     * LOCAL_CONTAINER runner reads straight from the artifacts mount.
      */
     static @NotNull AgentResult parseWaitResponse(@NotNull String body, @NotNull String agent,
                                                   @Nullable String intent, long durationMs) {
+        return parseResultPayload(body, agent, intent, durationMs, "remote");
+    }
+
+    public static @NotNull AgentResult parseResultPayload(@NotNull String body, @NotNull String agent,
+                                                          @Nullable String intent, long durationMs,
+                                                          @NotNull String providerLabel) {
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
             JsonObject result = json.has("result") && json.get("result").isJsonObject()
@@ -163,11 +171,11 @@ public class RemoteAgentBackend {
             }
             boolean ok = "ok".equalsIgnoreCase(status) && exitCode == 0;
             return ok
-                    ? AgentResult.ok(agent, intent, summary, 0, durationMs, "remote", null)
-                    : AgentResult.error(agent, intent, summary, 0, durationMs, "remote", null);
+                    ? AgentResult.ok(agent, intent, summary, 0, durationMs, providerLabel, null)
+                    : AgentResult.error(agent, intent, summary, 0, durationMs, providerLabel, null);
         } catch (Exception e) {
             return AgentResult.error(agent, intent,
-                    "Unreadable remote wait response: " + e.getMessage(), 0, durationMs, "remote", null);
+                    "Unreadable result payload: " + e.getMessage(), 0, durationMs, providerLabel, null);
         }
     }
 
