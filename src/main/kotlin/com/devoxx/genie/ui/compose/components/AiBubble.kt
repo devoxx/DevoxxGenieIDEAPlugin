@@ -378,8 +378,19 @@ private fun LiveStatusLine(entry: ActivityEntryUiModel) {
     ) {
         RunningSpinner()
         Spacer(Modifier.width(6.dp))
+        // Delegations surface WHO is working, not just "delegate_task" (TASK-246): the
+        // running children carry the agent names + provider labels. This line renders
+        // regardless of the tool-activity setting, so the active team member is always
+        // visible during a delegation.
+        val runningAgents = entry.children.filter {
+            it.status == ActivityStatus.RUNNING && it.subAgentId != null
+        }
         val text = if (entry.status == ActivityStatus.PENDING_APPROVAL) {
             "Waiting for your approval… (${entry.toolName ?: "tool"})"
+        } else if (runningAgents.isNotEmpty()) {
+            "Team working: " + runningAgents.joinToString(", ") { child ->
+                child.subAgentId + (child.agentLabel?.let { " ($it)" } ?: "")
+            } + "…"
         } else {
             val step = if (entry.callNumber > 0 && entry.maxCalls > 0) {
                 " (step ${entry.callNumber}/${entry.maxCalls})"

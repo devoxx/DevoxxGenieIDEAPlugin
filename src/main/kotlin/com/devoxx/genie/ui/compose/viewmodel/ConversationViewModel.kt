@@ -447,21 +447,38 @@ class ConversationViewModel(
                 else -> ActivityStatus.ERROR
             }
 
+            val child = ActivityEntryUiModel(
+                source = message.source?.name ?: "UNKNOWN",
+                content = message.content ?: "",
+                toolName = message.toolName,
+                arguments = truncateForChat(message.arguments),
+                result = truncateForChat(message.result),
+                callNumber = message.callNumber,
+                status = status,
+                startedAt = if (status == ActivityStatus.RUNNING) System.currentTimeMillis() else 0,
+                isToolActivity = true,
+                subAgentId = message.subAgentId,
+                agentLabel = message.agentModelLabel,
+            )
+
             if (parentIdx < 0) {
-                // No open parent row — degrade gracefully to a top-level entry
-                val orphan = ActivityEntryUiModel(
+                // No open parent row. This is the NORMAL case when "Show tool activity in
+                // chat" is on but agent debug logs are off: the TOOL_REQUEST event that
+                // would create the delegate_task row is debug-gated, while SUB_AGENT_*
+                // events publish under either flag. Synthesize a parent (callNumber 0
+                // marks it as synthesized) so every event of the delegation nests and
+                // resolves under one block instead of piling up top-level orphans.
+                val synthesized = ActivityEntryUiModel(
                     source = message.source?.name ?: "UNKNOWN",
-                    content = message.content ?: "",
+                    content = "",
                     toolName = message.toolName,
-                    arguments = truncateForChat(message.arguments),
-                    result = truncateForChat(message.result),
-                    callNumber = message.callNumber,
-                    status = status,
+                    callNumber = 0,
+                    status = ActivityStatus.RUNNING,
+                    startedAt = System.currentTimeMillis(),
                     isToolActivity = true,
-                    subAgentId = message.subAgentId,
-                    agentLabel = message.agentModelLabel,
-                )
-                return@updateMessage msg.copy(activityEntries = msg.activityEntries + orphan)
+                    children = listOf(child),
+                ).let(::deriveSynthesizedParentStatus)
+                return@updateMessage msg.copy(activityEntries = msg.activityEntries + synthesized)
             }
 
             msg.replaceEntryAt(parentIdx) { parent ->
@@ -470,20 +487,7 @@ class ConversationViewModel(
                 val childIdx = parent.children.indexOfLast {
                     (it.subAgentId ?: it.toolName) == (message.subAgentId ?: message.toolName)
                 }
-                if (childIdx < 0) {
-                    val child = ActivityEntryUiModel(
-                        source = message.source?.name ?: "UNKNOWN",
-                        content = message.content ?: "",
-                        toolName = message.toolName,
-                        arguments = truncateForChat(message.arguments),
-                        result = truncateForChat(message.result),
-                        callNumber = message.callNumber,
-                        status = status,
-                        startedAt = if (status == ActivityStatus.RUNNING) System.currentTimeMillis() else 0,
-                        isToolActivity = true,
-                        subAgentId = message.subAgentId,
-                        agentLabel = message.agentModelLabel,
-                    )
+                val updated = if (childIdx < 0) {
                     parent.copy(children = parent.children + child)
                 } else {
                     val children = parent.children.toMutableList()
@@ -494,8 +498,27 @@ class ConversationViewModel(
                     )
                     parent.copy(children = children)
                 }
+                deriveSynthesizedParentStatus(updated)
             }
         }
+    }
+
+    /**
+     * A synthesized delegation parent (callNumber 0 — no tracker-counted TOOL_REQUEST
+     * created it) has no TOOL_RESPONSE event to resolve it, so its status is derived
+     * from its children: running while any child runs, then error if any child failed,
+     * else success. Real (tracker-created) parents keep their own lifecycle.
+     */
+    private fun deriveSynthesizedParentStatus(parent: ActivityEntryUiModel): ActivityEntryUiModel {
+        if (parent.callNumber != 0 || parent.children.isEmpty()) {
+            return parent
+        }
+        val derived = when {
+            parent.children.any { it.isOpen() } -> ActivityStatus.RUNNING
+            parent.children.any { it.status == ActivityStatus.ERROR } -> ActivityStatus.ERROR
+            else -> ActivityStatus.SUCCESS
+        }
+        return if (parent.status == derived) parent else parent.copy(status = derived)
     }
 
     private fun ActivityEntryUiModel.isOpen(): Boolean =

@@ -714,16 +714,42 @@ class ConversationViewModelTest {
     }
 
     @Test
-    fun `sub-agent event without open parent degrades to labeled top-level row`() {
+    fun `sub-agent events without a tracker parent synthesize one block that nests and resolves`() {
+        // The normal case when "Show tool activity in chat" is on but agent debug logs
+        // are off: no TOOL_REQUEST(delegate_task) event exists. All SUB_AGENT_* events
+        // must still form ONE parent block with keyed, resolving children — and the
+        // synthesized parent's status must follow its children.
         val viewModel = ConversationViewModel(showToolActivityInChat = { true })
         viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
 
         viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "reviewer", "Ollama · qwen3"))
+        viewModel.onActivityMessage(subAgentEvent(AgentType.SUB_AGENT_STARTED, "implementer", null))
 
-        val orphan = activeMessageEntries(viewModel).single()
-        assertThat(orphan.subAgentId).isEqualTo("reviewer")
-        assertThat(orphan.agentLabel).isEqualTo("Ollama · qwen3")
-        assertThat(orphan.status).isEqualTo(ActivityStatus.RUNNING)
+        val running = activeMessageEntries(viewModel).single()
+        assertThat(running.toolName).isEqualTo("delegate_task")
+        assertThat(running.callNumber).isEqualTo(0) // synthesized marker
+        assertThat(running.status).isEqualTo(ActivityStatus.RUNNING)
+        assertThat(running.children).hasSize(2)
+        assertThat(running.children.first { it.subAgentId == "reviewer" }.agentLabel)
+            .isEqualTo("Ollama · qwen3")
+
+        viewModel.onActivityMessage(
+            subAgentEvent(AgentType.SUB_AGENT_COMPLETED, "reviewer", "Ollama · qwen3", "LGTM")
+        )
+        assertThat(activeMessageEntries(viewModel).single().status).isEqualTo(ActivityStatus.RUNNING)
+
+        viewModel.onActivityMessage(
+            subAgentEvent(AgentType.SUB_AGENT_ERROR, "implementer", null, "timed out")
+        )
+        val done = activeMessageEntries(viewModel).single()
+        assertThat(done.children).hasSize(2)
+        assertThat(done.children.first { it.subAgentId == "reviewer" }.status)
+            .isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(done.children.first { it.subAgentId == "implementer" }.status)
+            .isEqualTo(ActivityStatus.ERROR)
+        // Parent derived from children: no child running, one failed → ERROR (and no
+        // longer "open", so a NEXT delegation would synthesize a fresh block)
+        assertThat(done.status).isEqualTo(ActivityStatus.ERROR)
     }
 
     private fun subAgentEvent(
