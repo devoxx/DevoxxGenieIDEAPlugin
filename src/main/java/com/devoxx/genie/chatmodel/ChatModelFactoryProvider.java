@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
+import com.devoxx.genie.chatmodel.agentteam.AgentTeamChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.azureopenai.AzureOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.bedrock.BedrockModelFactory;
@@ -84,6 +85,7 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.Nvidia, NvidiaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.CLIRunners, CliRunnersChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.ACPRunners, AcpRunnersChatModelFactory::new);
+        FACTORY_SUPPLIERS.put(ModelProvider.AgentTeam, AgentTeamChatModelFactory::new);
     }
 
     /** Lazily-instantiated factory instances, keyed by the resolved provider. */

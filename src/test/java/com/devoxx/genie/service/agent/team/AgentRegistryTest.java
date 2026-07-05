@@ -53,14 +53,65 @@ class AgentRegistryTest {
             List<AgentDefinition> first = AgentRegistry.getInstance().getAll();
 
             assertThat(first).extracting(AgentDefinition::getName)
-                    .containsExactly("architect", "implementer", "reviewer", "documentalist");
+                    .containsExactly("orchestrator", "architect", "implementer", "reviewer", "documentalist");
             assertThat(first).allMatch(AgentDefinition::isBuiltIn);
             assertThat(first).allMatch(AgentDefinition::isEnabled);
 
             // Second call must not re-seed (stored list unchanged, no duplicate entries)
             List<AgentDefinition> second = AgentRegistry.getInstance().getAll();
-            assertThat(second).hasSize(4);
+            assertThat(second).hasSize(5);
             verify(stateService, times(1)).setAgentDefinitions(anyList());
+        }
+    }
+
+    @Test
+    void getAll_topsUpBuiltInsMissingFromOlderStoredLists() {
+        try (MockedStatic<DevoxxGenieStateService> ignored = mockState()) {
+            // Simulate a list persisted before the orchestrator became a built-in
+            stored.add(AgentDefinition.builder().name("reviewer").instruction("x").builtIn(true).build());
+            stored.add(AgentDefinition.builder().name("my-agent").instruction("y").build());
+
+            List<AgentDefinition> all = AgentRegistry.getInstance().getAll();
+
+            assertThat(all).extracting(AgentDefinition::getName)
+                    .contains("orchestrator", "architect", "implementer", "documentalist", "reviewer", "my-agent");
+            // The user's existing reviewer edit is preserved, not overwritten
+            assertThat(all.stream().filter(d -> d.getName().equals("reviewer")).findFirst().orElseThrow()
+                    .getInstruction()).isEqualTo("x");
+        }
+    }
+
+    @Test
+    void getDelegable_excludesOrchestrator_catalogToo() {
+        try (MockedStatic<DevoxxGenieStateService> ignored = mockState()) {
+            assertThat(AgentRegistry.getInstance().getDelegable())
+                    .extracting(AgentDefinition::getName)
+                    .doesNotContain("orchestrator")
+                    .contains("architect", "implementer", "reviewer", "documentalist");
+            assertThat(AgentRegistry.getInstance().buildCatalogPrompt())
+                    .doesNotContain("| orchestrator |");
+            assertThat(AgentRegistry.getInstance().availableNames())
+                    .doesNotContain("orchestrator");
+        }
+    }
+
+    @Test
+    void selectedDirectAgent_onlyForAgentTeamProviderWithSpecialistModel() {
+        try (MockedStatic<DevoxxGenieStateService> ignored = mockState()) {
+            AgentRegistry registry = AgentRegistry.getInstance();
+            registry.getAll(); // seed
+
+            when(stateService.getSelectedProvider("hash")).thenReturn("Agent Team");
+            when(stateService.getSelectedLanguageModel("hash")).thenReturn("reviewer");
+            assertThat(registry.selectedDirectAgent("hash")).isPresent()
+                    .get().extracting(AgentDefinition::getName).isEqualTo("reviewer");
+
+            when(stateService.getSelectedLanguageModel("hash")).thenReturn("orchestrator");
+            assertThat(registry.selectedDirectAgent("hash")).isEmpty();
+
+            when(stateService.getSelectedProvider("hash")).thenReturn("Anthropic");
+            when(stateService.getSelectedLanguageModel("hash")).thenReturn("reviewer");
+            assertThat(registry.selectedDirectAgent("hash")).isEmpty();
         }
     }
 

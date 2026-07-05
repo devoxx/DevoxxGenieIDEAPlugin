@@ -24,6 +24,9 @@ public final class AgentRegistry {
     /** Flat, lowercase agent names — same constraint as DockerAgents agent spec names. */
     public static final Pattern NAME_PATTERN = Pattern.compile("^[a-z][a-z0-9-]{1,31}$");
 
+    /** The coordinator agent; selectable as a "model" but never delegable (no self-delegation). */
+    public static final String ORCHESTRATOR_NAME = "orchestrator";
+
     private static final AgentRegistry INSTANCE = new AgentRegistry();
 
     private AgentRegistry() {
@@ -48,6 +51,24 @@ public final class AgentRegistry {
             state.setAgentDefinitions(seeded);
             log.info("Agent registry seeded with {} built-in agents", seeded.size());
             stored = state.getAgentDefinitions();
+        } else {
+            // Top-up seeding: built-ins added in later plugin versions (e.g. the
+            // orchestrator, TASK-249) must appear in lists persisted before they existed —
+            // saveAll rejects lists missing a built-in, so absence would brick the editor.
+            List<AgentDefinition> missing = new ArrayList<>();
+            for (AgentDefinition shipped : BuiltInAgents.defaults()) {
+                boolean present = stored.stream().anyMatch(d -> shipped.getName().equals(d.getName()));
+                if (!present) {
+                    missing.add(shipped.copy());
+                }
+            }
+            if (!missing.isEmpty()) {
+                List<AgentDefinition> merged = new ArrayList<>(missing);
+                merged.addAll(stored);
+                state.setAgentDefinitions(merged);
+                log.info("Agent registry topped up with {} new built-in agent(s)", missing.size());
+                stored = state.getAgentDefinitions();
+            }
         }
         List<AgentDefinition> copy = new ArrayList<>(stored.size());
         for (AgentDefinition def : stored) {
@@ -56,9 +77,16 @@ public final class AgentRegistry {
         return copy;
     }
 
-    /** Enabled agents only — the set the orchestrator may delegate to. */
+    /** Enabled agents only. Includes the orchestrator — see {@link #getDelegable} for delegation targets. */
     public @NotNull List<AgentDefinition> getEnabled() {
         return getAll().stream().filter(AgentDefinition::isEnabled).toList();
+    }
+
+    /** Enabled agents the orchestrator may delegate to — everything except itself. */
+    public @NotNull List<AgentDefinition> getDelegable() {
+        return getEnabled().stream()
+                .filter(def -> !ORCHESTRATOR_NAME.equals(def.getName()))
+                .toList();
     }
 
     public @NotNull Optional<AgentDefinition> byName(@Nullable String name) {
@@ -71,9 +99,9 @@ public final class AgentRegistry {
                 .findFirst();
     }
 
-    /** Comma-separated enabled agent names, for error messages and validation hints. */
+    /** Comma-separated delegable agent names, for error messages and validation hints. */
     public @NotNull String availableNames() {
-        return String.join(", ", getEnabled().stream().map(AgentDefinition::getName).toList());
+        return String.join(", ", getDelegable().stream().map(AgentDefinition::getName).toList());
     }
 
     public static boolean isValidName(@Nullable String name) {
@@ -149,15 +177,15 @@ public final class AgentRegistry {
      * or "conversation model" when inherited.
      */
     public @NotNull String buildCatalogPrompt() {
-        List<AgentDefinition> enabled = getEnabled();
-        if (enabled.isEmpty()) {
+        List<AgentDefinition> delegable = getDelegable();
+        if (delegable.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
         sb.append("Available specialist agents (delegate with the `delegate_task` tool):\n\n");
         sb.append("| agent | capabilities | model |\n");
         sb.append("|-------|--------------|-------|\n");
-        for (AgentDefinition def : enabled) {
+        for (AgentDefinition def : delegable) {
             sb.append("| ").append(def.getName())
                     .append(" | ").append(sanitizeCell(def.getDescription()))
                     .append(" | ").append(modelLabel(def))
@@ -172,6 +200,28 @@ public final class AgentRegistry {
      */
     public @NotNull String buildOrchestratorInstruction() {
         return BuiltInAgents.ORCHESTRATOR_INSTRUCTION + "\n" + buildCatalogPrompt();
+    }
+
+    /**
+     * The specialist directly selected in the LLM dropdown (TASK-249): non-empty only
+     * when the conversation's provider is "Agent Team" and the selected "model" is a
+     * delegable agent. Empty for the orchestrator selection (which keeps the normal
+     * team-mode behavior) and for real providers.
+     */
+    public @NotNull Optional<AgentDefinition> selectedDirectAgent(@Nullable String projectLocationHash) {
+        if (projectLocationHash == null) {
+            return Optional.empty();
+        }
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        if (!com.devoxx.genie.model.enumarations.ModelProvider.AgentTeam.getName()
+                .equals(state.getSelectedProvider(projectLocationHash))) {
+            return Optional.empty();
+        }
+        String selectedModel = state.getSelectedLanguageModel(projectLocationHash);
+        if (selectedModel == null || ORCHESTRATOR_NAME.equals(selectedModel)) {
+            return Optional.empty();
+        }
+        return byName(selectedModel).filter(AgentDefinition::isEnabled);
     }
 
     static @NotNull String modelLabel(@NotNull AgentDefinition def) {

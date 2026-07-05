@@ -1,5 +1,8 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.model.agent.AgentDefinition;
+import com.devoxx.genie.service.agent.team.AgentRegistry;
+import com.devoxx.genie.service.agent.team.TeamAgentToolProvider;
 import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
@@ -51,6 +54,25 @@ public class AgentToolProviderFactory {
 
         if (!Boolean.TRUE.equals(settings.getAgentModeEnabled())) {
             return null;
+        }
+
+        // TASK-249: a specialist selected directly in the LLM dropdown ("Agent Team"
+        // provider + e.g. "reviewer" as the model) chats with ITS scoped toolset —
+        // exactly what a delegation would give it (approval-gated, budgeted, no
+        // delegate_task) — instead of the orchestrator chain below.
+        if (Boolean.TRUE.equals(settings.getAgentTeamEnabled())) {
+            var directAgent = AgentRegistry.getInstance()
+                    .selectedDirectAgent(project.getLocationHash());
+            if (directAgent.isPresent()) {
+                AgentDefinition definition = directAgent.get();
+                ToolProvider teamTools = new TeamAgentToolProvider(project, definition);
+                boolean autoApproveRO = Boolean.TRUE.equals(settings.getAgentAutoApproveReadOnly());
+                ToolProvider approved = new AgentApprovalProvider(teamTools, project, autoApproveRO);
+                int budget = definition.getMaxToolCalls() != null && definition.getMaxToolCalls() > 0
+                        ? definition.getMaxToolCalls()
+                        : (settings.getAgentMaxToolCalls() != null ? settings.getAgentMaxToolCalls() : 25);
+                return new AgentLoopTracker(approved, budget, project, definition.getName());
+            }
         }
 
         List<ToolProvider> providers = new ArrayList<>();

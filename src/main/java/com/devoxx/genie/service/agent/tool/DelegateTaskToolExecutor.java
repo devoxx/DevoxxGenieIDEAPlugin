@@ -87,7 +87,10 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         List<AgentDefinition> resolved = new ArrayList<>(tasks.size());
         for (DelegatedTask task : tasks) {
             Optional<AgentDefinition> def = registry.byName(task.agent());
-            if (def.isEmpty() || !def.get().isEnabled()) {
+            // The orchestrator is never delegable — no self-delegation (DockerAgents rule,
+            // enforced structurally here instead of by prompt).
+            if (def.isEmpty() || !def.get().isEnabled()
+                    || AgentRegistry.ORCHESTRATOR_NAME.equals(def.get().getName())) {
                 return "Error: unknown or disabled agent '" + task.agent()
                         + "'. Available agents: " + registry.availableNames() + ".";
             }

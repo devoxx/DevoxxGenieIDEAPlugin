@@ -512,7 +512,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
                     case Nvidia -> state.isNvidiaEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
-                    case CLIRunners, ACPRunners -> false;
+                    // agents bind to real providers, never pseudo-providers
+                    case CLIRunners, ACPRunners, AgentTeam -> false;
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))

@@ -393,6 +393,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case Bedrock -> state.isAwsEnabled();
                     case CLIRunners -> false;
                     case ACPRunners -> false;
+                    case AgentTeam -> false; // agents bind to real providers, never the pseudo-provider
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
@@ -623,6 +624,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case Bedrock -> state.isAwsEnabled();
                         case CLIRunners -> false;
                         case ACPRunners -> false;
+                        case AgentTeam -> false; // sub-agents bind to real providers only
                     })
                     .distinct()
                     .sorted(Comparator.comparing(ModelProvider::getName))

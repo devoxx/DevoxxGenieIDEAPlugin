@@ -289,6 +289,7 @@ story ("" = inherit conversation model):
 | TASK-246 | Chat UI: delegation progress blocks + per-agent labels in log panel | 243 |
 | TASK-247 | Genie YAML import/export (`agents/*.yml` interop with DockerAgents) | 241, 245 |
 | TASK-248 | Optional remote backend: `delegate_task` targeting a DockerAgents `orchestrator-api` | 244 |
+| TASK-249 | "Agent Team" pseudo-provider in the LLM dropdown: agents as selectable models — orchestrator = team mode, specialist = chat directly as that agent (persona + scoped tools) | 244, 245 |
 
 Phases: **1** = 241+242 (foundations, no behavior change) → **2** = 243 (delegation) →
 **3** = 244+245+246 (orchestration + UX) → **4** = 247+248 (interop, optional).

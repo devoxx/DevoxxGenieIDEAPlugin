@@ -47,7 +47,23 @@ final class BuiltInAgents {
             """;
 
     static @NotNull List<AgentDefinition> defaults() {
-        return List.of(architect(), implementer(), reviewer(), documentalist());
+        return List.of(orchestrator(), architect(), implementer(), reviewer(), documentalist());
+    }
+
+    /**
+     * The orchestrator as an AgentDefinition so it appears as a selectable "model" of the
+     * Agent Team provider and its underlying model binding is user-editable. It is NEVER
+     * delegable (no self-delegation — see {@code AgentRegistry#getDelegable}); when
+     * selected, the conversation runs the normal agent loop with the team fragment and
+     * delegate_task, so its toolset presets are unused.
+     */
+    private static AgentDefinition orchestrator() {
+        return AgentDefinition.builder()
+                .name(AgentRegistry.ORCHESTRATOR_NAME)
+                .description("Coordinates the team: breaks work down, delegates to specialists, synthesizes results.")
+                .instruction(ORCHESTRATOR_INSTRUCTION)
+                .builtIn(true)
+                .build();
     }
 
     private static AgentDefinition architect() {

@@ -183,6 +183,9 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case Bedrock -> stateService.isAwsEnabled();
                     case CLIRunners -> true;
                     case ACPRunners -> true;
+                    // Only present in the list when Agent Team mode is enabled
+                    // (see LLMProviderService.getAgentTeamProvider)
+                    case AgentTeam -> true;
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))

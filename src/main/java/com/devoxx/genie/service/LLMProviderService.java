@@ -56,19 +56,28 @@ public class LLMProviderService {
         providers.addAll(getOptionalProviders());
         providers.addAll(getCliRunnersProvider());
         providers.addAll(getAcpRunnersProvider());
+        providers.addAll(getAgentTeamProvider());
 
         return providers;
     }
 
     private List<ModelProvider> getLocalModelProviders() {
-        // CLIRunners and ACPRunners are declared as Type.LOCAL but are only available
-        // when the user has configured (and enabled) at least one CLI/ACP tool. They are
-        // added conditionally by getCliRunnersProvider()/getAcpRunnersProvider(), so they
-        // must be excluded from the blanket local list here to avoid appearing unconditionally.
+        // CLIRunners, ACPRunners and AgentTeam are declared as Type.LOCAL but are only
+        // available conditionally (configured CLI/ACP tool, Agent Team mode enabled).
+        // They are added by their dedicated getters, so they must be excluded from the
+        // blanket local list here to avoid appearing unconditionally.
         return ModelProvider.fromType(Type.LOCAL).stream()
                 .filter(provider -> provider != ModelProvider.CLIRunners
-                        && provider != ModelProvider.ACPRunners)
+                        && provider != ModelProvider.ACPRunners
+                        && provider != ModelProvider.AgentTeam)
                 .toList();
+    }
+
+    private @NotNull List<ModelProvider> getAgentTeamProvider() {
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentTeamEnabled())) {
+            return List.of(ModelProvider.AgentTeam);
+        }
+        return List.of();
     }
 
     /**

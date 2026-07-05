@@ -130,6 +130,19 @@ class DelegateTaskToolExecutorTest {
     }
 
     @Test
+    void execute_orchestratorTarget_isRejected_noSelfDelegation() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+
+            DelegateTaskToolExecutor executor = new DelegateTaskToolExecutor(project);
+            String result = executor.execute(request(
+                    "{\"tasks\": [{\"agent\": \"orchestrator\", \"task\": \"coordinate yourself\"}]}"), null);
+
+            assertThat(result).startsWith("Error:").contains("orchestrator");
+        }
+    }
+
+    @Test
     void formatResults_rendersSummaryOnlyWithStatusMetadata() {
         List<AgentResult> results = List.of(
                 AgentResult.ok("reviewer", "review foo", "Looks good. One nit in Foo.java.",

@@ -45,6 +45,7 @@ class AgentTeamPromptTest {
 
         when(stateService.getSystemPrompt()).thenReturn("Base prompt.");
         when(project.getBasePath()).thenReturn("/tmp/project");
+        when(project.getLocationHash()).thenReturn("hash");
         when(project.isDefault()).thenReturn(true); // skip SkillRegistry platform access
     }
 
@@ -63,6 +64,45 @@ class AgentTeamPromptTest {
                     .contains("delegate_task")
                     .contains("| reviewer |")
                     .contains("| implementer |");
+        }
+    }
+
+    @Test
+    void directSpecialistSelected_appendsPersonaInsteadOfTeamFragment() {
+        // TASK-249: "Agent Team" provider + a specialist as the model → the conversation
+        // runs AS that agent; its persona replaces the coordinator mandate.
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getAgentTeamEnabled()).thenReturn(true);
+            when(project.getLocationHash()).thenReturn("hash");
+            when(stateService.getSelectedProvider("hash")).thenReturn("Agent Team");
+            when(stateService.getSelectedLanguageModel("hash")).thenReturn("reviewer");
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(project);
+
+            assertThat(prompt)
+                    .contains("<AGENT_PERSONA agent=\"reviewer\">")
+                    .contains("senior code reviewer")
+                    .doesNotContain("<AGENT_TEAM_INSTRUCTION>");
+        }
+    }
+
+    @Test
+    void orchestratorSelected_keepsTeamFragment() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getAgentTeamEnabled()).thenReturn(true);
+            when(project.getLocationHash()).thenReturn("hash");
+            when(stateService.getSelectedProvider("hash")).thenReturn("Agent Team");
+            when(stateService.getSelectedLanguageModel("hash")).thenReturn("orchestrator");
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(project);
+
+            assertThat(prompt)
+                    .contains("<AGENT_TEAM_INSTRUCTION>")
+                    .doesNotContain("<AGENT_PERSONA");
         }
     }
 

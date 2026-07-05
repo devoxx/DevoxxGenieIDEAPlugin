@@ -17,6 +17,13 @@ public enum ModelProvider {
     Ollama("Ollama", Type.LOCAL),
     CLIRunners("CLI Runners", Type.LOCAL),
     ACPRunners("ACP Runners", Type.LOCAL),
+    /**
+     * Pseudo-provider for Agent Team mode: its "models" are the team's agents
+     * (orchestrator, implementer, reviewer, …). Selecting an agent runs the prompt as
+     * that agent — resolution to a real provider/model happens per agent binding in
+     * AgentTeamChatModelFactory. Only listed when Agent Team mode is enabled.
+     */
+    AgentTeam("Agent Team", Type.LOCAL),
 
     OpenAI("OpenAI", Type.CLOUD),
     Anthropic("Anthropic", Type.CLOUD),

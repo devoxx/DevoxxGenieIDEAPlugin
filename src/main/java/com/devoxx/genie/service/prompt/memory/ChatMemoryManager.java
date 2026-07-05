@@ -480,16 +480,27 @@ public class ChatMemoryManager {
                     """;
         }
 
-        // Agent Team mode: append the orchestrator mandate + the live agent catalog —
-        // the in-process analog of the DockerAgents runner's DELEGATION TRANSPORT
-        // addendum with its runtime-fetched /agents table. Only when agent mode is on;
+        // Agent Team mode: when a SPECIALIST is directly selected in the LLM dropdown
+        // ("Agent Team" provider + a non-orchestrator agent as the model, TASK-249), the
+        // conversation runs AS that agent — its persona replaces the coordinator fragment.
+        // Otherwise (orchestrator selected, or any real provider with team mode on) append
+        // the orchestrator mandate + the live agent catalog — the in-process analog of the
+        // DockerAgents runner's DELEGATION TRANSPORT addendum. Only when agent mode is on;
         // the delegate_task tool is registered under the same gate.
         if (Boolean.TRUE.equals(state.getAgentModeEnabled())
                 && Boolean.TRUE.equals(state.getAgentTeamEnabled())) {
             try {
-                systemPrompt += "\n<AGENT_TEAM_INSTRUCTION>\n"
-                        + AgentRegistry.getInstance().buildOrchestratorInstruction()
-                        + "\n</AGENT_TEAM_INSTRUCTION>\n";
+                var directAgent = AgentRegistry.getInstance()
+                        .selectedDirectAgent(project.getLocationHash());
+                if (directAgent.isPresent()) {
+                    systemPrompt += "\n<AGENT_PERSONA agent=\"" + directAgent.get().getName() + "\">\n"
+                            + directAgent.get().getInstruction()
+                            + "\n</AGENT_PERSONA>\n";
+                } else {
+                    systemPrompt += "\n<AGENT_TEAM_INSTRUCTION>\n"
+                            + AgentRegistry.getInstance().buildOrchestratorInstruction()
+                            + "\n</AGENT_TEAM_INSTRUCTION>\n";
+                }
             } catch (Exception e) {
                 log.warn("Failed to append Agent Team system-prompt fragment", e);
             }

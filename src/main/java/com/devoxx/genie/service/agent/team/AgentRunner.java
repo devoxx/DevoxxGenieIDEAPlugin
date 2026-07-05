@@ -2,9 +2,11 @@ package com.devoxx.genie.service.agent.team;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.agentteam.AgentTeamChatModelFactory;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.agent.AgentDefinition;
 import com.devoxx.genie.model.agent.AgentResult;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.agent.AgentApprovalProvider;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -181,6 +183,20 @@ public class AgentRunner implements AgentLoopTracker.Cancellable {
         }
         if (providerName == null || providerName.isBlank()) {
             return null;
+        }
+        // TASK-249: when the conversation itself runs on the "Agent Team" pseudo-provider,
+        // inheriting it would recurse. Resolve this agent's own binding (or the default
+        // provider chain) instead.
+        if (ModelProvider.AgentTeam.getName().equals(providerName)) {
+            try {
+                var binding = AgentTeamChatModelFactory.resolveBinding(definition.getName());
+                providerName = binding.providerName();
+                modelName = binding.modelName() != null ? binding.modelName() : "";
+            } catch (IllegalArgumentException e) {
+                log.warn("Team agent '{}' could not resolve a real provider: {}",
+                        definition.getName(), e.getMessage());
+                return null;
+            }
         }
 
         resolvedProviderName = providerName;
