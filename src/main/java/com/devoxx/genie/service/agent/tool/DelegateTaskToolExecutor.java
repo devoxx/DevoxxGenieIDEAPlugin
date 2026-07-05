@@ -3,6 +3,7 @@ package com.devoxx.genie.service.agent.tool;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentDefinition;
+import com.devoxx.genie.model.agent.AgentExecutionTarget;
 import com.devoxx.genie.model.agent.AgentResult;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
@@ -76,11 +77,6 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         }
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
-        if (Boolean.TRUE.equals(settings.getAgentTeamRemoteEnabled())
-                && settings.getAgentTeamRemoteUrl() != null
-                && !settings.getAgentTeamRemoteUrl().isBlank()) {
-            return executeRemote(tasks, settings);
-        }
 
         // Fail fast on ANY unknown agent before spawning anything (DockerAgents 404 analog).
         AgentRegistry registry = AgentRegistry.getInstance();
@@ -105,22 +101,82 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             resolved = resolved.subList(0, tasks.size());
         }
 
-        log.info("delegate_task: launching {} agent(s)", tasks.size());
+        // Per-agent execution target (Phase A of per-agent isolation): one fan-out may mix
+        // in-process runners with DockerAgents container sessions. The backend and its
+        // /agents directory are prepared once; remote-side problems degrade to structured
+        // per-task errors so co-scheduled in-process tasks still run (wait_all semantics).
+        List<String> remoteAgents = List.of();
+        String remoteSetupError = null;
+        boolean anyRemote = resolved.stream()
+                .anyMatch(def -> def.effectiveExecutionTarget() == AgentExecutionTarget.DOCKER_AGENTS);
+        if (anyRemote) {
+            String url = settings.getAgentTeamRemoteUrl();
+            if (url == null || url.isBlank()) {
+                remoteSetupError = "no DockerAgents orchestrator-api URL configured in "
+                        + "Settings > Agent > Agent Team";
+            } else {
+                RemoteAgentBackend backend = new RemoteAgentBackend(url);
+                activeRemoteBackend = backend;
+                try {
+                    remoteAgents = backend.listAgentNames();
+                } catch (Exception e) {
+                    remoteSetupError = "DockerAgents orchestrator-api at " + url
+                            + " is unreachable (" + e.getMessage() + ")";
+                }
+            }
+        }
+
+        log.info("delegate_task: launching {} agent(s){}", tasks.size(),
+                anyRemote ? " (mixed in-process/container)" : "");
         ExecutorService executor = ThreadPoolManager.getInstance().getSubAgentPool();
 
         List<Future<AgentResult>> futures = new ArrayList<>(tasks.size());
-        List<AgentRunner> runners = new ArrayList<>(tasks.size());
+        List<AgentRunner> runners = new ArrayList<>(tasks.size()); // null entries for remote tasks
+        List<Boolean> remoteFlags = new ArrayList<>(tasks.size());
         for (int i = 0; i < tasks.size(); i++) {
             DelegatedTask task = tasks.get(i);
             AgentDefinition definition = resolved.get(i);
-
-            AgentRunner runner = new AgentRunner(project, definition, task.intent(), cancelled);
-            runners.add(runner);
-            activeRunners.add(runner);
+            boolean remote = definition.effectiveExecutionTarget() == AgentExecutionTarget.DOCKER_AGENTS;
+            remoteFlags.add(remote);
 
             publishEvent(AgentType.SUB_AGENT_STARTED, definition.getName(),
-                    modelLabelOf(definition), describeTask(task), null, i + 1);
-            futures.add(executor.submit(() -> runner.execute(task.task())));
+                    remote ? "remote" : modelLabelOf(definition), describeTask(task), null, i + 1);
+
+            if (remote) {
+                runners.add(null);
+                if (remoteSetupError != null) {
+                    futures.add(CompletableFuture.completedFuture(AgentResult.error(
+                            definition.getName(), task.intent(),
+                            "Agent '" + definition.getName() + "' targets a DockerAgents container but "
+                                    + remoteSetupError + ".",
+                            0, 0, "remote", null)));
+                } else if (!remoteAgents.contains(definition.getName())) {
+                    futures.add(CompletableFuture.completedFuture(AgentResult.error(
+                            definition.getName(), task.intent(),
+                            "Agent '" + definition.getName() + "' is not defined on the DockerAgents "
+                                    + "side. Export it via Settings > Agent > Agent Team > Export YAML "
+                                    + "into its agents/ directory. Remote agents: "
+                                    + String.join(", ", remoteAgents) + ".",
+                            0, 0, "remote", null)));
+                } else {
+                    RemoteAgentBackend backend = activeRemoteBackend;
+                    int waitSeconds = taskTimeoutSeconds(definition, settings);
+                    futures.add(executor.submit(() -> {
+                        String sessionId = backend.spawn(task.agent(), task.task(), task.intent());
+                        activeRemoteSessions.add(sessionId);
+                        try {
+                            return backend.waitFor(sessionId, task.agent(), task.intent(), waitSeconds);
+                        } finally {
+                            activeRemoteSessions.remove(sessionId);
+                        }
+                    }));
+                }
+            } else {
+                AgentRunner runner = new AgentRunner(project, definition, task.intent(), cancelled);
+                runners.add(runner);
+                activeRunners.add(runner);
+                futures.add(executor.submit(() -> runner.execute(task.task())));
+            }
         }
 
         // wait_all semantics: collect every child; convert per-child failures into
@@ -129,16 +185,17 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         for (int i = 0; i < futures.size(); i++) {
             DelegatedTask task = tasks.get(i);
             AgentDefinition definition = resolved.get(i);
-            int timeoutSeconds = definition.getTimeoutSeconds() != null && definition.getTimeoutSeconds() > 0
-                    ? definition.getTimeoutSeconds()
-                    : (settings.getSubAgentTimeoutSeconds() != null
-                        ? settings.getSubAgentTimeoutSeconds()
-                        : SUB_AGENT_TIMEOUT_SECONDS);
+            boolean remote = remoteFlags.get(i);
+            int timeoutSeconds = taskTimeoutSeconds(definition, settings);
             AgentResult result;
             try {
-                result = futures.get(i).get(timeoutSeconds, TimeUnit.SECONDS);
+                // Remote sessions block server-side for timeoutSeconds; the extra margin
+                // covers spawn + transport.
+                result = futures.get(i).get(timeoutSeconds + (remote ? 60L : 0L), TimeUnit.SECONDS);
             } catch (TimeoutException e) {
-                runners.get(i).cancel();
+                if (runners.get(i) != null) {
+                    runners.get(i).cancel();
+                }
                 futures.get(i).cancel(true);
                 result = AgentResult.timeout(definition.getName(), task.intent(), timeoutSeconds);
             } catch (CancellationException e) {
@@ -147,7 +204,7 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 result = AgentResult.error(definition.getName(), task.intent(),
                         "Agent '" + definition.getName() + "' failed: " + cause.getMessage(),
-                        0, 0, null, null);
+                        0, 0, remote ? "remote" : null, null);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 result = AgentResult.cancelled(definition.getName(), task.intent());
@@ -164,7 +221,19 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
         }
 
         activeRunners.clear();
+        activeRemoteBackend = null;
         return formatResults(results);
+    }
+
+    /** Per-task timeout: definition override → global sub-agent timeout → constant. */
+    private static int taskTimeoutSeconds(@NotNull AgentDefinition definition,
+                                          @NotNull DevoxxGenieStateService settings) {
+        if (definition.getTimeoutSeconds() != null && definition.getTimeoutSeconds() > 0) {
+            return definition.getTimeoutSeconds();
+        }
+        return settings.getSubAgentTimeoutSeconds() != null
+                ? settings.getSubAgentTimeoutSeconds()
+                : SUB_AGENT_TIMEOUT_SECONDS;
     }
 
     /**
@@ -185,86 +254,6 @@ public class DelegateTaskToolExecutor implements ToolExecutor, AgentLoopTracker.
             }
             activeRemoteSessions.clear();
         }
-    }
-
-    /**
-     * Remote execution path (TASK-248): the same delegation contract, but each task runs
-     * as a one-shot container session on a DockerAgents orchestrator-api. Agent names
-     * are validated against the remote /agents directory; per-task failures stay
-     * structured entries; cancellation DELETEs the remote sessions.
-     */
-    private String executeRemote(@NotNull List<DelegatedTask> tasks,
-                                 @NotNull DevoxxGenieStateService settings) {
-        RemoteAgentBackend backend = new RemoteAgentBackend(settings.getAgentTeamRemoteUrl());
-        activeRemoteBackend = backend;
-
-        List<String> remoteAgents;
-        try {
-            remoteAgents = backend.listAgentNames();
-        } catch (Exception e) {
-            return "Error: DockerAgents orchestrator-api at " + settings.getAgentTeamRemoteUrl()
-                    + " is unreachable (" + e.getMessage() + "). Fix the URL in "
-                    + "Settings > Agent > Agent Team or disable remote execution.";
-        }
-        for (DelegatedTask task : tasks) {
-            if (!remoteAgents.contains(task.agent())) {
-                return "Error: unknown remote agent '" + task.agent()
-                        + "'. Available remote agents: " + String.join(", ", remoteAgents) + ".";
-            }
-        }
-
-        int timeoutSeconds = settings.getSubAgentTimeoutSeconds() != null
-                ? settings.getSubAgentTimeoutSeconds()
-                : SUB_AGENT_TIMEOUT_SECONDS;
-        ExecutorService executor = ThreadPoolManager.getInstance().getSubAgentPool();
-
-        List<Future<AgentResult>> futures = new ArrayList<>(tasks.size());
-        for (int i = 0; i < tasks.size(); i++) {
-            DelegatedTask task = tasks.get(i);
-            publishEvent(AgentType.SUB_AGENT_STARTED, task.agent(), "remote",
-                    describeTask(task), null, i + 1);
-            futures.add(executor.submit(() -> {
-                String sessionId = backend.spawn(task.agent(), task.task(), task.intent());
-                activeRemoteSessions.add(sessionId);
-                try {
-                    return backend.waitFor(sessionId, task.agent(), task.intent(), timeoutSeconds);
-                } finally {
-                    activeRemoteSessions.remove(sessionId);
-                }
-            }));
-        }
-
-        List<AgentResult> results = new ArrayList<>(tasks.size());
-        for (int i = 0; i < futures.size(); i++) {
-            DelegatedTask task = tasks.get(i);
-            AgentResult result;
-            try {
-                // The api blocks server-side for timeoutSeconds; the extra margin covers transport.
-                result = futures.get(i).get(timeoutSeconds + 60L, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                futures.get(i).cancel(true);
-                result = AgentResult.timeout(task.agent(), task.intent(), timeoutSeconds);
-            } catch (CancellationException e) {
-                result = AgentResult.cancelled(task.agent(), task.intent());
-            } catch (ExecutionException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                result = AgentResult.error(task.agent(), task.intent(),
-                        "Remote agent '" + task.agent() + "' failed: " + cause.getMessage(),
-                        0, 0, "remote", null);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                result = AgentResult.cancelled(task.agent(), task.intent());
-            }
-            results.add(result);
-
-            AgentType eventType = result.status() == AgentResult.Status.OK
-                    ? AgentType.SUB_AGENT_COMPLETED : AgentType.SUB_AGENT_ERROR;
-            publishEvent(eventType, task.agent(), "remote",
-                    describeTask(task), truncate(result.summary()), i + 1);
-        }
-
-        activeRemoteBackend = null;
-        return formatResults(results);
     }
 
     static @NotNull List<DelegatedTask> parseTasks(@Nullable String arguments) {

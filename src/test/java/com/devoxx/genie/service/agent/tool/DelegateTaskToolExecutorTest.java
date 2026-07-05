@@ -2,7 +2,9 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.model.agent.AgentDefinition;
 import com.devoxx.genie.model.agent.AgentResult;
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +31,10 @@ class DelegateTaskToolExecutorTest {
     private Project project;
     @Mock
     private DevoxxGenieStateService stateService;
+    @Mock
+    private com.intellij.openapi.application.Application application;
+    @Mock
+    private ThreadPoolManager threadPoolManager;
 
     private List<AgentDefinition> stored;
 
@@ -139,6 +145,58 @@ class DelegateTaskToolExecutorTest {
                     "{\"tasks\": [{\"agent\": \"orchestrator\", \"task\": \"coordinate yourself\"}]}"), null);
 
             assertThat(result).startsWith("Error:").contains("orchestrator");
+        }
+    }
+
+    @Test
+    void execute_dockerTargetWithUnreachableBackend_yieldsStructuredErrorEntry() {
+        // TASK-250: a task whose agent targets DOCKER_AGENTS degrades to a structured
+        // per-task error when the orchestrator-api is unreachable — it must not fail the
+        // batch and must never spawn anything.
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+            when(application.getService(ThreadPoolManager.class)).thenReturn(threadPoolManager);
+            // Port 1 refuses connections immediately — deterministic "unreachable"
+            when(stateService.getAgentTeamRemoteUrl()).thenReturn("http://127.0.0.1:1");
+
+            DelegateTaskToolExecutor executor = new DelegateTaskToolExecutor(project);
+            executor.execute(request("{\"tasks\": [{\"agent\": \"x\", \"task\": \"seed\"}]}"), null);
+            stored.stream().filter(d -> d.getName().equals("implementer"))
+                    .forEach(d -> d.setExecutionTarget("DOCKER_AGENTS"));
+
+            String result = executor.execute(request(
+                    "{\"tasks\": [{\"agent\": \"implementer\", \"task\": \"build it\", \"intent\": \"phase-a\"}]}"),
+                    null);
+
+            assertThat(result)
+                    .contains("# Delegation Results")
+                    .contains("Status: error")
+                    .contains("implementer")
+                    .contains("unreachable");
+            // Nothing was spawned: the mocked pool returns null, so any submit would NPE.
+        }
+    }
+
+    @Test
+    void execute_dockerTargetWithoutUrl_yieldsStructuredErrorEntry() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+            when(application.getService(ThreadPoolManager.class)).thenReturn(threadPoolManager);
+            when(stateService.getAgentTeamRemoteUrl()).thenReturn("");
+
+            DelegateTaskToolExecutor executor = new DelegateTaskToolExecutor(project);
+            executor.execute(request("{\"tasks\": [{\"agent\": \"x\", \"task\": \"seed\"}]}"), null);
+            stored.stream().filter(d -> d.getName().equals("reviewer"))
+                    .forEach(d -> d.setExecutionTarget("docker_agents")); // case-insensitive parse
+
+            String result = executor.execute(request(
+                    "{\"tasks\": [{\"agent\": \"reviewer\", \"task\": \"review\"}]}"), null);
+
+            assertThat(result).contains("Status: error").contains("no DockerAgents orchestrator-api URL");
         }
     }
 

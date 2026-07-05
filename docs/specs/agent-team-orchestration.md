@@ -290,6 +290,8 @@ story ("" = inherit conversation model):
 | TASK-247 | Genie YAML import/export (`agents/*.yml` interop with DockerAgents) | 241, 245 |
 | TASK-248 | Optional remote backend: `delegate_task` targeting a DockerAgents `orchestrator-api` | 244 |
 | TASK-249 | "Agent Team" pseudo-provider in the LLM dropdown: agents as selectable models — orchestrator = team mode, specialist = chat directly as that agent (persona + scoped tools) | 244, 245 |
+| TASK-250 | Per-agent execution target (IN_PROCESS / DOCKER_AGENTS): mixed fan-outs, remote-side failures as structured per-task errors; replaces the global remote toggle | 248 |
+| TASK-251 | Phase B isolation: LOCAL_CONTAINER target — docker-java-spawned container with the project bind-mounted (ro/rw per agent), workspace-preserving semantics | 250 |
 
 Phases: **1** = 241+242 (foundations, no behavior change) → **2** = 243 (delegation) →
 **3** = 244+245+246 (orchestration + UX) → **4** = 247+248 (interop, optional).

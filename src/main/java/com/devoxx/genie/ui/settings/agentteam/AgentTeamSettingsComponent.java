@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings.agentteam;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.AgentDefinition;
+import com.devoxx.genie.model.agent.AgentExecutionTarget;
 import com.devoxx.genie.model.agent.AgentToolsetPreset;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
@@ -69,6 +70,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner maxToolCallsSpinner = new JBIntSpinner(SUB_AGENT_MAX_TOOL_CALLS, 1, 500);
     private final JBIntSpinner timeoutSpinner = new JBIntSpinner(SUB_AGENT_TIMEOUT_SECONDS, 10, 3600);
     private final JBTextField temperatureField = new JBTextField();
+    private final ComboBox<AgentExecutionTarget> executionTargetCombo =
+            new ComboBox<>(AgentExecutionTarget.values());
     private final JBLabel resolvedToolsLabel = new JBLabel();
     private final JButton addButton = new JButton("Add");
     private final JButton copyButton = new JButton("Copy");
@@ -77,9 +80,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     private final JButton importButton = new JButton("Import YAML…");
     private final JButton exportButton = new JButton("Export YAML…");
 
-    // Remote execution backend (TASK-248)
-    private final JBCheckBox remoteEnabledCheckbox =
-            new JBCheckBox("Run delegations on a DockerAgents orchestrator-api (containers instead of in-process)");
+    // DockerAgents backend connection (TASK-248/250) — used by agents whose
+    // execution target is DOCKER_AGENTS; there is no global on/off switch anymore.
     private final JBTextField remoteUrlField = new JBTextField();
     private final JButton remoteTestButton = new JButton("Test Connection");
 
@@ -187,27 +189,28 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         addSettingRow(form, gbc, "", readOnlyCheckbox);
         addSettingRow(form, gbc, "Resolved tools", resolvedToolsLabel);
 
-        addSection(form, gbc, "Budgets");
+        addSection(form, gbc, "Budgets & Execution");
         addSettingRow(form, gbc, "Max tool calls", maxToolCallsSpinner);
         addSettingRow(form, gbc, "Timeout (seconds)", timeoutSpinner);
         addSettingRow(form, gbc, "Temperature (empty = global)", temperatureField);
+        executionTargetCombo.setRenderer(new ExecutionTargetRenderer());
+        addSettingRow(form, gbc, "Execution target", executionTargetCombo);
+        addSettingRow(form, gbc, "",
+                new JBLabel("Where this agent's delegated tasks run. 'DockerAgents container' gives an " +
+                        "isolated one-shot container per task (recommended for agents with write/run " +
+                        "tools); the agent must also exist in the DockerAgents agents/ directory " +
+                        "(use Export YAML). Direct chat with the agent stays in-process."));
         addSettingRow(form, gbc, "", enabledCheckbox);
 
-        addSection(form, gbc, "Remote Execution (DockerAgents)");
-        addSettingRow(form, gbc, "", remoteEnabledCheckbox);
+        addSection(form, gbc, "DockerAgents Connection");
         JPanel remoteUrlRow = new JPanel(new BorderLayout(5, 0));
         remoteUrlRow.add(remoteUrlField, BorderLayout.CENTER);
         remoteUrlRow.add(remoteTestButton, BorderLayout.EAST);
         addSettingRow(form, gbc, "Orchestrator-api URL", remoteUrlRow);
         addSettingRow(form, gbc, "",
-                new JBLabel("When enabled, delegate_task spawns one-shot container sessions on the " +
-                        "DockerAgents orchestrator-api (agents validated against its live /agents " +
-                        "directory) instead of running in-process."));
+                new JBLabel("Used by agents whose execution target is 'DockerAgents container'. " +
+                        "One delegate_task fan-out can mix in-process and containerized agents."));
         remoteTestButton.addActionListener(e -> testRemoteConnection());
-        remoteEnabledCheckbox.addActionListener(e -> {
-            remoteUrlField.setEnabled(remoteEnabledCheckbox.isSelected());
-            remoteTestButton.setEnabled(remoteEnabledCheckbox.isSelected());
-        });
 
         // absorb remaining vertical space
         gbc.gridwidth = 2;
@@ -261,7 +264,7 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
             boolean hasSelection = def != null;
             for (JComponent c : List.of(nameField, descriptionField, instructionArea, providerComboBox,
                     modelComboBox, readOnlyCheckbox, enabledCheckbox, maxToolCallsSpinner,
-                    timeoutSpinner, temperatureField)) {
+                    timeoutSpinner, temperatureField, executionTargetCombo)) {
                 c.setEnabled(hasSelection);
             }
             presetCheckboxes.values().forEach(cb -> cb.setEnabled(hasSelection));
@@ -287,6 +290,9 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
             maxToolCallsSpinner.setNumber(def.getMaxToolCalls() != null ? def.getMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
             timeoutSpinner.setNumber(def.getTimeoutSeconds() != null ? def.getTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS);
             temperatureField.setText(def.getTemperature() != null ? String.valueOf(def.getTemperature()) : "");
+            executionTargetCombo.setSelectedItem(def.effectiveExecutionTarget());
+            // The orchestrator itself is never delegated, so a target makes no sense for it
+            executionTargetCombo.setEnabled(!AgentRegistry.ORCHESTRATOR_NAME.equals(def.getName()));
             updateResolvedToolsLabel();
         } finally {
             loadingForm = false;
@@ -320,6 +326,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         def.setMaxToolCalls(maxToolCallsSpinner.getNumber());
         def.setTimeoutSeconds(timeoutSpinner.getNumber());
         def.setTemperature(parseTemperature(temperatureField.getText()));
+        AgentExecutionTarget target = (AgentExecutionTarget) executionTargetCombo.getSelectedItem();
+        def.setExecutionTarget(target != null ? target.name() : "");
         listModel.set(editedIndex, def); // trigger renderer refresh
     }
 
@@ -578,9 +586,8 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
     public boolean isModified() {
         syncFormIntoEditedAgent();
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        if (remoteEnabledCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentTeamRemoteEnabled())
-                || !Objects.equals(remoteUrlField.getText().trim(),
-                        state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "")) {
+        if (!Objects.equals(remoteUrlField.getText().trim(),
+                state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "")) {
             return true;
         }
         List<AgentDefinition> persisted = AgentRegistry.getInstance().getAll();
@@ -607,7 +614,6 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         syncFormIntoEditedAgent();
         AgentRegistry.getInstance().saveAll(workingCopy());
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        state.setAgentTeamRemoteEnabled(remoteEnabledCheckbox.isSelected());
         state.setAgentTeamRemoteUrl(remoteUrlField.getText().trim());
     }
 
@@ -615,10 +621,7 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
         populateProviderComboBox();
         loadWorkingCopy();
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        remoteEnabledCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentTeamRemoteEnabled()));
         remoteUrlField.setText(state.getAgentTeamRemoteUrl() != null ? state.getAgentTeamRemoteUrl() : "");
-        remoteUrlField.setEnabled(remoteEnabledCheckbox.isSelected());
-        remoteTestButton.setEnabled(remoteEnabledCheckbox.isSelected());
     }
 
     // -------------------------------------------------------- renderers --
@@ -635,8 +638,22 @@ public class AgentTeamSettingsComponent extends AbstractSettingsComponent {
                             ? "" : " · " + def.getModelName());
                 String suffix = def.isEnabled() ? "" : "  [disabled]";
                 String badge = def.isBuiltIn() ? "" : "  [custom]";
-                setText(def.getName() + "  —  " + model + badge + suffix);
+                String container = def.effectiveExecutionTarget() == AgentExecutionTarget.DOCKER_AGENTS
+                        ? "  [container]" : "";
+                setText(def.getName() + "  —  " + model + container + badge + suffix);
                 setEnabled(def.isEnabled());
+            }
+            return this;
+        }
+    }
+
+    private static class ExecutionTargetRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                      boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof AgentExecutionTarget target) {
+                setText(target.getDisplayName());
             }
             return this;
         }

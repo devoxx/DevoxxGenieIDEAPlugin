@@ -54,6 +54,18 @@ public class AgentDefinition {
     private boolean builtIn;
     @Builder.Default
     private boolean enabled = true;
+    /**
+     * Where delegated tasks for this agent execute ({@link AgentExecutionTarget} name).
+     * Stored as a String for XML-serialization stability; empty/unknown = IN_PROCESS.
+     * Applies to delegations only — direct chat (Agent Team dropdown) is always in-process.
+     */
+    @Builder.Default
+    private String executionTarget = "";
+
+    /** Null-safe typed accessor for {@link #executionTarget}. */
+    public AgentExecutionTarget effectiveExecutionTarget() {
+        return AgentExecutionTarget.fromString(executionTarget);
+    }
 
     /** Defensive copy used by settings UI and registry reset. */
     public AgentDefinition copy() {
