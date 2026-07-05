@@ -302,7 +302,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "tool and a live catalog of specialist agents (architect, implementer, reviewer, " +
                 "documentalist). Each specialist runs one-shot with its own tools and can be bound " +
                 "to its own provider/model — e.g. local Ollama for review, a cloud model for " +
-                "implementation. Requires agent mode.");
+                "implementation. Requires agent mode. Enabling this also switches on 'Show tool " +
+                "activity in chat output' so delegation progress is visible (untick it again to opt out).");
 
         addFullWidthRow(contentPanel, gbc, agentTeamPureCoordinatorCheckbox);
         addHelpText(contentPanel, gbc,
@@ -310,8 +311,15 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "conversation so all hands-on work flows through delegated specialists " +
                 "(whose writes remain approval-gated).");
 
-        enableAgentTeamCheckbox.addActionListener(e ->
-                agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected()));
+        enableAgentTeamCheckbox.addActionListener(e -> {
+            agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected());
+            // Team mode without the delegation progress blocks is near-silent — ticking
+            // team mode brings the visibility setting along. Deliberate opt-out stays
+            // possible: the checkbox is right there and can be unticked afterwards.
+            if (enableAgentTeamCheckbox.isSelected()) {
+                showToolActivityInChatCheckbox.setSelected(true);
+            }
+        });
         agentTeamPureCoordinatorCheckbox.setEnabled(enableAgentTeamCheckbox.isSelected());
 
         // --- Debug ---
