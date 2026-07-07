@@ -38,4 +38,6 @@ Implemented in LLMProvidersConfigurable: apply() now calls validateEnabledProvid
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 Blocked saving half-configured cloud LLM providers in the Settings UI. LLMProvidersConfigurable.apply() now validates the dialog state before persisting and throws ConfigurationException when any enabled provider lacks its credential, so the Settings dialog shows the aggregated error and stays open with nothing saved. Covers the 12 key-field providers (blank or whitespace-only key), Azure OpenAI (key, endpoint, deployment) and AWS Bedrock (credential per selected auth mode). Complements the task-252 submit-time guard, which remains as the safety net for configs saved by older plugin versions. TDD: 12 new tests in LLMProvidersConfigurableTest (nested ApplyValidation class) written first and confirmed failing; full test suite green.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1196
 <!-- SECTION:FINAL_SUMMARY:END -->
