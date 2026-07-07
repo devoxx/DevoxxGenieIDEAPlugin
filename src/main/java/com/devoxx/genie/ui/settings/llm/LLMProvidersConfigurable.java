@@ -1,14 +1,18 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
@@ -144,7 +148,9 @@ public class LLMProvidersConfigurable implements Configurable {
      * Apply the changes to the settings
      */
     @Override
-    public void apply() {
+    public void apply() throws ConfigurationException {
+        validateEnabledProviders();
+
         boolean isModified = isModified();
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
@@ -234,6 +240,90 @@ public class LLMProvidersConfigurable implements Configurable {
             project.getMessageBus()
                     .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
                     .settingsChanged(isAnyApiKeyEnabled(settings));
+        }
+    }
+
+    /**
+     * Reject the Apply when an enabled cloud provider is missing its credential, so a
+     * half-configured provider can never be saved (it would only fail later at prompt time).
+     * Validates the dialog state, not the stored settings, so previously saved invalid
+     * configurations are also flagged the next time this panel is applied.
+     *
+     * @throws ConfigurationException listing every enabled provider with a missing credential
+     */
+    private void validateEnabledProviders() throws ConfigurationException {
+        List<String> problems = new ArrayList<>();
+
+        checkApiKeyProvider(problems, "OpenAI", llmSettingsComponent.getOpenAIEnabledCheckBox(), llmSettingsComponent.getOpenAIKeyField());
+        checkApiKeyProvider(problems, "Mistral", llmSettingsComponent.getMistralEnabledCheckBox(), llmSettingsComponent.getMistralApiKeyField());
+        checkApiKeyProvider(problems, "Anthropic", llmSettingsComponent.getAnthropicEnabledCheckBox(), llmSettingsComponent.getAnthropicApiKeyField());
+        checkApiKeyProvider(problems, "Groq", llmSettingsComponent.getGroqEnabledCheckBox(), llmSettingsComponent.getGroqApiKeyField());
+        checkApiKeyProvider(problems, "DeepInfra", llmSettingsComponent.getDeepInfraEnabledCheckBox(), llmSettingsComponent.getDeepInfraApiKeyField());
+        checkApiKeyProvider(problems, "Google Gemini", llmSettingsComponent.getGeminiEnabledCheckBox(), llmSettingsComponent.getGeminiApiKeyField());
+        checkApiKeyProvider(problems, "DeepSeek", llmSettingsComponent.getDeepSeekEnabledCheckBox(), llmSettingsComponent.getDeepSeekApiKeyField());
+        checkApiKeyProvider(problems, "OpenRouter", llmSettingsComponent.getOpenRouterEnabledCheckBox(), llmSettingsComponent.getOpenRouterApiKeyField());
+        checkApiKeyProvider(problems, "Grok", llmSettingsComponent.getGrokEnabledCheckBox(), llmSettingsComponent.getGrokApiKeyField());
+        checkApiKeyProvider(problems, "Kimi", llmSettingsComponent.getKimiEnabledCheckBox(), llmSettingsComponent.getKimiApiKeyField());
+        checkApiKeyProvider(problems, "GLM", llmSettingsComponent.getGlmEnabledCheckBox(), llmSettingsComponent.getGlmApiKeyField());
+        checkApiKeyProvider(problems, "NVIDIA", llmSettingsComponent.getNvidiaEnabledCheckBox(), llmSettingsComponent.getNvidiaApiKeyField());
+
+        validateAzureOpenAI(problems);
+        validateAwsBedrock(problems);
+
+        if (!problems.isEmpty()) {
+            throw new ConfigurationException(String.join("\n", problems), "Incomplete LLM Provider Configuration");
+        }
+    }
+
+    private static void checkApiKeyProvider(List<String> problems,
+                                            String displayName,
+                                            @NotNull JCheckBox enabledCheckBox,
+                                            @NotNull JPasswordField keyField) {
+        if (enabledCheckBox.isSelected() && new String(keyField.getPassword()).isBlank()) {
+            problems.add(displayName + " is enabled but has no API key.");
+        }
+    }
+
+    private void validateAzureOpenAI(List<String> problems) {
+        if (!llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected()) {
+            return;
+        }
+        if (new String(llmSettingsComponent.getAzureOpenAIKeyField().getPassword()).isBlank()) {
+            problems.add("Azure OpenAI is enabled but has no API key.");
+        }
+        if (llmSettingsComponent.getAzureOpenAIEndpointField().getText().isBlank()) {
+            problems.add("Azure OpenAI is enabled but has no endpoint.");
+        }
+        if (llmSettingsComponent.getAzureOpenAIDeploymentField().getText().isBlank()) {
+            problems.add("Azure OpenAI is enabled but has no deployment name.");
+        }
+    }
+
+    private void validateAwsBedrock(List<String> problems) {
+        if (!llmSettingsComponent.getEnableAWSCheckBox().isSelected()) {
+            return;
+        }
+        AwsBedrockAuthMode authMode = (AwsBedrockAuthMode) llmSettingsComponent.getAwsAuthModeComboBox().getSelectedItem();
+        if (authMode == null) {
+            authMode = AwsBedrockAuthMode.defaultMode();
+        }
+        switch (authMode) {
+            case ACCESS_KEY -> {
+                if (new String(llmSettingsComponent.getAwsAccessKeyIdField().getPassword()).isBlank() ||
+                        new String(llmSettingsComponent.getAwsSecretKeyField().getPassword()).isBlank()) {
+                    problems.add("AWS Bedrock is enabled but has no access key ID and/or secret access key.");
+                }
+            }
+            case PROFILE -> {
+                if (llmSettingsComponent.getAwsProfileName().getText().isBlank()) {
+                    problems.add("AWS Bedrock is enabled but has no profile name.");
+                }
+            }
+            case BEARER_TOKEN -> {
+                if (new String(llmSettingsComponent.getAwsBearerTokenField().getPassword()).isBlank()) {
+                    problems.add("AWS Bedrock is enabled but has no bearer token.");
+                }
+            }
         }
     }
 

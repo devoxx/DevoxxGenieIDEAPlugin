@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -87,7 +89,7 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
-    void shouldApplyOllamaContextWindowOverrideSetting() {
+    void shouldApplyOllamaContextWindowOverrideSetting() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 
         component.getOllamaContextWindowOverrideCheckBox().setSelected(true);
@@ -110,7 +112,7 @@ class LLMProvidersConfigurableTest {
 
 
     @Test
-    void shouldApplyCustomOpenAIContextWindowSetting() {
+    void shouldApplyCustomOpenAIContextWindowSetting() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 
         component.getCustomOpenAIContextWindowEnabledCheckBox().setSelected(true);
@@ -124,7 +126,7 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
-    void shouldClearCustomOpenAIContextWindowWhenDisabled() {
+    void shouldClearCustomOpenAIContextWindowWhenDisabled() throws ConfigurationException {
         stateService.setCustomOpenAIContextWindow(32_000);
         LLMProvidersComponent component = getSettingsComponent();
         component.getCustomOpenAIContextWindowEnabledCheckBox().setSelected(false);
@@ -146,7 +148,7 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
-    void shouldApplyCustomOpenAICostSettings() {
+    void shouldApplyCustomOpenAICostSettings() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 
         component.getCustomOpenAIInputCostField().setValue(3.0d);
@@ -161,7 +163,7 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
-    void shouldStoreNullCustomOpenAICostWhenZero() {
+    void shouldStoreNullCustomOpenAICostWhenZero() throws ConfigurationException {
         stateService.setCustomOpenAIInputCost(3.0d);
         LLMProvidersComponent component = getSettingsComponent();
         component.getCustomOpenAIInputCostField().setValue(0.0d);
@@ -184,7 +186,7 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
-    void shouldApplyShowThinkingSetting() {
+    void shouldApplyShowThinkingSetting() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 
         component.getShowThinkingCheckBox().setSelected(true);
@@ -203,6 +205,135 @@ class LLMProvidersConfigurableTest {
         configurable.reset();
 
         assertThat(getSettingsComponent().getShowThinkingCheckBox().isSelected()).isTrue();
+    }
+
+    @Nested
+    class ApplyValidation {
+
+        @Test
+        void shouldRejectApplyWhenEnabledProviderHasNoApiKey() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getAnthropicEnabledCheckBox().setSelected(true);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("Anthropic");
+
+            assertThat(stateService.isAnthropicEnabled()).isFalse();
+        }
+
+        @Test
+        void shouldRejectApplyWhenKeyIsOnlyWhitespace() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getOpenAIEnabledCheckBox().setSelected(true);
+            component.getOpenAIKeyField().setText("   ");
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("OpenAI");
+        }
+
+        @Test
+        void shouldAggregateAllViolationsIntoSingleError() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getAnthropicEnabledCheckBox().setSelected(true);
+            component.getGroqEnabledCheckBox().setSelected(true);
+            component.getNvidiaEnabledCheckBox().setSelected(true);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("Anthropic")
+                    .hasMessageContaining("Groq")
+                    .hasMessageContaining("NVIDIA");
+        }
+
+        @Test
+        void shouldApplyWhenEnabledProviderHasApiKey() throws ConfigurationException {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getAnthropicEnabledCheckBox().setSelected(true);
+            component.getAnthropicApiKeyField().setText("sk-ant-key");
+
+            configurable.apply();
+
+            assertThat(stateService.isAnthropicEnabled()).isTrue();
+            assertThat(stateService.getAnthropicKey()).isEqualTo("sk-ant-key");
+        }
+
+        @Test
+        void shouldApplyWhenProviderWithBlankKeyIsDisabled() throws ConfigurationException {
+            configurable.apply();
+
+            assertThat(stateService.isAnthropicEnabled()).isFalse();
+        }
+
+        @Test
+        void shouldRejectApplyWhenAzureEnabledWithoutKeyEndpointOrDeployment() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAzureOpenAICheckBox().setSelected(true);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("Azure OpenAI");
+        }
+
+        @Test
+        void shouldApplyWhenAzureFullyConfigured() throws ConfigurationException {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAzureOpenAICheckBox().setSelected(true);
+            component.getAzureOpenAIKeyField().setText("azure-key");
+            component.getAzureOpenAIEndpointField().setText("https://example.openai.azure.com");
+            component.getAzureOpenAIDeploymentField().setText("gpt-4o");
+
+            configurable.apply();
+
+            assertThat(stateService.getShowAzureOpenAIFields()).isTrue();
+        }
+
+        @Test
+        void shouldRejectApplyWhenBedrockAccessKeyModeMissingCredentials() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAWSCheckBox().setSelected(true);
+            component.getAwsAuthModeComboBox().setSelectedItem(AwsBedrockAuthMode.ACCESS_KEY);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("AWS Bedrock");
+        }
+
+        @Test
+        void shouldRejectApplyWhenBedrockProfileModeMissingProfileName() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAWSCheckBox().setSelected(true);
+            component.getAwsAuthModeComboBox().setSelectedItem(AwsBedrockAuthMode.PROFILE);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("AWS Bedrock");
+        }
+
+        @Test
+        void shouldRejectApplyWhenBedrockBearerTokenModeMissingToken() {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAWSCheckBox().setSelected(true);
+            component.getAwsAuthModeComboBox().setSelectedItem(AwsBedrockAuthMode.BEARER_TOKEN);
+
+            assertThatThrownBy(() -> configurable.apply())
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessageContaining("AWS Bedrock");
+        }
+
+        @Test
+        void shouldApplyWhenBedrockProfileModeFullyConfigured() throws ConfigurationException {
+            LLMProvidersComponent component = getSettingsComponent();
+            component.getEnableAWSCheckBox().setSelected(true);
+            component.getAwsAuthModeComboBox().setSelectedItem(AwsBedrockAuthMode.PROFILE);
+            component.getAwsProfileName().setText("bedrock-profile");
+
+            configurable.apply();
+
+            assertThat(stateService.getShowAwsFields()).isTrue();
+            assertThat(stateService.getAwsProfileName()).isEqualTo("bedrock-profile");
+        }
     }
 
     @Nested
