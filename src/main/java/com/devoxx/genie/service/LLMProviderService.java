@@ -142,6 +142,16 @@ public class LLMProviderService {
     }
 
     /**
+     * Does the provider need a credential (API key, or AWS credentials for Bedrock) to work?
+     *
+     * @param provider the model provider
+     * @return true when a credential must be configured before prompts can be executed
+     */
+    public static boolean requiresApiKey(ModelProvider provider) {
+        return providerKeyMap.containsKey(provider);
+    }
+
+    /**
      * Get the API key for the specified model provider.
      *
      * @param provider The model provider for which to retrieve the API key.

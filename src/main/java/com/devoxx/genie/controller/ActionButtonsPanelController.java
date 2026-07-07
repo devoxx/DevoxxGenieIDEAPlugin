@@ -9,6 +9,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
+import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -84,11 +85,17 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
             return false;
         }
 
+        LanguageModel selectedLanguageModel = getSelectedLanguageModel();
+
+        if (isApiKeyMissing(selectedLanguageModel)) {
+            return false;
+        }
+
         ChatMessageContext currentChatMessageContext = ChatMessageContextUtil.createContext(
                 new ChatContextParameters(
                         project,
                         userPromptText,
-                        getSelectedLanguageModel(),
+                        selectedLanguageModel,
                         chatModelProvider,
                         actionCommand,
                         editorFileButtonManager,
@@ -137,6 +144,30 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
             selectedLanguageModel = createDefaultLanguageModel(stateService);
         }
         return selectedLanguageModel;
+    }
+
+    /**
+     * Check whether the selected provider needs an API key that hasn't been configured yet.
+     * Key-less providers stay selectable in the combo box because the provider list deliberately
+     * never touches the credential store at startup (avoids macOS keychain prompts), so the key
+     * can only be validated here, at prompt submission time. Without this guard the blank key
+     * reaches the langchain4j model builder which throws an unhandled IllegalArgumentException.
+     *
+     * @param languageModel the selected language model
+     * @return true when a required API key is missing (a notification has been shown)
+     */
+    private boolean isApiKeyMissing(@NotNull LanguageModel languageModel) {
+        ModelProvider provider = languageModel.getProvider();
+        if (provider == null || !LLMProviderService.requiresApiKey(provider)) {
+            return false;
+        }
+        if (LLMProviderService.getInstance().getApiKey(provider).isBlank()) {
+            NotificationUtil.sendNotification(project,
+                    "No API key configured for " + provider.getName() +
+                            ". Please add it in Settings → Tools → DevoxxGenie → LLM Providers.");
+            return true;
+        }
+        return false;
     }
 
     /**
