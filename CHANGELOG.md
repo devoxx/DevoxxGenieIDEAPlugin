@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.8.14 - 2026-07-07
+
+### Added
+- feat(settings): block saving LLM settings when an enabled cloud provider has no credential — the Settings UI previously let you enable a cloud provider without entering its API key, persisting a half-configured provider that could never work and only failed later at prompt time. `LLMProvidersConfigurable.apply()` now validates before persisting and raises the standard IntelliJ `ConfigurationException` (dialog shows the error and stays open, nothing is saved), aggregating all violations into one message. Covers the 12 key-field providers (blank/whitespace-only keys), Azure OpenAI (key, endpoint, deployment) and AWS Bedrock (credential for the selected auth mode) (task-253, #1196)
+
+### Fixed
+- fix(agent): prevent dangling `tool_calls` from corrupting agent conversations — Langchain4j writes the `AiMessage(tool_calls)` to chat memory *before* tool results, so any throw in between (hallucinated/unavailable tool name, malformed tool arguments, round-trip limit) left an orphaned `tool_calls` tail that made OpenAI-compatible providers (DeepSeek, OpenAI, …) reject every subsequent request in the conversation. Two-layer fix: `ToolErrorRecovery` configures all tool-using `AiServices` builders to return hallucinated-tool-name and bad-argument errors as tool results (letting the model self-correct), and `ChatMemoryManager.prepareMemory()` now self-heals by sanitizing any orphaned tool tail before each new prompt instead of only on explicit cancellation (#1193, #1194)
+- fix(providers): gracefully handle a missing API key at prompt submission — submitting with a cloud provider selected but no key configured crashed on the EDT with an unhandled `IllegalArgumentException: apiKey cannot be null or blank`, surfaced as an "IDE error occurred" balloon. A submit-time guard in `ActionButtonsPanelController` now shows a friendly notification pointing to Settings and aborts the submission, backed by a new `LLMProviderService.requiresApiKey()` covering all key-based providers including Bedrock, Grok, Kimi and GLM (task-252, #1195)
+
+### Documentation
+- docs(blog): add a growth milestone blog post — 75K JetBrains Marketplace downloads and the active-user growth curve, with dashboard screenshots (#1192)
+
+### Contributors
+- @stephanj
+
 ## v1.8.13 - 2026-07-03
 
 ### Added
