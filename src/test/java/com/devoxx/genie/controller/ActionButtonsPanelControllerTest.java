@@ -2,6 +2,7 @@ package com.devoxx.genie.controller;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.prompt.PromptExecutionService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
@@ -282,6 +283,37 @@ class ActionButtonsPanelControllerTest {
         // The prompt execution controller will handle it internally
         // Just verify we get past input validation
         when(promptOutputPanel.isNewConversation()).thenReturn(false);
+    }
+
+    @Test
+    void testHandlePromptSubmission_CloudProviderWithoutApiKey_ShowsNotificationInsteadOfCrashing() {
+        when(promptInputArea.getText()).thenReturn("Hello Claude");
+        commandProcessorMockedStatic.when(() -> CommandProcessor.processCommand(project, "Hello Claude")).thenReturn(false);
+
+        LLMProviderService llmProviderService = mock(LLMProviderService.class);
+        when(application.getService(LLMProviderService.class)).thenReturn(llmProviderService);
+        when(llmProviderService.getApiKey(ModelProvider.Anthropic)).thenReturn("");
+
+        LanguageModel model = LanguageModel.builder()
+                .provider(ModelProvider.Anthropic)
+                .modelName("claude-sonnet-4-0")
+                .displayName("Claude Sonnet 4")
+                .apiKeyUsed(true)
+                .inputCost(3)
+                .outputCost(15)
+                .inputMaxTokens(200_000)
+                .build();
+        modelNameComboBox.addItem(model);
+        modelNameComboBox.setSelectedItem(model);
+        modelProviderComboBox.addItem(ModelProvider.Anthropic);
+        modelProviderComboBox.setSelectedItem(ModelProvider.Anthropic);
+
+        boolean result = controller.handlePromptSubmission("submit", false, null);
+
+        assertThat(result).isFalse();
+        notificationUtilMockedStatic.verify(
+                () -> NotificationUtil.sendNotification(eq(project), contains("API key"))
+        );
     }
 
     @Test
