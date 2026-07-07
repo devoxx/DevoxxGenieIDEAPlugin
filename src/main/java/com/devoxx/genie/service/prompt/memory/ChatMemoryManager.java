@@ -95,6 +95,12 @@ public class ChatMemoryManager {
                 initializeMemoryByKey(memoryKey);
             }
 
+            // Issue #1193: a tool loop that died between writing the AiMessage(tool_calls)
+            // and its tool results (hallucinated tool name, round-trip limit, streaming
+            // error) leaves a dangling tool_use tail that makes OpenAI-compatible providers
+            // reject every subsequent request. Heal the conversation before each new prompt.
+            sanitizeOrphanedToolMessages(memoryKey);
+
             if (chatMemoryService.isEmptyByKey(memoryKey)) {
                 log.debug("Preparing memory with initial system message if needed");
 

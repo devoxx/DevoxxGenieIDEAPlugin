@@ -5,6 +5,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
+import com.devoxx.genie.service.agent.ToolErrorRecovery;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
@@ -232,6 +233,9 @@ public class NonStreamingPromptExecutionService {
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
                     .toolProvider(toolProvider);
+            // Issue #1193: turn hallucinated-tool-name / bad-arguments throws into
+            // error tool-results so chat memory never ends up with a dangling tool_use.
+            ToolErrorRecovery.configure(assistantBuilder);
             if (toolProvider instanceof AgentLoopTracker tracker) {
                 // Issue #1188: Langchain4j defaults maxToolCallingRoundTrips to 100,
                 // which silently overrides user-configured tool-call limits above 100.
