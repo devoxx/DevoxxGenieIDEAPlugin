@@ -262,9 +262,9 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.17.1"
-    val lg4j_beta_version = "1.17.1-beta27"
-    val awsSdkVersion = "2.46.20"
+    val lg4j_version = "1.17.2"
+    val lg4j_beta_version = "1.17.2-beta27"
+    val awsSdkVersion = "2.47.0"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.0"
     val dockerJavaVersion = "3.7.1"
@@ -280,7 +280,7 @@ dependencies {
     // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
     // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
     val markdownRendererVersion = "0.38.1"
-    val nettyVersion = "4.2.15.Final"
+    val nettyVersion = "4.2.16.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.5.37"
