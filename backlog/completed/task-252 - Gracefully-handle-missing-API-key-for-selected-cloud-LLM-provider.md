@@ -35,4 +35,6 @@ Guard added in ActionButtonsPanelController.handlePromptSubmission(): before bui
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 Fixed the unhandled IllegalArgumentException ("apiKey cannot be null or blank") that surfaced as an "IDE error occurred" balloon when submitting a prompt with a cloud provider selected but no API key configured. Added a submit-time guard in ActionButtonsPanelController.handlePromptSubmission() that checks the selected provider via the new LLMProviderService.requiresApiKey() (backed by providerKeyMap) and shows a friendly notification pointing to Settings instead of crashing. Validation happens at submission time because the provider combo deliberately never reads the credential store at startup (macOS keychain prompt avoidance). Includes a regression test that reproduced the original crash; full test suite green.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1195
 <!-- SECTION:FINAL_SUMMARY:END -->
