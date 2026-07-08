@@ -259,6 +259,10 @@ class ConversationViewModel(
     fun onActivityMessage(message: ActivityMessage) {
         if (activityDeactivated.get()) return
 
+        // Raw request/response captures carry the full LLM payload JSON as content — they
+        // belong to the Activity Log tool window only, never to the in-chat timeline.
+        if (message.source == ActivitySource.RAW) return
+
         val msgId = activeMessageId ?: return
 
         // Agent loop limit reached — surface a durable terminal notice in the chat

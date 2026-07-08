@@ -57,4 +57,23 @@ class SecretRedactorTest {
         assertThat(redacted).contains("****");
         assertThat(redacted).doesNotContain("ab12");
     }
+
+    @Test
+    void redact_secretContainingDollarSign_doesNotThrowIllegalGroupReference() {
+        // Matcher.replaceAll(Function) feeds the produced string through appendReplacement,
+        // which interprets '$' as a group reference unless quoted. A secret like "pa$$word..."
+        // used to throw IllegalArgumentException, silently dropping the log entry.
+        String text = "{\"password\":\"pa$$word12345\"}";
+        String redacted = SecretRedactor.redact(text);
+        assertThat(redacted).isEqualTo("{\"password\":\"pa$$****2345\"}");
+    }
+
+    @Test
+    void redact_secretContainingBackslash_isMaskedWithoutCorruption() {
+        // Unquoted '\' in the replacement is treated as an escape by appendReplacement and
+        // used to be silently swallowed from the masked output.
+        String text = "{\"apiKey\":\"a\\bcdefghijklmn\"}";
+        String redacted = SecretRedactor.redact(text);
+        assertThat(redacted).isEqualTo("{\"apiKey\":\"a\\bc****klmn\"}");
+    }
 }

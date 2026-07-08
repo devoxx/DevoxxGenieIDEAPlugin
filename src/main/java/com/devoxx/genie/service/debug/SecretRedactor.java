@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -31,9 +32,15 @@ public final class SecretRedactor {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        String result = BEARER_TOKEN.matcher(text).replaceAll(m -> m.group(1) + mask(m.group(2)));
-        result = KNOWN_KEY_SHAPES.matcher(result).replaceAll(m -> mask(m.group(1)));
-        result = JSON_SECRET_FIELD.matcher(result).replaceAll(m -> m.group(1) + mask(m.group(2)) + m.group(3));
+        // quoteReplacement: replaceAll(Function) feeds the produced string through
+        // appendReplacement, so an unquoted '$' or '\' in a matched secret would throw
+        // "Illegal group reference" or corrupt the output.
+        String result = BEARER_TOKEN.matcher(text)
+                .replaceAll(m -> Matcher.quoteReplacement(m.group(1) + mask(m.group(2))));
+        result = KNOWN_KEY_SHAPES.matcher(result)
+                .replaceAll(m -> Matcher.quoteReplacement(mask(m.group(1))));
+        result = JSON_SECRET_FIELD.matcher(result)
+                .replaceAll(m -> Matcher.quoteReplacement(m.group(1) + mask(m.group(2)) + m.group(3)));
         return result;
     }
 
