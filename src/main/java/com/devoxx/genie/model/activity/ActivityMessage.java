@@ -2,6 +2,7 @@ package com.devoxx.genie.model.activity;
 
 import com.devoxx.genie.model.agent.AgentMessage;
 import com.devoxx.genie.model.agent.AgentType;
+import com.devoxx.genie.model.debug.RawTrafficType;
 import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPType;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,11 @@ public class ActivityMessage {
 
     // Agent-specific
     private AgentType agentType;
+
+    // Raw request/response-specific
+    private RawTrafficType rawTrafficType;
+    /** One-line summary shown in the log list; {@link #content} holds the full redacted JSON payload. */
+    private String summary;
 
     // Shared fields
     private String content;

@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.panel.log;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
+import com.devoxx.genie.model.debug.RawTrafficType;
 import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.rag.RAGLogMessage;
 import com.devoxx.genie.service.activity.ActivityLoggingMessage;
@@ -70,13 +71,14 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    enum LogSource { MCP, AGENT, RAG }
-    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY, RAG_ONLY }
+    enum LogSource { MCP, AGENT, RAG, RAW }
+    enum LogFilter { ALL, MCP_ONLY, AGENT_ONLY, RAG_ONLY, RAW_ONLY }
 
     record LogEntry(
         String timestamp,
         LogSource source,
-        AgentType agentType,  // null for MCP entries
+        AgentType agentType,  // null unless source == AGENT
+        RawTrafficType rawTrafficType,  // null unless source == RAW
         String message,
         String clipboardMessage,
         String fullContent
@@ -236,6 +238,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 case MCP_ONLY   -> "Show MCP Only";
                 case AGENT_ONLY -> "Show Agents Only";
                 case RAG_ONLY   -> "Show RAG Only";
+                case RAW_ONLY   -> "Show Raw Only";
             });
         }
 
@@ -246,6 +249,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             group.add(filterAction("Show MCP Only",     LogFilter.MCP_ONLY));
             group.add(filterAction("Show Agents Only",  LogFilter.AGENT_ONLY));
             group.add(filterAction("Show RAG Only",     LogFilter.RAG_ONLY));
+            group.add(filterAction("Show Raw Only",     LogFilter.RAW_ONLY));
             return group;
         }
 
@@ -276,6 +280,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             case MCP_ONLY -> e.source() == LogSource.MCP;
             case AGENT_ONLY -> e.source() == LogSource.AGENT;
             case RAG_ONLY -> e.source() == LogSource.RAG;
+            case RAW_ONLY -> e.source() == LogSource.RAW;
         };
     }
 
@@ -303,9 +308,23 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     LocalDateTime.now().format(TIME_FORMATTER),
                     LogSource.AGENT,
                     message.getAgentType(),
+                    null,
                     displayText,
                     clipboardText,
                     fullContent
+            );
+            addToPending(entry);
+        } else if (message.getSource() == ActivitySource.RAW) {
+            String summary = message.getSummary() != null ? message.getSummary() : "";
+            String content = message.getContent() != null ? message.getContent() : "";
+            LogEntry entry = new LogEntry(
+                    LocalDateTime.now().format(TIME_FORMATTER),
+                    LogSource.RAW,
+                    null,
+                    message.getRawTrafficType(),
+                    summary,
+                    summary,
+                    content
             );
             addToPending(entry);
         } else {
@@ -313,6 +332,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             LogEntry entry = new LogEntry(
                     LocalDateTime.now().format(TIME_FORMATTER),
                     LogSource.MCP,
+                    null,
                     null,
                     content,
                     content,
@@ -341,6 +361,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 LocalDateTime.now().format(TIME_FORMATTER),
                 LogSource.MCP,
                 null,
+                null,
                 content,
                 content,
                 content
@@ -364,6 +385,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         LogEntry entry = new LogEntry(
                 LocalDateTime.now().format(TIME_FORMATTER),
                 LogSource.RAG,
+                null,
                 null,
                 formatRagRow(message),
                 formatRagForClipboard(message),
@@ -667,6 +689,13 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     LightVirtualFile virtualFile = new LightVirtualFile(fileName, content);
                     FileEditorManager.getInstance(project).openFile(virtualFile, true);
                 });
+            } else if (logEntry.source() == LogSource.RAW) {
+                String fileName = "RawLog_" + logEntry.timestamp().replace(":", "").replace(".", "_") + ".json";
+                String finalContent = formatJsonContent(logEntry.fullContent());
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    LightVirtualFile virtualFile = new LightVirtualFile(fileName, finalContent);
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true);
+                });
             } else {
                 String content = logEntry.fullContent();
                 if (content.startsWith("<") || content.startsWith(">")) {
@@ -796,6 +825,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     case MCP   -> "[MCP] ";
                     case AGENT -> "[AGT] ";
                     case RAG   -> "[RAG] ";
+                    case RAW   -> "[RAW] ";
                 };
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 String plain = entry.timestamp() + " " + badge + entry.message();
@@ -840,6 +870,13 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             if (entry.source() == LogSource.MCP) {
                 if (entry.message().startsWith("<")) return MCP_IN_COLOR;
                 if (entry.message().startsWith(">")) return MCP_OUT_COLOR;
+            }
+            if (entry.source() == LogSource.RAW && entry.rawTrafficType() != null) {
+                return switch (entry.rawTrafficType()) {
+                    case REQUEST  -> MCP_OUT_COLOR;
+                    case RESPONSE -> MCP_IN_COLOR;
+                    case ERROR    -> ERROR_COLOR;
+                };
             }
             return null;
         }
