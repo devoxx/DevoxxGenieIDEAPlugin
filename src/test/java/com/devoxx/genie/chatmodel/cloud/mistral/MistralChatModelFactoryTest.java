@@ -4,6 +4,7 @@ import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.debug.RawTrafficListenerService;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -97,6 +98,25 @@ public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
         } catch (ReflectiveOperationException e) {
             throw new AssertionError("Unable to read LangChain4j Mistral returnThinking flag", e);
         }
+    }
+
+    @Test
+    void createChatModelAttachesRawTrafficListenerWhenEnabled() {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        when(state.getMcpEnabled()).thenReturn(false);
+        when(state.getAgentModeEnabled()).thenReturn(false);
+        when(state.getRawRequestResponseLoggingEnabled()).thenReturn(true);
+
+        MistralChatModelFactory factory = new MistralChatModelFactory();
+        CustomChatModel customChatModel = new CustomChatModel();
+        customChatModel.setModelName("mistral-small-latest");
+        customChatModel.setMaxRetries(3);
+        customChatModel.setTimeout(60);
+
+        Assertions.assertThat(factory.createChatModel(customChatModel).listeners())
+            .anyMatch(RawTrafficListenerService.class::isInstance);
+        Assertions.assertThat(factory.createStreamingChatModel(customChatModel).listeners())
+            .anyMatch(RawTrafficListenerService.class::isInstance);
     }
 
     @Test

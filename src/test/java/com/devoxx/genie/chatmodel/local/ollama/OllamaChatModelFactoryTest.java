@@ -1,6 +1,7 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
 import com.devoxx.genie.model.CustomChatModel;
+import com.devoxx.genie.service.debug.RawTrafficListenerService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -165,5 +166,49 @@ class OllamaChatModelFactoryTest {
             assertThat(result).isNotNull();
             assertThat(((OllamaStreamingChatModel) result).defaultRequestParameters().numCtx()).isEqualTo(8192);
         }
+    }
+
+    @Test
+    void testCreateChatModelAttachesRawTrafficListenerWhenEnabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mockStateWithRawLoggingEnabled();
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+
+            ChatModel result = factory.createChatModel(customChatModel);
+
+            org.assertj.core.api.Assertions.assertThat(result.listeners())
+                    .anyMatch(RawTrafficListenerService.class::isInstance);
+        }
+    }
+
+    @Test
+    void testCreateStreamingChatModelAttachesRawTrafficListenerWhenEnabled() {
+        try (MockedStatic<DevoxxGenieStateService> mockedSettings = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            DevoxxGenieStateService mockSettingsState = mockStateWithRawLoggingEnabled();
+            when(DevoxxGenieStateService.getInstance()).thenReturn(mockSettingsState);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName("ollama");
+
+            StreamingChatModel result = factory.createStreamingChatModel(customChatModel);
+
+            org.assertj.core.api.Assertions.assertThat(result.listeners())
+                    .anyMatch(RawTrafficListenerService.class::isInstance);
+        }
+    }
+
+    private static DevoxxGenieStateService mockStateWithRawLoggingEnabled() {
+        DevoxxGenieStateService mockSettingsState = mock(DevoxxGenieStateService.class);
+        when(mockSettingsState.getOllamaModelUrl()).thenReturn("http://localhost:8080");
+        when(mockSettingsState.getShowThinkingEnabled()).thenReturn(false);
+        when(mockSettingsState.getMcpEnabled()).thenReturn(false);
+        when(mockSettingsState.getAgentModeEnabled()).thenReturn(false);
+        when(mockSettingsState.getRawRequestResponseLoggingEnabled()).thenReturn(true);
+        return mockSettingsState;
     }
 }

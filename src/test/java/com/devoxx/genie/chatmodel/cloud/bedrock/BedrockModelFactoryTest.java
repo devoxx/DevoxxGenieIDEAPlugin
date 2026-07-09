@@ -1,9 +1,11 @@
 package com.devoxx.genie.chatmodel.cloud.bedrock;
 
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.debug.RawTrafficListenerService;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
@@ -83,6 +85,28 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         when(settingsStateMock.getAwsProfileName()).thenReturn("bedrock");
         AwsCredentialsProvider awsCredentialsProvider = factory.getCredentialsProvider();
         assertThat(awsCredentialsProvider).isInstanceOf(ProfileCredentialsProvider.class);
+    }
+
+    @Test
+    void createChatModelAttachesRawTrafficListenerWhenEnabled() {
+        when(settingsStateMock.getMcpEnabled()).thenReturn(false);
+        when(settingsStateMock.getAgentModeEnabled()).thenReturn(false);
+        when(settingsStateMock.getRawRequestResponseLoggingEnabled()).thenReturn(true);
+        when(settingsStateMock.getShouldEnableAWSRegionalInference()).thenReturn(false);
+
+        BedrockModelFactory factory = new BedrockModelFactory();
+
+        CustomChatModel anthropicModel = new CustomChatModel();
+        anthropicModel.setModelName("anthropic.claude-sonnet-4-20250514-v1:0");
+        assertThat(factory.createChatModel(anthropicModel).listeners())
+                .anyMatch(RawTrafficListenerService.class::isInstance);
+        assertThat(factory.createStreamingChatModel(anthropicModel).listeners())
+                .anyMatch(RawTrafficListenerService.class::isInstance);
+
+        CustomChatModel mistralModel = new CustomChatModel();
+        mistralModel.setModelName("mistral.mistral-large-2402-v1:0");
+        assertThat(factory.createChatModel(mistralModel).listeners())
+                .anyMatch(RawTrafficListenerService.class::isInstance);
     }
 
     private static LanguageModel model(String modelName) {
