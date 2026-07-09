@@ -41,10 +41,10 @@ public class DebugSettingsConfigurable implements Configurable {
         if (component == null) {
             return;
         }
-        boolean nowEnabled = component.isRawRequestResponseLoggingSelected();
+        boolean nowEnabled = component.isAnyLoggingSelected();
         component.apply();
 
-        // Auto-open the Activity Log panel when raw logging is turned on, so users see it start filling.
+        // Auto-open the Activity Log panel when any debug logging is turned on, so users see it start filling.
         if (nowEnabled) {
             ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("DevoxxGenieActivityLogs");
             if (toolWindow != null) {
