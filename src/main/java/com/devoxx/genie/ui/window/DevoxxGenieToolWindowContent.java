@@ -250,11 +250,11 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
         if (currentProvider != null) {
             // Model loading is asynchronous, so re-select the current model and lift the
-            // tracking suppression only once the combo has actually been repopulated.
+            // tracking suppression only once the combo has actually been repopulated. The
+            // repopulated models carry the settings just applied (e.g. a new Custom OpenAI context
+            // window), so re-selection matches on the model name rather than on value equality.
             llmProviderPanel.updateModelNamesComboBox(currentProvider.getName(), () -> {
-                if (currentModel != null) {
-                    llmProviderPanel.getModelNameComboBox().setSelectedItem(currentModel);
-                }
+                llmProviderPanel.reselectModel(currentModel);
                 suppressModelSelectionTracking = false;
             });
         } else {

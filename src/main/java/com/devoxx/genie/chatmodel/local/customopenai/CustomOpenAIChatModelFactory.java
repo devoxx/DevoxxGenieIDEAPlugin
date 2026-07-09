@@ -6,6 +6,7 @@ import com.devoxx.genie.chatmodel.local.LocalLLMProviderUtil;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.model.gpt4all.Model;
 import com.devoxx.genie.model.gpt4all.ResponseDTO;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.diagnostic.Logger;
@@ -45,11 +46,14 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
             .build();
 
     /**
-     * Cached result of the last {@link #getModels()} probe. {@code null} means "not yet fetched".
+     * Model ids returned by the last {@link #getModels()} probe. {@code null} means "not yet fetched".
      * Cleared by {@link #resetModels()} (the Refresh button). Caching prevents a network round-trip
      * on every provider selection, which otherwise re-probed the endpoint each time.
+     * <p>
+     * Only the ids are cached, never the assembled {@link LanguageModel}s: context window and costs
+     * come from settings, so caching built models froze whatever those settings were at first probe.
      */
-    private volatile List<LanguageModel> cachedModels = null;
+    private volatile List<String> cachedModelIds = null;
 
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
@@ -132,27 +136,45 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
-        List<LanguageModel> cached = cachedModels;
-        if (cached != null) {
-            return cached;
+        List<String> cached = cachedModelIds;
+        if (cached == null) {
+            cached = fetchModelIdsFromServer();
+            // Only cache a successful, non-empty probe. An empty result usually means the endpoint
+            // was momentarily unreachable/slow (e.g. right after IDE startup); caching it would make
+            // the model list stick empty until a manual Refresh. Leaving it uncached lets the next
+            // (background, bounded) probe recover once the endpoint is available.
+            if (!cached.isEmpty()) {
+                cachedModelIds = cached;
+            }
         }
-        List<LanguageModel> models = fetchModelsFromServer();
-        // Only cache a successful, non-empty probe. An empty result usually means the endpoint
-        // was momentarily unreachable/slow (e.g. right after IDE startup); caching it would make
-        // the model list stick empty until a manual Refresh. Leaving it uncached lets the next
-        // (background, bounded) probe recover once the endpoint is available.
-        if (!models.isEmpty()) {
-            cachedModels = models;
-        }
-        return models;
+        return cached.stream()
+                .map(CustomOpenAIChatModelFactory::toLanguageModel)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void resetModels() {
-        cachedModels = null;
+        cachedModelIds = null;
     }
 
-    private List<LanguageModel> fetchModelsFromServer() {
+    /**
+     * Build a {@link LanguageModel} for a model id using the <em>current</em> settings, so a context
+     * window or cost edited in Settings takes effect without re-probing the endpoint.
+     */
+    private static @NotNull LanguageModel toLanguageModel(@NotNull String modelId) {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        return LanguageModel.builder()
+                .provider(ModelProvider.CustomOpenAI)
+                .modelName(modelId)
+                .displayName(modelId)
+                .inputCost(CustomOpenAICost.resolve(state.getCustomOpenAIInputCost()))
+                .outputCost(CustomOpenAICost.resolve(state.getCustomOpenAIOutputCost()))
+                .inputMaxTokens(CustomOpenAIContextWindow.resolve(state.getCustomOpenAIContextWindow()))
+                .apiKeyUsed(state.isCustomOpenAIApiKeyEnabled())
+                .build();
+    }
+
+    private List<String> fetchModelIdsFromServer() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String baseUrl = state.getCustomOpenAIUrl();
         if (baseUrl == null || baseUrl.isBlank()) {
@@ -166,15 +188,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
             }
             return response.getData().stream()
                     .filter(model -> model != null && model.getId() != null && !model.getId().isBlank())
-                    .map(model -> LanguageModel.builder()
-                            .provider(ModelProvider.CustomOpenAI)
-                            .modelName(model.getId())
-                            .displayName(model.getId())
-                            .inputCost(CustomOpenAICost.resolve(state.getCustomOpenAIInputCost()))
-                            .outputCost(CustomOpenAICost.resolve(state.getCustomOpenAIOutputCost()))
-                            .inputMaxTokens(CustomOpenAIContextWindow.resolve(state.getCustomOpenAIContextWindow()))
-                            .apiKeyUsed(state.isCustomOpenAIApiKeyEnabled())
-                            .build())
+                    .map(Model::getId)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             // Degrade gracefully: a missing/empty/failing models endpoint must

@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
@@ -639,5 +640,104 @@ class LlmProviderPanelTest {
 
         ComboBox<LanguageModel> modelComboBox = panel.getModelNameComboBox();
         assertThat(modelComboBox.getItemCount()).isEqualTo(1);
+    }
+
+    @Test
+    void reselectModelKeepsTheUserSelectionAfterAContextWindowChange() {
+        // End-to-end shape of the reported bug: the user selected the second model, then raised the
+        // Custom OpenAI context window. Applying settings repopulates the combo with refreshed
+        // models; the previously selected instance still carries the old 4096 window, so it no
+        // longer equals its counterpart. Selection must stay on the user's model, with 262000.
+        when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("CustomOpenAI");
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.CustomOpenAI));
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("model-a").displayName("model-a").inputMaxTokens(262_000).build(),
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("model-b").displayName("model-b").inputMaxTokens(262_000).build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("CustomOpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel staleSelection = LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                .modelName("model-b").displayName("model-b").inputMaxTokens(4096).build();
+
+        panel.reselectModel(staleSelection);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("model-b");
+        assertThat(selected.getInputMaxTokens()).isEqualTo(262_000);
+    }
+
+    @Test
+    void reselectModelReAddsACustomOpenAIModelTheEndpointDoesNotEnumerate() {
+        when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("CustomOpenAI");
+        when(stateService.getCustomOpenAIContextWindow()).thenReturn(262_000);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.CustomOpenAI));
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                        .modelName("model-a").displayName("model-a").inputMaxTokens(262_000).build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("CustomOpenAI"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        LanguageModel privateModel = LanguageModel.builder().provider(ModelProvider.CustomOpenAI)
+                .modelName("private-model").displayName("private-model").inputMaxTokens(4096).build();
+
+        panel.reselectModel(privateModel);
+
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("private-model");
+        assertThat(selected.getInputMaxTokens()).isEqualTo(262_000);
+    }
+
+    @Test
+    void synthesizedCustomOpenAIModelCarriesTheConfiguredContextWindow() {
+        // A Custom OpenAI endpoint need not enumerate the configured model, in which case the
+        // persisted selection is synthesised. It previously defaulted inputMaxTokens to 0, which
+        // hid the conversation context indicator instead of using the configured window.
+        when(stateService.getCustomOpenAIContextWindow()).thenReturn(262_000);
+        when(stateService.getCustomOpenAIInputCost()).thenReturn(1.5);
+        when(stateService.getCustomOpenAIOutputCost()).thenReturn(2.5);
+
+        LanguageModel restored =
+                LlmProviderPanel.synthesizePersistedModel(ModelProvider.CustomOpenAI, "private-model");
+
+        assertThat(restored.getModelName()).isEqualTo("private-model");
+        assertThat(restored.getInputMaxTokens()).isEqualTo(262_000);
+        assertThat(restored.getInputCost()).isEqualTo(1.5);
+        assertThat(restored.getOutputCost()).isEqualTo(2.5);
+    }
+
+    @Test
+    void synthesizedCustomOpenAIModelFallsBackToTheDefaultContextWindow() {
+        when(stateService.getCustomOpenAIContextWindow()).thenReturn(null);
+
+        LanguageModel restored =
+                LlmProviderPanel.synthesizePersistedModel(ModelProvider.CustomOpenAI, "private-model");
+
+        assertThat(restored.getInputMaxTokens()).isEqualTo(CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW);
+    }
+
+    @Test
+    void synthesizedModelForOtherProvidersIsUnchanged() {
+        // Only Custom OpenAI derives its window from settings; other providers keep the minimal
+        // stand-in so no bogus window is invented for them.
+        LanguageModel restored =
+                LlmProviderPanel.synthesizePersistedModel(ModelProvider.Ollama, "llama3");
+
+        assertThat(restored.getProvider()).isEqualTo(ModelProvider.Ollama);
+        assertThat(restored.getModelName()).isEqualTo("llama3");
+        assertThat(restored.getInputMaxTokens()).isZero();
     }
 }
