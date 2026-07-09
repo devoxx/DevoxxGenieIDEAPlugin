@@ -2,7 +2,10 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
+import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAICost;
 import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
+import com.devoxx.genie.util.LanguageModelSelectionUtil;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -449,14 +452,55 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         if (provider == null) {
             return;
         }
-        LanguageModel restored = LanguageModel.builder()
-                .provider(provider)
-                .modelName(lastSelectedLanguageModel)
-                .displayName(lastSelectedLanguageModel)
-                .build();
+        LanguageModel restored = synthesizePersistedModel(provider, lastSelectedLanguageModel);
         modelNameComboBox.addItem(restored);
         modelNameComboBox.setSelectedItem(restored);
         modelNameComboBox.setVisible(true);
+    }
+
+    /**
+     * Build the stand-in {@link LanguageModel} for a persisted model the provider did not return.
+     *
+     * <p>For Custom OpenAI the context window and costs are settings, not properties of the
+     * {@code /models} response, so they are resolved here as well. Leaving the context window at 0
+     * hid the conversation context indicator entirely for users whose endpoint does not enumerate
+     * their configured model.</p>
+     */
+    static @NotNull LanguageModel synthesizePersistedModel(@NotNull ModelProvider provider,
+                                                           String modelName) {
+        LanguageModel.LanguageModelBuilder builder = LanguageModel.builder()
+                .provider(provider)
+                .modelName(modelName)
+                .displayName(modelName);
+        if (provider == ModelProvider.CustomOpenAI) {
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+            builder.inputCost(CustomOpenAICost.resolve(state.getCustomOpenAIInputCost()))
+                    .outputCost(CustomOpenAICost.resolve(state.getCustomOpenAIOutputCost()))
+                    .inputMaxTokens(CustomOpenAIContextWindow.resolve(state.getCustomOpenAIContextWindow()))
+                    .apiKeyUsed(state.isCustomOpenAIApiKeyEnabled());
+        }
+        return builder.build();
+    }
+
+    /**
+     * Re-select {@code previous} after the model combo has been repopulated (e.g. once settings
+     * were applied). Matching is by model name, because the refreshed models carry the settings
+     * just applied and therefore no longer {@code equals()} the instance that was selected before.
+     *
+     * <p>When the provider no longer offers the model it is re-added for Custom OpenAI, whose
+     * {@code /models} endpoint need not enumerate the configured model; for other providers the
+     * model genuinely disappeared, so the refreshed list's first entry stays selected.</p>
+     */
+    public void reselectModel(@Nullable LanguageModel previous) {
+        if (previous == null || LanguageModelSelectionUtil.reselectByModelName(modelNameComboBox, previous)) {
+            return;
+        }
+        ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        if (provider == ModelProvider.CustomOpenAI && previous.getModelName() != null) {
+            LanguageModel restored = synthesizePersistedModel(provider, previous.getModelName());
+            modelNameComboBox.addItem(restored);
+            modelNameComboBox.setSelectedItem(restored);
+        }
     }
 
     /**

@@ -236,6 +236,65 @@ class CustomOpenAIChatModelFactoryTest {
         }
     }
 
+    @Test
+    void getModelsReflectsContextWindowChangedAfterFirstProbe() {
+        // Regression: the factory used to cache fully-built LanguageModel objects, so the
+        // context window configured in Settings after the first probe never reached the model.
+        // The conversation footer then kept showing the 4096 default as the denominator.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://localhost:8080/v1/");
+        when(mockState.getCustomOpenAIContextWindow()).thenReturn(null);
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                    .thenReturn(buildResponse("model-a"));
+
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getInputMaxTokens)
+                    .containsExactly(CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW);
+
+            // User sets the real context window in Settings -> Tools -> DevoxxGenie -> LLM Providers.
+            when(mockState.getCustomOpenAIContextWindow()).thenReturn(262_000);
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getInputMaxTokens)
+                    .containsExactly(262_000);
+
+            // Still a single network probe: the settings-derived fields are rebuilt, not re-fetched.
+            util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)), times(1));
+        }
+    }
+
+    @Test
+    void getModelsReflectsCostsChangedAfterFirstProbe() {
+        // Same staleness applied to the cost fields, which feed the cost estimate in the footer.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://localhost:8080/v1/");
+        when(mockState.getCustomOpenAIInputCost()).thenReturn(null);
+        when(mockState.getCustomOpenAIOutputCost()).thenReturn(null);
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                    .thenReturn(buildResponse("model-a"));
+
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+            factory.getModels();
+
+            when(mockState.getCustomOpenAIInputCost()).thenReturn(1.5);
+            when(mockState.getCustomOpenAIOutputCost()).thenReturn(2.5);
+
+            assertThat(factory.getModels())
+                    .singleElement()
+                    .satisfies(model -> {
+                        assertThat(model.getInputCost()).isEqualTo(1.5);
+                        assertThat(model.getOutputCost()).isEqualTo(2.5);
+                    });
+        }
+    }
+
     private static ResponseDTO buildResponse(String... modelIds) {
         ResponseDTO dto = new ResponseDTO();
         dto.setData(java.util.Arrays.stream(modelIds).map(id -> {
