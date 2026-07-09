@@ -53,10 +53,10 @@ public class MCPSettingsConfigurable implements Configurable {
             // TODO Check if things have changed, if so Notify listeners that settings have changed
             messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged(true);
 
-            // Auto-open the MCP Logs panel when debug logging is enabled
+            // Auto-open the Activity Log panel when debug logging is enabled
             if (MCPService.isDebugLogsEnabled()) {
                 ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                        .getToolWindow("DevoxxGenieMCPLogs");
+                        .getToolWindow("DevoxxGenieActivityLogs");
                 if (toolWindow != null) {
                     toolWindow.show();
                 }
