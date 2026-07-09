@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.9.0</h2>
+        <UL>
+                    <LI>feat(debug): new opt-in Raw Request/Response viewer (Settings → DevoxxGenie → Debug) shows the full LLM request and response — messages, tool calls, token usage — in the Activity Log tool window, with a "Show Raw Only" filter, JSON view and copy-all for bug reports; secrets are redacted (#1197, #1198)</LI>
+                    <LI>fix(customopenai): the configured Custom OpenAI context window is now honoured instead of the 4096 default, so the conversation footer no longer reports a 4K window and a red "context exceeded" bar; applying settings also no longer silently switches your selected model (#1201)</LI>
+                    <LI>chore(deps): upgrade Langchain4J to 1.17.2, AWS SDK to 2.47.0 and Netty to 4.2.16.Final (#1191)</LI>
+                </UL>
         <h2>v1.8.14</h2>
         <UL>
                     <LI>feat(settings): saving LLM settings is now blocked when an enabled cloud provider has no API key — the Settings dialog shows a clear error instead of persisting a half-configured provider (#1196)</LI>

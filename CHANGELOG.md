@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.9.0 - 2026-07-09
+
+### Added
+- feat(debug): add an opt-in **Raw Request/Response viewer** for LLM traffic (Settings → DevoxxGenie → Debug, off by default) — captures the full request and response exchanged with the provider (messages, tool calls, token usage) and renders it in the Activity Log tool window, filterable via "Show Raw Only", with double-click-to-JSON and copy-all for pasting into bug reports. The capture listener hooks into `ChatModelFactory.getListener()`, the single choke point every provider factory already attaches listeners through, so it works across all providers at once. Provider API keys are never in scope (factories set `.apiKey(...)` on the model builder, so the key lives in the HTTP client, not in the serialized `ChatRequest`/`ChatResponse`), and `SecretRedactor` masks Bearer tokens, known key shapes (`sk-`, `sk-ant-`, `AKIA`, `AIza`, `gsk_`) and secret-looking JSON fields as defence in depth. Raw captures stay in the Activity Log tool window and are never appended to the in-chat activity timeline (#1197, #1198)
+
+### Fixed
+- fix(customopenai): honour the configured **context window** instead of falling back to the 4096 default — setting a large window (e.g. 262000) had no effect: the conversation footer kept reporting a 4K window and drove the usage bar red. Three defects on the Custom OpenAI path, all fixed: `CustomOpenAIChatModelFactory` cached fully-built `LanguageModel` objects whose `inputMaxTokens`/`inputCost`/`outputCost` are *settings* rather than properties of the `/models` response, so the first probe froze the fresh-install default and nothing invalidated it when settings changed (it now caches only the model ids and rebuilds the settings-derived fields on every `getModels()` call, keeping the network probe a single shot); re-selection after Apply silently switched the user's model, because `LanguageModel` is a Lombok `@Data` value type whose `equals()` covers `inputMaxTokens` and a non-editable `JComboBox` *rejects* a `setSelectedItem()` argument absent from its model (re-selection is now by model name); and the persisted-model restore path synthesised a model with `inputMaxTokens = 0`, hiding the context indicator entirely for providers whose `/models` endpoint need not enumerate the configured model (#1201)
+
+### Documentation
+- docs(blog): add "MTPLX: 2x Faster Local LLMs on Apple Silicon, Wired Into DevoxxGenie" — how MTPLX uses a model's built-in multi-token prediction heads for speculative decoding (no draft model, unchanged output distribution) and how to point DevoxxGenie at it through the Custom OpenAI provider (#1200)
+
+### Dependencies
+- chore(deps): upgrade Langchain4J 1.17.1 → 1.17.2 (and beta 1.17.1-beta27 → 1.17.2-beta27), AWS SDK 2.46.20 → 2.47.0, Netty 4.2.15.Final → 4.2.16.Final (#1191)
+
+### Contributors
+- @stephanj
+
 ## v1.8.14 - 2026-07-07
 
 ### Added
