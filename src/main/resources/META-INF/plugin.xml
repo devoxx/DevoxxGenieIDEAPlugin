@@ -717,6 +717,11 @@
                              instance="com.devoxx.genie.ui.settings.agent.AgentSettingsConfigurable"
                              displayName="Agent Mode (BETA)"/>
 
+        <projectConfigurable id="com.devoxx.genie.debugsettings"
+                             parentId="com.devoxx.genie.DevoxxGenie"
+                             instance="com.devoxx.genie.ui.settings.debug.DebugSettingsConfigurable"
+                             displayName="Debug"/>
+
         <projectConfigurable id="com.devoxx.genie.WebSearch"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.websearch.WebSearchProvidersConfigurable"

@@ -367,6 +367,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     private Boolean agentDebugLogsEnabled = false;
+    /**
+     * When enabled, the full request/response exchanged with the LLM provider (messages, tool
+     * calls, token usage) is captured and shown in the Activity Log panel, with likely secrets
+     * redacted. Opt-in because it can surface complete prompt/response text.
+     */
+    private Boolean rawRequestResponseLoggingEnabled = false;
     private Boolean showToolActivityInChat = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 

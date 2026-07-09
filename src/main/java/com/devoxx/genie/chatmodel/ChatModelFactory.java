@@ -5,6 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.debug.RawTrafficListenerService;
 import com.devoxx.genie.service.mcp.MCPListenerService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -12,6 +13,7 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface ChatModelFactory {
@@ -65,12 +67,16 @@ public interface ChatModelFactory {
     default void resetModels() {}
 
     default List<ChatModelListener> getListener() {
+        List<ChatModelListener> listeners = new ArrayList<>();
         // Attach MCPListenerService when MCP is enabled (for MCP tool logging)
         // or when agent mode is enabled (for intermediate response logging to Agent Logs)
         if (MCPService.isMCPEnabled() ||
                 Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentModeEnabled())) {
-            return List.of(new MCPListenerService());
+            listeners.add(new MCPListenerService());
         }
-        return List.of();
+        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRawRequestResponseLoggingEnabled())) {
+            listeners.add(new RawTrafficListenerService());
+        }
+        return listeners;
     }
 }
